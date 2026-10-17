@@ -52,7 +52,6 @@ function pint(s) {
 }
 
 const isPrintable = (b) => b === 9 || b === 10 || b === 13 || (b >= 0x20 && b <= 0x7e);
-const asciiOf = (u) => { let o = ""; for (let i = 0; i < u.length; i++) o += u[i] >= 0x20 && u[i] <= 0x7e ? String.fromCharCode(u[i]) : "."; return o; };
 
 // decode a list of [bitValue, name] flags set in val
 function decodeFlags(map, val) {
@@ -231,18 +230,6 @@ const LOLBAS = [
   ["forfiles.exe", "Selects files and can execute a command per file."],
   ["odbcconf.exe", "ODBC configuration. Can load a DLL via its REGSVR action."],
 ];
-const REG_AUTORUN = [
-  ["HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", "Programs run at machine logon (all users)."],
-  ["HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnce", "Run once at next logon, then deleted."],
-  ["HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", "Programs run at the current user's logon."],
-  ["HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnce", "Run once for the current user, then deleted."],
-  ["HKLM\\SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run", "32-bit Run key on 64-bit Windows."],
-  ["HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\Userinit", "Userinit executables at logon; a classic persistence hijack."],
-  ["HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon\\Shell", "The logon shell; hijacked to append a payload."],
-  ["HKLM\\SYSTEM\\CurrentControlSet\\Services", "Service definitions; auto-start services are a common persistence point."],
-  ["HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options", "Debugger values here hijack execution of a named program (IFEO)."],
-  ["HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows\\AppInit_DLLs", "DLLs loaded into most GUI processes (legacy, often disabled by Secure Boot)."],
-];
 const ATTACK = [
   ["T1059", "Command and Scripting Interpreter", "Execution"], ["T1059.001", "PowerShell", "Execution"], ["T1059.003", "Windows Command Shell", "Execution"], ["T1059.005", "Visual Basic", "Execution"], ["T1059.006", "Python", "Execution"],
   ["T1055", "Process Injection", "Defense Evasion / Privilege Escalation"], ["T1053", "Scheduled Task/Job", "Execution / Persistence"], ["T1053.005", "Scheduled Task", "Persistence"],
@@ -264,12 +251,8 @@ const ATTACK = [
   ["T1047", "Windows Management Instrumentation", "Execution"], ["T1204", "User Execution", "Execution"], ["T1204.002", "Malicious File", "Execution"],
   ["T1566", "Phishing", "Initial Access"], ["T1566.001", "Spearphishing Attachment", "Initial Access"], ["T1190", "Exploit Public-Facing Application", "Initial Access"],
 ];
-const TACTICS = [
-  ["TA0043", "Reconnaissance"], ["TA0042", "Resource Development"], ["TA0001", "Initial Access"], ["TA0002", "Execution"], ["TA0003", "Persistence"], ["TA0004", "Privilege Escalation"], ["TA0005", "Defense Evasion"], ["TA0006", "Credential Access"], ["TA0007", "Discovery"], ["TA0008", "Lateral Movement"], ["TA0009", "Collection"], ["TA0011", "Command and Control"], ["TA0010", "Exfiltration"], ["TA0040", "Impact"],
-];
 const KILLCHAIN = [["1", "Reconnaissance", "Research and select targets."], ["2", "Weaponization", "Pair an exploit with a deliverable payload."], ["3", "Delivery", "Transmit the weapon to the target (email, web, USB)."], ["4", "Exploitation", "Trigger the exploit on the target."], ["5", "Installation", "Install malware / a backdoor for persistence."], ["6", "Command & Control (C2)", "Establish a channel for remote control."], ["7", "Actions on Objectives", "Achieve the goal (exfiltration, destruction)."]];
 const DIAMOND = [["Adversary", "The actor conducting the intrusion."], ["Capability", "The tools and techniques used (malware, exploits)."], ["Infrastructure", "The physical/logical resources used (C2 servers, domains)."], ["Victim", "The target of the activity (people, assets, networks)."]];
-const PYRAMID = [["1 - Hash Values", "Trivial for attackers to change."], ["2 - IP Addresses", "Easy to change."], ["3 - Domain Names", "Simple to change (but costs a little)."], ["4 - Network/Host Artifacts", "Annoying for the attacker to change."], ["5 - Tools", "Challenging to replace."], ["6 - TTPs", "Tough - changing behaviour is hardest of all."]];
 const TLP = [["TLP:RED", "Not for disclosure; restricted to those explicitly named in the exchange."], ["TLP:AMBER", "Limited disclosure; share only within your organization and its clients on a need-to-know basis."], ["TLP:AMBER+STRICT", "Limited disclosure; restricted to your organization only."], ["TLP:GREEN", "Limited disclosure; share within your community/sector but not publicly."], ["TLP:CLEAR", "Disclosure is not limited; information may be shared freely (formerly TLP:WHITE)."]];
 const WIN_DLLS = [
   ["kernel32.dll", "Core Win32: memory, files, processes, threads, loading libraries."], ["ntdll.dll", "Low-level NT syscall stubs and the loader (Nt*/Zw*/Ldr*)."],
@@ -541,18 +524,6 @@ export const TOOLS = [
     } },
 
   // ---------------- file identification ----------------
-  { id: "bi-magic-bytes", name: "File Magic / Signature Identifier", cat: "bininspect", desc: "Identify a file type from the first bytes you paste by matching known magic-number signatures. Does not open any file.", tags: ["magic", "signature", "file type", "magic bytes", "identify"],
-    inputs: [{ k: "data", label: "First bytes (hex or base64)", type: "textarea", rows: 3, placeholder: "89504E470D0A1A0A..." }, { k: "fmt", label: "Input format", type: "select", opts: ["Auto", "Hex", "Base64"], value: "Auto" }],
-    run(v, H) {
-      const u = toBytes(v.data, v.fmt, H);
-      if (!u.length) return "";
-      const head = Array.from(u.slice(0, 16), (b) => b.toString(16).padStart(2, "0")).join("");
-      let best = null;
-      for (const [sig, name] of MAGICS) if (head.startsWith(sig.toLowerCase()) && (!best || sig.length > best[0].length)) best = [sig, name];
-      const pre = "first bytes: " + head.replace(/(..)/g, "$1 ").trim() + "\n";
-      if (!best) return pre + "No known signature matched these leading bytes.";
-      return pre + "match: " + best[1] + "  (magic " + best[0].toUpperCase().replace(/(..)/g, "$1 ").trim() + ")";
-    } },
 
   // ---------------- byte / number formatting ----------------
   { id: "bi-byte-reformat", name: "Byte Array Reformatter", cat: "bininspect", desc: "Convert a pasted hex/byte blob between formats (\\xAA, 0xAA, C array, Python bytes, space-hex, bare hex, base64, decimal) as a pure text transform.", tags: ["bytes", "reformat", "shellcode", "c array", "python bytes", "convert"],
@@ -619,25 +590,10 @@ export const TOOLS = [
       return L.join("\n");
     } },
 
-  { id: "bi-hexdump", name: "Hexdump Formatter", cat: "bininspect", desc: "Render a pasted hex/base64 blob as a classic hexdump (offset, 16 hex bytes, ASCII gutter) for reading structure.", tags: ["hexdump", "xxd", "hexview", "ascii"],
-    inputs: [{ k: "data", label: "Bytes (hex or base64)", type: "textarea", rows: 4, placeholder: "48656C6C6F2C20776F726C6421" }, { k: "fmt", label: "Input format", type: "select", opts: ["Auto", "Hex", "Base64"], value: "Auto" }],
-    run(v, H) {
-      const u = toBytes(v.data, v.fmt, H); if (!u.length) return "";
-      const L = [];
-      for (let o = 0; o < u.length; o += 16) {
-        const row = u.slice(o, o + 16);
-        const hexs = Array.from(row, (b) => b.toString(16).padStart(2, "0"));
-        while (hexs.length < 16) hexs.push("  ");
-        const left = hexs.slice(0, 8).join(" "), right = hexs.slice(8).join(" ");
-        L.push(o.toString(16).padStart(8, "0") + "  " + left + "  " + right + "  |" + asciiOf(row) + "|");
-      }
-      return L.join("\n");
-    } },
-
   { id: "bi-strings", name: "Strings Extractor", cat: "bininspect", desc: "Pull printable ASCII or UTF-16LE (wide) strings of a minimum length out of a pasted hex/base64 blob, like the Unix 'strings' tool.", tags: ["strings", "ascii", "wide", "unicode", "extract"],
-    inputs: [{ k: "data", label: "Bytes (hex or base64)", type: "textarea", rows: 5, placeholder: "68656C6C6F00..." }, { k: "fmt", label: "Input format", type: "select", opts: ["Auto", "Hex", "Base64"], value: "Auto" }, { k: "min", label: "Minimum length", type: "range", min: 2, max: 20, step: 1, value: 4 }, { k: "mode", label: "Mode", type: "select", opts: ["ASCII", "Wide (UTF-16LE)", "Both"], value: "ASCII" }],
+    inputs: [{ k: "data", label: "Bytes (hex or base64)", type: "textarea", rows: 5, placeholder: "68656C6C6F00..." }, { k: "fmt", label: "Input format", type: "select", opts: ["Auto", "Hex", "Base64", "Text"], value: "Auto" }, { k: "min", label: "Minimum length", type: "range", min: 2, max: 20, step: 1, value: 4 }, { k: "mode", label: "Mode", type: "select", opts: ["ASCII", "Wide (UTF-16LE)", "Both"], value: "ASCII" }],
     run(v, H) {
-      const u = toBytes(v.data, v.fmt, H); if (!u.length) return "";
+      const u = v.fmt === "Text" ? H.bytes(S(v.data)) : toBytes(v.data, v.fmt, H); if (!u.length) return "";
       const min = H.clampInt(v.min, 2, 64, 4);
       const out = [];
       if (v.mode === "ASCII" || v.mode === "Both") {
@@ -700,19 +656,6 @@ export const TOOLS = [
       return out.length ? out.join("\n") : "(no base64 run of length >= " + min + " decoded to printable text)";
     } },
 
-  { id: "bi-powershell-decode", name: "PowerShell EncodedCommand Decoder", cat: "bininspect", desc: "Decode a PowerShell -EncodedCommand value (base64 of UTF-16LE) back to the readable script text, for incident triage.", tags: ["powershell", "encodedcommand", "enc", "base64", "utf-16", "incident response"],
-    inputs: [{ k: "b64", label: "Base64 EncodedCommand value", type: "textarea", rows: 4, placeholder: "VwByAGkAdABlAC0ASABvAHMAdAAgAGgAaQA=" }],
-    run(v, H) {
-      let s = S(v.b64).trim(); if (!s) return "";
-      s = s.replace(/^-?e(nc(odedcommand)?)?\s+/i, "").replace(/\s+/g, "");
-      let u; try { u = b64ToU8(s); } catch (e) { return { error: "Not valid base64." }; }
-      // PowerShell -EncodedCommand is base64 of UTF-16LE
-      let out = "";
-      for (let i = 0; i + 1 < u.length; i += 2) out += String.fromCharCode(u[i] | (u[i + 1] << 8));
-      if (!out) return { error: "Decoded to empty string." };
-      return out;
-    } },
-
   { id: "bi-url-deobfuscate", name: "URL / Log De-obfuscator", cat: "bininspect", desc: "Recursively percent-decode an obfuscated URL from a log line, revealing double/triple-encoded payloads and reporting how many layers were peeled.", tags: ["url", "percent", "deobfuscate", "log", "decode"],
     inputs: [{ k: "url", label: "Encoded URL or log value", type: "textarea", rows: 3, placeholder: "%252e%252e%252fetc%252fpasswd" }, { k: "plus", label: "Treat + as space", type: "checkbox", value: false }],
     run(v) {
@@ -767,30 +710,6 @@ export const TOOLS = [
     } },
 
   // ---------------- IOC handling ----------------
-  { id: "bi-ioc-extract", name: "IOC Extractor", cat: "bininspect", desc: "Pull indicators (IPv4/IPv6, domains, URLs, emails, MD5/SHA-1/SHA-256 hashes) out of a pasted report or log, de-duplicated, with optional defanging.", tags: ["ioc", "extract", "indicators", "hash", "domain", "url", "defang"],
-    inputs: [{ k: "text", label: "Text to scan", type: "textarea", rows: 8, placeholder: "Paste a report, log, or email body..." }, { k: "defang", label: "Defang output (hxxp, 1[.]2[.]3[.]4)", type: "checkbox", value: false }],
-    run(v) {
-      let t = S(v.text); if (!t) return "";
-      // refang first so already-defanged indicators are caught
-      t = t.replace(/\[\.\]/g, ".").replace(/\(\.\)/g, ".").replace(/\{\.\}/g, ".").replace(/\[:\]/g, ":").replace(/\[@\]/g, "@").replace(/h(?:xx|XX)p(s?)/g, "http$1").replace(/\[(:\/\/)\]/g, "$1");
-      const uniq = (a) => Array.from(new Set(a));
-      const grab = (re) => uniq((t.match(re) || []));
-      const sha256 = grab(/\b[a-f0-9]{64}\b/gi);
-      const sha1 = grab(/\b[a-f0-9]{40}\b/gi);
-      const md5 = grab(/\b[a-f0-9]{32}\b/gi);
-      const urls = grab(/\bhttps?:\/\/[^\s"'<>\])]+/gi);
-      const emails = grab(/\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/gi);
-      const ipv4 = grab(/\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g);
-      const ipv6 = grab(/\b(?:[a-f0-9]{1,4}:){2,7}[a-f0-9]{1,4}\b/gi).filter((x) => x.includes("::") || x.split(":").length >= 4);
-      // domains: strip ones already captured inside urls/emails
-      const inOther = new Set();
-      urls.concat(emails).forEach((x) => (x.match(/[a-z0-9.-]+\.[a-z]{2,}/gi) || []).forEach((d) => inOther.add(d.toLowerCase())));
-      const domains = grab(/\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b/gi).filter((d) => !/^\d+$/.test(d.split(".").pop()) && !inOther.has(d.toLowerCase()));
-      const defang = (s) => v.defang ? s.replace(/^http/i, "hxxp").replace(/\./g, "[.]").replace(/@/g, "[@]").replace(/:\/\//, "[://]") : s;
-      const section = (name, arr) => arr.length ? name + " (" + arr.length + "):\n" + arr.map((x) => "  " + defang(x)).join("\n") : null;
-      const parts = [section("IPv4", ipv4), section("IPv6", ipv6), section("Domains", domains), section("URLs", urls), section("Emails", emails), section("SHA-256", sha256), section("SHA-1", sha1.filter((h) => !sha256.includes(h))), section("MD5", md5.filter((h) => !sha1.includes(h) && !sha256.includes(h)))].filter(Boolean);
-      return parts.length ? parts.join("\n\n") : "(no indicators found)";
-    } },
 
   { id: "bi-defang-refang", name: "IOC Defang / Refang", cat: "bininspect", desc: "Toggle indicators between live and safe-to-share form: defang (hxxp://1[.]2[.]3[.]4) so links are not clickable, or refang back to the real value.", tags: ["defang", "refang", "ioc", "hxxp", "safe", "neutralize"],
     inputs: [{ k: "text", label: "Indicators (one per line or inline)", type: "textarea", rows: 5, placeholder: "http://example.com/path\n198.51.100.23\nuser@example.com" }, { k: "mode", label: "Mode", type: "select", opts: ["Defang", "Refang"], value: "Defang" }],
@@ -857,31 +776,6 @@ export const TOOLS = [
     } },
 
   // ---------------- detection-rule scaffolds ----------------
-  { id: "bi-yara-skeleton", name: "YARA Rule Skeleton", cat: "bininspect", desc: "Format the strings you picked into a well-formed YARA rule template (meta + strings + condition). A scaffold - it does not invent detection logic.", tags: ["yara", "rule", "skeleton", "template", "detection"],
-    inputs: [
-      { k: "name", label: "Rule name", type: "text", value: "Suspicious_Sample", placeholder: "My_Rule" },
-      { k: "strings", label: "Strings (one per line; wrap /re/ for regex, { AA BB } stays hex)", type: "textarea", rows: 5, placeholder: "cmd.exe /c\nhxxp fragment\n{ 6A 40 68 00 30 }" },
-      { k: "author", label: "Author (meta)", type: "text", placeholder: "analyst" },
-      { k: "desc", label: "Description (meta)", type: "text", placeholder: "What this detects" },
-      { k: "cond", label: "Condition", type: "select", opts: ["any of them", "all of them", "2 of them", "uint16(0) == 0x5A4D and any of them"], value: "any of them" }],
-    run(v) {
-      const name = (S(v.name).trim() || "My_Rule").replace(/[^A-Za-z0-9_]/g, "_").replace(/^(\d)/, "_$1");
-      const strs = S(v.strings).split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
-      const L = ["rule " + name, "{", "    meta:"];
-      L.push('        author = "' + (S(v.author).trim() || "unknown").replace(/"/g, "'") + '"');
-      L.push('        description = "' + (S(v.desc).trim() || "describe the detection").replace(/"/g, "'") + '"');
-      L.push("    strings:");
-      if (!strs.length) L.push('        $s0 = "example"');
-      strs.forEach((s, i) => {
-        let val;
-        if (/^\{[\s0-9a-fA-F?]+\}$/.test(s)) val = s;                       // hex string
-        else if (/^\/.*\/[a-z]*$/.test(s)) val = s;                          // regex
-        else val = '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"'; // text string
-        L.push("        $s" + i + " = " + val);
-      });
-      L.push("    condition:", "        " + v.cond, "}");
-      return L.join("\n");
-    } },
 
   { id: "bi-yara-hex", name: "YARA Hex String Formatter", cat: "bininspect", desc: "Turn a hex/base64 byte blob into a YARA hex string { AA BB CC }, optionally wrapping to a width, ready to paste into a rule.", tags: ["yara", "hex string", "bytes", "format", "rule"],
     inputs: [{ k: "data", label: "Bytes (hex or base64)", type: "textarea", rows: 3, placeholder: "6A 40 68 00 30 00 00" }, { k: "fmt", label: "Input format", type: "select", opts: ["Auto", "Hex", "Base64"], value: "Auto" }, { k: "name", label: "Variable name", type: "text", value: "$a" }, { k: "wrap", label: "Bytes per line (0 = one line)", type: "range", min: 0, max: 32, step: 4, value: 16 }],
@@ -894,26 +788,6 @@ export const TOOLS = [
       const lines = [];
       for (let i = 0; i < h.length; i += w) lines.push("    " + h.slice(i, i + w).join(" "));
       return name + " = {\n" + lines.join("\n") + "\n}";
-    } },
-
-  { id: "bi-sigma-skeleton", name: "Sigma Rule Skeleton", cat: "bininspect", desc: "Format a Sigma detection rule scaffold (YAML) from a title, log source and field:value selection lines. A template, not generated logic.", tags: ["sigma", "yaml", "detection", "skeleton", "siem"],
-    inputs: [
-      { k: "title", label: "Title", type: "text", value: "Suspicious Activity", placeholder: "Suspicious PowerShell EncodedCommand" },
-      { k: "product", label: "logsource product", type: "text", value: "windows", placeholder: "windows" },
-      { k: "category", label: "logsource category", type: "text", value: "process_creation", placeholder: "process_creation" },
-      { k: "selection", label: "Selection (field: value, one per line)", type: "textarea", rows: 5, placeholder: "Image|endswith: \\powershell.exe\nCommandLine|contains: -enc" },
-      { k: "level", label: "level", type: "select", opts: ["low", "medium", "high", "critical"], value: "high" }],
-    run(v) {
-      const title = S(v.title).trim() || "Untitled Rule";
-      const sel = S(v.selection).split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
-      const L = ["title: " + title, "status: experimental", "description: Describe what this rule detects", "logsource:"];
-      L.push("    product: " + (S(v.product).trim() || "windows"));
-      if (S(v.category).trim()) L.push("    category: " + S(v.category).trim());
-      L.push("detection:", "    selection:");
-      if (!sel.length) L.push("        FieldName|contains: value");
-      for (const line of sel) { const m = line.match(/^(.+?):\s*(.*)$/); L.push("        " + (m ? m[1] + ": " + m[2] : line)); }
-      L.push("    condition: selection", "falsepositives:", "    - Unknown", "level: " + v.level);
-      return L.join("\n");
     } },
 
   { id: "bi-vt-url", name: "VirusTotal Report URL Builder", cat: "bininspect", desc: "Build the VirusTotal GUI URL for a pasted hash, IP, domain or URL so you can open the report yourself. Only formats a link - it does not query anything.", tags: ["virustotal", "vt", "url", "report", "hash", "lookup"],
@@ -1033,16 +907,6 @@ export const TOOLS = [
       return hits.length ? hits.map((r) => r[0] + "\n  " + r[1]).join("\n\n") : { error: "No curated LOLBAS entry matching \"" + q + "\"." };
     } },
 
-  { id: "bi-registry-autorun", name: "Registry Autorun / Persistence Reference", cat: "bininspect", desc: "Reference of common Windows registry autorun and persistence locations (Run keys, Winlogon, services, IFEO).", tags: ["registry", "persistence", "autorun", "run key", "winlogon"],
-    inputs: [{ k: "q", label: "Filter (blank = full list)", type: "text", placeholder: "winlogon" }],
-    run(v) {
-      const q = S(v.q).trim().toLowerCase();
-      const rows = REG_AUTORUN;
-      const hits = q ? rows.filter((r) => r.join(" ").toLowerCase().includes(q)) : rows;
-      if (!hits.length) return { error: "No location matching \"" + q + "\"." };
-      return hits.map((r) => r[0] + "\n  " + r[1]).join("\n\n");
-    } },
-
   { id: "bi-attack-lookup", name: "MITRE ATT&CK Technique Lookup", cat: "bininspect", desc: "Look up a MITRE ATT&CK Enterprise technique by T-number or keyword, with its name and tactic. Curated accurate subset.", tags: ["mitre", "att&ck", "technique", "ttp", "tactic"],
     inputs: [{ k: "q", label: "Technique ID or keyword (e.g. T1059 or powershell)", type: "text", placeholder: "T1055" }],
     run(v) {
@@ -1050,10 +914,6 @@ export const TOOLS = [
       const hits = ATTACK.filter((r) => r[0].toLowerCase() === q || r[0].toLowerCase().startsWith(q) || r[1].toLowerCase().includes(q) || r[2].toLowerCase().includes(q));
       return hits.length ? hits.map((r) => r[0] + "  " + r[1] + "  [" + r[2] + "]").join("\n") : { error: "No curated ATT&CK entry matching \"" + S(v.q).trim() + "\"." };
     } },
-
-  { id: "bi-attack-tactics", name: "MITRE ATT&CK Tactics Reference", cat: "bininspect", desc: "List the 14 MITRE ATT&CK Enterprise tactics with their TA numbers, or look one up by name/number.", tags: ["mitre", "att&ck", "tactics", "ta", "reference"],
-    inputs: [{ k: "q", label: "Filter (blank = all 14)", type: "text", placeholder: "persistence" }],
-    run(v) { return renderTable(TACTICS, v.q); } },
 
   { id: "bi-killchain", name: "Cyber Kill Chain Reference", cat: "bininspect", desc: "Reference for the 7 phases of the Lockheed Martin Cyber Kill Chain, from Reconnaissance to Actions on Objectives.", tags: ["kill chain", "lockheed", "phases", "reference"],
     inputs: [{ k: "q", label: "Filter (blank = all phases)", type: "text", placeholder: "delivery" }],
@@ -1068,14 +928,6 @@ export const TOOLS = [
     run(v) {
       const q = S(v.q).trim().toLowerCase(); const hits = q ? DIAMOND.filter((r) => r.join(" ").toLowerCase().includes(q)) : DIAMOND;
       if (!hits.length) return { error: "No feature matching \"" + q + "\"." };
-      return hits.map((r) => r[0] + " - " + r[1]).join("\n");
-    } },
-
-  { id: "bi-pyramid-of-pain", name: "Pyramid of Pain Reference", cat: "bininspect", desc: "Reference for the Pyramid of Pain, ranking indicator types by how much disrupting them hurts an attacker (hashes easiest, TTPs hardest).", tags: ["pyramid of pain", "indicators", "ttp", "reference"],
-    inputs: [{ k: "q", label: "Filter (blank = all)", type: "text", placeholder: "ttp" }],
-    run(v) {
-      const q = S(v.q).trim().toLowerCase(); const hits = q ? PYRAMID.filter((r) => r.join(" ").toLowerCase().includes(q)) : PYRAMID;
-      if (!hits.length) return { error: "No level matching \"" + q + "\"." };
       return hits.map((r) => r[0] + " - " + r[1]).join("\n");
     } },
 

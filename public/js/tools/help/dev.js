@@ -51,16 +51,6 @@ export const HELP = {
     when: "You have an .ini config and want to view it as JSON or use it in code.",
     example: { ini: "; main config\nname=demo\n\n[server]\nhost=example.com\nport=8080" },
   },
-  "d-semver-compare": {
-    what: "Compares two version numbers in semver format (major.minor.patch, like 1.2.3) and shows whether the first is lower, equal or higher.",
-    when: "You need to know which of two software versions is newer, including pre-release tags like 2.0.0-beta.1.",
-    example: { a: "1.10.0", b: "1.9.3" },
-  },
-  "d-semver-bump": {
-    what: "Takes a version number like 1.2.3 and gives the next one after raising the patch, minor or major part (resetting the parts after it to 0).",
-    when: "You are releasing a new version and want the correct next number. Pre-release tags are dropped.",
-    example: { ver: "1.4.2", part: "minor" },
-  },
   "d-regex-tester": {
     what: "Runs a regular expression (a search pattern for text) against your text and lists each match, where it starts and any captured parts.",
     when: "You are writing a pattern to find or extract things like emails or dates and want to check it works. Add the g flag to see all matches.",
@@ -91,25 +81,10 @@ export const HELP = {
     when: "You are making a version 3 or version 5 UUID and need the official namespace ID to use.",
     example: {},
   },
-  "d-cron-next": {
-    what: "Takes a cron expression (a five-part schedule code used by servers, like */15 9-17 * * 1-5) and lists the next run times starting from now, shown in UTC.",
-    when: "You are setting up a scheduled job and want to confirm when it will run. Only numbers are supported, not names like MON.",
-    example: { expr: "*/15 9-17 * * 1-5", count: "5" },
-  },
   "d-timestamp-diff": {
     what: "Works out how much time lies between two dates and times, shown as days, hours, minutes and seconds, plus totals in seconds and milliseconds.",
     when: "You want the exact gap between two log timestamps or events.",
     example: { a: "2026-01-01T00:00:00Z", b: "2026-03-15T12:30:00Z" },
-  },
-  "d-htaccess-redirect": {
-    what: "Writes one line of Apache web server config that sends visitors from an old path to a new URL. 301 means moved for good, 302 means temporary.",
-    when: "You moved a page on a site hosted with Apache and want old links to keep working.",
-    example: { from: "/old-page", to: "https://example.com/new-page", code: "301" },
-  },
-  "d-json-to-env": {
-    what: "Turns a flat JSON object into .env lines (KEY=value, the format apps use for settings). Values containing spaces are wrapped in quotes.",
-    when: "You have settings in JSON and need a .env file for an app or deployment.",
-    example: { json: '{"PORT":3000,"APP_NAME":"My App","DEBUG":false}' },
   },
   "d-text-templater": {
     what: "Fills placeholders written like {{name}} in your text with values from JSON, including nested values like {{user.city}}.",
@@ -120,11 +95,6 @@ export const HELP = {
     what: "Compares two JSON documents and lists fields that were added (+), removed (-) or changed (~), with old and new values.",
     when: "You want to see exactly what changed between two versions of a config file or API response.",
     example: { a: '{"name":"Jane Doe","plan":"free","tags":["beta"]}', b: '{"name":"Jane Doe","plan":"pro","tags":["beta"],"trial":false}' },
-  },
-  "d-dup-lines": {
-    what: "Finds lines that appear more than once in your text and shows how many times each one appears.",
-    when: "You have a list of emails, IDs or URLs and want to find the repeated entries. Blank lines are ignored.",
-    example: { text: "jane@example.com\njohn@example.com\njane@example.com\nalex@example.com\njohn@example.com\njane@example.com", trim: true },
   },
   "d-list-set-ops": {
     what: "Compares two lists (one item per line) and shows which items are in both, only in the first, only in the second, and all items combined without repeats.",

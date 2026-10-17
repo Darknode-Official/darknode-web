@@ -1,11 +1,6 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
 // Plain-English help for the blueteam.js mini-tools. See help/README.md for the contract.
 export const HELP = {
-  "bt-sigma-scaffold": {
-    what: "Builds a ready-to-edit Sigma detection rule in YAML. Sigma is a vendor-neutral format for writing detections that can be converted to Splunk, Elastic and others. You fill in a title, log source and match fields and it produces the full rule skeleton.",
-    when: "You are writing a new detection and want a correct Sigma rule structure to start from instead of remembering the YAML layout.",
-    example: { title: "Suspicious cmd.exe spawned by Office", category: "process_creation", product: "windows", selection: "ParentImage|endswith: \\\\winword.exe\nImage|endswith: \\\\cmd.exe", condition: "selection", level: "high" },
-  },
   "bt-sigma-modifiers": {
     what: "A searchable list of Sigma value-modifiers (like contains, startswith, re, base64, cidr) and what each one does to a match. Type a keyword to filter.",
     when: "You are writing a Sigma rule and need to remember how to match a substring, a regex, an IP range or an encoded value.",
@@ -96,11 +91,6 @@ export const HELP = {
     when: "You have a batch of similar log lines and want to pull structured fields out of them to inspect or feed elsewhere.",
     example: { regex: "^(?<ip>\\S+) \\S+ (?<user>\\S+) \\[(?<ts>[^\\]]+)\\]", text: "198.51.100.7 - bob [03/Oct/2026:10:00:00 +0000]\n198.51.100.9 - eve [03/Oct/2026:10:00:05 +0000]" },
   },
-  "bt-yara-rule": {
-    what: "Builds a YARA rule skeleton with a meta block, string definitions and a condition. YARA matches files/memory against text, hex or regex patterns to identify malware.",
-    when: "You are writing a YARA rule to detect a sample and want the structure filled in from your strings.",
-    example: { name: "Suspicious_Dropper", author: "analyst", desc: "Detects marker strings in a dropper sample", type: "text", strings: "cmd.exe /c\npowershell -enc", condition: "any of them" },
-  },
   "bt-wazuh-rule": {
     what: "Builds a Wazuh/OSSEC rule XML block from a group, rule id, level and a match string. Wazuh is an open-source host IDS/SIEM; rules raise alerts from decoded log fields.",
     when: "You are adding a custom detection to Wazuh and want a correctly structured rule element.",
@@ -116,30 +106,10 @@ export const HELP = {
     when: "You are querying Elasticsearch directly and want a correctly shaped bool query to paste into a search or alert.",
     example: { must: "event.action:logon-failed", should: "", rangeField: "@timestamp", gte: "now-24h" },
   },
-  "bt-cef-parse": {
-    what: "Reads an ArcSight CEF log line and splits it into its seven header fields and the key=value extension pairs. CEF (Common Event Format) is a standard log format many security products emit.",
-    when: "You have a CEF line from a log and want to read its vendor, event name, severity and extension fields clearly.",
-    example: { line: "CEF:0|Security|threatmanager|1.0|100|worm detected|10|src=192.0.2.1 dst=198.51.100.2 spt=1232" },
-  },
   "bt-cef-build": {
     what: "Builds a correctly escaped ArcSight CEF log line from the vendor, product, signature, name, severity and extension key=value pairs you provide.",
     when: "You are generating CEF output (for a connector, test or integration) and want a valid line with the pipes and equals signs escaped properly.",
     example: { vendor: "Darknode", product: "Sensor", version: "1.0", sig: "100", name: "Port scan detected", severity: "6", ext: "src=192.0.2.5\ndst=198.51.100.8\nspt=44321" },
-  },
-  "bt-leef-parse": {
-    what: "Reads an IBM QRadar LEEF log line (version 1.0 or 2.0) and splits it into its header fields and attribute key=value pairs, handling the attribute delimiter. LEEF is QRadar's log event format.",
-    when: "You have a LEEF line and want to read its vendor, event id and attributes clearly.",
-    example: { line: "LEEF:2.0|Lancope|StealthWatch|1.0|41|^|src=192.0.2.1^dst=198.51.100.2^spt=1232" },
-  },
-  "bt-syslog-parse": {
-    what: "Parses an RFC 5424 syslog message into its PRI (decoded to facility and severity), version, timestamp, host, app, process id, message id, structured data and message text.",
-    when: "You have a modern (RFC 5424) syslog line and want to read every field, including what its priority number means.",
-    example: { line: "<34>1 2026-10-03T22:14:15.003Z host1 su 1234 ID47 - BOM'su root' failed for user on /dev/pts/8" },
-  },
-  "bt-syslog-pri": {
-    what: "Converts a syslog PRI number into its facility and severity, or the other way around. PRI encodes both values as facility times 8 plus severity.",
-    when: "You see a syslog PRI value and want to know which facility and severity it represents (or need to compute a PRI).",
-    example: { mode: "PRI -> facility/severity", pri: "34", facility: "4", severity: "2" },
   },
   "bt-syslog-ref": {
     what: "A searchable reference of the RFC 5424 syslog facility codes (0-23) and severity codes (0-7) with their meanings.",
@@ -151,11 +121,6 @@ export const HELP = {
     when: "You have a logfmt-style log line and want it as clean JSON to read or process.",
     example: { line: 'level=error msg="connection refused" src=192.0.2.9 attempt=3 ok=false' },
   },
-  "bt-accesslog-parse": {
-    what: "Parses an Apache or Nginx access-log line in Common or Combined Log Format into named fields (host, user, time, request method/path, status, bytes, referer, user-agent).",
-    when: "You are reviewing web server access logs and want a single line broken into readable fields.",
-    example: { line: '198.51.100.7 - frank [03/Oct/2026:13:55:36 +0000] "GET /admin HTTP/1.1" 403 512 "http://example.com/" "Mozilla/5.0"' },
-  },
   "bt-iis-log-parse": {
     what: "Maps an IIS W3C extended log line to field names using the #Fields header line, so each space-separated value gets its correct label.",
     when: "You are reading IIS web server logs and want each value matched to its field name.",
@@ -165,16 +130,6 @@ export const HELP = {
     what: "Parses an AWS VPC Flow Log record in the default version-2 format into named fields, and decodes the protocol number and the start/end epoch times.",
     when: "You are analyzing AWS VPC flow logs and want a record broken into readable fields like source, destination, action and ports.",
     example: { line: "2 123456789012 eni-0abc12 192.0.2.5 198.51.100.8 44321 443 6 20 4000 1696339200 1696339260 ACCEPT OK" },
-  },
-  "bt-ps-decode": {
-    what: "Decodes a PowerShell -EncodedCommand value back to the original script. These are base64 of UTF-16LE text, so a plain base64 decode gives garbage; this tool decodes them correctly.",
-    when: "You found an encoded PowerShell command in a log or process list and want to read what it actually runs.",
-    example: { b64: "dwBoAG8AYQBtAGkA" },
-  },
-  "bt-defang": {
-    what: "Defangs or refangs text: defanging turns http into hxxp and . into [.] so URLs and IPs are not clickable; refanging reverses it. This makes indicators safe to paste into reports and tickets.",
-    when: "You are writing up findings and want to share a malicious URL or IP without it being a live, clickable link (or you received a defanged one and want it back).",
-    example: { text: "http://evil.example.com/path and 192.0.2.5 contacted mail@evil.example.com", mode: "Defang" },
   },
   "bt-cvss4-parse": {
     what: "Reads a CVSS v4.0 vector string, checks every metric is valid, expands each to its full name, and tells you the nomenclature (CVSS-B / BT / BE / BTE). It does not compute the number, because the official v4.0 score needs a large lookup table.",
@@ -205,16 +160,6 @@ export const HELP = {
     what: "A searchable reference of the Windows advanced audit policy categories and their subcategories (what auditpol configures). These control which security events Windows logs.",
     when: "You are tuning Windows audit policy and need the exact category and subcategory names.",
     example: { q: "logon" },
-  },
-  "bt-win-event-ids": {
-    what: "A searchable reference of security-relevant Windows Security-log event IDs (like 4624 logon, 4688 process creation, 4769 Kerberos ticket) and what each records.",
-    when: "You are writing or reading a Windows detection and need to know what an event ID means.",
-    example: { q: "logon" },
-  },
-  "bt-sysmon-ids": {
-    what: "A searchable reference of Sysmon event IDs (process creation, network connection, DNS query and so on). Sysmon is a Windows tool that logs rich endpoint telemetry.",
-    when: "You are building detections on Sysmon data and need to recall which event ID is which.",
-    example: { q: "network" },
   },
   "bt-win-logon-types": {
     what: "A searchable reference of Windows logon type codes (the LogonType field in 4624/4625 events), such as 3 Network, 10 RemoteInteractive (RDP), and what each means.",
@@ -325,21 +270,6 @@ export const HELP = {
     what: "Produces a structured markdown documentation block for a detection rule: severity, data source, ATT&CK mapping, logic, known false positives, response steps and validation.",
     when: "You wrote a detection and need to document it consistently for your team or a rule repository.",
     example: { name: "Encoded PowerShell execution", source: "Sysmon EID 1 / Security 4688", logic: "Process powershell.exe with -EncodedCommand / -enc in the command line.", severity: "High", mitre: "T1059.001 (PowerShell)", fp: "Some admin tooling uses -enc legitimately.", response: "Decode the command, inspect, isolate host if malicious." },
-  },
-  "bt-ip-proto": {
-    what: "A searchable reference of IANA IP protocol numbers (1 ICMP, 6 TCP, 17 UDP, and more) used in the protocol field of flow and firewall logs.",
-    when: "You see a protocol number in a flow log or firewall log and want to know which protocol it is.",
-    example: { q: "tcp" },
-  },
-  "bt-icmp-ref": {
-    what: "A searchable reference of ICMPv4 message types and the codes for Destination Unreachable and Time Exceeded.",
-    when: "You are analyzing ICMP traffic or firewall logs and want to decode an ICMP type or code.",
-    example: { q: "unreachable" },
-  },
-  "bt-dns-rcode": {
-    what: "A searchable reference of DNS response codes (0 NOERROR, 3 NXDOMAIN, 2 SERVFAIL, 5 REFUSED and more) for analyzing DNS logs.",
-    when: "You are looking at DNS logs and want to know what a response code means.",
-    example: { q: "nxdomain" },
   },
   "bt-ir-lifecycle": {
     what: "A searchable reference putting the NIST SP 800-61 incident-response phases next to the SANS PICERL phases so you can see how they line up.",

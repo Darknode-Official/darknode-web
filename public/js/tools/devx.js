@@ -66,18 +66,6 @@ const ULID_ALPHA = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
 export const TOOLS = [
   {
-    id: "dv-uuid-v4", name: "UUID v4 Generator", cat: "devx",
-    desc: "Generate one or many random RFC 4122 version-4 UUIDs.",
-    tags: ["uuid", "guid", "v4", "random", "id"],
-    inputs: [{ k: "count", label: "How many", type: "range", min: 1, max: 100, step: 1, value: 5 }],
-    run(v, H) {
-      const n = H.clampInt(v.count, 1, 100, 5);
-      const out = [];
-      for (let i = 0; i < n; i++) out.push(H.uuid());
-      return out.join("\n");
-    },
-  },
-  {
     id: "dv-uuid-v7", name: "UUID v7 (time-ordered)", cat: "devx",
     desc: "Generate version-7 UUIDs whose leading bits encode the current Unix millisecond, so they sort chronologically.",
     tags: ["uuid", "v7", "sortable", "id", "time"],
@@ -455,15 +443,19 @@ export const TOOLS = [
     tags: ["curl", "http", "builder", "request"],
     inputs: [
       { k: "url", label: "URL", type: "text", placeholder: "https://api.example.com/v1/items" },
-      { k: "method", label: "Method", type: "select", opts: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"], value: "GET" },
+      { k: "method", label: "Method", type: "select", opts: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"], value: "GET" },
       { k: "headers", label: "Headers (one per line: Name: value)", type: "textarea", rows: 4, placeholder: "Authorization: Bearer TOKEN" },
       { k: "body", label: "Body", type: "textarea", rows: 3, placeholder: '{"name":"x"}' },
+      { k: "insecure", label: "Insecure (-k, skip TLS verify)", type: "checkbox", value: false },
+      { k: "verbose", label: "Verbose (-v)", type: "checkbox", value: false },
     ],
     run(v) {
       if (!S(v.url).trim()) return "";
       const q = (s) => `'${String(s).replace(/'/g, "'\\''")}'`;
       let parts = ["curl"];
       if (v.method && v.method !== "GET") parts.push(`-X ${v.method}`);
+      if (v.insecure) parts.push("-k");
+      if (v.verbose) parts.push("-v");
       S(v.headers).split("\n").forEach((h) => { if (h.trim()) parts.push(`-H ${q(h.trim())}`); });
       if (S(v.body).trim()) parts.push(`--data ${q(v.body)}`);
       parts.push(q(v.url.trim()));
@@ -860,7 +852,11 @@ export const TOOLS = [
           const key = (prefix ? prefix + "_" : "") + String(k).toUpperCase().replace(/[^A-Z0-9]+/g, "_");
           const val = o[k];
           if (val && typeof val === "object" && !Array.isArray(val)) walk(val, key);
-          else out.push(`${key}=${Array.isArray(val) ? JSON.stringify(val) : String(val)}`);
+          else {
+            let s = Array.isArray(val) ? JSON.stringify(val) : String(val);
+            if (/\s/.test(s)) s = `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+            out.push(`${key}=${s}`);
+          }
         }
       };
       walk(obj, "");
@@ -972,27 +968,6 @@ export const TOOLS = [
         if (v.order === "desc") out.reverse();
       }
       return out.join("\n");
-    },
-  },
-  {
-    id: "dv-random-token", name: "Secure Random Token", cat: "devx",
-    desc: "Generate a cryptographically random token in hex, base64, or URL-safe base64.",
-    tags: ["token", "random", "secret", "hex", "base64"],
-    inputs: [
-      { k: "bytes", label: "Bytes of entropy", type: "range", min: 4, max: 128, step: 1, value: 32 },
-      { k: "format", label: "Format", type: "select", opts: ["hex", "base64", "base64url"], value: "hex" },
-    ],
-    run(v, H) {
-      const n = H.clampInt(v.bytes, 4, 128, 32);
-      const rb = H.randBytes(n);
-      if (v.format === "hex") return H.toHex(rb);
-      const b = H.fromBytes(rb);
-      // fromBytes may mangle non-UTF8; encode raw bytes to base64 directly instead
-      let bin = "";
-      for (let i = 0; i < rb.length; i++) bin += String.fromCharCode(rb[i]);
-      let out = btoa(bin);
-      if (v.format === "base64url") out = out.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-      return out;
     },
   },
   {
@@ -1228,48 +1203,6 @@ export const TOOLS = [
     },
   },
   {
-    id: "dv-mime-ext", name: "MIME from Extension", cat: "devx",
-    desc: "Look up the common MIME type for a file extension.",
-    tags: ["mime", "content-type", "extension"],
-    inputs: [{ k: "ext", label: "Extension or filename", type: "text", placeholder: ".json" }],
-    run(v) {
-      const raw = S(v.ext).trim().toLowerCase();
-      if (!raw) return "";
-      const ext = raw.replace(/^.*\./, "").replace(/^\./, "");
-      const T = {
-        html: "text/html", htm: "text/html", css: "text/css", js: "text/javascript", mjs: "text/javascript",
-        json: "application/json", xml: "application/xml", txt: "text/plain", csv: "text/csv", md: "text/markdown",
-        png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", svg: "image/svg+xml", webp: "image/webp", ico: "image/x-icon",
-        pdf: "application/pdf", zip: "application/zip", gz: "application/gzip", tar: "application/x-tar",
-        mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg", mp4: "video/mp4", webm: "video/webm",
-        woff: "font/woff", woff2: "font/woff2", ttf: "font/ttf", otf: "font/otf",
-        wasm: "application/wasm", yaml: "application/yaml", yml: "application/yaml",
-      };
-      return T[ext] || "application/octet-stream";
-    },
-  },
-  {
-    id: "dv-http-status", name: "HTTP Status Quick-Ref", cat: "devx",
-    desc: "Look up the reason phrase and category for an HTTP status code.",
-    tags: ["http", "status", "code", "reference"],
-    inputs: [{ k: "code", label: "Status code", type: "text", inputType: "number", placeholder: "404" }],
-    run(v) {
-      const raw = S(v.code).trim();
-      if (!raw) return "";
-      const code = parseInt(raw, 10);
-      if (isNaN(code) || code < 100 || code > 599) return { error: "Enter a code from 100-599." };
-      const T = {
-        100: "Continue", 101: "Switching Protocols", 200: "OK", 201: "Created", 202: "Accepted", 204: "No Content", 206: "Partial Content",
-        301: "Moved Permanently", 302: "Found", 303: "See Other", 304: "Not Modified", 307: "Temporary Redirect", 308: "Permanent Redirect",
-        400: "Bad Request", 401: "Unauthorized", 403: "Forbidden", 404: "Not Found", 405: "Method Not Allowed", 409: "Conflict",
-        410: "Gone", 418: "I'm a teapot", 422: "Unprocessable Entity", 429: "Too Many Requests",
-        500: "Internal Server Error", 501: "Not Implemented", 502: "Bad Gateway", 503: "Service Unavailable", 504: "Gateway Timeout",
-      };
-      const cat = code < 200 ? "Informational" : code < 300 ? "Success" : code < 400 ? "Redirection" : code < 500 ? "Client Error" : "Server Error";
-      return `${code} ${T[code] || "(unassigned reason phrase)"}\nCategory: ${cat} (${Math.floor(code / 100)}xx)`;
-    },
-  },
-  {
     id: "dv-regex-common", name: "Common Regex Patterns", cat: "devx",
     desc: "Return a ready-to-use regular expression for a common data type.",
     tags: ["regex", "pattern", "email", "url", "validation"],
@@ -1303,25 +1236,6 @@ export const TOOLS = [
     },
   },
   {
-    id: "dv-jwt-decode", name: "JWT Decoder", cat: "devx",
-    desc: "Decode a JWT's header and payload from base64url without verifying the signature.",
-    tags: ["jwt", "token", "decode", "base64url"],
-    inputs: [{ k: "jwt", label: "JWT", type: "textarea", rows: 4, placeholder: "eyJhbGc...header.payload.sig" }],
-    run(v, H) {
-      const t = S(v.jwt).trim();
-      if (!t) return "";
-      const parts = t.split(".");
-      if (parts.length < 2) return { error: "A JWT has at least two dot-separated parts." };
-      const dec = (seg) => {
-        try {
-          const json = H.b64decode(seg, { url: true });
-          return JSON.stringify(JSON.parse(json), null, 2);
-        } catch (e) { return "(could not decode: " + e.message + ")"; }
-      };
-      return `--- HEADER ---\n${dec(parts[0])}\n\n--- PAYLOAD ---\n${dec(parts[1])}\n\n--- SIGNATURE ---\n${parts[2] || "(none)"}`;
-    },
-  },
-  {
     id: "dv-commit-lint", name: "Conventional Commit Linter", cat: "devx",
     desc: "Validate a commit message subject against the Conventional Commits format.",
     tags: ["git", "commit", "conventional", "lint"],
@@ -1338,33 +1252,6 @@ export const TOOLS = [
         return `VALID\ntype        : ${m[1]}\nscope       : ${m[2] ? m[2].slice(1, -1) : "(none)"}\nbreaking    : ${m[3] ? "yes" : "no"}` + (errs.length ? `\nwarnings    : ${errs.join("; ")}` : "");
       }
       return `INVALID:\n- ${errs.join("\n- ")}\nExpected: type(scope): description  (types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert)`;
-    },
-  },
-  {
-    id: "dv-ua-parse", name: "User-Agent Parser", cat: "devx",
-    desc: "Extract the likely browser, engine, and operating system from a User-Agent string (heuristic).",
-    tags: ["user-agent", "ua", "browser", "parse"],
-    inputs: [{ k: "ua", label: "User-Agent", type: "textarea", rows: 3, placeholder: "Mozilla/5.0 (X11; Linux x86_64) ..." }],
-    run(v) {
-      const ua = S(v.ua).trim();
-      if (!ua) return "";
-      let browser = "Unknown", ver = "";
-      const bm =
-        /(Edg|Edge)\/([\d.]+)/.exec(ua) ? ["Edge", /(?:Edg|Edge)\/([\d.]+)/.exec(ua)[1]] :
-        /OPR\/([\d.]+)/.exec(ua) ? ["Opera", /OPR\/([\d.]+)/.exec(ua)[1]] :
-        /Firefox\/([\d.]+)/.exec(ua) ? ["Firefox", /Firefox\/([\d.]+)/.exec(ua)[1]] :
-        /Chrome\/([\d.]+)/.exec(ua) ? ["Chrome", /Chrome\/([\d.]+)/.exec(ua)[1]] :
-        /Version\/([\d.]+).*Safari/.exec(ua) ? ["Safari", /Version\/([\d.]+)/.exec(ua)[1]] : null;
-      if (bm) { browser = bm[0]; ver = bm[1]; }
-      let os = "Unknown";
-      if (/Windows NT 10/.test(ua)) os = "Windows 10/11";
-      else if (/Windows NT/.test(ua)) os = "Windows";
-      else if (/Android/.test(ua)) os = "Android";
-      else if (/iPhone|iPad|iPod/.test(ua)) os = "iOS";
-      else if (/Mac OS X/.test(ua)) os = "macOS";
-      else if (/Linux/.test(ua)) os = "Linux";
-      const engine = /Gecko\/|rv:/.test(ua) && /Firefox/.test(ua) ? "Gecko" : /AppleWebKit/.test(ua) ? "WebKit/Blink" : "Unknown";
-      return `Browser : ${browser}${ver ? " " + ver : ""}\nEngine  : ${engine}\nOS      : ${os}`;
     },
   },
   {

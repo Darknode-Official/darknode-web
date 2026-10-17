@@ -69,41 +69,6 @@ const IP_PROTO = { 1: "ICMP", 2: "IGMP", 6: "TCP", 17: "UDP", 41: "IPv6 (encap)"
 
 export const TOOLS = [
   // ======================= DETECTION-AS-CODE BUILDERS =======================
-  { id: "bt-sigma-scaffold", name: "Sigma Rule Scaffold", cat: "blueteam", desc: "Generate a valid Sigma detection rule YAML skeleton from title, logsource and selection fields.", tags: ["sigma", "detection", "yaml"],
-    inputs: [
-      { k: "title", label: "Title", type: "text", value: "Suspicious cmd.exe spawned by Office" },
-      { k: "category", label: "logsource category", type: "text", value: "process_creation" },
-      { k: "product", label: "logsource product", type: "text", value: "windows" },
-      { k: "selection", label: "Selection (one 'Field: value' per line)", type: "textarea", rows: 4, value: "ParentImage|endswith: \\\\winword.exe\nImage|endswith: \\\\cmd.exe" },
-      { k: "condition", label: "condition", type: "text", value: "selection" },
-      { k: "level", label: "level", type: "select", opts: ["informational", "low", "medium", "high", "critical"], value: "high" },
-    ],
-    run(v, H) {
-      if (!v.title) return { error: "Set a title." };
-      const sel = lines(v.selection).map((l) => "        " + l).join("\n") || "        Image|endswith: \\cmd.exe";
-      return [
-        `title: ${v.title}`,
-        `id: ${H.uuid()}`,
-        `status: experimental`,
-        `description: Describe what this rule detects and why it matters.`,
-        `references:`,
-        `    - https://example.com/reference`,
-        `author: analyst`,
-        `date: ${new Date().toISOString().slice(0, 10)}`,
-        `logsource:`,
-        v.category ? `    category: ${v.category}` : null,
-        v.product ? `    product: ${v.product}` : null,
-        `detection:`,
-        `    selection:`,
-        sel,
-        `    condition: ${v.condition || "selection"}`,
-        `falsepositives:`,
-        `    - Unknown`,
-        `level: ${v.level}`,
-        `tags:`,
-        `    - attack.execution`,
-      ].filter((x) => x != null).join("\n");
-    } },
 
   { id: "bt-sigma-modifiers", name: "Sigma Field-Modifier Reference", cat: "blueteam", desc: "Reference of Sigma detection field value-modifiers (contains, startswith, re, base64, cidr, ...).", tags: ["sigma", "reference", "modifier"],
     inputs: [{ k: "q", label: "Filter", type: "text", placeholder: "base64, cidr, re..." }],
@@ -456,38 +421,6 @@ export const TOOLS = [
       return JSON.stringify(rows, null, 2);
     } },
 
-  { id: "bt-yara-rule", name: "YARA Rule Scaffold", cat: "blueteam", desc: "Generate a YARA rule skeleton with meta, string definitions and a condition.", tags: ["yara", "detection", "malware"],
-    inputs: [
-      { k: "name", label: "Rule name", type: "text", value: "Suspicious_Dropper" },
-      { k: "author", label: "Author", type: "text", value: "analyst" },
-      { k: "desc", label: "Description", type: "text", value: "Detects marker strings in a dropper sample" },
-      { k: "type", label: "String type", type: "select", opts: ["text", "hex", "regex"], value: "text" },
-      { k: "strings", label: "Strings (one per line)", type: "textarea", rows: 3, value: "cmd.exe /c\npowershell -enc" },
-      { k: "condition", label: "Condition", type: "text", value: "any of them" },
-    ],
-    run(v) {
-      if (!v.name) return { error: "Set a rule name." };
-      const nm = S(v.name).replace(/[^A-Za-z0-9_]/g, "_");
-      const defs = lines(v.strings).map((s, i) => {
-        if (v.type === "hex") return `        $s${i + 1} = { ${s} }`;
-        if (v.type === "regex") return `        $s${i + 1} = /${s}/`;
-        return `        $s${i + 1} = "${s.replace(/"/g, '\\"')}"`;
-      });
-      return [
-        `rule ${nm}`,
-        `{`,
-        `    meta:`,
-        `        author = "${v.author || "analyst"}"`,
-        `        description = "${(v.desc || "").replace(/"/g, '\\"')}"`,
-        `        date = "${new Date().toISOString().slice(0, 10)}"`,
-        `    strings:`,
-        defs.join("\n") || `        $s1 = "example"`,
-        `    condition:`,
-        `        ${v.condition || "any of them"}`,
-        `}`,
-      ].join("\n");
-    } },
-
   { id: "bt-wazuh-rule", name: "Wazuh / OSSEC Rule Scaffold", cat: "blueteam", desc: "Generate a Wazuh/OSSEC decoder-matching rule XML block.", tags: ["wazuh", "ossec", "rule", "xml"],
     inputs: [
       { k: "group", label: "Group name", type: "text", value: "local,authentication" },
@@ -541,33 +474,6 @@ export const TOOLS = [
     } },
 
   // ======================= LOG FORMAT PARSERS / DECODERS =======================
-  { id: "bt-cef-parse", name: "CEF Log Parser", cat: "blueteam", desc: "Parse an ArcSight CEF log line into its header fields and extension key=value pairs.", tags: ["cef", "arcsight", "parse"],
-    inputs: [{ k: "line", label: "CEF line", type: "textarea", rows: 3, value: "CEF:0|Security|threatmanager|1.0|100|worm detected|10|src=192.0.2.1 dst=198.51.100.2 spt=1232" }],
-    run(v) {
-      const raw = S(v.line).trim();
-      if (!raw) return "";
-      const i = raw.indexOf("CEF:");
-      if (i < 0) return { error: "Not a CEF line (missing 'CEF:' prefix)." };
-      const body = raw.slice(i + 4);
-      // split header on unescaped pipes, max 8 fields (last = extension)
-      const parts = []; let cur = "";
-      for (let j = 0; j < body.length; j++) {
-        const c = body[j];
-        if (c === "\\" && j + 1 < body.length) { cur += body[j + 1]; j++; continue; }
-        if (c === "|" && parts.length < 7) { parts.push(cur); cur = ""; continue; }
-        cur += c;
-      }
-      parts.push(cur);
-      if (parts.length < 8) return { error: "Malformed CEF header (expected 7 pipe-separated header fields + extension)." };
-      const names = ["CEF Version", "Device Vendor", "Device Product", "Device Version", "Signature ID", "Name", "Severity"];
-      const head = names.map((n, k) => `${n}: ${parts[k]}`);
-      const ext = {};
-      const ere = /([^\s=]+)=((?:\\.|[^\\])*?)(?=\s+[^\s=]+=|$)/g;
-      let m; const extStr = parts[7] || "";
-      while ((m = ere.exec(extStr))) ext[m[1]] = m[2].replace(/\\(.)/g, "$1");
-      const extLines = Object.keys(ext).map((k) => `  ${k} = ${ext[k]}`);
-      return head.join("\n") + "\n\nExtension:\n" + (extLines.join("\n") || "  (none)");
-    } },
 
   { id: "bt-cef-build", name: "CEF Log Builder", cat: "blueteam", desc: "Build a well-formed ArcSight CEF log line from header fields and extension pairs.", tags: ["cef", "arcsight", "build"],
     inputs: [
@@ -584,79 +490,6 @@ export const TOOLS = [
       const header = ["CEF:0", esc(v.vendor), esc(v.product), esc(v.version), esc(v.sig), esc(v.name), esc(v.severity)].join("|");
       const ext = lines(v.ext).map((l) => { const i = l.indexOf("="); return i < 0 ? l : `${l.slice(0, i)}=${l.slice(i + 1).replace(/\\/g, "\\\\").replace(/=/g, "\\=")}`; }).join(" ");
       return header + "|" + ext;
-    } },
-
-  { id: "bt-leef-parse", name: "LEEF Log Parser", cat: "blueteam", desc: "Parse an IBM QRadar LEEF (1.0/2.0) log line into header fields and attributes.", tags: ["leef", "qradar", "parse"],
-    inputs: [{ k: "line", label: "LEEF line", type: "textarea", rows: 3, value: "LEEF:2.0|Lancope|StealthWatch|1.0|41|^|src=192.0.2.1^dst=198.51.100.2^spt=1232" }],
-    run(v) {
-      const raw = S(v.line).trim();
-      if (!raw) return "";
-      if (!raw.startsWith("LEEF:")) return { error: "Not a LEEF line (missing 'LEEF:' prefix)." };
-      const parts = raw.split("|");
-      const ver = parts[0].slice(5);
-      const names = ["Vendor", "Product", "Version", "Event ID"];
-      let attrStart = 5, delim = "\t";
-      // LEEF 2.0 may carry an explicit attribute-delimiter field before the attributes
-      if (/^2/.test(ver) && parts.length > 6 && parts[5] !== undefined && !parts[5].includes("=") && parts[5].length <= 4) {
-        attrStart = 6;
-        const d = parts[5];
-        if (/^x09$/i.test(d) || /^0x09$/i.test(d) || d === "\\t" || d === "\t") delim = "\t";
-        else if (/^x[0-9a-f]{2}$/i.test(d)) delim = String.fromCharCode(parseInt(d.slice(1), 16));
-        else if (/^0x[0-9a-f]{2}$/i.test(d)) delim = String.fromCharCode(parseInt(d.slice(2), 16));
-        else delim = d;
-      }
-      const head = [`LEEF Version: ${ver}`, ...names.map((n, k) => `${n}: ${parts[k + 1] !== undefined ? parts[k + 1] : ""}`)];
-      const attrStr = parts.slice(attrStart).join("|");
-      // if the chosen delimiter is absent, fall back to tab then space
-      let useDelim = delim;
-      if (!attrStr.includes(useDelim)) { if (attrStr.includes("\t")) useDelim = "\t"; else if (attrStr.includes(" ")) useDelim = " "; }
-      const attrs = attrStr.split(useDelim).filter((x) => x.includes("=")).map((kv) => { const i = kv.indexOf("="); return `  ${kv.slice(0, i)} = ${kv.slice(i + 1)}`; });
-      return head.join("\n") + `\n(attribute delimiter: ${JSON.stringify(useDelim)})\n\nAttributes:\n` + (attrs.join("\n") || "  (none)");
-    } },
-
-  { id: "bt-syslog-parse", name: "RFC 5424 Syslog Parser", cat: "blueteam", desc: "Parse an RFC 5424 syslog message into PRI (facility/severity), header fields and message.", tags: ["syslog", "rfc5424", "parse"],
-    inputs: [{ k: "line", label: "Syslog line", type: "textarea", rows: 3, value: '<34>1 2026-10-03T22:14:15.003Z host1 su 1234 ID47 - BOM\'su root\' failed for user on /dev/pts/8' }],
-    run(v) {
-      const raw = S(v.line).trim();
-      if (!raw) return "";
-      const m = raw.match(/^<(\d{1,3})>(\d)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(?:(-)|(\[.*?\](?:\s*\[.*?\])*))\s?([\s\S]*)$/);
-      if (!m) return { error: "Does not match RFC 5424 format (<PRI>VERSION TIMESTAMP HOST APP PROCID MSGID SD MSG)." };
-      const pri = parseInt(m[1], 10);
-      const FAC = ["kernel", "user-level", "mail", "system daemons", "security/authorization", "syslogd", "line printer", "network news", "UUCP", "clock daemon", "security/authorization (private)", "FTP", "NTP", "log audit", "log alert", "clock daemon (note 2)", "local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7"];
-      const SEV = ["Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Informational", "Debug"];
-      const fac = pri >> 3, sev = pri & 7;
-      return [
-        `PRI: ${pri}  ->  facility ${fac} (${FAC[fac] || "?"}), severity ${sev} (${SEV[sev] || "?"})`,
-        `Version: ${m[2]}`,
-        `Timestamp: ${m[3]}`,
-        `Hostname: ${m[4]}`,
-        `App-Name: ${m[5]}`,
-        `ProcID: ${m[6]}`,
-        `MsgID: ${m[7]}`,
-        `Structured-Data: ${m[8] || m[9] || "-"}`,
-        `Message: ${m[10] || ""}`,
-      ].join("\n");
-    } },
-
-  { id: "bt-syslog-pri", name: "Syslog PRI Decoder", cat: "blueteam", desc: "Decode a syslog PRI value into its facility and severity, or compute PRI from them.", tags: ["syslog", "pri", "facility", "severity"],
-    inputs: [
-      { k: "mode", label: "Mode", type: "select", opts: ["PRI -> facility/severity", "facility+severity -> PRI"], value: "PRI -> facility/severity" },
-      { k: "pri", label: "PRI value", type: "text", value: "34" },
-      { k: "facility", label: "Facility (0-23)", type: "text", value: "4" },
-      { k: "severity", label: "Severity (0-7)", type: "text", value: "2" },
-    ],
-    run(v) {
-      const FAC = ["kernel", "user-level", "mail", "system daemons", "security/authorization", "syslogd", "line printer", "network news", "UUCP", "clock daemon", "security/authorization (private)", "FTP", "NTP", "log audit", "log alert", "clock daemon", "local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7"];
-      const SEV = ["Emergency", "Alert", "Critical", "Error", "Warning", "Notice", "Informational", "Debug"];
-      if (v.mode === "facility+severity -> PRI") {
-        const f = parseInt(v.facility, 10), s = parseInt(v.severity, 10);
-        if (!(f >= 0 && f <= 23) || !(s >= 0 && s <= 7)) return { error: "Facility must be 0-23 and severity 0-7." };
-        return `PRI = facility*8 + severity = ${f}*8 + ${s} = ${f * 8 + s}\nfacility ${f} (${FAC[f]}), severity ${s} (${SEV[s]})`;
-      }
-      const pri = parseInt(v.pri, 10);
-      if (!(pri >= 0 && pri <= 191)) return { error: "PRI must be 0-191." };
-      const f = pri >> 3, s = pri & 7;
-      return `PRI ${pri}\nfacility = ${f} (${FAC[f]})\nseverity = ${s} (${SEV[s]})`;
     } },
 
   { id: "bt-syslog-ref", name: "Syslog Facility / Severity Reference", cat: "blueteam", desc: "RFC 5424 syslog facility (0-23) and severity (0-7) code tables.", tags: ["syslog", "reference", "rfc5424"],
@@ -679,23 +512,6 @@ export const TOOLS = [
       while ((m = re.exec(raw))) { any = true; out[m[1]] = m[2] !== undefined ? m[2].replace(/\\(.)/g, "$1") : m[3]; }
       if (!any) return { error: "No key=value pairs found." };
       return JSON.stringify(out, null, 2);
-    } },
-
-  { id: "bt-accesslog-parse", name: "Apache/Nginx Access Log Parser", cat: "blueteam", desc: "Parse a Common or Combined Log Format access-log line into named fields.", tags: ["apache", "nginx", "clf", "parse"],
-    inputs: [{ k: "line", label: "Access log line", type: "textarea", rows: 3, value: '198.51.100.7 - frank [03/Oct/2026:13:55:36 +0000] "GET /admin HTTP/1.1" 403 512 "http://example.com/" "Mozilla/5.0"' }],
-    run(v) {
-      const raw = S(v.line).trim();
-      if (!raw) return "";
-      const m = raw.match(/^(\S+)\s+(\S+)\s+(\S+)\s+\[([^\]]+)\]\s+"([^"]*)"\s+(\d{3})\s+(\S+)(?:\s+"([^"]*)"\s+"([^"]*)")?/);
-      if (!m) return { error: "Does not match Common/Combined Log Format." };
-      const req = m[5].split(/\s+/);
-      const out = [
-        `Remote host: ${m[1]}`, `Identd: ${m[2]}`, `User: ${m[3]}`, `Time: ${m[4]}`,
-        `Request: ${m[5]}`, `  Method: ${req[0] || ""}`, `  Path:   ${req[1] || ""}`, `  Proto:  ${req[2] || ""}`,
-        `Status: ${m[6]}`, `Bytes: ${m[7]}`,
-      ];
-      if (m[8] !== undefined) out.push(`Referer: ${m[8]}`, `User-Agent: ${m[9]}`);
-      return out.join("\n");
     } },
 
   { id: "bt-iis-log-parse", name: "IIS W3C Log Parser", cat: "blueteam", desc: "Map an IIS W3C extended log line to its fields using the #Fields header.", tags: ["iis", "w3c", "parse"],
@@ -724,37 +540,6 @@ export const TOOLS = [
         return `${n}: ${val}`;
       });
       return out.join("\n") + (vals.length !== 14 ? `\n\n(default v2 format expects 14 fields; got ${vals.length})` : "");
-    } },
-
-  { id: "bt-ps-decode", name: "PowerShell EncodedCommand Decoder", cat: "blueteam", desc: "Decode a PowerShell -EncodedCommand base64 value (UTF-16LE) back to the original script.", tags: ["powershell", "base64", "decode", "utf16"],
-    inputs: [{ k: "b64", label: "Base64 (-enc) value", type: "textarea", rows: 3, value: "dwBoAG8AYQBtAGkA" }],
-    run(v) {
-      const s = S(v.b64).trim().replace(/\s+/g, "");
-      if (!s) return "";
-      let bin;
-      try { bin = atob(s.replace(/-/g, "+").replace(/_/g, "/")); } catch (e) { return { error: "Not valid base64." }; }
-      const u = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
-      try { return new TextDecoder("utf-16le").decode(u); } catch (e) { return { error: "Could not decode as UTF-16LE." }; }
-    } },
-
-  { id: "bt-defang", name: "URL / IP Defanger", cat: "blueteam", desc: "Defang or refang URLs, domains and IPs (http->hxxp, . -> [.]) for safe sharing in reports.", tags: ["defang", "refang", "ioc", "report"],
-    inputs: [
-      { k: "text", label: "Text", type: "textarea", rows: 3, value: "http://evil.example.com/path and 192.0.2.5 contacted mail@evil.example.com" },
-      { k: "mode", label: "Mode", type: "select", opts: ["Defang", "Refang"], value: "Defang" },
-    ],
-    run(v) {
-      if (!v.text) return "";
-      let t = v.text;
-      if (v.mode === "Defang") {
-        t = t.replace(/http(s?)/gi, "hxxp$1");
-        t = t.replace(/\./g, "[.]");
-        t = t.replace(/@/g, "[@]");
-      } else {
-        t = t.replace(/\[\.\]/g, ".").replace(/\[:\/\/\]/g, "://").replace(/\[@\]/g, "@").replace(/\[at\]/gi, "@");
-        t = t.replace(/hxxp(s?)/gi, "http$1");
-      }
-      return t;
     } },
 
   // ======================= SCORING / SEVERITY =======================
@@ -909,82 +694,6 @@ export const TOOLS = [
       const rows = [];
       for (const cat of Object.keys(data)) for (const sub of data[cat]) rows.push([cat, sub]);
       return ref(rows, v.q);
-    } },
-
-  { id: "bt-win-event-ids", name: "Windows Security Event ID Reference", cat: "blueteam", desc: "Security-relevant Windows Security-log event IDs used in detections.", tags: ["windows", "event id", "reference"],
-    inputs: [{ k: "q", label: "Filter", type: "text", placeholder: "logon, 4688, kerberos..." }],
-    run(v) {
-      return ref([
-        ["4624", "An account was successfully logged on"],
-        ["4625", "An account failed to log on"],
-        ["4634", "An account was logged off"],
-        ["4647", "User initiated logoff"],
-        ["4648", "Logon attempted using explicit credentials"],
-        ["4672", "Special privileges assigned to new logon"],
-        ["4673", "A privileged service was called"],
-        ["4688", "A new process has been created"],
-        ["4689", "A process has exited"],
-        ["4697", "A service was installed in the system"],
-        ["4698", "A scheduled task was created"],
-        ["4699", "A scheduled task was deleted"],
-        ["4700", "A scheduled task was enabled"],
-        ["4702", "A scheduled task was updated"],
-        ["4719", "System audit policy was changed"],
-        ["4720", "A user account was created"],
-        ["4722", "A user account was enabled"],
-        ["4723", "An attempt was made to change an account's password"],
-        ["4724", "An attempt was made to reset an account's password"],
-        ["4725", "A user account was disabled"],
-        ["4726", "A user account was deleted"],
-        ["4728", "A member was added to a security-enabled global group"],
-        ["4732", "A member was added to a security-enabled local group"],
-        ["4740", "A user account was locked out"],
-        ["4756", "A member was added to a security-enabled universal group"],
-        ["4768", "A Kerberos authentication ticket (TGT) was requested"],
-        ["4769", "A Kerberos service ticket was requested"],
-        ["4771", "Kerberos pre-authentication failed"],
-        ["4776", "The domain controller attempted to validate credentials (NTLM)"],
-        ["4798", "A user's local group membership was enumerated"],
-        ["4799", "A security-enabled local group membership was enumerated"],
-        ["4964", "Special groups have been assigned to a new logon"],
-        ["5140", "A network share object was accessed"],
-        ["5145", "A network share object was checked for access (detailed)"],
-        ["1102", "The audit log was cleared"],
-      ], v.q);
-    } },
-
-  { id: "bt-sysmon-ids", name: "Sysmon Event ID Reference", cat: "blueteam", desc: "Sysmon operational-log event IDs and what each one records.", tags: ["sysmon", "event id", "reference"],
-    inputs: [{ k: "q", label: "Filter", type: "text", placeholder: "process, network, dns..." }],
-    run(v) {
-      return ref([
-        ["1", "Process creation"],
-        ["2", "A process changed a file creation time"],
-        ["3", "Network connection"],
-        ["4", "Sysmon service state changed"],
-        ["5", "Process terminated"],
-        ["6", "Driver loaded"],
-        ["7", "Image (DLL) loaded"],
-        ["8", "CreateRemoteThread"],
-        ["9", "RawAccessRead"],
-        ["10", "ProcessAccess"],
-        ["11", "FileCreate"],
-        ["12", "Registry object added or deleted"],
-        ["13", "Registry value set"],
-        ["14", "Registry object renamed"],
-        ["15", "FileCreateStreamHash (alternate data stream)"],
-        ["16", "Sysmon config changed"],
-        ["17", "Pipe created"],
-        ["18", "Pipe connected"],
-        ["19", "WmiEventFilter activity"],
-        ["20", "WmiEventConsumer activity"],
-        ["21", "WmiEventConsumerToFilter activity"],
-        ["22", "DNS query"],
-        ["23", "FileDelete (archived)"],
-        ["24", "Clipboard change"],
-        ["25", "Process tampering (image hollowing/herpaderping)"],
-        ["26", "FileDeleteDetected (not archived)"],
-        ["255", "Sysmon error"],
-      ], v.q);
     } },
 
   { id: "bt-win-logon-types", name: "Windows Logon Type Reference", cat: "blueteam", desc: "Windows logon type codes (the LogonType field in 4624/4625) and their meaning.", tags: ["windows", "logon", "reference"],
@@ -1459,48 +1168,6 @@ export const TOOLS = [
     } },
 
   // ======================= PROTOCOL / NETWORK REFERENCES =======================
-  { id: "bt-ip-proto", name: "IP Protocol Number Reference", cat: "blueteam", desc: "IANA IP protocol numbers for decoding the protocol field in flow logs and firewall logs.", tags: ["protocol", "reference", "network"],
-    inputs: [{ k: "q", label: "Filter", type: "text", placeholder: "tcp, 17, gre..." }],
-    run(v) {
-      const rows = Object.keys(IP_PROTO).map((k) => [k, IP_PROTO[k]]);
-      return ref(rows, v.q);
-    } },
-
-  { id: "bt-icmp-ref", name: "ICMP Type / Code Reference", cat: "blueteam", desc: "ICMPv4 message types and the codes for Destination Unreachable and Time Exceeded.", tags: ["icmp", "reference", "network"],
-    inputs: [{ k: "q", label: "Filter", type: "text", placeholder: "unreachable, echo, redirect..." }],
-    run(v) {
-      return ref([
-        ["0", "Echo Reply"],
-        ["3", "Destination Unreachable (code 0=net, 1=host, 2=protocol, 3=port, 4=frag needed+DF, 13=comm admin prohibited)"],
-        ["4", "Source Quench (deprecated)"],
-        ["5", "Redirect"],
-        ["8", "Echo Request (ping)"],
-        ["9", "Router Advertisement"],
-        ["10", "Router Solicitation"],
-        ["11", "Time Exceeded (code 0=TTL exceeded, 1=frag reassembly time exceeded)"],
-        ["12", "Parameter Problem"],
-        ["13", "Timestamp Request"],
-        ["14", "Timestamp Reply"],
-      ], v.q);
-    } },
-
-  { id: "bt-dns-rcode", name: "DNS Response Code Reference", cat: "blueteam", desc: "DNS RCODE values for analyzing DNS logs (NXDOMAIN, SERVFAIL, REFUSED, ...).", tags: ["dns", "rcode", "reference"],
-    inputs: [{ k: "q", label: "Filter", type: "text", placeholder: "nxdomain, servfail..." }],
-    run(v) {
-      return ref([
-        ["0", "NOERROR", "no error"],
-        ["1", "FORMERR", "format error (malformed query)"],
-        ["2", "SERVFAIL", "server failure (e.g. DNSSEC validation failed)"],
-        ["3", "NXDOMAIN", "non-existent domain"],
-        ["4", "NOTIMP", "query type not implemented"],
-        ["5", "REFUSED", "server refused (policy)"],
-        ["6", "YXDOMAIN", "name exists when it should not"],
-        ["7", "YXRRSET", "RR set exists when it should not"],
-        ["8", "NXRRSET", "RR set that should exist does not"],
-        ["9", "NOTAUTH", "server not authoritative / not authorized"],
-        ["10", "NOTZONE", "name not in zone"],
-      ], v.q);
-    } },
 
   // ======================= IR / DETECTION CONCEPTS =======================
   { id: "bt-ir-lifecycle", name: "Incident Response Lifecycle Reference", cat: "blueteam", desc: "NIST SP 800-61 and SANS PICERL incident-response phases side by side.", tags: ["incident", "nist", "sans", "reference"],

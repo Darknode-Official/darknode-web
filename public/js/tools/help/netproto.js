@@ -181,11 +181,6 @@ export const HELP = {
     when: "You pulled a timestamp out of an NTP packet and want to read it as a human date, or you need the NTP form of a date.",
     example: { val: "0xe5f20a8e" },
   },
-  "np-syslog-pri": {
-    what: "Decodes the syslog priority number (the value in angle brackets like <134> at the start of a log message) into the facility (which part of the system) and severity (how urgent), or builds it back.",
-    when: "You are reading raw syslog messages and want to know which facility and severity a PRI value means.",
-    example: { mode: "PRI -> facility+severity", pri: "134" },
-  },
   "np-ip-protocols": {
     what: "Looks up the IANA IP protocol number, which is the field inside an IP packet that says what is carried next (6 is TCP, 17 is UDP, 1 is ICMP, and so on).",
     when: "You see a protocol number in an IP header or a firewall rule and want to know what it is.",

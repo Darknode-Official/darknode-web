@@ -1,7 +1,6 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
 // Web / application-security mini-tools: payload builders, cheatsheets and analyzers
 // for AUTHORIZED penetration testing and red/blue team exercises. See _schema.md.
-const S = (v) => (v == null ? "" : String(v));
 
 function b64urlEncodeBytes(u8) {
   let bin = "";
@@ -100,7 +99,7 @@ function jwtLeaves(obj, prefix, out) {
 
 export const TOOLS = [
   // ---------------- JWT flagship ----------------
-  { id: "w-jwt-analyzer", name: "JWT Analyzer & Attack Lab", cat: "websec",
+  { id: "w-jwt-analyzer", name: "JWT Security Auditor", cat: "websec",
     desc: "Decode a JWT and run a full security audit (alg:none, RS→HS key confusion, kid/jku/jwk injection, weak-secret auto-crack, expiry & claim hygiene), brute-force the HMAC secret, or forge a tampered token — all client-side, for authorized testing.",
     tags: ["jwt", "jose", "jws", "token", "alg none", "kid", "jku", "jwk", "key confusion", "hs256", "crack", "forge", "audit", "scanner"],
     button: "Run",
@@ -185,6 +184,10 @@ export const TOOLS = [
       L.push(`Algorithm : ${alg === undefined ? "(missing)" : alg}${spec ? "  — " + spec.note : "  — unrecognized"}`);
       if (header.typ) L.push(`Type      : ${header.typ}`);
       if (header.kid !== undefined) L.push(`Key ID    : ${JSON.stringify(header.kid)}`);
+      const tnum = (k) => typeof payload[k] === "number";
+      L.push(`Status    : ${tnum("exp") && payload.exp < now ? `EXPIRED ${jwtRel(payload.exp, now)}`
+        : tnum("nbf") && payload.nbf > now ? `NOT YET VALID (nbf ${jwtRel(payload.nbf, now)})`
+          : tnum("exp") ? `valid, expires ${jwtRel(payload.exp, now)}` : "no exp claim (never expires)"}  [now ${now} = ${jwtHumanTime(now)}]`);
       L.push("");
       L.push("-- HEADER --");
       L.push(jsonPretty(header));
@@ -300,6 +303,7 @@ export const TOOLS = [
       { k: "baseUri", label: "base-uri", type: "text", value: "'self'" },
       { k: "formAction", label: "form-action", type: "text", value: "'self'" },
       { k: "upgradeInsecure", label: "upgrade-insecure-requests", type: "checkbox", value: true },
+      { k: "extra", label: "Extra directives (one per line)", type: "textarea", rows: 3, placeholder: "worker-src 'self'" },
     ],
     run(v) {
       const parts = [];
@@ -308,6 +312,7 @@ export const TOOLS = [
       push("img-src", v.imgSrc); push("connect-src", v.connectSrc); push("font-src", v.fontSrc);
       push("frame-ancestors", v.frameAncestors); push("object-src", v.objectSrc); push("base-uri", v.baseUri); push("form-action", v.formAction);
       if (v.upgradeInsecure) parts.push("upgrade-insecure-requests");
+      String(v.extra || "").split("\n").map((l) => l.trim().replace(/;+$/, "").replace(/\s+/g, " ")).filter(Boolean).forEach((l) => parts.push(l));
       if (!parts.length) return { error: "Set at least one directive." };
       return `Content-Security-Policy: ${parts.join("; ")}`;
     } },
@@ -359,7 +364,7 @@ export const TOOLS = [
   { id: "w-cors-preflight", name: "CORS Preflight Explainer", cat: "websec", desc: "Given a request Origin/Method/Headers, show what the server's preflight response must contain for it to succeed.", tags: ["cors", "preflight"],
     inputs: [
       { k: "origin", label: "Request Origin", type: "text", value: "https://evil.example" },
-      { k: "method", label: "Request Method", type: "select", opts: ["GET", "POST", "PUT", "PATCH", "DELETE"], value: "PUT" },
+      { k: "method", label: "Request Method", type: "select", opts: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"], value: "PUT" },
       { k: "headers", label: "Custom request headers (comma-sep)", type: "text", value: "Content-Type, X-Auth-Token" },
       { k: "credentials", label: "Request includes credentials (cookies)", type: "checkbox" },
     ],
@@ -376,6 +381,7 @@ export const TOOLS = [
       lines.push(`  Access-Control-Allow-Methods: ${v.method}`);
       if (hdrs.length) lines.push(`  Access-Control-Allow-Headers: ${hdrs.join(", ")}`);
       if (v.credentials) lines.push(`  Access-Control-Allow-Credentials: true`);
+      lines.push(`  Access-Control-Max-Age: 600  (optional: lets the browser cache this preflight, in seconds)`);
       lines.push("");
       lines.push(v.credentials
         ? "NOTE: with credentials, Allow-Origin can never be '*' and Allow-Credentials must be exactly 'true' — misconfigurations here (origin reflection + credentials) are a common CORS vuln to test for."
@@ -900,47 +906,6 @@ export const TOOLS = [
     } },
 
   // ---------------- CVSS ----------------
-  { id: "w-cvss-calc", name: "CVSS v3.1 Base Score Calculator", cat: "websec", desc: "Parse a CVSS v3.1 base vector string and compute the base score and severity rating.", tags: ["cvss", "score", "severity"],
-    inputs: [{ k: "vector", label: "CVSS vector", type: "text", value: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" }],
-    run(v) {
-      const vec = (v.vector || "").trim();
-      if (!vec) return "";
-      const m = {};
-      vec.split("/").forEach((p) => { const [k, val] = p.split(":"); if (k && val) m[k] = val; });
-      const need = ["AV", "AC", "PR", "UI", "S", "C", "I", "A"];
-      for (const k of need) if (!m[k]) return { error: `Missing metric ${k} in vector.` };
-      const AV = { N: 0.85, A: 0.62, L: 0.55, P: 0.2 }[m.AV];
-      const AC = { L: 0.77, H: 0.44 }[m.AC];
-      const UI = { N: 0.85, R: 0.62 }[m.UI];
-      const scoped = m.S === "C";
-      const PR = scoped ? { N: 0.85, L: 0.68, H: 0.5 }[m.PR] : { N: 0.85, L: 0.62, H: 0.27 }[m.PR];
-      const CIA = { N: 0, L: 0.22, H: 0.56 };
-      const C = CIA[m.C], I = CIA[m.I], A = CIA[m.A];
-      if ([AV, AC, UI, PR, C, I, A].some((x) => x === undefined)) return { error: "Invalid metric value in vector." };
-      const iss = 1 - (1 - C) * (1 - I) * (1 - A);
-      const impact = scoped ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15) : 6.42 * iss;
-      const exploitability = 8.22 * AV * AC * PR * UI;
-      if (impact <= 0) return "Base score: 0.0 (None) — no impact on C/I/A.";
-      const raw = scoped ? Math.min(1.08 * (impact + exploitability), 10) : Math.min(impact + exploitability, 10);
-      const score = Math.ceil(raw * 10) / 10;
-      const sev = score === 0 ? "None" : score < 4 ? "Low" : score < 7 ? "Medium" : score < 9 ? "High" : "Critical";
-      return `Base score: ${score.toFixed(1)} (${sev})\nImpact subscore: ${impact.toFixed(2)}\nExploitability subscore: ${exploitability.toFixed(2)}`;
-    } },
-
-  { id: "w-cvss-vector-builder", name: "CVSS v3.1 Vector Builder", cat: "websec", desc: "Build a CVSS v3.1 base vector string from metric dropdowns.", tags: ["cvss", "vector", "builder"],
-    inputs: [
-      { k: "AV", label: "Attack Vector", type: "select", opts: [["N", "Network"], ["A", "Adjacent"], ["L", "Local"], ["P", "Physical"]], value: "N" },
-      { k: "AC", label: "Attack Complexity", type: "select", opts: [["L", "Low"], ["H", "High"]], value: "L" },
-      { k: "PR", label: "Privileges Required", type: "select", opts: [["N", "None"], ["L", "Low"], ["H", "High"]], value: "N" },
-      { k: "UI", label: "User Interaction", type: "select", opts: [["N", "None"], ["R", "Required"]], value: "N" },
-      { k: "S", label: "Scope", type: "select", opts: [["U", "Unchanged"], ["C", "Changed"]], value: "U" },
-      { k: "C", label: "Confidentiality", type: "select", opts: [["N", "None"], ["L", "Low"], ["H", "High"]], value: "H" },
-      { k: "I", label: "Integrity", type: "select", opts: [["N", "None"], ["L", "Low"], ["H", "High"]], value: "H" },
-      { k: "A", label: "Availability", type: "select", opts: [["N", "None"], ["L", "Low"], ["H", "High"]], value: "H" },
-    ],
-    run(v) {
-      return `CVSS:3.1/AV:${v.AV}/AC:${v.AC}/PR:${v.PR}/UI:${v.UI}/S:${v.S}/C:${v.C}/I:${v.I}/A:${v.A}`;
-    } },
 
   // ---------------- Misc AppSec utilities ----------------
   { id: "w-sri-hash", name: "Subresource Integrity Hash", cat: "websec", desc: "Compute a sha384 hash of provided content and format it as an SRI integrity attribute.", tags: ["sri", "integrity", "hash"],
@@ -973,11 +938,12 @@ export const TOOLS = [
         v.reqLower ? ["Contains lowercase", /[a-z]/.test(p)] : null,
         v.reqDigit ? ["Contains digit", /[0-9]/.test(p)] : null,
         v.reqSpecial ? ["Contains special character", /[^A-Za-z0-9]/.test(p)] : null,
-        v.noSpaces ? ["No spaces", !/\s/.test(p)] : null,
+        v.noSpaces ? ["No spaces", !/\s/.test(p)] : ["No spaces at either end", p === p.trim()],
       ].filter(Boolean);
       const lines = checks.map(([label, pass]) => `${pass ? "PASS" : "FAIL"}  ${label}`);
-      const allPass = checks.every(([, pass]) => pass);
-      lines.push("", allPass ? "Overall: MEETS policy." : "Overall: DOES NOT meet policy.");
+      const passed = checks.filter(([, pass]) => pass).length;
+      const allPass = passed === checks.length;
+      lines.push("", `${passed}/${checks.length} rules met. ` + (allPass ? "Overall: MEETS policy." : "Overall: DOES NOT meet policy."));
       return lines.join("\n");
     } },
 

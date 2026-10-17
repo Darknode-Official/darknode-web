@@ -51,9 +51,8 @@ for (const [cat, meta] of Object.entries(TOOL_CATS)) {
 // duplicate cheat sheets). The modules stay on disk so old links still route, but
 // nothing in the menus, directory or search points at them any more.
 export const RETIRED = new Set(["ghdb", "reverseshell", "socialeng", "payloads", "payloadgen", "payloadstudio",
-  ...["w-revshell", "w-bindshell", "w-msfvenom", "w-google-dork", "w-xss-payload-gen", "w-wordlist-mangler", "sx-revshell", "sx-bindshell",
-    "sx-xss-mutator", "sx-unicode-bypass", "sx-leetspeak", "leetspeak", "sx-sqli-cheatsheet", "sx-xss-cheatsheet", "sx-lfi-list", "sx-cmdi-list",
-    "sx-ssti-cheatsheet", "sx-ssrf-list", "sx-xxe-cheatsheet", "sx-open-redirect", "sx-ua-list", "sx-path-wordlist"].map((id) => "tool-" + id)]);
+  ...["w-revshell", "w-bindshell", "w-msfvenom", "w-google-dork", "w-xss-payload-gen", "w-wordlist-mangler",
+    "sx-xss-mutator", "sx-unicode-bypass", "leetspeak", "sx-xss-cheatsheet", "sx-ua-list", "sx-path-wordlist"].map((id) => "tool-" + id)]);
 for (const g of NAV) g.items = g.items.filter((i) => !RETIRED.has(i.sec));
 
 // Section directory for the Darknode Assistant (darknode-chat.js), so "open citadel"
