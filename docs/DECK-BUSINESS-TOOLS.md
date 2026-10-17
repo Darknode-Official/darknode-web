@@ -116,11 +116,11 @@ Legend: planned · scaffolded · built · merged · deployed
 
 | route | Label | group | prefix | status |
 |---|---|---|---|---|
-| `iacscan` | IaC Scanner | code | `iac-` | scaffolded |
+| `iacscan` | IaC Scanner | code | `iac-` | merged |
 | `k8saudit` | Kubernetes Audit | code | `kub-` | merged |
 | `cloudtrail` | Cloud Audit Log Hunter | detect | `ctl-` | scaffolded |
 | `vulnimport` | Vulnerability Import & SLA | exposure | `vim-` | scaffolded |
-| `fleetcomply` | Endpoint Fleet Compliance | exposure | `flt-` | scaffolded |
+| `fleetcomply` | Endpoint Fleet Compliance | exposure | `flt-` | merged |
 
 ### Wave 3 — Finance & fraud forensics
 
