@@ -1161,7 +1161,7 @@ export function exampleDataset(seed = 7) {
   const guid = () => hex(8) + "-" + hex(4) + "-4" + hex(3) + "-a" + hex(3) + "-" + hex(12);
   const mac = () => Array.from({ length: 6 }, () => hex(2)).join(":").toUpperCase();
   const people = ["ana.silva", "raj.patel", "lee.chen", "maria.garcia", "tom.okafor", "sara.berg", "ivan.petrov", "nina.kowalski", "omar.haddad", "julia.meyer", "ken.ito", "zoe.adams"];
-  const upn = (p) => p + "@darknode.ai";
+  const upn = (p) => p + "@test.darknode.ai";
   // 12 Windows devices managed by Intune
   const win = [
     ["WIN-LT-001", "Latitude 7450", "10.0.26200.6899", "Yes", "Compliant", "2026-10-15 08:12:04"],

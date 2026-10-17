@@ -74,6 +74,7 @@ const CSS = `
   .flt-list{border:1px solid var(--line,#e6e8ee);border-radius:12px;overflow:auto;max-width:100%}
   .flt-list table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px}
   .flt-list th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085);font-weight:700;padding:9px 12px;background:var(--bg,#f7f8fb);border-bottom:1px solid var(--line,#e6e8ee);white-space:nowrap;cursor:pointer;user-select:none}
+  .flt-nw{white-space:nowrap}
   .flt-list th.on{color:var(--tx,#1a2230)}
   .flt-list th.on::after{content:" \\2193";font-size:.7rem}
   .flt-list th.on.asc::after{content:" \\2191"}
@@ -318,7 +319,7 @@ export function renderFleetComply(main) {
     { key: "eolStatus", label: "Support", rank: EOL_RANK, render: (d) => pill(d.eolStatus, d.eolStatus === "unknown" ? "unmapped" : d.eolStatus) + (d.eolDate ? '<div class="' + P + '-muted">' + esc(d.eolDate) + "</div>" : "") },
     { key: "encrypted", label: "Encrypted", render: (d) => esc(yn(d.encrypted)) },
     { key: "edr", label: "EDR", render: (d) => esc(d.edr) + (d.edrHealth && d.edrHealth !== "ok" ? '<div class="' + P + '-muted">' + esc(d.edrHealth) + "</div>" : "") },
-    { key: "lastSeen", label: "Last seen", render: (d) => esc(d.lastSeen ? d.lastSeen.slice(0, 10) : "-") },
+    { key: "lastSeen", label: "Last seen", render: (d) => `<span class="flt-nw">${esc(d.lastSeen ? d.lastSeen.slice(0, 10) : "-")}</span>` },
     { key: "sources", label: "Sources", render: (d) => d.sources.map((s) => '<span class="' + P + '-chip">' + esc(s) + "</span>").join("") },
     { key: "score", label: "Score", render: (d) => '<span class="' + P + "-score " + scoreCls(d.score) + '">' + d.score + "</span>" },
     { key: "flagCount", label: "Failed checks", render: (d) => esc(d.flags.map((f) => WEIGHT_LABEL[f] || f).join(", ") || "-") },
