@@ -1,7 +1,7 @@
 # Darknode — Web
 
 **[darknode.ai](https://darknode.ai)** — a browser-based cybersecurity platform:
-192 security tool platforms and 900+ in-browser utilities, threat intelligence,
+192 security tool platforms and 790+ in-browser utilities, threat intelligence,
 CTF/lab content, a built-in AI assistant, and install paths for the desktop app,
 CLI, and OS that run deeper work on your own machine.
 
@@ -30,8 +30,10 @@ their own repositories (see [Ecosystem](#ecosystem)).
 
 - `public/` ≈ **581K lines** of first-party source (≈531K JS; ≈362K without the `data/`
   reference sets), across **378** JS modules in `js/` — excludes third-party libraries (`js/vendor/`).
-- **192** tool platforms (`CATALOG` in `js/toolkit.js`) + **902** Toolbox
-  mini-tools across 16 categories (`js/tools-manifest.js`).
+- **192** tool platforms (`CATALOG` in `js/toolkit.js`) + **792** visible Toolbox
+  mini-tools across 16 categories (`js/tools-manifest.js`). Another 110 retired ids still
+  resolve: 99 open the keeper they were merged into and 11 open a full console tool
+  (`TOOL_ALIAS` / `ROUTE_ALIAS` in `js/mini-tools.js`).
 - "Zero cloud dependency" does **not** apply to the website — it relies on
   Firebase Auth/Firestore and external threat-intel APIs. The *local-first AI*
   claim (Ollama) is the accurate version of that idea.

@@ -978,6 +978,68 @@ rule("AWS-IAM-010", "high", "aws", ["aws_iam_role_policy_attachment", "aws_iam_u
     return arns.filter((a) => typeof a === "string" && /:policy\/AdministratorAccess$/.test(a)).map((a) => c.H(a, c.cfn ? "ManagedPolicyArns" : "policy_arn", "confirmed"));
   });
 
+/* IAM privilege-escalation paths: every action in a set must be allowed by the same policy document. */
+export const IAM_PRIVESC = [
+  { name: "CreatePolicyVersion", sev: "critical", actions: ["iam:CreatePolicyVersion"], why: "can publish a new default version of a managed policy with any permissions, including on a policy attached to itself" },
+  { name: "SetDefaultPolicyVersion", sev: "critical", actions: ["iam:SetDefaultPolicyVersion"], why: "can switch a managed policy to an older, more permissive version" },
+  { name: "AttachUserPolicy", sev: "critical", actions: ["iam:AttachUserPolicy"], why: "can attach AdministratorAccess to its own user" },
+  { name: "AttachGroupPolicy", sev: "critical", actions: ["iam:AttachGroupPolicy"], why: "can attach AdministratorAccess to a group it belongs to" },
+  { name: "AttachRolePolicy", sev: "critical", actions: ["iam:AttachRolePolicy"], why: "can attach AdministratorAccess to a role it can assume" },
+  { name: "PutUserPolicy", sev: "critical", actions: ["iam:PutUserPolicy"], why: "can write an inline admin policy on its own user" },
+  { name: "PutGroupPolicy", sev: "critical", actions: ["iam:PutGroupPolicy"], why: "can write an inline admin policy on a group it belongs to" },
+  { name: "PutRolePolicy", sev: "critical", actions: ["iam:PutRolePolicy"], why: "can write an inline admin policy on a role it can assume" },
+  { name: "PassRole to Lambda", sev: "critical", actions: ["iam:PassRole", "lambda:CreateFunction", "lambda:InvokeFunction"], why: "can create and invoke a Lambda function that runs as a more privileged role" },
+  { name: "PassRole to EC2", sev: "critical", actions: ["iam:PassRole", "ec2:RunInstances"], why: "can launch an instance with a privileged instance profile and read its credentials" },
+  { name: "PassRole to CloudFormation", sev: "critical", actions: ["iam:PassRole", "cloudformation:CreateStack"], why: "can create a stack that provisions resources as a more privileged role" },
+  { name: "CreateAccessKey", sev: "high", actions: ["iam:CreateAccessKey"], why: "can mint access keys for another, more privileged user" },
+  { name: "CreateLoginProfile", sev: "high", actions: ["iam:CreateLoginProfile"], why: "can set a console password on a privileged user that has none" },
+  { name: "UpdateLoginProfile", sev: "high", actions: ["iam:UpdateLoginProfile"], why: "can change the console password of a more privileged user" },
+  { name: "AddUserToGroup", sev: "high", actions: ["iam:AddUserToGroup"], why: "can add itself to an administrators group" },
+  { name: "UpdateAssumeRolePolicy", sev: "high", actions: ["iam:UpdateAssumeRolePolicy"], why: "can rewrite a role's trust policy so it can assume that role" },
+  { name: "PassRole to Glue", sev: "high", actions: ["iam:PassRole", "glue:CreateDevEndpoint"], why: "can create a Glue dev endpoint with a privileged role and use its credentials over SSH" },
+  { name: "PassRole to Data Pipeline", sev: "high", actions: ["iam:PassRole", "datapipeline:CreatePipeline", "datapipeline:PutPipelineDefinition", "datapipeline:ActivatePipeline"], why: "can run arbitrary commands in a pipeline that executes as a privileged role" },
+  { name: "UpdateFunctionCode", sev: "high", actions: ["lambda:UpdateFunctionCode"], why: "can replace an existing function's code and act with that function's role" },
+  { name: "PassRole to SageMaker", sev: "high", actions: ["iam:PassRole", "sagemaker:CreateNotebookInstance", "sagemaker:CreatePresignedNotebookInstanceUrl"], why: "can open a notebook that runs as a privileged role" },
+  { name: "SSM StartSession", sev: "high", actions: ["ssm:StartSession"], why: "can open a shell on instances and use their instance-profile credentials" },
+  { name: "PassRole to CodeBuild", sev: "high", actions: ["iam:PassRole", "codebuild:CreateProject", "codebuild:StartBuild"], why: "can run a build that executes as a privileged role" },
+  { name: "PassRole to CodeStar", sev: "medium", actions: ["iam:PassRole", "codestar:CreateProject"], why: "can create a CodeStar project whose service role grants further permissions" },
+];
+const actionRe = (pat) => new RegExp("^" + String(pat).split("").map((ch) => (ch === "*" ? ".*" : ch === "?" ? "." : reEsc(ch))).join("") + "$", "i");
+/** Escalation paths fully allowed by one policy document's statements: [{ path, scoped }]. */
+export function privescPaths(stmts) {
+  const allow = (stmts || []).filter((st) => lc(st.effect) === "allow");
+  if (allow.some((st) => st.actions.includes("*") && st.resources.includes("*"))) return []; // full admin: AWS-IAM-001
+  const deny = (stmts || []).filter((st) => lc(st.effect) === "deny" && !st.condition && st.resources.includes("*"));
+  const grant = (a) => {
+    if (deny.some((st) => st.actions.some((p) => actionRe(p).test(a)))) return null;
+    const by = allow.filter((st) => st.actions.some((p) => p !== "<dynamic>" && actionRe(p).test(a)));
+    return !by.length ? null : by.some((st) => st.resources.includes("*") && !st.condition) ? "any" : "scoped";
+  };
+  const out = [];
+  for (const path of IAM_PRIVESC) { const g = path.actions.map(grant); if (g.every(Boolean)) out.push({ path, scoped: g.includes("scoped") }); }
+  return out;
+}
+function privescCheck(sev) {
+  return (c) => {
+    if (!IDENTITY_POLICY.has(c.r.type)) return [];
+    const hits = [];
+    for (const pol of policiesOf(c.r)) {
+      if (!pol.stmts) { if (pol.dyn) hits.push(c.D(pol.key)); continue; }
+      for (const { path, scoped } of privescPaths(pol.stmts)) if (path.sev === sev) hits.push(c.H(path.name + " (" + path.actions.join(" + ") + "): " + path.why + (scoped ? "; the grant is limited by resource or condition, check whether it reaches privileged targets" : ""), pol.key, scoped ? "review" : "confirmed"));
+    }
+    return hits;
+  };
+}
+rule("AWS-IAM-011", "critical", "aws", POLICY_ALL, "IAM policy allows privilege escalation by rewriting policies or passing a role to compute",
+  [[N, "AC-6"], [M, "T1098"], [M, "T1078.004"]], "Remove the listed actions or scope them to specific ARNs, add a permissions boundary, and block self-escalation with an SCP.",
+  privescCheck("critical"));
+rule("AWS-IAM-012", "high", "aws", POLICY_ALL, "IAM policy allows privilege escalation through another identity or service",
+  [[N, "AC-6"], [M, "T1098"], [M, "T1078.004"]], "Restrict the listed actions to specific resources (or to the caller's own user via ${aws:username}) and limit iam:PassRole with iam:PassedToService.",
+  privescCheck("high"));
+rule("AWS-IAM-013", "medium", "aws", POLICY_ALL, "IAM policy allows an indirect privilege-escalation path",
+  [[N, "AC-6"], [M, "T1098"]], "Limit iam:PassRole to the specific service roles the workflow needs.",
+  privescCheck("medium"));
+
 /* CloudTrail */
 const CT = ["aws_cloudtrail", "AWS::CloudTrail::Trail"];
 rule("AWS-CT-001", "medium", "aws", CT, "CloudTrail trail is not multi-region",
@@ -1555,9 +1617,11 @@ rule("K8S-009", "medium", "kubernetes", isWorkload, "Container is not required t
   [[CK, "5.2.7"], [N, "AC-6"]], "Set securityContext.runAsNonRoot: true (pod or container level).",
   perContainer((ct, s, c) => { if (num(effSC(ct, s, "runAsUser")) === 0) return []; const v = effSC(ct, s, "runAsNonRoot"); return isTrue(v) ? [] : [c.H(v == null ? "runAsNonRoot not set" : "runAsNonRoot: false", v == null ? null : "runAsNonRoot", v == null ? "likely" : "confirmed")]; }));
 const DANGEROUS_CAPS = new Set(["ALL", "SYS_ADMIN", "NET_ADMIN", "SYS_PTRACE", "SYS_MODULE", "DAC_READ_SEARCH", "SYS_RAWIO", "BPF", "PERFMON"]);
+const SYS_ADMIN_NOTE = (caps) => (caps.some((x) => x === "SYS_ADMIN" || x === "ALL") ? " (SYS_ADMIN permits the cgroup v1 release_agent container escape, CVE-2022-0492)" : "");
+const UNCONFINED_NOTE = " (unshare is no longer blocked, a precondition for the CVE-2022-0185 and CVE-2022-0492 container escapes)";
 rule("K8S-010", "high", "kubernetes", isWorkload, "Container adds dangerous Linux capabilities",
   [[CK, "5.2.9"], [N, "AC-6"], [M, "T1611"]], "Remove the added capabilities; drop ALL and add back only narrowly required ones (for example NET_BIND_SERVICE).",
-  perContainer((ct, s, c) => { const add = arr(get(ct, "securityContext.capabilities.add")).map((x) => String(x).toUpperCase().replace(/^CAP_/, "")); const bad = add.filter((x) => DANGEROUS_CAPS.has(x)); return bad.length ? [c.H("capabilities.add: " + bad.join(", "), "add")] : []; }));
+  perContainer((ct, s, c) => { const add = arr(get(ct, "securityContext.capabilities.add")).map((x) => String(x).toUpperCase().replace(/^CAP_/, "")); const bad = add.filter((x) => DANGEROUS_CAPS.has(x)); return bad.length ? [c.H("capabilities.add: " + bad.join(", ") + SYS_ADMIN_NOTE(bad), "add")] : []; }));
 rule("K8S-011", "low", "kubernetes", isWorkload, "Container does not drop NET_RAW",
   [[CK, "5.2.8"], [N, "CM-7"], [M, "T1040"]], "Add capabilities.drop: [\"ALL\"] (or at least NET_RAW).",
   perContainer((ct, s, c) => { if (isTrue(get(ct, "securityContext.privileged"))) return []; const drop = arr(get(ct, "securityContext.capabilities.drop")).map((x) => String(x).toUpperCase()); return drop.includes("ALL") || drop.includes("NET_RAW") || drop.includes("CAP_NET_RAW") ? [] : [c.H("NET_RAW not dropped", drop.length ? "drop" : null, "likely")]; }));
@@ -1637,7 +1701,7 @@ rule("K8S-028", "low", "kubernetes", isWorkload, "No seccomp profile set",
   perContainer((ct, s, c) => { const t = effSC(ct, s, "seccompProfile.type"); const ann = get(c.p, "metadata.annotations") || {}; return t || Object.keys(ann).some((k) => /seccomp/.test(k)) ? [] : [c.H("no seccompProfile", null, "likely")]; }));
 rule("K8S-029", "medium", "kubernetes", isWorkload, "Seccomp profile is Unconfined",
   [[CK, "5.7.2"], [N, "CM-7"], [M, "T1611"]], "Use seccompProfile.type: RuntimeDefault or a Localhost profile.",
-  perContainer((ct, s, c) => (lc(effSC(ct, s, "seccompProfile.type")) === "unconfined" ? [c.H("seccompProfile Unconfined", "type")] : [])));
+  perContainer((ct, s, c) => (lc(effSC(ct, s, "seccompProfile.type")) === "unconfined" ? [c.H("seccompProfile Unconfined" + UNCONFINED_NOTE, "type")] : [])));
 rule("K8S-030", "low", "kubernetes", isWorkload, "Container root filesystem is writable",
   [[CK, "section 5.7 (General Policies)"], [N, "CM-7"], [N, "SI-7"]], "Set securityContext.readOnlyRootFilesystem: true and mount emptyDir where writes are needed.",
   perContainer((ct, s, c) => (isTrue(get(ct, "securityContext.readOnlyRootFilesystem")) ? [] : [c.H("readOnlyRootFilesystem not true", null, "likely")]), ["containers"]));
@@ -1673,6 +1737,11 @@ rule("K8S-035", "high", "kubernetes", isWorkload, "Windows HostProcess container
 rule("K8S-036", "medium", "kubernetes", isWorkload, "Pod uses the default service account",
   [[CK, "5.1.5"], [N, "AC-6"]], "Create a dedicated ServiceAccount per workload and set serviceAccountName.",
   (c) => { const s = podSpec(c.p); if (!s) return []; const n = s.serviceAccountName || s.serviceAccount; return !n || n === "default" ? [c.H(n ? "serviceAccountName: default" : "no serviceAccountName (uses default)", n ? "serviceAccountName" : null, n ? "confirmed" : "likely")] : []; });
+const PROC_FD = /^["']?\/proc\/(self|thread-self|\d+)\/fd(\/|["']?$)/;
+const RUNC_NOTE = "; with runc before 1.1.12 a leaked host directory descriptor gives the process the host filesystem (CVE-2024-21626, Leaky Vessels)";
+rule("K8S-037", "critical", "kubernetes", isWorkload, "Container workingDir points into /proc/*/fd (runc CVE-2024-21626 escape pattern)",
+  [[N, "SI-2"], [N, "SC-39"], [M, "T1611"]], "Never set workingDir under /proc/*/fd; upgrade runc to 1.1.12 or later on every node.",
+  perContainer((ct, s, c) => (typeof ct.workingDir === "string" && PROC_FD.test(ct.workingDir.trim()) ? [c.H("workingDir: " + ct.workingDir + RUNC_NOTE, "workingDir")] : [])));
 
 /* ---------------------------- Dockerfile --------------------------------- */
 
@@ -1695,7 +1764,7 @@ rule("DKR-004", "high", "docker", DF, "Remote script piped into a shell",
   [[CS, "section 3 (Dependencies)"], [N, "SR-3"], [N, "SI-7"], [M, "T1059.004"]], "Download to a file, verify a pinned checksum or signature, then execute; better, use a package manager.",
   (c) => insHits(c, "RUN", PIPE_SH, (x) => "RUN " + x.args));
 rule("DKR-005", "info", "docker", DF, "apt-get install without --no-install-recommends",
-  [[N, "CM-7"]], "Add --no-install-recommends to keep the attack surface and image small.",
+  [[CD, "4.3"], [N, "CM-7"]], "Add --no-install-recommends to keep the attack surface and image small.",
   (c) => insHits(c, "RUN", /apt-get\s+(-\S+\s+)*install\b(?![^&;|]*--no-install-recommends)/, (x) => "RUN " + x.args));
 const STAGES = (c) => new Set(ins(c).filter((x) => x.cmd === "FROM").map((x) => (/\bAS\s+(\S+)/i.exec(x.args) || [])[1]).filter(Boolean).map(lc));
 const fromImage = (x) => x.args.replace(/^(--[\w-]+=\S+\s+)+/, "").split(/\s+/)[0];
@@ -1735,6 +1804,37 @@ rule("DKR-013", "low", "docker", DF, "apt-get update in its own RUN layer",
 rule("DKR-014", "medium", "docker", DF, "TLS or signature verification disabled during build",
   [[N, "SI-7"], [N, "SC-8"], [M, "T1195.002"]], "Remove --insecure / -k / --no-check-certificate / --allow-untrusted / --trusted-host and fix the trust store instead.",
   (c) => insHits(c, "RUN", /\bcurl\b[^;&|]*\s(-k|--insecure)\b|\bwget\b[^;&|]*--no-check-certificate|\bapk\b[^;&|]*--allow-untrusted|--allow-unauthenticated|\bpip3?\b[^;&|]*--trusted-host|npm\s+config\s+set\s+strict-ssl\s+false|GIT_SSL_NO_VERIFY/, (x) => "RUN " + x.args));
+const exposed = (x) => x.args.split(/\s+/).map((t) => /^(\d+)(?:-(\d+))?(?:\/(?:tcp|udp|sctp))?$/i.exec(t)).filter(Boolean).map((m) => ({ from: Number(m[1]), to: Number(m[2] || m[1]) }));
+const exposeHits = (ports) => (c) => ins(c).filter((x) => x.cmd === "EXPOSE").flatMap((x) => {
+  const names = [...new Set(exposed(x).flatMap((e) => Object.keys(ports).filter((p) => e.from <= Number(p) && Number(p) <= e.to).map((p) => p + " " + ports[p])))];
+  return names.length ? [c.H("EXPOSE " + x.args + " (" + names.join(", ") + ")", null, "confirmed", null, x.line)] : [];
+});
+rule("DKR-015", "low", "docker", DF, "Image exposes a database port",
+  [[CD, "5.8"], [N, "CM-7"], [N, "SC-7"], [M, "T1190"]], "Expose only the ports the service needs; run databases as their own service and reach them over a private network. EXPOSE also publishes the port under docker run -P.",
+  exposeHits(DB_PORTS));
+const ADMIN_PORTS = { 23: "Telnet", 2375: "Docker API (plaintext)", 2376: "Docker API (TLS)", 3389: "RDP", 10250: "kubelet API" };
+rule("DKR-016", "medium", "docker", DF, "Image exposes a remote-admin or container control-plane port",
+  [[CD, "5.8"], [N, "CM-7"], [M, "T1021"]], "Remove the EXPOSE; administer containers with docker exec / kubectl exec and never publish the Docker or kubelet API from an image.",
+  exposeHits(ADMIN_PORTS));
+const cacheMount = (x) => /--mount=[^\s]*type=cache/.test(x.args);
+const PIP_INSTALL = /\bpip(3(\.\d+)?)?\s+(-\S+\s+)*install\b|\bpython(3(\.\d+)?)?\s+-m\s+pip\s+(-\S+\s+)*install\b/;
+rule("DKR-017", "info", "docker", DF, "pip install without --no-cache-dir in the final image",
+  [[N, "CM-7"]], "Add --no-cache-dir (or ENV PIP_NO_CACHE_DIR=1) so downloaded wheels are not kept in the image layer.",
+  (c) => (ins(c).some((x) => (x.cmd === "ENV" || x.cmd === "ARG") && /\bPIP_NO_CACHE_DIR\b/.test(x.args)) ? [] : lastStage(c).filter((x) => x.cmd === "RUN" && PIP_INSTALL.test(x.args) && !/--no-cache-dir\b/.test(x.args) && !cacheMount(x)).map((x) => c.H("RUN " + x.args, null, "confirmed", null, x.line))));
+rule("DKR-018", "info", "docker", DF, "apt package lists not removed in the same layer",
+  [[N, "CM-7"]], "End the RUN that installs packages with rm -rf /var/lib/apt/lists/*; a later RUN cannot shrink an earlier layer.",
+  (c) => lastStage(c).filter((x) => x.cmd === "RUN" && /\bapt(-get)?\s+(-\S+\s+)*install\b/.test(x.args) && !/\brm\s+(-\S+\s+)*\/var\/lib\/apt\/lists/.test(x.args) && !cacheMount(x)).map((x) => c.H("RUN " + x.args, null, "confirmed", null, x.line)));
+const copySources = (x) => { if (/(^|\s)--from=/.test(x.args)) return []; const rest = x.args.replace(/^(--[\w-]+(=\S+)?\s+)+/, "").trim(); let toks; if (rest.startsWith("[")) { try { toks = JSON.parse(rest); } catch (_) { return []; } } else toks = rest.split(/\s+/); return Array.isArray(toks) ? toks.slice(0, -1).map(String) : []; };
+rule("DKR-019", "low", "docker", DF, "COPY copies the whole build context",
+  [[N, "CM-7"], [M, "T1552.001"]], "Copy only the paths the image needs and keep a .dockerignore that excludes .git, .env files and credentials.",
+  (c) => ins(c).filter((x) => x.cmd === "COPY" && copySources(x).some((s) => s === "." || s === "./")).map((x) => c.H("COPY " + x.args, null, "likely", null, x.line)));
+const BUILD_STEP = /\b(go\s+build|cargo\s+build|mvnw?\s|gradlew?\s|dotnet\s+(build|publish)|(npm|yarn|pnpm)\s+(run\s+)?build\b|cmake\s|g?cc\s|g\+\+\s|make(\s|$))|\bbuild-essential\b/;
+rule("DKR-020", "info", "docker", DF, "Single-stage build ships the build toolchain",
+  [[N, "CM-7"]], "Compile in a builder stage and COPY --from only the artifacts into a minimal runtime image.",
+  (c) => { if (ins(c).filter((x) => x.cmd === "FROM").length !== 1) return []; const b = ins(c).find((x) => x.cmd === "RUN" && BUILD_STEP.test(x.args)); return b ? [c.H("one FROM and a build step: RUN " + b.args, null, "likely", null, b.line)] : []; });
+rule("DKR-021", "critical", "docker", DF, "WORKDIR points into /proc/*/fd (runc CVE-2024-21626 escape pattern)",
+  [[N, "SI-2"], [N, "SC-39"], [M, "T1611"]], "Never set WORKDIR under /proc/*/fd; build and run only on runc 1.1.12 or later, and treat any image containing this as hostile.",
+  (c) => insHits(c, "WORKDIR", PROC_FD, (x) => "WORKDIR " + x.args + RUNC_NOTE));
 
 /* ---------------------------- docker-compose ----------------------------- */
 
@@ -1743,23 +1843,23 @@ const isCompose = (r) => r.format === "compose";
 const svcEnv = (p) => { const e = p.environment; if (Array.isArray(e)) return e.map((x) => { const s = String(x); const i = s.indexOf("="); return i > 0 ? [s.slice(0, i), s.slice(i + 1)] : [s, null]; }); if (e && typeof e === "object") return Object.entries(e); return []; };
 const vols = (p) => arr(p.volumes).map((v) => (typeof v === "string" ? { src: v.split(":")[0], dst: v.split(":")[1] || "", ro: /:ro(,|$)/.test(v), raw: v } : v && typeof v === "object" ? { src: String(v.source || ""), dst: String(v.target || ""), ro: isTrue(v.read_only), raw: (v.source || "") + ":" + (v.target || "") } : null)).filter(Boolean);
 rule("CMP-001", "critical", "compose", (r) => isCompose(r), "Service runs privileged",
-  [[CD, "section 5 (Container Runtime)"], [N, "AC-6"], [M, "T1611"]], "Remove privileged: true; add only required capabilities.",
+  [[CD, "5.4"], [N, "AC-6"], [M, "T1611"]], "Remove privileged: true; add only required capabilities.",
   (c) => (isTrue(c.p.privileged) ? [c.H("privileged: true", "privileged")] : []));
 rule("CMP-002", "high", "compose", isCompose, "Service uses the host network",
-  [[CD, "section 5 (Container Runtime)"], [N, "SC-7"], [M, "T1611"]], "Use a bridge network and publish only required ports.",
+  [[CD, "5.9"], [N, "SC-7"], [M, "T1611"]], "Use a bridge network and publish only required ports.",
   (c) => (lc(c.p.network_mode) === "host" ? [c.H("network_mode: host", "network_mode")] : []));
 rule("CMP-003", "high", "compose", isCompose, "Service shares the host PID namespace",
-  [[CD, "section 5 (Container Runtime)"], [N, "SC-39"], [M, "T1611"]], "Remove pid: host.",
+  [[CD, "5.15"], [N, "SC-39"], [M, "T1611"]], "Remove pid: host.",
   (c) => (lc(c.p.pid) === "host" ? [c.H("pid: host", "pid")] : []));
 rule("CMP-004", "medium", "compose", isCompose, "Service shares the host IPC namespace",
-  [[CD, "section 5 (Container Runtime)"], [N, "SC-39"]], "Remove ipc: host.",
+  [[CD, "5.16"], [N, "SC-39"]], "Remove ipc: host.",
   (c) => (lc(c.p.ipc) === "host" ? [c.H("ipc: host", "ipc")] : []));
 rule("CMP-005", "critical", "compose", isCompose, "Service mounts the Docker socket",
   [[CD, "section 5 (Container Runtime)"], [N, "AC-6"], [M, "T1611"], [M, "T1610"]], "Do not mount /var/run/docker.sock; use a socket proxy with an allow-list if the API is truly needed.",
   (c) => vols(c.p).filter((v) => SOCKETS.test(v.src)).map((v) => c.H("volume " + v.raw, "docker.sock")));
 rule("CMP-006", "high", "compose", isCompose, "Service adds dangerous capabilities",
-  [[CD, "section 5 (Container Runtime)"], [N, "AC-6"], [M, "T1611"]], "Remove cap_add entries such as SYS_ADMIN and ALL; prefer cap_drop: [ALL].",
-  (c) => { const bad = arr(c.p.cap_add).map((x) => String(x).toUpperCase().replace(/^CAP_/, "")).filter((x) => DANGEROUS_CAPS.has(x)); return bad.length ? [c.H("cap_add: " + bad.join(", "), "cap_add")] : []; });
+  [[CD, "5.3"], [N, "AC-6"], [M, "T1611"]], "Remove cap_add entries such as SYS_ADMIN and ALL; prefer cap_drop: [ALL].",
+  (c) => { const bad = arr(c.p.cap_add).map((x) => String(x).toUpperCase().replace(/^CAP_/, "")).filter((x) => DANGEROUS_CAPS.has(x)); return bad.length ? [c.H("cap_add: " + bad.join(", ") + SYS_ADMIN_NOTE(bad), "cap_add")] : []; });
 function publishedPorts(p) {
   const out = [];
   for (const x of arr(p.ports)) {
@@ -1773,11 +1873,11 @@ function publishedPorts(p) {
   return out;
 }
 rule("CMP-007", "medium", "compose", isCompose, "Database port published on all interfaces",
-  [[N, "SC-7"], [M, "T1190"]], "Bind to 127.0.0.1 (\"127.0.0.1:5432:5432\") or drop the published port and use the service network.",
+  [[CD, "5.13"], [N, "SC-7"], [M, "T1190"]], "Bind to 127.0.0.1 (\"127.0.0.1:5432:5432\") or drop the published port and use the service network.",
   (c) => publishedPorts(c.p).filter((x) => x.pub && (!x.host || x.host === "0.0.0.0" || x.host === "::") && Object.keys(DB_PORTS).some((p) => rangeCovers(x.target, undefined, Number(p)))).map((x) => c.H("ports " + x.raw + " (" + (DB_PORTS[x.target] || "database") + ")", "ports")));
 rule("CMP-008", "high", "compose", isCompose, "Seccomp or AppArmor confinement disabled",
-  [[CD, "section 5 (Container Runtime)"], [N, "CM-7"], [M, "T1611"]], "Remove seccomp:unconfined / apparmor:unconfined from security_opt.",
-  (c) => arr(c.p.security_opt).filter((s) => /^(seccomp|apparmor)[:=]unconfined$/i.test(String(s).trim())).map((s) => c.H("security_opt " + s, "security_opt")));
+  [[CD, "5.1"], [CD, "5.21"], [N, "CM-7"], [M, "T1611"]], "Remove seccomp:unconfined / apparmor:unconfined from security_opt.",
+  (c) => arr(c.p.security_opt).filter((s) => /^(seccomp|apparmor)[:=]unconfined$/i.test(String(s).trim())).map((s) => c.H("security_opt " + s + (/^seccomp/i.test(String(s).trim()) ? UNCONFINED_NOTE : ""), "security_opt")));
 rule("CMP-009", "high", "compose", isCompose, "Plaintext credentials in service environment",
   [[N, "IA-5"], [M, "T1552.001"]], "Use Compose secrets or an env_file kept out of version control; reference ${VARIABLES} instead of literals.",
   (c) => secretEnvHits(c, svcEnv(c.p).filter(([, v]) => v != null)));
@@ -1786,13 +1886,13 @@ rule("CMP-010", "medium", "compose", isCompose, "Service image uses :latest or n
   (c) => { const im = c.p.image; if (typeof im !== "string" || dynImage(im)) return []; const p = parseImage(im); return !p.digest && (!p.tag || lc(p.tag) === "latest") ? [c.H("image " + im, "image")] : []; });
 const SENSITIVE_HOST = /^(\/|\/etc(\/.*)?|\/proc(\/.*)?|\/sys(\/.*)?|\/boot|\/root(\/.*)?|\/var\/run|\/run|\/dev|\/home|\/var\/lib\/docker(\/.*)?|\/var\/lib\/kubelet(\/.*)?)$/;
 rule("CMP-011", "high", "compose", isCompose, "Sensitive host path mounted read-write",
-  [[CD, "section 5 (Container Runtime)"], [N, "AC-6"], [M, "T1611"]], "Avoid mounting host system directories; if required, mount read-only (:ro).",
+  [[CD, "5.5"], [N, "AC-6"], [M, "T1611"]], "Avoid mounting host system directories; if required, mount read-only (:ro).",
   (c) => vols(c.p).filter((v) => !v.ro && SENSITIVE_HOST.test(v.src.replace(/\/$/, "") || "/") && v.src.startsWith("/") && !SOCKETS.test(v.src)).map((v) => c.H("volume " + v.raw, "volumes")));
 rule("CMP-012", "medium", "compose", isCompose, "Service runs as root",
   [[CD, "section 5 (Container Runtime)"], [N, "AC-6"]], "Set user to a non-root UID:GID.",
   (c) => (/^(root|0)(:|$)/.test(String(c.p.user || "")) ? [c.H("user: " + c.p.user, "user")] : []));
 rule("CMP-013", "info", "compose", isCompose, "no-new-privileges is not set",
-  [[CD, "section 5 (Container Runtime)"], [N, "AC-6"]], "Add security_opt: [\"no-new-privileges:true\"].",
+  [[CD, "5.25"], [N, "AC-6"]], "Add security_opt: [\"no-new-privileges:true\"].",
   (c) => (arr(c.p.security_opt).some((s) => /^no-new-privileges(:true)?$/i.test(String(s).trim())) ? [] : [c.H("no-new-privileges not set", null, "likely")]));
 
 /* ---------------------------- GitHub Actions ----------------------------- */

@@ -3,7 +3,7 @@
 **Darknode Web** is the marketing site **and** the full web console for
 [darknode.ai](https://darknode.ai). Signed-out visitors get a landing page with
 app/CLI/OS downloads; signed-in users get a single-page console: a browser tool
-arsenal (192 tool platforms + 900+ Toolbox mini-tools), payload / dork /
+arsenal (192 tool platforms + 790+ Toolbox mini-tools), payload / dork /
 exploit-DB libraries, threat intel and cheat sheets, a built-in AI assistant
 (hosted free tier or local Ollama), a report generator, a Private-Cloud
 compose generator, the Nexus showcase, docs, and download pages. Aimed at
@@ -74,7 +74,7 @@ public/
     api.js              [adapter] the user's Darknode API key (Firestore users/{uid}.apiKey)
     saved.js            [adapter] saved workspace (Firestore or localStorage)
     toolkit.js          [data]    the 192-entry tool CATALOG + browser-tool engine
-    tools-manifest.js   [data]    902 Toolbox mini-tool ids/names/cats (generated)
+    tools-manifest.js   [data]    792 Toolbox mini-tool ids/names/cats (generated)
     tools/*.js          [tools]   mini-tool implementations + plain-English help
     webai.js            [feature] AI assistant (hosted proxy, local Ollama, or a
                                   connected provider key, incl. OpenRouter)
