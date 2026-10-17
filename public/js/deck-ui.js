@@ -31,6 +31,7 @@ import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261016ze";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
+import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261015d";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
 
@@ -510,7 +511,7 @@ function readRecentActivity(){
   if (items.some((i) => i.sim === undefined)) {
     const sim = new Map();
     try {
-      const ents = (JSON.parse(localStorage.getItem("dn_security_graph")) || {}).entities || {};
+      const ents = (JSON.parse(localStorage.getItem(storeKeyFor(activeWorkspace()))) || {}).entities || {};
       for (const e of Object.values(ents)) { const k = (e.type || "") + ": " + e.name; sim.set(k, (sim.get(k) ?? true) && isSimulated(e)); }
     } catch (_) {}
     items = items.map((i) => { if (i.sim !== undefined) return i; const m = /^Created (.+)$/.exec(i.text); return { ...i, sim: !!(m && sim.get(m[1])) }; });
@@ -1613,7 +1614,7 @@ export function renderDeck(host, opts) {
     let aiConnected = INTEGRATIONS.some((i) => i.kind === "ai" && conns[i.id] && conns[i.id].connected);
     if (!aiConnected) { try { aiConnected = Object.keys(localStorage).some((k) => k.indexOf("dn_key_") === 0); } catch (_) {} }
     let hasGraph = false;
-    try { const ents = Object.values((JSON.parse(localStorage.getItem("dn_security_graph")) || {}).entities || {}); hasGraph = ents.some((e) => !isSimulated(e)); } catch (_) {}
+    try { const ents = Object.values((JSON.parse(localStorage.getItem(storeKeyFor(activeWorkspace()))) || {}).entities || {}); hasGraph = ents.some((e) => !isSimulated(e)); } catch (_) {}
     return [
       { id: "ws", label: "Name your workspace", sub: "So reports and the header carry your brand", done: !!wsProfile.name, act: () => go("settings") },
       { id: "ai", label: "Connect an AI model or key", sub: "Power triage, runbooks and explanations", done: aiConnected, act: () => go("con") },
@@ -2207,11 +2208,14 @@ export function renderDeck(host, opts) {
     { type: "action", label: "Go to Cloud Posture", group: "Navigate", icon: IC.cloud, run: () => go("cloud") },
     { type: "action", label: "Go to Compliance", group: "Navigate", icon: IC.shield, run: () => go("compliance") },
     { type: "action", label: "Go to Findings", group: "Navigate", icon: IC.alert, run: () => go("findings") },
+    { type: "action", label: "Go to Reports", group: "Navigate", icon: IC.note, run: () => go("reports") },
     { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.search, run: () => go("invest") },
     { type: "action", label: "Go to Integrations", group: "Navigate", icon: IC.plug, run: () => go("con") },
     { type: "action", label: "Go to Tool Library", group: "Navigate", icon: IC.grid, run: () => go("tools") },
+    { type: "action", label: "Go to Toolkit", group: "Navigate", icon: IC.wrench, run: () => go("toolkit") },
     { type: "action", label: "Go to Activity", group: "Navigate", icon: IC.pulse, run: () => go("activity") },
     { type: "action", label: "Go to Assistant", group: "Navigate", icon: IC.spark, run: () => go("assistant") },
+    { type: "action", label: "Go to Team", group: "Navigate", icon: IC.nodes, run: () => go("team") },
     { type: "action", label: "Go to Plans & billing", group: "Navigate", icon: IC.star, run: () => go("plans") },
     { type: "action", label: "Open Settings", group: "Navigate", icon: IC.gear, run: () => go("settings") },
   ];
@@ -2594,7 +2598,7 @@ export function renderDeck(host, opts) {
     // least two recorded days. No history is ever invented.
     function recordExpSnapshot(score){
       try {
-        const key = "dn_deck_exphist"; let h = [];
+        const wid = activeWorkspace(), key = wid ? "dn_deck_exphist__ws_" + wid : "dn_deck_exphist"; let h = [];
         try { h = JSON.parse(localStorage.getItem(key) || "[]"); } catch (_) { h = []; }
         if (!Array.isArray(h)) h = [];
         const d = new Date().toISOString().slice(0, 10);
@@ -3291,9 +3295,9 @@ export function renderDeck(host, opts) {
   const SEV_C = { critical: "#e0383a", high: "#f5920b", medium: "#d9a400", low: "#4f86ff", info: "#8a93a6" };
   const ST_C = { new: "#4f86ff", open: "#f5920b", investigating: "#9b5cf0", resolved: "#12a85f", closed: "#8a93a6" };
   const agoISO = (s) => s ? timeAgo(new Date(s).getTime()) : "—";
-  function dl(name, text, type){
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  function dl(name, text, mime){
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: (mime || "text/plain") + ";charset=utf-8" })); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (_) {} }, 2000);
   }
   const ONBOARD = `<div class="dk-onb"><b>No findings recorded yet</b><p>Findings appear here when a tool records them in the security graph. Start with one of these:</p><div class="dk-qa">
       <button class="dk-qacard" data-tool="codescan"><span class="qi" style="--a:#3f78ff">${IC.code}</span><b>Scan a codebase</b><span>Scan a GitHub repository, then choose Add to graph.</span></button>
@@ -3767,12 +3771,6 @@ export function renderDeck(host, opts) {
     return { org, date, iso: now.toISOString() };
   }
   const SEV_ORDER = ["critical", "high", "medium", "low", "info"];
-  function dl(name, text, mime){
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([text], { type: (mime || "text/plain") + ";charset=utf-8" }));
-    a.download = name; a.click();
-    setTimeout(() => { try { URL.revokeObjectURL(a.href); } catch (_) {} }, 2000);
-  }
   function printReport(title, inner){
     let w; try { w = window.open("", "_blank"); } catch (_) {}
     if (!w) { toast("Allow pop-ups to print this report"); return; }
@@ -3832,7 +3830,7 @@ export function renderDeck(host, opts) {
     return `<h1>${esc(m.org)} — Findings Register</h1><p class="meta">Generated ${esc(m.date)} · ${rows.length} findings (${d.fc.open} open)</p>${body}<p class="foot">Generated in your browser from your security graph. Sample data is excluded and nothing was uploaded.</p>`;
   }
   // Attack-surface view: the externally-facing entity types the graph knows about.
-  const SURFACE_TYPES = ["domain", "subdomain", "host", "ip", "url", "service", "port", "certificate", "endpoint"];
+  const SURFACE_TYPES = ["asset", "domain", "ip", "port", "service", "certificate", "endpoint"];   // real ENTITY_TYPES (security-graph.js)
   function surfaceRows(d){
     return d.entities.filter((e) => SURFACE_TYPES.includes(String(e.type || "").toLowerCase()))
       .sort((a, b) => String(a.type).localeCompare(String(b.type)) || String(a.name || "").localeCompare(String(b.name || "")));
@@ -4037,8 +4035,8 @@ export function renderDeck(host, opts) {
 
   // ---------- keyboard & shortcuts ----------
   // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
-  const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant" };
-  const SCENE_TITLE = { overview: "Security Overview", surface: "Attack Surface", threat: "Threats & Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "AI Assistant" };
+  const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant", f: "findings", r: "reports", w: "team", p: "plans", ",": "settings" };
+  const SCENE_TITLE = { overview: "Security Overview", surface: "Attack Surface", threat: "Threats & Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "AI Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
     const nav = Object.entries(GOTO).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");

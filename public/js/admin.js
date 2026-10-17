@@ -282,7 +282,7 @@ export async function renderAdmin(main, user) {
         document.querySelectorAll("body > .dk").forEach((n) => n.remove());
         _deckOff = renderDeck(document.body, {
           groups: (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] })),
-          user: user ? { displayName: user.displayName || "", email: user.email || "", photoURL: user.photoURL || "" } : null,
+          user: user ? { uid: user.uid || "", displayName: user.displayName || "", email: user.email || "", photoURL: user.photoURL || "" } : null,
           isOwner: true,
           tier: deckTier,
           workspace: wsProfile,
