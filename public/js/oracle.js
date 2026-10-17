@@ -591,7 +591,7 @@ function _orGraphPush(gb, tally, item) {
 // Wraps the lazy bridge import, button state, and the single summary toast.
 function _orSendGraph(btn, label, build) {
   btn.disabled = true;
-  import('/js/graph-bridge.js?v=20261012a').then(function(gb) {
+  import('/js/graph-bridge.js?v=20261016f').then(function(gb) {
     var tally = { created: 0, updated: 0, links: 0 };
     var actorCache = {};
     var ctx = {

@@ -2953,7 +2953,7 @@ export function renderAegis(main) {
           opts: { tags: ['aegis', 'firewall', 'flow', 'sample', 'simulated'], severity: (r.external || r.broadOnly) ? 'high' : 'medium' } };
       });
       if (msg) msg.textContent = 'Pushing ' + items.length + ' flagged flow(s)...';
-      import('/js/graph-bridge.js?v=20261012a').then(function (gb) {
+      import('/js/graph-bridge.js?v=20261016f').then(function (gb) {
         try { gb.sendToGraph('AEGIS', items, undefined, true); if (msg) msg.textContent = items.length + ' sample flow(s) sent to Security Graph, tagged "simulated" so they never count toward your real posture.'; }
         catch (_) { if (msg) msg.textContent = 'Graph unavailable.'; }
       }).catch(function () { if (msg) msg.textContent = 'Graph unavailable.'; });

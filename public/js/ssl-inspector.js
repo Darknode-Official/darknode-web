@@ -313,7 +313,7 @@ function _sslToGraph(btn) {
   var sevMap = { CRITICAL: 'critical', HIGH: 'high', MEDIUM: 'medium', LOW: 'low', INFO: 'info' };
   var tags = ['ssl', 'ct-log', 'crt.sh'];
   btn.disabled = true;
-  import('/js/graph-bridge.js?v=20261012a').then(function(gb) {
+  import('/js/graph-bridge.js?v=20261016f').then(function(gb) {
     var rr = gb.sendToGraph('SSL Inspector', [{ type: 'DOMAIN', name: domain, data: { ctCertificates: _sslData.certs.length, ctSubdomains: _sslData.subdomains.length }, opts: { tags: tags } }], undefined, true);
     var root = rr.entities[0];
     var cr = gb.sendToGraph('SSL Inspector', valid.map(function(c) {

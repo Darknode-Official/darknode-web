@@ -980,7 +980,7 @@ function ctHostItem(v, tags) {
 
 function ctSendAlertsToGraph(btn, alerts) {
   btn.disabled = true;
-  import('/js/graph-bridge.js?v=20261012a').then(function(gb) {
+  import('/js/graph-bridge.js?v=20261016f').then(function(gb) {
     var sim = alerts.some(function(a){ return a.example; });
     // Tag per alert: one example alert in a batch must not mark the real ones simulated.
     var tagsFor = function(a) { return a.example ? ['citadel','soc','simulated'] : ['citadel','soc']; };

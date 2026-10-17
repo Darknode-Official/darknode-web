@@ -255,7 +255,7 @@ export function renderSubdomainEnum(container) {
     var tags = ['subdomain-enum'];
     var meta = { simulated: false, scannedAt: new Date().toISOString() };
     btn.disabled = true;
-    import('/js/graph-bridge.js?v=20261012a').then(function(gb) {
+    import('/js/graph-bridge.js?v=20261016f').then(function(gb) {
       var root = gb.sendToGraph('Subdomain Enum', [{ type: 'DOMAIN', name: domain, data: Object.assign({ subdomainCount: results.length }, meta), opts: { tags: tags.concat('root-domain') } }], undefined, true).entities[0];
       var created = 0, updated = 0, links = 0;
       results.forEach(function(r) {

@@ -989,7 +989,7 @@ var _SP_GRAPH_SEV = { CRITICAL: 'critical', HIGH: 'high', MEDIUM: 'medium', LOW:
 
 function _spSendGraph(btn, build) {
   btn.disabled = true;
-  import('/js/graph-bridge.js?v=20261012a').then(function(gb) {
+  import('/js/graph-bridge.js?v=20261016f').then(function(gb) {
     var tally = { created: 0, updated: 0, links: 0, findings: 0 };
     var push = function(item) {
       var r = gb.sendToGraph('SPECTRE', [item], undefined, true);

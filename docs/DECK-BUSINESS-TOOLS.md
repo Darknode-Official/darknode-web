@@ -110,7 +110,7 @@ Legend: planned · scaffolded · built · merged · deployed
 | `privaudit` | Privileged Access Audit | `prv-` | merged |
 | `nhi` | Non-Human Identity Lifecycle | `nhi-` | merged |
 | `jml` | Lifecycle & Offboarding Verifier | `jml-` | merged |
-| `oauthgov` | OAuth App Governance | `oag-` | scaffolded |
+| `oauthgov` | OAuth App Governance | `oag-` | merged |
 
 ### Wave 2 — Cloud, infra & fleet
 
