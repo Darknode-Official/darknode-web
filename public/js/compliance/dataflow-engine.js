@@ -1203,6 +1203,8 @@ export function parseTransferCell(countries, safeguards) {
 export function csvToActivities(rows, mapping, { dateOrder = "dmy" } = {}) {
   const skipped = [];
   const records = [];
+  const byKey = new Map();
+  let merged = 0;
   // The ICO template writes "N/A" in cells that do not apply: read those as blank.
   const get = (r, k) => { const v = mapping[k] ? str(r[mapping[k]]) : ""; return /^(n\/a|not applicable)$/i.test(v) ? "" : v; };
   (rows || []).forEach((r, i) => {
@@ -1229,8 +1231,19 @@ export function csvToActivities(rows, mapping, { dateOrder = "dmy" } = {}) {
     if (get(r, "legalBasis") && !rec.legalBasis) skipped.push({ check: "row " + (i + 2), reason: "lawful basis \"" + get(r, "legalBasis") + "\" not recognised; left blank" });
     if (!rec.role) rec.role = "controller";
     if (!rec.id) delete rec.id;
-    records.push(rec);
+    // The ICO template lists each personal-data category of one activity on its own row: fold
+    // rows with the same id, or the same name and purpose, into one activity.
+    const key = (rec.id || rec.name + "\u0000" + rec.purpose).toLowerCase();
+    const prev = byKey.get(key);
+    if (!prev) { byKey.set(key, rec); records.push(rec); return; }
+    for (const k of ["dataSubjects", "dataCategories", "systems", "recipients", "dpiaCriteria"]) prev[k] = uniq([...prev[k], ...rec[k]]).sort(k === "systems" || k === "recipients" ? cmp : undefined);
+    const tk = (t) => t.country + "|" + t.recipient + "|" + t.mechanism;
+    for (const t of rec.transfers) if (!prev.transfers.some((u) => tk(u) === tk(t))) prev.transfers.push(t);
+    for (const [c, u] of Object.entries(rec.categoryUses || {})) if (!prev.categoryUses[c]) prev.categoryUses[c] = u;
+    for (const [k, v] of Object.entries(rec)) if (typeof v === "string" && v && !prev[k]) prev[k] = v;
+    merged++;
   });
+  if (merged) skipped.push({ check: "rows", reason: merged + " row(s) repeated an activity already listed (same name and purpose) and were merged into it" });
   return { records, skipped };
 }
 

@@ -421,6 +421,19 @@ group("dataflow: parsing", () => {
     assert.equal(file.rows.length, 2);
     assert.equal(csvToActivities(file.rows, file.mapping).records[0].name, "Finance - Payroll");
   });
+  test("ICO template: one row per data category for the same activity folds into one activity", () => {
+    const NA = "N/A";
+    const row = (cat, rec) => ["Finance", "Payroll", NA, "Employees", cat, rec, NA, NA, NA, "3 years post-employment", "Encrypted storage and transfer",
+      "Article 6(1)(c) - legal obligation", NA, NA, NA, "Access and rectification", "No", "Data subject", NA, "Finance payroll system", "No", NA, NA, "No", NA, NA, NA, NA, NA, NA];
+    const text = [ICO_HEADERS, row("Bank details", "HMRC"), row("Salary", "Pension provider"), row("Contact details", "HMRC")].map(icoLine).join("\r\n");
+    const file = parseInput([{ name: "ico-rows.csv", text }]).files[0];
+    const { records, skipped } = csvToActivities(file.rows, file.mapping);
+    assert.equal(records.length, 1);
+    assert.equal(records[0].name, "Finance - Payroll");
+    assert.ok(records[0].dataCategories.length >= 2, JSON.stringify(records[0].dataCategories));
+    assert.deepEqual(records[0].recipients, ["HMRC", "Pension provider"]);
+    assert.ok(skipped.some((x) => /2 row\(s\) repeated an activity/.test(x.reason)));
+  });
   test("ICO template N/A cells (as in the template's Example sheet) read as blank", () => {
     const NA = "N/A";
     const ex = ["Finance", "Payroll", NA, "Employees", "Bank details", "HMRC", NA, NA, NA, "3 years post-employment", "Encrypted storage and transfer",
