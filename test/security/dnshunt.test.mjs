@@ -364,7 +364,7 @@ group("dnshunt: contract", () => {
     const ex = exampleDataset();
     const r = analyze({ files: ex.files }, ex.opts);
     const bl = blocklistText(r.findings);
-    assert.ok(bl.includes("larkspur-relay.invalid"));
+    assert.ok(bl.includes("sync-relay.invalid"));
     assert.ok(!bl.includes("darkn0de.test"), "review-confidence lookalike is not auto-blocked");
     const txt = summaryText(r);
     assert.ok(txt.startsWith("DNS Hunt summary")); assert.ok(txt.includes("[HIGH/likely]"));

@@ -164,7 +164,7 @@ function exampleWindows() {
   const q = (s) => '"' + s.replace(/"/g, '""') + '"';
   const L = ["Level,Date and Time,Source,Event ID,Task Category"];
   const row = (t, id, cat, msg) => L.push(`Information,${t},Microsoft-Windows-Security-Auditing,${id},${cat},${q(msg)}`);
-  for (let i = 0; i < 12; i++) row(`10/13/2026 1:${pad2(i)}:11 PM`, 4625, "Logon", `An account failed to log on.\n\nSubject:\n\tAccount Name:\t\t-\n\nAccount For Which Logon Failed:\n\tAccount Name:\t\t${["jsmith", "mlee", "svc_sql", "rpatel", "achen", "backup"][i % 6]}\n\tAccount Domain:\t\tCORP\n\nFailure Information:\n\tStatus:\t\t\t0xC000006D\n\tSub Status:\t\t0xC000006A\n\nLogon Type:\t\t\t3\n\nNetwork Information:\n\tWorkstation Name:\tWS-UNKNOWN\n\tSource Network Address:\t203.0.113.9\n\tSource Port:\t\t51${pad2(i)}`);
+  for (let i = 0; i < 12; i++) row(`10/13/2026 1:${pad2(i)}:11 PM`, 4625, "Logon", `An account failed to log on.\n\nSubject:\n\tAccount Name:\t\t-\n\nAccount For Which Logon Failed:\n\tAccount Name:\t\t${["user01", "user02", "svc_sql", "user03", "user04", "backup"][i % 6]}\n\tAccount Domain:\t\tCORP\n\nFailure Information:\n\tStatus:\t\t\t0xC000006D\n\tSub Status:\t\t0xC000006A\n\nLogon Type:\t\t\t3\n\nNetwork Information:\n\tWorkstation Name:\tWS-UNKNOWN\n\tSource Network Address:\t203.0.113.9\n\tSource Port:\t\t51${pad2(i)}`);
   row("10/13/2026 1:20:00 PM", 4624, "Logon", "An account was successfully logged on.\n\nSubject:\n\tAccount Name:\t\t-\n\nLogon Type:\t\t\t10\n\nNew Logon:\n\tAccount Name:\t\tjsmith\n\tAccount Domain:\t\tCORP\n\nNetwork Information:\n\tWorkstation Name:\tWS-UNKNOWN\n\tSource Network Address:\t203.0.113.9");
   row("10/13/2026 1:25:00 PM", 4720, "User Account Management", "A user account was created.\n\nSubject:\n\tAccount Name:\t\tjsmith\n\tAccount Domain:\t\tCORP\n\nNew Account:\n\tAccount Name:\t\tsvc_backup2\n\tAccount Domain:\t\tCORP");
   row("10/13/2026 1:27:00 PM", 4732, "Security Group Management", "A member was added to a security-enabled local group.\n\nSubject:\n\tAccount Name:\t\tjsmith\n\nMember:\n\tSecurity ID:\t\tS-1-5-21-1-2-3-1105\n\tAccount Name:\t\tCORP\\svc_backup2\n\nGroup:\n\tSecurity ID:\t\tS-1-5-32-544\n\tGroup Name:\t\tAdministrators\n\tGroup Domain:\t\tBuiltin");
@@ -176,10 +176,10 @@ function exampleWindows() {
 function exampleWindowsJson() {
   const J = [];
   const ev = (id, t, data, comp) => J.push(JSON.stringify({ Event: { System: { EventID: id, TimeCreated: { "#attributes": { SystemTime: t } }, Computer: comp || "DC01.corp.example" }, EventData: data } }));
-  for (let i = 0; i < 6; i++) ev(4769, `2026-10-13T14:00:${pad2(i * 5)}Z`, { TargetUserName: "mlee@CORP.EXAMPLE", ServiceName: ["svc_sql", "svc_web", "svc_iis", "svc_sp", "svc_exch", "svc_bk"][i], TicketEncryptionType: "0x17", Status: "0x0", IpAddress: "::ffff:10.0.0.44" });
-  for (let i = 0; i < 6; i++) ev(4624, `2026-10-13T14:10:${pad2(i * 5)}Z`, { TargetUserName: "mlee", LogonType: 3, IpAddress: "10.0.0.44", WorkstationName: "WS-044" }, `SRV0${i + 1}.corp.example`);
+  for (let i = 0; i < 6; i++) ev(4769, `2026-10-13T14:00:${pad2(i * 5)}Z`, { TargetUserName: "user02@CORP.EXAMPLE", ServiceName: ["svc_sql", "svc_web", "svc_iis", "svc_sp", "svc_exch", "svc_bk"][i], TicketEncryptionType: "0x17", Status: "0x0", IpAddress: "::ffff:10.0.0.44" });
+  for (let i = 0; i < 6; i++) ev(4624, `2026-10-13T14:10:${pad2(i * 5)}Z`, { TargetUserName: "user02", LogonType: 3, IpAddress: "10.0.0.44", WorkstationName: "WS-044" }, `SRV0${i + 1}.corp.example`);
   ev(7045, "2026-10-13T14:20:00Z", { ServiceName: "WinUpdSvc", ImagePath: "C:\\Users\\Public\\upd.exe", AccountName: "LocalSystem" }, "SRV03.corp.example");
-  ev(4672, "2026-10-13T14:21:00Z", { SubjectUserName: "mlee", PrivilegeList: "SeDebugPrivilege" }, "SRV03.corp.example");
+  ev(4672, "2026-10-13T14:21:00Z", { SubjectUserName: "user02", PrivilegeList: "SeDebugPrivilege" }, "SRV03.corp.example");
   return J.join("\n") + "\n";
 }
 const EXAMPLES = { web: ["access.log", exampleWeb], linux: ["auth.log", exampleLinux], windows: ["security-export.csv", exampleWindows], winjson: ["security-evtx.json", exampleWindowsJson] };

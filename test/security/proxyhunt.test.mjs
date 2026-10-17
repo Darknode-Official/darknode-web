@@ -448,7 +448,7 @@ group("proxyhunt: contract", () => {
     const bl = blocklistText(r.findings);
     assert.ok(bl.includes("k7q2vx.ngrok-free.app")); assert.ok(!bl.includes("dropbox")); assert.ok(bl.includes("203.0.113.77"));
     const rep = userReportText(r);
-    assert.ok(rep.includes("== bob@test.darknode.ai") && rep.includes("Large upload"));
+    assert.ok(rep.includes("== user02@test.darknode.ai") && rep.includes("Large upload"));
     assert.ok(summaryText(r).includes("Web Gateway Hunt summary"));
   });
   test("defaults and tool id", () => {
