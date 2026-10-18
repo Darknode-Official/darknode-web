@@ -45,6 +45,7 @@ import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.
 import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
 import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018d";
 import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018d";
+import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261018e";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -1088,6 +1089,20 @@ const CSS = `
 .dk-twrap{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-bottom:20px}
 @media(max-width:900px){.dk-twrap{grid-template-columns:1fr}}
 .dk-tpanel{border-radius:16px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);padding:16px 18px}
+.dk-roles{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:4px 0 2px}
+.dk-roles .rl{font-size:12px;color:#6b7589;margin-right:2px}
+.dk-rolechip{font:inherit;font-size:12.5px;cursor:pointer;border:1px solid rgba(23,33,56,.14);background:transparent;color:#48526a;border-radius:999px;padding:4px 12px}
+.dk-rolechip.on{background:#2552c6;border-color:#2552c6;color:#fff}
+.dk-rolefocus .rf-lead{margin:2px 0 12px;color:#6b7589;font-size:13px}
+.rf-metrics{display:flex;flex-wrap:wrap;gap:10px 26px;margin-bottom:12px}
+.rf-m b{display:block;font-size:22px;color:#1a2233;font-variant-numeric:tabular-nums}
+.rf-m span{font-size:12px;color:#6b7589}
+.rf-items{display:flex;flex-direction:column;gap:4px}
+.rf-it{display:flex;align-items:center;gap:9px;width:100%;text-align:left;font:inherit;cursor:pointer;background:transparent;border:0;border-radius:8px;padding:7px 9px}
+.rf-it:hover{background:rgba(23,33,56,.04)}
+.rf-it .dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.rf-it .n{flex:1;color:#2b3448;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rf-it .s{font-size:11.5px;color:#8a93a6;text-transform:capitalize}
 .dk-affects{margin:16px 0;background:rgba(224,56,58,.04);border-color:rgba(224,56,58,.18)}
 .dk-affects .ct{display:flex;align-items:center;gap:8px;font-weight:700;color:#1a2233;margin-bottom:10px}
 .dk-affects .ct .src{margin-left:auto;font-weight:500;font-size:12px;color:#6b7589}
@@ -2579,6 +2594,37 @@ export function renderDeck(host, opts) {
   window.addEventListener("storage", onStorage);
   busOffs.push(() => { clearTimeout(syncT); window.removeEventListener("storage", onStorage); });
 
+  // ---------- role-based home focus (D8): optional per-workspace Overview preset ----------
+  function roleKey(){ const wid = activeWorkspace(); return wid ? "dn_deck_role__ws_" + wid : "dn_deck_role"; }
+  function readRole(){ try { return localStorage.getItem(roleKey()) || ""; } catch (_) { return ""; } }
+  function writeRole(r){ try { if (r) localStorage.setItem(roleKey(), r); else localStorage.removeItem(roleKey()); } catch (_) {} }
+  function setupRoleFocus(el){
+    const chips = el.querySelector("#dkRoles"), panel = el.querySelector("#dkRoleFocus"); if (!chips) return;
+    let cur = readRole();
+    const fill = () => {
+      if (!cur) { if (panel) { panel.hidden = true; panel.innerHTML = ""; } return; }
+      withGraph((m) => {
+        if (curScene !== "overview" || !panel) return;
+        const all = m && m.exportAll ? (m.exportAll().entities || []) : [];
+        const ents = postureMod && postureMod.realEntities ? postureMod.realEntities(all) : all;
+        const f = roleFocus(ents, { role: cur, now: Date.now(), myUid: (user && user.uid) || "" });
+        if (!f) { panel.hidden = true; return; }
+        panel.hidden = false;
+        const metrics = f.metrics.map((mt) => `<div class="rf-m"><b>${esc(String(mt.value))}</b><span>${esc(mt.label)}${mt.sub ? " · " + esc(mt.sub) : ""}</span></div>`).join("");
+        const items = f.items.length
+          ? f.items.map((it) => `<button class="rf-it" data-eid="${esc(it.id)}"><span class="dot" style="--c:${SEV_C[it.severity] || "#8a93a6"}"></span><span class="n">${esc(it.name)}</span><span class="s">${esc(it.severity)}</span></button>`).join("")
+          : `<div class="dk-nempty">${esc(f.emptyText || "Nothing to show for this view yet.")}</div>`;
+        panel.innerHTML = `<h2>${IC.gauge} ${esc(f.label)} focus <span class="mo" data-scene="findings">All findings</span></h2><p class="rf-lead">${esc(f.lead)}</p><div class="rf-metrics">${metrics}</div><div class="rf-items">${items}</div>`;
+        panel.querySelectorAll(".rf-it[data-eid]").forEach((b) => b.onclick = () => { try { openEntityDrawer(b.dataset.eid); } catch (_) {} });
+        const mo = panel.querySelector(".mo[data-scene]"); if (mo) mo.onclick = () => go("findings");
+      });
+    };
+    const paintChips = () => {
+      chips.innerHTML = `<span class="rl">View as</span>` + [{ id: "", label: "All" }].concat(HOME_ROLES).map((r) => `<button class="dk-rolechip${(cur || "") === r.id ? " on" : ""}" data-role="${r.id}">${esc(r.label)}</button>`).join("");
+      chips.querySelectorAll(".dk-rolechip").forEach((b) => b.onclick = () => { cur = b.dataset.role; writeRole(cur); paintChips(); fill(); });
+    };
+    paintChips(); fill();
+  }
   // ---------- Overview workspace ----------
   function renderOverview(){
     const el = sceneEls.overview;
@@ -2633,6 +2679,8 @@ export function renderDeck(host, opts) {
         ${kpi("graph", "—", "Graph entities", IC.grid, "", "invest", "Real entities, samples excluded")}
       </div>
       <div class="dk-expnote" id="dkExpNote" hidden></div>
+      <div class="dk-roles" id="dkRoles"></div>
+      <div class="dk-ovp dk-rolefocus" id="dkRoleFocus" hidden></div>
       <div class="dk-ovp"><h2 data-explain="panel.actions">${IC.bolt} Needs attention <span class="mo" data-scene="findings">All findings</span></h2><div id="dkTopAct"><div class="dk-loading"><span class="sp"></span>Ranking what needs attention…</div></div></div>
       <div class="dk-ovgrid3">
         <div class="dk-ovp"><h2 data-explain="panel.pins">${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
@@ -2676,6 +2724,8 @@ export function renderDeck(host, opts) {
     el.querySelectorAll(".dk-onbd-step[data-onb]").forEach((b) => b.onclick = () => { const st = steps.find((x) => x.id === b.dataset.onb); if (st && !st.done) st.act(); });
     const onbX = el.querySelector("#dkOnbDismiss");
     if (onbX) onbX.onclick = () => { dismissOnboarding(); const c = el.querySelector("#dkOnbd"); if (c) c.remove(); };
+    // role-based home focus (optional; default off)
+    setupRoleFocus(el);
     // pinned tools + live system status
     renderPins();
     renderSystem();
