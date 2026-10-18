@@ -2692,10 +2692,25 @@ export function renderDeck(host, opts) {
           if (kn) kn.textContent = "—";
           lines.push(`<b>Your exposure: not measured yet</b> — no real findings in this workspace. Map your attack surface or scan a codebase to measure it.`);
         } else {
-          const score = Math.round((0.65 * Math.min(1, sig.hot / 25) + 0.35 * (1 - Math.min(1, sig.intCov / 100))) * 100);
+          // Exposure score v2: the SAME documented metrics-engine score the Board report and
+          // the trend store use, so every surface agrees. The sparkline is drawn from the real
+          // per-day trend store (metrics v2). Falls back to the legacy indicative score only if
+          // the metrics engine cannot run on the entities to hand.
+          let score, spark = "", extra = "";
+          try {
+            const snap = metricsSnapshot(sig.entities || [], { now: Date.now() });
+            score = snap.exposureScore;
+            const wid = activeWorkspace() || null;
+            const series = readTrend(wid).map((r) => ({ d: r.day, s: r.exposureScore }));
+            spark = expSpark(series.length >= 2 ? series : recordExpSnapshot(score));
+            const top = (snap.exposure.top || []).filter((t) => t.kev || t.overdue || t.exposed).length;
+            if (snap.kevOpen || top) extra = ` &middot; ${snap.kevOpen} known-exploited, ${top} KEV/overdue/exposed driver${top === 1 ? "" : "s"}`;
+          } catch (_) {
+            score = Math.round((0.65 * Math.min(1, sig.hot / 25) + 0.35 * (1 - Math.min(1, sig.intCov / 100))) * 100);
+            spark = expSpark(recordExpSnapshot(score));
+          }
           if (kn) kn.textContent = String(score);
-          const spark = expSpark(recordExpSnapshot(score));
-          lines.push(`<b>Your exposure ${score}/100</b> (higher is worse) — ${sig.hot} open critical/high finding${sig.hot === 1 ? "" : "s"} of ${sig.real.toLocaleString()} real entities &middot; ${sig.intCov}% integration coverage. Indicative, not an audit.` + (spark ? "<br>" + spark : ""));
+          lines.push(`<b>Your exposure ${score}/100</b> (higher is worse) — ${sig.hot} open critical/high finding${sig.hot === 1 ? "" : "s"} of ${sig.real.toLocaleString()} real entities &middot; ${sig.intCov}% integration coverage${extra}. Indicative, not an audit; see the board report for the full breakdown.` + (spark ? "<br>" + spark : ""));
         }
         if (sig.sim) lines.push(`${sig.sim.toLocaleString()} simulated/sample entities (CRUCIBLE, demos) are excluded from every metric.`);
       }
@@ -2715,7 +2730,7 @@ export function renderDeck(host, opts) {
       const all = m.exportAll ? (m.exportAll().entities || []) : [];
       const real = P.realEntities(all);
       const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = real.length.toLocaleString();
-      sig.real = real.length; sig.sim = all.length - real.length;
+      sig.real = real.length; sig.sim = all.length - real.length; sig.entities = real;
       sig.hot = real.filter((e) => /^(critical|high)$/i.test(e.severity || "") && !/^(resolved|closed)$/i.test(e.status || "")).length;
       const hk = el.querySelector('[data-k="hot"] .kn'); if (hk) hk.textContent = real.length ? sig.hot.toLocaleString() : "—";
       // Nothing real to score yet: one get-started card replaces the two empty posture tiles.
