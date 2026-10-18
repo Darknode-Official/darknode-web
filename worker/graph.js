@@ -20,6 +20,13 @@
 import { wins } from "../public/js/core/graph-merge.js";
 import { verifyIdToken } from "./vault-auth.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
+import { chainAppend, chainVerify, GENESIS, pad } from "./audit-chain.js";
+
+// The audit chain is never trimmed: "verify from genesis" must stay meaningful. It only
+// grows on a real change (an idle sync that writes nothing appends nothing), and each
+// entry is a small summary, not a copy of the data.
+const AUDIT_IDS_CAP = 40;     // ids summarised per write entry
+const AUDIT_PAGE = 200;       // audit records returned per read page
 
 // A workspace id is a Firebase uid (or, later, a workspace doc id).
 export const GRAPH_ID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -81,15 +88,26 @@ export class GraphDO {
       if (!cur) { if (state.count >= MAX_STORED) continue; state.count++; }
       state.rev++;
       const fields = prefix === "e:" ? ENTITY_FIELDS : REL_FIELDS;
-      state.put[k] = { ...sanitize(rec, fields, key), _rev: state.rev };
+      state.put[k] = { ...sanitize(rec, fields, key), _rev: state.rev, _by: state.uid || "" };
       n++;
     }
     return n;
   }
 
-  async push(body) {
+  async auditMeta() { return (await this.storage.get("ameta")) || { n: 0, head: GENESIS }; }
+
+  // One summary entry per write that actually changed something. Hash-chained: the record
+  // commits to the previous head, so a tampered or dropped entry fails verification.
+  appendAudit(am, entry) {
+    const { rec, next } = chainAppend(am, entry);
+    this.storage.put("a:" + pad(rec.n), rec);
+    this.storage.put("ameta", next);
+    return next;
+  }
+
+  async push(body, uid) {
     const m = await this.meta();
-    const state = { rev: m.rev, count: m.count || 0, put: {} };
+    const state = { rev: m.rev, count: m.count || 0, put: {}, uid: uid || "" };
     const entities = await this.applyKind(body && body.entities, "e:", "updatedAt", state);
     const relationships = await this.applyKind(body && body.relationships, "r:", "createdAt", state);
     const keys = Object.keys(state.put);
@@ -101,21 +119,42 @@ export class GraphDO {
         this.storage.put(chunk);
       }
       this.storage.put("meta", { rev: state.rev, count: state.count });
+      const am = await this.auditMeta();
+      this.appendAudit(am, { ts: Date.now(), uid: state.uid, op: "push", entities, relationships, rev: state.rev, ids: keys.slice(0, AUDIT_IDS_CAP) });
     }
     return { rev: state.rev, applied: { entities, relationships }, count: state.count };
   }
 
+  // Most-recent audit records first, for the Deck Audit Log scene.
+  async auditPage(limit) {
+    const am = await this.auditMeta();
+    const entries = [...(await this.storage.list({ prefix: "a:", reverse: true, limit: Math.min(Number(limit) || AUDIT_PAGE, AUDIT_PAGE) })).values()];
+    return { entries, count: am.n, head: am.head };
+  }
+
+  // Walk the whole chain from genesis and confirm it matches the stored head and count.
+  async auditVerify() {
+    const am = await this.auditMeta();
+    const records = [...(await this.storage.list({ prefix: "a:" })).values()];
+    return { ...chainVerify(records, am.head, am.n), count: am.n, head: am.head };
+  }
+
   async fetch(request) {
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-    if (!request.headers.get("x-graph-uid")) return reply({ error: "forbidden" }, 403);
+    const uid = request.headers.get("x-graph-uid");
+    if (!uid) return reply({ error: "forbidden" }, 403);
+    const url = new URL(request.url);
     if (request.method === "GET") {
-      return reply(await this.pull(new URL(request.url).searchParams.get("since")));
+      const audit = url.searchParams.get("audit");
+      if (audit === "verify") return reply(await this.auditVerify());
+      if (audit) return reply(await this.auditPage(url.searchParams.get("limit")));
+      return reply(await this.pull(url.searchParams.get("since")));
     }
     let body;
     try { body = await request.json(); } catch (_) { return reply({ error: "Invalid JSON body" }, 400); }
     let res;
     await this.state.blockConcurrencyWhile(async () => {
-      try { res = await this.push(body || {}); } catch (e) { res = { __err: String(e.message || e) }; }
+      try { res = await this.push(body || {}, uid); } catch (e) { res = { __err: String(e.message || e) }; }
     });
     if (res && res.__err) return reply({ error: res.__err }, 500);
     return reply(res);
@@ -140,8 +179,14 @@ export async function handleGraph(request, env, wid, json) {
   try { role = await resolveWorkspaceRole(projectId, wid, who.uid, m[1]); }
   catch (e) { return json({ error: e.message }, 502); }
   if (!role) return json({ error: "You are not a member of this workspace." }, 403);
-  const op = request.method === "GET" ? "read" : "write";
-  if (!canDo(role, op)) return json({ error: "Your role (" + role + ") cannot " + op + " this workspace's graph." }, 403);
+  // The audit log is a trust surface, not operational data: only owners and admins read it.
+  const isAudit = request.method === "GET" && new URL(request.url).searchParams.has("audit");
+  if (isAudit) {
+    if (!canDo(role, "manageMembers")) return json({ error: "Only an owner or admin can read the audit log." }, 403);
+  } else {
+    const op = request.method === "GET" ? "read" : "write";
+    if (!canDo(role, op)) return json({ error: "Your role (" + role + ") cannot " + op + " this workspace's graph." }, 403);
+  }
   let bodyText = null;
   if (request.method === "POST") {
     bodyText = await request.text();
