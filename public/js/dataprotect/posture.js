@@ -53,6 +53,14 @@ function injectStyle() {
   .ps .ps-cat>h3 .sc{margin-left:auto;font-size:.8rem;color:var(--mut,#667085);font-weight:600}
   .ps .ps-check{display:flex;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line,#eef0f4)}
   .ps .ps-check:last-child{border-bottom:0}
+  .ps .ps-cat{background:var(--card,#fff);border-top:4px solid var(--cat,var(--line,#e6e8ee))}
+  .ps .ps-cat-good{--cat:#2f9e56}.ps .ps-cat-mid{--cat:#b58100}.ps .ps-cat-bad{--cat:#b00020}
+  .ps .ps-cat>h3{font-size:1rem}
+  .ps .ps-cat>h3 .sc{color:var(--cat,var(--mut,#667085));font-weight:700}
+  .ps .ps-check{border-left:4px solid transparent}
+  .ps .ps-st-fail{border-left-color:#b00020;background:color-mix(in srgb,#b00020 5%,transparent)}
+  .ps .ps-st-warn{border-left-color:#b58100}
+  .ps .ps-st-pass{border-left-color:#2f9e56}
   .ps .ps-pill{flex:0 0 auto;align-self:flex-start;font-size:.68rem;font-weight:700;color:#fff;padding:2px 8px;border-radius:999px;min-width:40px;text-align:center}
   .ps .ps-cn{font-weight:600}
   .ps .ps-cd{color:var(--tx,#1a2230);font-size:.86rem}
@@ -224,11 +232,11 @@ function renderReport(out, res, rerun) {
   const gc = GRADE_C[res.grade] || "#667085";
   const cats = res.categories.map((cat) => {
     const checks = cat.checks.map((c) => `
-      <div class="ps-check">
+      <div class="ps-check ps-st-${c.status}">
         <span class="ps-pill" style="background:${ST[c.status].c}">${ST[c.status].t}</span>
         <div><div class="ps-cn">${esc(c.name)}</div><div class="ps-cd">${esc(c.detail)}</div>${c.advice ? `<div class="ps-ca">${esc(c.advice)}</div>` : ""}</div>
       </div>`).join("");
-    return `<div class="ps-cat"><h3>${esc(cat.label)}<span class="sc">${cat.score == null ? "not assessed" : cat.score + " / 100"} · weight ${cat.weight}%</span></h3>${checks}</div>`;
+    return `<div class="ps-cat ${cat.score == null ? "ps-cat-na" : cat.score >= 80 ? "ps-cat-good" : cat.score >= 50 ? "ps-cat-mid" : "ps-cat-bad"}"><h3>${esc(cat.label)}<span class="sc">${cat.score == null ? "not assessed" : cat.score + " / 100"} · weight ${cat.weight}%</span></h3>${checks}</div>`;
   }).join("");
 
   const actions = res.topActions.length

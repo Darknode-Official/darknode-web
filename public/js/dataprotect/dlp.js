@@ -240,7 +240,7 @@ function renderReport(out, text, res, rerun, sample) {
     `<span class="dlp-type"><span class="dlp-dot" style="--c:${SEV[t.severity].c}"></span><b>${t.count}</b> ${esc(t.label)}</span>`).join("");
 
   const rows = res.findings.map((f) => `
-    <tr>
+    <tr class="dlp-sev-${f.severity}">
       <td><span class="dlp-pill" style="background:${SEV[f.severity].c}">${SEV[f.severity].label}</span></td>
       <td>${esc(f.label)}${f.detail ? ` <span class="dlp-loc">(${esc(f.detail)})</span>` : ""}
         <div class="dlp-advice">${esc(f.advice || "")}</div></td>
@@ -259,7 +259,7 @@ function renderReport(out, text, res, rerun, sample) {
   </div>
 
   <div class="dlp-card" style="padding:0;overflow:hidden">
-    <div class="dlp-list"><table>
+    <div class="dlp-list dn-scrollbox"><table>
       <thead><tr><th>Severity</th><th>Type</th><th>Value (masked)</th><th>Location</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>

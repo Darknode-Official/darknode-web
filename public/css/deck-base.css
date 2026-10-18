@@ -430,3 +430,100 @@
   margin-top: 0 !important;
   margin-bottom: 0 !important;
 }
+
+/* ---------- result views ----------
+   One visual language for result screens: severity accents on table rows, sticky column
+   headers inside scroll boxes, a KPI band with a coloured top edge, and a styled empty
+   state. Real specificity on purpose: tools style their own tiles and tables in injected
+   CSS (two classes), and this layer is meant to win over that. Colours are authored for
+   the light theme like everything else here. */
+:where(html[data-embed] body, .dk, .dk ~ .dn-modal-ov) {
+  --db-sev-critical: #b00020;
+  --db-sev-high: #d9480f;
+  --db-sev-medium: #b58100;
+  --db-sev-low: #2f7d9e;
+  --db-sev-info: #8a93a6;
+  --db-sev-good: #2f9e56;
+}
+/* Rows: the severity is read from a class on the row, on a cell, or on a badge directly
+   inside a cell (sev-critical, acr-sev-high, sif-sev-medium, ...). Highest wins. */
+:is(html[data-embed] body, .dk) tbody > tr:is([class*="sev-info"], :has(> td[class*="sev-info"], > td > [class*="sev-info"])) { --db-row-sev: var(--db-sev-info); }
+:is(html[data-embed] body, .dk) tbody > tr:is([class*="sev-low"], :has(> td[class*="sev-low"], > td > [class*="sev-low"])) { --db-row-sev: var(--db-sev-low); }
+:is(html[data-embed] body, .dk) tbody > tr:is([class*="sev-med"], :has(> td[class*="sev-med"], > td > [class*="sev-med"])) { --db-row-sev: var(--db-sev-medium); }
+:is(html[data-embed] body, .dk) tbody > tr:is([class*="sev-high"], :has(> td[class*="sev-high"], > td > [class*="sev-high"])) { --db-row-sev: var(--db-sev-high); }
+:is(html[data-embed] body, .dk) tbody > tr:is([class*="sev-crit"], :has(> td[class*="sev-crit"], > td > [class*="sev-crit"])) { --db-row-sev: var(--db-sev-critical); }
+:is(html[data-embed] body, .dk) tbody > tr:is([class*="sev-"], :has(> td[class*="sev-"], > td > [class*="sev-"])) > td:first-child {
+  box-shadow: inset 4px 0 0 var(--db-row-sev, transparent);
+}
+/* !important to sit over the zebra stripes in pro-theme and the Deck (also !important);
+   :nth-child(n) only lifts specificity past the Deck's tr:nth-child(even) rule. Hover keeps its fill. */
+:is(html[data-embed] body, .dk) tbody > tr:nth-child(n):is([class*="sev-crit"], :has(> td[class*="sev-crit"], > td > [class*="sev-crit"])):not(:hover) > td {
+  background-color: color-mix(in srgb, var(--db-sev-critical) 6%, var(--db-surf)) !important;
+}
+/* Long tables scroll inside their card with the column headers pinned. */
+:is(html[data-embed] body, .dk) .dn-scrollbox {
+  max-height: min(70vh, 640px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+:is(html[data-embed] body, .dk) .dn-scrollbox > table > thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--db-surf2);
+  box-shadow: inset 0 -1px 0 var(--db-line);
+}
+/* KPI band: any "<prefix>-kpis" strip of "<prefix>-kpi" tiles built as <b>value</b><span>label</span>.
+   The top edge carries the tile's severity, from a sev-* class on the value or a kpi-* class
+   on the tile. The value's own badge styling (from the global sev-* rule) is undone. */
+:is(html[data-embed] body, .dk) [class*="-kpis"]:has(> [class*="-kpi"] > b + span) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 130px), 1fr));
+  gap: 10px;
+}
+:is(html[data-embed] body, .dk) [class*="-kpis"] > [class*="-kpi"]:has(> b + span) {
+  min-width: 0;
+  margin: 0;
+  padding: 12px 16px 13px;
+  background: var(--db-surf);
+  border: 1px solid var(--db-line);
+  border-top: 4px solid var(--db-kpi-c, var(--db-line));
+  border-radius: 10px;
+}
+:is(html[data-embed] body, .dk) [class*="-kpis"] > [class*="-kpi"] > b:has(+ span) {
+  display: block;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  font-size: 1.7rem;
+  font-weight: 750;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+:is(html[data-embed] body, .dk) [class*="-kpis"] > [class*="-kpi"] > b + span {
+  display: block;
+  margin-top: 5px;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--db-tx2);
+}
+:is(html[data-embed] body, .dk) [class*="-kpi"]:is(.kpi-good, :has(> b[class*="good"])) { --db-kpi-c: var(--db-sev-good); }
+:is(html[data-embed] body, .dk) [class*="-kpi"]:is(.kpi-low, :has(> b[class*="sev-low"])) { --db-kpi-c: var(--db-sev-low); }
+:is(html[data-embed] body, .dk) [class*="-kpi"]:is(.kpi-medium, :has(> b[class*="sev-med"])) { --db-kpi-c: var(--db-sev-medium); }
+:is(html[data-embed] body, .dk) [class*="-kpi"]:is(.kpi-high, :has(> b[class*="sev-high"])) { --db-kpi-c: var(--db-sev-high); }
+:is(html[data-embed] body, .dk) [class*="-kpi"]:is(.kpi-critical, :has(> b[class*="sev-crit"])) { --db-kpi-c: var(--db-sev-critical); }
+:is(html[data-embed] body, .dk) [class*="-kpi"]:is(.kpi-critical, .kpi-high, .kpi-medium) > b { color: var(--db-kpi-c); }
+/* Empty and "nothing to show" states read as a deliberate panel, not a stray line. */
+:is(html[data-embed] body, .dk) :is(.vim-empty, .acr-empty, .sif-empty, .fwa-empty, .lgh-empty, .cs-empty, .dlp-empty, .ps-empty):not(td) {
+  padding: 34px 20px;
+  border: 1px dashed var(--db-line);
+  border-radius: 12px;
+  background: var(--db-surf2);
+  color: var(--db-tx2);
+  text-align: center;
+  font-size: .88rem;
+  line-height: 1.55;
+}

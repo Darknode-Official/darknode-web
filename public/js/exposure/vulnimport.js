@@ -83,6 +83,7 @@ const CSS = `
   .vim-list tr[data-i]{cursor:pointer}
   .vim-list tr[data-i]:hover,.vim-list tr.sel{background:var(--bg,#f7f8fb)}
   .vim-pill{display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 8px;border-radius:999px;color:#fff;background:#667085;white-space:nowrap}
+  .vim-list tbody>tr:has(>td>.vim-pill:is(.P4,.low))>td:first-child{box-shadow:inset 4px 0 0 #2f7d9e}.vim-list tbody>tr:has(>td>.vim-pill:is(.P3,.medium))>td:first-child{box-shadow:inset 4px 0 0 #b58100}.vim-list tbody>tr:has(>td>.vim-pill:is(.P2,.high))>td:first-child{box-shadow:inset 4px 0 0 #d9480f}.vim-list tbody>tr:has(>td>.vim-pill:is(.P1,.critical))>td:first-child{box-shadow:inset 4px 0 0 #b00020}
   .vim-pill.critical,.vim-pill.P1{background:#7a0012}.vim-pill.high,.vim-pill.P2{background:#b00020}.vim-pill.medium,.vim-pill.P3{background:#b58100}.vim-pill.low,.vim-pill.P4{background:#2552c6}.vim-pill.info{background:#667085}
   .vim-chip{display:inline-block;font-size:.7rem;border:1px solid var(--line,#d7dbe3);border-radius:6px;padding:1px 6px;margin:1px 4px 1px 0;color:var(--mut,#667085);white-space:nowrap}
   .vim-chip.kev{color:#7a0012;border-color:#7a0012;font-weight:700}
@@ -117,7 +118,7 @@ const CSS = `
   @media (max-width:560px){.vim-field,.vim-filters .vim-field{flex:1 1 100%}.vim-dl{grid-template-columns:1fr}.vim-card{padding:14px}}
 `;
 
-const kpi = (v, l) => '<div class="' + P + '-kpi"><b>' + esc(v == null ? "-" : v) + "</b><span>" + esc(l) + "</span></div>";
+const kpi = (v, l, c) => '<div class="' + P + '-kpi' + (c ? " " + c : "") + '"><b>' + esc(v == null ? "-" : v) + "</b><span>" + esc(l) + "</span></div>";
 const pill = (s) => (s ? '<span class="' + P + "-pill " + esc(s) + '">' + esc(s) + "</span>" : "");
 const confClass = (c) => (c >= 0.8 ? "high" : c >= 0.5 ? "medium" : "low");
 const yn = (v) => (v === true ? "yes" : v === false ? "no" : "");
@@ -132,7 +133,7 @@ function table(cols, rows, sort, onSort, rowKey, limit) {
   const sorted = sortBy(rows, sort.key, sort.dir, (cols.find((c) => c.key === sort.key) || {}).rank);
   const shown = limit ? sorted.slice(0, limit) : sorted;
   const el = document.createElement("div");
-  el.className = P + "-list";
+  el.className = P + "-list dn-scrollbox";
   el.innerHTML = "<table><thead><tr>" + cols.map((c) => '<th data-k="' + esc(c.key) + '" class="' + (sort.key === c.key ? "on " + sort.dir : "") + '">' + esc(c.label) + "</th>").join("") + "</tr></thead><tbody>" +
     shown.map((r) => '<tr data-i="' + esc(rowKey(r)) + '">' + cols.map((c) => "<td>" + (c.render ? c.render(r) : esc(r[c.key] == null ? "" : r[c.key])) + "</td>").join("") + "</tr>").join("") + "</tbody></table>";
   el.querySelectorAll("th").forEach((th) => th.addEventListener("click", () => { const k = th.dataset.k; onSort({ key: k, dir: sort.key === k && sort.dir === "desc" ? "asc" : "desc" }); }));
@@ -380,7 +381,7 @@ export function renderVulnImport(main) {
   // ---- results ----
   function render() {
     const r = result, s = r.summary;
-    $("kpis").innerHTML = kpi(s.assets, "assets") + kpi(s.open, "open vulns") + kpi(s.uniqueCves, "unique CVEs") + kpi(s.kev, "KEV") + kpi(s.P1, "P1") + kpi(s.overdue, "overdue") +
+    $("kpis").innerHTML = kpi(s.assets, "assets") + kpi(s.open, "open vulns") + kpi(s.uniqueCves, "unique CVEs") + kpi(s.kev, "KEV", s.kev ? "kpi-critical" : "") + kpi(s.P1, "P1", s.P1 ? "kpi-critical" : "") + kpi(s.overdue, "overdue", s.overdue ? "kpi-high" : "") +
       kpi(s.fixed, s.baseline ? "fixed since baseline" : "fixed (scanner)") + kpi(s.meanTimeToRemediate == null ? "-" : s.meanTimeToRemediate + " d", "MTTR (n=" + s.mttrSamples + ")");
     const live = $("live");
     live.disabled = !s.missingEpss.length;
@@ -442,7 +443,7 @@ export function renderVulnImport(main) {
 
   function staticTable(cols, rows) {
     const el = document.createElement("div");
-    el.className = P + "-list";
+    el.className = P + "-list dn-scrollbox";
     el.innerHTML = "<table><thead><tr>" + cols.map((c) => "<th>" + esc(c.label) + "</th>").join("") + "</tr></thead><tbody>" +
       rows.map((r) => "<tr>" + cols.map((c) => "<td>" + (c.render ? c.render(r) : esc(r[c.key] == null ? "-" : r[c.key])) + "</td>").join("") + "</tr>").join("") + "</tbody></table>";
     return el;

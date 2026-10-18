@@ -87,9 +87,9 @@ const CSS = `<style id="cs-css">
 .cs-side .hd{display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-bottom:1px solid var(--cs-line);font-size:12px;font-weight:650;color:var(--cs-mut);text-transform:uppercase;letter-spacing:.04em;flex:none}
 .cs-side .hd .cs-in{height:28px;text-transform:none;letter-spacing:0;font-weight:400}
 .cs-scroll{overflow:auto;min-height:0;flex:1}
-.cs-file{display:flex;align-items:center;gap:8px;width:100%;min-height:34px;padding:4px 12px;border:0;background:none;font:inherit;font-size:12.5px;color:var(--cs-txt);cursor:pointer;text-align:left}
+.cs-file{display:flex;align-items:center;gap:8px;width:calc(100% - 12px);min-height:34px;margin:2px 6px;padding:4px 10px;border:1px solid var(--cs-line);border-radius:6px;background:color-mix(in srgb,var(--cs-txt) 2%,transparent);font:inherit;font-size:12.5px;color:var(--cs-txt);cursor:pointer;text-align:left}
 .cs-file:hover{background:color-mix(in srgb,var(--cs-txt) 4%,transparent)}
-.cs-file.on{background:color-mix(in srgb,var(--cs-acc) 9%,transparent)}
+.cs-file.on{border-color:var(--cs-acc);background:color-mix(in srgb,var(--cs-acc) 9%,transparent)}
 .cs-file .p{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
 .cs-n{min-width:20px;height:18px;padding:0 5px;border-radius:999px;font-size:11px;font-weight:700;color:#fff;display:inline-flex;align-items:center;justify-content:center}
 .cs-codehd{display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border-bottom:1px solid var(--cs-line);font-size:13px;min-width:0}
@@ -123,7 +123,7 @@ const CSS = `<style id="cs-css">
 .cs-ln.flash{animation:csflash 1.2s ease-out}
 @keyframes csflash{from{background:color-mix(in srgb,var(--cs-acc) 22%,transparent)}to{background:transparent}}
 .cs-sev{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:4px;font-size:11px;font-weight:700;color:#fff;background:var(--sev,#d92d20)}
-.cs-fd{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--cs-line);background:none;padding:10px 12px;font:inherit;cursor:pointer;color:var(--cs-txt)}
+.cs-fd{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--cs-line);border-left:4px solid var(--sev,var(--cs-line));background:color-mix(in srgb,var(--sev,transparent) 4%,transparent);padding:10px 12px;font:inherit;cursor:pointer;color:var(--cs-txt)}
 .cs-fd:hover{background:color-mix(in srgb,var(--cs-txt) 4%,transparent)}
 .cs-fd.on{background:color-mix(in srgb,var(--cs-acc) 9%,transparent)}
 .cs-fd .t1{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
