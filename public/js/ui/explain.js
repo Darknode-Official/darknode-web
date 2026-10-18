@@ -37,6 +37,7 @@ export const EXPLAIN = {
   "scene.cloud": { title: "Cloud Posture", body: "Paste IAM policies, bucket policies, security groups, Kubernetes manifests or Dockerfiles and get misconfigurations with fixes. Runs in your browser." },
   "scene.threat": { title: "Threats & Vulnerabilities", body: "The newest CVEs with severity, CISA known-exploited status and EPSS exploit probability, ranked so you can see what to patch first.", src: "NVD, CISA KEV and FIRST EPSS, fetched live." },
   "scene.invest": { title: "Investigations", body: "Browse and filter every entity in your security graph, with severity, status and relationships. Sample data is hidden unless you include it." },
+  "scene.inventory": { title: "Asset Inventory", body: "One deduplicated view of every host and identity your tools recorded — the same machine or person seen by several tools shown once — plus a coverage matrix of which control sources saw each. Read from your graph; nothing is uploaded." },
   "scene.reports": { title: "Reports", body: "Generate branded security reports from your own graph data: executive summary, findings register and attack-surface summary. Built in your browser; sample data is excluded and nothing is uploaded." },
   "scene.activity": { title: "Activity", body: "A time-ordered stream of what happened: tool results, graph changes, connections and AI use. Sample entries are labelled." },
   "scene.compliance": { title: "Frameworks", body: "Framework tools and self-assessments. Self-reported: they reflect what you enter, not an automated audit." },

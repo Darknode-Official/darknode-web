@@ -35,6 +35,7 @@ import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261015d";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
 import { mountFindingsQueue, repaintFindingsQueue, renderSlaSettings } from "/js/deck/findings-queue.js?v=20261017f";
+import { mountInventory, repaintInventory } from "/js/deck/inventory.js?v=20261017f";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -1579,7 +1580,7 @@ export function renderDeck(host, opts) {
     { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert], ["tool", "posture", "Posture Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificate Monitor", IC.cert], ["tool", "fwaudit", "Firewall Rule Audit", IC.shield], ["tool", "vulnimport", "Vulnerability Import", IC.alert], ["tool", "fleetcomply", "Fleet Compliance", IC.gauge], ["tool", "dmarcreports", "DMARC Reports", IC.link], ["tool", "domainguard", "Domain Guard", IC.radar], ["tool", "netexposure", "Network Scan Diff", IC.nodes]] },
     { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access", IC.shield], ["tool", "privaudit", "Privileged Access", IC.key], ["tool", "nhi", "Non-Human Identities", IC.gear], ["tool", "jml", "Offboarding Verifier", IC.check], ["tool", "oauthgov", "OAuth App Governance", IC.plug], ["tool", "vpnaudit", "Remote Access Audit", IC.lock]] },
     { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree], ["tool", "iacscan", "IaC Scanner", IC.code], ["tool", "k8saudit", "Kubernetes Audit", IC.nodes], ["tool", "licenseaudit", "License Compliance", IC.scale], ["tool", "apispec", "API Security Review", IC.plug]] },
-    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "investigation", "Investigation Workspace", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Log Hunter", IC.cloud], ["tool", "dnshunt", "DNS Hunt", IC.search], ["tool", "proxyhunt", "Web Gateway Hunt", IC.eye], ["tool", "pentestreg", "Finding Tracker", IC.wrench]] },
+    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "inventory", "Asset Inventory", IC.grid], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "investigation", "Investigation Workspace", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Log Hunter", IC.cloud], ["tool", "dnshunt", "DNS Hunt", IC.search], ["tool", "proxyhunt", "Web Gateway Hunt", IC.eye], ["tool", "pentestreg", "Finding Tracker", IC.wrench]] },
     { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale], ["tool", "apforensics", "AP Forensics", IC.coins], ["tool", "cardaudit", "Card Audit", IC.brief], ["tool", "payrollguard", "Payroll Integrity", IC.note], ["tool", "cloudspend", "Cloud Spend Anomaly", IC.gauge]] },
     { id: "risk", g: "Risk & Resilience", items: [["tool", "breachclock", "Breach Clock", IC.bell], ["tool", "riskreg", "Risk Register", IC.scale], ["tool", "vendorrisk", "Third-Party Risk", IC.nodes], ["tool", "backupready", "Backup Readiness", IC.folder]] },
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection Scanner", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key], ["tool", "evidence", "Control Evidence", IC.book], ["tool", "dataflow", "Processing Register", IC.folder], ["tool", "awareness", "Awareness Analytics", IC.pulse]] },
@@ -1702,6 +1703,8 @@ export function renderDeck(host, opts) {
 
     <div class="dk-scene dk-inv dk-fnd" id="dkFindings" hidden></div>
 
+    <div class="dk-scene dk-inv" id="dkInventory" hidden></div>
+
     <div class="dk-scene dk-inv dk-sect" id="dkSection" hidden></div>
 
     <div class="dk-scene dk-ov" id="dkActivity" hidden></div>
@@ -1760,7 +1763,7 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports", team: "#dkTeam" };
+  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", inventory: "#dkInventory", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports", team: "#dkTeam" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
@@ -1805,6 +1808,7 @@ export function renderDeck(host, opts) {
     else if (scene === "toolkit") renderToolkit();
     else if (scene === "invest") renderInvest();
     else if (scene === "findings") renderFindings();
+    else if (scene === "inventory") renderInventory();
     else if (scene === "section") renderSection();
     else if (scene === "activity") renderActivity();
     else if (scene === "plans") renderPlans();
@@ -2049,6 +2053,7 @@ export function renderDeck(host, opts) {
         m.updateEntity(id, { status: ev.target.value });
         toast("Status set to " + ev.target.value);
         if (curScene === "findings") withGraph(paintFindings);
+        else if (curScene === "inventory") withGraph(repaintInventory);
         else if (curScene === "invest") withGraph(paintInvTable);
       };
       drawerBody.querySelector('[data-act="graph"]').onclick = () => { drawer.classList.remove("on"); openTool("secgraph", secLabel["secgraph"] || "Security Graph"); };
@@ -2472,6 +2477,7 @@ export function renderDeck(host, opts) {
       else if (curScene === "invest") renderInvest();
       else if (curScene === "activity") renderActivity();
       else if (curScene === "findings") withGraph(paintFindings);
+      else if (curScene === "inventory") withGraph(repaintInventory);
       else if (curScene === "section") renderSection();
     }, 400);
   };
@@ -3309,6 +3315,7 @@ export function renderDeck(host, opts) {
     openTool: (id) => openTool(id, secLabel[id] || id), toolLabel: (id) => secLabel[id] || null, onboardHtml: ONBOARD, isActive: () => curScene === "findings" && sceneWork.hidden });
   function renderFindings(){ mountFindingsQueue(sceneEls.findings, fqCtx()); }
   function paintFindings(m){ repaintFindingsQueue(m); }
+  function renderInventory(){ mountInventory(sceneEls.inventory, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, agoISO: agoISO, toast }); }
 
   // ---------- Section overview pages (one per sidebar group) ----------
   // What each section covers in the graph, and which integrations feed it. Coverage is
