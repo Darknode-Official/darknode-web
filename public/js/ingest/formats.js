@@ -6,6 +6,12 @@
 // Finding contract (subset we populate):
 //   { title, severity, category?, description?, recommendation?, status?,
 //     controls?:[{framework,id}], assets?:[{type,name,data?}], tags?, evidence? }
+//
+// Beyond the three JSON formats below, any native scanner export the vulnimport engine
+// already parses (Nessus/Qualys/OpenVAS XML, Trivy/Grype/Snyk JSON, Defender/Rapid7/CSV)
+// falls through to that engine, which emits the same Finding contract. Same engine the
+// browser drop zone uses — no second, divergent parser.
+import { detectFormat as vulnDetectFormat, analyze as vulnAnalyze, FORMATS as VULN_FORMATS } from "../exposure/vulnimport-engine.js";
 
 const SEV = ["critical", "high", "medium", "low", "info"];
 const str = (v) => String(v == null ? "" : v).trim();
@@ -103,16 +109,97 @@ export function parseCycloneDX(obj) {
 }
 
 const PARSERS = { findings: parseFindingContract, sarif: parseSarif, cyclonedx: parseCycloneDX };
-export const SUPPORTED_FORMATS = Object.keys(PARSERS);
+// What the ingest endpoint advertises: the three native JSON contracts plus every scanner
+// export the vulnimport engine understands (minus "baseline", which is this tool's own JSON).
+export const SUPPORTED_FORMATS = [...Object.keys(PARSERS), ...Object.keys(VULN_FORMATS).filter((f) => f !== "baseline" && !Object.keys(PARSERS).includes(f))];
+
+const UNRECOGNISED = "unrecognised format — expected the Finding JSON contract, SARIF 2.1.0, CycloneDX, or a supported scanner export (Nessus, Qualys, OpenVAS, Trivy, Grype, Snyk, Rapid7, Defender or a CSV with asset and CVE columns)";
+
+const SCAN_ROW_CAP = 10000; // protect the graph / queue from a pathologically large export
+
+// Map one open register row (as the engine computed it) to a Finding. This is a thin
+// presentation of the engine's own fields — not a second parser — so ingest brings the
+// scanned vulnerabilities into the graph as ASSET + VULNERABILITY entities with affects
+// links, the same data the vulnimport tool's "Add to Security Graph" button produces.
+function rowToFinding(row) {
+  const cve = str(row.cve);
+  const asset = str(row.assetName) || str(row.assetKey) || "unknown asset";
+  const label = cve || str(row.title) || "Vulnerability";
+  const title = (cve && row.title ? `${cve} — ${str(row.title)}` : label) + " on " + asset;
+  const descParts = [];
+  if (row.title && cve) descParts.push(str(row.title) + ".");
+  if (row.package) descParts.push(`Affects ${str(row.package)}${row.installed ? " " + str(row.installed) : ""}${row.fixedVersion ? " (fixed in " + str(row.fixedVersion) + ")" : ""}.`);
+  if (row.cvss != null) descParts.push(`CVSS ${row.cvss}${row.cvssSource ? " (" + str(row.cvssSource) + ")" : ""}.`);
+  if (row.epss != null) descParts.push(`EPSS ${row.epss}.`);
+  if (row.kev) descParts.push("In the CISA Known Exploited Vulnerabilities catalog" + (row.ransomware ? ", used in ransomware campaigns" : "") + ".");
+  if (row.scanners) descParts.push("Reported by " + str(row.scanners) + ".");
+  const controls = [{ framework: "CIS v8", id: "7.7" }];
+  if (row.kev) controls.push({ framework: "CISA", id: "BOD 22-01" });
+  const vulnData = {};
+  if (row.cvss != null) vulnData.cvss = row.cvss;
+  if (row.epss != null) vulnData.epss = row.epss;
+  if (row.kev) { vulnData.kev = true; if (row.kevDue) vulnData.kevDue = str(row.kevDue); if (row.ransomware) vulnData.ransomware = true; }
+  if (row.title) vulnData.title = str(row.title);
+  const assetData = {};
+  for (const k of ["ip", "fqdn", "os", "kind"]) if (row[k]) assetData[k] = str(row[k]);
+  const assets = [];
+  if (cve) assets.push({ type: "VULNERABILITY", name: cve, data: vulnData });
+  assets.push({ type: "ASSET", name: asset, data: assetData });
+  const out = {
+    title,
+    severity: SEV.includes(str(row.severity).toLowerCase()) ? str(row.severity).toLowerCase() : "info",
+    category: "vulnerability",
+    description: descParts.join(" ") || (label + " reported on " + asset + "."),
+    recommendation: str(row.solution) || (row.fixedVersion ? `Upgrade ${str(row.package) || "the affected component"} to ${str(row.fixedVersion)} or later.` : "Patch or apply the vendor mitigation on the affected asset."),
+    controls,
+    assets,
+    evidence: [{ asset, cve: cve || undefined, package: str(row.package) || undefined, installed: str(row.installed) || undefined, fixedVersion: str(row.fixedVersion) || undefined, port: str(row.port) || undefined, scanners: str(row.scanners) || undefined }],
+    tags: ["vulnerability", ...(row.kev ? ["kev"] : []), ...(row.internetFacing ? ["internet-facing"] : [])],
+  };
+  if (row.references) out.references = str(row.references);
+  return out;
+}
+
+// Run the shared vulnimport engine over a raw scanner export. No feeds (KEV/EPSS) are
+// passed, so there is no enrichment and no network — the engine stays pure. An unrecognised
+// export comes back with format "unknown".
+function parseScannerExport(text) {
+  try {
+    const det = vulnDetectFormat(text);
+    if (!det || det.format === "unknown") return { format: "unknown", findings: [], errors: [] };
+    const r = vulnAnalyze([{ name: "ingest", text }]);
+    const rows = ((r.tables && r.tables.vulns) || []).filter((v) => v && v.status !== "fixed" && !v.aggregate);
+    const errors = (r.skipped || []).map((s) => (s && s.reason) || String(s));
+    let use = rows;
+    if (rows.length > SCAN_ROW_CAP) { use = rows.slice(0, SCAN_ROW_CAP); errors.push(`export has ${rows.length} vulnerabilities; ingesting the first ${SCAN_ROW_CAP}`); }
+    return { format: det.format, findings: use.map(rowToFinding), errors };
+  } catch (e) { return { format: "unknown", findings: [], errors: ["scanner parse failed: " + ((e && e.message) || e)] }; }
+}
 
 // ingestToFindings(input) -> { format, findings, errors }
-// input: a JSON string or an already-parsed object. Never throws.
+// input: a raw string (JSON, XML or CSV export) or an already-parsed object. Never throws.
 export function ingestToFindings(input) {
-  let obj = input;
-  if (typeof input === "string") { try { obj = JSON.parse(input); } catch (e) { return { format: "unknown", findings: [], errors: ["invalid JSON: " + (e.message || e)] }; } }
-  const format = detectFormat(obj);
+  if (typeof input === "string") {
+    const t = input.replace(/^﻿/, "").trimStart();
+    if (t[0] === "{" || t[0] === "[") {
+      let obj;
+      try { obj = JSON.parse(input); } catch (e) { return { format: "unknown", findings: [], errors: ["invalid JSON: " + (e.message || e)] }; }
+      const format = detectFormat(obj);
+      const parser = PARSERS[format];
+      if (parser) { const r = parser(obj); return { format, findings: r.findings, errors: r.errors }; }
+      // Valid JSON but not a native contract — maybe a scanner's own JSON (Trivy/Grype/Snyk).
+      const sc = parseScannerExport(input);
+      if (sc.format !== "unknown") return sc;
+      return { format: "unknown", findings: [], errors: [UNRECOGNISED] };
+    }
+    // Non-JSON text: XML / CSV scanner exports go straight to the engine.
+    const sc = parseScannerExport(input);
+    if (sc.format !== "unknown") return sc;
+    return { format: "unknown", findings: [], errors: sc.errors.length ? sc.errors : [UNRECOGNISED] };
+  }
+  const format = detectFormat(input);
   const parser = PARSERS[format];
-  if (!parser) return { format, findings: [], errors: ["unrecognised format — expected the Finding JSON contract, SARIF 2.1.0 or CycloneDX"] };
-  const r = parser(obj);
+  if (!parser) return { format, findings: [], errors: [UNRECOGNISED] };
+  const r = parser(input);
   return { format, findings: r.findings, errors: r.errors };
 }

@@ -43,7 +43,7 @@ export function mountApiKeys(el, ctx) {
   injectStyle();
   S.ctx = ctx || S.ctx; S.el = el; S.created = null;
   el.innerHTML = `
-    <div class="dk-ovhead"><div><h1>API &amp; Ingest</h1><p>Issue a workspace API key and push findings in from CI — SARIF, CycloneDX or the Finding JSON contract. Keys are shown once and stored only as a hash. Ingested findings land in your Security Graph exactly like a tool's own results.</p></div></div>
+    <div class="dk-ovhead"><div><h1>API &amp; Ingest</h1><p>Issue a workspace API key and push findings in from CI — SARIF, CycloneDX, the Finding JSON contract, or a native scanner export (Nessus, Qualys, OpenVAS, Trivy, Grype, Snyk, Rapid7, Defender). Keys are shown once and stored only as a hash. Ingested findings land in your Security Graph exactly like a tool's own results.</p></div></div>
     <div class="dk-ovp" id="apikBody"><div class="dk-loading"><span class="sp"></span>Loading…</div></div>`;
   load();
 }
@@ -94,7 +94,7 @@ function paint() {
     <h2 style="font-size:14px;margin:0 0 7px">Keys</h2>
     ${keyHtml}
     <div class="apik-panel"><h2>Push findings from CI</h2>
-      <p class="apik-sub">POST SARIF, CycloneDX or the Finding JSON contract to the ingest endpoint with your key. Then click “Pull ingested findings” here (or it syncs when you open the Deck).</p>
+      <p class="apik-sub">POST SARIF, CycloneDX, the Finding JSON contract, or a scanner export (Nessus, Trivy, Snyk and others) to the ingest endpoint with your key. The Deck pulls them in when you open it; or click “Pull ingested findings” to sync now.</p>
       <div class="apik-pre">${E(curl)}</div>
       <h2 style="font-size:13px;margin:14px 0 6px">GitHub Actions step</h2>
       <div class="apik-pre">${E(gha)}</div>

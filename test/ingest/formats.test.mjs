@@ -1,6 +1,6 @@
 // Unit tests for public/js/ingest/formats.js — ingest format parsers.
 import { test, group, assert } from "../harness.mjs";
-import { detectFormat, parseFindingContract, parseSarif, parseCycloneDX, ingestToFindings } from "../../public/js/ingest/formats.js";
+import { detectFormat, parseFindingContract, parseSarif, parseCycloneDX, ingestToFindings, SUPPORTED_FORMATS } from "../../public/js/ingest/formats.js";
 
 group("formats/detect", () => {
   test("detects SARIF, CycloneDX and the Finding contract", () => {
@@ -77,5 +77,44 @@ group("formats/ingestToFindings", () => {
   test("invalid JSON and unknown formats are errors, not throws", () => {
     assert.ok(ingestToFindings("{not json").errors[0].includes("invalid JSON"));
     assert.ok(ingestToFindings({ foo: 1 }).errors.length === 1);
+  });
+});
+
+group("formats/native scanner exports", () => {
+  const trivy = JSON.stringify({ SchemaVersion: 2, ArtifactName: "app:latest", Results: [{ Target: "app", Vulnerabilities: [{ VulnerabilityID: "CVE-2021-44228", PkgName: "log4j", InstalledVersion: "2.14", FixedVersion: "2.17", Severity: "CRITICAL", Title: "Log4Shell" }] }] });
+  test("a Trivy JSON export becomes one finding per open vulnerability", () => {
+    const r = ingestToFindings(trivy);
+    assert.equal(r.format, "trivy");
+    assert.equal(r.findings.length, 1);
+    const f = r.findings[0];
+    assert.equal(f.severity, "critical");
+    assert.equal(f.category, "vulnerability");
+    assert.ok(/CVE-2021-44228/.test(f.title));
+    const types = f.assets.map((a) => a.type).sort();
+    assert.deepEqual(types, ["ASSET", "VULNERABILITY"]);
+  });
+  test("a Snyk JSON export (no bomFormat) routes to the engine, not CycloneDX", () => {
+    const snyk = JSON.stringify({ vulnerabilities: [{ id: "SNYK-1", title: "Prototype Pollution", severity: "high", identifiers: { CVE: ["CVE-2020-0001"] }, packageName: "lodash", version: "4.17.0" }], projectName: "svc" });
+    const r = ingestToFindings(snyk);
+    assert.equal(r.format, "snyk");
+    assert.ok(r.findings.length >= 1);
+  });
+  test("a Nessus v2 XML export is parsed to findings", () => {
+    const nessus = `<?xml version="1.0"?><NessusClientData_v2><Report name="r"><ReportHost name="host1.test.darknode.ai"><ReportItem port="443" severity="4" pluginID="1" pluginName="Critical flaw"><risk_factor>Critical</risk_factor><cve>CVE-2023-0001</cve><description>d</description><solution>Patch</solution></ReportItem></ReportHost></Report></NessusClientData_v2>`;
+    const r = ingestToFindings(nessus);
+    assert.equal(r.format, "nessus-xml");
+    assert.ok(r.findings.length >= 1);
+    assert.ok(r.findings.every((f) => f.assets.some((a) => a.type === "ASSET")));
+  });
+  test("ingest is deterministic for the same export", () => {
+    assert.equal(JSON.stringify(ingestToFindings(trivy)), JSON.stringify(ingestToFindings(trivy)));
+  });
+  test("SUPPORTED_FORMATS advertises the native scanner formats", () => {
+    for (const f of ["findings", "sarif", "cyclonedx", "nessus-xml", "trivy", "snyk"]) assert.ok(SUPPORTED_FORMATS.includes(f), "missing " + f);
+  });
+  test("a non-JSON, non-scanner blob is unrecognised, not a throw", () => {
+    const r = ingestToFindings("just some prose not a scan");
+    assert.equal(r.format, "unknown");
+    assert.ok(r.errors.length >= 1);
   });
 });

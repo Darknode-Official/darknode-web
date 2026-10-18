@@ -2455,7 +2455,7 @@ export function renderDeck(host, opts) {
   const SYNC_LABEL = { local: "Local only", syncing: "Syncing…", synced: "Synced", error: "Sync error" };
   const syncEnabled = () => { try { return localStorage.getItem("dn_graph_sync_on") === "1"; } catch (_) { return false; } };
   let lastSyncState = (syncEnabled() || activeWorkspace()) ? "syncing" : "local";
-  const onSyncStatus = (e) => { lastSyncState = (e.detail && e.detail.state) || "local"; const el = root.querySelector("#dkSyncStat"); if (el) { el.textContent = SYNC_LABEL[lastSyncState] || "Local only"; el.dataset.state = lastSyncState; } };
+  const onSyncStatus = (e) => { lastSyncState = (e.detail && e.detail.state) || "local"; const el = root.querySelector("#dkSyncStat"); if (el) { el.textContent = SYNC_LABEL[lastSyncState] || "Local only"; el.dataset.state = lastSyncState; } if (lastSyncState === "synced") { try { autoDrainIngest(); } catch (_) {} } };
   document.addEventListener("graph-sync:status", onSyncStatus);
   busOffs.push(() => document.removeEventListener("graph-sync:status", onSyncStatus));
   // Resume sync across sessions. A team workspace always syncs (that is how its members
@@ -2464,6 +2464,23 @@ export function renderDeck(host, opts) {
   { const _aw = activeWorkspace();
     if (_aw) { try { startGraphSync({ workspaceId: _aw }).catch(() => {}); } catch (_) {} }
     else if (syncEnabled()) { try { startGraphSync().catch(() => {}); } catch (_) {} } }
+
+  // Pull any findings a CI pipeline sent to the ingest API into the graph, once per
+  // session, through the normal sink. No-op without the proxy / sign-in / write role.
+  let _ingestDrained = false;
+  async function autoDrainIngest() {
+    if (_ingestDrained) return; _ingestDrained = true;
+    try {
+      const { ingestAvailable, drainIngest } = await import("/js/deck/ingest-client.js");
+      if (!ingestAvailable()) return;
+      const r = await drainIngest();
+      const n = (r.created || 0) + (r.updated || 0);
+      if (r.batches && n) { toast(`Pulled ${n} finding${n === 1 ? "" : "s"} sent to the ingest API`, "success"); if (curScene === "findings") withGraph(paintFindings); else if (curScene === "inventory") withGraph(repaintInventory); }
+    } catch (_) {}
+  }
+  // onSyncStatus fires the drain once the graph reaches "synced"; this fallback covers the
+  // case where sync is off (ingest only needs the proxy and sign-in, not graph sync).
+  { const _dt = setTimeout(() => { try { autoDrainIngest(); } catch (_) {} }, 6000); busOffs.push(() => clearTimeout(_dt)); }
 
   busOffs.push(bus.on(EVENTS.ENTITY_CREATED, (p) => pushNotif(`Entity added to the graph${p && (p.label || p.name) ? `: ${p.label || p.name}` : p && p.type ? `: ${p.type}` : ""}`)));
   busOffs.push(bus.on(EVENTS.RELATIONSHIP_CREATED, () => pushNotif("New relationship created in the security graph")));
