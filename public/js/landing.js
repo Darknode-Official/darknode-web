@@ -237,7 +237,7 @@ export function renderLanding(view, actions) {
               <div class="tlv-visual">
                 <div class="term-window demo-term">
                   <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">terminal</span></div>
-                  <pre class="tw-body"><span class="c-pl">$</span> npm i -g darknode-cli\n<span class="c-mut">+ darknode-cli@2.14.0</span>\n<span class="c-mut">added 1 package in 3.2s</span>\n\n<span class="c-pl">$</span> darknode --version\n<span class="c-ok">darknode v2.14.0</span></pre>
+                  <pre class="tw-body"><span class="c-pl">$</span> npm i -g darknode-cli\n<span class="c-mut">+ darknode-cli@2.46.1</span>\n<span class="c-mut">added 1 package in 3.2s</span>\n\n<span class="c-pl">$</span> darknode --version\n<span class="c-ok">darknode v2.46.1</span></pre>
                 </div>
               </div>
             </div>

@@ -4,8 +4,6 @@
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-const REL = "https://github.com/Darknode-Official/darknode-web/releases/download/darknode";
-
 // features shown in the grid: [command/label, title, description, tag?]
 const FEATURES = [
   ["/race", "Race cloud vs local", "Run the same prompt on Claude <b>and</b> your local model at once, see every answer, keep the best. No other agent does this.", "unique"],
@@ -62,10 +60,10 @@ export function renderCliCoder(main) {
       <h1 class="nx-title">Code with cloud and local AI —<br>on your terms.</h1>
       <p class="nx-sub">Nexus is a single dependency-free binary that drives <b>Claude</b>, your <b>local</b> models, or <b>OpenCode</b> from one terminal UI. It reads &amp; writes files, runs commands, checkpoints every change, shows your real cost live, and keeps your secrets off the cloud.</p>
       <div class="nx-cta">
-        <a class="btn lg" href="${REL}/Darknode-cli-linux" download>Download · Linux</a>
-        <a class="btn lg ghost" href="${REL}/Darknode-cli-windows.exe" download>Download · Windows</a>
+        <pre class="code-block cta-cmd"><button class="cb-copy">copy</button><code>npm i -g darknode-cli</code></pre>
         <button class="btn lg ghost" data-sec="downloads">All builds</button>
       </div>
+      <p class="nx-sub" style="margin-top:8px;opacity:.75">Works everywhere Node 18+ runs — Linux, macOS, Windows. Then run <code>nexus</code>.</p>
       ${terminalMock()}
     </section>
 
@@ -104,29 +102,28 @@ export function renderCliCoder(main) {
         <tr><td>MCP servers &amp; project hooks</td><td class="yes">Yes</td><td>Yes</td></tr>
         <tr><td>Nexus-driven parallel sub-agents</td><td class="yes">Yes (/agents)</td><td>Its own</td></tr>
         <tr><td>Security toolkit (scan, recon, VM labs)</td><td class="yes">Yes</td><td>No</td></tr>
-        <tr><td>Single self-contained binary</td><td class="yes">Yes</td><td>Needs Node + npm</td></tr>
+        <tr><td>Dependencies</td><td class="yes">Zero — one self-contained file</td><td>npm dependency tree</td></tr>
         <tr><td>Price</td><td class="yes">Free</td><td>Subscription</td></tr>
       </tbody>
     </table>
     </div>
 
     <h2 class="nx-h2">Get started</h2>
-    <pre class="code-block"><button class="cb-copy">copy</button><code># install the Darknode CLI (npm i -g darknode-cli) — it installs Ollama + local models for you:
-darknode nexus init              # scaffold .nexus/ (project context Nexus reads each session)
-darknode nexus --tui             # full-screen UI (Claude if installed, else local)
-darknode nexus --tui -e ollama   # drive a 100% local, private agent</code></pre>
+    <pre class="code-block"><button class="cb-copy">copy</button><code>npm i -g darknode-cli   # one install; sets up free local AI on first run
+nexus                   # start the agent (Claude if installed, else local)
+nexus init              # optional: scaffold .nexus/ project context
+nexus --tui -e ollama   # drive a 100% local, private agent</code></pre>
     <div class="btns" style="margin:12px 0;flex-wrap:wrap;gap:8px">
-      <a class="btn" href="${REL}/Darknode-cli-linux" download>CLI · Linux</a>
-      <a class="btn" href="${REL}/Darknode-cli-windows.exe" download>CLI · Windows</a>
+      <a class="btn" href="https://www.npmjs.com/package/darknode-cli" target="_blank" rel="noopener">View on npm</a>
       <button class="btn ghost" data-sec="dlguide">Download guide</button>
     </div>
 
     <h2 class="nx-h2">Autonomous runs</h2>
     <p class="nx-lead">Give Nexus a big goal; it plans, executes, verifies and checkpoints so it can run for hours and resume.</p>
-    <pre class="code-block"><button class="cb-copy">copy</button><code>darknode nexus run "build a REST API with tests" --engine hybrid
-darknode nexus overnight "refactor and fix all failing tests" --until 07:00
-darknode nexus agents "add tests" "write docs" "fix lint"   # parallel
-darknode nexus run --resume                                 # continue where it left off</code></pre>
+    <pre class="code-block"><button class="cb-copy">copy</button><code>nexus run "build a REST API with tests" --engine hybrid
+nexus overnight "refactor and fix all failing tests" --until 07:00
+nexus agents "add tests" "write docs" "fix lint"   # parallel
+nexus run --resume                                 # continue where it left off</code></pre>
     <p class="muted" style="margin-top:16px">Prefer a GUI? The same agent — plus recon, exploitation and VM-lab tools — lives in the <button class="linklike" data-sec="downloads">desktop app</button>'s Assistant.</p>`;
 
   main.querySelectorAll(".cb-copy").forEach((b) => b.addEventListener("click", () => {
