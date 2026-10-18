@@ -20,9 +20,11 @@
 import { handleVault } from "./vault.js";
 import { handleGraph } from "./graph.js";
 import { handleMonitor } from "./monitor.js";
+import { handleKeys, handleIngest } from "./ingest.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
 export { MonitorDO } from "./monitor.js";
+export { IngestDO } from "./ingest.js";
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -546,6 +548,9 @@ export default {
     if (pathname.startsWith("/api/vault/")) return handleVault(request, env, pathname.slice(11), json);
     if (pathname.startsWith("/api/graph/")) return handleGraph(request, env, pathname.slice(11), json);
     if (pathname.startsWith("/api/monitor/")) return handleMonitor(request, env, pathname.slice(13), json);
+    if (pathname.startsWith("/api/keys/")) return handleKeys(request, env, pathname.slice(10), json);
+    if (pathname.startsWith("/api/v1/ingest/")) return handleIngest(request, env, pathname.slice(15), json, "ingest");
+    if (pathname.startsWith("/api/v1/findings/")) return handleIngest(request, env, pathname.slice(17), json, "findings");
     if (pathname !== "/api/chat") return json({ error: "Not found" }, 404);
     if (request.method !== "POST") return json({ error: "POST only" }, 405);
 

@@ -34,6 +34,12 @@ class_name = "GraphDO"
 name = "MONITOR"
 class_name = "MonitorDO"
 
+# Ingest API (Deck D5): one SQLite-backed Durable Object per workspace holding its
+# server-issued API keys (as SHA-256 hashes) and the ingest queue.
+[[durable_objects.bindings]]
+name = "INGEST"
+class_name = "IngestDO"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["VaultDO"]
@@ -45,3 +51,7 @@ new_sqlite_classes = ["GraphDO"]
 [[migrations]]
 tag = "v3"
 new_sqlite_classes = ["MonitorDO"]
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["IngestDO"]
