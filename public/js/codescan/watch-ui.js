@@ -510,16 +510,20 @@ export function createWatch(ctx) {
   }
 
   async function loadRuns(s) {
-    view.runsErr = "";
+    if (view.runsBusy) return;
+    view.runsBusy = true; view.runsErr = "";
+    const btn0 = body.querySelector("#cswRuns");
+    if (btn0) { btn0.disabled = true; btn0.textContent = "Loading…"; }
     try {
       const j = await gh.api(`/repos/${s.full}/actions/workflows/darknode-scan.yml/runs?per_page=15`);
       view.runs = j.workflow_runs || [];
     } catch (e) {
       view.runs = null;
       view.runsErr = isRate(e) ? e.message : e.status === 404 ? `No ${WORKFLOW_PATH} workflow was found in ${s.full}${gh.connected() ? ", or the token can't read its Actions" : " (a private repository needs a token with Actions: Read-only)"}.` : e.message;
-    }
+    } finally { view.runsBusy = false; }
     const el = body.querySelector("#cswRunList");
-    if (el && view.key === watchKey(s.full, s.branch)) { el.innerHTML = runsHtml(); const b = body.querySelector("#cswRuns"); if (b) b.textContent = "Refresh"; }
+    if (el && view.key === watchKey(s.full, s.branch)) el.innerHTML = runsHtml();
+    const b = body.querySelector("#cswRuns"); if (b) { b.disabled = false; b.textContent = "Refresh"; }
   }
 
   async function installWorkflow(s, yaml) {

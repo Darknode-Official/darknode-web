@@ -96,16 +96,20 @@ function _nsCheckPort(host, port, protocol) {
   });
 }
 
+function _nsWarnNoTarget() {
+  try { if (typeof window.showToast === 'function') window.showToast('Enter a hostname or IP to scan first.', 'warning'); } catch (_) {}
+}
+
 window._nsQuickScan = function() {
   var target = (document.getElementById('ns-target') || {}).value;
-  if (!target) return;
+  if (!target || !target.trim()) { _nsWarnNoTarget(); return; }
   target = target.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:.*$/, '');
   _nsScan(target, [80, 443, 8080, 8443]);
 };
 
 window._nsFullScan = function() {
   var target = (document.getElementById('ns-target') || {}).value;
-  if (!target) return;
+  if (!target || !target.trim()) { _nsWarnNoTarget(); return; }
   target = target.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:.*$/, '');
   _nsScan(target, _nsCommonPorts.map(function(p) { return p.port; }));
 };
@@ -138,7 +142,10 @@ function _nsScan(host, ports) {
         dnsEl.innerHTML = '<span style="color:#ff4444;font-size:10px;">DNS resolution failed</span>';
       }
     })
-    .catch(function() {});
+    .catch(function() {
+      var dnsEl = document.getElementById('ns-dns-info');
+      if (dnsEl) dnsEl.innerHTML = '<span style="color:#ff4444;font-size:10px;">DNS lookup unavailable (network or DoH blocked)</span>';
+    });
 
   // Port scan
   var completed = 0;

@@ -45,11 +45,13 @@ let TOPICS=[];
 async function _loadTopics(){
   if(TOPICS.length)return;
   const r=await fetch('/data/topics.json');
+  if(!r.ok)throw new Error('topics.json returned '+r.status);
   TOPICS=await r.json();
 }
 
 export async function renderLearnHub(main){
-await _loadTopics();
+try{await _loadTopics();}
+catch(e){main.innerHTML=`<div class="lh"><h1 class="pg-h1">Learn Hub</h1><p class="muted pg-sub">Couldn't load the learning content.<br><span style="font-size:.8rem">${esc(e&&e.message||e)} — check your connection and reload.</span></p></div>`;return;}
 const TOTAL_XP=TOPICS.reduce((s,t)=>s+t.xp,0);
 
 const prog=loadP();

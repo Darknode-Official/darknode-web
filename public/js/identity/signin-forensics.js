@@ -278,6 +278,9 @@ export function renderSigninForensics(main) {
       prog.textContent = `${fmtN(st.total)} rows read; ${fmtN(st.kept)} authentication events analysed in ${((performance.now() - t1) / 1000).toFixed(1)} s`
         + (st.nonAuth || st.badTs || st.noUser ? ` (dropped: ${fmtN(st.nonAuth)} non-authentication events, ${fmtN(st.badTs)} without a readable timestamp, ${fmtN(st.noUser)} without a user).` : ".");
       renderResults();
+    } catch (e) {
+      out.innerHTML = `<div class="sif-card sif-empty">Analysis failed.<br><span class="sif-note">${esc(e && e.message || e)}</span></div>`;
+      prog.textContent = "";
     } finally { running = false; $("sifRun").disabled = false; }
   }
 

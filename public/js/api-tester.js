@@ -293,6 +293,7 @@ export function renderAPITester(main) {
         }
 
         content.querySelector("#at-response").innerHTML = '<div style="color:var(--mut)">Sending...</div>';
+        var sendBtn = this; sendBtn.disabled = true;
         var startTime = performance.now();
         try {
           var fetchOpts = { method: method, headers: fetchHeaders, mode: "cors" };
@@ -366,7 +367,7 @@ export function renderAPITester(main) {
               '<div style="font-size:.78rem;color:var(--mut);margin-top:4px">Time: ' + elapsed2 + 'ms</div>' +
               '<div style="font-size:.78rem;color:var(--mut);margin-top:8px">Common causes: CORS policy blocking the request, network error, invalid URL, or the server is down.</div>' +
             '</div>';
-        }
+        } finally { sendBtn.disabled = false; }
       };
 
     } else if (tabId === "security") {
