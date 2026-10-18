@@ -4,6 +4,7 @@
 // correlation engine (core/correlate.js) and lists each hit with the findings that
 // make it up. Read-only — it never writes to the graph.
 import { correlate, RULES } from "../core/correlate.js";
+import { chokePoints } from "../core/paths.js";
 
 const S = { ctx: null, el: null, q: "", open: {} };
 
@@ -37,6 +38,13 @@ function injectStyle() {
 .cor-leglbl{font-size:12px;color:#5a6680;min-width:230px}
 .cor-finding{appearance:none;border:0;background:none;font:inherit;color:var(--dk-acc,#2552c6);font-weight:600;cursor:pointer;padding:0;text-align:left}
 .cor-finding:hover{text-decoration:underline}
+.cor-choke{border:1px solid rgba(37,82,198,.22);background:rgba(37,82,198,.04);border-radius:10px;padding:13px 15px;margin:0 0 16px}
+.cor-choke h2{font-size:13px;margin:0 0 3px;color:#141c2e}
+.cor-choke p{font-size:12px;color:#5a6680;margin:0 0 9px;line-height:1.5}
+.cor-chokerow{display:flex;align-items:baseline;gap:9px;padding:6px 0;border-top:1px dashed rgba(23,33,56,.1)}
+.cor-chokerow:first-of-type{border-top:0}
+.cor-choken{font-size:11px;font-weight:700;color:#2552c6;background:rgba(37,82,198,.12);border-radius:20px;padding:1px 9px;white-space:nowrap}
+.cor-chokewhy{font-size:12px;color:#5a6680}
 `;
   document.head.appendChild(st);
 }
@@ -60,15 +68,19 @@ function refresh() { if (S.ctx && S.el && S.el.isConnected && !S.el.hidden) S.ct
 export function repaintCorrelations(m) {
   if (!S.el || !S.el.isConnected || !S.ctx) return;
   const ents = m && m.listEntities ? m.listEntities() : [];
-  let hits = correlate(ents, { now: Date.now() });
+  const cp = chokePoints(ents, { now: Date.now() });
+  let hits = cp.chains;
   const q = S.q.trim().toLowerCase();
   if (q) hits = hits.filter((h) => (h.title + " " + h.subjectName + " " + h.attack.join(" ")).toLowerCase().includes(q));
   const box = S.el.querySelector("#corBody"); if (!box) return;
+  // Highest-leverage fixes: one finding that is a leg in two or more chains.
+  const choke = cp.findings.filter((f) => f.count >= 2).slice(0, 6);
+  const chokeHtml = (!q && choke.length) ? `<div class="cor-choke"><h2>Highest-leverage fixes</h2><p>These single findings each sit on more than one attack chain — fixing one closes several at once.</p>${choke.map((f) => `<div class="cor-chokerow"><span class="cor-choken">breaks ${f.count}</span><button class="cor-finding" data-fid="${E(f.findingId)}">${E(f.findingTitle)}</button><span class="cor-chokewhy">${E(f.chains.map((c) => c.title).join(" · "))}</span></div>`).join("")}</div>` : "";
   if (!hits.length) {
     box.innerHTML = `<div class="dk-nempty">No correlated attack chains${q ? " match" : " yet"}. Chains appear when two different tools flag the same resolved host or identity — for example run Conditional Access and VPN/Sign-in Forensics, then import a vulnerability scan alongside Attack Surface.</div>`;
     return;
   }
-  box.innerHTML = hits.map((h, i) => {
+  box.innerHTML = chokeHtml + hits.map((h, i) => {
     const on = S.open[h.ruleId + "|" + h.subjectKey];
     const legs = h.legs.map((l) => `<div class="cor-leg"><span class="cor-leglbl">${E(l.label)}</span><button class="cor-finding" data-fid="${E(l.findingId)}">${E(l.findingTitle)}</button></div>`).join("");
     return `<div class="cor-card${on ? " on" : ""}" data-key="${E(h.ruleId + "|" + h.subjectKey)}">
