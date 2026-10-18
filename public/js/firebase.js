@@ -33,12 +33,12 @@ export async function isAdminUser(user) {
   } catch (_) { return false; }
 }
 
-// PUBLIC Google OAuth client id (safe to commit).
-// NOTE: this is a "Desktop app" client. Browser sign-in needs a "Web application" client.
-// With Firebase Auth you normally do NOT use this directly - Firebase manages its own
-// web OAuth client when you enable the Google provider. Kept here for reference / in case
-// you switch to Google Identity Services directly.
-export const GOOGLE_CLIENT_ID = "206219019752-er2rsbl36m32ct8f2gn2i46tbovvn7j1.apps.googleusercontent.com";
+// PUBLIC Google OAuth client id (safe to commit — a client id is not a secret).
+// This is a "Web application" client (JavaScript origins: https://darknode.ai and
+// https://www.darknode.ai). It drives the in-page Google Identity Services FedCM / One Tap
+// bubble in auth.js (google.accounts.id). The returned ID token is exchanged for a Firebase
+// session via signInWithCredential. (The matching client SECRET is never used in the browser.)
+export const GOOGLE_CLIENT_ID = "153127828172-806br8tvkb773hbo931incl0t8ipr0p0.apps.googleusercontent.com";
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

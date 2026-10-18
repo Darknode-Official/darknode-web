@@ -7,7 +7,7 @@
 // The flagship prototype is the from-scratch game synthesizer, which runs fully
 // in the browser (no Firestore needed), so the lab is useful even offline.
 
-import { db } from "/js/firebase.js?v=20261007a";
+import { db } from "/js/firebase.js?v=20261018i";
 import { collection, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { synthFromScratch } from "/js/engine/gamegen-scratch.js?v=20261008b";
 

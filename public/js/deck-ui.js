@@ -32,7 +32,7 @@ import * as findings from "/js/core/findings.js?v=20261013e";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261018c";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
-import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261015d";
+import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261018i";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
 import { mountFindingsQueue, repaintFindingsQueue, renderSlaSettings } from "/js/deck/findings-queue.js?v=20261018e";
 import { mountInventory, repaintInventory } from "/js/deck/inventory.js?v=20261018a";

@@ -14,7 +14,7 @@
 
 import { Ledger, toCents, fmtCents, screenTransfer } from "/js/vault/ledger.js?v=20261017c";
 import { canDo, ROLES, ROLE_HELP } from "/js/vault/roles.js?v=20261012e";
-import * as remote from "/js/vault/remote.js?v=20261012e";
+import * as remote from "/js/vault/remote.js?v=20261018i";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const toast = (m) => { try { (window.dnToast || window.showToast || (() => {}))(m); } catch (_) {} };

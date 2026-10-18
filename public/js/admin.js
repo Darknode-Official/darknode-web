@@ -1,7 +1,7 @@
 // Owner-only admin console: live user management, a ban-list (the site is open
 // to everyone; only banned emails are blocked at sign-in), and site-wide
 // announcements. All backed by Firestore.
-import { db } from "/js/firebase.js?v=20261007a";
+import { db } from "/js/firebase.js?v=20261018i";
 
 // The super-admin is no longer a hardcoded email. The set-admin script stamps the
 // owner's own user doc with `admin: true` (alongside the Firebase custom claim),
@@ -37,7 +37,7 @@ let _deckOff = null; // teardown of the mounted Deck, so relaunching never stack
 // desktop app passes onSignOut, which makes the Deck the primary UI (no console exit).
 export async function openDeck(user, extra = {}) {
   const [{ renderDeck }, nav] = await Promise.all([
-    import("/js/deck-ui.js?v=20261018h"),
+    import("/js/deck-ui.js?v=20261018i"),
     import("/js/console-nav.js?v=20261013k"),
   ]);
   // Workspace identity (A1): load the owner's workspace profile so the Deck header,

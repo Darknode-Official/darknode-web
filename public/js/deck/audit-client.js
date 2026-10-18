@@ -11,7 +11,7 @@ export function auditAvailable() { return !!proxyBase(); }
 async function auditGet(query) {
   const base = proxyBase();
   if (!base) throw new Error("The audit log needs the cloud proxy, which this build has not configured.");
-  const { auth } = await import("/js/firebase.js?v=20261007a");
+  const { auth } = await import("/js/firebase.js?v=20261018i");
   const user = (auth && auth.currentUser) || null;
   if (!user) throw new Error("Sign in to read the audit log.");
   const wid = activeWorkspaceId() || user.uid;

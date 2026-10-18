@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
 (function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","darknode-official.github.io","sentinel-b4194.web.app","sentinel-b4194-6173e.web.app","darknode-web-e1s2.onrender.com","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d}))throw document.body.innerHTML="",new Error("unlicensed")}());
-import { auth, db, googleProvider, githubProvider, isAdminUser } from "/js/firebase.js?v=20261007a";
+import { auth, db, googleProvider, githubProvider, isAdminUser, GOOGLE_CLIENT_ID } from "/js/firebase.js?v=20261018i";
 
 // Finish an OpenRouter account-link if we've just returned from its consent page
 // (?code in the URL). Runs once on load, independent of auth; stores the user's
@@ -57,7 +57,7 @@ import { startTour, tourDone } from "/js/tour.js";
 import { isDesktop, has as desktopHas, syncTitlebar } from "/js/core/desktop.js";
 if (isDesktop()) syncTitlebar();
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261017e"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261018i"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -616,6 +616,11 @@ function showLanding() {
     if (tc) tc.innerHTML = "";
     if (window._tbClock) { clearInterval(window._tbClock); window._tbClock = null; }
     if (window._tbPopClose) { document.removeEventListener("click", window._tbPopClose); window._tbPopClose = null; }
+    // wireConsole() relocates the console nav (.con-bar: Services / Dashboard / Darknode AI /
+    // Docs / Settings) into the persistent #topbar. On return to the signed-out landing page it
+    // must be torn down, or that app nav strands on the header for a user who is not signed in.
+    // consoleHTML() rebuilds it fresh on the next renderApp(), so removing the stale one is safe.
+    document.querySelectorAll("#topbar .con-bar").forEach((b) => b.remove());
   } catch (_) {}
   userSlot.innerHTML = `
     <div class="nav-dd" data-dd="products">
@@ -680,6 +685,62 @@ function showLanding() {
   }));
 }
 
+// ---------- Google Identity Services: in-page FedCM / One Tap bubble ----------
+// Shows the native "Sign in to darknode.ai with google.com" chooser inside the page
+// (not a separate accounts.google.com window). The credential it returns is a Google ID
+// token, exchanged for a Firebase session via signInWithCredential — the same path the
+// desktop app already uses. If the bubble can't be shown, the caller falls back to the popup.
+let _gisLoad = null;
+function loadGis() {
+  if (_gisLoad) return _gisLoad;
+  _gisLoad = new Promise((resolve, reject) => {
+    try { if (window.google && window.google.accounts && window.google.accounts.id) return resolve(); } catch (_) {}
+    const s = document.createElement("script");
+    s.src = "https://accounts.google.com/gsi/client";
+    s.async = true; s.defer = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("gis-unavailable"));
+    document.head.appendChild(s);
+  });
+  return _gisLoad;
+}
+let _gisInit = false;
+async function initGis() {
+  await loadGis();
+  if (_gisInit) return;
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    use_fedcm_for_prompt: true,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+    callback: async (resp) => {
+      if (!resp || !resp.credential) return;
+      const el = document.getElementById("err");
+      try {
+        try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {}
+        await signInWithCredential(auth, GoogleAuthProvider.credential(resp.credential));
+      } catch (e) {
+        try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
+        if (el) el.textContent = errText(e);
+      }
+    },
+  });
+  _gisInit = true;
+}
+// Show the bubble. onUnavailable() runs only when GIS can't display it (FedCM opted out,
+// cooldown, library blocked), so the caller can fall back to the popup. Never throws.
+async function googleOneTap(onUnavailable) {
+  try {
+    await initGis();
+    google.accounts.id.prompt((notif) => {
+      try {
+        const gone = notif && ((notif.isNotDisplayed && notif.isNotDisplayed()) || (notif.isSkippedMoment && notif.isSkippedMoment()));
+        if (gone && typeof onUnavailable === "function") onUnavailable();
+      } catch (_) { /* under FedCM the moment methods are gone and the browser owns the UI */ }
+    });
+  } catch (_) { if (typeof onUnavailable === "function") onUnavailable(); }
+}
+
 function renderAuth(mode = "signin") {
   document.body.classList.remove("landing", "app");
   userSlot.innerHTML = "";
@@ -735,21 +796,26 @@ function renderAuth(mode = "signin") {
       } catch (e) { try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {} note.className = "auth-err"; err(errText(e)); }
       return;
     }
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (e) {
-      const code = (e && e.code) || "";
-      const popupIssue = /popup-blocked|popup-closed-by-user|cancelled-popup-request|operation-not-supported-in-this-environment|web-storage-unsupported/.test(code);
-      if (popupIssue) {
-        if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
-          try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
-          return; // user dismissed the chooser — do nothing
+    // Browser: show the native in-page FedCM / One Tap bubble first (stays on darknode.ai,
+    // no separate window). Fall back to the popup/redirect only if the bubble can't be shown.
+    const popupSignIn = async () => {
+      try {
+        await signInWithPopup(auth, googleProvider);
+      } catch (e) {
+        const code = (e && e.code) || "";
+        const popupIssue = /popup-blocked|popup-closed-by-user|cancelled-popup-request|operation-not-supported-in-this-environment|web-storage-unsupported/.test(code);
+        if (popupIssue) {
+          if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+            try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
+            return; // user dismissed the chooser — do nothing
+          }
+          try { await signInWithRedirect(auth, googleProvider); return; } catch (e2) { e = e2; }
         }
-        try { await signInWithRedirect(auth, googleProvider); return; } catch (e2) { e = e2; }
+        try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
+        err(errText(e));
       }
-      try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
-      err(errText(e));
-    }
+    };
+    googleOneTap(popupSignIn);
   };
   document.getElementById("github").onclick = async () => {
     err("");
@@ -785,7 +851,7 @@ function renderAuth(mode = "signin") {
     if (!panel) return;
     if (!panel.hidden) { panel.hidden = true; return; }
     panel.hidden = false;
-    try { const m = await import("/js/beta-lab.js?v=20261013b"); m.mountRequestForm(panel, { user: null }); }
+    try { const m = await import("/js/beta-lab.js?v=20261018i"); m.mountRequestForm(panel, { user: null }); }
     catch (_) { panel.textContent = "Beta Lab is unavailable right now."; }
   });
   on("toSignup", () => renderAuth("signup"));
@@ -796,6 +862,9 @@ function renderAuth(mode = "signin") {
     try { await sendPasswordResetEmail(auth, email, RESET_ACS); err(""); document.getElementById("err").className = "auth-ok"; document.getElementById("err").textContent = "Password reset email sent — check your inbox."; }
     catch (e) { err(errText(e)); }
   });
+  // Auto-show the Google One Tap / FedCM bubble on the sign-in screen (browser only).
+  // No popup fallback here — the explicit "Continue with Google" button handles that.
+  if (!desktopHas("auth.google")) { try { googleOneTap(() => {}); } catch (_) {} }
 }
 
 function renderVerify(user) {
@@ -1667,7 +1736,7 @@ function renderDesktopHome(user) {
     return;
   }
   view.innerHTML = "";
-  import("/js/admin.js?v=20261018h")
+  import("/js/admin.js?v=20261018i")
     .then((m) => m.openDeck(user, { onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
@@ -1973,7 +2042,7 @@ function renderApp(user) {
     else if (sec === "encoding") { import("/js/encoding-suite.js?v=20260924b").then(m => live() && m.renderEncodingSuite(main)); }
     else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20260924b").then(m => live() && m.renderThreatModeler(main)); }
     else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261015e").then(m => live() && m.renderOSINTDashboard(main, more)); }
-    else if (sec === "addressintel") { import("/js/address-intel.js?v=20261013b").then(m => live() && m.renderAddressIntel(main)); }
+    else if (sec === "addressintel") { import("/js/address-intel.js?v=20261018i").then(m => live() && m.renderAddressIntel(main)); }
     else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261015e").then(m => live() && m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js?v=20261013b").then(m => live() && m.renderFirewallBuilder(main)); }
     else if (sec === "apitester") { import("/js/api-tester.js?v=20261017f").then(m => live() && m.renderAPITester(main)); }
@@ -2000,7 +2069,7 @@ function renderApp(user) {
     else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
     else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/navarch.js?v=20261014g").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
     else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261017d").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
-    else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261013b").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
+    else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261018i").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
     else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261014f").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js?v=20261013b").then(m => live() && m.renderCspEvaluator(main)); }
     else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => live() && m.renderWaybackRecon(main)); }
@@ -2033,7 +2102,7 @@ function renderApp(user) {
     else if (sec === "emailauth") { import("/js/email-auth.js").then(m => live() && m.renderEmailAuth(main)); }
     else if (sec === "cookieinspect") { import("/js/cookie-inspector.js").then(m => live() && m.renderCookieInspector(main)); }
     else if (sec === "securitytxt") { import("/js/security-txt.js?v=20261017e").then(m => live() && m.renderSecurityTxt(main)); }
-    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261017f").then(m => live() && m.renderCodeScanner(main)); }
+    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261018i").then(m => live() && m.renderCodeScanner(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js?v=20261013b").then(m => live() && m.renderReconPlanner(main)); }
     else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20261013b").then(m => live() && m.renderAPIFuzzer(main)); }
     else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260928m").then(m => live() && m.renderPrivescToolkit(main)); }
@@ -2071,7 +2140,7 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js?v=20261017e").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261017d").then(m => live() && m.renderStrongroom(main)); }
-    else if (sec === "vault") { import("/js/vault.js?v=20261017c").then(m => live() && m.renderVault(main)); }
+    else if (sec === "vault") { import("/js/vault.js?v=20261018i").then(m => live() && m.renderVault(main)); }
     else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261017d").then(m => live() && m.renderSanctions(main)); }
     else if (sec === "signins") { import("/js/identity/signin-forensics.js?v=20261017f").then(m => live() && m.renderSigninForensics(main)); }
     else if (sec === "accessreview") { import("/js/identity/access-review.js?v=20261017d").then(m => live() && m.renderAccessReview(main)); }
@@ -2115,7 +2184,7 @@ function renderApp(user) {
     else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261017c").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261018h").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261018i").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261013c").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2394,7 +2463,7 @@ function renderApp(user) {
       ov.onclick = (ev) => { if (ev.target === ov) close(); };
       document.body.appendChild(ov);
       document.getElementById("betaAskClose").onclick = close;
-      import("/js/beta-lab.js?v=20261013b").then((m) => m.mountRequestForm(ov.querySelector(".beta-ask-mount"), { user })).catch(() => { ov.querySelector(".beta-ask-mount").textContent = "Beta Lab is unavailable right now."; });
+      import("/js/beta-lab.js?v=20261018i").then((m) => m.mountRequestForm(ov.querySelector(".beta-ask-mount"), { user })).catch(() => { ov.querySelector(".beta-ask-mount").textContent = "Beta Lab is unavailable right now."; });
     }
   };
   if (moreMenu) moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); show("setup", b.dataset.more); };

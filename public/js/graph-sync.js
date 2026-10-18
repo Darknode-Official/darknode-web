@@ -169,7 +169,7 @@ export async function startGraphSync(opts = {}) {
   if (!proxyBase()) { onStatus("local", { reason: "no-proxy" }); return null; }
   let SG, auth, isSim;
   try {
-    ({ auth } = await import("/js/firebase.js?v=20261007a"));
+    ({ auth } = await import("/js/firebase.js?v=20261018i"));
     SG = await import("/js/security-graph.js");
     try { ({ isSimulated: isSim } = await import("/js/core/posture.js")); } catch (_) { isSim = null; }
   } catch (e) { onStatus("error", { reason: "import", message: String(e && e.message || e) }); return null; }

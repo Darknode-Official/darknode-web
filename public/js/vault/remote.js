@@ -4,7 +4,7 @@
 // see firebase/firestore.rules); every ledger operation is a call to the Darknode worker,
 // which verifies the signed-in user and runs it in the vault's Durable Object.
 
-import { auth, db } from "/js/firebase.js?v=20261007a";
+import { auth, db } from "/js/firebase.js?v=20261018i";
 import { collection, collectionGroup, query, where, getDocs, doc, getDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 const base = () => { try { return String(window.DARKNODE_PROXY_URL || "").replace(/\/api\/chat$/, ""); } catch (_) { return ""; } };

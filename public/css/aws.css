@@ -72,9 +72,10 @@ html body.app #topbar#topbar .brand { flex: none; margin-right: 6px; }
    filtered (a filter would whiten its yellow dot), so the dark header swaps in the light-stroke
    logo instead. The Professional white header keeps the dark wordmark and the normal logo. */
 html body.app #topbar#topbar .brand-mark { filter: none !important; }
-/* pro-theme.css inverts the wordmark to white for the (old) dark header; the white header
-   needs the dark wordmark instead. Landing keeps its invert (transparent bar over a dark hero). */
-html[data-style=pro] body.app #topbar#topbar .brand-wordmark { filter: none !important; }
+/* The wordmark asset is drawn in near-white (#F2F5F9). The Professional console header is
+   white, so it must be inverted to dark to be visible (same as the landing rule in
+   pro-theme.css). filter:none left a white wordmark on a white bar — invisible. */
+html[data-style=pro] body.app #topbar#topbar .brand-wordmark { filter: invert(1) !important; }
 html[data-style=dark] body.app #topbar#topbar .brand-wordmark,
 html[data-style=classic] body.app #topbar#topbar .brand-wordmark { filter: brightness(0) invert(1) !important; }
 html[data-style=dark] body.app #topbar#topbar .brand-mark:not([src^="data:"]),

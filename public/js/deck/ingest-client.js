@@ -8,7 +8,7 @@ export function ingestAvailable() { return !!proxyBase(); }
 export function ingestBaseUrl() { return proxyBase(); }
 
 async function widAndToken() {
-  const { auth } = await import("/js/firebase.js?v=20261007a");
+  const { auth } = await import("/js/firebase.js?v=20261018i");
   const user = (auth && auth.currentUser) || null;
   if (!user) throw new Error("Sign in to manage API keys.");
   return { wid: activeWorkspaceId() || user.uid, token: await user.getIdToken() };
