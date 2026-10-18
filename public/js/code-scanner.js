@@ -11,7 +11,7 @@
 import { scanFile, parseManifest, isManifest, depFinding, dedupeDeps, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261013a";
 import * as gh from "/js/codescan/github.js?v=20261013a";
 import { findingKey, serializeBaseline, diffFindings, baselineKeySet } from "/js/codescan/baseline.js?v=20261014a";
-import { createWatch } from "/js/codescan/watch-ui.js?v=20261017d";
+import { createWatch } from "/js/codescan/watch-ui.js?v=20261017f";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (n) => Number(n || 0).toLocaleString();
