@@ -1689,6 +1689,10 @@ function renderApp(user) {
   try {
     if (new URLSearchParams(location.search).get("embed") === "1") {
       document.body.classList.add("dn-embed");
+      // Tool bridge (D8): forward in-frame tool results to the host for an instant refresh, and
+      // let tools ask the host to open an entity/tool. Additive and same-origin; the storage-event
+      // path still runs, so this is a speed-up, not a dependency.
+      import("/js/deck/embed-bridge.js?v=20261018g").then((m) => { try { m.initEmbedBridge(window); } catch (_) {} }).catch(() => {});
       if (!document.getElementById("dn-embed-css")) {
         const st = document.createElement("style"); st.id = "dn-embed-css";
         st.textContent = "body.dn-embed{background:transparent!important}body.dn-embed .app-shell{display:block!important;min-height:100vh!important}body.dn-embed .con-wrap,body.dn-embed #topbar,body.dn-embed .aws-side,body.dn-embed .aws-side-bd,body.dn-embed #bootscreen,body.dn-embed .skip-link{display:none!important}body.dn-embed .app-main{margin:0!important;padding:16px!important;max-width:none!important;width:100%!important}body.dn-embed .crumbs,body.dn-embed #secIntro,body.dn-embed .app-foot{display:none!important}";

@@ -46,6 +46,7 @@ import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
 import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018d";
 import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018d";
 import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261018f";
+import { makeMessage as makeBridge, parseMessage as parseBridge, MSG as BMSG } from "/js/core/tool-bridge.js?v=20261018g";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -2568,6 +2569,20 @@ export function renderDeck(host, opts) {
   // Tools run in iframes (/<sec>?embed=1), so their graph writes reach this window only as
   // `storage` events. Pull new activity rows in and refresh whichever view shows the graph.
   let syncT = 0;
+  // Re-render whichever open scene reflects the graph. Shared by the storage-event path and the
+  // immediate tool-bridge path. Never re-renders while a tool is open or the user is typing.
+  function refreshGraphScene(){
+    if (!sceneWork.hidden) return;   // a tool is open; scenes refresh when the user returns
+    const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && root.contains(document.activeElement);
+    if (typing) return;              // never re-render under the user's cursor
+    if (curScene === "overview") renderOverview();
+    else if (curScene === "invest") renderInvest();
+    else if (curScene === "activity") renderActivity();
+    else if (curScene === "findings") withGraph(paintFindings);
+    else if (curScene === "inventory") withGraph(repaintInventory);
+    else if (curScene === "correlations") withGraph(repaintCorrelations);
+    else if (curScene === "section") renderSection();
+  }
   const onStorage = (e) => {
     if (e.key === "dn_cool_ui") { reloadToolsForCool(); return; }
     // graph keys are workspace-suffixed in team mode (dn_security_graph__ws_<wid>)
@@ -2579,20 +2594,37 @@ export function renderDeck(host, opts) {
         const fresh = readRecentActivity().filter((a) => a.ts > newest).map((a) => ({ text: a.text, ts: a.ts, sim: !!a.sim }));
         if (fresh.length) { notifs = fresh.concat(notifs).slice(0, 40); updateBadge(); if (popBell.classList.contains("on")) buildBellMenu(); }
       }
-      if (!sceneWork.hidden) return;   // a tool is open; scenes refresh when the user returns
-      const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && root.contains(document.activeElement);
-      if (typing) return;              // never re-render under the user's cursor
-      if (curScene === "overview") renderOverview();
-      else if (curScene === "invest") renderInvest();
-      else if (curScene === "activity") renderActivity();
-      else if (curScene === "findings") withGraph(paintFindings);
-      else if (curScene === "inventory") withGraph(repaintInventory);
-      else if (curScene === "correlations") withGraph(repaintCorrelations);
-      else if (curScene === "section") renderSection();
+      refreshGraphScene();
     }, 400);
   };
   window.addEventListener("storage", onStorage);
   busOffs.push(() => { clearTimeout(syncT); window.removeEventListener("storage", onStorage); });
+
+  // ---------- tool bridge (D8): structured postMessage from embedded tool iframes ----------
+  // Same-origin only. We accept a message only when its origin is ours AND its source window is one
+  // of our live tool frames AND it is a well-formed bridge message (parseBridge). A tool announces
+  // a result (refresh now instead of after the storage event), asks to open an entity's detail or
+  // another tool, or signals it is ready so a queued focus deep link can be delivered.
+  const pendingFocus = new Map();
+  const frameSec = (src) => { for (const [k, f] of live) { if (f.contentWindow === src) return k; } return null; };
+  const onBridge = (e) => {
+    if (e.origin !== location.origin) return;
+    const sec = frameSec(e.source); if (!sec) return;     // ignore anything not from a live tool frame
+    const m = parseBridge(e.data); if (!m) return;
+    if (m.type === BMSG.RESULT) {
+      pushNotif(`Result captured${m.payload.tool ? ` from ${m.payload.tool}` : ""}`);
+      clearTimeout(syncT); syncT = setTimeout(refreshGraphScene, 300);
+    } else if (m.type === BMSG.OPEN_ENTITY) {
+      const id = m.payload.id; if (id) { try { openEntityDrawer(String(id)); } catch (_) {} }
+    } else if (m.type === BMSG.OPEN_TOOL) {
+      const s = m.payload.sec; if (s && secLabel[s]) { if (m.payload.focus) pendingFocus.set(s, m.payload.focus); openTool(s, secLabel[s]); }
+    } else if (m.type === BMSG.READY) {
+      const fc = pendingFocus.get(sec);
+      if (fc) { pendingFocus.delete(sec); const msg = makeBridge(BMSG.FOCUS, fc); if (msg) { try { e.source.postMessage(msg, location.origin); } catch (_) {} } }
+    }
+  };
+  window.addEventListener("message", onBridge);
+  busOffs.push(() => window.removeEventListener("message", onBridge));
 
   // ---------- role-based home focus (D8): optional per-workspace Overview preset ----------
   function roleKey(){ const wid = activeWorkspace(); return wid ? "dn_deck_role__ws_" + wid : "dn_deck_role"; }
