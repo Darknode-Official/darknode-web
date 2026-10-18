@@ -23,6 +23,7 @@ import {
 import { getSlaPolicy, setConfig, SLA_CONFIG } from "../core/ws-config.js";
 import { canDo } from "../core/workspace-roles.js";
 import { isSimulated } from "../core/posture.js";
+import { playbookFor } from "../core/playbooks.js";
 import { openTicketExport } from "./ticket-export.js";
 import {
   RESOLUTION_LABEL, dueChip, slaBasis, urgencySort, cleanTitle, memberName, timelineSentences, evidenceLines,
@@ -220,6 +221,11 @@ function injectStyle() {
 .fq-txt{font-size:13px;line-height:1.6;color:#2b3448;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
 .fq-mut{font-size:12.5px;color:#8a93a6}
 .fq-pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;background:rgba(23,33,56,.04);border:1px solid rgba(23,33,56,.08);border-radius:8px;padding:10px 12px;margin:0;max-height:460px;overflow:auto;color:#1a2233}
+.fq-pb{margin:0;padding-left:20px;font-size:13px;line-height:1.6;color:#2b3448}
+.fq-pb li{margin:0 0 5px}
+.fq-pbverify{margin-top:9px;font-size:12.5px;color:#2b3448;background:rgba(18,168,95,.07);border:1px solid rgba(18,168,95,.2);border-radius:8px;padding:8px 11px}
+.fq-pbref{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.fq-pbref span{font-size:11px;color:#5a6680;background:rgba(23,33,56,.05);border-radius:5px;padding:2px 7px}
 .fq-ctl{display:flex;flex-wrap:wrap;gap:6px}
 .fq-ctl span{font-size:11.5px;font-weight:600;color:#38435c;background:rgba(23,33,56,.05);border:1px solid rgba(23,33,56,.1);border-radius:6px;padding:2px 8px;overflow-wrap:anywhere}
 .fq-kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:12.5px;margin:0 0 10px}
@@ -764,6 +770,8 @@ function paintDetail(m) {
   const firstTs = toMs(e.createdAt);
   const sevTxt = sev ? SEV_LABEL[sev] || cap(sev) : "Unrated";
   const ov = d.severityOverride && d.severityOverride.reason ? `Changed from ${d.severityOverride.from || "none"} by ${nameOf(d.severityOverride.uid)}: ${d.severityOverride.reason}` : "";
+  const pb = playbookFor(e, { kev });
+  const pbHtml = `<div class="fq-sec"><div class="hd">Response playbook <span class="fq-mut" style="font-weight:400;text-transform:none;letter-spacing:0">${E(pb.title)}</span></div><ol class="fq-pb">${pb.steps.map((s) => `<li>${E(s)}</li>`).join("")}</ol><div class="fq-pbverify"><b>Verify:</b> ${E(pb.verify)}</div>${pb.references.length ? `<div class="fq-pbref">${pb.references.map((r) => `<span>${E((r.framework ? r.framework + " " : "") + r.id)}</span>`).join("")}</div>` : ""}</div>`;
 
   box.innerHTML = `
     <div class="fq-dtop"><button class="dk-tibtn" data-d="back">Back to queue</button><span class="fq-crumb">Findings / ${E(title)}</span><button class="dk-tibtn" data-d="graph">Graph record</button></div>
@@ -784,6 +792,7 @@ function paintDetail(m) {
         <div class="dk-ovp">
           <div class="fq-sec"><div class="hd">Description</div>${d.description ? `<p class="fq-txt">${E(d.description)}</p>` : `<div class="fq-mut">The tool recorded no description.</div>`}</div>
           <div class="fq-sec"><div class="hd">Recommendation</div>${d.recommendation ? `<p class="fq-txt">${E(d.recommendation)}</p>` : `<div class="fq-mut">No recommendation recorded.</div>`}</div>
+          ${pbHtml}
           <div class="fq-sec"><div class="hd">Affected assets (${assets.length})</div>${assets.length ? assets.map((a) => a.id ? `<button class="dk-relr" data-asset="${E(a.id)}"><span class="pdot" style="--c:${sevC(String(a.sev || "").toLowerCase())}"></span><span class="rn">${E(a.name || "-")}</span><span class="rt">${E(String(a.rel || "").replace(/_/g, " "))} ${E(m.getEntityTypeLabel ? m.getEntityTypeLabel(a.type) : a.type)}</span></button>` : `<div class="dk-relr" style="cursor:default"><span class="pdot" style="--c:#c2c8d4"></span><span class="rn">${E(a.name)}</span><span class="rt">not in the graph</span></div>`).join("") : `<div class="fq-mut">No affected assets recorded.</div>`}</div>
           ${controls.length ? `<div class="fq-sec"><div class="hd">Control references</div><div class="fq-ctl">${controls.map((c) => `<span>${E((c.framework ? c.framework + " " : "") + c.id)}</span>`).join("")}</div></div>` : ""}
           <div class="fq-sec"><div class="hd">Evidence${d.evidenceCount ? ` (${Number(d.evidenceCount).toLocaleString()} item${d.evidenceCount === 1 ? "" : "s"})` : ""}</div>${ev.lines.length ? `<pre class="fq-pre">${E(ev.lines.join("\n"))}</pre>${ev.more || ev.truncated ? `<div class="fq-mut" style="margin-top:6px">${ev.more ? `${ev.more.toLocaleString()} more line${ev.more === 1 ? "" : "s"} not shown. ` : ""}${ev.truncated ? "The tool trimmed some evidence to fit the graph's size limit." : ""}</div>` : ""}` : `<div class="fq-mut">No evidence recorded.</div>`}</div>
