@@ -29,7 +29,7 @@ import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261013e";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261018b";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261018c";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261015d";
@@ -38,7 +38,7 @@ import { mountFindingsQueue, repaintFindingsQueue, renderSlaSettings } from "/js
 import { mountInventory, repaintInventory } from "/js/deck/inventory.js?v=20261018a";
 import { mountCorrelations, repaintCorrelations } from "/js/deck/correlations.js?v=20261018a";
 import { mountMonitors } from "/js/deck/monitors.js?v=20261018a";
-import { mountApiKeys } from "/js/deck/apikeys.js?v=20261018b";
+import { mountApiKeys } from "/js/deck/apikeys.js?v=20261018c";
 import { mountAudit } from "/js/deck/audit.js?v=20261018c";
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261018c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
