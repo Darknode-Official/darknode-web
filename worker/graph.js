@@ -41,7 +41,15 @@ function sanitize(rec, fields, key) {
   if (typeof out.name === "string") out.name = out.name.slice(0, 500);
   if (typeof out.source === "string") out.source = out.source.slice(0, 120);
   if (Array.isArray(out.tags)) out.tags = out.tags.slice(0, 50).map((t) => String(t).slice(0, 80));
-  if (out.data != null) { try { if (JSON.stringify(out.data).length > 40000) out.data = {}; } catch (_) { out.data = {}; } }
+  // Oversized/unserializable data is dropped to keep the DO value small, but NOT silently:
+  // leave a marker so the client can see the entity's detail was truncated on sync.
+  if (out.data != null) {
+    try {
+      if (JSON.stringify(out.data).length > 40000) out.data = { _truncated: true, _reason: "entity data exceeded 40000 bytes and was dropped on sync" };
+    } catch (_) {
+      out.data = { _truncated: true, _reason: "entity data was not serializable and was dropped on sync" };
+    }
+  }
   return out;
 }
 

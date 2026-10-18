@@ -94,6 +94,7 @@ export function refreshStore() { return _refreshStore(); }
 let _batchDepth = 0;
 let _dirty = false;
 
+let _saveFailed = false;
 function _save() {
   if (_batchDepth) { _dirty = true; return; }
   try {
@@ -101,8 +102,20 @@ function _save() {
       entities: _entities,
       relationships: _relationships
     }));
-  } catch (_) {}
+    _saveFailed = false;
+  } catch (e) {
+    // Do NOT fail silently: a full localStorage quota means graph writes are being
+    // dropped on the floor. Surface it once so the user knows the graph is no longer
+    // persisting (the Deck can listen for dn:graph:savefail to show a banner).
+    if (!_saveFailed) {
+      _saveFailed = true;
+      try { console.warn('[security-graph] save failed — storage full; graph changes are not being persisted:', (e && e.message) || e); } catch (_) {}
+      try { window.dispatchEvent(new CustomEvent('dn:graph:savefail', { detail: String((e && e.message) || e) })); } catch (_) {}
+    }
+  }
 }
+// True while the last persist succeeded; false after a quota/write failure.
+export function saveHealthy() { return !_saveFailed; }
 
 export function createEntity(type, name, data, opts) {
   _load();
