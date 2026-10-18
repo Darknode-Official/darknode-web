@@ -42,6 +42,7 @@ import { mountApiKeys } from "/js/deck/apikeys.js?v=20261018b";
 import { mountAudit } from "/js/deck/audit.js?v=20261018c";
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261018c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
+import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -3867,6 +3868,23 @@ export function renderDeck(host, opts) {
     const top = (s.exposure.top || []).slice(0, 5).map((t) => `- ${t.name} — ${t.severity}${t.kev ? ", KEV" : ""}${t.overdue ? ", overdue" : ""}${t.exposed ? ", internet-facing" : ""}`).join("\n");
     return `# ${m.org} — Board Security Report\n\nGenerated ${m.date} · Darknode · ${period}\n\n## Headline\n\n| Metric | Now | Since last period |\n|---|---|---|\n${rows}\n\n## Open findings by age\n\n${aging}\n\n## Highest-weight exposures\n\n${top || "- None open"}\n\n---\n\nExposure score = open findings weighted by severity × KEV × internet-exposure × age × SLA breach × asset criticality, saturated as 100·(1−e^(−raw/${s.exposure.k})); raw = ${s.exposure.raw}. Built in your browser from your security graph; sample data excluded; nothing uploaded.\n`;
   }
+  // ---- Control mapping (D7): open findings grouped by the controls they cite ----
+  function cmapHtml(d){
+    const r = frameworkMap(d.entities), m = reportMeta();
+    const body = r.frameworks.length ? r.frameworks.map((fw) => `<h2>${esc(fw.framework)} <span class="meta">(${fw.open} open)</span></h2>`
+      + `<table><tr><th>Control</th><th>Open</th><th>Critical</th><th>High</th><th>Medium</th><th>Low</th></tr>`
+      + fw.controls.map((c) => `<tr><td>${esc(c.id)}</td><td>${c.open}</td><td>${c.bySeverity.critical}</td><td>${c.bySeverity.high}</td><td>${c.bySeverity.medium}</td><td>${c.bySeverity.low}</td></tr>`).join("") + `</table>`).join("")
+      : `<p>No open findings cite a compliance control yet.</p>`;
+    return `<h1>${esc(m.org)} — Control Mapping</h1><p class="meta">Generated ${esc(m.date)} · Darknode · ${r.totalOpen} open findings, ${r.unmappedOpen} not mapped to a control</p>${body}`
+      + `<p class="foot">Open findings grouped by the compliance controls they cite. This reports what your findings assert; it does not reproduce any framework catalogue or infer coverage of controls no finding mentions. Built in your browser from your security graph.</p>`;
+  }
+  function cmapMd(d){
+    const r = frameworkMap(d.entities), m = reportMeta();
+    const body = r.frameworks.length ? r.frameworks.map((fw) => `## ${fw.framework} (${fw.open} open)\n\n| Control | Open | Critical | High | Medium | Low |\n|---|---|---|---|---|---|\n`
+      + fw.controls.map((c) => `| ${c.id} | ${c.open} | ${c.bySeverity.critical} | ${c.bySeverity.high} | ${c.bySeverity.medium} | ${c.bySeverity.low} |`).join("\n")).join("\n\n")
+      : "No open findings cite a compliance control yet.";
+    return `# ${m.org} — Control Mapping\n\nGenerated ${m.date} · Darknode · ${r.totalOpen} open findings, ${r.unmappedOpen} not mapped to a control\n\n${body}\n\n---\n\nOpen findings grouped by the compliance controls they cite. Reports what your findings assert; does not reproduce any framework catalogue or infer coverage of controls no finding mentions. Built in your browser from your security graph.\n`;
+  }
   const FND_COLS = ["severity", "name", "type", "status", "source", "updatedAt", "id"];
   function fndMd(d){
     const m = reportMeta();
@@ -3930,6 +3948,11 @@ export function renderDeck(host, opts) {
           <div class="stat" id="dkRptStatFnd"><div><b>—</b><span>loading</span></div></div>
           <div class="dk-rptacts"><button class="dk-settog" data-rpt="fnd" data-act="print">Print / PDF</button><button class="dk-settog" data-rpt="fnd" data-act="md">Markdown</button><button class="dk-settog" data-rpt="fnd" data-act="csv">CSV</button><button class="dk-settog" data-rpt="fnd" data-act="json">JSON</button></div>
         </div>
+        <div class="dk-ovp dk-rptcard"><h2>${IC.scale} Control mapping</h2>
+          <p class="desc">Open findings grouped by the compliance controls they cite — SOC 2, ISO 27001, PCI DSS, CIS, NIST — for an audit evidence pack. Reports what your findings assert, not a catalogue.</p>
+          <div class="stat" id="dkRptStatCmap"><div><b>—</b><span>loading</span></div></div>
+          <div class="dk-rptacts"><button class="dk-settog" data-rpt="cmap" data-act="print">Print / PDF</button><button class="dk-settog" data-rpt="cmap" data-act="md">Markdown</button></div>
+        </div>
         <div class="dk-ovp dk-rptcard"><h2>${IC.radar} Attack surface summary</h2>
           <p class="desc">The externally-facing assets in your graph — domains, hosts, IPs, services — grouped by type.</p>
           <div class="stat" id="dkRptStatSurf"><div><b>—</b><span>loading</span></div></div>
@@ -3944,6 +3967,7 @@ export function renderDeck(host, opts) {
       const sEx = el.querySelector("#dkRptStatExec"); if (sEx) sEx.innerHTML = `<div><b>${d.ps.totalEntities}</b><span>Entities</span></div><div><b>${d.fc.open}</b><span>Open findings</span></div><div><b>${d.fc.critical + d.fc.high}</b><span>Critical &amp; high</span></div>`;
       const sFn = el.querySelector("#dkRptStatFnd"); if (sFn) sFn.innerHTML = `<div><b>${d.fc.total}</b><span>Findings</span></div><div><b>${d.fc.open}</b><span>Open</span></div><div><b>${d.fc.resolved}</b><span>Resolved</span></div>`;
       const sBd = el.querySelector("#dkRptStatBoard"); if (sBd) { try { const bs = metricsSnapshot(d.entities, { now: Date.now() }); sBd.innerHTML = `<div><b>${bs.exposureScore}</b><span>Exposure / 100</span></div><div><b>${bs.bySeverity.critical + bs.bySeverity.high}</b><span>Critical &amp; high</span></div><div><b>${bs.slaCompliancePct == null ? "—" : bs.slaCompliancePct + "%"}</b><span>SLA met</span></div>`; } catch (_) { sBd.innerHTML = `<div><b>—</b><span>unavailable</span></div>`; } }
+      const sCm = el.querySelector("#dkRptStatCmap"); if (sCm) { try { const cm = frameworkMap(d.entities); sCm.innerHTML = `<div><b>${cm.frameworks.length}</b><span>Frameworks</span></div><div><b>${cm.totalOpen - cm.unmappedOpen}</b><span>Mapped open</span></div><div><b>${cm.unmappedOpen}</b><span>Unmapped</span></div>`; } catch (_) { sCm.innerHTML = `<div><b>—</b><span>unavailable</span></div>`; } }
       const surf = surfaceRows(d);
       const sSu = el.querySelector("#dkRptStatSurf"); if (sSu) sSu.innerHTML = `<div><b>${surf.length}</b><span>Facing assets</span></div><div><b>${new Set(surf.map((e) => e.type)).size}</b><span>Asset types</span></div>`;
 
@@ -3955,6 +3979,9 @@ export function renderDeck(host, opts) {
         } else if (rpt === "board") {
           if (act === "print") printReport(wsLabelText() + " — Board Security Report", boardHtml(d));
           else dl(fname("board-report", "md"), boardMd(d), "text/markdown");
+        } else if (rpt === "cmap") {
+          if (act === "print") printReport(wsLabelText() + " — Control Mapping", cmapHtml(d));
+          else dl(fname("control-mapping", "md"), cmapMd(d), "text/markdown");
         } else if (rpt === "fnd") {
           if (act === "print") printReport(wsLabelText() + " — Findings Register", fndHtml(d));
           else if (act === "md") dl(fname("findings", "md"), fndMd(d), "text/markdown");
