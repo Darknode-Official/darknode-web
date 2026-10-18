@@ -43,8 +43,8 @@ import { mountAudit } from "/js/deck/audit.js?v=20261018c";
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261018c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
 import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
-import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018c";
-import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018c";
+import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018d";
+import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018d";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
