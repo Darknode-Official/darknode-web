@@ -43,6 +43,7 @@ import { mountAudit } from "/js/deck/audit.js?v=20261018c";
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261018c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
 import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
+import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018c";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -3885,6 +3886,43 @@ export function renderDeck(host, opts) {
       : "No open findings cite a compliance control yet.";
     return `# ${m.org} — Control Mapping\n\nGenerated ${m.date} · Darknode · ${r.totalOpen} open findings, ${r.unmappedOpen} not mapped to a control\n\n${body}\n\n---\n\nOpen findings grouped by the compliance controls they cite. Reports what your findings assert; does not reproduce any framework catalogue or infer coverage of controls no finding mentions. Built in your browser from your security graph.\n`;
   }
+  // ---- Remediation plan by owner (D7) ----
+  const ownerName = (g) => g.owner ? (g.ownerLabel || (g.owner.length > 12 ? g.owner.slice(0, 6) + "…" + g.owner.slice(-4) : g.owner)) : "Unassigned";
+  const sevList = (bs) => SEV_ORDER.filter((s) => bs[s]).map((s) => `${bs[s]} ${s}`).join(", ") || "—";
+  function remediationHtml(d){
+    const r = remediationPlan(d.entities, { now: Date.now() }), m = reportMeta();
+    const head = `<h1>${esc(m.org)} — Remediation Plan</h1><p class="meta">Generated ${esc(m.date)} · Darknode · ${r.totalOpen} open findings, ${r.overdue} overdue, ${r.unassignedOpen} unassigned</p>`;
+    if (!r.owners.length) return head + `<p>No open findings to plan. Everything recorded is closed or excepted.</p><p class="foot">Built in your browser from your security graph; sample data excluded; nothing uploaded.</p>`;
+    const body = r.owners.map((g) => `<h2>${esc(ownerName(g))} <span class="meta">(${g.open} open${g.overdue ? ", " + g.overdue + " overdue" : ""})</span></h2>`
+      + `<table><tr><th>Severity</th><th>Finding</th><th>Source</th><th>Due</th><th>Status</th></tr>`
+      + g.items.map((it) => `<tr><td>${esc(it.severity)}</td><td>${esc(it.name)}${it.kev ? ' <b>KEV</b>' : ''}</td><td>${esc(it.source)}</td><td>${it.dueAt ? esc(new Date(it.dueAt).toISOString().slice(0, 10)) : "—"}</td><td>${esc(it.state === "overdue" ? (it.daysLeft != null ? Math.abs(it.daysLeft) + "d overdue" : "overdue") : it.state === "due_soon" ? (it.daysLeft + "d left") : it.state.replace("_", " "))}</td></tr>`).join("") + `</table>`).join("");
+    return head + body + `<p class="foot">Open findings grouped by their assigned owner, most urgent first (overdue, then severity). Due dates follow this workspace's SLA policy. Built in your browser from your security graph; sample data excluded; nothing uploaded.</p>`;
+  }
+  function remediationMd(d){
+    const r = remediationPlan(d.entities, { now: Date.now() }), m = reportMeta();
+    const head = `# ${m.org} — Remediation Plan\n\nGenerated ${m.date} · Darknode · ${r.totalOpen} open findings, ${r.overdue} overdue, ${r.unassignedOpen} unassigned\n\n`;
+    if (!r.owners.length) return head + "No open findings to plan. Everything recorded is closed or excepted.\n";
+    return head + r.owners.map((g) => `## ${ownerName(g)} (${g.open} open${g.overdue ? ", " + g.overdue + " overdue" : ""})\n\n| Severity | Finding | Source | Due | Status |\n|---|---|---|---|---|\n`
+      + g.items.map((it) => `| ${it.severity}${it.kev ? " (KEV)" : ""} | ${String(it.name).replace(/\|/g, "\\|")} | ${it.source} | ${it.dueAt ? new Date(it.dueAt).toISOString().slice(0, 10) : "—"} | ${it.state === "overdue" ? (it.daysLeft != null ? Math.abs(it.daysLeft) + "d overdue" : "overdue") : it.state.replace("_", " ")} |`).join("\n")).join("\n\n")
+      + `\n\n---\n\nOpen findings grouped by their assigned owner, most urgent first. Due dates follow this workspace's SLA policy. Built in your browser from your security graph; sample data excluded; nothing uploaded.\n`;
+  }
+  // ---- Vulnerability SLA report (D7) ----
+  function slaHtml(d){
+    const r = slaReport(d.entities, { now: Date.now() }), m = reportMeta(), o = r.overall;
+    const sevRows = r.bySeverity.filter((x) => x.open).map((x) => `<tr><td>${esc(x.severity)}</td><td>${x.targetDays == null ? "—" : x.targetDays + "d"}</td><td>${x.open}</td><td>${x.onTrack}</td><td>${x.overdue}</td><td>${x.compliancePct == null ? "—" : x.compliancePct + "%"}</td></tr>`).join("");
+    const breaches = r.breaches.slice(0, 50).map((b) => `<tr><td>${esc(b.severity)}</td><td>${esc(b.name)}${b.kev ? ' <b>KEV</b>' : ''}</td><td>${esc(b.source)}</td><td>${b.daysOverdue}d</td></tr>`).join("");
+    return `<h1>${esc(m.org)} — Vulnerability SLA Report</h1><p class="meta">Generated ${esc(m.date)} · Darknode</p>`
+      + `<h2>Compliance</h2><div class="kv"><div><b>${o.compliancePct == null ? "—" : o.compliancePct + "%"}</b><span>Within SLA</span></div><div><b>${o.overdue}</b><span>Overdue</span></div><div><b>${o.withDate}</b><span>With a due date</span></div><div><b>${o.kevOverdue}</b><span>KEV overdue</span></div></div>`
+      + `<h2>By severity</h2>` + (sevRows ? `<table><tr><th>Severity</th><th>SLA target</th><th>Open</th><th>On track</th><th>Overdue</th><th>Compliance</th></tr>${sevRows}</table>` : `<p>No open findings with an SLA target.</p>`)
+      + `<h2>Breaches</h2>` + (breaches ? `<table><tr><th>Severity</th><th>Finding</th><th>Source</th><th>Overdue</th></tr>${breaches}</table>${r.breaches.length > 50 ? `<p class="meta">Showing the 50 most overdue of ${r.breaches.length}.</p>` : ""}` : `<p>No findings are past their SLA. Good.</p>`)
+      + `<p class="foot">SLA compliance is open findings within their due date, over those that have one; excepted and no-target findings are excluded. Targets follow this workspace's SLA policy (default: critical 30d, high 60d, medium 90d, low 180d, known-exploited 14d). Built in your browser from your security graph; sample data excluded; nothing uploaded.</p>`;
+  }
+  function slaMd(d){
+    const r = slaReport(d.entities, { now: Date.now() }), m = reportMeta(), o = r.overall;
+    const sevRows = r.bySeverity.filter((x) => x.open).map((x) => `| ${x.severity} | ${x.targetDays == null ? "—" : x.targetDays + "d"} | ${x.open} | ${x.onTrack} | ${x.overdue} | ${x.compliancePct == null ? "—" : x.compliancePct + "%"} |`).join("\n");
+    const breaches = r.breaches.slice(0, 50).map((b) => `| ${b.severity}${b.kev ? " (KEV)" : ""} | ${String(b.name).replace(/\|/g, "\\|")} | ${b.source} | ${b.daysOverdue}d |`).join("\n");
+    return `# ${m.org} — Vulnerability SLA Report\n\nGenerated ${m.date} · Darknode\n\n## Compliance\n\n- Within SLA: ${o.compliancePct == null ? "—" : o.compliancePct + "%"}\n- Overdue: ${o.overdue}\n- With a due date: ${o.withDate}\n- KEV overdue: ${o.kevOverdue}\n\n## By severity\n\n${sevRows ? `| Severity | SLA target | Open | On track | Overdue | Compliance |\n|---|---|---|---|---|---|\n${sevRows}` : "No open findings with an SLA target."}\n\n## Breaches\n\n${breaches ? `| Severity | Finding | Source | Overdue |\n|---|---|---|---|\n${breaches}` : "No findings are past their SLA."}\n\n---\n\nSLA compliance is open findings within their due date, over those that have one; excepted and no-target findings are excluded. Targets follow this workspace's SLA policy (default: critical 30d, high 60d, medium 90d, low 180d, known-exploited 14d). Built in your browser from your security graph; sample data excluded; nothing uploaded.\n`;
+  }
   const FND_COLS = ["severity", "name", "type", "status", "source", "updatedAt", "id"];
   function fndMd(d){
     const m = reportMeta();
@@ -3953,6 +3991,16 @@ export function renderDeck(host, opts) {
           <div class="stat" id="dkRptStatCmap"><div><b>—</b><span>loading</span></div></div>
           <div class="dk-rptacts"><button class="dk-settog" data-rpt="cmap" data-act="print">Print / PDF</button><button class="dk-settog" data-rpt="cmap" data-act="md">Markdown</button></div>
         </div>
+        <div class="dk-ovp dk-rptcard"><h2>${IC.note} Remediation plan</h2>
+          <p class="desc">Every open finding grouped by its assigned owner, most urgent first — a worklist each owner can act on, with due dates from your SLA policy.</p>
+          <div class="stat" id="dkRptStatRem"><div><b>—</b><span>loading</span></div></div>
+          <div class="dk-rptacts"><button class="dk-settog" data-rpt="rem" data-act="print">Print / PDF</button><button class="dk-settog" data-rpt="rem" data-act="md">Markdown</button></div>
+        </div>
+        <div class="dk-ovp dk-rptcard"><h2>${IC.pulse} Vulnerability SLA</h2>
+          <p class="desc">SLA compliance by severity: on-track vs overdue, the breach list and known-exploited items past their deadline — the monthly remediation-SLA view for leadership.</p>
+          <div class="stat" id="dkRptStatSla"><div><b>—</b><span>loading</span></div></div>
+          <div class="dk-rptacts"><button class="dk-settog" data-rpt="sla" data-act="print">Print / PDF</button><button class="dk-settog" data-rpt="sla" data-act="md">Markdown</button></div>
+        </div>
         <div class="dk-ovp dk-rptcard"><h2>${IC.radar} Attack surface summary</h2>
           <p class="desc">The externally-facing assets in your graph — domains, hosts, IPs, services — grouped by type.</p>
           <div class="stat" id="dkRptStatSurf"><div><b>—</b><span>loading</span></div></div>
@@ -3968,6 +4016,8 @@ export function renderDeck(host, opts) {
       const sFn = el.querySelector("#dkRptStatFnd"); if (sFn) sFn.innerHTML = `<div><b>${d.fc.total}</b><span>Findings</span></div><div><b>${d.fc.open}</b><span>Open</span></div><div><b>${d.fc.resolved}</b><span>Resolved</span></div>`;
       const sBd = el.querySelector("#dkRptStatBoard"); if (sBd) { try { const bs = metricsSnapshot(d.entities, { now: Date.now() }); sBd.innerHTML = `<div><b>${bs.exposureScore}</b><span>Exposure / 100</span></div><div><b>${bs.bySeverity.critical + bs.bySeverity.high}</b><span>Critical &amp; high</span></div><div><b>${bs.slaCompliancePct == null ? "—" : bs.slaCompliancePct + "%"}</b><span>SLA met</span></div>`; } catch (_) { sBd.innerHTML = `<div><b>—</b><span>unavailable</span></div>`; } }
       const sCm = el.querySelector("#dkRptStatCmap"); if (sCm) { try { const cm = frameworkMap(d.entities); sCm.innerHTML = `<div><b>${cm.frameworks.length}</b><span>Frameworks</span></div><div><b>${cm.totalOpen - cm.unmappedOpen}</b><span>Mapped open</span></div><div><b>${cm.unmappedOpen}</b><span>Unmapped</span></div>`; } catch (_) { sCm.innerHTML = `<div><b>—</b><span>unavailable</span></div>`; } }
+      const sRm = el.querySelector("#dkRptStatRem"); if (sRm) { try { const rp = remediationPlan(d.entities, { now: Date.now() }); sRm.innerHTML = `<div><b>${rp.totalOpen}</b><span>To remediate</span></div><div><b>${rp.overdue}</b><span>Overdue</span></div><div><b>${rp.unassignedOpen}</b><span>Unassigned</span></div>`; } catch (_) { sRm.innerHTML = `<div><b>—</b><span>unavailable</span></div>`; } }
+      const sSl = el.querySelector("#dkRptStatSla"); if (sSl) { try { const sr = slaReport(d.entities, { now: Date.now() }); sSl.innerHTML = `<div><b>${sr.overall.compliancePct == null ? "—" : sr.overall.compliancePct + "%"}</b><span>Within SLA</span></div><div><b>${sr.overall.overdue}</b><span>Overdue</span></div><div><b>${sr.overall.kevOverdue}</b><span>KEV overdue</span></div>`; } catch (_) { sSl.innerHTML = `<div><b>—</b><span>unavailable</span></div>`; } }
       const surf = surfaceRows(d);
       const sSu = el.querySelector("#dkRptStatSurf"); if (sSu) sSu.innerHTML = `<div><b>${surf.length}</b><span>Facing assets</span></div><div><b>${new Set(surf.map((e) => e.type)).size}</b><span>Asset types</span></div>`;
 
@@ -3987,6 +4037,12 @@ export function renderDeck(host, opts) {
           else if (act === "md") dl(fname("findings", "md"), fndMd(d), "text/markdown");
           else if (act === "csv") dl(fname("findings", "csv"), findings.toCSV(d.rows, FND_COLS), "text/csv");
           else dl(fname("findings", "json"), JSON.stringify(d.rows, null, 2), "application/json");
+        } else if (rpt === "rem") {
+          if (act === "print") printReport(wsLabelText() + " — Remediation Plan", remediationHtml(d));
+          else dl(fname("remediation-plan", "md"), remediationMd(d), "text/markdown");
+        } else if (rpt === "sla") {
+          if (act === "print") printReport(wsLabelText() + " — Vulnerability SLA Report", slaHtml(d));
+          else dl(fname("vulnerability-sla", "md"), slaMd(d), "text/markdown");
         } else if (rpt === "surf") {
           if (act === "print") printReport(wsLabelText() + " — Attack Surface Summary", surfaceHtml(d));
           else dl(fname("attack-surface", "md"), surfaceMd(d), "text/markdown");
