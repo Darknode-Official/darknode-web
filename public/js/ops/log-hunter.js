@@ -96,6 +96,7 @@ function injectStyle() {
   .lgh .lgh-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
   .lgh .lgh-legend i.t{background:var(--line,#dfe3ea)}
   .lgh .lgh-legend i.f{background:var(--acc,#1a2230)}
+  .lgh .lgh-zero{color:var(--mut,#667085)}
   .lgh .lgh-empty{padding:26px;text-align:center;color:var(--mut,#667085)}
   .lgh .lgh-badge{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--line,#e6e8ee);border-radius:4px;padding:1px 6px;color:var(--mut,#667085)}
   .lgh .lgh-right{text-align:right;font-variant-numeric:tabular-nums}
@@ -349,7 +350,7 @@ export function renderLogHunter(main) {
   let sortKey = "severity", sevFilter = "all", srcFilter = "all", ipFilter = "";
   function renderReport(r) {
     const st = r.stats, p = r.parse || { sources: {}, formats: {}, unknown: 0 };
-    const sevClass = (n, s) => (n ? `sev-${s}` : "sev-low");
+    const sevClass = (n, s) => (n ? `sev-${s}` : "lgh-zero");
     const badges = Object.entries(p.formats || {}).map(([k, n]) => `<span class="lgh-badge">${esc(FORMAT_LABEL[k] || k)} ${fmtN(n)}</span>`).join(" ");
     out.innerHTML = `
       <div class="lgh-card">
@@ -430,7 +431,7 @@ export function renderLogHunter(main) {
     const box = $("lghFind");
     if (!sorted.length) { box.innerHTML = `<div class="lgh-empty">${r.findings.length ? "No findings match the filter." : "No rule fired on these logs. This says the rules did not match, not that the logs are clean."}</div>`; return; }
     const th = (k, label) => `<th><button data-sort="${k}">${label}${sortKey === k ? " v" : ""}</button></th>`;
-    box.innerHTML = `<div class="lgh-tablewrap"><table>
+    box.innerHTML = `<div class="lgh-tablewrap dn-scrollbox"><table>
       <thead><tr>${th("severity", "Severity")}<th>Finding</th>${th("technique", "ATT&amp;CK")}<th>Where</th>${th("count", "Count")}<th class="lgh-hide">${sortKey === "time" ? "First seen v" : '<button data-sort="time">First seen</button>'}</th></tr></thead>
       <tbody>${sorted.map((f) => `<tr class="lgh-f" data-id="${f.id}">
         <td><span class="sev-${f.severity}">${SEV[f.severity] || f.severity}</span><div class="lgh-note" style="margin:0">${esc(f.confidence)} confidence</div></td>
@@ -470,7 +471,7 @@ export function renderLogHunter(main) {
     const shown = list.slice(0, 300);
     const box = $("lghIps");
     if (!shown.length) { box.innerHTML = `<div class="lgh-empty">No IPs${q ? " match the filter" : " in these logs"}.</div>`; return; }
-    box.innerHTML = `<div class="lgh-tablewrap"><table>
+    box.innerHTML = `<div class="lgh-tablewrap dn-scrollbox"><table>
       <thead><tr><th>IP</th><th>Scope</th><th>Worst</th><th class="lgh-right">Events</th><th class="lgh-right lgh-hide">Fail / OK</th><th class="lgh-hide">First seen</th><th class="lgh-hide">Last seen</th><th>Users</th><th class="lgh-hide">Top user-agent</th><th>Top paths</th></tr></thead>
       <tbody>${shown.map((d) => `<tr>
         <td class="lgh-mono">${esc(d.ip)}${d.findings.length ? `<div class="lgh-note" style="margin:0">${esc(d.findings.join(" "))}</div>` : ""}</td>

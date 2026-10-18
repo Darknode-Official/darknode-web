@@ -110,7 +110,7 @@ const CSS = `
   .bkr-rel{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
   .bkr-rel .bkr-grp p{margin:4px 0;font-size:.82rem;overflow-wrap:anywhere}
   .bkr-rel a{color:#2552c6;font-weight:600}
-  .bkr-match{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px 14px;align-items:center}
+  .bkr-match{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr) minmax(200px,1.3fr));gap:8px 14px;align-items:center}
   @media (max-width:560px){.bkr-field,.bkr-filters .bkr-field{flex:1 1 100%}.bkr-card{padding:14px}.bkr-grid{grid-template-columns:1fr}.bkr-match{grid-template-columns:1fr}}
 `;
 

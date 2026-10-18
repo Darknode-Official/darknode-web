@@ -425,12 +425,12 @@ export function renderFirewallAudit(main) {
         ${r.notes.length ? `<details><summary>Parser notes (${r.notes.length})</summary><ul class="fwa-notes">${r.notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul></details>` : ""}
       </div>
       <div class="fwa-kpis">
-        <div class="fwa-kpi"><b class="fwa-c" style="--c:${c.critical ? SEV.critical.c : "inherit"}">${c.critical}</b><span>Critical</span></div>
-        <div class="fwa-kpi"><b class="fwa-c" style="--c:${c.high ? SEV.high.c : "inherit"}">${c.high}</b><span>High</span></div>
-        <div class="fwa-kpi"><b class="fwa-c" style="--c:${c.medium ? SEV.medium.c : "inherit"}">${c.medium}</b><span>Medium</span></div>
+        <div class="fwa-kpi${c.critical ? " kpi-critical" : ""}"><b class="fwa-c" style="--c:${c.critical ? SEV.critical.c : "inherit"}">${c.critical}</b><span>Critical</span></div>
+        <div class="fwa-kpi${c.high ? " kpi-high" : ""}"><b class="fwa-c" style="--c:${c.high ? SEV.high.c : "inherit"}">${c.high}</b><span>High</span></div>
+        <div class="fwa-kpi${c.medium ? " kpi-medium" : ""}"><b class="fwa-c" style="--c:${c.medium ? SEV.medium.c : "inherit"}">${c.medium}</b><span>Medium</span></div>
         <div class="fwa-kpi"><b>${c.low + c.info}</b><span>Low / info</span></div>
         <div class="fwa-kpi"><b>${r.stats.anySrcAllows}<span class="fwa-dim" style="font-size:.9rem;text-transform:none;letter-spacing:0"> / ${r.stats.allows} (${r.stats.pctAnySrcAllows}%)</span></b><span>Allows from any source</span></div>
-        <div class="fwa-kpi"><b class="fwa-c" style="--c:${r.stats.exposedServices ? SEV.high.c : SEV.good.c}">${r.stats.exposedServices}</b><span>Risky services open to any</span></div>
+        <div class="fwa-kpi ${r.stats.exposedServices ? "kpi-high" : "kpi-good"}"><b class="fwa-c" style="--c:${r.stats.exposedServices ? SEV.high.c : SEV.good.c}">${r.stats.exposedServices}</b><span>Risky services open to any</span></div>
         <div class="fwa-kpi"><b>${r.stats.shadowed}<span class="fwa-dim" style="font-size:.9rem;text-transform:none;letter-spacing:0"> + ${r.stats.redundant}</span></b><span>Shadowed + redundant</span></div>
         <div class="fwa-kpi"><b>${r.stats.disabled}</b><span>Disabled rules</span></div>
       </div>
@@ -472,10 +472,10 @@ export function renderFirewallAudit(main) {
     const f = sortedFindings();
     if (!f.length) { p.innerHTML = `<div class="fwa-card fwa-empty"><span class="fwa-sev" style="--c:${SEV.good.c}">No findings.</span> The rule base passed every check this tool runs. That is not the same as a secure network; review the normalised rules too.</div>`; return; }
     const th = (k, label) => `<th data-k="${k}">${label}${sortKey === k ? (sortDir > 0 ? " ▴" : " ▾") : ""}</th>`;
-    p.innerHTML = `<div class="fwa-tbl"><table>
+    p.innerHTML = `<div class="fwa-tbl dn-scrollbox"><table>
       <thead><tr>${th("severity", "Severity")}${th("title", "Finding")}${th("type", "Type")}${th("rules", "Rules")}${th("confidence", "Confidence")}</tr></thead>
       <tbody>${f.map((x) => `
-        <tr class="fwa-f" data-id="${x.id}">
+        <tr class="fwa-f fwa-sev-${x.severity}" data-id="${x.id}">
           <td>${sevSpan(x.severity)}</td>
           <td><b>${esc(x.title)}</b><div class="fwa-dim fwa-mono">${x.id}</div></td>
           <td class="fwa-dim">${esc(x.type)}</td>
@@ -508,7 +508,7 @@ export function renderFirewallAudit(main) {
     if (ruleSort === "flags") rules.sort((a, b) => (b.flags.length - a.flags.length) || a.idx - b.idx);
     const flagC = { "any-any": SEV.critical.c, exposed: SEV.high.c, shadowed: SEV.high.c, overridden: SEV.medium.c, redundant: SEV.low.c, "broad-egress": SEV.medium.c };
     p.innerHTML = `<p class="fwa-note">Every rule normalised to one shape so that different vendors compare the same way. Struck-through rows are disabled. Shadow and redundancy markers point at the earlier rule that decides first.</p>
-      <div class="fwa-tbl"><table>
+      <div class="fwa-tbl dn-scrollbox"><table>
       <thead><tr><th data-k="idx">#</th><th class="nosort">Scope</th><th class="nosort">Action</th><th class="nosort">Dir</th><th class="nosort">Proto</th><th class="nosort">Source</th><th class="nosort">Src ports</th><th class="nosort">Destination</th><th class="nosort">Dst ports</th><th class="nosort">Log</th><th data-k="flags">Markers</th><th class="nosort">Name</th></tr></thead>
       <tbody>${rules.map((r) => `<tr class="${r.enabled ? "" : "fwa-off"}" title="${esc(r.raw.slice(0, 300))}">
         <td class="fwa-mono fwa-keep">${r.idx}${r.lineNo ? `<div class="fwa-dim">L${r.lineNo}</div>` : ""}</td>
@@ -532,7 +532,7 @@ export function renderFirewallAudit(main) {
     const openCount = ex.filter((e) => e.fromAny.length).length;
     p.innerHTML = `<p class="fwa-note">Which risky services an enabled allow rule makes reachable from any source (0.0.0.0/0, ::/0, "any", "all") or from a broad non-internal range (a /16 or wider outside your internal list). Rules shadowed by an earlier rule are not counted.
       ${openCount ? `<b class="fwa-c" style="--c:${SEV.high.c}">${openCount} service(s) open to any.</b>` : `<b class="fwa-c" style="--c:${SEV.good.c}">No risky service is open to any source.</b>`}</p>
-      <div class="fwa-tbl"><table>
+      <div class="fwa-tbl dn-scrollbox"><table>
       <thead><tr><th class="nosort">Service</th><th class="nosort">Ports</th><th class="nosort">If exposed</th><th class="nosort">From any</th><th class="nosort">From broad external</th></tr></thead>
       <tbody>${ex.map((e) => {
         const open = e.fromAny.length > 0, broad = e.fromBroad.length > 0;

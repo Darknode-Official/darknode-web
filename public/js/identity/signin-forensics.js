@@ -94,7 +94,7 @@ function injectStyle() {
   .sif .sif-cov > table{min-width:560px}
   .sif .sif-users th:nth-child(2){width:64px}.sif .sif-users th:nth-child(3){width:76px}.sif .sif-users th:nth-child(4){width:92px}
   .sif .sif-users td:first-child{word-break:break-all}
-  .sif .sif-reason{white-space:normal;min-width:240px;max-width:36ch}
+  .sif .sif-reason,.sif .sif-ev td.sif-reason{white-space:normal;min-width:240px;max-width:36ch}
   .sif tr.sif-click{cursor:pointer}
   .sif tr.sif-click:hover td{background:var(--card2,#f8fafc)}
   .sif tr.sif-open td{background:var(--card2,#f8fafc)}
@@ -294,11 +294,11 @@ export function renderSigninForensics(main) {
       <div class="sif-kpis">
         <div class="sif-kpi"><b>${fmtN(k.records)}</b><span>Auth events</span></div>
         <div class="sif-kpi"><b>${fmtN(k.successes)}</b><span>Successes</span></div>
-        <div class="sif-kpi"><b style="--c:${k.failures ? SEV.high.c : "inherit"}">${fmtN(k.failures)}</b><span>Failures</span></div>
+        <div class="sif-kpi${k.failures ? " kpi-high" : ""}"><b style="--c:${k.failures ? SEV.high.c : "inherit"}">${fmtN(k.failures)}</b><span>Failures</span></div>
         <div class="sif-kpi"><b>${fmtN(k.users)}</b><span>Users</span></div>
         <div class="sif-kpi"><b>${fmtN(k.ips)}</b><span>Source IPs</span></div>
         <div class="sif-kpi"><b>${k.countries ? fmtN(k.countries) : "n/a"}</b><span>Countries</span></div>
-        <div class="sif-kpi"><b style="--c:${r.findings.length ? SEV.high.c : SEV.good.c}">${fmtN(r.findings.length)}</b><span>Findings</span></div>
+        <div class="sif-kpi ${r.findings.length ? "kpi-high" : "kpi-good"}"><b style="--c:${r.findings.length ? SEV.high.c : SEV.good.c}">${fmtN(r.findings.length)}</b><span>Findings</span></div>
       </div>
 
       <div class="sif-two">
@@ -370,7 +370,7 @@ export function renderSigninForensics(main) {
     if (state.userFilter) list = list.filter((f) => (f.user || "").toLowerCase().includes(state.userFilter) || (f.ip || "").toLowerCase().includes(state.userFilter) || f.title.toLowerCase().includes(state.userFilter));
     if (!list.length) { host.innerHTML = `<div class="sif-card sif-empty">${r.findings.length ? "No findings match the filter." : "No findings. The coverage panel lists which detections ran on this export."}</div>`; return; }
     const shown = list.slice(0, 500);
-    host.innerHTML = `<div class="sif-tbl sif-findtbl"><table>
+    host.innerHTML = `<div class="sif-tbl sif-findtbl dn-scrollbox"><table>
       <thead><tr><th>Severity</th><th>Confidence</th><th>Detection</th><th>Account / source</th><th>Finding</th></tr></thead>
       <tbody>${shown.map((f) => `<tr class="sif-click${state.openKey === f.key ? " sif-open" : ""}" data-key="${esc(f.key)}">
         <td><span class="sif-sev sif-sev-${f.severity}">${SEV[f.severity].label}</span></td>
@@ -402,7 +402,7 @@ export function renderSigninForensics(main) {
   function renderUsers() {
     const r = state.result; const host = $("sifUsers");
     const list = r.users.slice(0, 300);
-    host.innerHTML = `<div class="sif-tbl sif-users"><table>
+    host.innerHTML = `<div class="sif-tbl sif-users dn-scrollbox"><table>
       <thead><tr><th>Account</th><th>Score</th><th>Found</th><th>OK/fail</th></tr></thead>
       <tbody>${list.map((u) => `<tr class="sif-click${state.user === u.user ? " sif-open" : ""}" data-user="${esc(u.user)}">
         <td class="sif-mono">${esc(u.user)}${u.isAdmin ? `<div class="sif-note" style="margin:0">admin (${esc(u.adminBasis || "hint")})</div>` : ""}</td>

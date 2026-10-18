@@ -182,7 +182,7 @@ const STYLE = `
 .ap-matrix-scroll { overflow-x: auto; margin-bottom: 16px; }
 .ap-matrix { display: grid; grid-template-columns: repeat(14, minmax(90px, 1fr)); gap: 2px; min-width: 1260px; }
 .ap-matrix-header { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); padding: 8px 4px; font-size: 9px; color: var(--acc,#2563eb); font-family: var(--font-mono, ui-monospace, monospace); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; font-weight: bold; border-radius: 4px 4px 0 0; }
-.ap-matrix-col { display: flex; flex-direction: column; gap: 2px; }
+.ap-matrix-col { display: flex; flex-direction: column; gap: 2px; text-align: center; }
 .ap-tech-cell { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); padding: 6px 4px; font-size: 9px; color: var(--txt-2,#9fb0cc); font-family: var(--font-mono, ui-monospace, monospace); cursor: pointer; border-radius: 3px; text-align: center; transition: all .15s; line-height: 1.3; min-height: 36px; display: flex; align-items: center; justify-content: center; }
 .ap-tech-cell:hover { border-color: var(--line,#283a5a); color: var(--txt,#e7eefc); background: var(--card2,#0f1726); }
 .ap-tech-cell.actor-uses { background: #1a0a0a; border-color: #ff224444; color: #ff6666; }
@@ -332,7 +332,8 @@ const STYLE = `
 [data-style=pro] .ap-res-table th, [data-style=pro] .ap-res-table td { border-color: #e5e5e5; }
 
 @media (max-width: 768px) {
-  .ap-matrix { grid-template-columns: repeat(14, 80px); }
+  .ap-matrix { grid-template-columns: repeat(14, 96px); min-width: 0; }
+  .ap-matrix-header, .ap-tech-cell { letter-spacing: 0; overflow-wrap: anywhere; hyphens: auto; }
   .ap-detail-grid { grid-template-columns: 1fr; }
   .ap-actor-info { grid-template-columns: 1fr 1fr; }
 }
