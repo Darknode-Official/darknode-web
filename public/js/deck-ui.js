@@ -2217,7 +2217,28 @@ export function renderDeck(host, opts) {
   // ---------- spotlight ----------
   const spot = $("#dkSpot"), spotIn = $("#dkSpotIn"), spotRes = $("#dkSpotRes");
   let selIdx = 0, matches = [];
-  const openSpot = () => { spot.classList.add("on"); spotIn.value = ""; runSpot(""); spotIn.focus(); };
+  // Global search over the security graph: the palette also finds real entities and findings
+  // by name/id and opens their detail drawer. Rebuilt each time the palette opens so it is
+  // current; capped so the palette stays fast. Simulated/sample entities are excluded.
+  let graphIndex = [];
+  const ENT_ICON_COLOR = { finding: "#e0383a", vulnerability: "#e8912b", asset: "#2552c6", identity: "#12935a" };
+  function buildGraphIndex(){
+    try {
+      withGraph((m) => {
+        if (!m || !m.exportAll) { graphIndex = []; return; }
+        const ents = (m.exportAll().entities || []).filter((e) => !(postureMod && postureMod.isSimulated && postureMod.isSimulated(e)));
+        graphIndex = ents.slice(0, 4000).map((e) => {
+          const t = String(e.type || "entity").toLowerCase();
+          const sev = String(e.severity || "").toLowerCase();
+          return { type: "entity", id: e.id, label: String(e.name || e.id || "entity"),
+            group: (t === "finding" ? "Finding" : t.charAt(0).toUpperCase() + t.slice(1)) + (sev ? " · " + sev : ""),
+            color: ENT_ICON_COLOR[t] || "#6b7589" };
+        });
+        if (spot.classList.contains("on")) runSpot(spotIn.value); // refresh results once ready
+      });
+    } catch (_) { graphIndex = []; }
+  }
+  const openSpot = () => { spot.classList.add("on"); spotIn.value = ""; buildGraphIndex(); runSpot(""); spotIn.focus(); };
   const closeSpot = () => spot.classList.remove("on");
   // Runnable commands in the palette (not just navigation) — these run an action
   // rather than opening a tool, so Ctrl+K is a true command palette.
@@ -2238,6 +2259,9 @@ export function renderDeck(host, opts) {
     { type: "action", label: "Go to Compliance", group: "Navigate", icon: IC.shield, run: () => go("compliance") },
     { type: "action", label: "Go to Findings", group: "Navigate", icon: IC.alert, run: () => go("findings") },
     { type: "action", label: "Go to Reports", group: "Navigate", icon: IC.note, run: () => go("reports") },
+    { type: "action", label: "Go to Asset Inventory", group: "Navigate", icon: IC.tree, run: () => go("inventory") },
+    { type: "action", label: "Go to Correlations", group: "Navigate", icon: IC.nodes, run: () => go("correlations") },
+    { type: "action", label: "Go to Monitors", group: "Navigate", icon: IC.bell, run: () => go("monitors") },
     { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.search, run: () => go("invest") },
     { type: "action", label: "Go to Integrations", group: "Navigate", icon: IC.plug, run: () => go("con") },
     { type: "action", label: "Go to Tool Library", group: "Navigate", icon: IC.grid, run: () => go("tools") },
@@ -2256,14 +2280,18 @@ export function renderDeck(host, opts) {
   function runSpot(q){
     q = q.trim().toLowerCase();
     const pool = ACTIONS.concat(index);
-    matches = (q ? pool.filter((t) => t.label.toLowerCase().includes(q) || (t.group||"").toLowerCase().includes(q)) : pool).slice(0, 80);
+    const base = (q ? pool.filter((t) => t.label.toLowerCase().includes(q) || (t.group||"").toLowerCase().includes(q)) : pool);
+    // Graph entities and findings are only searched when there is a query, and ranked after
+    // commands and tools so the palette stays a command palette by default.
+    const graphHits = q ? graphIndex.filter((g) => g.label.toLowerCase().includes(q)).slice(0, 40) : [];
+    matches = base.concat(graphHits).slice(0, 100);
     selIdx = 0;
     spotRes.innerHTML = matches.length ? matches.map((m, i) => `<div class="dk-sr${i===0?" sel":""}" data-i="${i}">${spotIcon(m)}<span class="l">${esc(m.label)}</span><span class="g">${esc(m.group||"")}</span>${m.type === "tool" ? `<button class="dk-srpin${pins.includes(m.sec) ? " on" : ""}" data-pin="${esc(m.sec)}" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>` : ""}</div>`).join("")
       : `<div class="dk-empty">Nothing matches "${esc(q)}"</div>`;
     spotRes.querySelectorAll(".dk-sr").forEach((r) => r.onclick = (e) => { if (e.target.closest(".dk-srpin")) return; chooseSpot(+r.dataset.i); });
     spotRes.querySelectorAll(".dk-srpin").forEach((b) => b.onclick = (e) => { e.stopPropagation(); b.classList.toggle("on", togglePin(b.dataset.pin)); });
   }
-  function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "action") { closeSpot(); try { m.run(); } catch (_) {} } else if (m.type === "conn") { closeSpot(); go("con"); openDrawer(m.it); } else { closeSpot(); openTool(m.sec, m.label); } }
+  function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "action") { closeSpot(); try { m.run(); } catch (_) {} } else if (m.type === "conn") { closeSpot(); go("con"); openDrawer(m.it); } else if (m.type === "entity") { closeSpot(); try { openEntityDrawer(m.id); } catch (_) {} } else { closeSpot(); openTool(m.sec, m.label); } }
   function moveSel(d){ if (!matches.length) return; selIdx = (selIdx + d + matches.length) % matches.length; spotRes.querySelectorAll(".dk-sr").forEach((r, i) => r.classList.toggle("sel", i === selIdx)); spotRes.querySelector(".dk-sr.sel")?.scrollIntoView({ block: "nearest" }); }
   $("#dkFindBtn").onclick = openSpot; $("#dkHSearch").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
   $("#dkAsstBtn").onclick = () => go("assistant");
@@ -4198,8 +4226,8 @@ export function renderDeck(host, opts) {
 
   // ---------- keyboard & shortcuts ----------
   // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
-  const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant", f: "findings", r: "reports", w: "team", p: "plans", ",": "settings" };
-  const SCENE_TITLE = { overview: "Security Overview", surface: "Attack Surface", threat: "Threats & Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "AI Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings" };
+  const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant", f: "findings", r: "reports", w: "team", p: "plans", ",": "settings", v: "inventory", x: "correlations", b: "monitors" };
+  const SCENE_TITLE = { overview: "Security Overview", surface: "Attack Surface", threat: "Threats & Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "AI Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings", inventory: "Asset Inventory", correlations: "Correlations", monitors: "Monitors", apikeys: "API & Ingest", audit: "Audit Log" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
     const nav = Object.entries(GOTO).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");
