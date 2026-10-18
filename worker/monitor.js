@@ -5,7 +5,7 @@
 // Discord / signed webhooks with retry. State and scheduling are the DO's; the grading
 // is the SAME pure engine the browser tools use (worker/checks.js), and the alert brain
 // is worker/monitor-core.js — both unit-tested without a deploy.
-import { runCheck } from "./checks.js";
+import { runCheck, cvesFromEntities } from "./checks.js";
 import { diffFindings, diffToEvents, shouldAlert, defaultAlertRules } from "./monitor-core.js";
 import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
 import { verifyIdToken } from "./vault-auth.js";
@@ -22,9 +22,25 @@ const safeChannel = (c) => ({ type: c.type, url: c.url, hasSecret: !!c.secret })
 const safeMonitor = (m) => ({ ...m, channels: (m.channels || []).map(safeChannel), lastResults: undefined, lastResultCount: (m.lastResults || []).length });
 
 export class MonitorDO {
-  constructor(state) { this.state = state; this.storage = state.storage; }
+  constructor(state, env) { this.state = state; this.storage = state.storage; this.env = env; }
 
   async _monitors() { return (await this.storage.get("monitors")) || {}; }
+
+  // Read this workspace's own CVE inventory from its GraphDO. Safe: a MonitorDO is addressed
+  // per workspace, and it reads the SAME workspace's graph (the GET pull is not uid-scoped —
+  // the per-workspace DO is itself the access boundary, reachable only by server code). Used
+  // only by the kev-epss check. Returns [] if the graph binding or the stored wid is missing.
+  async _graphCves() {
+    try {
+      const wid = await this.storage.get("wid");
+      if (!wid || !this.env || !this.env.GRAPH) return [];
+      const stub = this.env.GRAPH.get(this.env.GRAPH.idFromName(wid));
+      const res = await stub.fetch("https://graph/?since=0", { headers: { "x-graph-uid": wid } });
+      if (!res.ok) return [];
+      const data = await res.json().catch(() => null);
+      return cvesFromEntities(data && data.entities);
+    } catch (_) { return []; }
+  }
   async _put(mons) { await this.storage.put("monitors", mons); }
   async _log(key, cap, entry) {
     const list = (await this.storage.get(key)) || [];
@@ -49,7 +65,9 @@ export class MonitorDO {
   async _runOne(m, deps) {
     const t0 = now();
     let findings = [];
-    try { findings = await runCheck(m.type, m.config || {}, { fetch: deps.fetch, now: t0 }); }
+    // The kev-epss check grades the workspace's own CVE inventory, read from its graph.
+    const extra = m.type === "kev-epss" ? { cves: await this._graphCves(), feedBase: deps.feedBase } : {};
+    try { findings = await runCheck(m.type, m.config || {}, { fetch: deps.fetch, now: t0, ...extra }); }
     catch (e) { await this._log("history", HISTORY_CAP, { id: m.id, at: t0, error: String(e.message || e) }); return { id: m.id, error: String(e.message || e) }; }
 
     const diff = diffFindings(m.lastResults || [], findings);
@@ -60,6 +78,8 @@ export class MonitorDO {
     for (const ev of events) {
       // carry cert window into the rule check for cert monitors
       if (m.type === "cert-expiry") { ev.kind = ev.kind === "resolved" ? "resolved" : "cert"; ev.daysToExpiry = findings.find((f) => f.key === ev.key)?.daysToExpiry; }
+      // a new/worsened KEV-or-high-EPSS match alerts regardless of severity (onKev path)
+      else if (m.type === "kev-epss" && ev.kind !== "resolved") ev.kind = "kev";
       const d = shouldAlert(ev, rules, t0);
       if (d.alert) alerted.push(ev); else if (d.suppressed) held.push(ev);
     }
@@ -118,6 +138,9 @@ export class MonitorDO {
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
     if (!request.headers.get("x-mon-uid")) return reply({ error: "forbidden" }, 403);
     const role = request.headers.get("x-mon-role") || "viewer";
+    // Remember this DO's workspace id so an alarm-time run can read the workspace's own graph.
+    const widHdr = request.headers.get("x-mon-wid");
+    if (widHdr) { const cur = await this.storage.get("wid"); if (cur !== widHdr) await this.storage.put("wid", widHdr); }
     let body = {};
     if (request.method === "POST") { try { body = await request.json(); } catch (_) { return reply({ error: "Invalid JSON body" }, 400); } }
     const op = body.op || "list";
@@ -182,6 +205,6 @@ export async function handleMonitor(request, env, wid, json) {
   const bodyText = await request.text();
   if (bodyText.length > 256 * 1024) return json({ error: "Request too large." }, 413);
   const stub = env.MONITOR.get(env.MONITOR.idFromName(wid));
-  const res = await stub.fetch("https://monitor/", { method: "POST", body: bodyText || "{}", headers: { "Content-Type": "application/json", "x-mon-uid": who.uid, "x-mon-role": role } });
+  const res = await stub.fetch("https://monitor/", { method: "POST", body: bodyText || "{}", headers: { "Content-Type": "application/json", "x-mon-uid": who.uid, "x-mon-role": role, "x-mon-wid": wid } });
   return json(await res.json(), res.status);
 }

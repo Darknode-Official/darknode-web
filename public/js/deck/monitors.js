@@ -90,13 +90,14 @@ function paint() {
 
   box.innerHTML = `
     <p class="mon-sub">${mons.length.toLocaleString()} monitor${mons.length === 1 ? "" : "s"}. Monitors run on the server's own schedule; alerts fire only when something changes.</p>
-    <div style="margin:0 0 14px"><button class="mon-btn pri" id="monAdd">Add certificate monitor</button></div>
+    <div style="margin:0 0 14px;display:flex;gap:8px;flex-wrap:wrap"><button class="mon-btn pri" id="monAdd">Add certificate monitor</button><button class="mon-btn" id="monAddKev">Add KEV/EPSS watch</button></div>
     <div id="monFormSlot"></div>
     ${monHtml}
     ${logPanel("Recent runs", (S.data.history || []).slice(0, 8), (h) => `<b>${E((S.data.monitors.find((m) => m.id === h.id) || {}).name || h.id)}</b> — ${h.error ? ("error: " + E(h.error)) : `${h.found} open, ${h.added} new, ${h.changed} changed, ${h.alerted} alerted`} · ${E(ago(h.at))}`)}
     ${logPanel("Delivery log", (S.data.deliveries || []).slice(0, 8), (d) => `<b>${E(d.type)}</b> ${d.ok ? "delivered" : "failed"} (${d.status})${d.error ? " — " + E(d.error) : ""} · ${E(ago(d.at))}`)}`;
 
-  box.querySelector("#monAdd").onclick = () => { S.adding = !S.adding; renderForm(); };
+  box.querySelector("#monAdd").onclick = () => { const was = S.adding && S.kind === "cert-expiry"; S.kind = "cert-expiry"; S.adding = !was; renderForm(); };
+  box.querySelector("#monAddKev").onclick = () => { const was = S.adding && S.kind === "kev-epss"; S.kind = "kev-epss"; S.adding = !was; renderForm(); };
   if (S.adding) renderForm();
   box.querySelectorAll(".mon-row").forEach((row) => row.querySelector(".mon-actions").onclick = (e) => {
     const b = e.target.closest("[data-act]"); if (!b) return;
@@ -115,11 +116,15 @@ function logPanel(title, rows, fmt) {
 function renderForm() {
   const slot = S.el && S.el.querySelector("#monFormSlot"); if (!slot) return;
   if (!S.adding) { slot.innerHTML = ""; return; }
+  const kev = S.kind === "kev-epss";
+  const specific = kev
+    ? `<div class="mon-field"><label>EPSS alert floor (0–1)</label><input id="mfEpss" type="number" min="0" max="1" step="0.05" placeholder="0.5"><p class="hint">A CVE in your graph alerts when it is in the CISA KEV catalogue, or its EPSS exploit-prediction score is at or above this floor. Nothing is sent anywhere; the match runs against the current feeds.</p></div>`
+    : `<div class="mon-field"><label>Domains</label><textarea id="mfDomains" placeholder="one per line or comma-separated" spellcheck="false"></textarea><p class="hint">Hostnames to watch, e.g. test.darknode.ai. Certificate transparency logs are checked; nothing is sent to the domains.</p></div>
+    <div class="mon-field"><label>Warn when expiring within (days)</label><input id="mfWarn" type="number" min="1" max="365" placeholder="21"></div>`;
   slot.innerHTML = `<div class="mon-form">
-    <h3>New certificate-expiry monitor</h3>
-    <div class="mon-field"><label>Name</label><input id="mfName" placeholder="Public certificates" autocomplete="off"></div>
-    <div class="mon-field"><label>Domains</label><textarea id="mfDomains" placeholder="one per line or comma-separated" spellcheck="false"></textarea><p class="hint">Hostnames to watch, e.g. test.darknode.ai. Certificate transparency logs are checked; nothing is sent to the domains.</p></div>
-    <div class="mon-field"><label>Warn when expiring within (days)</label><input id="mfWarn" type="number" min="1" max="365" placeholder="21"></div>
+    <h3>${kev ? "New KEV / EPSS watch" : "New certificate-expiry monitor"}</h3>
+    <div class="mon-field"><label>Name</label><input id="mfName" placeholder="${kev ? "Known-exploited vulnerabilities" : "Public certificates"}" autocomplete="off"></div>
+    ${specific}
     <div class="mon-field"><label>Check interval (minutes)</label><input id="mfInt" type="number" min="15" max="10080" placeholder="1440"></div>
     <div class="mon-field"><label>Alert channel</label>
       <div class="mon-chrow"><select id="mfChType">${CHANNELS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select><input id="mfChUrl" placeholder="incoming webhook URL" autocomplete="off" spellcheck="false"></div>
@@ -136,16 +141,22 @@ function renderForm() {
 
 function readForm(slot) {
   const $ = (s) => slot.querySelector(s);
-  const domains = ($("#mfDomains").value || "").split(/[\s,]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
   const chUrl = ($("#mfChUrl").value || "").trim();
   const chType = $("#mfChType").value;
   const chSecret = ($("#mfChSecret").value || "").trim();
   const channels = chUrl ? [{ type: chType, url: chUrl, ...(chType === "webhook" && chSecret ? { secret: chSecret } : {}) }] : [];
+  const intervalMs = Math.max(15, Math.min(10080, Number($("#mfInt").value) || 1440)) * 60000;
+  if (S.kind === "kev-epss") {
+    const floorEl = $("#mfEpss"), floorRaw = floorEl ? Number(floorEl.value) : NaN;
+    const epssFloor = Number.isFinite(floorRaw) ? Math.max(0, Math.min(1, floorRaw)) : 0.5;
+    return { name: ($("#mfName").value || "").trim() || "KEV / EPSS watch", type: "kev-epss", config: { epssFloor }, intervalMs, channels };
+  }
+  const domains = ($("#mfDomains").value || "").split(/[\s,]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
   return {
     name: ($("#mfName").value || "").trim() || "Certificate monitor",
     type: "cert-expiry",
     config: { domains, warnDays: Math.max(1, Math.min(365, Number($("#mfWarn").value) || 21)) },
-    intervalMs: Math.max(15, Math.min(10080, Number($("#mfInt").value) || 1440)) * 60000,
+    intervalMs,
     channels,
   };
 }
@@ -153,7 +164,7 @@ function readForm(slot) {
 async function saveMonitor(slot) {
   if (S.busy) return;
   const mon = readForm(slot);
-  if (!mon.config.domains.length) { toast("Add at least one domain.", "warn"); return; }
+  if (mon.type === "cert-expiry" && !mon.config.domains.length) { toast("Add at least one domain.", "warn"); return; }
   S.busy = true;
   try { await monitorApi({ op: "upsert", monitor: mon }); toast("Monitor saved.", "ok"); S.adding = false; await load(); }
   catch (e) { toast(e.message || "Could not save.", "error"); }

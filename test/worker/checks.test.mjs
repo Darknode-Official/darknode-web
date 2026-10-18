@@ -64,3 +64,60 @@ group("checks/cert-expiry", () => {
     assert.equal((await runCheck("nope", {}, { fetch: f })).length, 0);
   });
 });
+
+// ---- KEV / EPSS watch -------------------------------------------------------
+import { cvesFromEntities, matchKevEpss, kevEpssCheck } from "../../worker/checks.js";
+
+group("checks/kev-epss", () => {
+  test("cvesFromEntities pulls CVEs from name, data.cve/cves and evidence, uppercased + unique", () => {
+    const out = cvesFromEntities([
+      { name: "cve-2021-44228 Log4Shell", data: {} },
+      { name: "x", data: { cve: "CVE-2021-44228" } },           // duplicate
+      { name: "y", data: { cves: ["CVE-2023-0001", "CVE-2023-0002"] } },
+      { name: "z", data: { evidence: "seen CVE-2024-9999 in logs" } },
+      { name: "no cve here", data: {} },
+    ]);
+    assert.deepEqual(out.sort(), ["CVE-2021-44228", "CVE-2023-0001", "CVE-2023-0002", "CVE-2024-9999"]);
+  });
+
+  test("matchKevEpss: KEV is critical, high-EPSS is high/medium, others skipped", () => {
+    const kev = new Map([["CVE-2021-44228", { dueDate: "2021-12-24" }]]);
+    const epss = new Map([["CVE-2023-0001", 0.95], ["CVE-2023-0002", 0.6], ["CVE-2023-0003", 0.1]]);
+    const out = matchKevEpss(["CVE-2021-44228", "CVE-2023-0001", "CVE-2023-0002", "CVE-2023-0003", "CVE-2099-0000"], { kev, epss, epssFloor: 0.5 });
+    const by = Object.fromEntries(out.map((f) => [f.cve, f]));
+    assert.equal(by["CVE-2021-44228"].severity, "critical");
+    assert.equal(by["CVE-2021-44228"].kev, true);
+    assert.equal(by["CVE-2023-0001"].severity, "high");
+    assert.equal(by["CVE-2023-0002"].severity, "medium");
+    assert.equal(by["CVE-2023-0003"], undefined);   // below floor
+    assert.equal(by["CVE-2099-0000"], undefined);   // not in either feed
+    assert.equal(out.length, 3);
+  });
+
+  test("matchKevEpss is deterministic and key-sorted", () => {
+    const kev = new Map([["CVE-2021-44228", {}]]);
+    const epss = new Map([["CVE-2023-0001", 0.9]]);
+    const a = matchKevEpss(["CVE-2023-0001", "CVE-2021-44228"], { kev, epss });
+    const b = matchKevEpss(["CVE-2021-44228", "CVE-2023-0001"], { kev, epss });
+    assert.equal(JSON.stringify(a), JSON.stringify(b));
+    assert.deepEqual(a.map((f) => f.key), ["epss:CVE-2023-0001", "kev:CVE-2021-44228"]);
+  });
+
+  test("kevEpssCheck fetches the mirrored feeds and matches the inventory", async () => {
+    const f = async (url) => {
+      if (url.includes("cisa-kev-index")) return { ok: true, status: 200, json: async () => ({ data: [{ cve: "CVE-2021-44228", dueDate: "2021-12-24" }] }) };
+      if (url.includes("epss-top")) return { ok: true, status: 200, json: async () => ({ data: [{ cve: "CVE-2023-0001", epss: 0.97 }] }) };
+      return { ok: false, status: 404, json: async () => null };
+    };
+    const out = await kevEpssCheck({ epssFloor: 0.5 }, { fetch: f, cves: ["CVE-2021-44228", "CVE-2023-0001", "CVE-2000-1111"] });
+    assert.equal(out.length, 2);
+    assert.ok(out.some((x) => x.key === "kev:CVE-2021-44228" && x.severity === "critical"));
+    assert.ok(out.some((x) => x.key === "epss:CVE-2023-0001" && x.severity === "high"));
+  });
+
+  test("kevEpssCheck returns nothing with no inventory, and skips (no invention) when feeds are down", async () => {
+    const down = async () => ({ ok: false, status: 500, json: async () => null });
+    assert.equal((await kevEpssCheck({}, { fetch: down, cves: [] })).length, 0);
+    assert.equal((await kevEpssCheck({}, { fetch: down, cves: ["CVE-2021-44228"] })).length, 0);
+  });
+});

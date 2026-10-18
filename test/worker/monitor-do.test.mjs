@@ -114,3 +114,53 @@ group("monitor DO/run + alert", () => {
     assert.equal(net.deliveries.length, 1);
   });
 });
+
+// ---- KEV / EPSS watch: reads the workspace graph inventory, matches feeds, alerts ----
+// A graph-binding stub: GraphDO.get(wid).fetch(pull) returns the workspace's entities.
+function graphEnv(entities) {
+  return { GRAPH: { idFromName: (n) => n, get: () => ({ fetch: async () => ({ ok: true, status: 200, json: async () => ({ entities }) }) }) } };
+}
+// fake net: serves the two mirrored feeds; any other URL is a webhook delivery.
+function kevNet(kevCves = ["CVE-2021-44228"], epssRows = []) {
+  const deliveries = [];
+  const fetch = async (url, opts) => {
+    if (url.includes("cisa-kev-index")) return { ok: true, status: 200, json: async () => ({ data: kevCves.map((c) => ({ cve: c, dueDate: "2021-12-24" })) }) };
+    if (url.includes("epss-top")) return { ok: true, status: 200, json: async () => ({ data: epssRows }) };
+    deliveries.push({ url, body: opts && opts.body }); return { ok: true, status: 200 };
+  };
+  return { fetch, deliveries };
+}
+
+group("monitor DO/kev-epss", () => {
+  test("a KEV match in the graph alerts, and an unchanged second run does not", async () => {
+    const st = memState();
+    const mon = new MonitorDO(st, graphEnv([{ name: "app server", data: { cves: ["CVE-2021-44228"] } }]));
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "KEV", type: "kev-epss", config: { epssFloor: 0.5 }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    const net = kevNet();
+    const r = await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    assert.equal(r.ran[0].found, 1);
+    assert.equal(net.deliveries.length, 1, "a new KEV match alerts regardless of severity");
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    assert.equal(net.deliveries.length, 1, "no new change on the second run");
+  });
+
+  test("no CVEs in the workspace graph means nothing found and nothing delivered", async () => {
+    const st = memState();
+    const mon = new MonitorDO(st, graphEnv([{ name: "host", data: {} }]));
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "KEV", type: "kev-epss", config: {}, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    const net = kevNet();
+    const r = await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    assert.equal(r.ran[0].found, 0);
+    assert.equal(net.deliveries.length, 0);
+  });
+
+  test("the DO remembers its workspace id from the x-mon-wid header", async () => {
+    const st = memState();
+    const mon = new MonitorDO(st, graphEnv([]));
+    const res = await mon.fetch(new Request("https://monitor/", { method: "POST", body: JSON.stringify({ op: "list" }), headers: { "content-type": "application/json", "x-mon-uid": "u1", "x-mon-role": "owner", "x-mon-wid": "wsX" } }));
+    assert.equal(res.status, 200);
+    assert.equal(await st.storage.get("wid"), "wsX");
+  });
+});
