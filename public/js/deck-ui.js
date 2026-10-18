@@ -45,7 +45,7 @@ import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.
 import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
 import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018d";
 import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018d";
-import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261018e";
+import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261018f";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
