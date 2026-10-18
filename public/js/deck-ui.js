@@ -44,6 +44,7 @@ import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=2
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
 import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
 import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018c";
+import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018c";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -1087,6 +1088,16 @@ const CSS = `
 .dk-twrap{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-bottom:20px}
 @media(max-width:900px){.dk-twrap{grid-template-columns:1fr}}
 .dk-tpanel{border-radius:16px;background:rgba(23,33,56,.03);border:1px solid rgba(23,33,56,.08);padding:16px 18px}
+.dk-affects{margin:16px 0;background:rgba(224,56,58,.04);border-color:rgba(224,56,58,.18)}
+.dk-affects .ct{display:flex;align-items:center;gap:8px;font-weight:700;color:#1a2233;margin-bottom:10px}
+.dk-affects .ct .src{margin-left:auto;font-weight:500;font-size:12px;color:#6b7589}
+.dk-affbadge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border-radius:5px;margin-left:5px;vertical-align:middle}
+.dk-affbadge.kev{background:#e0383a;color:#fff}
+.dk-affbadge.epss{background:rgba(224,56,58,.12);color:#b22}
+.dk-affsubs{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.dk-affsub{font:inherit;font-size:12px;cursor:pointer;background:rgba(37,82,198,.08);color:#2552c6;border:0;border-radius:6px;padding:2px 8px}
+.dk-affsub:hover{background:rgba(37,82,198,.16)}
+.dk-affsubs .more{font-size:11.5px;color:#6b7589}
 .dk-bars{display:flex;flex-direction:column;gap:9px}
 .dk-barrow{display:grid;grid-template-columns:62px 1fr 34px;align-items:center;gap:10px;font-size:12px}
 .dk-barrow .bl{color:#5a6680}
@@ -2844,7 +2855,7 @@ export function renderDeck(host, opts) {
         + `<div class="dk-sevchip"><div class="n">${(d.total || 0).toLocaleString()}</div><div class="l">Published 7d</div></div>`
         + `<div class="dk-sevchip" id="dkTiKevChip"><div class="n" style="--fg:#e0383a">—</div><div class="l">Known-exploited</div></div>`;
       const charts = buildThreatCharts(d.cves);
-      el.querySelector("#dkTiBody").innerHTML = `<div class="dk-sublede">Severity counts and charts cover the ${_tiCves.length} most recent CVEs; ${(d.total || 0).toLocaleString()} were published to NVD in the last 7 days.</div><div class="dk-sevchips">${chips}</div>${charts}
+      el.querySelector("#dkTiBody").innerHTML = `<div class="dk-sublede">Severity counts and charts cover the ${_tiCves.length} most recent CVEs; ${(d.total || 0).toLocaleString()} were published to NVD in the last 7 days.</div><div class="dk-sevchips">${chips}</div><div id="dkTiAffects"></div>${charts}
         <div id="dkTiRansom"></div>
         <div class="dk-tibar">
           <label class="dk-tsearch dk-tifind">${IC_SEARCH}<input id="dkTiSearch" type="search" placeholder="Filter CVEs…" autocomplete="off" spellcheck="false"></label>
@@ -2869,6 +2880,21 @@ export function renderDeck(host, opts) {
         paintTiList();
       }).catch(() => { const chip = el.querySelector("#dkTiKevChip .n"); if (chip) chip.textContent = "—"; });
       fetchEpss(_tiCves.map((v) => v.id)).then((m) => { _tiEpss = m || {}; paintTiList(); });
+      // What affects you: match THIS workspace's own graph CVEs against the live KEV + EPSS
+      // feeds, so known-exploited issues already in your inventory surface at the top — even
+      // ones not in this week's NVD window. Honest: driven entirely by the graph and the feeds.
+      paintAffects(null); // loading
+      (async () => {
+        try {
+          const kv = await fetchKev().catch(() => ({ set: new Set() }));
+          const ents = await new Promise((r) => withGraph((m) => r(m && m.exportAll ? (m.exportAll().entities || []) : [])));
+          const real = postureMod && postureMod.realEntities ? postureMod.realEntities(ents) : ents;
+          const ids = graphCves(real);
+          const epss = ids.length ? await fetchEpss(ids) : {};
+          if (curScene !== "threat") return;
+          paintAffects(affectsMe(real, { kevSet: kv.set || new Set(), epss }));
+        } catch (_) { paintAffects(undefined); }
+      })();
       // Recent ransomware-leak activity — honest live feed, hidden if unavailable.
       fetchRansom(8).then((vics) => {
         const box = el.querySelector("#dkTiRansom"); if (!box || !vics.length) return;
@@ -2880,6 +2906,22 @@ export function renderDeck(host, opts) {
       el.querySelector("#dkTiBody").innerHTML = `<div class="dk-errbox">Couldn't reach the NVD CVE feed. Keyless requests are rate-limited to ~5 every 30 seconds — wait a moment and reopen this tab.<br><button class="dk-b" id="dkTiRetry" style="display:inline-flex;width:auto;margin-top:12px">Retry</button></div>`;
       const rt = el.querySelector("#dkTiRetry"); if (rt) rt.onclick = () => { _cveCache = null; _cveAt = 0; renderThreat(); };
     });
+  }
+  // Render the "what affects you" panel into #dkTiAffects. r: null = loading, undefined =
+  // feed/graph unavailable (hide), else an affectsMe() result. An empty graph hides the panel;
+  // a graph with CVEs but no KEV/EPSS hits shows a short all-clear line.
+  function paintAffects(r){
+    const box = document.querySelector("#dkTiAffects"); if (!box) return;
+    if (r === null) { box.innerHTML = `<div class="dk-tpanel"><div class="ct">${IC.shield} What affects you <span class="src">matching your graph…</span></div><div class="dk-loading"><span class="sp"></span>Checking your inventory against the live KEV and EPSS feeds…</div></div>`; return; }
+    if (!r || !r.scanned) { box.innerHTML = ""; return; } // nothing in the graph carries a CVE — don't clutter
+    if (!r.matches.length) { box.innerHTML = `<div class="dk-tpanel"><div class="ct">${IC.shield} What affects you <span class="src">your graph vs live feeds</span></div><div class="dk-nempty">None of the ${r.scanned} CVE-bearing item${r.scanned === 1 ? "" : "s"} in your graph is known-exploited or high-probability right now. This re-checks against the current feeds each time you open this tab.</div></div>`; return; }
+    const rows = r.matches.slice(0, 50).map((m) => {
+      const chips = m.subjects.slice(0, 4).map((s) => `<button class="dk-affsub" data-eid="${esc(s.id)}" title="${esc(s.type)}">${esc(s.name || s.id)}</button>`).join("") + (m.subjectCount > 4 ? `<span class="more">+${m.subjectCount - 4}</span>` : "");
+      const badges = `${m.kev ? `<span class="dk-affbadge kev">KEV</span>` : ""}${m.epss != null ? `<span class="dk-affbadge epss" title="FIRST EPSS exploit probability">EPSS ${Math.round(m.epss * 100)}%</span>` : ""}`;
+      return `<tr><td class="sv"><span class="dk-sev" style="--c:${SEV_C[m.severity] || "#8a93a6"}"><i></i>${esc(m.severity.charAt(0).toUpperCase() + m.severity.slice(1))}</span></td><td class="cv"><b>${esc(m.cve)}</b> ${badges}</td><td class="su"><div class="dk-affsubs">${chips}</div></td><td class="st">${m.open ? "open" : "present"}</td></tr>`;
+    }).join("");
+    box.innerHTML = `<div class="dk-tpanel dk-affects"><div class="ct">${IC.shield} What affects you <span class="src">${r.kevCount} known-exploited, ${r.epssCount} high-probability · ${r.affectedSubjects} item${r.affectedSubjects === 1 ? "" : "s"} in your graph</span></div><div class="dk-tscroll"><table class="dk-natbl"><thead><tr><th>Severity</th><th>CVE</th><th>In your graph</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>${r.matches.length > 50 ? `<div class="dk-nempty">Showing the 50 highest-priority of ${r.matches.length}.</div>` : ""}</div>`;
+    box.querySelectorAll(".dk-affsub[data-eid]").forEach((b) => b.onclick = () => { try { openEntityDrawer(b.dataset.eid); } catch (_) {} });
   }
   // Charts built purely from the fetched CVE set: a 7-day stacked-severity trend
   // and a CVSS-band distribution. No extra network calls, no fabricated data.
