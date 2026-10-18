@@ -40,6 +40,8 @@ import { mountCorrelations, repaintCorrelations } from "/js/deck/correlations.js
 import { mountMonitors } from "/js/deck/monitors.js?v=20261018a";
 import { mountApiKeys } from "/js/deck/apikeys.js?v=20261018b";
 import { mountAudit } from "/js/deck/audit.js?v=20261018c";
+import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261018c";
+import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
 
 const LS_CONN = "dn_deck_connections_v1";
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
@@ -2485,6 +2487,24 @@ export function renderDeck(host, opts) {
   // case where sync is off (ingest only needs the proxy and sign-in, not graph sync).
   { const _dt = setTimeout(() => { try { autoDrainIngest(); } catch (_) {} }, 6000); busOffs.push(() => clearTimeout(_dt)); }
 
+  // Record one real metrics snapshot per day for this workspace (today's is overwritten as
+  // it recomputes), so the board report and Overview trend show genuine movement. Once per
+  // Deck load, from the sample-excluded graph.
+  let _trendRecorded = false;
+  function recordTrend() {
+    if (_trendRecorded) return;
+    withGraph((m) => {
+      if (!m || !m.exportAll) return;
+      _trendRecorded = true;
+      try {
+        const g = m.exportAll();
+        const ents = postureMod ? g.entities.filter((e) => !postureMod.isSimulated(e)) : (g.entities || []);
+        recordSnapshot(activeWorkspace() || null, metricsSnapshot(ents, { now: Date.now() }));
+      } catch (_) {}
+    });
+  }
+  { const _tt = setTimeout(recordTrend, 2500); busOffs.push(() => clearTimeout(_tt)); }
+
   busOffs.push(bus.on(EVENTS.ENTITY_CREATED, (p) => pushNotif(`Entity added to the graph${p && (p.label || p.name) ? `: ${p.label || p.name}` : p && p.type ? `: ${p.type}` : ""}`)));
   busOffs.push(bus.on(EVENTS.RELATIONSHIP_CREATED, () => pushNotif("New relationship created in the security graph")));
   busOffs.push(bus.on(EVENTS.TOOL_RESULT, (p) => pushNotif(`Result captured${p && p.tool ? ` from ${p.tool}` : ""}`)));
@@ -3797,6 +3817,56 @@ export function renderDeck(host, opts) {
       + `<h2>Recommended next steps</h2>` + (acts.length ? `<ol>${acts.map((a) => `<li><b>${esc(a.title)}</b> — ${esc(a.detail)}</li>`).join("")}</ol>` : `<p>No actions outstanding.</p>`)
       + `<p class="foot">Generated in your browser from your security graph. Sample data is excluded and nothing was uploaded.</p>`;
   }
+  // ---- Board report (D7): metrics snapshot + trend + quarter-over-quarter deltas ----
+  function boardData(d){
+    const now = Date.now();
+    const snap = metricsSnapshot(d.entities, { now });
+    const wid = activeWorkspace() || null;
+    const series = readTrend(wid);
+    const qAgo = new Date(now - 90 * 86400000).toISOString().slice(0, 10);
+    const prev = baselineBefore(wid, qAgo);
+    const delta = trendDelta(snap, prev);
+    return { snap, series, prev, delta };
+  }
+  // Signed delta with a plain-language sense. improve=-1 means "lower is better".
+  function dtxt(v, improveDown){
+    if (v == null || v === 0) return v === 0 ? "no change" : "no prior period";
+    const dir = v > 0 ? "+" : "";
+    const better = improveDown ? v < 0 : v > 0;
+    return `${dir}${v} (${better ? "better" : "worse"})`;
+  }
+  function boardMetricRows(b){
+    const s = b.snap, d = b.delta || {};
+    return [
+      ["Exposure score", s.exposureScore + " / 100", dtxt(d.exposureScore, true)],
+      ["Open findings", String(s.open), dtxt(d.open, true)],
+      ["Open critical + high", String(s.bySeverity.critical + s.bySeverity.high), dtxt(d.criticalHigh, true)],
+      ["Known-exploited (KEV) open", String(s.kevOpen), dtxt(d.kevOpen, true)],
+      ["SLA compliance", s.slaCompliancePct == null ? "no SLA dates" : s.slaCompliancePct + "%", dtxt(d.slaCompliancePct, false)],
+      ["Mean time to remediate", s.mttrDays == null ? "no closed findings" : s.mttrDays + " days", dtxt(d.mttrDays, true)],
+      ["Resolved findings", String(s.closed), dtxt(d.closed, false)],
+    ];
+  }
+  function boardHtml(d){
+    const b = boardData(d), m = reportMeta(), s = b.snap;
+    const period = b.prev ? `Compared with ${esc(b.prev.day)} (${b.series.length}-day history)` : "No prior period yet — this is the first recorded snapshot";
+    const rows = boardMetricRows(b).map((r) => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td><td>${esc(r[2])}</td></tr>`).join("");
+    const aging = Object.entries(s.aging).map(([k, v]) => `<tr><td>${esc(k)} days</td><td>${v}</td></tr>`).join("");
+    const top = (s.exposure.top || []).slice(0, 5).map((t) => `<li><b>${esc(t.name)}</b> — ${esc(t.severity)}${t.kev ? ", KEV" : ""}${t.overdue ? ", overdue" : ""}${t.exposed ? ", internet-facing" : ""}</li>`).join("");
+    return `<h1>${esc(m.org)} — Board Security Report</h1><p class="meta">Generated ${esc(m.date)} · Darknode · ${period}</p>`
+      + `<h2>Headline</h2><table><tr><th>Metric</th><th>Now</th><th>Since last period</th></tr>${rows}</table>`
+      + `<h2>Open findings by age</h2><table><tr><th>Bucket</th><th>Count</th></tr>${aging}</table>`
+      + `<h2>Highest-weight exposures</h2>` + (top ? `<ol>${top}</ol>` : `<p>None open.</p>`)
+      + `<p class="foot">The exposure score is open findings weighted by severity × KEV × internet-exposure × age × SLA breach × asset criticality, saturated as 100·(1−e^(−raw/${s.exposure.k})); raw = ${s.exposure.raw}. Built in your browser from your security graph; sample data excluded; nothing uploaded.</p>`;
+  }
+  function boardMd(d){
+    const b = boardData(d), m = reportMeta(), s = b.snap;
+    const period = b.prev ? `Compared with ${b.prev.day} (${b.series.length}-day history)` : "No prior period yet — first recorded snapshot";
+    const rows = boardMetricRows(b).map((r) => `| ${r[0]} | ${r[1]} | ${r[2]} |`).join("\n");
+    const aging = Object.entries(s.aging).map(([k, v]) => `- ${k} days: ${v}`).join("\n");
+    const top = (s.exposure.top || []).slice(0, 5).map((t) => `- ${t.name} — ${t.severity}${t.kev ? ", KEV" : ""}${t.overdue ? ", overdue" : ""}${t.exposed ? ", internet-facing" : ""}`).join("\n");
+    return `# ${m.org} — Board Security Report\n\nGenerated ${m.date} · Darknode · ${period}\n\n## Headline\n\n| Metric | Now | Since last period |\n|---|---|---|\n${rows}\n\n## Open findings by age\n\n${aging}\n\n## Highest-weight exposures\n\n${top || "- None open"}\n\n---\n\nExposure score = open findings weighted by severity × KEV × internet-exposure × age × SLA breach × asset criticality, saturated as 100·(1−e^(−raw/${s.exposure.k})); raw = ${s.exposure.raw}. Built in your browser from your security graph; sample data excluded; nothing uploaded.\n`;
+  }
   const FND_COLS = ["severity", "name", "type", "status", "source", "updatedAt", "id"];
   function fndMd(d){
     const m = reportMeta();
@@ -3850,6 +3920,11 @@ export function renderDeck(host, opts) {
           <div class="stat" id="dkRptStatExec"><div><b>—</b><span>loading</span></div></div>
           <div class="dk-rptacts"><button class="dk-settog" data-rpt="exec" data-act="print">Print / PDF</button><button class="dk-settog" data-rpt="exec" data-act="md">Markdown</button></div>
         </div>
+        <div class="dk-ovp dk-rptcard"><h2>${IC.gauge} Board report</h2>
+          <p class="desc">Executive metrics with quarter-over-quarter trend: exposure score, open critical/high, KEV, SLA compliance and MTTR — each with movement since the last period.</p>
+          <div class="stat" id="dkRptStatBoard"><div><b>—</b><span>loading</span></div></div>
+          <div class="dk-rptacts"><button class="dk-settog" data-rpt="board" data-act="print">Print / PDF</button><button class="dk-settog" data-rpt="board" data-act="md">Markdown</button></div>
+        </div>
         <div class="dk-ovp dk-rptcard"><h2>${IC.alert} Findings register</h2>
           <p class="desc">Every real finding and vulnerability, ranked by severity, with status and source. Export for a ticketing system or audit.</p>
           <div class="stat" id="dkRptStatFnd"><div><b>—</b><span>loading</span></div></div>
@@ -3868,6 +3943,7 @@ export function renderDeck(host, opts) {
       if (!d) { el.querySelectorAll(".stat").forEach((s) => s.innerHTML = `<div><b>—</b><span>graph unavailable</span></div>`); el.querySelectorAll(".dk-settog").forEach((b) => b.disabled = true); return; }
       const sEx = el.querySelector("#dkRptStatExec"); if (sEx) sEx.innerHTML = `<div><b>${d.ps.totalEntities}</b><span>Entities</span></div><div><b>${d.fc.open}</b><span>Open findings</span></div><div><b>${d.fc.critical + d.fc.high}</b><span>Critical &amp; high</span></div>`;
       const sFn = el.querySelector("#dkRptStatFnd"); if (sFn) sFn.innerHTML = `<div><b>${d.fc.total}</b><span>Findings</span></div><div><b>${d.fc.open}</b><span>Open</span></div><div><b>${d.fc.resolved}</b><span>Resolved</span></div>`;
+      const sBd = el.querySelector("#dkRptStatBoard"); if (sBd) { try { const bs = metricsSnapshot(d.entities, { now: Date.now() }); sBd.innerHTML = `<div><b>${bs.exposureScore}</b><span>Exposure / 100</span></div><div><b>${bs.bySeverity.critical + bs.bySeverity.high}</b><span>Critical &amp; high</span></div><div><b>${bs.slaCompliancePct == null ? "—" : bs.slaCompliancePct + "%"}</b><span>SLA met</span></div>`; } catch (_) { sBd.innerHTML = `<div><b>—</b><span>unavailable</span></div>`; } }
       const surf = surfaceRows(d);
       const sSu = el.querySelector("#dkRptStatSurf"); if (sSu) sSu.innerHTML = `<div><b>${surf.length}</b><span>Facing assets</span></div><div><b>${new Set(surf.map((e) => e.type)).size}</b><span>Asset types</span></div>`;
 
@@ -3876,6 +3952,9 @@ export function renderDeck(host, opts) {
         if (rpt === "exec") {
           if (act === "print") printReport(wsLabelText() + " — Security Posture Summary", execHtml(d));
           else dl(fname("executive-summary", "md"), execMd(d), "text/markdown");
+        } else if (rpt === "board") {
+          if (act === "print") printReport(wsLabelText() + " — Board Security Report", boardHtml(d));
+          else dl(fname("board-report", "md"), boardMd(d), "text/markdown");
         } else if (rpt === "fnd") {
           if (act === "print") printReport(wsLabelText() + " — Findings Register", fndHtml(d));
           else if (act === "md") dl(fname("findings", "md"), fndMd(d), "text/markdown");
