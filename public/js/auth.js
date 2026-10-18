@@ -57,7 +57,7 @@ import { startTour, tourDone } from "/js/tour.js";
 import { isDesktop, has as desktopHas, syncTitlebar } from "/js/core/desktop.js";
 if (isDesktop()) syncTitlebar();
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261015e"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261017e"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -1667,7 +1667,7 @@ function renderDesktopHome(user) {
     return;
   }
   view.innerHTML = "";
-  import("/js/admin.js?v=20261017d")
+  import("/js/admin.js?v=20261017e")
     .then((m) => m.openDeck(user, { onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
@@ -2016,7 +2016,7 @@ function renderApp(user) {
     else if (sec === "cyberbriefing") { import("/js/cyber-briefing.js?v=20261007a").then(m => live() && m.renderCyberBriefing(main)); }
     else if (sec === "incidentcost") { import("/js/incident-cost.js?v=20260924b").then(m => live() && m.renderIncidentCost(main)); }
     else if (sec === "fedcompliance") { import("/js/fed-compliance.js").then(m => live() && m.renderFedCompliance(main)); }
-    else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js?v=20260927a").then(m => live() && m.renderAdversaryPlaybook(main)); }
+    else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js?v=20261017e").then(m => live() && m.renderAdversaryPlaybook(main)); }
     else if (sec === "emailheader") { import("/js/email-header.js?v=20260924b").then(m => live() && m.renderEmailHeader(main)); }
     else if (sec === "dossier") { import("/js/target-dossier.js").then(m => live() && m.renderDossier(main)); }
     else if (sec === "payloadstudio") { import("/js/payload-studio.js?v=20261013m").then(m => live() && m.renderPayloadStudio(main)); }
@@ -2028,8 +2028,8 @@ function renderApp(user) {
     else if (sec === "yarabuilder") { import("/js/yara-builder.js").then(m => live() && m.renderYaraBuilder(main)); }
     else if (sec === "emailauth") { import("/js/email-auth.js").then(m => live() && m.renderEmailAuth(main)); }
     else if (sec === "cookieinspect") { import("/js/cookie-inspector.js").then(m => live() && m.renderCookieInspector(main)); }
-    else if (sec === "securitytxt") { import("/js/security-txt.js?v=20261013b").then(m => live() && m.renderSecurityTxt(main)); }
-    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261017d").then(m => live() && m.renderCodeScanner(main)); }
+    else if (sec === "securitytxt") { import("/js/security-txt.js?v=20261017e").then(m => live() && m.renderSecurityTxt(main)); }
+    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261017e").then(m => live() && m.renderCodeScanner(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js?v=20261013b").then(m => live() && m.renderReconPlanner(main)); }
     else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20261013b").then(m => live() && m.renderAPIFuzzer(main)); }
     else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260928m").then(m => live() && m.renderPrivescToolkit(main)); }
@@ -2039,7 +2039,7 @@ function renderApp(user) {
     else if (sec === "secgraph") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Security Graph...</p>"; import("/js/security-graph-ui.js?v=20261014f").then(m => live() && m.renderSecurityGraphUI(main)); }
 
     else if (sec === "cvetimeline") { import("/js/cve-timeline.js?v=20261007a").then(m => live() && m.renderCveTimeline(main)); }
-    else if (sec === "dataviz") { import("/js/data-viz.js?v=20260930b").then(m => live() && m.renderDataViz(main)); }
+    else if (sec === "dataviz") { import("/js/data-viz.js?v=20261017e").then(m => live() && m.renderDataViz(main)); }
     else if (sec === "forensicstoolkit") { import("/js/forensics-toolkit.js").then(m => live() && m.renderForensicsToolkit(main)); }
     else if (sec === "hashsuite") { import("/js/hash-suite.js").then(m => live() && m.renderHashSuite(main)); }
     else if (sec === "networktools") { import("/js/network-tools.js").then(m => live() && m.renderNetworkTools(main)); }
@@ -2060,22 +2060,22 @@ function renderApp(user) {
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => live() && m.renderLearnHub(main)); }
     else if (sec === "learndo") { import("/js/learndo.js?v=20261009a").then(m => live() && m.renderLearnDo(main)); }
     else if (sec === "engine") { import("/js/engine-tab.js?v=20260929t").then(m => live() && m.renderEngine(main)); }
-    else if (sec === "coder") { import("/js/coder.js?v=20261005a").then(m => live() && m.renderCliCoder(main)); }
-    else if (sec === "downloads") { import("/js/getapp.js?v=20261004a").then(m => live() && m.renderDownloads(main)); }
-    else if (sec === "dlguide") { import("/js/getapp.js?v=20261004a").then(m => live() && m.renderDownloadDocs(main)); }
+    else if (sec === "coder") { import("/js/coder.js?v=20261017e").then(m => live() && m.renderCliCoder(main)); }
+    else if (sec === "downloads") { import("/js/getapp.js?v=20261017e").then(m => live() && m.renderDownloads(main)); }
+    else if (sec === "dlguide") { import("/js/getapp.js?v=20261017e").then(m => live() && m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261017d").then(m => live() && m.renderAPI(main, user)); }
-    else if (sec === "docs") { import("/js/docs.js?v=20261011a").then(m => live() && m.renderDocs(main)); }
+    else if (sec === "docs") { import("/js/docs.js?v=20261017e").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261017d").then(m => live() && m.renderStrongroom(main)); }
     else if (sec === "vault") { import("/js/vault.js?v=20261017c").then(m => live() && m.renderVault(main)); }
     else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261017d").then(m => live() && m.renderSanctions(main)); }
-    else if (sec === "signins") { import("/js/identity/signin-forensics.js?v=20261017d").then(m => live() && m.renderSigninForensics(main)); }
+    else if (sec === "signins") { import("/js/identity/signin-forensics.js?v=20261017e").then(m => live() && m.renderSigninForensics(main)); }
     else if (sec === "accessreview") { import("/js/identity/access-review.js?v=20261017d").then(m => live() && m.renderAccessReview(main)); }
-    else if (sec === "fwaudit") { import("/js/infra/firewall-audit.js?v=20261017d").then(m => live() && m.renderFirewallAudit(main)); }
-    else if (sec === "loghunt") { import("/js/ops/log-hunter.js?v=20261017d").then(m => live() && m.renderLogHunter(main)); }
+    else if (sec === "fwaudit") { import("/js/infra/firewall-audit.js?v=20261017e").then(m => live() && m.renderFirewallAudit(main)); }
+    else if (sec === "loghunt") { import("/js/ops/log-hunter.js?v=20261017e").then(m => live() && m.renderLogHunter(main)); }
     else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261017d").then(m => live() && m.renderVendors(main)); }
-    else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261017d").then(m => live() && m.renderDlp(main)); }
-    else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261017d").then(m => live() && m.renderPosture(main)); }
+    else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261017e").then(m => live() && m.renderDlp(main)); }
+    else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261017e").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261017d").then(m => live() && m.renderTlsFleet(main)); }
     else if (sec === "phishtriage") { import("/js/dataprotect/phish.js?v=20261017d").then(m => live() && m.renderPhish(main)); }
     else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261017c").then(m => live() && m.renderLeakprobe(main)); }
@@ -2086,10 +2086,10 @@ function renderApp(user) {
     else if (sec === "oauthgov") { import("/js/identity/oauthgov.js?v=20261016f").then(m => live() && m.renderOauthGov(main)); }
     else if (sec === "iacscan") { import("/js/appsec/iacscan.js?v=20261016g").then(m => live() && m.renderIacScan(main)); }
     else if (sec === "cloudtrail") { import("/js/ops/cloudtrail.js?v=20261016h").then(m => live() && m.renderCloudTrail(main)); }
-    else if (sec === "vulnimport") { import("/js/exposure/vulnimport.js?v=20261016i").then(m => live() && m.renderVulnImport(main)); }
+    else if (sec === "vulnimport") { import("/js/exposure/vulnimport.js?v=20261017e").then(m => live() && m.renderVulnImport(main)); }
     else if (sec === "fleetcomply") { import("/js/exposure/fleetcomply.js?v=20261016j").then(m => live() && m.renderFleetComply(main)); }
     else if (sec === "k8saudit") { import("/js/appsec/k8saudit.js?v=20261016k").then(m => live() && m.renderK8sAudit(main)); }
-    else if (sec === "apforensics") { import("/js/finsec/apforensics.js?v=20261016l").then(m => live() && m.renderApForensics(main)); }
+    else if (sec === "apforensics") { import("/js/finsec/apforensics.js?v=20261017e").then(m => live() && m.renderApForensics(main)); }
     else if (sec === "cardaudit") { import("/js/finsec/cardaudit.js?v=20261016m").then(m => live() && m.renderCardAudit(main)); }
     else if (sec === "payrollguard") { import("/js/finsec/payrollguard.js?v=20261016n").then(m => live() && m.renderPayrollGuard(main)); }
     else if (sec === "cloudspend") { import("/js/finsec/cloudspend.js?v=20261016o").then(m => live() && m.renderCloudSpend(main)); }
@@ -2097,10 +2097,10 @@ function renderApp(user) {
     else if (sec === "riskreg") { import("/js/risk/riskreg.js?v=20261017c").then(m => live() && m.renderRiskRegister(main)); }
     else if (sec === "evidence") { import("/js/compliance/evidence.js?v=20261017c").then(m => live() && m.renderEvidence(main)); }
     else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261016s").then(m => live() && m.renderVendorRisk(main)); }
-    else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261017a").then(m => live() && m.renderBackupReady(main)); }
+    else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261017e").then(m => live() && m.renderBackupReady(main)); }
     else if (sec === "dmarcreports") { import("/js/exposure/dmarcreports.js?v=20261017c").then(m => live() && m.renderDmarcReports(main)); }
     else if (sec === "domainguard") { import("/js/exposure/domainguard.js?v=20261017c").then(m => live() && m.renderDomainGuard(main)); }
-    else if (sec === "dnshunt") { import("/js/ops/dnshunt.js?v=20261017a").then(m => live() && m.renderDnsHunt(main)); }
+    else if (sec === "dnshunt") { import("/js/ops/dnshunt.js?v=20261017e").then(m => live() && m.renderDnsHunt(main)); }
     else if (sec === "proxyhunt") { import("/js/ops/proxyhunt.js?v=20261017a").then(m => live() && m.renderProxyHunt(main)); }
     else if (sec === "vpnaudit") { import("/js/identity/vpnaudit.js?v=20261017a").then(m => live() && m.renderVpnAudit(main)); }
     else if (sec === "netexposure") { import("/js/exposure/netexposure.js?v=20261016z").then(m => live() && m.renderNetExposure(main)); }
@@ -2111,7 +2111,7 @@ function renderApp(user) {
     else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261017c").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261017d").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261017e").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261013c").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
