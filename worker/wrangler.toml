@@ -28,6 +28,12 @@ class_name = "VaultDO"
 name = "GRAPH"
 class_name = "GraphDO"
 
+# Continuous monitoring (Deck D4): one SQLite-backed Durable Object per workspace.
+# Monitors run on the DO's own alarms, so live checks keep running with no page open.
+[[durable_objects.bindings]]
+name = "MONITOR"
+class_name = "MonitorDO"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["VaultDO"]
@@ -35,3 +41,7 @@ new_sqlite_classes = ["VaultDO"]
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["GraphDO"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["MonitorDO"]
