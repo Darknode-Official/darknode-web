@@ -409,9 +409,35 @@ function dueFlow(ids, e) {
   }, (v) => { const at = dateInputToMs(v.date); return at == null ? "Pick a valid due date." : { op: "due", dueAt: at, reason: v.reason }; }, "Due date set");
 }
 
+// The Risk Register (riskreg) tool mirrors every risk into the graph as a FINDING
+// entity it owns (source "riskreg"). An exception links to one of those real entries
+// instead of a free-text id, so "accept this risk" points at a tracked risk.
+function riskRegisterRisks() {
+  let out = [];
+  try { S.ctx.withGraph((m) => { if (m && m.listEntities) out = (m.listEntities({ type: "FINDING" }) || []).filter((r) => r.source === "riskreg").map((r) => ({ id: r.id, name: String(r.name || "Untitled risk").slice(0, 90) })).sort((a, b) => a.name.localeCompare(b.name)); }); } catch (_) {}
+  return out;
+}
+const RISK_OTHER = "__other__";
+
 function exceptionFlow(ids, e) {
   const now = Date.now();
   const x = e && e.data && e.data.exception;
+  const curRisk = x && x.riskId ? String(x.riskId) : "";
+  const risks = riskRegisterRisks();
+  const linked = risks.some((r) => r.id === curRisk);
+  const riskFields = risks.length
+    ? [
+        { key: "riskSel", label: "Risk register entry", type: "select",
+          value: linked ? curRisk : (curRisk ? RISK_OTHER : ""),
+          options: [["", "— not linked —"], ...risks.map((r) => [r.id, r.name]), [RISK_OTHER, "Other / external id"]],
+          help: "Link this accepted risk to an entry in the Risk Register tool." },
+        { key: "riskId", label: "External risk id", type: "text", maxlength: 120, value: linked ? "" : curRisk, placeholder: "GRC / external id",
+          help: 'Only for a risk tracked outside this platform (choose "Other" above).' },
+      ]
+    : [
+        { key: "riskId", label: "Risk register id", type: "text", maxlength: 120, value: curRisk, placeholder: "Risk id",
+          help: "No risks in the Risk Register tool yet — add risks there to link them here, or enter an external id." },
+      ];
   formChange(ids, {
     title: (x ? "Replace risk exception" : "Add risk exception") + (ids.length > 1 ? ` for ${ids.length} findings` : ""),
     desc: `A time-boxed, approved decision to carry this risk. It must expire within ${EXCEPTION_MAX_DAYS} days; on expiry the finding returns to the queue.`,
@@ -420,7 +446,7 @@ function exceptionFlow(ids, e) {
       { key: "reason", label: "Reason", type: "textarea", required: true, maxlength: 500, placeholder: "Why the risk is accepted", help: "Note any compensating control." },
       { key: "approver", label: "Approved by", type: "text", required: true, maxlength: 120, placeholder: "Name or role", list: S.members.map((mm) => mm.label).filter(Boolean), help: "Pick a member or type a name or role." },
       { key: "expires", label: "Expires on", type: "date", required: true, min: localDay(now), max: exceptionMaxDay(now) },
-      { key: "riskId", label: "Risk register id", type: "text", maxlength: 120, placeholder: "Risk id" },
+      ...riskFields,
     ],
   }, (v) => {
     const n = Date.now(), maxDay = exceptionMaxDay(n);
@@ -428,7 +454,11 @@ function exceptionFlow(ids, e) {
     // Clamp only the end-of-day overshoot on the last allowed day itself.
     const exp = dateInputToMs(v.expires, { maxMs: n + EXCEPTION_MAX_DAYS * DAY_MS });
     if (exp == null) return "Pick a valid expiry date.";
-    return { op: "exception", reason: v.reason, approver: v.approver, expiresAt: exp, riskId: v.riskId };
+    // A chosen register entry wins; "Other" (or no register entries) uses the free-text id.
+    let riskId = "";
+    if (risks.length) { const sel = String(v.riskSel || ""); riskId = sel && sel !== RISK_OTHER ? sel : (sel === RISK_OTHER ? String(v.riskId || "").trim() : ""); }
+    else riskId = String(v.riskId || "").trim();
+    return { op: "exception", reason: v.reason, approver: v.approver, expiresAt: exp, riskId };
   }, x ? "Risk exception replaced" : "Risk exception added");
 }
 
@@ -692,6 +722,7 @@ function paintDetail(m) {
   const controls = Array.isArray(d.controls) ? d.controls.filter((c) => c && c.id) : [];
   const x = d.exception && typeof d.exception === "object" ? d.exception : null;
   const xActive = x && Number(x.expiresAt) > now;
+  const riskEnt = x && x.riskId && m.getEntity ? m.getEntity(x.riskId) : null;
   const xh = Array.isArray(d.exceptionHistory) ? d.exceptionHistory.slice().reverse() : [];
   const tickets = (Array.isArray(d.tickets) ? d.tickets : []).filter((t) => t && /^https:\/\//i.test(String(t.url || "")));
   const tl = timelineSentences(timeline(e), { nameOf, toolName: ctx.toolLabel, fmtDate: fmtDay });
@@ -731,7 +762,7 @@ function paintDetail(m) {
       <div class="fq-dside">
         <div class="dk-ovp">
           <h2>${IC.shield || ""} Risk exception</h2>
-          ${x ? `<dl class="fq-kv"><dt>Status</dt><dd>${xActive ? "Active" : "Expired"}</dd><dt>Reason</dt><dd>${E(x.reason)}</dd><dt>Approved by</dt><dd>${E(x.approver)}</dd><dt>Expires</dt><dd>${E(fmtDay(x.expiresAt))}${xActive ? ` (in ${Math.max(0, Math.ceil((x.expiresAt - now) / DAY_MS))}d)` : ""}</dd>${x.riskId ? `<dt>Risk id</dt><dd>${E(x.riskId)}</dd>` : ""}<dt>Recorded</dt><dd>${E(nameOf(x.by))}${x.ts ? ", " + E(fmtDay(x.ts)) : ""}</dd></dl>` : `<div class="fq-mut" style="margin-bottom:10px">No active exception. Add one to accept this risk for a fixed period.</div>`}
+          ${x ? `<dl class="fq-kv"><dt>Status</dt><dd>${xActive ? "Active" : "Expired"}</dd><dt>Reason</dt><dd>${E(x.reason)}</dd><dt>Approved by</dt><dd>${E(x.approver)}</dd><dt>Expires</dt><dd>${E(fmtDay(x.expiresAt))}${xActive ? ` (in ${Math.max(0, Math.ceil((x.expiresAt - now) / DAY_MS))}d)` : ""}</dd>${x.riskId ? `<dt>Risk</dt><dd>${riskEnt ? `<button class="dk-tibtn" style="height:auto;padding:2px 7px;font-size:inherit" data-risk="${E(x.riskId)}">${E(riskEnt.name || x.riskId)}</button>` : E(x.riskId)}</dd>` : ""}<dt>Recorded</dt><dd>${E(nameOf(x.by))}${x.ts ? ", " + E(fmtDay(x.ts)) : ""}</dd></dl>` : `<div class="fq-mut" style="margin-bottom:10px">No active exception. Add one to accept this risk for a fixed period.</div>`}
           ${write ? `<div class="fq-row"><button class="dk-tibtn" data-d="exc">${x ? "Replace" : "Add exception"}</button>${x ? `<button class="dk-tibtn" data-d="revoke">Revoke</button>` : ""}</div>` : ""}
           ${xh.length ? `<div class="fq-sec" style="margin-top:12px"><div class="hd">History</div><ul class="fq-hist">${xh.map((h) => `<li>${E(h.reason || "")}<br><span class="fq-mut">Approved by ${E(h.approver || "-")}, until ${E(fmtDay(h.expiresAt))}. ${h.revokedAt ? `Revoked by ${E(nameOf(h.revokedBy))} ${E(fmtDay(h.revokedAt))}${h.revokeReason ? ": " + E(h.revokeReason) : ""}` : h.expiredAt ? `Expired ${E(fmtDay(h.expiredAt))}` : h.replacedAt ? `Replaced ${E(fmtDay(h.replacedAt))}` : ""}</span></li>`).join("")}</ul></div>` : ""}
         </div>
@@ -754,6 +785,7 @@ function paintDetail(m) {
   on("graph", () => ctx.openEntityDrawer(e.id));
   on("tool", () => ctx.openTool(tool));
   box.querySelectorAll("[data-asset]").forEach((b) => b.onclick = () => ctx.openEntityDrawer(b.dataset.asset));
+  box.querySelectorAll("[data-risk]").forEach((b) => b.onclick = () => ctx.openEntityDrawer(b.dataset.risk));
   if (!write) return;
   on("sev", () => formChange(ids, {
     title: "Change severity", desc: "Tool re-runs keep your severity. The reason is kept in the history.", submitText: "Change severity",
