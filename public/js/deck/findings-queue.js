@@ -32,6 +32,11 @@ import {
 const KEV_URL = "/data/feeds/cisa-kev-index.json";
 const LS_VIEW = "dn_deck_fview__";      // + workspace id: last queue view
 const LS_SAVED = "dn_deck_fviews__";    // + uid + "__" + workspace id: saved views
+const LS_GROUP = "dn_deck_fgroup__";    // + workspace id: queue group-by dimension
+// Group-by dimensions. Only unambiguous, one-finding-one-group keys (asset/control
+// grouping is deferred: a finding can touch several assets, so it needs a design choice).
+export const GROUPS = ["none", "source", "severity", "owner", "status"];
+const GROUP_LABEL = { none: "No grouping", source: "Source tool", severity: "Severity", owner: "Owner", status: "Status" };
 const SLA_KEYS = ["critical", "high", "medium", "low", "info", "kev"];
 const SLA_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Info", kev: "Known exploited (CISA KEV)" };
 const SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Info" };
@@ -39,7 +44,7 @@ const SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "
 const S = {
   ctx: null, el: null, wsk: null,
   f: { q: "", severity: "", status: "", source: "", sim: false },
-  view: "open", sel: new Set(), rows: [], saved: [], savedName: "",
+  view: "open", group: "none", sel: new Set(), rows: [], saved: [], savedName: "",
   detailId: null, scrollTop: 0, scrollEl: null,
   policy: normalizePolicy(SLA_DEFAULTS), policyLoaded: false,
   role: null, roleErr: "", members: [], teamP: null,
@@ -82,6 +87,8 @@ function bind(ctx) {
   S.policy = normalizePolicy(SLA_DEFAULTS); S.policyLoaded = false;
   const v = lsGet(LS_VIEW + k);
   S.view = VIEWS.includes(v) ? v : "open";
+  const g = lsGet(LS_GROUP + k);
+  S.group = GROUPS.includes(g) ? g : "none";
   try { S.saved = normalizeSaved(JSON.parse(lsGet(LS_SAVED + (myUid() || "anon") + "__" + k) || "[]"), VIEWS); } catch (_) { S.saved = []; }
 }
 
@@ -166,6 +173,8 @@ function injectStyle() {
 .fq-saved .dk-isel{min-width:0;width:auto}
 .fq-saved .dk-tibtn{flex:none;white-space:nowrap}
 .dk-fndt th,.dk-fndt td.ag,.dk-fndt .pill{white-space:nowrap}
+.dk-fndt .fq-grp td{background:rgba(23,33,56,.045);font-weight:700;font-size:11.5px;letter-spacing:.02em;color:#2a3450;padding:7px 11px;border-top:2px solid rgba(23,33,56,.12)}
+.dk-fndt .fq-grp .fq-grpn{display:inline-block;margin-left:8px;font-weight:700;font-variant-numeric:tabular-nums;background:rgba(23,33,56,.08);color:#5a6680;border-radius:20px;padding:0 8px}
 .fq-note{font-size:12px;color:#5a6680;margin:-2px 0 10px;padding:7px 11px;background:rgba(23,33,56,.035);border-radius:8px;overflow-wrap:anywhere}
 .fq-note.warn{background:rgba(245,146,11,.1);color:#7a4a00}
 .fq-bulk .dk-isel{height:32px}
@@ -500,6 +509,7 @@ export function mountFindingsQueue(el, ctx) {
           <select id="dkFndStatus" class="dk-isel" aria-label="Status"></select>
           <select id="dkFndSrc" class="dk-isel" aria-label="Source"></select>
           <label class="dk-invsim" data-explain="inv.sim"><input type="checkbox" id="dkFndSim"${S.f.sim ? " checked" : ""}> Include simulated / sample</label>
+          <select id="dkFndGroup" class="dk-isel" aria-label="Group by">${GROUPS.map((g) => `<option value="${g}"${g === S.group ? " selected" : ""}>${E(g === "none" ? "No grouping" : "Group: " + GROUP_LABEL[g])}</option>`).join("")}</select>
           <div class="fq-saved"><select id="fqSaved" class="dk-isel" aria-label="Saved views"></select><button class="dk-tibtn" id="fqSave" style="height:38px">Save view</button><button class="dk-tibtn" id="fqDel" style="height:38px" hidden>Delete view</button></div>
         </div>
         <div id="fqNotes"></div>
@@ -515,6 +525,7 @@ export function mountFindingsQueue(el, ctx) {
   $("#dkFndStatus").onchange = (e) => { S.f.status = e.target.value; changed(); };
   $("#dkFndSrc").onchange = (e) => { S.f.source = e.target.value; changed(); };
   $("#dkFndSim").onchange = (e) => { S.f.sim = e.target.checked; changed(); };
+  $("#dkFndGroup").onchange = (e) => { S.group = GROUPS.includes(e.target.value) ? e.target.value : "none"; lsSet(LS_GROUP + S.wsk, S.group); refresh(); };
   const stamp = new Date().toISOString().slice(0, 10);
   const exportRows = () => S.rows.map((r) => ({ severity: r.severity, name: r.name, type: r.type, status: r.status, resolution: r.resolution || "", owner: r.ownerName, due: r.sla.dueAt ? localDay(r.sla.dueAt) : "", sla: r.sla.state, source: r.source, createdAt: r.createdAt, updatedAt: r.updatedAt, id: r.id, tags: r.tags, sim: r.sim }));
   $("#dkFndCsv").onclick = () => { if (!S.rows.length) return toast("No findings to export"); ctx.dl("darknode-findings-" + stamp + ".csv", ctx.findings.toCSV(exportRows(), ["severity", "name", "type", "status", "resolution", "owner", "due", "sla", "source", "createdAt", "updatedAt", "id"]), "text/csv"); };
@@ -559,6 +570,25 @@ function applySaved(v) {
   const q = S.el.querySelector("#dkFndQ"); if (q) q.value = S.f.q;
   const sim = S.el.querySelector("#dkFndSim"); if (sim) sim.checked = !!S.f.sim;
   refresh();
+}
+
+// Bucket queue rows by one unambiguous dimension. Returns ordered groups
+// [{ key, label, rows }]: severity in severity order, everything else by size
+// then label. Pure (no DOM) so it can be unit-tested.
+export function groupRows(rows, by) {
+  const keyer = {
+    source: (r) => [String(r.source || ""), String(r.source || "Unknown source")],
+    severity: (r) => { const s = String(r.severity || "none").toLowerCase(); return [s, SEV_LABEL[s] || "Unrated"]; },
+    owner: (r) => [String(r.owner || ""), String(r.ownerShow || "Unassigned")],
+    status: (r) => { const s = String(r.status || "new").toLowerCase(); return [s, cap(s)]; },
+  }[by];
+  if (!keyer) return [{ key: "", label: "", rows: rows.slice() }];
+  const map = new Map();
+  for (const r of rows) { const [k, label] = keyer(r); if (!map.has(k)) map.set(k, { key: k, label, rows: [] }); map.get(k).rows.push(r); }
+  const groups = [...map.values()];
+  if (by === "severity") { const ord = ["critical", "high", "medium", "low", "info", "none"]; groups.sort((a, b) => (ord.indexOf(a.key) + 1 || 99) - (ord.indexOf(b.key) + 1 || 99)); }
+  else groups.sort((a, b) => b.rows.length - a.rows.length || String(a.label).localeCompare(String(b.label)));
+  return groups;
 }
 
 /** Repaint the scene (queue or open detail) from the graph module `m`. */
@@ -619,10 +649,15 @@ function paintQueue(m) {
   if (!rows.length) { box.innerHTML = `<div class="dk-nempty">${base.length ? `Nothing in ${E(VIEW_LABEL[S.view])} with these filters.` : "No findings match these filters."}</div>`; return; }
   const shown = rows.slice(0, 500);
   const fmt = (ms) => fmtDay(ms);
-  box.innerHTML = `<div class="dk-itwrap"><table class="dk-itable dk-fndt"><thead><tr>${write ? `<th class="ck"><input type="checkbox" id="dkFndAll" aria-label="Select all shown"></th>` : ""}<th>Severity</th><th>Finding</th><th>Owner</th><th>Due</th><th>Status</th><th>Source</th><th>First seen</th><th>Updated</th></tr></thead><tbody>${shown.map((r) => {
+  const ncol = write ? 9 : 8;
+  const rowHtml = (r) => {
     const chip = dueChip(r.sla, now, fmt);
     return `<tr data-eid="${E(r.id)}" class="fq-sev-${E(String(r.severity || "none").toLowerCase())}">${write ? `<td class="ck"><input type="checkbox" data-sel="${E(r.id)}"${S.sel.has(r.id) ? " checked" : ""} aria-label="Select finding"></td>` : ""}<td>${r.severity ? pill(sevC(r.severity), cap(r.severity)) : "-"}</td><td class="fq-nm"><button class="fq-open" data-open="${E(r.id)}">${E(r.title || r.name || "Untitled finding")}</button>${r.type === "VULNERABILITY" ? '<span class="fq-chip vuln">Vulnerability</span>' : ""}${r.kev ? '<span class="fq-chip kev" title="On the CISA Known Exploited Vulnerabilities catalog">KEV</span>' : ""}${r.regressed ? '<span class="fq-chip reg" title="Was verified fixed, then seen again">Regressed</span>' : ""}${r.sim ? ' <span class="dk-simchip">Sample</span>' : ""}</td><td><div class="fq-own${r.owner ? "" : " un"}" title="${E(r.ownerShow)}">${E(r.ownerShow)}</div></td><td><span class="fq-due ${chip.cls}"${r.sla.dueAt ? ` title="Due ${E(fmtDay(r.sla.dueAt))}"` : ""}>${E(chip.text)}</span></td><td>${pill(stC(r.status), cap(r.status))}${r.resolution ? `<span class="fq-res">${E(RESOLUTION_LABEL[r.resolution] || r.resolution)}</span>` : ""}</td><td>${E(r.source)}</td><td class="ag">${ctx.agoISO(r.createdAt)}</td><td class="ag">${ctx.agoISO(r.updatedAt)}</td></tr>`;
-  }).join("")}</tbody></table></div>${rows.length > shown.length ? `<div class="dk-nempty">Showing ${shown.length} of ${rows.length.toLocaleString()}. Narrow the filters, or export to get them all.</div>` : ""}`;
+  };
+  const body = S.group === "none"
+    ? shown.map(rowHtml).join("")
+    : groupRows(shown, S.group).map((g) => `<tr class="fq-grp"><td colspan="${ncol}">${E(g.label || "—")}<span class="fq-grpn">${g.rows.length.toLocaleString()}</span></td></tr>${g.rows.map(rowHtml).join("")}`).join("");
+  box.innerHTML = `<div class="dk-itwrap"><table class="dk-itable dk-fndt"><thead><tr>${write ? `<th class="ck"><input type="checkbox" id="dkFndAll" aria-label="Select all shown"></th>` : ""}<th>Severity</th><th>Finding</th><th>Owner</th><th>Due</th><th>Status</th><th>Source</th><th>First seen</th><th>Updated</th></tr></thead><tbody>${body}</tbody></table></div>${rows.length > shown.length ? `<div class="dk-nempty">Showing ${shown.length} of ${rows.length.toLocaleString()}. Narrow the filters, or export to get them all.</div>` : ""}`;
   const all1 = box.querySelector("#dkFndAll");
   if (all1) {
     all1.checked = shown.every((r) => S.sel.has(r.id));
