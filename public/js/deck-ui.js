@@ -37,7 +37,7 @@ import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js
 import { mountFindingsQueue, repaintFindingsQueue, renderSlaSettings } from "/js/deck/findings-queue.js?v=20261018e";
 import { mountInventory, repaintInventory } from "/js/deck/inventory.js?v=20261018a";
 import { mountCorrelations, repaintCorrelations } from "/js/deck/correlations.js?v=20261018a";
-import { mountMonitors } from "/js/deck/monitors.js?v=20261018a";
+import { mountMonitors } from "/js/deck/monitors.js?v=20261018h";
 import { mountApiKeys } from "/js/deck/apikeys.js?v=20261018c";
 import { mountAudit } from "/js/deck/audit.js?v=20261018c";
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261018c";
