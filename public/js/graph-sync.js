@@ -48,8 +48,12 @@ export function createSyncEngine(deps) {
     const payload = { entities: [...pendingE.values()], relationships: [...pendingR.values()] };
     pendingE.clear(); pendingR.clear();
     try {
-      const res = await transport.push(payload);
-      if (res && typeof res.rev === "number") { st.rev = Math.max(st.rev, res.rev); persist(); }
+      await transport.push(payload);
+      // Deliberately do NOT adopt the push response's rev as our cursor. The records between
+      // our current cursor and that new head may belong to OTHER writers (a teammate, or this
+      // user's other device) and have not been pulled yet. Advancing the cursor to the push
+      // head and then pulling from there would skip them forever (silent divergence). Only
+      // pullDelta advances the cursor, and only to a head whose records it has actually applied.
     } catch (e) {
       // Never drop a local change on a failed push: requeue what did not go through
       // (a later real edit to the same id simply overwrites the requeued copy).
@@ -86,6 +90,9 @@ export function createSyncEngine(deps) {
       // records reach the cloud. After that the saved rev + live edits drive it.
       if (!st.seeded) { seedAll(); st.seeded = true; persist(); }
       await pushPending();
+      // Re-pull after seeding so the cursor advances to the head we just created (including our
+      // own seeded records, re-applied idempotently) without ever jumping it past unpulled revs.
+      await pullDelta();
       emit("synced", { rev: st.rev });
     } catch (e) { emit("error", (e && e.message) || String(e)); }
     if (pollMs > 0) {

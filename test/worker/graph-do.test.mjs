@@ -3,25 +3,30 @@
 import { test, group, assert } from "../harness.mjs";
 import { GraphDO } from "../../worker/graph.js";
 
-// Storage shim: supports single + array get, object + (k,v) put, delete, and a sorted
-// list({ prefix, reverse, limit }) — enough for GraphDO's pull / audit paths.
+// Storage shim: supports single + array get, object + (k,v) put, single + array delete, and a
+// sorted list({ prefix, start, reverse, limit }) — enough for GraphDO's pull / index / audit
+// paths. `start` (inclusive lower bound) and array delete mirror the real DO storage API, which
+// the rev-cursor index relies on. `_lists` records each list() prefix so a test can assert the
+// incremental fast path never full-scans "e:"/"r:".
 function memState() {
   const map = new Map();
+  const lists = [];
   const storage = {
     async get(k) {
       if (Array.isArray(k)) { const m = new Map(); for (const key of k) if (map.has(key)) m.set(key, map.get(key)); return m; }
       return map.has(k) ? map.get(k) : undefined;
     },
     async put(k, v) { if (k && typeof k === "object") { for (const [kk, vv] of Object.entries(k)) map.set(kk, vv); } else { map.set(k, v); } },
-    async delete(k) { map.delete(k); },
-    async list({ prefix = "", reverse = false, limit = Infinity } = {}) {
-      let keys = [...map.keys()].filter((x) => x.startsWith(prefix)).sort();
+    async delete(k) { if (Array.isArray(k)) { let n = 0; for (const key of k) n += map.delete(key) ? 1 : 0; return n; } return map.delete(k); },
+    async list({ prefix = "", start = "", reverse = false, limit = Infinity } = {}) {
+      lists.push({ prefix, start });
+      let keys = [...map.keys()].filter((x) => x.startsWith(prefix) && (!start || x >= start)).sort();
       if (reverse) keys.reverse();
       keys = keys.slice(0, limit);
       const out = new Map(); for (const key of keys) out.set(key, map.get(key)); return out;
     },
   };
-  return { storage, blockConcurrencyWhile: async (fn) => fn(), _map: map };
+  return { storage, blockConcurrencyWhile: async (fn) => fn(), _map: map, _lists: lists };
 }
 
 const ent = (id, name, extra = {}) => ({ id, type: "ASSET", name, updatedAt: Date.now(), ...extra });
@@ -92,5 +97,117 @@ group("GraphDO/audit chain", () => {
     const a = await getAudit(g);
     assert.equal(a.json.entries[0].n, 1); // newest first
     assert.equal(a.json.entries[1].n, 0);
+  });
+
+  test("the audit summary records only real record keys, never index keys", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    await push(g, { entities: [ent("a-1", "h1.test.darknode.ai")] });
+    const a = await getAudit(g);
+    assert.ok(a.json.entries[0].ids.every((k) => k.startsWith("e:") || k.startsWith("r:")), "no x: index keys leak into the audit ids");
+  });
+});
+
+async function pull(doInst, since = 0, uid = "u1") {
+  const res = await doInst.fetch(new Request("https://graph/?since=" + since, { method: "GET", headers: { "x-graph-uid": uid } }));
+  return { status: res.status, json: await res.json() };
+}
+
+group("GraphDO/rev-cursor delta index", () => {
+  test("an incremental pull returns only records changed after the cursor", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    const a = await push(g, { entities: [ent("a-1", "h1.test.darknode.ai")] });
+    const b = await push(g, { entities: [ent("a-2", "h2.test.darknode.ai")] });
+    const full = await pull(g, 0);
+    assert.equal(full.json.entities.length, 2, "since=0 is a full snapshot");
+    const delta = await pull(g, a.json.rev); // cursor just after the first write
+    assert.equal(delta.json.entities.length, 1, "only the second record is new");
+    assert.equal(delta.json.entities[0].id, "a-2");
+    assert.equal(delta.json.rev, b.json.rev);
+    const none = await pull(g, b.json.rev);
+    assert.equal(none.json.entities.length, 0, "cursor at head -> nothing new");
+  });
+
+  test("the incremental fast path does not full-scan e:/r:", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    const a = await push(g, { entities: [ent("a-1", "h1.test.darknode.ai")] });
+    await push(g, { entities: [ent("a-2", "h2.test.darknode.ai")] });
+    st._lists.length = 0; // watch only this pull's list() calls
+    await pull(g, a.json.rev);
+    assert.ok(st._lists.some((l) => l.prefix === "x:"), "it scans the x: index");
+    assert.ok(!st._lists.some((l) => l.prefix === "e:" || l.prefix === "r:"), "it never scans all entities/relationships");
+  });
+
+  test("a full snapshot (since=0) still scans every record, not the index", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    await push(g, { entities: [ent("a-1", "h1.test.darknode.ai")] });
+    st._lists.length = 0;
+    const r = await pull(g, 0);
+    assert.equal(r.json.entities.length, 1);
+    assert.ok(st._lists.some((l) => l.prefix === "e:"), "since=0 uses the full scan");
+  });
+
+  test("an updated record keeps exactly one index entry (the stale one is removed)", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    const a = await push(g, { entities: [ent("a-1", "old.test.darknode.ai", { updatedAt: 1000 })] });
+    await push(g, { entities: [ent("a-1", "new.test.darknode.ai", { updatedAt: 2000 })] });
+    const xKeys = [...st._map.keys()].filter((k) => k.startsWith("x:") && k.endsWith(":e:a-1"));
+    assert.equal(xKeys.length, 1, "one x: entry per record, at its current rev");
+    const delta = await pull(g, a.json.rev);
+    assert.equal(delta.json.entities.length, 1, "the update surfaces exactly once");
+    assert.equal(delta.json.entities[0].name, "new.test.darknode.ai", "and carries the new value");
+  });
+
+  test("a tombstone propagates through the index", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    const a = await push(g, { entities: [ent("a-1", "h1.test.darknode.ai", { updatedAt: 1000 })] });
+    await push(g, { entities: [{ id: "a-1", deleted: true, updatedAt: 2000 }] });
+    const delta = await pull(g, a.json.rev);
+    assert.equal(delta.json.entities.length, 1);
+    assert.equal(delta.json.entities[0].deleted, true, "the delete reaches an incremental puller");
+  });
+
+  test("migration: records written before the index are still returned to a pre-boundary cursor", async () => {
+    // Simulate a DO deployed before the index: raw records carry _rev but there is no "x:" entry
+    // and meta has no xBase.
+    const st = memState(); const g = new GraphDO(st);
+    st._map.set("e:legacy", { id: "legacy", type: "ASSET", name: "legacy.test.darknode.ai", updatedAt: 1000, _rev: 5, _by: "u1" });
+    st._map.set("meta", { rev: 5, count: 1 }); // no xBase
+    // A new push sets xBase = 5 and indexes the new record (rev 6).
+    const b = await push(g, { entities: [ent("a-2", "fresh.test.darknode.ai", { updatedAt: 2000 })] });
+    assert.equal(st._map.get("meta").xBase, 5, "xBase pins to the pre-index head");
+    // A client catching up from before the boundary (since < xBase) must see BOTH via full scan.
+    const behind = await pull(g, 3);
+    const ids = behind.json.entities.map((e) => e.id).sort();
+    assert.deepEqual(ids, ["a-2", "legacy"], "full-scan fallback returns the legacy record too");
+    // A client at/after the boundary uses the index and correctly sees only the fresh record.
+    const atBoundary = await pull(g, 5);
+    assert.equal(atBoundary.json.entities.length, 1);
+    assert.equal(atBoundary.json.entities[0].id, "a-2");
+    assert.equal(atBoundary.json.rev, b.json.rev);
+  });
+
+  test("a duplicate id in one push applies once (LWW winner), one index entry, rev +1", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    const r = await push(g, { entities: [
+      ent("a-1", "stale.test.darknode.ai", { updatedAt: 1000 }),
+      ent("a-1", "winner.test.darknode.ai", { updatedAt: 3000 }),
+      ent("a-1", "middle.test.darknode.ai", { updatedAt: 2000 }),
+    ] });
+    assert.equal(r.json.applied.entities, 1, "one effective change");
+    assert.equal(r.json.rev, 1, "rev advanced by exactly one");
+    assert.equal(st._map.get("e:a-1").name, "winner.test.darknode.ai", "the LWW winner is stored");
+    const xKeys = [...st._map.keys()].filter((k) => k.startsWith("x:") && k.endsWith(":e:a-1"));
+    assert.equal(xKeys.length, 1, "exactly one index entry");
+    const delta = await pull(g, 0);
+    assert.equal(delta.json.entities.filter((e) => e.id === "a-1").length, 1, "surfaces once, not thrice");
+  });
+
+  test("relationships are indexed too (keyed by createdAt)", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    await push(g, { entities: [ent("a-1", "h1.test.darknode.ai"), ent("a-2", "h2.test.darknode.ai")] });
+    const mid = await push(g, { relationships: [{ id: "r-1", fromId: "a-1", toId: "a-2", type: "related_to", createdAt: 1000 }] });
+    const delta = await pull(g, mid.json.rev - 1);
+    assert.equal(delta.json.relationships.length, 1, "the relationship surfaces via the index");
+    assert.equal(delta.json.relationships[0].id, "r-1");
   });
 });

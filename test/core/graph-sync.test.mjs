@@ -121,6 +121,23 @@ group("graph-sync engine", () => {
     assert.equal(eng.pending().entities, 0);
   });
 
+  test("a writer with a pending edit still receives a concurrent writer's records in one sync", async () => {
+    // Regression: poll sync() pushes then pulls. If push adopted the server head as the cursor,
+    // the pull would start past a concurrent writer's new revs and skip them permanently.
+    const server = makeServer();
+    const X = makeGraph(), Y = makeGraph();
+    const engX = mkEngine(X, server), engY = mkEngine(Y, server);
+    await engX.start(); await engY.start();          // both synced at the empty head
+    Y.create(ent("y1", "2026-02-01"));               // teammate Y writes two records...
+    Y.create(ent("y2", "2026-02-02"));
+    await engY.syncNow();                            // ...now on the server, X has not pulled them
+    X.create(ent("x1", "2026-03-01"));               // X has its own pending local edit
+    await engX.syncNow();                            // X syncs ONCE (push x1, then pull)
+    assert.ok(X.E.y1 && X.E.y2, "X received Y's records despite pushing its own edit first");
+    assert.ok(server.E.x1, "X's own edit still reached the server");
+    assert.equal(X.E.x1.name, "x1");
+  });
+
   test("relationships sync alongside entities", async () => {
     const server = makeServer();
     const A = makeGraph({ p: ent("p", "2026-01-01"), q: ent("q", "2026-01-01") });

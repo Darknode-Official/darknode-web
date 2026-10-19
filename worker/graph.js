@@ -37,6 +37,13 @@ const MAX_STORED = 200000;    // hard cap on stored records (entities + relation
 const ENTITY_FIELDS = ["id", "type", "name", "data", "tags", "severity", "status", "source", "createdAt", "updatedAt"];
 const REL_FIELDS = ["id", "fromId", "toId", "type", "createdAt"];
 
+// Revision-cursor index (the "x:<rev>" delta-index). Every stored record carries a monotonic
+// `_rev`; we keep a secondary key `x:<revPad(rev)>:<reckey>` -> <reckey> so an incremental pull
+// can list ONLY the records changed after a cursor instead of scanning all ~200k every poll.
+// The pad is wide enough that the lexical order of the keys matches the numeric rev order for
+// any rev this DO could ever reach (10^18), so a prefixed range scan from the cursor is exact.
+const revPad = (n) => String(n).padStart(18, "0");
+
 const clampStr = (v, max) => (typeof v === "string" ? v.slice(0, max) : v);
 
 // Keep only known fields and bound the big ones, so a client cannot store an arbitrary
@@ -67,18 +74,40 @@ export class GraphDO {
   async meta() { return (await this.storage.get("meta")) || { rev: 0, count: 0 }; }
 
   // Everything changed after revision `since` (0 = full snapshot).
+  //
+  // Fast path: when the caller's cursor is at or after xBase (the rev from which the rev-index
+  // is complete), range-scan the "x:" index from the cursor and fetch just those records —
+  // O(changes). Each record has exactly one "x:" entry (at its current _rev), so there is no
+  // duplication to dedupe. Slow path: a full snapshot (since <= 0) or a cursor that predates
+  // the index (since < xBase, e.g. a client catching up across a just-deployed boundary) scans
+  // every record once, exactly as before — correct, just not O(changes).
   async pull(since) {
     since = Number(since) || 0;
-    const entities = [], relationships = [];
-    for (const v of (await this.storage.list({ prefix: "e:" })).values()) if ((v._rev || 0) > since) entities.push(v);
-    for (const v of (await this.storage.list({ prefix: "r:" })).values()) if ((v._rev || 0) > since) relationships.push(v);
     const m = await this.meta();
+    const entities = [], relationships = [];
+    if (since > 0 && m.xBase != null && since >= m.xBase) {
+      const xs = await this.storage.list({ prefix: "x:", start: "x:" + revPad(since + 1) });
+      const reckeys = [...xs.values()];
+      for (let i = 0; i < reckeys.length; i += 128) {
+        const got = await this.storage.get(reckeys.slice(i, i + 128));
+        for (const [k, v] of got) { if (!v) continue; if (k[0] === "e") entities.push(v); else if (k[0] === "r") relationships.push(v); }
+      }
+    } else {
+      for (const v of (await this.storage.list({ prefix: "e:" })).values()) if ((v._rev || 0) > since) entities.push(v);
+      for (const v of (await this.storage.list({ prefix: "r:" })).values()) if ((v._rev || 0) > since) relationships.push(v);
+    }
     return { rev: m.rev, entities, relationships };
   }
 
   async applyKind(list, prefix, key, state) {
     if (!Array.isArray(list) || !list.length) return 0;
-    const items = list.slice(0, MAX_PER_PUSH).filter((r) => r && typeof r.id === "string" && r.id && GRAPH_ID.test(r.id));
+    const valid = list.slice(0, MAX_PER_PUSH).filter((r) => r && typeof r.id === "string" && r.id && GRAPH_ID.test(r.id));
+    // Collapse duplicate ids within one push to the LWW winner, so each record is applied once:
+    // otherwise the id would get two "x:" index entries (one orphaned forever) and rev would
+    // inflate by the duplicate count for a single effective change.
+    const byId = new Map();
+    for (const r of valid) { const prev = byId.get(r.id); if (!prev || wins(r, prev, key)) byId.set(r.id, r); }
+    const items = [...byId.values()];
     const keys = items.map((r) => prefix + r.id);
     const existing = keys.length ? await this.storage.get(keys) : new Map();
     let n = 0;
@@ -90,6 +119,11 @@ export class GraphDO {
       state.rev++;
       const fields = prefix === "e:" ? ENTITY_FIELDS : REL_FIELDS;
       state.put[k] = { ...sanitize(rec, fields, key), _rev: state.rev, _by: state.uid || "" };
+      // Maintain the rev-cursor index: move this record's single "x:" entry to its new rev.
+      // Deleting the stale entry keeps the index size bounded to the record count (a no-op when
+      // the record predates the index, which lazily pulls it into coverage).
+      if (cur && cur._rev != null) state.xDel.push("x:" + revPad(cur._rev) + ":" + k);
+      state.xPut["x:" + revPad(state.rev) + ":" + k] = k;
       n++;
     }
     return n;
@@ -108,18 +142,22 @@ export class GraphDO {
 
   async push(body, uid) {
     const m = await this.meta();
-    const state = { rev: m.rev, count: m.count || 0, put: {}, uid: uid || "" };
+    // xBase is the rev from which the rev-index is complete. Set once, the first time a push
+    // runs under the indexed code: every write from here on maintains an "x:" entry, so a pull
+    // whose cursor is >= xBase can trust the index. Records written before this point are only
+    // reachable by a full scan (since < xBase), which pull falls back to.
+    const xBase = m.xBase != null ? m.xBase : m.rev;
+    const state = { rev: m.rev, count: m.count || 0, put: {}, xPut: {}, xDel: [], uid: uid || "" };
     const entities = await this.applyKind(body && body.entities, "e:", "updatedAt", state);
     const relationships = await this.applyKind(body && body.relationships, "r:", "createdAt", state);
     const keys = Object.keys(state.put);
     if (keys.length) {
-      // Durable Object storage.put takes at most 128 entries per call.
-      for (let i = 0; i < keys.length; i += 128) {
-        const chunk = {};
-        for (const k of keys.slice(i, i + 128)) chunk[k] = state.put[k];
-        this.storage.put(chunk);
-      }
-      this.storage.put("meta", { rev: state.rev, count: state.count });
+      // Durable Object storage.put takes at most 128 entries per call; delete at most 128 keys.
+      const flush = (obj) => { const ks = Object.keys(obj); for (let i = 0; i < ks.length; i += 128) { const chunk = {}; for (const k of ks.slice(i, i + 128)) chunk[k] = obj[k]; this.storage.put(chunk); } };
+      flush(state.put);
+      flush(state.xPut);
+      for (let i = 0; i < state.xDel.length; i += 128) this.storage.delete(state.xDel.slice(i, i + 128));
+      this.storage.put("meta", { rev: state.rev, count: state.count, xBase });
       const am = await this.auditMeta();
       this.appendAudit(am, { ts: Date.now(), uid: state.uid, op: "push", entities, relationships, rev: state.rev, ids: keys.slice(0, AUDIT_IDS_CAP) });
     }
