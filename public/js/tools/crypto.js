@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Cryptography & PKI mini-tools: symmetric/asymmetric crypto via WebCrypto, key
 // derivation, PEM/ASN.1/X.509 parsing, CTF number-theory and classic cryptanalysis.
 // Pure client-side, deterministic (crypto RNG is allowed for generators). See _schema.md.

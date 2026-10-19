@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Pure presentation helpers for the Deck findings work queue (deck/findings-queue.js):
 // due chips, urgency order, owner names, readable timeline sentences, evidence lines,
 // bulk-result summaries and saved-view lists. No DOM, no storage, no clock reads:

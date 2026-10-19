@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // DNS Toolkit -- DNS analysis, security, and record building.
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>

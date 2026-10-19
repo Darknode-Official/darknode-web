@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Shared non-cryptographic string hashing. Pure: safe in node and the browser.
 
 /**

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Firewall Rules Reference Database — iptables, nftables, Windows Firewall, cloud security groups
 
 export const FIREWALL_RULES = {

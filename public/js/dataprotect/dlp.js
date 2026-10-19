@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Data Protection (DLP) scanner — finds secrets and PII in pasted text or dropped
 // files and produces an exposure report plus a redacted copy. Everything runs in the

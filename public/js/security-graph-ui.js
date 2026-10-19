@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 import { listEntities, getEntity, deleteEntity, getRelated, getRelationships, getStats, search, exportAll, importEntities, ENTITY_TYPES, SEVERITIES, STATUSES } from '/js/security-graph.js';
 import { openEntityModal } from '/js/graph-bridge.js';
 import { layout, normalizeImport } from '/js/secgraph/graph-view.js?v=20261014a';

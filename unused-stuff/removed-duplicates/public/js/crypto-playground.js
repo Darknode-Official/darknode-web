@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Crypto Playground — interactive cryptography learning tool with visual demos.
 
 export function renderCryptoPlayground(container) {

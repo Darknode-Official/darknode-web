@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Address Intelligence -- IP, domain, and URL intelligence gathering from real public sources.
 // Parallel lookups against GreyNoise, AbuseIPDB, Shodan, VirusTotal, crt.sh, DNS, plus
 // saved IPsum / ThreatFox / URLhaus snapshot files (not live queries), community reports,

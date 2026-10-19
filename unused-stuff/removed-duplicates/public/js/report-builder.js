@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Security Assessment Report Builder — generate professional pentest/VA reports.
 
 const REPORT_TEMPLATES = [

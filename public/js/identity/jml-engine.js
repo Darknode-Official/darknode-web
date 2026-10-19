@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Lifecycle & Offboarding Verifier engine (jml). Pure: no DOM, no network, no
 // clock (opts.now or the latest timestamp in the data). Safe inside a Worker.

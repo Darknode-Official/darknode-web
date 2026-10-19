@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Snort/Suricata IDS Rules Database — Network detection signatures for security education
 
 export const SNORT_RULES = [

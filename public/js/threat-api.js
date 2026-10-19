@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Threat Intelligence API — shared module for live threat data
 // All functions use callbacks: callback(error, data)
 

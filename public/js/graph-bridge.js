@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 import * as SG from '/js/security-graph.js';
 const { createEntity, getEntity, updateEntity, listEntities, createRelationship } = SG;
 // Namespace access so a browser still holding an older cached security-graph.js

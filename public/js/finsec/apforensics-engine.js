@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // AP Forensics engine (apforensics). Forensic screens over an accounts-payable ledger
 // (QuickBooks Online, Xero, NetSuite, SAP FBL1N, Sage Intacct or a mapped CSV), the vendor

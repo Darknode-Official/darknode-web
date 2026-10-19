@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Cloud Spend Anomaly engine (cloudspend). Reads cloud billing exports (AWS Cost and
 // Usage Report legacy + CUR 2.0, AWS Cost Explorer CSV, Azure Cost Management cost

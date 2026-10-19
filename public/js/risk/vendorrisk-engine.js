@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Third-Party Risk engine (vendorrisk). Pure, deterministic scoring of a vendor
 // register: inherent risk from a visible points table, assurance credit from the

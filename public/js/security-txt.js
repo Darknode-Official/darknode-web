@@ -1,7 +1,7 @@
 // security.txt Studio — generate and validate an RFC 9116 security.txt file.
 // Author, preview, download and audit the standardized vulnerability-disclosure
 // contact file that belongs at /.well-known/security.txt on a web host.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Fully client-side. No external libraries. Fetch is best-effort and may be CORS-blocked.
 //
 // Architecture: the RFC 9116 field set is expressed once as a declarative table

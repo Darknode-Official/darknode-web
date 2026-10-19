@@ -1,6 +1,6 @@
 // Darknode Project - CRUCIBLE :: Cyber Defense & Wargaming Command
 // Core: shared data models, simulation engine and scoring.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // ============================ CONTRACT ============================
 // This module is the single source of truth every CRUCIBLE pillar

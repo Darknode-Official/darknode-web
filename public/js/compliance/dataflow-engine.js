@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Data Inventory & Processing Register engine (dataflow). Pure ESM: no DOM, no
 // network, no clock (the current time is always passed in as opts.now), so it

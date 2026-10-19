@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Register store: a workspace-scoped local list of records (vendors, identities,
 // exceptions, ...) mirrored into the Security Graph as entities, the same way
 // incident-tracker.js mirrors incidents. Team workspaces rebuild the list from

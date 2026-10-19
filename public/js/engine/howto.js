@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Curated how-to answers: the everyday developer questions that have one well-known,
 // correct answer ("git undo last commit", "center a div", "python list comprehension").
 // Every entry is hand-written and carries the exact command or snippet; a question that

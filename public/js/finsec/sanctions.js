@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Sanctions Screening — screen payees, vendors and counterparties against the
 // official US Treasury OFAC SDN list (names + aliases). The list is mirrored into

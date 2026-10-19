@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Cloud & Container Security mini-tools: parsers, linters, explainers and builders
 // for AWS / GCP / Azure, Kubernetes, Docker/OCI and Terraform. All pure client-side,
 // deterministic, no network. For reviewing and hardening systems you operate or are

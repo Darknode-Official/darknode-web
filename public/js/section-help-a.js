@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Plain-English intro for console sections (part a). { sec: { what, when, note? } }. See section-help.js.
 export const HELP = {
   "home": { what: "The dashboard: a landing overview with tool counts, recent activity, session stats, and quick links to the flagship tools and categories.", when: "Use it as your starting point to get your bearings and jump to the tool or section you need." },

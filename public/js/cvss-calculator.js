@@ -1,6 +1,6 @@
 // CVSS 3.1 Base Score Calculator — vulnerability-scoring tool for the Darknode web app.
 // Computes the exact FIRST.org CVSS v3.1 base score, severity rating and vector string.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Fully client-side. No network, no external libraries. Pure CVSS math.
 //
 // Architecture: a pure, side-effect-free scoring core (computeCvss / parseVector /

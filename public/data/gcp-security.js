@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // GCP Security Reference — Google Cloud Platform security services, attacks, and hardening.
 
 export const GCP_SERVICES = [

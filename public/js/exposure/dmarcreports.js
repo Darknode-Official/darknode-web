@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // DMARC Reports (dmarcreports): Deck tool UI. Drop DMARC aggregate (RUA) reports
 // as .xml / .xml.gz / .zip (hundreds at once, nested archives unpacked locally),

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Kubernetes Audit (k8saudit): Deck tool UI. Drop a live cluster dump
 // (`kubectl get ... -A -o json|yaml`, zip accepted), kube-bench JSON, `kubectl get

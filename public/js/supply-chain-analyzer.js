@@ -4,7 +4,7 @@
 // from real edit-distance against popular names, severity from the CVSS v3 base
 // formula, and exploitation intel from the mirrored CISA KEV catalog + live FIRST
 // EPSS. Pure logic lives in supply-chain-engine.js (tested); this file is the UI.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 
 import {
   OSV_ECOSYSTEM, autoDetectAndParse, typosquat, summarizeVuln, scoreRisk, generateSBOM,

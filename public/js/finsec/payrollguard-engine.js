@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Payroll Integrity engine (payrollguard). Screens a payroll register against the HR
 // roster, the direct-deposit (bank) change log and optional timesheets for the ACFE

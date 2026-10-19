@@ -1,6 +1,6 @@
 // PHANTOM — Packet Handler, Analyzer, Network Topology & Operations Monitor
 // Browser-based network traffic analysis and deep packet inspection platform
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 
 import { mountModeSwitcher, filterTabsByMode, getToolMode } from '/js/core/tool-modes.js';
 

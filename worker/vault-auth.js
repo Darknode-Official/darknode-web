@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Firebase ID-token verification for the VAULT routes, done the way the Admin SDK does
 // it: RS256 signature against Google's published securetoken keys, then the audience,

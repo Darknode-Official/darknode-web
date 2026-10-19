@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // SSL Inspector — Certificate Transparency search, subdomain discovery, chain analysis
 // Uses crt.sh public API (no key required, CORS-friendly JSON output)
 

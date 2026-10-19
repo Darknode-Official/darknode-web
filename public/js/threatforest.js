@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // ThreatForest — automated attack trees from source code (UI layer).
 //
 // Inspired by the research project of the same name (AWS / Black Hat USA 2026,

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Email Security Reference — headers, SPF, DKIM, DMARC, attacks, forensics
 
 export const EMAIL_HEADERS = [

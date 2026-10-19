@@ -1,6 +1,6 @@
 // Darknode Project - CRUCIBLE :: Wargame Range
 // Pillar: build and launch adversary campaigns against the simulated estate.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Export contract: renderRange(container, ctx)
 //   ctx = { go(tabId), toast(msg, kind), core }

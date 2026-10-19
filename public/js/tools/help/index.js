@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Merges the plain-English help for every mini-tool: { id: { what, when, example } }.
 import { HELP as encoding } from "/js/tools/help/encoding.js?v=20261003a";
 import { HELP as hashing } from "/js/tools/help/hashing.js?v=20261003a";

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Ticket handoff dialog for the Deck Findings scene. Jira, ServiceNow and Azure
 // Boards get an import-ready CSV (built by core/tickets.js, downloaded locally);
 // GitHub gets real issues through the REST API with the user's own token. The token

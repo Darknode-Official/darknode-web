@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // MonitorDO -> Security Graph bridge (Trident Phase 2). PURE: no DOM, no storage, no
 // Durable Object — so it runs identically in a node test and in the worker.

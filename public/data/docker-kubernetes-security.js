@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Docker & Kubernetes Security Reference — container security, escapes, RBAC, and hardening.
 
 export const DOCKERFILE_BEST_PRACTICES = [

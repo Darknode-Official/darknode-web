@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Plain-English help for the cloud.js mini-tools. See help/README.md for the contract.
 // These are for reviewing and hardening cloud/container systems you operate or are authorised to test.
 export const HELP = {

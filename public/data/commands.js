@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
 // Comprehensive security command reference for authorized testing only.
 

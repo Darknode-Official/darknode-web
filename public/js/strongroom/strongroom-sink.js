@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Pure mapper: STRONGROOM fusion chains -> the common Finding shape (core/sink-map.js)
 // for the Security Graph (docs/STRONGROOM-FUSION-ENGINE.md §14). Each intrusion ->

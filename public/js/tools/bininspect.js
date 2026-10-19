@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Binary & Threat Triage mini-tools: read-only parsers, decoders, formatters and
 // accurate reference tables a defender uses to understand suspicious files and threat
 // data the analyst already has. Everything here is decode / parse / format / lookup on

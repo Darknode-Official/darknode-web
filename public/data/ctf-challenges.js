@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // CTF Challenge Writeups — comprehensive capture-the-flag reference for cybersecurity education.
 
 export const CTF_CATEGORIES = [

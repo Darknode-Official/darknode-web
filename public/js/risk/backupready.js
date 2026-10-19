@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Backup Readiness (backupready): Deck tool UI. Load Veeam, AWS Backup, Azure Backup,
 // generic job-log, restore-test and asset exports and prove (or disprove) that each

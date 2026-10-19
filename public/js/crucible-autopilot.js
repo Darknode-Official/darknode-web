@@ -1,7 +1,7 @@
 // Darknode Project - CRUCIBLE :: Defense Autopilot
 // Pillar: an autonomous blue-team AI that watches the active wargame run,
 // reasons over each detection and races the attacker to containment.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Exports exactly: renderAutopilot(container, ctx)
 //   ctx = { go(tabId), toast(msg,kind), core }  (core = crucible-core exports)

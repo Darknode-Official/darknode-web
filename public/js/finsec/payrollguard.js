@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Payroll Integrity (payrollguard): Deck tool UI. Drop the payroll register, the HR roster,
 // the direct-deposit change log and (optionally) timesheets together; each file is

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Network Scanner — port check, ping simulation, traceroute visualization
 // All checks run client-side using fetch/WebSocket timing for port detection
 

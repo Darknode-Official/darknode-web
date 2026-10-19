@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Payee Control — vendor master with bank-detail validation and bank-change control,
 // the preventive control against vendor-bank-change (BEC) wire fraud. Every change to

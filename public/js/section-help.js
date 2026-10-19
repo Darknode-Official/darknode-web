@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Plain-English intro shown above each console section: what the page is and when to use it.
 // { sec: { what, when, note? } } — `note` is an optional honesty line (for example "Uses sample data").
 import { HELP as a } from "/js/section-help-a.js?v=20261010j";

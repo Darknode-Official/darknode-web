@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Awareness & Phishing-Test Analytics engine (awareness). Reads phishing
 // simulation results (GoPhish results / raw events CSV and API JSON, KnowBe4

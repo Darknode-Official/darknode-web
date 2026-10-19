@@ -1,7 +1,7 @@
 // Supply Chain Risk Analyzer — pure engine (manifest/lockfile parsing, typosquat
 // detection by edit distance, CVSS v3 base-score math, OSV advisory summarizing,
 // risk scoring, SBOM). No network here; the UI pairs this with live OSV.dev queries.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 
 import { OSV_ECOSYSTEM, detectFormat, parseLockfile } from "./core/lockfiles.js";
 

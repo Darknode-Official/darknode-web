@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Cloud Audit Log Hunter (cloudtrail): Deck tool UI. Drop AWS CloudTrail, Azure Activity Log,
 // GCP Cloud Audit Log and Microsoft 365 Unified Audit Log exports (zip / gz unpacked locally);

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Plain-English help for the crypto.js mini-tools. See help/README.md for the contract.
 // Sample keys and certificates below are throwaway test material for example data only.
 

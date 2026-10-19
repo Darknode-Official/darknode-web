@@ -1,7 +1,7 @@
 // ============================================================================
 // SENTINEL EYE — Global Cyber Threat Detection & Counter-Operations Platform
 // Global cyber threat detection and prediction platform
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // ============================================================================
 // NORAD-grade cyber early warning system: monitors nation-state cyber force
 // readiness, global network anomalies, dark web signals, APT operational tempo,

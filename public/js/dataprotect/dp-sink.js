@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Pure mappers from the data-protection tools' real results to the common Finding
 // shape (core/sink-map.js), so each tool can publish to the Security Graph through

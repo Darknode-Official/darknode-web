@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Complete MITRE ATT&CK v14 Technique & Sub-technique Database
 // Covers all 14 tactics with detailed techniques, detections, and mitigations.
 

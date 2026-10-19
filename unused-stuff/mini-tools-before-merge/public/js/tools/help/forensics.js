@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Plain-English help for the forensics.js mini-tools. See help/README.md for the contract.
 // Digital Forensics & Incident Response helpers for analysts and defenders.
 export const HELP = {

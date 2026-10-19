@@ -1,6 +1,6 @@
 // Email Authentication Analyzer — SPF / DMARC / DKIM auditor for the Darknode web app.
 // Checks a domain's email-authentication DNS records live via DNS-over-HTTPS (Cloudflare, Google fallback).
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Fully client-side. No external libraries. All records shown are the real DNS answers, never fabricated.
 //
 // Architecture

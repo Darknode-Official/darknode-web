@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // CORS Tester — test Cross-Origin Resource Sharing policies on any URL
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) {

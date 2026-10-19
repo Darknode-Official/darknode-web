@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Non-Human Identity Lifecycle (nhi): Deck tool UI. Drop AWS / Entra / GCP / Okta /
 // Kubernetes / GitHub credential exports; the pure engine (nhi-engine.js) runs in a

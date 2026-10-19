@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Beta Lab — a preview mode. Everything here is a PROTOTYPE of something that
 // might get built; nothing in this mode is a shipped tool. Two live-data pieces
 // let the lab grow without a hosting redeploy:

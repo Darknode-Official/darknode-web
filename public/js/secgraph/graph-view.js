@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Pure, dependency-free layout math for the Security Graph node-link view.
 // Kept free of any DOM/localStorage import so it runs under plain Node for

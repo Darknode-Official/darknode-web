@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Ingest: worker runner — run an exported engine function off the main thread
 // in a Blob module Worker, with progress, timeout, cancel and a main-thread

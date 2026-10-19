@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Plain-English intro for console sections (part b). { sec: { what, when, note? } }. See section-help.js.
 export const HELP = {
   "crosswalk": { what: "An interactive explorer that maps the OWASP GenAI Security Project's 51 AI risks to controls across 26 security and compliance frameworks.", when: "When you need to find which frameworks or controls address a specific GenAI risk, or which risks a given framework covers.", note: "Browses a distilled snapshot of the published OWASP crosswalk dataset, not a live feed." },

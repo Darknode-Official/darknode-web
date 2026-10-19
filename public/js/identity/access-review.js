@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Access Review — periodic user-access review (SOX ITGC, ISO 27001 A.5.18,
 // SOC 2 CC6) done in the browser: an HR roster is reconciled against a

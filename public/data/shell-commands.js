@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Shell Command Reference for Security Professionals
 // Complete Linux and Windows command reference for pentesting and defense.
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Interactive Security Training Quiz Engine — 300 questions across 15 categories.
 
 const QUESTIONS = [

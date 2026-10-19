@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // AP Forensics (apforensics): Deck tool UI. Drop the AP ledger, the vendor master and
 // (optionally) the employee roster; the engine runs forensic screens inside a Worker.

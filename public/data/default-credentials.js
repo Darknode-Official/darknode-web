@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Default credentials database for network devices, IoT, software, databases, web applications.
 // For authorized security testing and auditing only.
 

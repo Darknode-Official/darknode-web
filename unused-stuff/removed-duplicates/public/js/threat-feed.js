@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Threat Intel Feed — recently published CVEs from the NIST NVD API, with severity filtering, search, and export
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c =>

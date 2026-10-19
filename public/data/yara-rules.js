@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // YARA Rules Database — Malware detection signatures for security education
 // Categories: ransomware, trojans/RATs, droppers/loaders, webshells, cryptominers,
 // wipers, rootkits, exploit kits, packers/crypters, APT toolkits, generic suspicious

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Learn & Do — the data spine. Pure, dependency-free, and unit-tested (test/core/learndo.test.mjs)
 // so the catalog can't rot: every activity points at a REAL section `sec` (validated against the
 // nav at render time), and the filter/progress helpers are exercised without a DOM.

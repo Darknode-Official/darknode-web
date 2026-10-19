@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Red Team Operation Playbooks — comprehensive attack simulation guides for authorized engagements
 
 export const RED_TEAM_PLAYBOOKS = [

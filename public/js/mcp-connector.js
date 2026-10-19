@@ -1,5 +1,5 @@
 // MCP Connector — "Connect to Darknode" interop hub.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Lets other apps and AI agents use Darknode's tools two ways:
 //   (a) embeddable UIs via `?embed=1` (same-origin iframes), and

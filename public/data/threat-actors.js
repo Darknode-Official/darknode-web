@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Threat Actor Profiles Database — 100 real-world threat groups
 
 export const THREAT_ACTORS = [

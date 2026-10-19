@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Endpoint Fleet Compliance (fleetcomply): Deck tool UI. Drop every endpoint inventory
 // (Intune, Jamf, CrowdStrike, Defender, Google, Entra / Okta / AD, software inventories and

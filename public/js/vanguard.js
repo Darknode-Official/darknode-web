@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // VANGUARD — Autonomous Attack Surface Intelligence Engine
 // The most comprehensive browser-based penetration testing reconnaissance tool.
 // For AUTHORIZED SECURITY TESTING ONLY. Always obtain explicit written permission

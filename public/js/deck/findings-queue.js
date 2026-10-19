@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Deck Findings scene as a work queue: queue views with live counts, owner and SLA due
 // columns, a role-aware bulk bar (assign / status with resolution / due date / risk
 // exception / tickets), a full finding detail page (severity override, exception panel,

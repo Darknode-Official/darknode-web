@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Threat Intelligence Dashboard — visualises the saved ThreatFox / URLhaus feed snapshots
 // (/data/feeds/*.json, written by tools/threat-feed-sync.py). Not a live feed.
 

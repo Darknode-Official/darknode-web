@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Phased incident-response playbooks (detection, containment, eradication, recovery,
 // lessons learned) with per-phase roles, tools, evidence and checklists, plus the
 // severity SLA table, communication templates and the stakeholder notification matrix.

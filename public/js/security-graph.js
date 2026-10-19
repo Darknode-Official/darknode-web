@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 import { wins } from './core/graph-merge.js';
 import { ruleAllows } from './core/relationship-rules.js';
 

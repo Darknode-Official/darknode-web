@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Shared export helpers: CSV / JSON / NDJSON / ICS text, a hand-rolled zip writer
 // and the browser download shim. Everything but download() is pure and node-safe.
 

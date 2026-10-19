@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Card Audit engine (cardaudit). Screens corporate card transactions and expense report
 // lines for the ACFE expense-reimbursement and card-misuse patterns so finance can review:

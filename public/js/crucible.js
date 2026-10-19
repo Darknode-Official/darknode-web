@@ -1,6 +1,6 @@
 // Darknode Project - CRUCIBLE :: Cyber Defense & Wargaming Command
 // Shell: tab bar, shared design system, pillar routing.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Pillars are separate modules, each exporting one render function:
 //   crucible-range.js       -> renderRange(container, ctx)

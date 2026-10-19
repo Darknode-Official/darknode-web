@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Third-Party Risk (vendorrisk): Deck tool UI. A team-shareable vendor register
 // (core/register.js, mirrored to the Security Graph as VENDOR entities) combined

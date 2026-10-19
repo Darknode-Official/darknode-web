@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Web Gateway Hunt (proxyhunt): Deck tool UI. Drop secure web gateway / proxy logs (Zscaler,
 // Squid, Palo Alto, Netskope, Umbrella, Cloudflare Gateway, generic CSV; zip / gz unpacked

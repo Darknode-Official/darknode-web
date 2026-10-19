@@ -5,7 +5,7 @@
 // permits, admin services exposed to any source, missing default deny, logging
 // gaps, hygiene, broad egress. No DOM, no network. BigInt is used for addresses
 // so IPv4 and IPv6 share one code path.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 
 import { controlsFromRefs } from "../core/sink-map.js";
 

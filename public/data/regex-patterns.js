@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Comprehensive regex pattern library for security, validation, log parsing, and data extraction.
 
 export const REGEX_CATEGORIES = [

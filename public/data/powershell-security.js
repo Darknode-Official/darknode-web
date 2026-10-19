@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // PowerShell for Security — offensive cmdlets, defense evasion, detection, Empire modules
 
 export const PS_RECON = [

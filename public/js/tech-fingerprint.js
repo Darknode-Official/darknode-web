@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Technology Fingerprinter — identify web technologies from the REAL response
 // headers and body. Requests go through the Darknode SSRF-guarded /api/fetch
 // proxy so the genuine upstream headers and HTML can be inspected (browser CORS

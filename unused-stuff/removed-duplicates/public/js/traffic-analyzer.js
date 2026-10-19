@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Network Traffic Analyzer — protocol distribution, top talkers, anomaly detection
 // All analysis runs client-side. Nothing leaves the browser.
 

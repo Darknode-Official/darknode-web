@@ -1,7 +1,7 @@
 // Cookie Security Analyzer — parse and grade Set-Cookie headers for the Darknode web app.
 // Paste one or more Set-Cookie lines (or a raw HTTP response header block) and get a
 // per-cookie attribute breakdown, security findings and a letter grade.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Fully client-side. No network, no external libraries. Offline parsing done by hand.
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>

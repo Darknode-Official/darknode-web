@@ -1,5 +1,5 @@
 // Darknode -- Extended Compliance Reference Database
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 
 const NIST_800_53 = [
   // ---------------------------------------------------------------------------

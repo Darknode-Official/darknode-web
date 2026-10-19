@@ -4,7 +4,7 @@
 // CSV, EVTX JSON, EVTX XML) into one event shape, then runs deterministic
 // threat-hunting rules mapped to MITRE ATT&CK. No DOM, no network: the UI
 // (log-hunter.js) feeds records in chunks so 200k lines never block the page.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 
 import { controlsFromRefs } from "../core/sink-map.js";
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // ThreatForest engine — pure, deterministic static-analysis logic (no DOM, no network).
 // Imported by public/js/threatforest.js (the UI) and exercised by
 // test/security/threatforest.test.mjs. Keeping it browser-free makes it unit-testable

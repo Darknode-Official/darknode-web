@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Card Audit (cardaudit): Deck tool UI. Drop corporate card feeds (American Express, Brex, Ramp),
 // expense report exports (Expensify, SAP Concur) or a mapped generic CSV, plus an optional HR

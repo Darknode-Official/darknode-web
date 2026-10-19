@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Pure helpers behind the Deck's Findings view, "Top actions" band and section pages.
 // Everything works on real security-graph entities (simulated/sample data is dropped
 // unless explicitly asked for) and on live feed data passed in by the caller, so each

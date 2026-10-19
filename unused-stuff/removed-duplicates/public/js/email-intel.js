@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Email Intelligence — email header analysis, SPF/DKIM/DMARC checker, phishing detector
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) {

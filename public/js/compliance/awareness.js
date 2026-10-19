@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Awareness & Phishing-Test Analytics (awareness): Deck tool UI. Drop phishing
 // simulation exports (GoPhish, KnowBe4, Microsoft Defender Attack Simulation

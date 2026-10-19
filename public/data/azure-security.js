@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Azure Security Reference — comprehensive coverage of Azure security services,
 // Entra ID attacks, misconfigurations, and hardening.
 

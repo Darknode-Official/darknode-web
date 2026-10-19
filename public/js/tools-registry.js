@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Central registry for the mini-tools. TOOL_CATS defines the categories (name +
 // accent colour, matching the console colour system). Each category's tools live
 // in js/tools/<file>.js and are aggregated here. mini-tools.js reads this to render.

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Risk Register engine (riskreg). Pure: no DOM, no network, no clock. Runs in a
 // Blob module Worker and in node tests. Same input -> byte-identical JSON.

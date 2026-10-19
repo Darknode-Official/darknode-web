@@ -1,6 +1,6 @@
 // SPECTRE — Security Posture Evaluation, Cloud Threat Response & Enforcement
 // Browser-based cloud security posture management platform for Darknode
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Operates in three postures (SCOUTING / DEFENSIVE / OFFENSIVE) via the shared
 // core/tool-modes switcher — same mechanism every flagship uses.

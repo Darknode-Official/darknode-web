@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Mobile bottom navigation — auto-initializes on import
 (function () {
   if (window.__mnavInit) return;

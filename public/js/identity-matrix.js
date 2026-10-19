@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Identity Matrix — IAM analyzer, JWT debugger, RBAC builder, session entropy
 // All analysis runs client-side. Nothing leaves the browser.
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // JWT Analyzer — decode, inspect, audit, compare, and build JSON Web Tokens
 // FOR AUTHORIZED SECURITY TESTING ONLY.
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Cloud Spend Anomaly (cloudspend): Deck tool UI. Load AWS CUR / CUR 2.0 / Cost Explorer,
 // Azure cost details and GCP billing exports, optionally a Cloud Audit Log Hunter JSON

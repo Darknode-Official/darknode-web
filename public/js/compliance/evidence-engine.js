@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Control Evidence engine (evidence). Runs the year-round evidence program for
 // SOC 2, ISO/IEC 27001:2022, PCI DSS v4.0.1, CIS Controls v8.1 and NIST CSF 2.0:

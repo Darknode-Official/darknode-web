@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Network Scan Diff (netexposure), pure engine. Turns the organisation's own network scan output
 // (nmap -oX / -oG, masscan -oJ / -oX, naabu JSON lines, Nessus .nessus v2, Shodan NDJSON / host

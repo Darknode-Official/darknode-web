@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Last-writer-wins (LWW) merge for the cloud-synced security graph. PURE: no DOM, no
 // storage, no network — so the same logic runs in the browser (applying remote changes

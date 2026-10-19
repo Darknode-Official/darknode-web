@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Mini-tools engine: a generic renderer for the declarative tool registry in
 // /js/tools/*.js. Each tool is { id, name, cat, desc, tags, inputs, run } and
 // runs entirely client-side. One engine renders every tool's form + live output,

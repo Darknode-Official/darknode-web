@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Plain-English help for the websec.js mini-tools. See help/README.md for the contract.
 // These are for security testing of systems you are authorised to test.
 export const HELP = {

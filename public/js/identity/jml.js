@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Lifecycle & Offboarding Verifier (jml): Deck tool UI. Drop an HR roster, the IdP
 // user export and every SaaS user list together; each file is classified by its

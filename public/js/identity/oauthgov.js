@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // OAuth App Governance (oauthgov): Deck tool UI. Drop the OAuth / enterprise-app exports
 // from Microsoft Entra, Google Workspace, Okta, Slack and GitHub; the engine builds one

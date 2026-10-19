@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // OAuth 2.0 / OpenID Connect Security Reference
 
 export const OAUTH_GRANT_TYPES = [

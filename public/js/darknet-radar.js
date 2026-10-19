@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Darknet Radar — REAL extortion / known-exploited-vulnerability intelligence.
 // There is no legitimate keyless "live dark web" feed, so this tool is driven by
 // two genuine public sources, fetched live through the Darknode proxy:

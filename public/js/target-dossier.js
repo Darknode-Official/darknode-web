@@ -1,5 +1,5 @@
 // Target Dossier — One-shot recon aggregator.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Enter a domain (or IP) and the tool runs several real, independent lookups in
 // parallel and assembles a single, exportable intelligence report:

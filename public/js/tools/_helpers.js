@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Shared helpers for the mini-tools registry. Pure, dependency-free, browser-safe.
 // Tool run() functions receive this object as their second argument: (vals, H).
 

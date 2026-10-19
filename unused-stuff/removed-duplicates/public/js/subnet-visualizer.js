@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Subnet Visualizer — interactive CIDR subnet calculator, VLSM planner, and visual network mapper.
 
 export function renderSubnetVisualizer(container) {

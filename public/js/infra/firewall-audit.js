@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Firewall Rule Audit: paste an on-prem / edge firewall rule-base export
 // (iptables, nftables, Cisco ASA/IOS ACL, pfSense/OPNsense, FortiGate, Windows

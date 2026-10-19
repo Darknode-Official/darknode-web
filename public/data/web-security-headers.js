@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // HTTP Security Headers — comprehensive reference with directives, examples, misconfigurations
 
 export const SECURITY_HEADERS = [

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // HTTP Probe — REAL endpoint probing, header fingerprinting and redirect tracing.
 // Requests run through the Darknode SSRF-guarded /api/fetch proxy so we read the
 // genuine upstream status, headers, redirect chain and body (browser CORS cannot).

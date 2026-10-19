@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Conditional Access Audit (caaudit): Deck tool UI. Loads Entra CA policies JSON,
 // Entra registration CSV, Okta policies JSON and Google 2SV CSV (any subset), runs

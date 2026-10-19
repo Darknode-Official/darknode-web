@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // VAULT team roles: what each role may do. Shared by the worker (worker/vault.js), which
 // ENFORCES it, and the browser UI, which only uses it to hide buttons that would fail.

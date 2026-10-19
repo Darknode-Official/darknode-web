@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Digital Forensics Toolkit — file header analysis, timestamp conversion, artifact reference, hash tools.
 
 export function renderForensicsToolkit(container) {

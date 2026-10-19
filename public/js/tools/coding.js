@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Coding & Data Formats mini-tools. See _schema.md for the contract.
 // All tools are pure, client-side, deterministic. Converters/parsers cover the
 // COMMON subset of each format (documented in help); accuracy over coverage.

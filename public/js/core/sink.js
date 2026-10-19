@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Browser half of the findings sink: writes mapped findings into the Security
 // Graph through graph-bridge.js and renders the shared "Add to Security Graph"
 // button. The mapping itself lives in core/sink-map.js (pure, node-tested).

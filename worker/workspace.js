@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Workspace membership — server side (Phase B2). The direct generalization of VAULT's
 // memberRole (worker/vault.js): the caller's role in a team workspace is read from

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Certificate & TLS Fleet Monitor — paste a list of domains and watch their TLS
 // certificates: issuer, validity window and days-to-expiry (live from certificate

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Ingest: dropzone — browser-only file intake. Drag/drop (incl. folders),
 // paste (text or files), Browse button and keyboard activation; archives are

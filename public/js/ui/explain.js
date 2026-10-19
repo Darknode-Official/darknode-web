@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Hover explainers: rest the pointer (or keyboard focus) on a meaningful element for
 // one second and a card says what it is, how it is worked out and where the data
 // comes from. Only elements that resolve to an explanation ever trigger, so blank

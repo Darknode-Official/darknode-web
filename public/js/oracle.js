@@ -1,6 +1,6 @@
 // ORACLE — Omniscient Reconnaissance, Analysis, Campaign & Lookup Engine
 // Browser-based threat intelligence platform for Darknode
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // ORACLE operates in three postures (SCOUTING / DEFENSIVE / OFFENSIVE) via the
 // shared core/tool-modes switcher. Scouting surfaces adversary reconnaissance &

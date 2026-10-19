@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Network-protocol mini-tools: packet/header decoders from pasted hex, accurate
 // protocol reference tables, and link-layer / transport calculators. See _schema.md.
 // Complements the "network" category (subnet math, command builders) without duplicating it.

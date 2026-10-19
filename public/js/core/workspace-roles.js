@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Workspace (team) roles — the non-financial generalization of vault/roles.js. A
 // workspace is a shared security context: its security graph (Phase B1), and later its

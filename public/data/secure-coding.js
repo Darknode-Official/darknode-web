@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Secure Coding Patterns — 12 languages × 15+ vulnerability categories
 // Each entry: vulnerable code, secure code, explanation, severity, CWE
 

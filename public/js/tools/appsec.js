@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Security & AppSec mini-tools (for authorized testing / defense).
 // Pure client-side, dependency-free. See _schema.md. Offensive payload / command
 // builders here are for AUTHORIZED penetration testing, CTFs and defense only.

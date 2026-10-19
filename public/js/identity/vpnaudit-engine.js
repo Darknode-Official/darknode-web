@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Remote Access Audit engine (vpnaudit). Pure: no DOM, no network, no clock
 // (everything is relative to the timestamps in the data). Safe inside a Worker.

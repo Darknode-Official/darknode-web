@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Breach Clock (breachclock): Deck tool UI. An incident-facts form feeds the pure
 // engine (breachclock-engine.js, run in a Worker), which returns every breach

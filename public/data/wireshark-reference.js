@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Comprehensive Wireshark/tshark Reference — display filters, capture filters, analysis
 
 export const WIRESHARK_DISPLAY_FILTERS = [

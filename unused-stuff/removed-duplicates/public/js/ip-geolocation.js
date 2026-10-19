@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // IP Geolocation — locate IPs, classify hosting/datacenter ASNs, bulk lookup
 // Uses ipapi.co (free, 1000/day, CORS OK) — no API key required
 

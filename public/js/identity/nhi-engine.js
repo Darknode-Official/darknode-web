@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Non-Human Identity Lifecycle engine (nhi). Pure: no DOM, no network, no clock
 // (the reference time is opts.now or the latest timestamp in the data). Runs in a

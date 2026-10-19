@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Blue Team & Detection mini-tools: detection-engineering scaffolds, log-format
 // parsers, severity/scoring helpers and accurate defender reference tables.
 // Pure client-side, deterministic. See _schema.md.

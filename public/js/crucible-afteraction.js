@@ -1,7 +1,7 @@
 // Darknode Project - CRUCIBLE :: After-Action
 // Pillar: score the exercise, render MITRE coverage, expose gaps, timeline,
 // Security Graph export and a printable report. All data synthetic.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Exports: renderAfterAction(container, ctx)
 //   ctx = { go(tabId), toast(msg, kind), core }  (core = crucible-core exports)

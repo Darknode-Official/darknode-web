@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Threat Feed Aggregator — a REAL, timestamped unified feed built live from three
 // keyless public sources, fetched through the Darknode proxy at view time:
 //   - CISA Known Exploited Vulnerabilities catalog (cisa.gov)

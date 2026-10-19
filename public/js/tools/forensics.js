@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Digital Forensics & Incident Response (DFIR) mini-tools: timestamp decoders,
 // file-signature and container parsers, Windows artifact references, log and email
 // header parsers, IOC extraction, evidence helpers and DFIR command builders.

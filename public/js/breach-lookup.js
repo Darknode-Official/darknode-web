@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Data Breach Intelligence Dashboard — searches the REAL, live Have I Been Pwned
 // breach catalog (https://haveibeenpwned.com/api/v3/breaches), which is keyless.
 // Nothing here is hardcoded or synthesised: company names, breach dates, pwn

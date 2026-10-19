@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // AWS Security Reference — comprehensive coverage of AWS security services,
 // misconfigurations, attack techniques, and hardening for authorized testing.
 

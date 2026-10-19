@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Entitlements: a pure, side-effect-free model of what each plan tier unlocks.
 //
 // The tier is set server-side only — a Firebase custom claim or an owner-written

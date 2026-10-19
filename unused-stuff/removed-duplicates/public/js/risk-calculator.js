@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Security Risk Assessment Calculator — interactive risk matrix, ALE calculator, risk register, CVSS v3.1 calculator
 
 export var THREAT_SCENARIOS = [

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Comprehensive Nmap Reference Database — scan types, NSE scripts, timing, evasion, flags
 
 export const NMAP_SCAN_TYPES = [

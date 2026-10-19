@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // LEAKPROBE engine — pure, deterministic logic for the Secret Exposure &
 // Backend Leak scanner. No DOM, no network; the UI (leakprobe.js) does the real

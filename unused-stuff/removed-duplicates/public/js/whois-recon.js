@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // WHOIS Recon — Domain/IP Intelligence Tool
 // RDAP registration data (the modern WHOIS), DNS lookups, IP geolocation,
 // certificate transparency, reverse DNS.

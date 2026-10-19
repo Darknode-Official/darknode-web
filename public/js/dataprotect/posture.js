@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // External Posture Scorecard — one domain, run live checks (HTTPS + redirect,
 // security headers, SPF/DMARC, security.txt, certificate transparency) and roll

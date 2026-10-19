@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Data Inventory & Processing Register (dataflow): Deck tool UI. Two team-shareable
 // registers (core/register.js): processing activities (mirrored to the Security Graph

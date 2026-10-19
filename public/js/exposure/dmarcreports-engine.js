@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // DMARC Reports engine (dmarcreports). Pure: no DOM, no network, deterministic.
 // Safe to run inside a Blob module Worker and in node tests.

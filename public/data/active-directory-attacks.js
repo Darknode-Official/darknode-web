@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Active Directory Attack Techniques — Comprehensive Reference
 // For authorized security assessments and education only.
 

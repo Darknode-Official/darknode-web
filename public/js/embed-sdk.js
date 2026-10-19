@@ -1,5 +1,5 @@
 // Embed SDK — generate an iframe or snippet to embed any Darknode tool in another site.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Darknode runs any route in EMBED MODE with ?embed=1 — the full app boots but all chrome
 // (sidebar, bootscreen, header, footer) is stripped, leaving just the one tool, so it can be

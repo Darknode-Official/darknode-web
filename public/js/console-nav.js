@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Console navigation: services bar, Services mega-menu, favorites + recents, and the
 // home-page services directory. An AWS-console-style front end over the existing
 // `.side-item[data-sec]` sections — every section still gets one of those buttons in

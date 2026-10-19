@@ -1,5 +1,5 @@
 // Darknode Project - CITADEL SOC Operations Center
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 
 import { mountModeSwitcher } from '/js/core/tool-modes.js';
 

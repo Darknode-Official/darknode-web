@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Decode a base64url JWT segment to its parsed JSON, handling padding and
 // UTF-8 claims (atob yields a Latin-1 byte string; decode it as UTF-8 so
 // non-ASCII claim values are not mangled).

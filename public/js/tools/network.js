@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Network & IP mini-tools. See _schema.md for the contract.
 // Pure client-side: all IPv4/IPv6/MAC math is implemented inline with
 // integer/bitwise operations (kept unsigned via >>> 0). No network access.

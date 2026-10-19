@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Web / application-security mini-tools: payload builders, cheatsheets and analyzers
 // for AUTHORIZED penetration testing and red/blue team exercises. See _schema.md.
 

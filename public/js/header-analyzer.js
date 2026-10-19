@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // HTTP Security Header Analyzer — checks the REAL security headers of any URL.
 // Requests are made through the Darknode Worker's SSRF-guarded /api/fetch proxy,
 // so we read the genuine upstream response headers (browser CORS cannot).

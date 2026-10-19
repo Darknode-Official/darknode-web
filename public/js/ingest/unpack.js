@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Ingest: unpack — hand-rolled ZIP reader + gzip/deflate via the native
 // DecompressionStream. Zero dependencies; no module-scope access to window,

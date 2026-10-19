@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Domain Guard engine (domainguard): domain portfolio guard. Grades the live
 // DNS / RDAP / certificate-transparency answers the UI fetched for every owned

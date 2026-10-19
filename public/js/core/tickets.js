@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Ticket handoff, pure half: turns Security Graph FINDING entities into the import
 // formats of the ticketing systems teams already run. No DOM, no network, no clock:
 // the same entities always give the same bytes. deck/ticket-export.js does the I/O.

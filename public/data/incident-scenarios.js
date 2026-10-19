@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Incident Response Training Scenarios — 50 detailed scenarios for IR drills
 
 export const INCIDENT_SCENARIOS = [

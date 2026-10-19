@@ -1,6 +1,6 @@
 // Darknode Project - CRUCIBLE :: Fusion Command
 // Pillar: the LIVE threat-picture command surface for the active wargame.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Exports one render function; all data/engine/esc come from ctx.core.
 //   renderFusion(container, ctx)   ctx = { go(tabId), toast, core }

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Everyday tools DI answers exactly, offline: clock arithmetic ("hours between 9am and
 // 5:30pm", "add 45 minutes to 10:20"), the current time in a city, random draws (coin,
 // dice, number, pick one), UUIDs, placeholder text, tip / BMI / loan / savings maths,

@@ -1,6 +1,6 @@
 // Threat Hunting Laboratory — Find the Attacker in the Logs
 // Interactive CTF-style challenges for SOC analysts and threat hunters.
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

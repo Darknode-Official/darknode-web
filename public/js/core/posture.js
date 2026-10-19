@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Posture metrics over the security graph, counting REAL data only.
 //
 // Several tools write training/sample data into the shared graph (CRUCIBLE war-games,

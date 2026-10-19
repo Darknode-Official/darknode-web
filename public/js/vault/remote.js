@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // VAULT team-vault client. Membership and roles are Firestore documents (rules-enforced,
 // see firebase/firestore.rules); every ledger operation is a call to the Darknode worker,

@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Relationship semantics: constrain which entity types a relationship may join.
 // A rule is { from: [types]|"*", to: [types]|"*" }. "*" means any entity type.
 // This turns the flat RELATIONSHIP_TYPES list into a typed, checkable graph.

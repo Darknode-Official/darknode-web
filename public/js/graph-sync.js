@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 //
 // Cloud sync for the security graph (Phase B1). The browser's security-graph.js stays the
 // instant, synchronous source of truth; this layer mirrors it to and from the worker's

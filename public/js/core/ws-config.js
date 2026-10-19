@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Shared per-workspace settings (the SLA policy now; alert rules later). Browser module.
 //
 // A team workspace keeps them in Firestore at workspaces/{wid}/config/{name}: every

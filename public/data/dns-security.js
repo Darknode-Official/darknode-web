@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // DNS Security Reference — record types, attacks, DNSSEC, enumeration, detection
 
 export const DNS_RECORD_TYPES = [

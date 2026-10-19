@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Threat Modeler reference data: PASTA stages, LINDDUN privacy categories, DFD trust-boundary
 // patterns, the CWE-tagged STRIDE threat library (merged with the original quick-reference
 // library), STRIDE-to-control mappings and security-requirement templates. Pure data, no DOM.

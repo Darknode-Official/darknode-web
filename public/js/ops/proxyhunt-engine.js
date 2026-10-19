@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Web Gateway Hunt engine (proxyhunt). Reads secure web gateway / proxy logs and finds data
 // leaving the company (uploads to personal storage, file transfer, paste sites, webmail and

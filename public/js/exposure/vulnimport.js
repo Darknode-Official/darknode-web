@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Vulnerability Import & SLA (vulnimport): Deck tool UI. Drop scanner exports (Nessus, Tenable,
 // Qualys, Greenbone/OpenVAS, Rapid7, Trivy, Grype, Snyk, SARIF, Defender, generic CSV) and an

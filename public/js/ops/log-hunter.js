@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Log Threat Hunter — paste or load web access logs, Linux auth logs and Windows
 // Security event exports; get deterministic threat hunting mapped to MITRE ATT&CK.

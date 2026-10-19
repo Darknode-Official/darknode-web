@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Attack Simulator -- interactive cyber attack kill chain walkthrough and tabletop exercises.
 // 12 scenarios, interactive phase execution, defense reports, MITRE ATT&CK coverage
 

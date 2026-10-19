@@ -1,7 +1,7 @@
 // PROMETHEUS Web — Predictive Real-time Omniscient Monitoring, Emulation,
 // Threat Hunting & Engagement Unified System
 // Browser-based military-grade cyber operations platform for Darknode
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 
 var _pmIntervals = null;
 export function cleanupPrometheus() {

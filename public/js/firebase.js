@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 // Firebase init for Darknode Web.
 // The apiKey here is NOT a secret (it only identifies the project); real protection
 // comes from the Firestore/Storage Security Rules in ../firebase/.

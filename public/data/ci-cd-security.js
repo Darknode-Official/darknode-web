@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // CI/CD Pipeline Security Reference — GitHub Actions, GitLab CI, Jenkins, supply chain attacks.
 
 export const GITHUB_ACTIONS_SECURITY = {

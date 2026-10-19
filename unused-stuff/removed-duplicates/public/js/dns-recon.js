@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // DNS Recon — DNS enumeration, subdomain brute-force, SPF/DKIM/DMARC analysis
 // Uses Google DoH (dns.google) and Cloudflare DoH (cloudflare-dns.com) — no API key, CORS OK
 

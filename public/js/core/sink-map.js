@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Pure half of the findings sink: maps a tool's findings onto Security Graph
 // entities + links. No DOM, no storage, no graph import — core/sink.js does the
 // browser I/O. Any tool that emits the common Finding shape below can publish.

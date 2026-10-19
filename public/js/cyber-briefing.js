@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Executive Cyber Briefing — a REAL threat briefing assembled live from public,
 // keyless sources through the Darknode proxy:
 //   - CISA Known Exploited Vulnerabilities catalog (cisa.gov): what is being

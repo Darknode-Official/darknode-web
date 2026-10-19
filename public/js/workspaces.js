@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Team-workspace client (Phase B2) — the non-financial generalization of vault/remote.js.
 // Membership and roles are Firestore documents (rules-enforced, firebase/firestore.rules);

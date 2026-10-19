@@ -1,5 +1,5 @@
 // Darknode -- API Attack Patterns Database
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 
 const API_ATTACK_CATEGORIES = [
   { id: "bola", name: "Broken Object Level Authorization", description: "BOLA/IDOR allows attackers to access resources belonging to other users by manipulating object identifiers in API requests." },

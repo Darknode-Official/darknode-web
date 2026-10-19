@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Domain Guard (domainguard): Deck tool UI. Checks every owned domain live over
 // DNS-over-HTTPS (dns.google, cloudflare-dns.com fallback), RDAP (rdap.org via the

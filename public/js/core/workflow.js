@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved.
+// Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Pure findings workflow engine: SLA due dates, triage changes (assign, status,
 // comment, severity, due date, risk exception, ticket), verify-fixed / regression
 // reconciliation after a tool re-run, exception expiry and the queue views.

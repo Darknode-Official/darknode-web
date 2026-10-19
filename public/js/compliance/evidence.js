@@ -1,4 +1,4 @@
-// Copyright (c) 2026 Darknode-Official (Manav Prasad). All rights reserved. See LICENSE.
+// Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Control Evidence (evidence): Deck tool UI. A year-round evidence program for
 // SOC 2, ISO 27001, PCI DSS, CIS v8 and NIST CSF 2.0. Controls in scope live in a
