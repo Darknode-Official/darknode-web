@@ -2,7 +2,8 @@
 // another sees "impossible travel" on the SAME resolved person — together that is an
 // account-takeover risk no single tool reports. Reads the Security Graph through the
 // correlation engine (core/correlate.js) and lists each hit with the findings that
-// make it up. Read-only — it never writes to the graph.
+// make it up. The chain list is a live read; promoting a chain opens a managed
+// incident (via the Incident Tracker) and links its findings as evidence.
 import { correlate, RULES } from "../core/correlate.js";
 import { chokePoints } from "../core/paths.js";
 
@@ -38,6 +39,9 @@ function injectStyle() {
 .cor-leglbl{font-size:12px;color:#5a6680;min-width:230px}
 .cor-finding{appearance:none;border:0;background:none;font:inherit;color:var(--dk-acc,#2552c6);font-weight:600;cursor:pointer;padding:0;text-align:left}
 .cor-finding:hover{text-decoration:underline}
+.cor-acts{display:flex;gap:10px;align-items:center;margin-top:12px;padding-top:11px;border-top:1px dashed rgba(23,33,56,.12)}
+.cor-act{appearance:none;border:1px solid rgba(37,82,198,.3);background:rgba(37,82,198,.06);color:#2552c6;font:inherit;font-size:12px;font-weight:600;border-radius:6px;padding:5px 12px;cursor:pointer}
+.cor-act:hover{background:rgba(37,82,198,.12)}
 .cor-choke{border:1px solid rgba(37,82,198,.22);background:rgba(37,82,198,.04);border-radius:10px;padding:13px 15px;margin:0 0 16px}
 .cor-choke h2{font-size:13px;margin:0 0 3px;color:#141c2e}
 .cor-choke p{font-size:12px;color:#5a6680;margin:0 0 9px;line-height:1.5}
@@ -55,7 +59,7 @@ export function mountCorrelations(el, ctx) {
   el.innerHTML = `
     <div class="dk-ovhead"><div><h1>Correlations</h1><p>Attack chains your tools only see together — the same host or person flagged by two different tools adds up to a risk neither reports alone. Every chain links back to the findings that prove it.</p></div></div>
     <div class="dk-ovp">
-      <p class="cor-sub">Deterministic rules over the resolved inventory (${RULES.length} rules). Nothing here is written back to the graph; these are a live read of the findings you already have.</p>
+      <p class="cor-sub">Deterministic rules over the resolved inventory (${RULES.length} rules) — a live read of the findings you already have. Open any chain as a managed incident to track it to closure.</p>
       <div class="dk-invbar"><div class="dk-isearch">${(ctx && ctx.IC_SEARCH) || ""}<input id="corQ" placeholder="Search correlations" value="${E(S.q)}" autocomplete="off" spellcheck="false"></div></div>
       <div id="corBody"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
     </div>`;
@@ -89,13 +93,29 @@ export function repaintCorrelations(m) {
         <span><span class="cor-ttl">${E(h.title)}</span>${h.attack.map((a) => `<span class="cor-att">${E(a)}</span>`).join("")}<br><span class="cor-subj">on <b>${E(h.subjectName)}</b> · ${h.subjectType === "asset" ? "host" : "identity"}</span></span>
         <span class="cor-chev">›</span>
       </div>
-      <div class="cor-body"><p class="cor-exp">${E(h.explanation)}</p>${legs}</div>
+      <div class="cor-body"><p class="cor-exp">${E(h.explanation)}</p>${legs}
+        <div class="cor-acts"><button class="cor-act" data-key="${E(h.ruleId + "|" + h.subjectKey)}">Open as incident</button></div>
+      </div>
     </div>`;
   }).join("");
+  // Index the visible chains by their card key so the actions can find the full hit.
+  S.byKey = {};
+  hits.forEach((h) => { S.byKey[h.ruleId + "|" + h.subjectKey] = h; });
   box.querySelectorAll(".cor-head").forEach((head) => head.onclick = (e) => {
     if (e.target.closest(".cor-finding")) return;
     const card = head.closest(".cor-card"), k = card.dataset.key;
     S.open[k] = !S.open[k]; card.classList.toggle("on", S.open[k]);
   });
   box.querySelectorAll(".cor-finding").forEach((b) => b.onclick = () => S.ctx.openEntityDrawer && S.ctx.openEntityDrawer(b.dataset.fid));
+  box.querySelectorAll(".cor-act").forEach((b) => b.onclick = async () => {
+    const chain = S.byKey && S.byKey[b.dataset.key]; if (!chain || b.disabled) return;
+    const toast = S.ctx && S.ctx.toast;
+    b.disabled = true;                                // guard against a double-click creating two incidents
+    let res = null;
+    try { const m = await import("/js/incident-tracker.js"); res = m.promoteCorrelation(chain); } catch (_) { res = null; }
+    b.disabled = false;
+    if (!res) { if (toast) toast("Could not open an incident from this chain", "error"); return; }
+    if (toast) toast(`Incident ${res.id} ${res.created ? "opened" : "updated"} in Incident Tracker`, "success");
+    if (S.ctx && S.ctx.openTool) S.ctx.openTool("incidents", "Incident Tracker");
+  });
 }

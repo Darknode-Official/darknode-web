@@ -1,5 +1,5 @@
 // Incident Tracker — security incident management dashboard with localStorage persistence
-import { createEntity as sgCreate, updateEntity as sgUpdate, deleteEntity as sgDelete, getEntity as sgGet, listEntities as sgList } from "/js/security-graph.js";
+import { createEntity as sgCreate, updateEntity as sgUpdate, deleteEntity as sgDelete, getEntity as sgGet, listEntities as sgList, createRelationship as sgRel } from "/js/security-graph.js";
 import { IR_PLAYBOOKS, IR_SEVERITY, IR_COMM_TEMPLATES, IR_STAKEHOLDERS, TYPE_PLAYBOOK } from "/js/incident-playbooks.js";
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
@@ -81,6 +81,72 @@ function mirrorToGraph(inc) {
   } catch (_) {}
 }
 function unmirrorFromGraph(inc) { try { if (inc && inc.graphId) sgDelete(inc.graphId); } catch (_) {} }
+
+// ── Correlation → managed incident ─────────────────────────────────────
+// A correlation chain (core/correlate.js) is a cross-tool attack pattern on one
+// resolved host or identity. Promoting it opens a FULLY MANAGED incident here —
+// triage, playbook, timeline, closure — pre-filled from the chain, not a bare
+// INCIDENT entity the tracker cannot work. It is idempotent per chain: a stable
+// correlationKey means re-promoting the same chain updates the existing incident
+// instead of duplicating it, and the contributing findings are linked
+// FINDING -evidence_for-> INCIDENT in the graph so the evidence is auditable.
+const COR_SEV = { critical: "P1 — Critical", high: "P2 — High", medium: "P3 — Medium", low: "P4 — Low", info: "P4 — Low" };
+// Map each correlation rule to the closest real incident type. Unmatched rules
+// (e.g. a rule added later) fall back to Unauthorized Access rather than guess.
+const COR_TYPE = {
+  "account-takeover": "Unauthorized Access",
+  "leaver-active": "Insider Threat",
+  "priv-no-mfa": "Unauthorized Access",
+  "exploit-exposed-host": "APT Intrusion",
+  "exposed-no-backup": "Unauthorized Access",
+  "live-priv-cred": "Credential Theft",
+  "brute-force-success": "Credential Theft",
+  "oauth-overscope": "Unauthorized Access",
+  "domain-takeover": "DNS Hijacking",
+  "beacon-exposed": "APT Intrusion",
+};
+function corType(chain) { return COR_TYPE[chain.ruleId] || "Unauthorized Access"; }
+
+// Create or update the managed incident for a correlation chain. Returns
+// { id, created, graphId } or null for an unusable chain.
+export function promoteCorrelation(chain) {
+  if (!chain || !chain.ruleId) return null;
+  const key = "cor:" + chain.ruleId + "|" + (chain.subjectKey || "");
+  const incidents = loadIncidents();
+  let inc = incidents.find(function (i) { return i && i.correlationKey === key; });
+  const created = !inc;
+  const mitre = Array.isArray(chain.attack) ? chain.attack.filter(function (a) { return /^T\d/.test(a); }) : [];
+  const legs = Array.isArray(chain.legs) ? chain.legs : [];
+  const evidence = legs.map(function (l) { return "- " + (l.label || "") + (l.findingTitle ? ": " + l.findingTitle : ""); }).join("\n");
+  const desc = (chain.explanation || "") + (evidence ? "\n\nContributing findings:\n" + evidence : "");
+
+  if (created) {
+    inc = { id: "INC-" + Date.now().toString(36).toUpperCase(), status: "New", evidence: [], comms: [], created: new Date().toISOString(), closedAt: null, correlationKey: key, source: "correlation" };
+    incidents.unshift(inc);
+  }
+  // Derived fields always reflect the latest chain; analyst-owned state
+  // (status, phase, checks, timeline, closedAt) is preserved across re-promotes.
+  inc.title = chain.title + (chain.subjectName ? " on " + chain.subjectName : "");
+  inc.severity = COR_SEV[chain.severity] || "P3 — Medium";
+  inc.type = corType(chain);
+  inc.affected = chain.subjectName || "";
+  inc.description = desc;
+  inc.mitre = mitre;
+  ensureResponse(inc);
+  if (created) addTimeline(inc, "Opened from correlation: " + chain.title, true);
+  mirrorToGraph(inc);
+  // Link the contributing findings as evidence (idempotent; invalid/absent ones skip).
+  if (inc.graphId) {
+    const seen = {};
+    legs.forEach(function (l) {
+      const fid = l && l.findingId != null ? String(l.findingId) : "";
+      if (!fid || seen[fid]) return; seen[fid] = 1;
+      try { if (sgGet(fid)) sgRel(fid, inc.graphId, "evidence_for"); } catch (_) {}
+    });
+  }
+  saveIncidents(incidents);
+  return { id: inc.id, created: created, graphId: inc.graphId };
+}
 
 // ── Main Render ──
 export function renderIncidentTracker(main) {

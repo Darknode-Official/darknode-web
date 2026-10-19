@@ -2043,7 +2043,7 @@ function renderApp(user) {
     else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20260924b").then(m => live() && m.renderThreatModeler(main)); }
     else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261015e").then(m => live() && m.renderOSINTDashboard(main, more)); }
     else if (sec === "addressintel") { import("/js/address-intel.js?v=20261018i").then(m => live() && m.renderAddressIntel(main)); }
-    else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261015e").then(m => live() && m.renderIncidentTracker(main)); }
+    else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261019a").then(m => live() && m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js?v=20261013b").then(m => live() && m.renderFirewallBuilder(main)); }
     else if (sec === "apitester") { import("/js/api-tester.js?v=20261017f").then(m => live() && m.renderAPITester(main)); }
     else if (sec === "compliance") { import("/js/compliance-checker.js?v=20260924a").then(m => live() && m.renderComplianceChecker(main)); }
