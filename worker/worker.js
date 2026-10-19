@@ -555,7 +555,11 @@ export default {
     if (request.method !== "POST") return json({ error: "POST only" }, 405);
 
     let body;
-    try { body = await request.json(); } catch (_) { return json({ error: "Invalid JSON body" }, 400); }
+    try {
+      const raw = await request.text();
+      if (raw.length > 1024 * 1024) return json({ error: "Request too large." }, 413); // parity with the other routes' body caps
+      body = JSON.parse(raw);
+    } catch (_) { return json({ error: "Invalid JSON body" }, 400); }
     const { provider, model, messages } = body || {};
     if (!provider || !model || !messages) return json({ error: "Missing provider, model, or messages" }, 400);
 

@@ -96,5 +96,10 @@ export async function deliver(channel, alert, deps = {}) {
   }
 }
 
-// Backoff schedule (ms) for the DO to use between retries.
-export const RETRY_BACKOFF_MS = [0, 30000, 300000];
+// Backoff schedule (ms) between delivery retries. Kept SHORT and bounded: the caller
+// (_deliverWithRetry) awaits these inline on the request path and inside the alarm's
+// blockConcurrencyWhile critical section, so a long sleep would hang the client response
+// and freeze the whole workspace DO (risking an alarm-budget kill → re-invoke → duplicate
+// alerts). Total worst-case stays ~3.5s/channel; durable long-delay retry belongs in an
+// alarm-scheduled queue, not an inline sleep.
+export const RETRY_BACKOFF_MS = [0, 500, 3000];

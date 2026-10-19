@@ -221,6 +221,12 @@ export class MonitorDO {
     }
     if (!canWrite) return reply({ error: "Your role (" + role + ") cannot change monitors." }, 403);
 
+    // Serialize every mutating op. Each does a read-modify-write on `mons`, and run/test
+    // hold that snapshot across long non-storage awaits (network checks + delivery) during
+    // which the DO input gate would otherwise open — so a concurrent request could write a
+    // stale snapshot (clobbering an interleaved upsert/pause/delete and resurrecting
+    // resolved findings' SLA clocks) and two runs could double-deliver the same change.
+    return this.state.blockConcurrencyWhile(async () => {
     if (op === "upsert") {
       const m = body.monitor || {};
       if (!m.type) return reply({ error: "monitor.type required" }, 400);
@@ -250,6 +256,7 @@ export class MonitorDO {
       return reply({ ok });
     }
     return reply({ error: "unknown op: " + op }, 400);
+    });
   }
 }
 
