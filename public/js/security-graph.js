@@ -93,22 +93,36 @@ function _idbPut(key, value) {
     } catch (_) { resolve(false); }
   })).catch(() => false);
 }
-// Write the current in-memory snapshot to IDB, coalesced. Runs on save success AND on a
-// quota failure (that is the whole point — the data survives even when localStorage cannot
-// take it). Bails if the active store changed between scheduling and the flush.
+// Write the current in-memory snapshot to IDB, coalesced on a 400ms timer. Runs on save
+// success AND on a quota failure (that is the whole point — the data survives even when
+// localStorage cannot take it). Bails if the active store changed before the flush.
 function _idbSchedulePut() {
   if (!_hasIDB || _idbWriteTimer) return;
-  const key = _key, at = _lastSavedAt;
+  const key = _key;
   _idbWriteTimer = setTimeout(() => {
     _idbWriteTimer = null;
     if (key !== _key) return;
-    try { _idbPut(key, { entities: _entities, relationships: _relationships, savedAt: at }); } catch (_) {}
+    _idbFlushNow(key);
   }, 400);
 }
-// Merge the IDB snapshot back into memory IF it is newer than what localStorage gave us.
-// Equal/older IDB is ignored, so a normal load never resurrects a just-deleted record;
-// a newer IDB means localStorage lost a write, and recovering it (even if it re-adds a
-// record deleted in the last <400ms before an immediate reload) is the safe trade.
+// Mirror the CURRENT in-memory snapshot to IDB immediately, stamped with the LIVE savedAt
+// (never a value frozen when a debounce window opened). This is the key to recovery: a
+// save that overflowed localStorage leaves localStorage holding an OLDER savedAt, so the
+// IDB copy is always strictly newer and gets adopted on reload. Called by the debounce
+// flush and, synchronously, before a workspace switch clears the old store from memory.
+function _idbFlushNow(key) {
+  if (!_hasIDB) return;
+  if (_idbWriteTimer) { clearTimeout(_idbWriteTimer); _idbWriteTimer = null; }
+  try { _idbPut(key, { entities: _entities, relationships: _relationships, savedAt: _lastSavedAt }); } catch (_) {}
+}
+// Recover from IDB only when its snapshot is STRICTLY newer than what localStorage gave
+// us — i.e. a localStorage write was dropped on quota, or localStorage was evicted while
+// IDB survived. In that case the IDB snapshot is the complete latest truth, so adopt its
+// key-set WHOLESALE: this restores lost records AND applies deletions the newer snapshot
+// omits (localStorage carries no tombstones). Equal/older IDB is ignored, so a normal load
+// never resurrects a deleted record and never clobbers a just-saved local edit (that edit
+// advanced savedAt, so the gate fails). savedAt is strictly monotonic (see _save), so even
+// two writes in the same millisecond cannot collide on the gate.
 function _idbHydrate() {
   if (!_hasIDB || _hydratedKey === _key) return;
   _hydratedKey = _key;
@@ -116,14 +130,12 @@ function _idbHydrate() {
   _idbGet(key).then((snap) => {
     if (!snap || key !== _key || _index === null) return;
     if (!(Number(snap.savedAt) > _memSavedAt)) return;
-    let changed = 0;
-    for (const id in (snap.entities || {})) { const rec = snap.entities[id]; if (rec && wins(rec, _entities[id], 'updatedAt')) { _entities[id] = rec; changed++; } }
-    for (const id in (snap.relationships || {})) { const rec = snap.relationships[id]; if (rec && wins(rec, _relationships[id], 'createdAt')) { _relationships[id] = rec; changed++; } }
+    _entities = snap.entities || {};
+    _relationships = snap.relationships || {};
     _memSavedAt = Number(snap.savedAt);
-    if (changed) {
-      try { localStorage.setItem(key, JSON.stringify({ entities: _entities, relationships: _relationships, savedAt: _memSavedAt })); } catch (_) {}
-      _emit('secgraph:sync', { recovered: changed });
-    }
+    _lastSavedAt = Math.max(_lastSavedAt, _memSavedAt);
+    try { localStorage.setItem(key, JSON.stringify({ entities: _entities, relationships: _relationships, savedAt: _memSavedAt })); } catch (_) {}
+    _emit('secgraph:sync', { recovered: true });
   }).catch(() => {});
 }
 
@@ -143,6 +155,7 @@ function _load() {
     _relationships = {};
   }
   _index = true;
+  _lastSavedAt = Math.max(_lastSavedAt, _memSavedAt); // keep the save stamp strictly ahead of what is persisted
   _idbHydrate(); // async: recover anything a full-quota localStorage write dropped
 }
 
@@ -166,7 +179,7 @@ try {
 function _refreshStore() {
   const next = storeKeyFor(_activeWid());
   if (next === _key) return false;
-  if (_index !== null && !_batchDepth) _save();
+  if (_index !== null && !_batchDepth) { _save(); _idbFlushNow(_key); } // persist the OLD store to localStorage AND IDB before leaving it
   _key = next;
   _index = null; _entities = {}; _relationships = {}; _hydratedKey = null;
   _emit('secgraph:store-changed', { wid: _activeWid() });
@@ -181,7 +194,7 @@ let _dirty = false;
 let _saveFailed = false;
 function _save() {
   if (_batchDepth) { _dirty = true; return; }
-  _lastSavedAt = Date.now();
+  _lastSavedAt = Math.max(Date.now(), _lastSavedAt + 1); // strictly monotonic: a later save always out-stamps an earlier one
   try {
     localStorage.setItem(_key, JSON.stringify({
       entities: _entities,
