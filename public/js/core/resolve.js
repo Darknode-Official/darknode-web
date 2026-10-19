@@ -120,7 +120,9 @@ export function identityKeys(name, data = {}) {
   for (const c of pool) { if (c.includes("@")) { const e = normalizeEmail(c); if (e && e.includes("@")) { emailKey = e; break; } } }
   const upnRaw = str(d.upn || d.userPrincipalName) || (emailKey || (nm.includes("@") ? nm : ""));
   const upnKey = upnRaw.includes("@") ? normalizeEmail(upnRaw) : "";
-  const samKey = lc(d.samAccountName || d.sam || "").replace(/^.*\\/, ""); // strip DOMAIN\ prefix
+  // Keep the DOMAIN\ prefix (normalise / to \): sAMAccountName is unique only within a
+  // domain, so CORP\jane and OTHER\jane must stay distinct identities, not auto-merge.
+  const samKey = lc(d.samAccountName || d.sam || "").replace(/\//g, "\\");
   const nameKey = normalizeName(d.displayName || d.name || (nm.includes("@") ? "" : nm));
   return { emailKey, upnKey, samKey, nameKey };
 }

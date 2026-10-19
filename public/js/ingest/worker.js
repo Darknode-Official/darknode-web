@@ -31,6 +31,17 @@ self.onmessage = async (e) => {
   } catch (err) { self.postMessage({ ok: false, error: String(err && err.message || err) }); }
 };`;
 
+// Copy an arg that would be detached by a transfer, so a fallback can still read it.
+// ArrayBuffers and TypedArray/DataView views are copied; anything else passes through.
+function cloneForInline(a) {
+  if (a instanceof ArrayBuffer) return a.slice(0);
+  if (a && ArrayBuffer.isView(a) && a.buffer instanceof ArrayBuffer) {
+    if (typeof DataView !== "undefined" && a instanceof DataView) return new DataView(a.buffer.slice(a.byteOffset, a.byteOffset + a.byteLength));
+    return new a.constructor(a);   // TypedArray ctor copies element-wise from the source view
+  }
+  return a;
+}
+
 function autoTransfer(args) {
   const list = [];
   for (const a of args) {
@@ -58,7 +69,7 @@ export function runInWorker(url, fnName, args = [], { onProgress, timeoutMs = 12
   let cancel = () => {};
   const p = new Promise((resolve, reject) => {
     if (!canWorker) { runInline(url, fnName, args, onProgress).then(resolve, reject); return; }
-    let w = null, blobUrl = "", settled = false, spoke = false, timer = 0;
+    let w = null, blobUrl = "", settled = false, spoke = false, timer = 0, inlineArgs = args;
     const cleanup = () => {
       if (timer) clearTimeout(timer);
       try { if (blobUrl) URL.revokeObjectURL(blobUrl); } catch (_) {}
@@ -78,16 +89,19 @@ export function runInWorker(url, fnName, args = [], { onProgress, timeoutMs = 12
       };
       w.onerror = (ev) => {
         if (settled) return;
-        if (!spoke) { settled = true; cleanup(); runInline(url, fnName, args, onProgress).then(resolve, reject); return; }
+        if (!spoke) { settled = true; cleanup(); runInline(url, fnName, inlineArgs, onProgress).then(resolve, reject); return; }
         finish(false, new Error(String(ev && ev.message || "worker error")));
       };
       const list = transfer === "auto" ? autoTransfer(args) : Array.isArray(transfer) ? transfer : [];
+      // Posting transfers (detaches) every buffer in `list`, so the main-thread fallback can't
+      // re-read `args` — keep a non-detached copy for it. Only costs a copy when transferring.
+      if (list.length) inlineArgs = args.map(cloneForInline);
       w.postMessage({ fn: fnName, args }, list);
       if (timeoutMs > 0) timer = setTimeout(() => finish(false, new Error("worker timeout")), timeoutMs);
     } catch (_) {
       if (settled) return;
       settled = true; cleanup();
-      runInline(url, fnName, args, onProgress).then(resolve, reject);
+      runInline(url, fnName, inlineArgs, onProgress).then(resolve, reject);
     }
   });
   p.cancel = () => cancel();

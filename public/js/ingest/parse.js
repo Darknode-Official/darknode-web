@@ -244,7 +244,7 @@ function* iterCsvRows(text, delimiter) {
   if (s.charCodeAt(0) === 0xfeff) s = s.slice(1);
   const d = delimiter || sniffDelimiter(s);
   const n = s.length;
-  let i = 0, row = [], field = "", quoted = false, any = false;
+  let i = 0, row = [], field = "", quoted = false, any = false, sawQuote = false;
   while (i < n) {
     const c = s[i];
     if (quoted) {
@@ -254,17 +254,19 @@ function* iterCsvRows(text, delimiter) {
       }
       field += c; i++; continue;
     }
-    if (c === '"') { quoted = true; any = true; i++; continue; }
+    if (c === '"') { quoted = true; any = true; sawQuote = true; i++; continue; }
     if (c === d) { row.push(field); field = ""; any = true; i++; continue; }
     if (c === "\r") { i++; continue; }
     if (c === "\n") {
       row.push(field); field = ""; i++;
-      if ((any || row.length > 1 || row[0] !== "") && row.some((f) => f !== "")) yield row;
-      row = []; any = false; continue;
+      // Skip a truly blank line, but keep a row of explicitly-quoted empty fields ("","")
+      // — the quote marks it as a real record, unlike a bare `,` or an empty line.
+      if (any || row.length > 1 || row[0] !== "") { if (sawQuote || row.some((f) => f !== "")) yield row; }
+      row = []; any = false; sawQuote = false; continue;
     }
     field += c; any = true; i++;
   }
-  if (any || field !== "" || row.length) { row.push(field); if (row.some((f) => f !== "")) yield row; }
+  if (any || field !== "" || row.length) { row.push(field); if (sawQuote || row.some((f) => f !== "")) yield row; }
 }
 
 // Trimmed, de-duplicated header keys ("a", "a_2", "a_3").
@@ -683,6 +685,7 @@ function yScalar(s) {
   if (/^[-+]?(0|[1-9][0-9]*)$/.test(s)) return parseInt(s, 10);
   if (/^0x[0-9a-fA-F]+$/.test(s)) return parseInt(s.slice(2), 16);
   if (/^0o[0-7]+$/.test(s)) return parseInt(s.slice(2), 8);
+  if (/^[-+]?0\d+$/.test(s)) return s;                      // zero-padded (zip code, id, version pin) — keep as string, not a number
   if (/^[-+]?(\d+\.\d*|\.\d+|\d+)([eE][-+]?\d+)?$/.test(s)) return parseFloat(s);
   if (/^[-+]?\.(inf|Inf|INF)$/.test(s)) return s[0] === "-" ? -Infinity : Infinity;
   if (/^\.(nan|NaN|NAN)$/.test(s)) return NaN;

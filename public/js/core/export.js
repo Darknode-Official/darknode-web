@@ -36,7 +36,7 @@ export function fileStamp(d = new Date()) {
 // ICS (RFC 5545)
 // ---------------------------------------------------------------------------
 
-const icsEsc = (s) => String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+const icsEsc = (s) => String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n");
 const icsUtc = (d) => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 const icsDate = (d) => { const x = new Date(d); return x.toISOString().slice(0, 10).replace(/-/g, ""); };
 

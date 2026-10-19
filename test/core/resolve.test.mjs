@@ -86,10 +86,17 @@ group("resolve/identity-keys", () => {
     assert.equal(k.emailKey, "jane@corp.com");
     assert.equal(k.upnKey, "jane@corp.com");
   });
-  test("identityKeys strips a DOMAIN\\ prefix from samAccountName", () => {
+  test("identityKeys keeps the DOMAIN\\ prefix on samAccountName (unique only per domain)", () => {
     const k = identityKeys("CORP\\jdoe", { samAccountName: "CORP\\jdoe", displayName: "Doe, John" });
-    assert.equal(k.samKey, "jdoe");
+    assert.equal(k.samKey, "corp\\jdoe");
     assert.equal(k.nameKey, "john doe");
+  });
+  test("different domains with the same sAMAccountName do NOT auto-merge", () => {
+    const { clusters } = resolveIdentities([
+      E("1", "IDENTITY", "CORP\\jane", { samAccountName: "CORP\\jane" }, "accessreview"),
+      E("2", "IDENTITY", "OTHER\\jane", { samAccountName: "OTHER\\jane" }, "accessreview"),
+    ]);
+    assert.equal(clusters.length, 2, "CORP\\jane and OTHER\\jane are two people");
   });
   test("identityKeys prefers data.email over the display name", () => {
     const k = identityKeys("John Doe", { email: "JDOE@corp.com" });

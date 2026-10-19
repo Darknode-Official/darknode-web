@@ -168,6 +168,9 @@ group("ingest/iterCsv", () => {
     assert.deepEqual(rows, [["a", "b"], ["1", "2"]], "a bare delimiter row is dropped like an all-empty EOF row");
   });
   test("short rows fill with empty strings", () => assert.deepEqual([...iterCsv("a,b,c\n1,2\n")][0], { a: "1", b: "2", c: "" }));
+  test("a row of explicitly-quoted empty fields is kept (not dropped like a blank line)", () => {
+    assert.deepEqual([...iterCsv('a,b\n"",""\nx,y', { header: false })], [["a", "b"], ["", ""], ["x", "y"]]);
+  });
   test("parseCsv convenience", () => {
     const r = parseCsv(TSV);
     assert.deepEqual(r.headers, ["id", "name", "email"]);
@@ -395,12 +398,14 @@ sq: 'it''s'
 url: http://darknode.ai/x
 long: this is a
   continued value
+zip: 00501
 star: "*/5 * * * *"
 `);
     assert.equal(d.i, 42); assert.equal(d.f, 3.5); assert.equal(d.neg, -7); assert.equal(d.hex, 255);
     assert.equal(d.t, "yes"); assert.equal(d.n, null); assert.equal(d.nul, null);
     assert.equal(d.dq, 'tab\tnew\nq"x'); assert.equal(d.sq, "it's");
     assert.equal(d.url, "http://darknode.ai/x"); assert.equal(d.long, "this is a continued value");
+    assert.equal(d.zip, "00501"); // zero-padded id stays a string, not 501
     assert.equal(d.star, "*/5 * * * *");
   });
   test("flow sequences and maps, nested", () => {

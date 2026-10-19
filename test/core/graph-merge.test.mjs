@@ -22,6 +22,14 @@ group("core/graph-merge", () => {
     assert.equal(wins(E("a", "2026-01-01"), E("a", "2026-01-01"), K), false);
   });
 
+  test("wins: equal instants with different serializations are a tie, not string-ordered", () => {
+    // "…Z" > "…000Z" and "+05:00" > "Z" lexically, but these are the SAME instant → keep existing.
+    assert.equal(wins(E("a", "2026-01-01T00:00:00Z"), E("a", "2026-01-01T00:00:00.000Z"), K), false);
+    assert.equal(wins(E("a", "2026-01-01T05:00:00+05:00"), E("a", "2026-01-01T00:00:00Z"), K), false);
+    // a genuinely later instant still wins despite a lexically-smaller offset form
+    assert.equal(wins(E("a", "2026-01-01T06:00:00+05:00"), E("a", "2026-01-01T00:00:00Z"), K), true);
+  });
+
   test("wins: a tombstone beats a live record of the same timestamp", () => {
     const tomb = { id: "a", deleted: true, updatedAt: "2026-01-01" };
     assert.equal(wins(tomb, E("a", "2026-01-01"), K), true);

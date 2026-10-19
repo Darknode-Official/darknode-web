@@ -30,9 +30,19 @@ export function orderKey(rec, key) {
 export function wins(incoming, existing, key) {
   if (!incoming) return false;
   if (!existing) return true;
-  const ti = orderKey(incoming, key), te = orderKey(existing, key);
-  if (ti > te) return true;
-  if (ti < te) return false;
+  const si = orderKey(incoming, key), se = orderKey(existing, key);
+  // Compare the actual instant when both are parseable timestamps, so equal instants with
+  // different serializations ("…Z" vs "…000Z", a +NN:NN offset) are a true tie rather than
+  // ordered by string bytes. Fall back to raw string compare otherwise ("" < any real value,
+  // and non-date ordering keys still work).
+  const pi = Date.parse(si), pe = Date.parse(se);
+  if (!Number.isNaN(pi) && !Number.isNaN(pe)) {
+    if (pi > pe) return true;
+    if (pi < pe) return false;
+  } else {
+    if (si > se) return true;
+    if (si < se) return false;
+  }
   return !!incoming.deleted && !existing.deleted;
 }
 
