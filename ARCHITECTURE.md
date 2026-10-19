@@ -3,7 +3,7 @@
 **Darknode Web** is the marketing site **and** the full web console for
 [darknode.ai](https://darknode.ai). Signed-out visitors get a landing page with
 app/CLI/OS downloads; signed-in users get a single-page console: a browser tool
-arsenal (192 tool platforms + 790+ Toolbox mini-tools), payload / dork /
+arsenal (192 tool platforms + 792 Toolbox mini-tools), payload / dork /
 exploit-DB libraries, threat intel and cheat sheets, a built-in AI assistant
 (hosted free tier or local Ollama), a report generator, a Private-Cloud
 compose generator, the Nexus showcase, docs, and download pages. Aimed at
@@ -57,7 +57,7 @@ across `public/` counting JS + CSS + HTML). State lives in Firebase
 
 ## Module map (high level)
 
-378 modules is too many to list; they group as:
+407 modules is too many to list; they group as:
 
 ```
 public/
