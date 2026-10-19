@@ -1631,7 +1631,7 @@ export function renderDeck(host, opts) {
   // Primary mode: the Deck IS the signed-in UI (no older console to fall back to),
   // so "exit" entries become sign-out and "full console" links open a new tab.
   const primary = typeof opts.onSignOut === "function";
-  const toast = (m) => { try { (window.showToast || window.dnToast)?.(m); } catch (_) {} };
+  const toast = (m, t) => { try { (window.showToast || window.dnToast)?.(m, t); } catch (_) {} };
 
   // Workspace identity (A1): editable name/logo/accent. The host (admin.js) supplies
   // it from Firestore and persists changes via opts.onWorkspace; a localStorage cache
@@ -4509,7 +4509,7 @@ export function renderDeck(host, opts) {
   // ---------- boot: restore the last workspace ----------
   let initial = "overview";
   try { const sv = localStorage.getItem(LS_SCENE); if (sv && SCENES[sv]) initial = sv; } catch (_) {}
-  requestAnimationFrame(() => { go(initial); if (opts.startSec) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec); });
+  rafId = requestAnimationFrame(() => { go(initial); if (opts.startSec) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec); });
 
   function teardown(){
     cancelAnimationFrame(rafId); clearInterval(clockId); clearTimeout(gTimer);

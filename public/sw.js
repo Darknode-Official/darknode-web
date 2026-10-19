@@ -88,7 +88,7 @@ self.addEventListener('fetch', e => {
             c.put(e.request, res.clone());
           }
           return res;
-        }))
+        }).catch(() => cached || Response.error()))
       )
     );
     return;
@@ -105,7 +105,7 @@ self.addEventListener('fetch', e => {
         c.match(e.request).then(cached => cached || fetch(e.request).then(res => {
           if (res.ok) c.put(e.request, res.clone());
           return res;
-        }))
+        }).catch(() => cached || Response.error()))
       )
     );
     return;

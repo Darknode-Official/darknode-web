@@ -320,7 +320,7 @@ export async function renderAdmin(main, user) {
       try {
         await openDeck(user);
       } catch (e) {
-        try { window.showToast ? window.showToast("Command center failed to load: " + e.message, "err") : 0; } catch (_) {}
+        try { window.showToast ? window.showToast("Command center failed to load: " + e.message, "error") : 0; } catch (_) {}
       } finally { btn.disabled = false; btn.textContent = label; }
     }
     btn.addEventListener("click", launchDeck);

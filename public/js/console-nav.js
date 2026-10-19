@@ -311,11 +311,11 @@ export function wireConsole(root) {
   };
   const markActive = (sec) => {
     if (!side) return;
-    side.querySelectorAll(".aws-sl.on").forEach((b) => b.classList.remove("on"));
+    side.querySelectorAll(".aws-sl.on, .aws-sl[aria-current]").forEach((b) => { b.classList.remove("on"); b.removeAttribute("aria-current"); });
     const gname = GROUP_OF.get(sec);
     const g = ALL.find((x) => x.name === gname && x.items.some((i) => i.sec === sec));
     if (g) { const sg = side.querySelector(`.aws-sg[data-g="${g.id}"]`); if (sg) openGroup(sg, true); }
-    side.querySelectorAll(`.aws-sl[data-sec="${CSS.escape(sec)}"]`).forEach((b) => b.classList.add("on"));
+    side.querySelectorAll(`.aws-sl[data-sec="${CSS.escape(sec)}"]`).forEach((b) => { b.classList.add("on"); b.setAttribute("aria-current", "page"); });
     const on = side.querySelector(".aws-sg .aws-sl.on");
     if (on) { const r = on.getBoundingClientRect(), sr = side.getBoundingClientRect(); if (r.top < sr.top || r.bottom > sr.bottom) on.scrollIntoView({ block: "center" }); }
   };
