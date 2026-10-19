@@ -21,6 +21,11 @@ group("sanctions: normalization", () => {
   test("normName latinizes, lowercases, strips punctuation", () => {
     assert.equal(normName("José Peña S.A."), "jose pena s a");
   });
+  test("normName folds atomic Latin letters NFKD can't (ø/ß/ł) so native spelling screens against the romanized SDN entry", () => {
+    assert.equal(normName("Jørgen Halvorsen"), "jorgen halvorsen");
+    assert.equal(normName("Gößmann"), "gossmann");
+    assert.equal(normName("Łódź"), "lodz");
+  });
   test("tokens remove suffixes and short fragments", () => {
     assert.deepEqual(tokens("The Acme Holding Group Ltd"), ["acme"]);
   });

@@ -144,4 +144,10 @@ group("strongroom: per-finding money is integer-cents exact", () => {
     assert.equal(f.money, 2760.6);
     assert.equal(Math.round(f.money * 100), 276060); // cent-exact, no drift
   });
+  test("weekend = Saturday+Sunday only: a Sunday payment is flagged, a Friday payment is not", () => {
+    const run = (date) => analyze(["date,vendor,amount,invoice", `${date},Northwind,500.00,INV-9`].join("\n"), "")
+      .findings.find((x) => x.rule === "weekend-payment");
+    assert.ok(run("2026-01-04"), "2026-01-04 (Sunday) must be flagged");   // was missed by the old dow===5||6
+    assert.ok(!run("2026-01-02"), "2026-01-02 (Friday) must NOT be flagged"); // was wrongly flagged by the old logic
+  });
 });

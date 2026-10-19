@@ -27,11 +27,20 @@ const STOP = new Set([
   "von", "der", "den", "la", "le", "du", "des", "wal", "bint",
 ]);
 
+// Atomic Latin letters that carry NO combining mark, so NFKD leaves them intact
+// and the punctuation pass below would otherwise drop them — screening a name in
+// its native spelling (Jørgen, Gößmann, Łódź) clean against its romanized SDN entry.
+const LATIN_FOLD = {
+  "ø": "o", "æ": "ae", "œ": "oe", "ß": "ss", "ł": "l", "đ": "d", "ð": "d",
+  "þ": "th", "ħ": "h", "ı": "i", "ŋ": "ng", "ĸ": "k", "ŧ": "t", "ƀ": "b",
+};
+
 // Latin-ize accents, strip punctuation, collapse whitespace, lower-case.
 export function normName(s) {
   return String(s == null ? "" : s)
     .normalize("NFKD").replace(/[̀-ͯ]/g, "")
     .toLowerCase()
+    .replace(/[øæœßłđðþħıŋĸŧƀ]/g, (c) => LATIN_FOLD[c] || c)
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();

@@ -119,7 +119,7 @@ function dayToISO(day) {
   const dt = new Date(day * 86400000);
   return dt.toISOString().slice(0, 10);
 }
-function isWeekend(day) { if (day == null) return false; const dow = (day + 4) % 7; return dow === 5 || dow === 6; } // epoch day0 = Thu
+function isWeekend(day) { if (day == null) return false; const dow = (day + 4) % 7; return dow === 6 || dow === 0; } // epoch day0=Thu, so 0=Sun…6=Sat; weekend = Sat|Sun
 
 // ------------------------------- record loading -------------------------------
 
