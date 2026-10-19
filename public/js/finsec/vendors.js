@@ -19,7 +19,7 @@ import {
   HOLD_HOURS, WATCH_DAYS, toSinkFindings,
 } from "/js/finsec/vendor-engine.js?v=20261017d";
 import { attachSinkButton } from "../core/sink.js";
-import { buildIndex, screenName } from "/js/finsec/sanctions-engine.js?v=20261017d";
+import { buildIndex, screenName } from "/js/finsec/sanctions-engine.js?v=20261019f";
 
 // ── OFAC sanctions screening of payee names ──────────────────────────────
 // A payee register that doesn't check names against the sanctions list is a

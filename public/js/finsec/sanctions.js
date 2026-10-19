@@ -11,7 +11,7 @@
 // compliance determination. Hits must be verified against the official source,
 // and blocking / reporting decisions are a human + legal responsibility.
 
-import { buildIndex, screenBatch, screenBatchAsync, selfTest, toSinkFindings } from "/js/finsec/sanctions-engine.js?v=20261017d";
+import { buildIndex, screenBatch, screenBatchAsync, selfTest, toSinkFindings } from "/js/finsec/sanctions-engine.js?v=20261019f";
 import { sampleShare, SAMPLE_SHARE } from "../core/sink-map.js";
 import { attachSinkButton } from "../core/sink.js";
 
