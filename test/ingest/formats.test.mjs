@@ -66,6 +66,15 @@ group("formats/cyclonedx", () => {
     assert.equal(findings[0].assets[0].name, "lodash@4.17.0");
     assert.equal(findings[0].assets[0].type, "SOFTWARE");
   });
+  test("an explicit null or empty CVSS score does not override a stated severity", () => {
+    const bom = { bomFormat: "CycloneDX", vulnerabilities: [
+      { id: "CVE-2024-0001", ratings: [{ score: null, severity: "critical" }] },
+      { id: "CVE-2024-0002", ratings: [{ score: "", severity: "high" }] },
+    ] };
+    const { findings } = parseCycloneDX(bom);
+    assert.equal(findings.find((f) => /CVE-2024-0001/.test(f.title)).severity, "critical");
+    assert.equal(findings.find((f) => /CVE-2024-0002/.test(f.title)).severity, "high");
+  });
 });
 
 group("formats/ingestToFindings", () => {

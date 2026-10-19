@@ -307,7 +307,9 @@ export function triageEmail(raw) {
   if (fromReg && replyTo && registrableDomain(replyTo) !== fromReg) add(2, `Reply-To domain (${replyTo}) differs from From (${fromReg}) — replies would go elsewhere.`);
 
   // display-name spoofing
-  const brandInName = BRANDS.find((b) => name.toLowerCase().includes(b));
+  const nameLc = name.toLowerCase();
+  // Whole-word match, not substring: "att" must not fire on "matthew", "ups" on "groups".
+  const brandInName = BRANDS.find((b) => new RegExp("\\b" + b.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b").test(nameLc));
   if (brandInName && fromReg && !fromReg.includes(brandInName)) add(4, `Display name mentions "${brandInName}" but the sending domain is ${fromReg || "unknown"}.`);
   const fromLook = fromReg ? lookalike(fromDomain) : { near: false, impersonation: false };
   if (fromLook.impersonation) add(4, `From domain impersonates brand "${fromLook.brand}" in a subdomain.`);

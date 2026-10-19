@@ -212,6 +212,18 @@ group("sif: normalisation per source", () => {
     const p = parseAll(nd);
     assert.equal(p.records.length, 1); assert.equal(p.stats.badTs, 1);
   });
+  test("pretty-printed wrapper object { value: [...] } parses (not mis-read as NDJSON)", () => {
+    const events = [
+      oktaEvent({ ts: T0, user: "cy@corp.example", success: true, ip: "2.2.2.2" }),
+      oktaEvent({ ts: T0 + min(5), user: "di@corp.example", success: true, ip: "3.3.3.3" }),
+    ];
+    const p = parseAll(JSON.stringify({ value: events }, null, 2));
+    assert.equal(p.records.length, 2); assert.equal(p.source, "okta");
+  });
+  test("pretty-printed single event object parses as one record", () => {
+    const p = parseAll(JSON.stringify(oktaEvent({ ts: T0, user: "cy@corp.example", success: true, ip: "2.2.2.2" }), null, 2));
+    assert.equal(p.records.length, 1);
+  });
   test("createParser chunks until done and totals match", () => {
     const rows = baseline(3);
     const p = createParser(entraCsv(rows));

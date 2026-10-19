@@ -382,12 +382,16 @@ export function createParser(text) {
     if (c0 === "[") {
       arr = JSON.parse(s);
     } else {
-      // NDJSON, or a wrapper object with an array under value/events/items/data
-      const lines = s.split(/\r?\n/).filter((l) => l.trim());
-      if (lines.length > 1) arr = lines.map((l) => JSON.parse(l));
-      else {
-        const o = JSON.parse(s);
-        arr = o.value || o.events || o.items || o.data || o.records || (o.id && o.events ? [o] : [o]);
+      // A wrapper object with its array under value/events/items/data, a single
+      // event object, or NDJSON (one object per line). Try the whole document as
+      // one object first — a pretty-printed export spans many lines — and fall
+      // back to per-line NDJSON only when that fails (two+ objects, no wrapper).
+      let o = null;
+      try { o = JSON.parse(s); } catch (_) { o = null; }
+      if (o && typeof o === "object") {
+        arr = o.value || o.events || o.items || o.data || o.records || [o];
+      } else {
+        arr = s.split(/\r?\n/).filter((l) => l.trim()).map((l) => JSON.parse(l));
       }
     }
     if (!Array.isArray(arr)) throw new Error("JSON must be an array of events, NDJSON, or an object with a value/events/items array.");
@@ -957,7 +961,8 @@ export function analyze(records, options, meta) {
   }
 
   // Sort and count
-  findings.sort((a, b) => (SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]) || (a.confidence === b.confidence ? 0 : a.confidence === "high" ? -1 : 1) || a.title.localeCompare(b.title));
+  const CONF_RANK = { high: 0, medium: 1, low: 2 };
+  findings.sort((a, b) => (SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]) || ((CONF_RANK[a.confidence] ?? 9) - (CONF_RANK[b.confidence] ?? 9)) || a.title.localeCompare(b.title));
   for (const f of findings) {
     const c = coverage.find((x) => x.id === f.id); if (c) c.findings++;
     if (f.user && users.has(f.user)) users.get(f.user).findings.push(f.key);

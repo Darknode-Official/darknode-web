@@ -94,7 +94,7 @@ export function parseCycloneDX(obj) {
   for (const v of (obj.vulnerabilities || [])) {
     const id = str(v.id) || "vuln";
     const ratings = v.ratings || [];
-    const score = ratings.map((r) => r.score).find((s) => Number.isFinite(Number(s)));
+    const score = ratings.map((r) => r.score).find((s) => s != null && s !== "" && Number.isFinite(Number(s)));
     const named = ratings.map((r) => r.severity).find(Boolean);
     const severity = sevFromScore(score) || normSev(named) || "medium";
     const affects = [];

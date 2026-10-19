@@ -161,6 +161,14 @@ group("phish: email parsing and triage", () => {
     ].join("\n"));
     assert.ok(r.findings.some((f) => /Display name mentions/.test(f.t)));
   });
+  test("an incidental brand substring in a display name is not a brand spoof", () => {
+    // "matthew" contains the brand token "att"; whole-word matching must not fire.
+    const r = triageEmail([
+      'From: "Matthew Rogers" <matthew@example.com>',
+      "Authentication-Results: mx; dmarc=none", "", "Hi.",
+    ].join("\n"));
+    assert.notOk(r.findings.some((f) => /Display name mentions/.test(f.t)));
+  });
 });
 
 group("phish: defang, refang and report", () => {
