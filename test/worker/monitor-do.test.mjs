@@ -265,6 +265,45 @@ group("monitor DO/graph sync", () => {
     assert.equal(resolved.createdAt, open.createdAt, "SLA createdAt preserved across the resolve");
   });
 
+  test("a resolution survives a failed graph push: it is re-emitted on the next run until acked", async () => {
+    // GRAPH env whose POST can be toggled to fail — models a transient push failure exactly
+    // when the resolution is written.
+    const pushes = [];
+    let failPush = false;
+    const env = { GRAPH: { idFromName: (n) => n, get: () => ({ fetch: async (url, opts) => {
+      if (opts && opts.method === "POST") {
+        const body = JSON.parse(opts.body); pushes.push(body);
+        if (failPush) return { ok: false, status: 500, json: async () => ({}) };
+        return { ok: true, status: 200, json: async () => ({ applied: { entities: body.entities.length, relationships: body.relationships.length } }) };
+      }
+      return { ok: true, status: 200, json: async () => ({ entities: [] }) };
+    } }) } };
+    const st = memState();
+    const mon = new MonitorDO(st, env);
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 21 } } });
+    const base = Date.now();
+    // Run 1: expiring cert -> open FINDING pushed (success).
+    await mon.runDue({ force: true, fetch: fakeNet(new Date(base + 10 * 86400000).toISOString()).fetch, sleep: async () => {}, now: base });
+    const open = pushes[0].entities.find((e) => e.type === "FINDING");
+    assert.equal(open.status, "open");
+    // Run 2 (next day): cert renewed -> resolved push, but the push FAILS.
+    failPush = true;
+    await mon.runDue({ force: true, fetch: fakeNet(new Date(base + 400 * 86400000).toISOString()).fetch, sleep: async () => {}, now: base + 86400000 });
+    const r2 = pushes[pushes.length - 1].entities.find((e) => e.type === "FINDING" && e.id === open.id);
+    assert.ok(r2 && r2.status === "resolved", "run 2 attempted the resolved push");
+    // Run 3 (another day): still healthy -> the resolution MUST be re-emitted (push now succeeds).
+    failPush = false;
+    await mon.runDue({ force: true, fetch: fakeNet(new Date(base + 401 * 86400000).toISOString()).fetch, sleep: async () => {}, now: base + 2 * 86400000 });
+    const r3 = pushes[pushes.length - 1].entities.find((e) => e.type === "FINDING" && e.id === open.id);
+    assert.ok(r3 && r3.status === "resolved", "run 3 re-emits the resolved record after the earlier failure (not lost)");
+    assert.equal(r3.createdAt, open.createdAt, "SLA createdAt still preserved");
+    // Run 4: once acked, the resolution is forgotten — no more re-emits.
+    const before = pushes.length;
+    await mon.runDue({ force: true, fetch: fakeNet(new Date(base + 402 * 86400000).toISOString()).fetch, sleep: async () => {}, now: base + 3 * 86400000 });
+    assert.equal(pushes.length, before, "run 4 pushes nothing — the acked resolution is no longer queued");
+  });
+
   test("findings still reach the graph with no GRAPH binding, failing cleanly", async () => {
     const st = memState(); const mon = new MonitorDO(st, {}); // env with no GRAPH
     await st.storage.put("wid", "ws1");

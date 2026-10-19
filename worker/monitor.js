@@ -139,7 +139,15 @@ export class MonitorDO {
     // record would carry the same updatedAt as the stored open one and GraphDO's wins() would
     // treat it as a tie and drop it, leaving the finding "open" (and its SLA clock running)
     // forever. (Verified defect — every cert renewal / patched CVE hit this.)
-    for (const f of diff.removed) if (gm[f.key]) gm[f.key].changedAt = t0;
+    // A resolution must survive a failed graph push. Removed findings go into a pending-
+    // resolution queue (keeping their clocks) and are re-emitted every run until the push is
+    // acked — otherwise one best-effort write failure would leave the finding "open" with its
+    // SLA clock running forever, because m.lastResults below drops it and diffFindings would
+    // never surface it as removed again. A finding that reappears leaves the queue.
+    m.pendingResolved = m.pendingResolved || {};
+    for (const f of diff.removed) if (!m.pendingResolved[f.key]) { m.pendingResolved[f.key] = f; if (gm[f.key]) gm[f.key].changedAt = t0; } // resolution IS a change: advance the clock once, then keep it stable so re-pushes are idempotent ties
+    for (const key of Object.keys(m.pendingResolved)) if (findings.some((f) => f.key === key)) delete m.pendingResolved[key]; // came back → the open path owns it again
+    const resolvedList = Object.values(m.pendingResolved);
     // The monitor's own run state is authoritative regardless of the graph outcome, and must be
     // durable BEFORE the external graph write: a crash after the push must not resurrect a new
     // finding with a reset first-seen (SLA) clock on the retried run.
@@ -147,12 +155,15 @@ export class MonitorDO {
     m.lastRunAt = t0;
     let graphSynced = 0, graphError = null;
     try {
-      const write = buildGraphWrite(m.id, m.name || m.type, findings, diff.removed, gm, t0);
-      for (const f of diff.removed) delete gm[f.key];                                           // resolved + written — drop its clock
+      const write = buildGraphWrite(m.id, m.name || m.type, findings, resolvedList, gm, t0);
       if (write.entities.length || write.relationships.length) {
-        if (mons) await this._put(mons);                                                        // persist the clock before the push
+        if (mons) await this._put(mons);                                                        // persist clocks + pending queue before the push
         const r = await this._pushGraph(write, m.id);
         graphSynced = r.synced; graphError = r.error;
+        if (!graphError) {                                                                       // acked → safe to forget these resolutions and their clocks
+          for (const f of resolvedList) { delete m.pendingResolved[f.key]; if (gm[f.key]) delete gm[f.key]; }
+          if (mons) await this._put(mons);
+        }
       }
     } catch (e) { graphError = String(e.message || e); }
 
