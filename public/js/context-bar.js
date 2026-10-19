@@ -90,29 +90,28 @@ function _render() {
   const stats = { entities: related.length };
 
   _barEl.style.display = '';
+  const navigable = ctx.type === 'INVESTIGATION' || ctx.type === 'CASE' || ctx.type === 'INCIDENT';
   _barEl.innerHTML = `
     <div class="ctx-bar-inner">
       <span class="ctx-bar-label">ACTIVE CONTEXT</span>
       <span class="ctx-bar-type" style="background:${color}">${esc(ctx.type)}</span>
-      <span class="ctx-bar-name">${esc(ctx.name)}</span>
+      <span class="ctx-bar-name"${navigable ? ' role="button" tabindex="0"' : ''}>${esc(ctx.name)}</span>
       ${ctx.severity ? `<span class="ctx-bar-sev ctx-sev-${ctx.severity}">${esc(ctx.severity.toUpperCase())}</span>` : ''}
       ${ctx.status ? `<span class="ctx-bar-status">${esc(ctx.status)}</span>` : ''}
       <span class="ctx-bar-count">${stats.entities} related</span>
-      <button class="ctx-bar-open" title="Open investigation">Open</button>
-      <button class="ctx-bar-clear" title="Clear context">x</button>
+      ${navigable ? `<button class="ctx-bar-open" title="Open investigation">Open</button>` : ''}
+      <button class="ctx-bar-clear" title="Clear context" aria-label="Clear context">x</button>
     </div>`;
 
-  _barEl.querySelector('.ctx-bar-open').onclick = () => {
-    if (_appShow && (ctx.type === 'INVESTIGATION' || ctx.type === 'CASE' || ctx.type === 'INCIDENT')) {
-      _appShow('investigation');
-    }
-  };
+  // Only INVESTIGATION/CASE/INCIDENT contexts are navigable — don't render an
+  // Open control (or a clickable name) that would be a silent no-op otherwise.
+  const _open = () => { if (_appShow && navigable) _appShow('investigation'); };
+  if (navigable) {
+    const openBtn = _barEl.querySelector('.ctx-bar-open'); if (openBtn) openBtn.onclick = _open;
+    const nameEl = _barEl.querySelector('.ctx-bar-name');
+    if (nameEl) { nameEl.onclick = _open; nameEl.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _open(); } }; }
+  }
   _barEl.querySelector('.ctx-bar-clear').onclick = clearContext;
-  _barEl.querySelector('.ctx-bar-name').onclick = () => {
-    if (_appShow && (ctx.type === 'INVESTIGATION' || ctx.type === 'CASE' || ctx.type === 'INCIDENT')) {
-      _appShow('investigation');
-    }
-  };
 }
 
 export function getContextBarCSS() {

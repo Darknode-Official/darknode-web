@@ -44,7 +44,9 @@ body:not(.app) .mnav-bar{display:none!important}
   function setActive(sec) {
     bar.querySelectorAll(".mnav-item").forEach(b => {
       const s = b.dataset.mnav;
-      b.classList.toggle("mnav-active", s === sec || (s === "home" && sec === "home"));
+      const on = s === sec || (s === "home" && sec === "home");
+      b.classList.toggle("mnav-active", on);
+      if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
   }
 
@@ -53,7 +55,9 @@ body:not(.app) .mnav-bar{display:none!important}
     if (!btn) return;
     const sec = btn.dataset.mnav;
     if (sec === "_search") {
-      document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+      // Dedicated open signal — a synthetic Ctrl+K would toggle (and could close
+      // an already-open palette) and is fragile. See the dn:open-palette listener.
+      document.dispatchEvent(new CustomEvent("dn:open-palette"));
       return;
     }
     document.dispatchEvent(new CustomEvent("dn:navigate", { detail: sec }));

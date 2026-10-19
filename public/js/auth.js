@@ -1620,7 +1620,7 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     const dnKeyEl = main.querySelector("#dn-key");
     if (dnKeyEl) {
       const rev = main.querySelector("#dn-key-reveal"); if (rev) rev.onclick = () => { const h = dnKeyEl.type === "password"; dnKeyEl.type = h ? "text" : "password"; rev.textContent = h ? "Hide" : "Reveal"; };
-      const cp = main.querySelector("#dn-key-copy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(dnKeyEl.value); } catch (_) {} const o = cp.textContent; cp.textContent = "Copied"; setTimeout(() => { cp.textContent = o; }, 1200); };
+      const cp = main.querySelector("#dn-key-copy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(dnKeyEl.value); } catch (_) { showToast("Copy failed", "error"); return; } if (cp.dataset.o === undefined) cp.dataset.o = cp.textContent; cp.textContent = "Copied"; clearTimeout(cp._swapT); cp._swapT = setTimeout(() => { cp.textContent = cp.dataset.o; delete cp.dataset.o; }, 1200); };
       const rg = main.querySelector("#dn-key-regen"); if (rg) rg.onclick = async () => {
         const ok = window.dnConfirm
           ? await window.dnConfirm("Regenerate Darknode API key?", "The current key stops working immediately.", { submitText: "Regenerate", danger: true })
@@ -1632,8 +1632,8 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     }
     // MCP + code-block copy buttons
     const mcpCopy = main.querySelector("#dn-mcp-copy2");
-    if (mcpCopy) mcpCopy.onclick = async () => { const c = main.querySelector("#dn-mcp"); if (c) { try { await navigator.clipboard.writeText(c.textContent); } catch (_) {} const o = mcpCopy.textContent; mcpCopy.textContent = "Copied"; setTimeout(() => { mcpCopy.textContent = o; }, 1200); } };
-    main.querySelectorAll(".set-code-copy").forEach((btn) => { btn.onclick = async () => { const c = main.querySelector("#" + btn.dataset.code); if (!c) return; try { await navigator.clipboard.writeText(c.textContent); } catch (_) {} const o = btn.textContent; btn.textContent = "copied"; setTimeout(() => { btn.textContent = o; }, 1200); }; });
+    if (mcpCopy) mcpCopy.onclick = async () => { const c = main.querySelector("#dn-mcp"); if (!c) return; try { await navigator.clipboard.writeText(c.textContent); } catch (_) { showToast("Copy failed", "error"); return; } if (mcpCopy.dataset.o === undefined) mcpCopy.dataset.o = mcpCopy.textContent; mcpCopy.textContent = "Copied"; clearTimeout(mcpCopy._swapT); mcpCopy._swapT = setTimeout(() => { mcpCopy.textContent = mcpCopy.dataset.o; delete mcpCopy.dataset.o; }, 1200); };
+    main.querySelectorAll(".set-code-copy").forEach((btn) => { btn.onclick = async () => { const c = main.querySelector("#" + btn.dataset.code); if (!c) return; try { await navigator.clipboard.writeText(c.textContent); } catch (_) { showToast("Copy failed", "error"); return; } if (btn.dataset.o === undefined) btn.dataset.o = btn.textContent; btn.textContent = "copied"; clearTimeout(btn._swapT); btn._swapT = setTimeout(() => { btn.textContent = btn.dataset.o; delete btn.dataset.o; }, 1200); }; });
     const akSave = main.querySelector("#ak-save");
     if (akSave) {
       const akFields = [["groq", "#ak-groq"], ["openrouter", "#ak-openrouter"], ["anthropic", "#ak-anthropic"], ["openai", "#ak-openai"], ["gemini", "#ak-gemini"], ["abuseipdb", "#ak-abuseipdb"], ["virustotal", "#ak-virustotal"], ["shodan", "#ak-shodan"], ["otx", "#ak-otx"]];
@@ -1671,7 +1671,7 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     const out = main.querySelector("#set-out"); if (out) out.onclick = () => doLogout();
     const tour = main.querySelector("#set-tour"); if (tour) tour.onclick = () => startTour(tourSteps(isOwner));
     const pwBtn = main.querySelector("#set-pw");
-    if (pwBtn) pwBtn.onclick = async () => { try { await sendPasswordResetEmail(auth, user.email, RESET_ACS); showToast("Password reset link sent to " + user.email, "success"); } catch (e) { showToast(errText(e), "error"); } };
+    if (pwBtn) pwBtn.onclick = async () => { pwBtn.disabled = true; try { await sendPasswordResetEmail(auth, user.email, RESET_ACS); showToast("Password reset link sent to " + user.email, "success"); } catch (e) { showToast(errText(e), "error"); } finally { pwBtn.disabled = false; } };
     const codeInput = main.querySelector("#nexus-code");
     if (codeInput) {
       const note = main.querySelector("#nexus-code-note");
@@ -1686,7 +1686,7 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
           if (note) note.textContent = "Could not generate a code: " + ((e && e.message) || "please try again.");
         } finally { gen.disabled = false; gen.textContent = o; }
       };
-      const cp = main.querySelector("#nexus-copy"); if (cp) cp.onclick = async (e) => { if (!codeInput.value) { showToast("Generate a code first", "info"); return; } try { await navigator.clipboard.writeText(codeInput.value); } catch (_) { codeInput.select(); try { document.execCommand("copy"); } catch (__) {} } const b = e.target, o = b.textContent; b.textContent = "Copied"; setTimeout(() => { b.textContent = o; }, 1200); };
+      const cp = main.querySelector("#nexus-copy"); if (cp) cp.onclick = async () => { if (!codeInput.value) { showToast("Generate a code first", "info"); return; } let okc = true; try { await navigator.clipboard.writeText(codeInput.value); } catch (_) { codeInput.select(); try { okc = document.execCommand("copy"); } catch (__) { okc = false; } } if (!okc) { showToast("Copy failed", "error"); return; } if (cp.dataset.o === undefined) cp.dataset.o = cp.textContent; cp.textContent = "Copied"; clearTimeout(cp._swapT); cp._swapT = setTimeout(() => { cp.textContent = cp.dataset.o; delete cp.dataset.o; }, 1200); };
     }
   }
   main.querySelector(".set-nav").onclick = (e) => { const b = e.target.closest(".set-tab"); if (b) showSetTab(b.dataset.stab); };
@@ -2777,6 +2777,8 @@ document.addEventListener("keydown", (e) => {
     const ex = document.getElementById("cmdk"); if (ex) ex.remove(); else openPalette();
   }
 });
+// Open-only palette signal (mobile search, etc.) — never toggles an open one.
+document.addEventListener("dn:open-palette", () => { if (document.body.classList.contains("app") && !document.getElementById("cmdk")) openPalette(); });
 
 function tourSteps(isOwner) {
   const steps = [

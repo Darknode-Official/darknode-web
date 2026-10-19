@@ -72,7 +72,10 @@ export function showToast(message, type = "info", duration = 4000) {
   el.className = "toast-item";
   el.dataset.key = key;
   el.style.setProperty("--toast-c", c);
-  el.innerHTML = `<div class="toast-msg"><div class="toast-label">${type}</div>${message}</div><button class="toast-x" aria-label="Dismiss">x</button><div class="toast-bar" style="width:100%;transition:width ${duration}ms linear"></div>`;
+  // Message is injected as text, never HTML — callers pass dynamic error
+  // strings (e.g. "Invalid JSON: " + e.message) that must not be parsed as markup.
+  el.innerHTML = `<div class="toast-msg"><div class="toast-label">${type}</div></div><button class="toast-x" aria-label="Dismiss">x</button><div class="toast-bar" style="width:100%;transition:width ${duration}ms linear"></div>`;
+  el.querySelector(".toast-msg").appendChild(document.createTextNode(message == null ? "" : String(message)));
   container.appendChild(el);
   requestAnimationFrame(() => {
     const bar = el.querySelector(".toast-bar");
