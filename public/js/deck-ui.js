@@ -2289,6 +2289,8 @@ export function renderDeck(host, opts) {
     { type: "action", label: "Go to Asset Inventory", group: "Navigate", icon: IC.tree, run: () => go("inventory") },
     { type: "action", label: "Go to Correlations", group: "Navigate", icon: IC.nodes, run: () => go("correlations") },
     { type: "action", label: "Go to Monitors", group: "Navigate", icon: IC.bell, run: () => go("monitors") },
+    { type: "action", label: "Go to API & Ingest", group: "Navigate", icon: IC.key, run: () => go("apikeys") },
+    { type: "action", label: "Go to Audit Log", group: "Navigate", icon: IC.lock, run: () => go("audit") },
     { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.search, run: () => go("invest") },
     { type: "action", label: "Go to Integrations", group: "Navigate", icon: IC.plug, run: () => go("con") },
     { type: "action", label: "Go to Tool Library", group: "Navigate", icon: IC.grid, run: () => go("tools") },
@@ -4350,7 +4352,7 @@ export function renderDeck(host, opts) {
 
   // ---------- keyboard & shortcuts ----------
   // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
-  const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant", f: "findings", r: "reports", w: "team", p: "plans", ",": "settings", v: "inventory", x: "correlations", b: "monitors" };
+  const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant", f: "findings", r: "reports", w: "team", p: "plans", ",": "settings", v: "inventory", x: "correlations", b: "monitors", y: "apikeys", u: "audit" };
   const SCENE_TITLE = { overview: "Security Overview", surface: "Attack Surface", threat: "Threats & Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "AI Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings", inventory: "Asset Inventory", correlations: "Correlations", monitors: "Monitors", apikeys: "API & Ingest", audit: "Audit Log" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
