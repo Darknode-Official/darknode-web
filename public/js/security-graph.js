@@ -46,20 +46,104 @@ function _emit(name, detail) {
   try { document.dispatchEvent(new CustomEvent(name, { detail })); } catch (_) {}
 }
 
+// ---- IndexedDB durability backstop ------------------------------------------------
+// localStorage stays the synchronous source of truth: instant reads, zero change to
+// startup. IndexedDB is a larger, durable MIRROR written behind every save and read
+// back on load. Each snapshot carries a `savedAt` stamp; on load, if the IDB snapshot
+// is newer than what localStorage held (which only happens when a localStorage write
+// was dropped on a full quota, or the browser evicted localStorage but kept IDB), its
+// records are merged back into memory under the same last-writer-wins rule. Everything
+// here is feature-detected and best-effort — if IndexedDB is missing or throws anywhere
+// (private mode, old browser, Node tests), the graph behaves exactly as a
+// localStorage-only store. The singleton URL is unchanged, so no ?v= bump is involved.
+const IDB_NAME = 'dn-secgraph', IDB_STORE = 'snap';
+const _hasIDB = (() => { try { return typeof indexedDB !== 'undefined' && !!indexedDB; } catch (_) { return false; } })();
+let _idbPromise = null, _idbWriteTimer = null, _hydratedKey = null;
+let _memSavedAt = 0, _lastSavedAt = 0;
+
+function _idb() {
+  if (_idbPromise) return _idbPromise;
+  _idbPromise = new Promise((resolve) => {
+    let req;
+    try { req = indexedDB.open(IDB_NAME, 1); } catch (_) { resolve(null); return; }
+    req.onupgradeneeded = () => { try { const db = req.result; if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE); } catch (_) {} };
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => resolve(null);
+    req.onblocked = () => resolve(null);
+  }).catch(() => null);
+  return _idbPromise;
+}
+function _idbGet(key) {
+  return _idb().then((db) => db && new Promise((resolve) => {
+    try {
+      const r = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
+      r.onsuccess = () => resolve(r.result || null);
+      r.onerror = () => resolve(null);
+    } catch (_) { resolve(null); }
+  })).catch(() => null);
+}
+function _idbPut(key, value) {
+  return _idb().then((db) => db && new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(value, key);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+      tx.onabort = () => resolve(false);
+    } catch (_) { resolve(false); }
+  })).catch(() => false);
+}
+// Write the current in-memory snapshot to IDB, coalesced. Runs on save success AND on a
+// quota failure (that is the whole point — the data survives even when localStorage cannot
+// take it). Bails if the active store changed between scheduling and the flush.
+function _idbSchedulePut() {
+  if (!_hasIDB || _idbWriteTimer) return;
+  const key = _key, at = _lastSavedAt;
+  _idbWriteTimer = setTimeout(() => {
+    _idbWriteTimer = null;
+    if (key !== _key) return;
+    try { _idbPut(key, { entities: _entities, relationships: _relationships, savedAt: at }); } catch (_) {}
+  }, 400);
+}
+// Merge the IDB snapshot back into memory IF it is newer than what localStorage gave us.
+// Equal/older IDB is ignored, so a normal load never resurrects a just-deleted record;
+// a newer IDB means localStorage lost a write, and recovering it (even if it re-adds a
+// record deleted in the last <400ms before an immediate reload) is the safe trade.
+function _idbHydrate() {
+  if (!_hasIDB || _hydratedKey === _key) return;
+  _hydratedKey = _key;
+  const key = _key;
+  _idbGet(key).then((snap) => {
+    if (!snap || key !== _key || _index === null) return;
+    if (!(Number(snap.savedAt) > _memSavedAt)) return;
+    let changed = 0;
+    for (const id in (snap.entities || {})) { const rec = snap.entities[id]; if (rec && wins(rec, _entities[id], 'updatedAt')) { _entities[id] = rec; changed++; } }
+    for (const id in (snap.relationships || {})) { const rec = snap.relationships[id]; if (rec && wins(rec, _relationships[id], 'createdAt')) { _relationships[id] = rec; changed++; } }
+    _memSavedAt = Number(snap.savedAt);
+    if (changed) {
+      try { localStorage.setItem(key, JSON.stringify({ entities: _entities, relationships: _relationships, savedAt: _memSavedAt })); } catch (_) {}
+      _emit('secgraph:sync', { recovered: changed });
+    }
+  }).catch(() => {});
+}
+
 function _load() {
   if (_index !== null) return;
+  _memSavedAt = 0;
   try {
     const raw = localStorage.getItem(_key);
     if (raw) {
       const parsed = JSON.parse(raw);
       _entities = parsed.entities || {};
       _relationships = parsed.relationships || {};
+      _memSavedAt = Number(parsed.savedAt) || 0;
     }
   } catch (_) {
     _entities = {};
     _relationships = {};
   }
   _index = true;
+  _idbHydrate(); // async: recover anything a full-quota localStorage write dropped
 }
 
 // The active workspace changed in another document (the Deck's switcher), or another tab
@@ -71,7 +155,7 @@ try {
     if (e.key === ACTIVE_WS_KEY) { _refreshStore(); return; }
     if (e.key !== _key && e.key !== null) return;
     if (_batchDepth) return;
-    _index = null; _entities = {}; _relationships = {};
+    _index = null; _entities = {}; _relationships = {}; _hydratedKey = null;
     _emit('secgraph:sync', {});
   });
 } catch (_) {}
@@ -84,7 +168,7 @@ function _refreshStore() {
   if (next === _key) return false;
   if (_index !== null && !_batchDepth) _save();
   _key = next;
-  _index = null; _entities = {}; _relationships = {};
+  _index = null; _entities = {}; _relationships = {}; _hydratedKey = null;
   _emit('secgraph:store-changed', { wid: _activeWid() });
   _emit('secgraph:sync', {});
   return true;
@@ -97,22 +181,26 @@ let _dirty = false;
 let _saveFailed = false;
 function _save() {
   if (_batchDepth) { _dirty = true; return; }
+  _lastSavedAt = Date.now();
   try {
     localStorage.setItem(_key, JSON.stringify({
       entities: _entities,
-      relationships: _relationships
+      relationships: _relationships,
+      savedAt: _lastSavedAt
     }));
+    _memSavedAt = _lastSavedAt;
     _saveFailed = false;
   } catch (e) {
-    // Do NOT fail silently: a full localStorage quota means graph writes are being
-    // dropped on the floor. Surface it once so the user knows the graph is no longer
-    // persisting (the Deck can listen for dn:graph:savefail to show a banner).
+    // localStorage is full. The write is NOT lost: the durable IndexedDB mirror below
+    // still captures it (with this newer savedAt), and the next load merges it back.
+    // Surface the quota problem once anyway, so the Deck can warn (dn:graph:savefail).
     if (!_saveFailed) {
       _saveFailed = true;
-      try { console.warn('[security-graph] save failed — storage full; graph changes are not being persisted:', (e && e.message) || e); } catch (_) {}
+      try { console.warn('[security-graph] localStorage full — persisting to IndexedDB instead:', (e && e.message) || e); } catch (_) {}
       try { window.dispatchEvent(new CustomEvent('dn:graph:savefail', { detail: String((e && e.message) || e) })); } catch (_) {}
     }
   }
+  _idbSchedulePut(); // durable mirror — written on save success AND on quota failure
 }
 // True while the last persist succeeded; false after a quota/write failure.
 export function saveHealthy() { return !_saveFailed; }
