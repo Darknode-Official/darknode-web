@@ -185,13 +185,19 @@ async function act_run(id) {
   catch (e) { toast(e.message || "Run failed.", "error"); }
 }
 async function act_pause(id, row) {
-  const paused = !row.innerHTML.includes("Paused");
+  // Toggle against the authoritative record, not rendered markup — reading row.innerHTML
+  // inverted the state for any markup change or a monitor whose text contained "Paused".
+  const mon = ((S.data && S.data.monitors) || []).find((m) => m.id === id);
+  const paused = !(mon && mon.paused);
   try { await monitorApi({ op: "pause", id, paused }); await load(); }
   catch (e) { toast(e.message || "Could not update.", "error"); }
 }
 async function act_del(id, row) {
   const name = (row.querySelector(".mon-name") || {}).textContent || "this monitor";
-  const ok = window.dnConfirm ? await window.dnConfirm("Delete " + name + "? This stops its scheduled checks.") : true;
+  // Fail closed: if the confirm modal is unavailable, do NOT delete (the old `: true`
+  // fallback deleted with no confirmation). No native dialogs per the UI rules.
+  if (!window.dnConfirm) { toast("Confirmation unavailable — monitor not deleted.", "error"); return; }
+  const ok = await window.dnConfirm("Delete " + name + "? This stops its scheduled checks.");
   if (!ok) return;
   try { await monitorApi({ op: "delete", id }); await load(); toast("Monitor deleted.", "ok"); }
   catch (e) { toast(e.message || "Could not delete.", "error"); }

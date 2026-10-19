@@ -3654,11 +3654,11 @@ export function renderDeck(host, opts) {
         cta: "Upgrade to Pro" },
       { id: "team", name: "Team", price: "$79", unit: "per user / month", tag: "", a: "#7c3aed",
         blurb: "Shared workspaces, roles and server-enforced Treasury controls.",
-        feats: ["Everything in Pro", "Shared team workspaces & roles", "Server-enforced VAULT approvals & audit", "Integrations (SIEM, ticketing, chat)", "Google SSO & activity log"],
+        feats: ["Everything in Pro", "Shared team workspaces & roles", "Server-enforced VAULT approvals & audit", "Integrations (ticketing, chat webhooks)", "Activity & audit log"],
         cta: "Start Team trial" },
       { id: "enterprise", name: "Enterprise", price: "Custom", unit: "", tag: "", a: "#0f766e",
         blurb: "Scale, compliance and deployment on your terms.",
-        feats: ["Everything in Team", "Self-hosted / private deployment", "SAML SSO, SCIM, custom roles", "Compliance pack & DPA", "Dedicated support & SLA"],
+        feats: ["Everything in Team", "Self-hosted / private deployment", "SSO & MFA (on the roadmap), custom roles", "Compliance pack & DPA", "Dedicated support & SLA"],
         cta: "Contact sales" },
     ];
     // CTA depends on the effective tier: your current plan, something already
