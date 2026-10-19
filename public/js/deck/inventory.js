@@ -3,20 +3,11 @@
 // each one. Reads the Security Graph through the resolution layer (core/resolve.js);
 // it never writes, so it cannot change the graph.
 import { resolveAssets, resolveIdentities, coverageMatrix } from "../core/resolve.js";
-
-// Which tool sources count as "covered" for each control area. Kept to the real Deck
-// tools that publish host/identity entities.
-const ASSET_CATS = [
-  { id: "vuln", label: "Vuln scan", sources: ["vulnimport", "netexposure"] },
-  { id: "endpoint", label: "Endpoint / fleet", sources: ["fleetcomply"] },
-  { id: "backup", label: "Backup", sources: ["backupready"] },
-  { id: "exposure", label: "External exposure", sources: ["domainguard", "posture", "tlsfleet", "netexposure"] },
-];
-const ID_CATS = [
-  { id: "idp", label: "Identity provider", sources: ["signins", "caaudit"] },
-  { id: "review", label: "Access review", sources: ["accessreview", "jml"] },
-  { id: "priv", label: "Privileged access", sources: ["privaudit", "nhi"] },
-];
+// Control-area definitions (which tools cover each area) and the deterministic
+// gap-finding generator both live in core/coverage.js, so the matrix columns and
+// the published findings share one source of truth. ASSET_COV/IDENTITY_COV keep the
+// { id, label, sources } the matrix needs, plus the severity/refs the findings need.
+import { ASSET_COV, IDENTITY_COV, coverageFindings } from "../core/coverage.js";
 
 const TABS = ["assets", "identities", "coverage"];
 const TAB_LABEL = { assets: "Assets", identities: "Identities", coverage: "Coverage" };
@@ -44,6 +35,12 @@ function injectStyle() {
 .inv-open{appearance:none;border:0;background:none;font:inherit;color:var(--dk-acc,#2552c6);font-weight:600;cursor:pointer;padding:0;text-align:left}
 .inv-open:hover{text-decoration:underline}
 .inv-sug{font-size:12px;color:#7a4a00;background:rgba(245,146,11,.1);border-radius:8px;padding:8px 11px;margin:10px 0 0}
+.inv-covbar{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid rgba(37,82,198,.22);background:rgba(37,82,198,.04);border-radius:10px;padding:11px 14px;margin:0 0 16px}
+.inv-covtxt{font-size:12.5px;color:#45506a;line-height:1.5;max-width:720px}
+.inv-covtxt b{color:#141c2e}
+.inv-covbtn{appearance:none;border:1px solid rgba(37,82,198,.3);background:rgba(37,82,198,.08);color:#2552c6;font:inherit;font-size:12.5px;font-weight:600;border-radius:6px;padding:7px 14px;cursor:pointer;white-space:nowrap}
+.inv-covbtn:hover:not(:disabled){background:rgba(37,82,198,.14)}
+.inv-covbtn:disabled{opacity:.45;cursor:default}
 `;
   document.head.appendChild(st);
 }
@@ -84,8 +81,27 @@ export function repaintInventory(m) {
   const matchId = (c) => !q || c.name.toLowerCase().includes(q) || c.emails.some((e) => e.includes(q)) || c.sources.some((s) => s.includes(q));
   if (S.tab === "assets") box.innerHTML = assetTable(assets.filter(matchAsset));
   else if (S.tab === "identities") box.innerHTML = idTable(idRes.clusters.filter(matchId), idRes.suggestions);
-  else box.innerHTML = coverageView(assets.filter(matchAsset), idRes.clusters.filter(matchId));
+  else {
+    // Publishing uses the FULL resolved inventory, never the search-filtered subset,
+    // so a search never causes the sink to auto-resolve findings for hidden rows.
+    S.allAssets = assets; S.allIds = idRes.clusters;
+    box.innerHTML = coverageView(assets.filter(matchAsset), idRes.clusters.filter(matchId), coverageFindings(assets, idRes.clusters).length);
+  }
   box.querySelectorAll("[data-open]").forEach((b) => b.onclick = () => S.ctx.openEntityDrawer && S.ctx.openEntityDrawer(b.dataset.open));
+  const covBtn = box.querySelector("#invCovCreate");
+  if (covBtn) covBtn.onclick = async () => {
+    if (covBtn.disabled) return;
+    const findings = coverageFindings(S.allAssets || [], S.allIds || []);
+    if (!findings.length) return;
+    const toast = S.ctx && S.ctx.toast;
+    covBtn.disabled = true; const prev = covBtn.textContent; covBtn.textContent = "Publishing…";
+    let res = null;
+    try { const sink = await import("/js/core/sink.js"); res = await sink.publishFindings("coverage", findings, { quiet: true }); } catch (_) { res = null; }
+    covBtn.textContent = prev;
+    if (!res) { covBtn.disabled = false; if (toast) toast("Could not publish coverage findings", "error"); return; }
+    if (toast) toast(`${res.created} added, ${res.updated} updated in the Findings queue`, "success");
+    refresh();                                       // reflect the new graph state
+  };
 }
 
 const srcChips = (sources) => sources.map((s) => `<span class="inv-src">${E(s)}</span>`).join("") || `<span class="dk-mut">—</span>`;
@@ -104,17 +120,21 @@ function idTable(rows, suggestions) {
   <div class="dk-itwrap"><table class="dk-itable"><thead><tr><th>Identity</th><th>Email addresses</th><th>Seen by</th></tr></thead><tbody>${rows.map((c) => `<tr><td>${openCell(c)}</td><td>${c.emails.length ? c.emails.map((e) => E(e)).join("<br>") : '<span class="dk-mut">—</span>'}</td><td>${srcChips(c.sources)}</td></tr>`).join("")}</tbody></table></div>${sug}`;
 }
 
-function coverageView(assets, ids) {
-  const aCov = coverageMatrix(assets, ASSET_CATS);
-  const iCov = coverageMatrix(ids, ID_CATS);
+function coverageView(assets, ids, actionable) {
+  const aCov = coverageMatrix(assets, ASSET_COV);
+  const iCov = coverageMatrix(ids, IDENTITY_COV);
   const cell = (hit) => `<td class="inv-cell ${hit ? "yes" : "no"}">${hit ? "Yes" : "No"}</td>`;
   const matrix = (rows, cats, cov, nameHdr) => {
     if (!rows.length) return `<div class="dk-nempty">Nothing to show yet.</div>`;
     const gaps = cov.filter((r) => r.missing.length);
     return `<div class="dk-itwrap"><table class="dk-itable"><thead><tr><th>${nameHdr}</th>${cats.map((c) => `<th>${E(c.label)}</th>`).join("")}</tr></thead><tbody>${cov.map((r, i) => `<tr><td>${openCell(rows[i])}</td>${cats.map((c) => cell(r.cover[c.id])).join("")}</tr>`).join("")}</tbody></table></div>
-    <p class="inv-sub">${gaps.length.toLocaleString()} of ${cov.length.toLocaleString()} have a coverage gap (a "No" above). These are candidates for a coverage finding.</p>`;
+    <p class="inv-sub">${gaps.length.toLocaleString()} of ${cov.length.toLocaleString()} have a coverage gap (a "No" above).</p>`;
   };
+  // Actionable = gaps where the subject is already in scope for the control (a managed
+  // host missing backup, a signed-in account not reconciled against HR), not every "No".
+  const bar = `<div class="inv-covbar"><div class="inv-covtxt"><b>${(actionable || 0).toLocaleString()}</b> trackable coverage finding${actionable === 1 ? "" : "s"} — blind spots on subjects already in scope for the control. Publishing them adds owned, SLA-tracked findings to the queue and auto-closes any gap that is now covered.</div><button class="inv-covbtn" id="invCovCreate"${actionable ? "" : " disabled"}>Create coverage findings</button></div>`;
   return `<p class="inv-sub">Which control sources have observed each host and identity. A "No" is a blind spot — an asset with no backup, an endpoint not in the fleet tool, a user not reconciled against HR.</p>
-    <h2 style="font-size:15px;margin:4px 0 8px">Host coverage</h2>${matrix(assets, ASSET_CATS, aCov, "Host")}
-    <h2 style="font-size:15px;margin:18px 0 8px">Identity coverage</h2>${matrix(ids, ID_CATS, iCov, "Identity")}`;
+    ${bar}
+    <h2 style="font-size:15px;margin:4px 0 8px">Host coverage</h2>${matrix(assets, ASSET_COV, aCov, "Host")}
+    <h2 style="font-size:15px;margin:18px 0 8px">Identity coverage</h2>${matrix(ids, IDENTITY_COV, iCov, "Identity")}`;
 }

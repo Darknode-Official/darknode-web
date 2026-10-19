@@ -35,7 +35,7 @@ import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261018i";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
 import { mountFindingsQueue, repaintFindingsQueue, renderSlaSettings } from "/js/deck/findings-queue.js?v=20261018e";
-import { mountInventory, repaintInventory } from "/js/deck/inventory.js?v=20261018a";
+import { mountInventory, repaintInventory } from "/js/deck/inventory.js?v=20261019b";
 import { mountCorrelations, repaintCorrelations } from "/js/deck/correlations.js?v=20261019a";
 import { mountMonitors } from "/js/deck/monitors.js?v=20261018j";
 import { mountApiKeys } from "/js/deck/apikeys.js?v=20261018c";
