@@ -42,6 +42,7 @@ function injectStyle() {
 .cor-acts{display:flex;gap:10px;align-items:center;margin-top:12px;padding-top:11px;border-top:1px dashed rgba(23,33,56,.12)}
 .cor-act{appearance:none;border:1px solid rgba(37,82,198,.3);background:rgba(37,82,198,.06);color:#2552c6;font:inherit;font-size:12px;font-weight:600;border-radius:6px;padding:5px 12px;cursor:pointer}
 .cor-act:hover{background:rgba(37,82,198,.12)}
+.cor-tracked{display:inline-block;font-size:10px;font-weight:700;background:rgba(18,168,95,.12);color:#0f7a45;border-radius:4px;padding:1px 6px;margin-left:6px;white-space:nowrap}
 .cor-choke{border:1px solid rgba(37,82,198,.22);background:rgba(37,82,198,.04);border-radius:10px;padding:13px 15px;margin:0 0 16px}
 .cor-choke h2{font-size:13px;margin:0 0 3px;color:#141c2e}
 .cor-choke p{font-size:12px;color:#5a6680;margin:0 0 9px;line-height:1.5}
@@ -72,6 +73,10 @@ function refresh() { if (S.ctx && S.el && S.el.isConnected && !S.el.hidden) S.ct
 export function repaintCorrelations(m) {
   if (!S.el || !S.el.isConnected || !S.ctx) return;
   const ents = m && m.listEntities ? m.listEntities() : [];
+  // Chains that already have an incident open (promoteCorrelation stamps the chain's
+  // correlationKey onto the incident), so the card shows "tracked" and offers an update.
+  const tracked = new Set();
+  for (const e of ents) { if (e && e.type === "INCIDENT" && e.data && e.data._full && e.data._full.correlationKey) tracked.add(e.data._full.correlationKey); }
   const cp = chokePoints(ents, { now: Date.now() });
   let hits = cp.chains;
   const q = S.q.trim().toLowerCase();
@@ -85,16 +90,18 @@ export function repaintCorrelations(m) {
     return;
   }
   box.innerHTML = chokeHtml + hits.map((h, i) => {
-    const on = S.open[h.ruleId + "|" + h.subjectKey];
+    const key = h.ruleId + "|" + h.subjectKey;
+    const on = S.open[key];
+    const isTracked = tracked.has("cor:" + key);
     const legs = h.legs.map((l) => `<div class="cor-leg"><span class="cor-leglbl">${E(l.label)}</span><button class="cor-finding" data-fid="${E(l.findingId)}">${E(l.findingTitle)}</button></div>`).join("");
-    return `<div class="cor-card${on ? " on" : ""}" data-key="${E(h.ruleId + "|" + h.subjectKey)}">
+    return `<div class="cor-card${on ? " on" : ""}" data-key="${E(key)}">
       <div class="cor-head">
         <span class="cor-sev ${E(h.severity)}">${E(SEV_LABEL[h.severity] || h.severity)}</span>
-        <span><span class="cor-ttl">${E(h.title)}</span>${h.attack.map((a) => `<span class="cor-att">${E(a)}</span>`).join("")}<br><span class="cor-subj">on <b>${E(h.subjectName)}</b> · ${h.subjectType === "asset" ? "host" : "identity"}</span></span>
+        <span><span class="cor-ttl">${E(h.title)}</span>${h.attack.map((a) => `<span class="cor-att">${E(a)}</span>`).join("")}${isTracked ? `<span class="cor-tracked">Incident open</span>` : ""}<br><span class="cor-subj">on <b>${E(h.subjectName)}</b> · ${h.subjectType === "asset" ? "host" : "identity"}</span></span>
         <span class="cor-chev">›</span>
       </div>
       <div class="cor-body"><p class="cor-exp">${E(h.explanation)}</p>${legs}
-        <div class="cor-acts"><button class="cor-act" data-key="${E(h.ruleId + "|" + h.subjectKey)}">Open as incident</button></div>
+        <div class="cor-acts"><button class="cor-act" data-key="${E(key)}">${isTracked ? "Update incident" : "Open as incident"}</button></div>
       </div>
     </div>`;
   }).join("");

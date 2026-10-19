@@ -36,7 +36,7 @@ import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, lis
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
 import { mountFindingsQueue, repaintFindingsQueue, renderSlaSettings } from "/js/deck/findings-queue.js?v=20261018e";
 import { mountInventory, repaintInventory } from "/js/deck/inventory.js?v=20261019b";
-import { mountCorrelations, repaintCorrelations } from "/js/deck/correlations.js?v=20261019a";
+import { mountCorrelations, repaintCorrelations } from "/js/deck/correlations.js?v=20261019c";
 import { mountMonitors } from "/js/deck/monitors.js?v=20261018j";
 import { mountApiKeys } from "/js/deck/apikeys.js?v=20261018c";
 import { mountAudit } from "/js/deck/audit.js?v=20261018c";
