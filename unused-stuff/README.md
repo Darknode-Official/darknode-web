@@ -19,7 +19,6 @@ redirect there through the `ALIAS` map in `public/js/auth.js`. Files are restore
 | `js/breach-simulator.js` | `breachsim` -> `incidentcost` |
 | `js/case-manager.js` | `casemgmt` -> `investigation` |
 | `js/cert-analyzer.js` | no route (nothing used it) |
-| `js/chess.js` | no route (nothing used it) |
 | `js/cloud-security.js` | no route (nothing used it) |
 | `js/container-security.js` | `containers` -> `iacscan` |
 | `js/cred-auditor.js` | no route (nothing used it) |
