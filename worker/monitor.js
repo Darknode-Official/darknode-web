@@ -9,6 +9,7 @@ import { runCheck, cvesFromEntities } from "./checks.js";
 import { diffFindings, diffToEvents, shouldAlert, defaultAlertRules } from "./monitor-core.js";
 import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
 import { verifyIdToken } from "./vault-auth.js";
+import { isSuspended } from "./gate.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -198,6 +199,7 @@ export async function handleMonitor(request, env, wid, json) {
   if (!m) return json({ error: "Sign in required" }, 401);
   let who;
   try { who = await verifyIdToken(m[1], projectId); } catch (e) { return json({ error: "Invalid sign-in token: " + e.message }, 401); }
+  if (await isSuspended(projectId, who, m[1])) return json({ error: "Your access has been suspended by an administrator." }, 403);
   let role;
   try { role = await resolveWorkspaceRole(projectId, wid, who.uid, m[1]); }
   catch (e) { return json({ error: e.message }, 502); }

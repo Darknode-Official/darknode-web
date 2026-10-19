@@ -7,6 +7,7 @@
 import { generateKey, hashKey, keyIdOf, keyPrefix, normalizeScopes, hasScope, timingSafeEqual, SCOPES } from "./keys-core.js";
 import { ingestToFindings } from "../public/js/ingest/formats.js";
 import { verifyIdToken } from "./vault-auth.js";
+import { isSuspended } from "./gate.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -111,6 +112,7 @@ async function authWorkspace(request, env, wid, json) {
   if (!m) return { err: json({ error: "Sign in required" }, 401) };
   let who;
   try { who = await verifyIdToken(m[1], projectId); } catch (e) { return { err: json({ error: "Invalid sign-in token: " + e.message }, 401) }; }
+  if (await isSuspended(projectId, who, m[1])) return { err: json({ error: "Your access has been suspended by an administrator." }, 403) };
   let role;
   try { role = await resolveWorkspaceRole(projectId, wid, who.uid, m[1]); }
   catch (e) { return { err: json({ error: e.message }, 502) }; }

@@ -17,6 +17,7 @@
 
 import { Ledger, toCents, fmtCents, hashStr, canon } from "../public/js/vault/ledger.js";
 import { verifyIdToken } from "./vault-auth.js";
+import { isSuspended } from "./gate.js";
 import { ROLES, canDo } from "../public/js/vault/roles.js";
 
 export { ROLES, canDo };
@@ -257,6 +258,7 @@ export async function handleVault(request, env, vid, json) {
   if (!m) return json({ error: "Sign in required" }, 401);
   let who;
   try { who = await verifyIdToken(m[1], projectId); } catch (e) { return json({ error: "Invalid sign-in token: " + e.message }, 401); }
+  if (await isSuspended(projectId, who, m[1])) return json({ error: "Your access has been suspended by an administrator." }, 403);
   let role;
   try { role = await memberRole(projectId, vid, who.uid, m[1]); } catch (e) { return json({ error: e.message }, 502); }
   if (!role) return json({ error: "You are not a member of this vault." }, 403);

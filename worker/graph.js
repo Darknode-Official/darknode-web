@@ -19,6 +19,7 @@
 
 import { wins } from "../public/js/core/graph-merge.js";
 import { verifyIdToken } from "./vault-auth.js";
+import { isSuspended } from "./gate.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
 import { chainAppend, chainVerify, GENESIS, pad } from "./audit-chain.js";
 
@@ -175,6 +176,7 @@ export async function handleGraph(request, env, wid, json) {
   if (!m) return json({ error: "Sign in required" }, 401);
   let who;
   try { who = await verifyIdToken(m[1], projectId); } catch (e) { return json({ error: "Invalid sign-in token: " + e.message }, 401); }
+  if (await isSuspended(projectId, who, m[1])) return json({ error: "Your access has been suspended by an administrator." }, 403);
   let role;
   try { role = await resolveWorkspaceRole(projectId, wid, who.uid, m[1]); }
   catch (e) { return json({ error: e.message }, 502); }
