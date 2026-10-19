@@ -31,7 +31,11 @@ import { dirname, join } from "node:path";
 // firebase-admin is a dependency of ./functions, so resolve it from there.
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(join(__dirname, "..", "functions", "package.json"));
-const admin = require("firebase-admin");
+// firebase-admin v12+ is modular: the old `admin.credential` / `admin.auth()` /
+// `admin.firestore()` namespace was removed, so import from the subpath entry points.
+const { initializeApp, applicationDefault } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 const PROJECT_ID = "sentinel-b4194";
 
@@ -48,13 +52,13 @@ async function main() {
     process.exit(1);
   }
 
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
+  initializeApp({
+    credential: applicationDefault(),
     projectId: PROJECT_ID,
   });
 
-  const auth = admin.auth();
-  const db = admin.firestore();
+  const auth = getAuth();
+  const db = getFirestore();
 
   const user = await auth.getUserByEmail(email).catch((e) => {
     console.error(`error: no account for ${email} (${e.code || e.message}).`);
@@ -74,7 +78,7 @@ async function main() {
   // Also stamp the top entitlement tier. The web app has no functional paywall
   // today — every tool is open to any signed-in user — but if one is ever added,
   // the owner is already marked `enterprise` and keeps full access by default.
-  const del = admin.firestore.FieldValue.delete();
+  const del = FieldValue.delete();
   await db.collection("users").doc(user.uid).set(
     {
       admin: revoke ? del : true,
