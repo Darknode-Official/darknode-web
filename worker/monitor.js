@@ -7,6 +7,7 @@
 // is worker/monitor-core.js — both unit-tested without a deploy.
 import { runCheck, cvesFromEntities } from "./checks.js";
 import { diffFindings, diffToEvents, shouldAlert, defaultAlertRules } from "./monitor-core.js";
+import { buildGraphWrite } from "./monitor-graph.js";
 import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
 import { verifyIdToken } from "./vault-auth.js";
 import { isSuspended } from "./gate.js";
@@ -20,7 +21,7 @@ const uid = () => "m_" + Math.random().toString(36).slice(2, 10) + now().toStrin
 
 // Redact channel secrets before anything leaves the DO.
 const safeChannel = (c) => ({ type: c.type, url: c.url, hasSecret: !!c.secret });
-const safeMonitor = (m) => ({ ...m, channels: (m.channels || []).map(safeChannel), lastResults: undefined, lastResultCount: (m.lastResults || []).length });
+const safeMonitor = (m) => ({ ...m, channels: (m.channels || []).map(safeChannel), lastResults: undefined, graphMeta: undefined, lastResultCount: (m.lastResults || []).length });
 
 export class MonitorDO {
   constructor(state, env) { this.state = state; this.storage = state.storage; this.env = env; }
@@ -39,9 +40,35 @@ export class MonitorDO {
       const res = await stub.fetch("https://graph/?since=0", { headers: { "x-graph-uid": wid } });
       if (!res.ok) return [];
       const data = await res.json().catch(() => null);
-      return cvesFromEntities(data && data.entities);
+      // Exclude the monitor's OWN writes (source "monitor:*"). A kev-epss run now writes
+      // VULNERABILITY(CVE) + FINDING nodes back into this same graph; re-reading them as
+      // inventory would be a feedback loop — a patched CVE would never clear because the
+      // monitor keeps seeing the node it authored last run. Only genuine tool/ingest sources
+      // count as the workspace's real CVE inventory.
+      const inventory = ((data && data.entities) || []).filter((e) => !String((e && e.source) || "").startsWith("monitor:"));
+      return cvesFromEntities(inventory);
     } catch (_) { return []; }
   }
+  // Push a monitor's findings into THIS workspace's GraphDO (same wid as the MonitorDO).
+  // Returns { synced, error }; never throws. The per-workspace DO is itself the access
+  // boundary (reachable only by server code), so the uid header is provenance, not authz.
+  async _pushGraph(write, monitorId) {
+    try {
+      const wid = await this.storage.get("wid");
+      if (!wid || !this.env || !this.env.GRAPH) return { synced: 0, error: "no graph binding" };
+      const stub = this.env.GRAPH.get(this.env.GRAPH.idFromName(wid));
+      const res = await stub.fetch("https://graph/", {
+        method: "POST",
+        body: JSON.stringify({ entities: write.entities, relationships: write.relationships }),
+        headers: { "Content-Type": "application/json", "x-graph-uid": "monitor:" + monitorId },
+      });
+      if (!res.ok) return { synced: 0, error: "graph push " + res.status };
+      const j = await res.json().catch(() => null);
+      const applied = j && j.applied ? ((j.applied.entities || 0) + (j.applied.relationships || 0)) : 0;
+      return { synced: applied, error: null };
+    } catch (e) { return { synced: 0, error: String(e.message || e) }; }
+  }
+
   async _put(mons) { await this.storage.put("monitors", mons); }
   async _log(key, cap, entry) {
     const list = (await this.storage.get(key)) || [];
@@ -63,8 +90,11 @@ export class MonitorDO {
   }
 
   // Run one monitor: check -> diff -> events -> alerts -> deliver. Returns a summary.
-  async _runOne(m, deps) {
-    const t0 = now();
+  async _runOne(m, deps, mons) {
+    // One clock for the whole run: day-counts, diffs, alert windows and graph timestamps all
+    // key off t0, so pinning it (deps.now, tests only) makes a run fully deterministic. In
+    // production deps.now is never set, so this is the real wall clock.
+    const t0 = Number.isFinite(deps.now) ? deps.now : now();
     let findings = [];
     // The kev-epss check grades the workspace's own CVE inventory, read from its graph.
     const extra = m.type === "kev-epss" ? { cves: await this._graphCves(), feedBase: deps.feedBase } : {};
@@ -97,10 +127,37 @@ export class MonitorDO {
       for (const ch of m.channels) delivered += (await this._deliverWithRetry(ch, alert, deps)) ? 1 : 0;
     }
 
+    // ---- feed findings into the workspace Security Graph (Trident Phase 2) ----
+    // Monitor findings become ownable, SLA-tracked, correlatable FINDING entities, the
+    // same shape a browser tool produces. Best-effort: a graph write failure never breaks
+    // the monitor run or its alerting. See worker/monitor-graph.js for the id/clock model.
+    m.graphMeta = m.graphMeta || {};
+    const gm = m.graphMeta;
+    for (const f of findings) if (!gm[f.key]) gm[f.key] = { firstSeen: t0, changedAt: t0 }; // new / cold-start backfill
+    for (const c of diff.changed) if (gm[c.key]) gm[c.key].changedAt = t0;                   // a watched field changed
+    // A resolution IS a change: advance the clock for removed findings too, or the resolved
+    // record would carry the same updatedAt as the stored open one and GraphDO's wins() would
+    // treat it as a tie and drop it, leaving the finding "open" (and its SLA clock running)
+    // forever. (Verified defect — every cert renewal / patched CVE hit this.)
+    for (const f of diff.removed) if (gm[f.key]) gm[f.key].changedAt = t0;
+    // The monitor's own run state is authoritative regardless of the graph outcome, and must be
+    // durable BEFORE the external graph write: a crash after the push must not resurrect a new
+    // finding with a reset first-seen (SLA) clock on the retried run.
     m.lastResults = findings;
     m.lastRunAt = t0;
-    await this._log("history", HISTORY_CAP, { id: m.id, at: t0, found: findings.length, added: diff.added.length, changed: diff.changed.length, removed: diff.removed.length, alerted: alerted.length, held: held.length, delivered, ms: now() - t0 });
-    return { id: m.id, found: findings.length, alerted: alerted.length, delivered };
+    let graphSynced = 0, graphError = null;
+    try {
+      const write = buildGraphWrite(m.id, m.name || m.type, findings, diff.removed, gm, t0);
+      for (const f of diff.removed) delete gm[f.key];                                           // resolved + written — drop its clock
+      if (write.entities.length || write.relationships.length) {
+        if (mons) await this._put(mons);                                                        // persist the clock before the push
+        const r = await this._pushGraph(write, m.id);
+        graphSynced = r.synced; graphError = r.error;
+      }
+    } catch (e) { graphError = String(e.message || e); }
+
+    await this._log("history", HISTORY_CAP, { id: m.id, at: t0, found: findings.length, added: diff.added.length, changed: diff.changed.length, removed: diff.removed.length, alerted: alerted.length, held: held.length, delivered, graphSynced, graphError, ms: now() - t0 });
+    return { id: m.id, found: findings.length, alerted: alerted.length, delivered, graphSynced };
   }
 
   // One delivery with bounded retry/backoff. Each attempt is logged.
@@ -123,7 +180,7 @@ export class MonitorDO {
     for (const m of Object.values(mons)) {
       if (m.paused) continue;
       const due = (m.lastRunAt || 0) + Math.max(m.intervalMs || 0, MIN_INTERVAL);
-      if (deps.force || t >= due) ran.push(await this._runOne(m, deps));
+      if (deps.force || t >= due) ran.push(await this._runOne(m, deps, mons));
     }
     await this._put(mons);
     await this._reschedule();
@@ -159,7 +216,7 @@ export class MonitorDO {
       const mons = await this._monitors();
       const id = m.id && mons[m.id] ? m.id : uid();
       const prev = mons[id] || {};
-      mons[id] = { id, name: m.name || m.type, type: m.type, config: m.config || {}, rules: m.rules || prev.rules || {}, channels: Array.isArray(m.channels) ? m.channels : (prev.channels || []), intervalMs: Math.max(m.intervalMs || prev.intervalMs || MIN_INTERVAL, MIN_INTERVAL), paused: !!m.paused, lastRunAt: prev.lastRunAt || 0, lastResults: prev.lastResults || [] };
+      mons[id] = { id, name: m.name || m.type, type: m.type, config: m.config || {}, rules: m.rules || prev.rules || {}, channels: Array.isArray(m.channels) ? m.channels : (prev.channels || []), intervalMs: Math.max(m.intervalMs || prev.intervalMs || MIN_INTERVAL, MIN_INTERVAL), paused: !!m.paused, lastRunAt: prev.lastRunAt || 0, lastResults: prev.lastResults || [], graphMeta: prev.graphMeta || {} };
       await this._put(mons); await this._reschedule();
       return reply({ monitor: safeMonitor(mons[id]) });
     }

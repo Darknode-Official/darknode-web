@@ -53,9 +53,10 @@ group("affects-me/affectsMe", () => {
 
   test("accepts a kevSet given as an array, and is deterministic", () => {
     const ents = [V("v1", "CVE-2026-0040", "high"), V("v2", "CVE-2026-0041", "high")];
-    const a = affectsMe(ents, { kevSet: ["CVE-2026-0040", "CVE-2026-0041"] });
+    const opts = { kevSet: ["CVE-2026-0040", "CVE-2026-0041"], now: 1792380000000 }; // pin asOf so the two runs match
+    const a = affectsMe(ents, opts);
     assert.equal(a.matches.length, 2);
-    assert.equal(JSON.stringify(a), JSON.stringify(affectsMe(ents, { kevSet: ["CVE-2026-0040", "CVE-2026-0041"] })));
+    assert.equal(JSON.stringify(a), JSON.stringify(affectsMe(ents, opts)));
   });
 
   test("empty graph is safe", () => {

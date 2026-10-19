@@ -80,9 +80,12 @@ group("monitor DO/run + alert", () => {
   test("a second identical run raises no new alert (only changes alert)", async () => {
     const st = memState(); const mon = new MonitorDO(st);
     await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 21 }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
-    const net = fakeNet(day(10));
-    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
-    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    // Pin the run clock and the cert's expiry to one base so the day-count cannot drift across
+    // the two runs (otherwise a run straddling a day boundary flips the title → a false change).
+    const base = Date.now();
+    const net = fakeNet(new Date(base + 10 * 86400000).toISOString());
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base });
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base });
     assert.equal(net.deliveries.length, 1, "no duplicate alert on an unchanged cert");
   });
 
@@ -156,11 +159,117 @@ group("monitor DO/kev-epss", () => {
     assert.equal(net.deliveries.length, 0);
   });
 
+  test("the monitor's own CVE writes are not re-read as inventory (no self-feedback loop)", async () => {
+    // The graph holds ONLY a VULNERABILITY the monitor itself authored last run (source monitor:*).
+    // Without the source filter this echoes back as inventory and the CVE could never clear.
+    const st = memState();
+    const mon = new MonitorDO(st, graphEnv([{ type: "VULNERABILITY", name: "CVE-2021-44228", source: "monitor:m1", data: {} }]));
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "KEV", type: "kev-epss", config: {}, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    const net = kevNet();
+    const r = await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    assert.equal(r.ran[0].found, 0, "a monitor-authored CVE node is not genuine inventory");
+    assert.equal(net.deliveries.length, 0);
+  });
+
+  test("a genuine (tool-authored) CVE node IS counted as inventory", async () => {
+    const st = memState();
+    const mon = new MonitorDO(st, graphEnv([{ type: "VULNERABILITY", name: "CVE-2021-44228", source: "vulnimport", data: {} }]));
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "KEV", type: "kev-epss", config: {} } });
+    const r = await mon.runDue({ force: true, fetch: kevNet().fetch, sleep: async () => {} });
+    assert.equal(r.ran[0].found, 1, "a real inventory source still matches");
+  });
+
   test("the DO remembers its workspace id from the x-mon-wid header", async () => {
     const st = memState();
     const mon = new MonitorDO(st, graphEnv([]));
     const res = await mon.fetch(new Request("https://monitor/", { method: "POST", body: JSON.stringify({ op: "list" }), headers: { "content-type": "application/json", "x-mon-uid": "u1", "x-mon-role": "owner", "x-mon-wid": "wsX" } }));
     assert.equal(res.status, 200);
     assert.equal(await st.storage.get("wid"), "wsX");
+  });
+});
+
+// ---- Graph sync: a monitor run writes its findings into the workspace GraphDO ----
+// A capturing graph stub: records every POST body and still serves GET pulls (kev-epss).
+function capturingGraphEnv(entities = []) {
+  const pushes = [];
+  const env = { GRAPH: { idFromName: (n) => n, get: () => ({ fetch: async (url, opts) => {
+    if (opts && opts.method === "POST") { const body = JSON.parse(opts.body); pushes.push(body); return { ok: true, status: 200, json: async () => ({ applied: { entities: body.entities.length, relationships: body.relationships.length } }) }; }
+    return { ok: true, status: 200, json: async () => ({ entities }) };
+  } }) } };
+  return { env, pushes };
+}
+
+group("monitor DO/graph sync", () => {
+  test("a cert monitor run pushes a FINDING + DOMAIN into the workspace graph", async () => {
+    const st = memState(); const g = capturingGraphEnv();
+    const mon = new MonitorDO(st, g.env);
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 21 } } });
+    const net = fakeNet(day(10));
+    const r = await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    assert.equal(g.pushes.length, 1, "one graph push");
+    const body = g.pushes[0];
+    const f = body.entities.find((e) => e.type === "FINDING");
+    const d = body.entities.find((e) => e.type === "DOMAIN");
+    assert.ok(f && d, "finding + domain entities pushed");
+    assert.equal(f.source, "monitor:" + r.ran[0].id);
+    assert.equal(f.status, "open");
+    assert.ok(body.relationships.some((rel) => rel.type === "affects" && rel.fromId === f.id && rel.toId === d.id));
+    assert.ok(r.ran[0].graphSynced > 0, "run reports a graph sync count");
+  });
+
+  test("a healthy cert run (no findings) pushes nothing", async () => {
+    const st = memState(); const g = capturingGraphEnv();
+    const mon = new MonitorDO(st, g.env);
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 21 } } });
+    await mon.runDue({ force: true, fetch: fakeNet(day(400)).fetch, sleep: async () => {} });
+    assert.equal(g.pushes.length, 0, "no findings → no graph write");
+  });
+
+  test("an unchanged second run re-emits byte-identical records (a tie at the DO)", async () => {
+    // KEV findings have a stable title (a CVE id, no drifting day count), so this is
+    // deterministic regardless of wall-clock between the two runs.
+    const st = memState(); const g = capturingGraphEnv([{ name: "app server", data: { cves: ["CVE-2021-44228"] } }]);
+    const mon = new MonitorDO(st, g.env);
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "KEV", type: "kev-epss", config: { epssFloor: 0.5 } } });
+    const net = kevNet();
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    const a = g.pushes[0].entities.find((e) => e.type === "FINDING");
+    const b = g.pushes[g.pushes.length - 1].entities.find((e) => e.type === "FINDING");
+    assert.equal(a.createdAt, b.createdAt, "createdAt stable across runs (SLA clock preserved)");
+    assert.equal(a.updatedAt, b.updatedAt, "updatedAt stable when nothing changed");
+  });
+
+  test("a resolved finding strictly wins at the graph: later run pushes status=resolved with a greater updatedAt", async () => {
+    const st = memState(); const g = capturingGraphEnv();
+    const mon = new MonitorDO(st, g.env);
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 21 } } });
+    const base = Date.now();
+    // Run 1: cert expiring soon -> an open FINDING is pushed.
+    await mon.runDue({ force: true, fetch: fakeNet(new Date(base + 10 * 86400000).toISOString()).fetch, sleep: async () => {}, now: base });
+    const open = g.pushes[0].entities.find((e) => e.type === "FINDING");
+    assert.equal(open.status, "open");
+    // Run 2 (a day later): cert renewed (healthy) -> the finding is removed -> resolved push.
+    await mon.runDue({ force: true, fetch: fakeNet(new Date(base + 400 * 86400000).toISOString()).fetch, sleep: async () => {}, now: base + 86400000 });
+    const resolved = g.pushes[g.pushes.length - 1].entities.find((e) => e.type === "FINDING" && e.id === open.id);
+    assert.ok(resolved, "the same FINDING id is re-pushed on resolve");
+    assert.equal(resolved.status, "resolved");
+    assert.equal(resolved.data.resolution, "fixed");
+    assert.ok(resolved.updatedAt > open.updatedAt, "resolved updatedAt strictly later -> GraphDO.wins() applies it (not a tie)");
+    assert.equal(resolved.createdAt, open.createdAt, "SLA createdAt preserved across the resolve");
+  });
+
+  test("findings still reach the graph with no GRAPH binding, failing cleanly", async () => {
+    const st = memState(); const mon = new MonitorDO(st, {}); // env with no GRAPH
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 21 } } });
+    const r = await mon.runDue({ force: true, fetch: fakeNet(day(10)).fetch, sleep: async () => {} });
+    assert.equal(r.ran[0].graphSynced, 0, "no binding → nothing synced, no throw");
   });
 });
