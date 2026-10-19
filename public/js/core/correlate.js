@@ -7,6 +7,7 @@
 // the graph (turning hits into INCIDENT entities is a separate, idempotent step), so
 // it can never corrupt the graph.
 import { resolveAssets, resolveIdentities, hostParts, canonIp, identityKeys } from "./resolve.js";
+import { cyrb53 } from "./hash.js";
 
 const str = (v) => String(v == null ? "" : v).trim();
 const lc = (v) => str(v).toLowerCase();
@@ -19,7 +20,6 @@ const toMs = (v) => (typeof v === "number" ? v : (typeof v === "string" && v ? D
 const src = (...tools) => (f) => tools.includes(f.source);
 const cat = (...cats) => (f) => cats.includes(f.category);
 const sevAtLeast = (level) => (f) => (SEV_RANK[f.severity] || 0) >= (SEV_RANK[level] || 0);
-const kw = (re) => (f) => re.test(f.title);
 const all = (...preds) => (f) => preds.every((p) => p(f));
 const any = (...preds) => (f) => preds.some((p) => p(f));
 
@@ -43,7 +43,7 @@ export const RULES = [
     explain: "HR marks this person a leaver, yet a sign-in or remote-access session is still happening on their account.",
     legs: [
       { id: "terminated", label: "Terminated in HR (offboarding verifier)", when: all(src("jml"), cat("leaver")) },
-      { id: "still-active", label: "Sign-in or VPN activity after termination", when: any(src("vpnaudit"), src("signins")) },
+      { id: "still-active", label: "Sign-in, VPN or access-review activity after termination", when: any(src("vpnaudit"), src("signins"), all(src("accessreview"), cat("activity_after_termination", "leaver_enabled"))) },
     ],
   },
   {
@@ -77,13 +77,58 @@ export const RULES = [
     ],
   },
   {
-    id: "live-secret", subject: "asset", severity: "critical",
-    attack: ["T1552"], window: 30 * DAY,
-    title: "Leaked secret with a matching live credential",
-    explain: "A secret was found in code/data and a matching machine credential is still active and unrotated.",
+    // A live, unrotated machine credential that ALSO carries standing privilege or broad
+    // trust — a key an attacker can use right now. Keyed on the IDENTITY (the service
+    // principal), because that is the subject both nhi and privaudit resolve to. (The old
+    // asset-keyed "leaked-secret" rule could never co-locate — nhi findings are IDENTITY,
+    // code/IaC secret findings are host/repo — and named tools that never sink.)
+    id: "live-priv-cred", subject: "identity", severity: "critical",
+    attack: ["T1552.001", "T1078.004"], window: 60 * DAY,
+    title: "Privileged machine credential that is live and unrotated",
+    explain: "A non-human/service credential that is unrotated, expiring or over-used AND tied to standing privilege or broad cross-account trust — a working key with power behind it.",
     legs: [
-      { id: "leaked", label: "Secret found in code or data", when: any(all(src("codescan", "leakprobe", "dlp"), kw(/secret|key|token|credential|password/i)), all(src("codescan", "leakprobe"), cat("secrets"))) },
-      { id: "active-key", label: "Active, unrotated machine credential", when: all(src("nhi"), cat("rotation", "expiry", "usage")) },
+      { id: "stale-cred", label: "Unrotated / overdue / over-used machine credential", when: all(src("nhi"), cat("rotation", "expiry", "usage")) },
+      { id: "privileged", label: "Standing privilege or broad trust on the same principal", when: any(all(src("nhi"), cat("privilege")), all(src("privaudit"), cat("non-human-privilege", "standing-privilege", "cross-account-trust"))) },
+    ],
+  },
+  {
+    id: "brute-force-success", subject: "identity", severity: "critical",
+    attack: ["T1110"], window: 14 * DAY,
+    title: "Password attack followed by a successful sign-in",
+    explain: "A password-spray or brute-force campaign against an account and a confirmed credential-stuffing success on that same account — the attack landed.",
+    legs: [
+      { id: "attempt", label: "Password spray / brute force against the account", when: any(all(src("vpnaudit"), cat("brute_force", "spraying")), all(src("signins"), cat("password_spray", "brute_force"))) },
+      { id: "success", label: "Confirmed credential-stuffing / brute-force success", when: all(src("signins"), cat("cred_stuffing_success")) },
+    ],
+  },
+  {
+    id: "oauth-overscope", subject: "identity", severity: "high",
+    attack: ["T1528"], window: 90 * DAY,
+    title: "High-scope OAuth grant by a weakly-protected account",
+    explain: "An account consented to a high-privilege OAuth application while its own sign-in control (MFA / legacy auth) is weak — a token-theft and consent-phishing exposure.",
+    legs: [
+      { id: "grant", label: "High-scope OAuth application grant", when: all(src("oauthgov"), cat("oauth")) },
+      { id: "weak-auth", label: "Weak MFA / legacy auth or risky sign-in on the same account", when: any(all(src("caaudit"), cat("mfa", "legacy-auth")), all(src("signins"), sevAtLeast("high"))) },
+    ],
+  },
+  {
+    id: "domain-takeover", subject: "asset", severity: "high",
+    attack: ["T1584.001"], window: 90 * DAY,
+    title: "Takeover-prone domain we still rely on",
+    explain: "A domain or DNS record at risk of hostile takeover (dangling record, lapsed delegation) that we still serve or hold certificates / transport posture for — a subdomain-takeover foothold.",
+    legs: [
+      { id: "takeover", label: "Dangling / takeover-prone DNS record", when: all(src("domainguard"), cat("takeover")) },
+      { id: "still-ours", label: "Still served by our certificates or exposed transport", when: any(all(src("tlsfleet"), cat("certificate lifecycle", "transport security")), all(src("netexposure"), cat("tls", "certificate", "external exposure"))) },
+    ],
+  },
+  {
+    id: "beacon-exposed", subject: "asset", severity: "high",
+    attack: ["T1071"], window: 14 * DAY,
+    title: "C2 beaconing from an internet-exposed host",
+    explain: "A host showing command-and-control DNS behaviour (beaconing, DGA, tunnelling) that is also internet-exposed — a likely foothold already communicating out.",
+    legs: [
+      { id: "c2", label: "Beaconing / DGA / DNS-tunnel behaviour", when: all(src("dnshunt"), cat("beacon", "dga", "tunnel")) },
+      { id: "exposed", label: "Internet-exposed service", when: all(src("netexposure"), cat("rdp", "smb", "ssh", "segmentation", "external exposure")) },
     ],
   },
 ];
@@ -189,4 +234,56 @@ export function correlate(entities, opts = {}) {
   }
   hits.sort((a, b) => (SEV_RANK[b.severity] || 0) - (SEV_RANK[a.severity] || 0) || a.ruleId.localeCompare(b.ruleId) || String(a.subjectKey).localeCompare(String(b.subjectKey)));
   return hits;
+}
+
+// ---- INCIDENT materialization -----------------------------------------------------
+// Turn correlation hits into graph records so a chain becomes an ownable, trackable
+// INCIDENT (not just a live read). PURE and idempotent: ids are deterministic (one
+// incident per rule+subject) and timestamps are derived from the CONTRIBUTING findings
+// already in the graph — createdAt = when the earliest leg appeared (SLA clock), updatedAt
+// = when the latest leg last changed — so an unchanged chain produces a byte-identical
+// record that GraphDO's wins() treats as a tie (zero churn), while a chain whose evidence
+// moved strictly wins. The caller decides whether/when to write the result to the graph.
+const PRIORITY = { critical: "p1", high: "p2", medium: "p3", low: "p4", info: "p4" };
+export function incidentId(ruleId, subjectType, subjectKey) {
+  return "inc" + cyrb53(str(ruleId) + "|" + str(subjectType) + ":" + str(subjectKey));
+}
+
+// materializeIncidents(hits, entities, { now }) -> { entities:[INCIDENT...], relationships:[FINDING -evidence_for-> INCIDENT] }
+export function materializeIncidents(hits, entities, opts = {}) {
+  const nowMs = Number.isFinite(opts.now) ? opts.now : NaN;
+  const iso = (ms) => new Date(Number.isFinite(ms) ? ms : 0).toISOString();
+  // finding id -> { created, updated } in ms (stable graph data drives the incident clock)
+  const ftimes = new Map();
+  for (const e of (entities || [])) {
+    if (e.type !== "FINDING" && e.type !== "VULNERABILITY") continue;
+    const u = toMs(e.updatedAt), c = toMs(e.createdAt);
+    ftimes.set(e.id, { created: Number.isFinite(c) ? c : (Number.isFinite(u) ? u : nowMs), updated: Number.isFinite(u) ? u : (Number.isFinite(c) ? c : nowMs) });
+  }
+  const outEnts = [], outRels = [];
+  for (const h of (hits || [])) {
+    const id = incidentId(h.ruleId, h.subjectType, h.subjectKey);
+    const legTimes = h.legs.map((l) => ftimes.get(l.findingId)).filter(Boolean);
+    const createdMs = legTimes.length ? Math.min(...legTimes.map((t) => t.created)) : nowMs;
+    const updatedMs = legTimes.length ? Math.max(...legTimes.map((t) => t.updated)) : nowMs;
+    const createdAt = iso(createdMs), updatedAt = iso(updatedMs);
+    outEnts.push({
+      id, type: "INCIDENT", name: `${h.title}: ${h.subjectName}`,
+      severity: h.severity, status: "open", source: "correlate",
+      createdAt, updatedAt,
+      data: {
+        title: h.title, phase: "identification", priority: PRIORITY[h.severity] || "p3",
+        summary: h.explanation, rule: h.ruleId, attack: (h.attack || []).slice(),
+        subjectType: h.subjectType, subjectName: h.subjectName, window: h.window || null, span: h.span || 0,
+        legs: h.legs.map((l) => ({ id: l.id, label: l.label, findingId: l.findingId, findingTitle: l.findingTitle })),
+      },
+    });
+    // Each contributing finding is evidence_for the incident. createdAt tracks the finding's
+    // own first-seen (stable) so the relationship is a tie on an unchanged re-run.
+    for (const l of h.legs) {
+      const ft = ftimes.get(l.findingId);
+      outRels.push({ id: "r" + cyrb53(str(l.findingId) + "|evidence_for|" + id), fromId: str(l.findingId), toId: id, type: "evidence_for", createdAt: iso(ft ? ft.created : createdMs) });
+    }
+  }
+  return { entities: outEnts, relationships: outRels };
 }

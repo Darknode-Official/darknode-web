@@ -1,6 +1,6 @@
 // Unit tests for public/js/core/correlate.js — the cross-tool correlation engine.
 import { test, group, assert } from "../harness.mjs";
-import { correlate, RULES } from "../../public/js/core/correlate.js";
+import { correlate, RULES, materializeIncidents, incidentId } from "../../public/js/core/correlate.js";
 
 const DAY = 86400000;
 const NOW = Date.parse("2026-10-17T00:00:00Z");
@@ -119,13 +119,64 @@ group("correlate/asset rules", () => {
     assert.ok(hits.find((x) => x.ruleId === "exploit-exposed-host"), "resolves across short/fqdn");
   });
 
-  test("live-secret fires on leaked secret + active key", () => {
+});
+
+group("correlate/new cross-tool rules", () => {
+  test("live-priv-cred fires on an unrotated credential that is also privileged (same principal)", () => {
     const hits = correlate([
-      A("ci-host"),
-      F("leakprobe", "secrets", "ci-host", "high", { title: "AWS secret key exposed" }),
-      F("nhi", "rotation", "ci-host", "high"),
+      I("svc-deploy@corp.com"),
+      F("nhi", "rotation", "svc-deploy@corp.com", "high"),
+      F("privaudit", "non-human-privilege", "svc-deploy@corp.com", "high"),
     ]);
-    assert.ok(hits.find((x) => x.ruleId === "live-secret"));
+    const h = hits.find((x) => x.ruleId === "live-priv-cred");
+    assert.ok(h, "live-priv-cred hit present");
+    assert.equal(h.subjectType, "identity");
+    assert.equal(h.severity, "critical");
+  });
+
+  test("brute-force-success fires on spray/brute attempt + confirmed stuffing success", () => {
+    const hits = correlate([
+      I("jo@corp.com"),
+      F("vpnaudit", "brute_force", "jo@corp.com", "high"),
+      F("signins", "cred_stuffing_success", "jo@corp.com", "critical"),
+    ]);
+    assert.ok(hits.find((x) => x.ruleId === "brute-force-success"));
+  });
+
+  test("oauth-overscope fires on a high-scope grant by a weak-MFA account", () => {
+    const hits = correlate([
+      I("sam@corp.com"),
+      F("oauthgov", "oauth", "sam@corp.com", "high"),
+      F("caaudit", "mfa", "sam@corp.com", "high"),
+    ]);
+    assert.ok(hits.find((x) => x.ruleId === "oauth-overscope"));
+  });
+
+  test("domain-takeover fires on a dangling record we still serve certs for", () => {
+    const hits = correlate([
+      A("app.corp.com"),
+      F("domainguard", "takeover", "app.corp.com", "high"),
+      F("tlsfleet", "transport security", "app.corp.com", "medium"),
+    ]);
+    assert.ok(hits.find((x) => x.ruleId === "domain-takeover"));
+  });
+
+  test("beacon-exposed fires on C2 DNS behaviour from an internet-exposed host", () => {
+    const hits = correlate([
+      A("host7.corp.com"),
+      F("dnshunt", "beacon", "host7.corp.com", "high"),
+      F("netexposure", "rdp", "host7.corp.com", "high"),
+    ]);
+    assert.ok(hits.find((x) => x.ruleId === "beacon-exposed"));
+  });
+
+  test("leaver-active also fires on access-review activity after termination", () => {
+    const hits = correlate([
+      I("x@corp.com"),
+      F("jml", "leaver", "x@corp.com", "medium"),
+      F("accessreview", "activity_after_termination", "x@corp.com", "high"),
+    ]);
+    assert.ok(hits.find((h) => h.ruleId === "leaver-active"));
   });
 });
 
@@ -168,5 +219,87 @@ group("correlate/contract", () => {
     const a = JSON.stringify(correlate(base));
     const b = JSON.stringify(correlate(base.slice().reverse()));
     assert.equal(a, b);
+  });
+});
+
+group("correlate/incident materialization", () => {
+  // Account-takeover legs with explicit createdAt/updatedAt so the incident clock is testable.
+  // fa: first seen day(10), last changed day(10). fb: first seen day(5), last changed day(3).
+  const atoGraph = () => [
+    I("jane@corp.com"),
+    { id: "fa", type: "FINDING", name: "caaudit/mfa", severity: "high", source: "caaudit", tags: [],
+      createdAt: day(10), updatedAt: day(10), data: { tool: "caaudit", category: "mfa", assets: ["jane@corp.com"] } },
+    { id: "fb", type: "FINDING", name: "vpnaudit/impossible_travel", severity: "high", source: "vpnaudit", tags: [],
+      createdAt: day(5), updatedAt: day(3), data: { tool: "vpnaudit", category: "impossible_travel", assets: ["jane@corp.com"] } },
+  ];
+
+  test("a hit becomes one INCIDENT with an evidence_for link from every leg", () => {
+    const ents = atoGraph();
+    const ato = correlate(ents).find((h) => h.ruleId === "account-takeover");
+    assert.ok(ato, "precondition: account-takeover fires");
+    const { entities, relationships } = materializeIncidents([ato], ents);
+    assert.equal(entities.length, 1);
+    const inc = entities[0];
+    assert.equal(inc.type, "INCIDENT");
+    assert.equal(inc.status, "open");
+    assert.equal(inc.data.rule, "account-takeover");
+    assert.equal(inc.data.phase, "identification");
+    assert.equal(relationships.length, ato.legs.length);
+    for (const r of relationships) {
+      assert.equal(r.type, "evidence_for");
+      assert.equal(r.toId, inc.id);
+      assert.ok(ato.legs.some((l) => l.findingId === r.fromId), "relationship comes from a contributing finding");
+    }
+  });
+
+  test("the incident id is deterministic per rule + subject", () => {
+    const ents = atoGraph();
+    const ato = correlate(ents).find((h) => h.ruleId === "account-takeover");
+    const { entities } = materializeIncidents([ato], ents);
+    assert.equal(entities[0].id, incidentId("account-takeover", "identity", ato.subjectKey));
+  });
+
+  test("re-running on an unchanged graph is byte-identical (idempotent LWW tie)", () => {
+    const a = JSON.stringify(materializeIncidents(correlate(atoGraph()), atoGraph()));
+    const b = JSON.stringify(materializeIncidents(correlate(atoGraph()), atoGraph()));
+    assert.equal(a, b);
+  });
+
+  test("createdAt = earliest leg first-seen, updatedAt = latest leg change", () => {
+    const ents = atoGraph();
+    const ato = correlate(ents).find((h) => h.ruleId === "account-takeover");
+    const inc = materializeIncidents([ato], ents).entities[0];
+    assert.equal(inc.createdAt, day(10)); // min(created): fa day(10) is earliest
+    assert.equal(inc.updatedAt, day(3));  // max(updated): fb day(3) is most recent
+  });
+
+  test("a newer leg advances updatedAt only, not createdAt (SLA clock holds, LWW wins)", () => {
+    const base = atoGraph();
+    const inc0 = materializeIncidents(correlate(base), base).entities[0];
+    const moved = atoGraph();
+    moved.find((e) => e.id === "fb").updatedAt = day(0); // the anomaly re-fires today
+    const inc1 = materializeIncidents(correlate(moved), moved).entities[0];
+    assert.equal(inc1.id, inc0.id, "same incident id");
+    assert.equal(inc1.createdAt, inc0.createdAt, "createdAt (SLA clock) unchanged");
+    assert.ok(Date.parse(inc1.updatedAt) > Date.parse(inc0.updatedAt), "updatedAt advanced so it strictly wins");
+  });
+
+  test("priority maps from severity (critical -> p1)", () => {
+    const g = [
+      A("web01.corp.com"),
+      { id: "v1", type: "FINDING", name: "vulnimport/sla", severity: "high", source: "vulnimport", tags: ["kev"],
+        createdAt: day(2), updatedAt: day(2), data: { tool: "vulnimport", category: "sla", assets: ["web01.corp.com"] } },
+      { id: "x1", type: "FINDING", name: "netexposure/rdp", severity: "high", source: "netexposure", tags: [],
+        createdAt: day(2), updatedAt: day(2), data: { tool: "netexposure", category: "rdp", assets: ["web01.corp.com"] } },
+    ];
+    const hit = correlate(g).find((h) => h.ruleId === "exploit-exposed-host");
+    assert.ok(hit && hit.severity === "critical", "precondition: critical hit");
+    assert.equal(materializeIncidents([hit], g).entities[0].data.priority, "p1");
+  });
+
+  test("no hits yields empty record sets", () => {
+    const r = materializeIncidents([], []);
+    assert.deepEqual(r.entities, []);
+    assert.deepEqual(r.relationships, []);
   });
 });
