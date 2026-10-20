@@ -41,6 +41,7 @@ function injectStyles() {
   el.id = "pvx-style";
   el.textContent = `
 .pvx{--ink:#131722;--ink2:#58616f;--ink3:#8a92a1;--line:#eceef3;--line2:#e2e5ec;--surf:#fff;--accent:#4b63f0;
+  --fill:#eef0f5;--fillh:#edf0f6;--mix:#fff;color-scheme:light dark;
   position:fixed;inset:0;z-index:4000;display:flex;flex-direction:column;color:var(--ink);
   font:400 15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow:hidden;
@@ -63,7 +64,7 @@ function injectStyles() {
 .pvx-ttl{font:700 15px/1.15 inherit;letter-spacing:-.015em}
 .pvx-sub{font:500 11.5px/1.2 inherit;color:var(--ink3)}
 .pvx-spacer{flex:1 1 0}
-.pvx-seg{display:flex;align-items:center;gap:2px;padding:3px;background:#eef0f5;border-radius:11px}
+.pvx-seg{display:flex;align-items:center;gap:2px;padding:3px;background:var(--fill);border-radius:11px}
 .pvx-seg button{width:34px;height:30px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--ink3);transition:background .14s,color .14s,box-shadow .14s}
 .pvx-seg button svg{width:16px;height:16px}
 .pvx-seg button:hover{color:var(--ink2)}
@@ -71,7 +72,7 @@ function injectStyles() {
 .pvx-x{flex:none;width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line2);
   border-radius:11px;background:var(--surf);color:var(--ink2);transition:background .15s,color .15s,border-color .15s,transform .1s}
 .pvx-x svg{width:17px;height:17px}
-.pvx-x:hover{background:#f6f7fa;color:var(--ink);border-color:#d6dbe4}
+.pvx-x:hover{background:var(--fillh);color:var(--ink);border-color:var(--line2)}
 .pvx-x:active{transform:scale(.94)}
 
 /* ── Hero ─────────────────────────────────────────────── */
@@ -89,13 +90,13 @@ function injectStyles() {
 .pvx-hs input::placeholder{color:var(--ink3)}
 .pvx-hs input::-webkit-search-cancel-button{-webkit-appearance:none}
 .pvx-kbd{flex:none;font:650 11px/1 ui-monospace,"SF Mono",Menlo,monospace;color:var(--ink3);
-  background:#f2f4f8;border:1px solid var(--line2);border-bottom-width:2px;border-radius:6px;padding:4px 7px}
+  background:var(--fill);border:1px solid var(--line2);border-bottom-width:2px;border-radius:6px;padding:4px 7px}
 .pvx-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:16px auto 0;max-width:640px}
 .pvx-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--surf);
   color:var(--ink2);border-radius:999px;padding:7px 14px;font:550 13px/1 inherit;transition:background .14s,color .14s,border-color .14s,transform .1s}
 .pvx-chip:hover{border-color:#cfd5df;color:var(--ink)}
 .pvx-chip:active{transform:scale(.96)}
-.pvx-chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pvx-chip.on{background:var(--ink);color:var(--surf);border-color:var(--ink)}
 .pvx-chip .pvx-cdot{width:7px;height:7px;border-radius:50%}
 
 /* ── Layout ───────────────────────────────────────────── */
@@ -106,12 +107,12 @@ function injectStyles() {
 .pvx-rail-h{font:720 11px/1.4 inherit;letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);padding:0 12px 10px}
 .pvx-rl{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:0;background:transparent;
   padding:9px 12px;border-radius:10px;color:var(--ink2);position:relative;transition:background .12s,color .12s}
-.pvx-rl:hover{background:#edf0f6;color:var(--ink)}
-.pvx-rl.on{background:color-mix(in srgb,var(--h) 11%,#fff);color:var(--ink);font-weight:600}
+.pvx-rl:hover{background:var(--fillh);color:var(--ink)}
+.pvx-rl.on{background:color-mix(in srgb,var(--h) 11%,var(--mix));color:var(--ink);font-weight:600}
 .pvx-rl.on::before{content:"";position:absolute;left:3px;top:50%;transform:translateY(-50%);width:3px;height:17px;border-radius:3px;background:var(--h)}
 .pvx-rl-n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
-.pvx-rl-c{font:600 11.5px/1 inherit;color:var(--ink3);background:#f0f2f7;border-radius:999px;padding:2px 8px;min-width:24px;text-align:center}
-.pvx-rl.on .pvx-rl-c{color:var(--h);background:color-mix(in srgb,var(--h) 15%,#fff)}
+.pvx-rl-c{font:600 11.5px/1 inherit;color:var(--ink3);background:var(--fill);border-radius:999px;padding:2px 8px;min-width:24px;text-align:center}
+.pvx-rl.on .pvx-rl-c{color:var(--h);background:color-mix(in srgb,var(--h) 15%,var(--mix))}
 .pvx-dot{flex:none;width:9px;height:9px;border-radius:50%;background:var(--h,#5b6676);box-shadow:0 0 0 3px color-mix(in srgb,var(--h,#5b6676) 16%,transparent)}
 .pvx-rl .pvx-dot{box-shadow:none;width:8px;height:8px}
 
@@ -123,7 +124,7 @@ function injectStyles() {
 .pvx-sh{display:flex;align-items:center;gap:11px;margin:0 0 16px}
 .pvx-sh .pvx-dot{width:11px;height:11px}
 .pvx-sh h2{font:700 17px/1.2 inherit;letter-spacing:-.02em;margin:0}
-.pvx-sh-c{font:650 11.5px/1 inherit;color:var(--ink3);background:#eef1f6;border-radius:999px;padding:4px 9px}
+.pvx-sh-c{font:650 11.5px/1 inherit;color:var(--ink3);background:var(--fill);border-radius:999px;padding:4px 9px}
 .pvx-sh-rule{flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
 
 /* ── Cover cards (grid view) ──────────────────────────── */
@@ -136,10 +137,10 @@ function injectStyles() {
 .pvx-cover{position:relative;height:104px;display:grid;place-items:center;border-bottom:1px solid var(--line);
   background:
     radial-gradient(74px 74px at 80% 22%,color-mix(in srgb,var(--h) 16%,transparent),transparent 72%),
-    linear-gradient(158deg,color-mix(in srgb,var(--h) 9%,#fff) 0%,#fff 68%)}
+    linear-gradient(158deg,color-mix(in srgb,var(--h) 9%,var(--mix)) 0%,var(--mix) 68%)}
 .pvx-tile{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;color:#fff;
   font:800 18px/1 inherit;letter-spacing:.01em;
-  background:linear-gradient(145deg,color-mix(in srgb,var(--h) 84%,#fff),var(--h));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--h) 84%,var(--mix)),var(--h));
   box-shadow:0 6px 16px color-mix(in srgb,var(--h) 34%,transparent),inset 0 1px 0 rgba(255,255,255,.4);
   transition:transform .16s}
 .pvx-card:hover .pvx-tile{transform:scale(1.06)}
@@ -163,11 +164,30 @@ function injectStyles() {
 .pvx[data-view=list] .pvx-foot{padding:10px 16px 10px 14px;gap:2px}
 
 .pvx-empty{padding:72px 20px;text-align:center;color:var(--ink3);animation:pvx-pop .18s ease}
-.pvx-empty-ic{width:52px;height:52px;margin:0 auto 14px;border-radius:14px;display:grid;place-items:center;background:#eef1f6;color:var(--ink3)}
+.pvx-empty-ic{width:52px;height:52px;margin:0 auto 14px;border-radius:14px;display:grid;place-items:center;background:var(--fill);color:var(--ink3)}
 .pvx-empty-ic svg{width:24px;height:24px}
 .pvx-empty b{display:block;color:var(--ink2);font:650 16px/1.3 inherit;margin-bottom:3px}
 .pvx-sec[hidden],.pvx-card[hidden]{display:none}
 
+/* ── Dark mode: follows the browser/OS theme (prefers-color-scheme) ──── */
+@media (prefers-color-scheme:dark){
+  .pvx{--ink:#e9ebf1;--ink2:#9aa3b2;--ink3:#6b7482;--line:#242a35;--line2:#2f3542;--surf:#171a22;--accent:#7e93ff;
+    --fill:#20242e;--fillh:#262c37;--mix:#1b1f28;background:linear-gradient(180deg,#0e1014 0%,#13161e 100%)}
+  .pvx-top{background:rgba(16,18,24,.74)}
+  .pvx-hero{background:radial-gradient(760px 300px at 50% -40%,rgba(126,147,255,.1),transparent 70%)}
+  .pvx-seg{background:#13161d}
+  .pvx-seg button.on{background:#2a303c;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.45)}
+  .pvx-x:hover{border-color:#39414f}
+  .pvx-chip:hover{border-color:#3a4150}
+  .pvx-card{box-shadow:0 1px 2px rgba(0,0,0,.28)}
+  .pvx-card:hover{box-shadow:0 12px 28px rgba(0,0,0,.5)}
+  .pvx-hs{box-shadow:0 2px 8px rgba(0,0,0,.3)}
+  .pvx-rail::-webkit-scrollbar-thumb,.pvx-main::-webkit-scrollbar-thumb{background:#2c313c}
+  .pvx-b-live{color:#4cd6a1;background:rgba(32,169,124,.16)}
+  .pvx-b-ai{color:#ab91ff;background:rgba(115,85,242,.2)}
+  .pvx-b-beta{color:#e6ad52;background:rgba(221,154,36,.16)}
+  .pvx-b-new{color:#7a9dff;background:rgba(75,99,240,.2)}
+}
 @media (max-width:860px){
   .pvx-wrap{grid-template-columns:1fr}
   .pvx-rail{display:none}
