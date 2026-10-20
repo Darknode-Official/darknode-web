@@ -138,6 +138,15 @@ group("domainguard: RDAP", () => {
     assert.ok(!parseRdap({ errorCode: 404, title: "Not Found" }, NOW).ok);
     assert.ok(!parseRdap({ error: "proxy down" }, NOW).ok);
   });
+  test("ageDays floors a sub-day fraction instead of rounding the age up", () => {
+    // Created exactly 10 days + 1 hour before NOW: whole-day age is 10. The old -floor(negative diff)
+    // reported 11, which could drop a domain out of the newlyRegistered window a day early.
+    const created = new Date(NOW - (10 * 86400000 + 3600000)).toISOString();
+    const r = parseRdap({ ...RDAP, events: [{ eventAction: "registration", eventDate: created }] }, NOW);
+    assert.equal(r.ageDays, 10);
+    // Unparseable creation date yields null, not 0 (which -null used to produce).
+    assert.equal(parseRdap({ ...RDAP, events: [{ eventAction: "registration", eventDate: "not-a-date" }] }, NOW).ageDays, null);
+  });
 });
 
 // Build a domain observation from compact pieces.

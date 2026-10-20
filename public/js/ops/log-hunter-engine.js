@@ -37,8 +37,9 @@ export const DEFAULT_SETTINGS = {
   internalCidrs: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.0/8", "169.254.0.0/16", "::1/128", "fc00::/7", "fe80::/10"],
   loginPaths: ["/login", "/signin", "/sign-in", "/wp-login.php", "/xmlrpc.php", "/api/auth", "/api/login", "/oauth/token", "/session", "/user/login", "/account/login", "/auth", "/j_security_check"],
   adminNamePattern: "admin|administrator|^root$|adm$|^svc|^sa$|da$|domain admin|enterprise admin",
-  // Year assumed for syslog lines that carry no year
-  assumeYear: new Date().getUTCFullYear(),
+  // Year assumed for syslog lines that carry no year. 0 = resolve lazily in parseTs at parse time;
+  // never bake a value at module load (new Date() here would be a purity violation and freeze the year).
+  assumeYear: 0,
 };
 
 export function mergeSettings(s) {

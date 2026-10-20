@@ -27,6 +27,14 @@ group("log-hunter: catalogue", () => {
     }
     assert.ok(Object.keys(DETECTIONS).length >= 38);
   });
+  test("DEFAULT_SETTINGS.assumeYear is a fixed constant, not a module-load wall-clock year (purity)", () => {
+    // Was new Date().getUTCFullYear() baked at import time, which both violates the purity rule and
+    // freezes the assumed year for the life of the module. 0 means parseTs resolves it lazily at parse time.
+    assert.equal(DEFAULT_SETTINGS.assumeYear, 0);
+    // An explicit year still flows through to yearless syslog timestamps unchanged.
+    const ts = parseTs("Oct 13 10:00:00", 2026);
+    assert.equal(new Date(ts).getUTCFullYear(), 2026);
+  });
   test("no banned marketing words in rule copy", () => {
     const banned = /seamless|robust|comprehensive|empower|leverage|cutting-edge|unlock|elevate|holistic/i;
     for (const d of Object.values(DETECTIONS)) assert.notOk(banned.test(d.name + d.explain + d.action), d.name);

@@ -366,7 +366,10 @@ export function parseRdap(j, nowMs) {
   return {
     ok: true, ldhName: normName(j.ldhName || ""), registrar: reg ? vcardFn(reg) || reg.handle || null : null,
     registrarIanaId: reg && Array.isArray(reg.publicIds) ? ((reg.publicIds.find((p) => /iana/i.test(p.type)) || {}).identifier || null) : null,
-    expires, created, updated, daysLeft: days(expires), ageDays: created && nowMs != null ? -days(created) : null,
+    expires, created, updated, daysLeft: days(expires),
+    // age = whole days elapsed since creation. Floor the POSITIVE elapsed span: negating a floored
+    // negative diff rounded the age UP on any sub-day fraction (10d1h -> 11). null if created unparseable.
+    ageDays: created && nowMs != null && !isNaN(Date.parse(created)) ? Math.floor((nowMs - Date.parse(created)) / DAY) : null,
     statuses,
     transferLock: s.has("clienttransferprohibited") || s.has("servertransferprohibited"),
     deleteLock: s.has("clientdeleteprohibited") || s.has("serverdeleteprohibited"),
