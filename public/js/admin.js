@@ -98,6 +98,21 @@ export async function openDeck(user, extra = {}) {
   return _deckOff;
 }
 export function closeDeck() { if (_deckOff) { try { _deckOff(); } catch (_) {} _deckOff = null; } }
+
+// ---- Preview UI: a light, single-surface alternate view of every tool, launched from
+// the admin page like the Deck. Same NAV taxonomy, self-contained module (scoped .pvx). ----
+let _previewOff = null;
+export async function openPreview(user) {
+  const nav = await import("/js/console-nav.js?v=20261013k");
+  const { renderPreview } = await import("/js/preview-ui.js?v=20261019g");
+  if (_previewOff) { try { _previewOff(); } catch (_) {} _previewOff = null; }
+  document.querySelectorAll("body > .pvx").forEach((n) => n.remove());
+  _previewOff = renderPreview(document.body, {
+    groups: (nav.NAV || []).map((g) => ({ id: g.id, name: g.name, color: g.color, items: g.items || [] })),
+    onExit: () => { _previewOff = null; },
+  });
+  return _previewOff;
+}
 export async function renderAdmin(main, user) {
   main.innerHTML = `
     <h1 class="pg-h1">Admin</h1>
@@ -117,7 +132,10 @@ export async function renderAdmin(main, user) {
         <h2 class="pg-h2" style="margin:6px 0 4px">Darknode Command Center</h2>
         <p class="muted" style="margin:0;max-width:70ch">The Deck: grouped sidebar, posture overview, attack surface, investigations and every tool in one workspace, with Ctrl&nbsp;K search. Visible only to you.</p>
       </div>
-      <button class="btn" id="deckLaunch" style="flex:none">Open Command Center</button>
+      <div style="display:flex;gap:10px;flex:none;flex-wrap:wrap">
+        <button class="btn" id="deckLaunch">Open Command Center</button>
+        <button class="btn ghost" id="previewLaunch">Open Preview UI</button>
+      </div>
     </div>
 
     <div class="adm-cols">
@@ -329,6 +347,18 @@ export async function renderAdmin(main, user) {
     import("/js/openrouter-connect.js?v=20261010c").then(({ shouldReopenDeck }) => {
       if (shouldReopenDeck()) Promise.resolve(window.__orConnect).finally(launchDeck);
     }).catch(() => {});
+  })();
+
+  // ---- Preview UI launcher (sits beside the Deck button) ----
+  (function wirePreview() {
+    const btn = main.querySelector("#previewLaunch");
+    if (!btn) return;
+    btn.addEventListener("click", async () => {
+      btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
+      try { await openPreview(user); }
+      catch (e) { try { window.showToast && window.showToast("Preview UI failed to load: " + e.message, "error"); } catch (_) {} }
+      finally { btn.disabled = false; btn.textContent = label; }
+    });
   })();
 
   let users = [];

@@ -323,7 +323,7 @@ body.app.aws-side-closed .aws-side-open {
 .aws-side-open span::after { top: 5px; }
 
 .aws-side-div { height: 1px; margin: 12px 24px; background: var(--aws-side-line); }
-.aws-side-lbl { padding: 0 24px 6px; color: var(--aws-side-head); font: 700 14px/1.4 var(--aws-font); }
+.aws-side-lbl { padding: 2px 24px 8px; color: var(--aws-crumb-cur); font: 700 11px/1.4 var(--aws-font); letter-spacing: .07em; text-transform: uppercase; }
 html body .aws-side :is(.aws-sl, .aws-sg-h) {
   display: flex;
   align-items: center;
@@ -343,18 +343,27 @@ html body .aws-side :is(.aws-sl, .aws-sg-h) {
   transform: none !important;
   white-space: nowrap;      /* a long tool name must never wrap to a second line */
   overflow: hidden;         /* ... including when the active item turns bold (below) */
+  transition: background .12s ease, color .12s ease;
 }
 html body .aws-side .aws-sg-items .aws-sl { padding-left: 44px !important; }
+/* Neat row highlights: a soft full-row tint on hover (no dated underline), and a clear
+   left accent bar + tint on the active item, like a cloud console's side nav. */
 html body .aws-side .aws-sl:hover,
-html body .aws-side .aws-sg-h:hover { color: var(--aws-side-on) !important; text-decoration: underline; }
-html body .aws-side .aws-sl.on { color: var(--aws-side-on) !important; font-weight: 700; }
+html body .aws-side .aws-sg-h:hover { color: var(--aws-side-on) !important; background: color-mix(in srgb, var(--aws-side-txt) 9%, transparent) !important; }
+html body .aws-side .aws-sl.on {
+  color: var(--aws-side-on) !important;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--aws-side-on) 12%, transparent) !important;
+  box-shadow: inset 3px 0 0 var(--aws-side-on) !important;
+}
+html body .aws-side .aws-sl.on:hover { background: color-mix(in srgb, var(--aws-side-on) 16%, transparent) !important; }
 html body .aws-side .aws-sg-h { font-weight: 400; }
 /* The label is its own flex item so it truncates with an ellipsis instead of
    wrapping — the extra width from the bold active state is absorbed here, not
    pushed onto a new line. Any trailing badge stays visible beside it. */
 html body .aws-side .aws-sl .aws-sl-t { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aws-sg-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.aws-sg-n { color: var(--aws-crumb-cur); font-size: 12px; }
+.aws-sg-n { color: var(--aws-crumb-cur); font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--aws-side-txt) 10%, transparent); }
 .aws-caret {
   position: relative;
   width: 14px;
