@@ -212,10 +212,13 @@ export function correlate(entities, opts = {}) {
     const groups = rule.subject === "asset" ? byAsset : byId;
     const prefix = rule.subject === "asset" ? "a:" : "i:";
     for (const [subjectKey, findings] of groups) {
+      // Order findings deterministically (newest first, id tiebreak) so leg selection, the time-window
+      // check and the emitted evidence ids never depend on graph iteration order.
+      const findingsSorted = findings.slice().sort((a, b) => (b.ts - a.ts) || String(a.id).localeCompare(String(b.id)));
       const matched = [];
       let ok = true;
       for (const leg of rule.legs) {
-        const hit = findings.find((f) => leg.when(f));
+        const hit = findingsSorted.find((f) => leg.when(f));
         if (!hit) { ok = false; break; }
         matched.push({ leg, f: hit });
       }

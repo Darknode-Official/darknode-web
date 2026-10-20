@@ -57,6 +57,22 @@ group("correlate/account-takeover", () => {
     ]);
     assert.equal(hits.filter((h) => h.ruleId === "account-takeover").length, 0);
   });
+
+  test("leg selection is deterministic regardless of input order (newest finding wins)", () => {
+    const jane = I("jane@corp.com");
+    const mfa = F("caaudit", "mfa", "jane@corp.com", "high", { at: day(1) });
+    const older = F("vpnaudit", "impossible_travel", "jane@corp.com", "high", { at: day(5) });
+    const newer = F("vpnaudit", "impossible_travel", "jane@corp.com", "high", { at: day(2) });
+    const pick = (arr) => correlate(arr).find((h) => h.ruleId === "account-takeover");
+    const fwd = pick([jane, mfa, older, newer]);
+    const rev = pick([newer, older, mfa, jane]);
+    assert.ok(fwd && rev, "fires both ways");
+    // identical leg selection no matter the order the entities arrived in
+    assert.equal(JSON.stringify(fwd.legs), JSON.stringify(rev.legs));
+    // and the newer of the two candidate findings is the one chosen
+    assert.ok(fwd.legs.some((l) => l.findingId === newer.id), "newest matching finding is selected");
+    assert.notOk(fwd.legs.some((l) => l.findingId === older.id), "older duplicate is not selected");
+  });
 });
 
 group("correlate/identity rules", () => {

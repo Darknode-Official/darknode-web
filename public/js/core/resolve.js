@@ -32,7 +32,7 @@ export function bareHost(name) {
   s = s.split("/")[0].split("?")[0];                        // path / query
   const br = /^\[([0-9a-f:]+)\](?::\d+)?$/.exec(s);          // [ipv6]:port
   if (br) return br[1];
-  if (!s.includes("::") && /:\d+$/.test(s)) s = s.replace(/:\d+$/, ""); // host:port (not ipv6)
+  if (!s.includes("::") && !isIpv6(s) && /:\d+$/.test(s)) s = s.replace(/:\d+$/, ""); // host:port (not an uncompressed ipv6)
   return s.replace(/\.+$/, "");                             // trailing FQDN root dot(s)
 }
 

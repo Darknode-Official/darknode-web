@@ -19,6 +19,10 @@ group("resolve/host", () => {
   test("bareHost leaves an ipv6 host:colon alone", () => {
     assert.equal(bareHost("fe80::1"), "fe80::1");
   });
+  test("bareHost does not truncate an UNcompressed ipv6 as host:port", () => {
+    // no "::" to short-circuit, and it ends in :1 — must not be mistaken for a port.
+    assert.equal(bareHost("2001:db8:0:0:0:0:0:1"), "2001:db8:0:0:0:0:0:1");
+  });
   test("hostParts splits an FQDN into short + fqdn", () => {
     const p = hostParts("Server01.corp.local");
     assert.equal(p.kind, "host"); assert.equal(p.short, "server01"); assert.equal(p.fqdn, "server01.corp.local");
