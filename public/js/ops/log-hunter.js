@@ -12,7 +12,7 @@
 import {
   DEFAULT_SETTINGS, DETECTIONS, SEV_RANK, splitRecords, createParser, createHunt,
   findingsToCsv, reportToJson, iocText, toSinkFindings,
-} from "./log-hunter-engine.js?v=20261017d";
+} from "./log-hunter-engine.js?v=20261019j";
 import { attachSinkButton } from "../core/sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

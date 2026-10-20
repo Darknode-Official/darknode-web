@@ -28,7 +28,7 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
-import * as findings from "/js/core/findings.js?v=20261013e";
+import * as findings from "/js/core/findings.js?v=20261019j";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261018c";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
