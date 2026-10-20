@@ -603,7 +603,11 @@ export function validateData(type, data = {}) {
     if (res.value !== undefined) normalized[field.name] = res.value;
   }
   const unknown = Object.keys(data).filter((k) => !known.has(k));
-  for (const k of unknown) normalized[k] = data[k]; // preserve, but flag
+  // Preserve each unknown field verbatim as an OWN property. A plain normalized[k]=… would, for
+  // k === "__proto__" (an own-enumerable key when data came from JSON.parse), hit the __proto__
+  // setter and reassign normalized's prototype instead of storing the value — silently dropping the
+  // field (a prototype is never serialized) and handing a poisoned object to createEntity.
+  for (const k of unknown) Object.defineProperty(normalized, k, { value: data[k], enumerable: true, writable: true, configurable: true });
   return { ok: errors.length === 0, errors, normalized, unknown };
 }
 

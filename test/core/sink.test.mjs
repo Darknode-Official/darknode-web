@@ -171,4 +171,8 @@ group("sink-map: summarize", () => {
   test("empty input", () => {
     assert.deepEqual(summarize([]), { total: 0, bySeverity: { critical: 0, high: 0, medium: 0, low: 0, info: 0 }, byConfidence: {} });
   });
+  test("a prototype-name confidence is tallied, not swallowed by Object.prototype", () => {
+    const s = summarize([{ title: "x", severity: "high", confidence: "__proto__" }]);
+    assert.equal(s.byConfidence["__proto__"], 1);
+  });
 });

@@ -223,7 +223,9 @@ export function toEntities(toolId, findings, { dataset, sample = false } = {}) {
  */
 export function summarize(findings) {
   const bySeverity = Object.fromEntries(SEVERITIES.map((s) => [s, 0]));
-  const byConfidence = {};
+  // confidence is a free-form tool field, so a value like "__proto__"/"constructor" would read an
+  // inherited Object.prototype member off a plain {} and skip the tally; a null-proto map counts it.
+  const byConfidence = Object.create(null);
   let total = 0;
   for (const f of findings || []) {
     if (!f) continue;

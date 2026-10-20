@@ -15,6 +15,15 @@ group("core/findings", () => {
     assert.deepEqual(collectFindings(ents, { includeSim: true }).map((r) => r.id), ["c", "a", "b", "d"]);
   });
 
+  test("collectFindings breaks severity+updatedAt ties on id, independent of input order", () => {
+    const same = [
+      { id: "z", type: "FINDING", severity: "high", updatedAt: "2026-10-01" },
+      { id: "a", type: "FINDING", severity: "high", updatedAt: "2026-10-01" },
+    ];
+    assert.deepEqual(collectFindings(same).map((r) => r.id), ["a", "z"]);
+    assert.deepEqual(collectFindings(same.slice().reverse()).map((r) => r.id), ["a", "z"]);
+  });
+
   test("filterFindings by severity, open status, source and text", () => {
     const rows = collectFindings(ents);
     assert.deepEqual(filterFindings(rows, { severity: "high" }).map((r) => r.id), ["b"]);

@@ -157,6 +157,15 @@ group("entities: validateData", () => {
     assert.equal(r.normalized.weird, "x");
   });
 
+  test("a __proto__ data field is kept as an own property, not a prototype poison", () => {
+    const r = validateData("IP", JSON.parse('{"address":"10.0.0.1","__proto__":{"pwned":true}}'));
+    assert.ok(r.unknown.includes("__proto__"));
+    const d = Object.getOwnPropertyDescriptor(r.normalized, "__proto__");
+    assert.deepEqual(d && d.value, { pwned: true });
+    assert.equal(Object.getPrototypeOf(r.normalized), Object.prototype); // prototype not reassigned
+    assert.equal(r.normalized.pwned, undefined);
+  });
+
   test("unknown type fails cleanly", () => {
     const r = validateData("NOPE", {});
     assert.notOk(r.ok);

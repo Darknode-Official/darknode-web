@@ -21,7 +21,7 @@ export function collectFindings(entities, opts = {}) {
       source: e.source || "manual", tags: e.tags || [], createdAt: e.createdAt || "", updatedAt: e.updatedAt || e.createdAt || "",
       sim: isSimulated(e),
     }))
-    .sort((a, b) => (SEV_RANK[b.severity] ?? -1) - (SEV_RANK[a.severity] ?? -1) || String(b.updatedAt).localeCompare(String(a.updatedAt)));
+    .sort((a, b) => (SEV_RANK[b.severity] ?? -1) - (SEV_RANK[a.severity] ?? -1) || String(b.updatedAt).localeCompare(String(a.updatedAt)) || String(a.id).localeCompare(String(b.id)));
 }
 
 export function filterFindings(rows, f = {}) {
