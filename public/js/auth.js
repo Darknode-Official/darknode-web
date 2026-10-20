@@ -375,6 +375,11 @@ function prewarmCommon() {
 let _chatLoaded = false;
 function loadSupportChat() {
   if (_chatLoaded) return;
+  // Embedded tool frames (/<sec>?embed=1 inside the Deck or the desktop app) are a full app
+  // load that shares the parent tab, which already hosts the assistant. Loading it again in
+  // every tool iframe just spawns a stray launcher inside each frame and re-runs the chat
+  // bootstrap N times (the duplicated "[darknode-agent] ready" log). The parent tab owns it.
+  try { if (document.documentElement.hasAttribute("data-embed")) return; } catch (_) {}
   _chatLoaded = true;
   const s = document.createElement("script");
   s.src = "/js/darknode-chat.js?v=20261007e"; s.async = false;
