@@ -207,6 +207,14 @@ group("sif: normalisation per source", () => {
     assert.equal(di.mfa, false, "session start with no MFA event is single-factor");
     assert.equal(cy.city, "Dublin"); assert.equal(cy.lat, 53.33); assert.equal(cy.isp, "eircom limited"); assert.equal(cy.isProxy, false);
   });
+  test("Okta: an MFA factor deactivate is a settings change, not a sign-in (no fabricated travel)", () => {
+    const p = parseAll(oktaJson([
+      { ts: T0, user: "ok@corp.example", success: true, ip: "86.43.10.20", country: "IE", city: "Dublin", lat: 53.35, lon: -6.26 },
+      { ts: T0 + min(10), user: "ok@corp.example", success: true, ip: "118.189.5.5", country: "SG", city: "Singapore", lat: 1.35, lon: 103.82, type: "user.mfa.factor.deactivate" },
+    ]));
+    const r = analyze(p.records, {}, { columns: p.columns, source: p.source });
+    assert.equal(byId(r, "impossible_travel").length, 0, "an MFA settings change must not be compared as a login");
+  });
   test("Okta NDJSON accepted; rows without timestamp or user are dropped and counted", () => {
     const nd = [oktaEvent({ ts: T0, user: "cy@corp.example", success: true, ip: "2.2.2.2" }), { eventType: "user.session.start", published: "garbage" }].map((e) => JSON.stringify(e)).join("\n");
     const p = parseAll(nd);
@@ -331,6 +339,14 @@ group("sif: new country (T1078)", () => {
   test("negative: a new country on day 2 (no baseline for that user yet) does not fire", () => {
     const rows = baseline().concat([{ ts: T0 + day(2), user: "cy@corp.example", success: true, ip: "41.203.0.1", country: "NG", city: "Lagos", mfa: true }]);
     assert.equal(byId(run(rows).r, "new_country").length, 0);
+  });
+  test("negative: a user's first-ever geolocated country is not a 'new' country", () => {
+    // zz has a countryless success at T0 (establishes history) then their first country on day 9.
+    const rows = baseline().concat([
+      { ts: T0, user: "zz@corp.example", success: true, ip: "10.0.0.1", mfa: true },
+      { ts: T0 + day(9) + min(60), user: "zz@corp.example", success: true, ip: "41.203.0.1", country: "NG", city: "Lagos", lat: 6.52, lon: 3.38, mfa: true },
+    ]);
+    assert.equal(byId(run(rows).r, "new_country").filter((f) => f.user === "zz@corp.example").length, 0);
   });
   test("skipped with reason when the dataset spans under 7 days", () => {
     const { r } = run(baseline(3));

@@ -297,7 +297,10 @@ export function normalizeOkta(ev) {
   const c = ev.client || {};
   r.ip = nonEmpty(c.ipAddress);
   const res = str(ev.outcome && ev.outcome.result).toUpperCase();
-  const isAuth = /^user\.session\.start$|^user\.authentication\.|^user\.session\.access_admin_app$|^user\.mfa\.factor\.deactivate$/.test(type) || type === "user.account.lock";
+  // NOTE: user.mfa.factor.deactivate is an MFA settings change, NOT an authentication — mapping it
+  // to a successful sign-in made its (admin's) IP/geo flow into the travel/concurrency detections
+  // and fabricate impossible-travel alerts. It is deliberately excluded here.
+  const isAuth = /^user\.session\.start$|^user\.authentication\.|^user\.session\.access_admin_app$/.test(type) || type === "user.account.lock";
   if (isAuth) {
     if (res === "SUCCESS" || res === "ALLOW") r.success = true;
     else if (res === "FAILURE" || res === "DENY" || res === "LOCKED_OUT" || type === "user.account.lock") r.success = false;
@@ -824,7 +827,9 @@ export function analyze(records, options, meta) {
         if (!r.success || !r.country) continue;
         const c = r.country.toLowerCase();
         if (!seen.has(c)) {
-          if (r.ts - firstTs >= minMs && !flagged.has(c)) {
+          // require at least one PRIOR country as the baseline — a user's first-ever geolocated
+          // sign-in is not a deviation from anything and must not be flagged as a "new" country.
+          if (seen.size > 0 && r.ts - firstTs >= minMs && !flagged.has(c)) {
             flagged.add(c);
             const later = arr.filter((x) => x.success && x.country && x.country.toLowerCase() === c);
             push({ id: "new_country", key: `newc:${user}:${c}`, severity: "medium", confidence: "medium", user, ip: r.ip,

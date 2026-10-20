@@ -381,6 +381,18 @@ group("jml: movers and joiners", () => {
     const fd = find(r, /old department/);
     assert.ok(fd); assert.equal(fd.confidence, "review"); assert.ok(/Finance-All/.test(fd.evidence[0].staleGroups)); assert.ok(/Finance-Approvers/.test(fd.evidence[0].staleGroups)); assert.ok(!/IT-All/.test(fd.evidence[0].staleGroups));
   });
+  test("a mover out of a short-named department (IT) still in its groups is flagged", () => {
+    const wd = ["Employee ID,Worker,Email - Primary Work,Hire Date,Termination Date,Active Status,Manager,Cost Center,Job Title,Business Title,Location",
+      `E9,Omar Said,omar.said@corp.com,${d(500)},,Yes,,Security,Analyst,Analyst,Dublin`].join("\n");
+    const ch = ["Employee ID,Effective Date,Change Type,From Department,To Department,From Manager,To Manager",
+      `E9,${d(30)},Transfer,IT,Security,,`].join("\n");
+    const en = ["userPrincipalName,displayName,accountEnabled,createdDateTime,lastSignInDateTime,department,jobTitle,assignedLicenses,memberOf,deletedDateTime",
+      `omar.said@corp.com,Omar Said,True,${dt(500)},${dt(1)},Security,Analyst,ENTERPRISEPACK,IT-All;Security-Team,`].join("\n");
+    const r = run([f("workday.csv", wd), f("changes.csv", ch), f("entra.csv", en)]);
+    const fd = find(r, /old department/);
+    assert.ok(fd, "a 2-char department name is no longer dropped, so the stale group is flagged");
+    assert.ok(/IT-All/.test(fd.evidence[0].staleGroups) && !/Security-Team/.test(fd.evidence[0].staleGroups));
+  });
   test("mover inside the grace period is silent (edge)", () => {
     const r = run([f("workday.csv", WORKDAY), f("changes.csv", CHANGES), f("entra.csv", ENTRA_CSV)], { moverGraceDays: 31 });
     assert.ok(!find(r, /old department/));

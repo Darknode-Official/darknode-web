@@ -741,8 +741,11 @@ export function analyze(dataset, opts = {}, ctx) {
       const past = mv.effectiveDate == null || now - mv.effectiveDate >= o.moverGraceDays * DAY;
       if (!past) continue;
       const u = p.idp;
-      const oldTokens = str(mv.fromDept).toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length >= 3);
-      const stale = u ? u.groups.filter((g) => { const gl = g.toLowerCase(); return oldTokens.length && oldTokens.every((t) => gl.includes(t)); }) : [];
+      // Match the old-department name against group names on WHOLE tokens, not raw substrings: the
+      // old length>=3 filter silently dropped 1-2 char departments (IT, HR, QA, PR) so their stale
+      // groups were never flagged, while a raw substring would false-match ("it" inside "Security").
+      const oldTokens = str(mv.fromDept).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+      const stale = u ? u.groups.filter((g) => { const gtoks = new Set(g.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)); return oldTokens.length && oldTokens.every((t) => gtoks.has(t)); }) : [];
       const deptMismatch = u && str(u.dept) && norm(u.dept) === norm(mv.fromDept) && norm(mv.toDept) !== norm(mv.fromDept);
       if (!stale.length && !deptMismatch) continue;
       p.flags.push("mover with stale access");
