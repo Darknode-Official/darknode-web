@@ -8,7 +8,7 @@
 //
 //   renderPosture(main) -> void
 
-import { scorePosture, newestCert } from "/js/dataprotect/posture-engine.js?v=20261014d";
+import { scorePosture, newestCert } from "/js/dataprotect/posture-engine.js?v=20261019i";
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
 import { dnFetch } from "/js/net.js";
 import { attachSinkButton } from "../core/sink.js";
