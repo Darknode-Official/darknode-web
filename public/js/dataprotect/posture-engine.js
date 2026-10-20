@@ -5,7 +5,10 @@
 // All network I/O lives in the UI (posture.js); this module is side-effect-free
 // and fully unit-tested (test/security/posture.test.mjs).
 
-const STATUS_SCORE = { pass: 100, warn: 55, info: 100, fail: 0, na: null };
+// info/na are purely descriptive and must NOT move a category score — categoryScore
+// skips any check whose score is null (an `info` scored 100 would average in as a
+// perfect mark, inflating e.g. a failed-certificate TLS category by a whole grade).
+const STATUS_SCORE = { pass: 100, warn: 55, info: null, fail: 0, na: null };
 
 // ---- parsers --------------------------------------------------------------
 
@@ -24,8 +27,11 @@ export function parseHSTS(value) {
 export function parseSPF(txts) {
   const rec = (txts || []).find((t) => /^v=spf1\b/i.test(String(t).trim()));
   if (!rec) return { present: false };
-  const m = String(rec).match(/([-~?+])all\b/i);
-  return { present: true, record: rec, qualifier: m ? m[1] : null };
+  // The `all` MECHANISM token (optionally qualified), not any "<qual>all" substring:
+  // a host/include like `mail-all.example.com` must not be mistaken for the policy.
+  // A bare `all` means `+all` per RFC 7208 (default qualifier is pass).
+  const allTok = String(rec).trim().split(/\s+/).find((t) => /^[-~?+]?all$/i.test(t));
+  return { present: true, record: rec, qualifier: allTok ? (/^[-~?+]/.test(allTok) ? allTok[0] : "+") : null };
 }
 
 export function parseDMARC(txts) {
@@ -521,6 +527,8 @@ export function selfTest() {
 
   T("parseHSTS maxage", parseHSTS("max-age=31536000; includeSubDomains; preload").maxAge === 31536000);
   T("parseSPF hardfail", parseSPF(["v=spf1 include:_spf.google.com -all"]).qualifier === "-");
+  T("parseSPF all is a token not a substring", parseSPF(["v=spf1 include:mail-all.example.com ?all"]).qualifier === "?");
+  T("parseSPF bare all defaults to +", parseSPF(["v=spf1 a all"]).qualifier === "+");
   T("parseDMARC reject", parseDMARC(["v=DMARC1; p=reject"]).policy === "reject");
   T("certDaysLeft future", certDaysLeft(new Date(Date.now() + 40 * 86400000).toISOString()) >= 39);
 
@@ -545,6 +553,16 @@ export function selfTest() {
   T("parseSetCookie flags", parseSetCookie("id=1; Path=/; Secure; HttpOnly; SameSite=Lax")[0].secure === true);
   T("certCoversDomain wildcard", certCoversDomain("*.example.com", "a.example.com") === true);
   T("gradeCSPDeep penalises unsafe-inline", gradeCSPDeep("script-src 'self' 'unsafe-inline'").score < 90);
+  // info/na checks stay neutral: expired cert (fail=0) + non-covering SAN (warn=55) +
+  // known issuer (info) must score the TLS category on fail+warn only → round(55/2)=28,
+  // NOT (0+55+100)/3=52 (the pre-fix bug where info counted as a perfect 100).
+  const badTls = scorePosture({
+    domain: "bad.test", requestedUrl: "https://bad.test", finalUrl: "https://bad.test",
+    headers: {}, spfTxts: [], dmarcTxts: [],
+    cert: { issuer: "CN=E5", notAfter: new Date(Date.now() - 86400000).toISOString(), names: "other.test" },
+    securityTxt: { present: false },
+  });
+  T("info checks stay neutral in TLS score", (badTls.categories.find((c) => c.key === "tls") || {}).score === 28);
 
   const weak = scorePosture({
     domain: "weak.test", requestedUrl: "http://weak.test", finalUrl: "http://weak.test",
