@@ -43,6 +43,12 @@ group("sca: CVSS v3 base score", () => {
   test("no-impact vector is 0", () => {
     assert.equal(cvssV3BaseScore("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N"), 0);
   });
+  test("scope-changed vector uses the v3.1 impact sub-formula, not v3.0", () => {
+    // AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H -> 9.7 under official v3.1 (v3.0 gives 9.6)
+    assert.equal(cvssV3BaseScore("CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H"), 9.7);
+    // the same vector tagged 3.0 keeps the v3.0 score
+    assert.equal(cvssV3BaseScore("CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H"), 9.6);
+  });
   test("garbage returns null", () => assert.equal(cvssV3BaseScore("not a vector"), null));
   test("severityFromCvss bands", () => {
     assert.equal(severityFromCvss(9.1), "critical");

@@ -292,6 +292,9 @@ test("CVSS 3.1 known vectors", () => {
   assert.equal(computeCvss31("CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:L/I:N/A:N"), 1.8);
   assert.equal(computeCvss31("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N"), 0);
   assert.equal(computeCvss31("CVSS:3.1/AV:N/AC:L"), null);
+  // scope-changed high-impact: v3.1 (0.9731 factor, exp 13) diverges from v3.0
+  assert.equal(computeCvss31("CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H"), 9.7);
+  assert.equal(computeCvss31("CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H"), 9.6);
 });
 
 test("CVSS 2 known vectors", () => {

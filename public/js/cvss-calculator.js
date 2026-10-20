@@ -177,7 +177,9 @@ function computeCvss(metrics) {
   var iss = 1 - ((1 - c) * (1 - i) * (1 - a));
   var impact;
   if (scopeChanged) {
-    impact = 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15);
+    // CVSS v3.1 scope-changed impact (spec §7.1): the 0.9731 factor and exponent
+    // 13 are the v3.1 correction of the v3.0 formula (which used iss-0.02 ^15).
+    impact = 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss * 0.9731 - 0.02, 13);
   } else {
     impact = 6.42 * iss;
   }
@@ -210,7 +212,7 @@ export function __selftest() {
     ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H", 9.8, "Critical"], // canonical default
     ["CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N", 0.0, "None"],     // no impact → 0.0
     ["CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N", 6.1, "Medium"],   // classic reflected XSS
-    ["CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H", 9.9, "Critical"]  // scope-changed PR weight 0.68
+    ["CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H", 10.0, "Critical"] // scope-changed, high impact → 10.0 under v3.1
   ];
   var ok = true;
   cases.forEach(function (t) {
