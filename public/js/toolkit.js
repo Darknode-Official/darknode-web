@@ -28,7 +28,13 @@ const B = {
   url: (r) => io(r, [{ label: "Encode", fn: (s) => encodeURIComponent(s) }, { label: "Decode", fn: (s) => decodeURIComponent(s) }]),
   hex: (r) => io(r, [
     { label: "Text -> Hex", fn: (s) => [...enc.encode(s)].map((b) => b.toString(16).padStart(2, "0")).join(" ") },
-    { label: "Hex -> Text", fn: (s) => new TextDecoder().decode(new Uint8Array(s.trim().split(/\s+/).map((h) => parseInt(h, 16)))) },
+    { label: "Hex -> Text", fn: (s) => {
+      const t = s.trim();
+      // Accept both space-separated byte tokens ("48 65 6c") and contiguous hex
+      // ("48656c6c6f"); for contiguous input, left-pad an odd nibble and chunk into pairs.
+      const toks = /\s/.test(t) ? t.split(/\s+/) : ((t.length % 2 ? "0" + t : t).match(/../g) || []);
+      return new TextDecoder().decode(new Uint8Array(toks.map((h) => parseInt(h, 16))));
+    } },
   ]),
   html: (r) => io(r, [
     { label: "Encode", fn: (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])) },
@@ -56,9 +62,10 @@ const B = {
     { label: "Unicode", fn: (s) => s.split("").map((c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")).join("") },
   ], "Payload to obfuscate"),
   baseconv: (r) => io(r, [
-    { label: "-> bin", fn: (s) => parseInt(s.trim()).toString(2) }, { label: "-> oct", fn: (s) => parseInt(s.trim()).toString(8) },
-    { label: "-> hex", fn: (s) => parseInt(s.trim()).toString(16) }, { label: "hex -> dec", fn: (s) => parseInt(s.trim(), 16).toString(10) },
-    { label: "bin -> dec", fn: (s) => parseInt(s.trim(), 2).toString(10) },
+    // BigInt keeps full precision above 2^53 (parseInt/Number would round).
+    { label: "-> bin", fn: (s) => BigInt(s.trim()).toString(2) }, { label: "-> oct", fn: (s) => BigInt(s.trim()).toString(8) },
+    { label: "-> hex", fn: (s) => BigInt(s.trim()).toString(16) }, { label: "hex -> dec", fn: (s) => BigInt("0x" + s.trim().replace(/^0x/i, "")).toString(10) },
+    { label: "bin -> dec", fn: (s) => BigInt("0b" + s.trim().replace(/^0b/i, "")).toString(10) },
   ], "A number"),
 
   revshell: (r) => {
@@ -122,8 +129,10 @@ const B = {
 };
 
 // ---- extra browser tools ----
+// Normalize a hex colour: drop '#', expand 3-digit shorthand (#abc -> aabbcc).
+const expandHex = (h) => { h = String(h).trim().replace(/^#/, ""); return h.length === 3 ? h.replace(/./g, (c) => c + c) : h; };
 const hexToHsl = (hex) => {
-  hex = hex.replace("#", "");
+  hex = expandHex(hex);
   const r = parseInt(hex.slice(0, 2), 16) / 255, g = parseInt(hex.slice(2, 4), 16) / 255, b = parseInt(hex.slice(4, 6), 16) / 255;
   const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let h = 0, s = 0, l = (mx + mn) / 2;
   if (mx !== mn) { const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h /= 6; }
@@ -135,13 +144,32 @@ const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 function base32enc(s) { let bits = ""; for (const b of enc.encode(s)) bits += b.toString(2).padStart(8, "0"); let out = ""; for (let i = 0; i < bits.length; i += 5) out += B32[parseInt(bits.slice(i, i + 5).padEnd(5, "0"), 2)]; while (out.length % 8) out += "="; return out; }
 function base32dec(s) { s = s.replace(/=+$/, "").toUpperCase(); let bits = ""; for (const c of s) { const v = B32.indexOf(c); if (v >= 0) bits += v.toString(2).padStart(5, "0"); } const bytes = []; for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i + 8), 2)); return new TextDecoder().decode(new Uint8Array(bytes)); }
 
+// Quote-aware RFC-4180-ish CSV parser: handles "..."-quoted fields, embedded
+// commas and newlines, and "" escaped quotes inside a quoted field.
+function parseCsv(text) {
+  const rows = []; let row = [], field = "", q = false;
+  const t = String(text).replace(/\r\n?/g, "\n");
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) {
+      if (c === '"') { if (t[i + 1] === '"') { field += '"'; i++; } else q = false; }
+      else field += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+    else field += c;
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
 B.jsonfmt = (r) => io(r, [{ label: "Format", fn: (s) => JSON.stringify(JSON.parse(s), null, 2) }, { label: "Minify", fn: (s) => JSON.stringify(JSON.parse(s)) }], "Paste JSON");
-B.csvjson = (r) => io(r, [{ label: "CSV -> JSON", fn: (s) => { const rows = s.trim().split(/\r?\n/).map((l) => l.split(",")); const head = rows.shift().map((h) => h.trim()); return JSON.stringify(rows.map((rw) => Object.fromEntries(head.map((h, i) => [h, (rw[i] || "").trim()]))), null, 2); } }], "header row, then data rows");
+B.csvjson = (r) => io(r, [{ label: "CSV -> JSON", fn: (s) => { const rows = parseCsv(s.trim()); const head = (rows.shift() || []).map((h) => h.trim()); return JSON.stringify(rows.map((rw) => Object.fromEntries(head.map((h, i) => [h, (rw[i] ?? "").trim()]))), null, 2); } }], "header row, then data rows");
 B.unicode = (r) => io(r, [{ label: "Code points", fn: (s) => [...s].map((c) => c + "  U+" + c.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")).join("\n") }]);
 B.base32 = (r) => io(r, [{ label: "Encode", fn: base32enc }, { label: "Decode", fn: base32dec }]);
 B.binary = (r) => io(r, [{ label: "Text -> Binary", fn: (s) => [...enc.encode(s)].map((b) => b.toString(2).padStart(8, "0")).join(" ") }, { label: "Binary -> Text", fn: (s) => new TextDecoder().decode(new Uint8Array(s.trim().split(/\s+/).map((b) => parseInt(b, 2)))) }]);
 B.morse = (r) => io(r, [{ label: "Text -> Morse", fn: (s) => s.toUpperCase().split("").map((c) => c === " " ? "/" : (MORSE[c] || "")).join(" ").trim() }, { label: "Morse -> Text", fn: (s) => s.trim().split(" ").map((c) => c === "/" ? " " : (MORSE_R[c] || "")).join("") }]);
-B.jsescape = (r) => io(r, [{ label: "Escape", fn: (s) => JSON.stringify(s).slice(1, -1) }, { label: "Unescape", fn: (s) => JSON.parse('"' + s.replace(/"/g, '\\"') + '"') }]);
+B.jsescape = (r) => io(r, [{ label: "Escape", fn: (s) => JSON.stringify(s).slice(1, -1) }, { label: "Unescape", fn: (s) => JSON.parse('"' + s + '"') }]);
 B.caesar = (r) => { r.innerHTML = `<div class="tk-row">Shift <input class="tk-f" id="cz-n" type="number" value="3" style="max-width:90px"></div><textarea class="tk-in" id="cz-in" rows="3" placeholder="Text"></textarea><div class="tk-btns"><button class="btn sm" id="cz-go">Shift</button></div><pre class="tk-out" id="cz-out"></pre>`; r.querySelector("#cz-go").onclick = () => { const n = ((+r.querySelector("#cz-n").value % 26) + 26) % 26; r.querySelector("#cz-out").textContent = r.querySelector("#cz-in").value.replace(/[a-z]/gi, (c) => { const base = c <= "Z" ? 65 : 97; return String.fromCharCode((c.charCodeAt(0) - base + n) % 26 + base); }); }; };
 B.xor = (r) => { r.innerHTML = `<div class="tk-row">Key <input class="tk-f" id="xr-k" placeholder="key"></div><textarea class="tk-in" id="xr-in" rows="3" placeholder="Text"></textarea><div class="tk-btns"><button class="btn sm" id="xr-go">XOR -> hex</button></div><pre class="tk-out" id="xr-out"></pre>`; r.querySelector("#xr-go").onclick = () => { const kb = enc.encode(r.querySelector("#xr-k").value || " "); r.querySelector("#xr-out").textContent = [...enc.encode(r.querySelector("#xr-in").value)].map((b, i) => (b ^ kb[i % kb.length]).toString(16).padStart(2, "0")).join(""); }; };
 B.hmac = (r) => { r.innerHTML = `<div class="tk-row">Key <input class="tk-f" id="hm-k" placeholder="secret"></div><textarea class="tk-in" id="hm-in" rows="3" placeholder="Message"></textarea><div class="tk-btns"><button class="btn sm" id="hm-go">HMAC-SHA256</button></div><pre class="tk-out" id="hm-out"></pre>`; r.querySelector("#hm-go").onclick = async () => { try { const key = await crypto.subtle.importKey("raw", enc.encode(r.querySelector("#hm-k").value), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]); r.querySelector("#hm-out").textContent = hexOf(await crypto.subtle.sign("HMAC", key, enc.encode(r.querySelector("#hm-in").value))); } catch (e) { r.querySelector("#hm-out").textContent = "Error: " + e.message; } }; };
@@ -150,7 +178,7 @@ B.slug = (r) => io(r, [{ label: "Slugify", fn: (s) => s.toLowerCase().trim().rep
 B.wordcount = (r) => io(r, [{ label: "Count", fn: (s) => `Characters: ${s.length}\nWords: ${(s.trim().match(/\S+/g) || []).length}\nLines: ${s.split(/\n/).length}` }]);
 B.lorem = (r) => { const W = "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud".split(" "); r.innerHTML = `<div class="tk-row">Paragraphs <input class="tk-f" id="lo-n" type="number" value="2" min="1" max="10" style="max-width:90px"></div><div class="tk-btns"><button class="btn sm" id="lo-go">Generate</button></div><pre class="tk-out" id="lo-out"></pre>`; r.querySelector("#lo-go").onclick = () => { const n = Math.max(1, Math.min(10, +r.querySelector("#lo-n").value || 2)); const p = () => Array.from({ length: 40 }, () => W[Math.floor(Math.random() * W.length)]).join(" "); r.querySelector("#lo-out").textContent = Array.from({ length: n }, p).join("\n\n"); }; };
 B.regex = (r) => { r.innerHTML = `<div class="tk-row"><input class="tk-f" id="rx-p" placeholder="pattern e.g. \\d+"><input class="tk-f" id="rx-f" placeholder="flags" value="g" style="max-width:80px"></div><textarea class="tk-in" id="rx-in" rows="4" placeholder="Test string"></textarea><div class="tk-btns"><button class="btn sm" id="rx-go">Match</button></div><pre class="tk-out" id="rx-out"></pre>`; r.querySelector("#rx-go").onclick = () => { try { const re = new RegExp(r.querySelector("#rx-p").value, r.querySelector("#rx-f").value); const m = [...r.querySelector("#rx-in").value.matchAll(re)]; r.querySelector("#rx-out").textContent = m.length ? m.map((x, i) => `${i}: ${x[0]}`).join("\n") : "no matches"; } catch (e) { r.querySelector("#rx-out").textContent = "Error: " + e.message; } }; };
-B.color = (r) => io(r, [{ label: "Hex -> RGB", fn: (s) => { const n = parseInt(s.trim().replace("#", ""), 16); return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`; } }, { label: "Hex -> HSL", fn: (s) => hexToHsl(s.trim()) }], "#00d4ff");
+B.color = (r) => io(r, [{ label: "Hex -> RGB", fn: (s) => { const n = parseInt(expandHex(s), 16); return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`; } }, { label: "Hex -> HSL", fn: (s) => hexToHsl(s.trim()) }], "#00d4ff");
 B.ip2int = (r) => io(r, [{ label: "IP -> int", fn: (s) => String(s.trim().split(".").reduce((a, o) => a * 256 + (+o), 0) >>> 0) }, { label: "int -> IP", fn: (s) => { const n = (+s.trim()) >>> 0; return [24, 16, 8, 0].map((sh) => (n >>> sh) & 255).join("."); } }], "192.168.1.1");
 
 // id, name, category, kind, desc, and (browser) render / (local) install command.
