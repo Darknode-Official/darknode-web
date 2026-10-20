@@ -104,7 +104,7 @@ export function closeDeck() { if (_deckOff) { try { _deckOff(); } catch (_) {} _
 let _previewOff = null;
 export async function openPreview(user) {
   const nav = await import("/js/console-nav.js?v=20261013k");
-  const { renderPreview } = await import("/js/preview-ui.js?v=20261019g");
+  const { renderPreview } = await import("/js/preview-ui.js?v=20261019h");
   if (_previewOff) { try { _previewOff(); } catch (_) {} _previewOff = null; }
   document.querySelectorAll("body > .pvx").forEach((n) => n.remove());
   _previewOff = renderPreview(document.body, {
