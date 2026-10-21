@@ -7,7 +7,7 @@
 import { test, assert, group } from "../harness.mjs";
 import {
   TOOL_ID, VERSION, COLUMNS, DEFAULTS, RULES, parseInput, analyze, findingsToCsv, iocsToCsv, principalsToCsv, timelineToCsv,
-  queriesText, summaryText, exampleDataset, selfTest, detectFile, windows, parseTs, parseAthenaStruct, cleanIp, classifyHeaders, isAfterHours,
+  queriesText, summaryText, exampleDataset, selfTest, detectFile, windows, parseTs, parseAthenaStruct, cleanIp, classifyHeaders, isAfterHours, normalizeM365,
 } from "../../public/js/ops/cloudtrail-engine.js";
 
 // ---------------------------------------------------------------------------
@@ -515,5 +515,17 @@ group("cloudtrail: results and exports", () => {
     assert.equal(TOOL_ID, "cloudtrail"); assert.ok(VERSION);
     assert.ok(COLUMNS.timestamp.length && DEFAULTS.secretsBurstN === 20);
     assert.equal(classifyHeaders(["eventTime", "eventSource", "eventName", "userIdentity"]).platform, "aws");
+  });
+});
+
+group("cloudtrail: M365 UserType that is a prototype member is stringified, not a native fn", () => {
+  test("UserType 'constructor' yields the literal string, not Object()", () => {
+    const e = normalizeM365({ AuditData: { Operation: "Add user.", UserId: "test@test.darknode.ai", UserType: "constructor" } }, 0);
+    assert.equal(e.principalType, "constructor");
+    assert.equal(typeof e.principalType, "string");
+  });
+  test("a real numeric UserType still maps (2 -> Admin)", () => {
+    const e = normalizeM365({ AuditData: { Operation: "Add user.", UserId: "test@test.darknode.ai", UserType: 2 } }, 0);
+    assert.equal(e.principalType, "Admin");
   });
 });

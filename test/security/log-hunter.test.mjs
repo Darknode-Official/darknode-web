@@ -571,3 +571,12 @@ group("log-hunter: report, dossier, exports", () => {
     assert.ok(ms < 20000, "took " + ms + " ms");
   });
 });
+
+group("log-hunter: a prototype-named file can't crash or pollute", () => {
+  test("parseText with a file named __proto__ parses normally, no Object.prototype pollution", () => {
+    const line = '127.0.0.1 - - [07/Oct/2026:14:00:00 +0000] "GET /x HTTP/1.1" 200 12';
+    const r = parseText(line, "__proto__");
+    assert.ok(r.events.length >= 1, "the line is still parsed");
+    assert.equal(({}).lines, undefined, "Object.prototype was not polluted");
+  });
+});

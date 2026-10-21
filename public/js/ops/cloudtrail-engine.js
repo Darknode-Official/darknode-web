@@ -360,7 +360,9 @@ export function normalizeGcp(o, i) {
   return ev;
 }
 
-const M365_USER_TYPE = { 0: "Regular", 1: "Reserved", 2: "Admin", 3: "DcAdmin", 4: "System", 5: "Application", 6: "ServicePrincipal", 7: "CustomPolicy", 8: "SystemPolicy" };
+// null-proto: UserType comes from the record, so a value like "constructor" must
+// fall through to str(typeNum), not resolve to a native Object.prototype member.
+const M365_USER_TYPE = Object.assign(Object.create(null), { 0: "Regular", 1: "Reserved", 2: "Admin", 3: "DcAdmin", 4: "System", 5: "Application", 6: "ServicePrincipal", 7: "CustomPolicy", 8: "SystemPolicy" });
 const M365_STATUS = (v) => { const s = low(v); if (!s) return "success"; return /^(succeeded|success|true|partiallysucceeded|ok)$/.test(s) ? "success" : /fail|false|denied/.test(s) ? "failure" : "other"; };
 
 export function normalizeM365(o, i) {

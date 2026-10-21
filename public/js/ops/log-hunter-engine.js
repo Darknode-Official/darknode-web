@@ -763,7 +763,10 @@ function parseWinXml(rec) {
 export function createParser(settings) {
   const s = mergeSettings(settings);
   const st = { iisFields: null, csvCols: null, assumeYear: s.assumeYear, lastFile: null };
-  const stats = { records: 0, parsed: 0, unknown: 0, sources: { web: 0, linux: 0, windows: 0 }, formats: {}, files: {} };
+  // files is keyed by the caller-supplied file name — null-proto so a file named
+  // "__proto__"/"constructor" can't hit the prototype setter (losing the record +
+  // polluting Object.prototype, which then crashes the per-file aggregation).
+  const stats = { records: 0, parsed: 0, unknown: 0, sources: { web: 0, linux: 0, windows: 0 }, formats: {}, files: Object.create(null) };
   const unknownSamples = [];
 
   function feed(rec) {
@@ -1284,7 +1287,7 @@ export function createHunt(settings) {
 function isLoginFail(status) { return status != null && [400, 401, 403, 422, 429].includes(status); }
 function decodeStatus(code) {
   const k = String(code || "").toLowerCase();
-  return WIN_STATUS[k] ? `${code} ${WIN_STATUS[k]}` : (code || "unknown");
+  return Object.prototype.hasOwnProperty.call(WIN_STATUS, k) ? `${code} ${WIN_STATUS[k]}` : (code || "unknown"); // guard: a status code of "constructor" would otherwise print the native Object fn
 }
 function pad(n) { return String(n).padStart(2, "0"); }
 function minTs(evs) { let m = null; for (const e of evs) if (e.ts != null && (m == null || e.ts < m)) m = e.ts; return m; }
