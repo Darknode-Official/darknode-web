@@ -21,6 +21,7 @@ import { handleVault } from "./vault.js";
 import { handleGraph } from "./graph.js";
 import { handleMonitor } from "./monitor.js";
 import { handleKeys, handleIngest } from "./ingest.js";
+import { hostAllowed } from "./net-guard.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
 export { MonitorDO } from "./monitor.js";
@@ -140,36 +141,8 @@ function geminiSearchOn(env, messages) {
 }
 
 // ---- Web access (SSRF-guarded URL fetching) --------------------------------
-// Cloudflare Workers run on the edge and can't reach a private network, and
-// there's no `dns`/`net` module, so the guard is hostname/IP-literal based:
-// reject localhost, .local/.internal, and private/reserved IP literals.
-
-function ipv4Private(host) {
-  const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (!m) return false;
-  const p = m.slice(1).map(Number);
-  if (p.some((n) => n > 255)) return true;
-  if (p[0] === 0 || p[0] === 10 || p[0] === 127) return true;
-  if (p[0] === 169 && p[1] === 254) return true;          // link-local + cloud metadata
-  if (p[0] === 172 && p[1] >= 16 && p[1] <= 31) return true;
-  if (p[0] === 192 && p[1] === 168) return true;
-  if (p[0] === 100 && p[1] >= 64 && p[1] <= 127) return true; // CGNAT
-  if (p[0] >= 224) return true;                            // multicast / reserved
-  return false;
-}
-
-function hostAllowed(u) {
-  if (u.protocol !== "http:" && u.protocol !== "https:") return false;
-  const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (!h || h === "localhost" || h.endsWith(".local") || h.endsWith(".internal") || h.endsWith(".localhost")) return false;
-  if (ipv4Private(h)) return false;
-  if (h.includes(":")) { // IPv6 literal
-    if (h === "::1" || h === "::") return false;
-    if (h.startsWith("fe80") || h.startsWith("fc") || h.startsWith("fd")) return false;
-    if (h.startsWith("::ffff:") && ipv4Private(h.slice(7))) return false;
-  }
-  return true;
-}
+// hostAllowed / ipv4Private live in ./net-guard.js so monitor alert delivery
+// (worker/notify.js) reuses the exact same SSRF guard.
 
 function htmlToText(html) {
   let s = String(html || "");

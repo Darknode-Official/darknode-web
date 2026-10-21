@@ -7,6 +7,8 @@
 // worker secret (an owner decision gate). Slack, Teams, Discord and signed webhooks all
 // work with no provider, so monitoring alerts are useful before that decision is made.
 
+import { hostAllowed } from "./net-guard.js";
+
 const SEV_EMOJI = { critical: "red", high: "orange", medium: "blue", low: "grey", info: "grey" };
 
 // A normalised alert: { title, severity, text, url?, workspace?, events?:[{kind,title,severity,detail}] }
@@ -81,6 +83,12 @@ export async function deliver(channel, alert, deps = {}) {
   const f = deps.fetch || (typeof fetch !== "undefined" ? fetch : null);
   if (!f) return { ok: false, status: 0, error: "no fetch available" };
   if (!channel || !channel.url) return { ok: false, status: 0, error: "no channel url" };
+  // SSRF guard: a workspace member sets channel.url, so re-validate it against the
+  // same public-host allowlist as /api/fetch before we POST to it (blocks loopback,
+  // RFC1918, link-local/cloud-metadata and numeric-encoded private addresses).
+  let target;
+  try { target = new URL(channel.url); } catch (_) { return { ok: false, status: 0, error: "invalid channel url" }; }
+  if (!hostAllowed(target)) return { ok: false, status: 0, error: "channel url host is not allowed" };
   const build = BUILDERS[channel.type] || genericPayload;
   const bodyStr = JSON.stringify(build(alert));
   const headers = { "content-type": "application/json" };

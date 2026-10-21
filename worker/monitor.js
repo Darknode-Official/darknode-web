@@ -26,7 +26,9 @@ const safeMonitor = (m) => ({ ...m, channels: (m.channels || []).map(safeChannel
 export class MonitorDO {
   constructor(state, env) { this.state = state; this.storage = state.storage; this.env = env; }
 
-  async _monitors() { return (await this.storage.get("monitors")) || {}; }
+  // Null-proto map: a monitor id comes from the request body, so "__proto__"/
+  // "constructor" must be an ordinary own entry, never reach Object.prototype.
+  async _monitors() { return Object.assign(Object.create(null), await this.storage.get("monitors")); }
 
   // Read this workspace's own CVE inventory from its GraphDO. Safe: a MonitorDO is addressed
   // per workspace, and it reads the SAME workspace's graph (the GET pull is not uid-scoped —

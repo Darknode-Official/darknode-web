@@ -99,3 +99,15 @@ group("ingest DO/data plane", () => {
     assert.ok(r.json.errors[0].includes("invalid JSON"));
   });
 });
+
+group("ingest DO/prototype safety", () => {
+  test("revoking a key named __proto__ is a clean 404, not a prototype write", async () => {
+    const d = new IngestDO(memState());
+    await newKey(d, ["ingest:write"]);
+    const r = await jsonOf(await d.fetch(mgmt("revoke", { keyId: "__proto__" })));
+    assert.equal(r.status, 404);
+    assert.equal(({}).revoked, undefined, "Object.prototype must be untouched");
+    const list = (await jsonOf(await d.fetch(mgmt("list")))).json;
+    assert.equal(list.keys.length, 1, "the real key is unaffected");
+  });
+});

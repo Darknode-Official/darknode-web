@@ -83,3 +83,20 @@ group("notify/signing + deliver", () => {
     assert.equal(r.ok, false);
   });
 });
+
+group("notify/ssrf guard", () => {
+  test("deliver refuses a channel url on a private or metadata host (no fetch)", async () => {
+    let called = false;
+    const spy = async () => { called = true; return { ok: true, status: 200 }; };
+    for (const url of ["http://169.254.169.254/latest/meta-data/", "http://127.0.0.1/hook", "http://10.0.0.1/x", "http://2130706433/x"]) {
+      const r = await deliver({ type: "webhook", url }, ALERT, { fetch: spy });
+      assert.equal(r.ok, false);
+      assert.ok(r.error.includes("not allowed"));
+    }
+    assert.notOk(called, "fetch must not run for a blocked host");
+  });
+  test("deliver still posts to a public webhook host", async () => {
+    const r = await deliver({ type: "webhook", url: "https://hooks.slack.com/services/x" }, ALERT, { fetch: async () => ({ ok: true, status: 200 }) });
+    assert.equal(r.ok, true);
+  });
+});

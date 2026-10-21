@@ -20,7 +20,9 @@ const safeKey = (k) => ({ keyId: k.keyId, prefix: keyPrefix(k.keyId), scopes: k.
 
 export class IngestDO {
   constructor(state) { this.state = state; this.storage = state.storage; }
-  async _keys() { return (await this.storage.get("keys")) || {}; }
+  // Null-proto map: keyId comes from an API caller, so a key named "__proto__"/
+  // "constructor" must be an ordinary own entry, never reach Object.prototype.
+  async _keys() { return Object.assign(Object.create(null), await this.storage.get("keys")); }
   async _queue() { return (await this.storage.get("queue")) || []; }
 
   async _verify(presented, scope) {

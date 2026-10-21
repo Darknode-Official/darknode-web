@@ -312,3 +312,17 @@ group("monitor DO/graph sync", () => {
     assert.equal(r.ran[0].graphSynced, 0, "no binding → nothing synced, no throw");
   });
 });
+
+group("monitor DO/prototype safety", () => {
+  test("pause/delete/upsert with id __proto__ never touch Object.prototype", async () => {
+    const st = memState(); const mon = new MonitorDO(st);
+    await post(mon, { op: "upsert", monitor: { name: "C", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"] }, channels: [] } });
+    const paused = await post(mon, { op: "pause", id: "__proto__", paused: true });
+    assert.equal(paused.status, 404);
+    const del = await post(mon, { op: "delete", id: "__proto__" });
+    assert.equal(del.status, 200);
+    assert.equal(({}).paused, undefined, "Object.prototype.paused must be unset");
+    const up = await post(mon, { op: "upsert", monitor: { id: "__proto__", type: "cert-expiry", config: { domains: ["b.test.darknode.ai"] }, channels: [] } });
+    assert.notEqual(up.json.monitor.id, "__proto__");
+  });
+});
