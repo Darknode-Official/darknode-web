@@ -299,7 +299,7 @@ function fetchIpsum(ip) {
 var REPORT_CATEGORIES = ["Scanner", "Brute Force", "Malware", "Phishing", "Spam", "C2", "Other"];
 var _fb = null;
 function fb() {
-  if (!_fb) _fb = Promise.all([import("/js/firebase.js?v=20261018i"), import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js")])
+  if (!_fb) _fb = Promise.all([import("/js/firebase.js?v=20261021a"), import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js")])
     .then(function(m) { return { db: m[0].db, auth: m[0].auth, fs: m[1] }; });
   _fb.catch(function() { _fb = null; });
   return _fb;

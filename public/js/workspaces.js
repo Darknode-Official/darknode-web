@@ -20,7 +20,7 @@ let _deps = null;
 async function deps() {
   if (_deps) return _deps;
   const [fb, fs] = await Promise.all([
-    import("/js/firebase.js?v=20261018i"),
+    import("/js/firebase.js?v=20261021a"),
     import("https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js"),
   ]);
   _deps = { auth: fb.auth, db: fb.db, fns: fs };

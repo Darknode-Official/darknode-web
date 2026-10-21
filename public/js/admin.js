@@ -1,7 +1,7 @@
 // Owner-only admin console: live user management, a ban-list (the site is open
 // to everyone; only banned emails are blocked at sign-in), and site-wide
 // announcements. All backed by Firestore.
-import { db } from "/js/firebase.js?v=20261018i";
+import { db } from "/js/firebase.js?v=20261021a";
 
 // The super-admin is no longer a hardcoded email. The set-admin script stamps the
 // owner's own user doc with `admin: true` (alongside the Firebase custom claim),

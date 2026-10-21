@@ -23,7 +23,7 @@ export function disconnect() { token = ""; login = ""; kind = ""; }
 // GitHub account already tied to another Darknode user still yields a token.
 export async function connectGitHub() {
   const fa = await import("https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js");
-  const { auth } = await import("/js/firebase.js?v=20261018i");
+  const { auth } = await import("/js/firebase.js?v=20261021a");
   const gh = new fa.GithubAuthProvider();
   gh.addScope("repo");
   gh.addScope("read:org");

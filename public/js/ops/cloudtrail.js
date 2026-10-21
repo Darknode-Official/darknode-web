@@ -15,9 +15,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, RULES, PLATFORM_LABEL, SEV_RANK, CONF_RANK, detectFile,
   findingsToCsv, iocsToCsv, principalsToCsv, ipsToCsv, timelineToCsv, queriesText, summaryText, exampleDataset,
-} from "./cloudtrail-engine.js?v=20261017c";
+} from "./cloudtrail-engine.js?v=20261021a";
 
-const ENGINE = engineUrl("./cloudtrail-engine.js?v=20261017c", import.meta);
+const ENGINE = engineUrl("./cloudtrail-engine.js?v=20261021a", import.meta);
 const P = "ctl";
 const FEED_URL = "/data/feeds/malicious-ips.json";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };

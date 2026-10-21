@@ -13,9 +13,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, DEFAULT_INTERNAL, TOOL_ID, COLUMNS, RULES, SEV_RANK, parseInput, findingsToCsv, inventoryToCsv, changesToCsv,
   firewallTicketText, summaryText, exampleDataset,
-} from "./netexposure-engine.js?v=20261017c";
+} from "./netexposure-engine.js?v=20261021a";
 
-const ENGINE = engineUrl("./netexposure-engine.js?v=20261017c", import.meta);
+const ENGINE = engineUrl("./netexposure-engine.js?v=20261021a", import.meta);
 const P = "nxp";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

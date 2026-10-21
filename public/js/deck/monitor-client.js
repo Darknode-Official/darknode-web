@@ -12,7 +12,7 @@ export function monitoringAvailable() { return !!proxyBase(); }
 export async function monitorApi(body) {
   const base = proxyBase();
   if (!base) throw new Error("Monitoring needs the cloud proxy, which this build has not configured.");
-  const { auth } = await import("/js/firebase.js?v=20261018i");
+  const { auth } = await import("/js/firebase.js?v=20261021a");
   const user = (auth && auth.currentUser) || null;
   if (!user) throw new Error("Sign in to use monitors.");
   const wid = activeWorkspaceId() || user.uid;

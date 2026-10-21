@@ -15,9 +15,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, FORMATS, SOURCE_LABEL, SCOPE_RISK, SCOPE_CLASSES, RISK_RANK, DETECTIONS,
   parseInput, findingsToCsv, appsToCsv, revokeToCsv, summaryText, exampleDataset,
-} from "./oauthgov-engine.js?v=20261017c";
+} from "./oauthgov-engine.js?v=20261021a";
 
-const ENGINE = engineUrl("./oauthgov-engine.js?v=20261017c", import.meta);
+const ENGINE = engineUrl("./oauthgov-engine.js?v=20261021a", import.meta);
 const P = "oag";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
