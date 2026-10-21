@@ -1971,7 +1971,7 @@ export function renderDeck(host, opts) {
       // OpenRouter; on return, openrouter-connect finishes the handshake, stores
       // the user's minted key, and this deck re-opens showing it connected.
       oauthBtn.disabled = true; oauthBtn.textContent = "Opening OpenRouter…";
-      try { startOpenRouterConnect(); } catch (_) { oauthBtn.disabled = false; toast("Could not start OpenRouter connect"); }
+      try { startOpenRouterConnect(); } catch (_) { oauthBtn.disabled = false; toast("Could not start OpenRouter connect", "error"); }
     };
     const accBtn = drawerBody.querySelector('[data-act="account"]');
     if (accBtn) accBtn.onclick = () => {
@@ -2238,7 +2238,7 @@ export function renderDeck(host, opts) {
   $("#dkWFull").onclick = () => { const s = curSec; if (primary) { window.open("/" + s, "_blank", "noopener"); return; } teardown(); onOpen(s); };
   if (primary) { $("#dkWFull").hidden = true; $("#dkBrand").title = "Home"; $("#dkAsstFull").textContent = "Open in new tab"; }
   $("#dkWPin").onclick = () => { if (!curSec) return; const on = togglePin(curSec); $("#dkWPin").classList.toggle("pinned", on); toast(on ? "Pinned to overview" : "Unpinned"); };
-  $("#dkWCopy").onclick = async () => { if (!curSec) return; try { await navigator.clipboard.writeText(location.origin + "/" + curSec); toast("Tool link copied"); } catch (_) { toast("Copy failed"); } };
+  $("#dkWCopy").onclick = async () => { if (!curSec) return; try { await navigator.clipboard.writeText(location.origin + "/" + curSec); toast("Tool link copied"); } catch (_) { toast("Copy failed", "error"); } };
   $("#dkWTab").onclick = () => { if (curSec) window.open("/" + curSec, "_blank", "noopener"); };
 
   // ---------- spotlight ----------
@@ -2460,6 +2460,10 @@ export function renderDeck(host, opts) {
     } else { lastSyncState = "local"; }
     updateWsChip(wid, name);
     closeAllMenus();
+    // Re-arm the once-per-load guards so the newly-active workspace gets its own
+    // daily trend snapshot and CI-ingest drain this session (were stuck true from
+    // the previous workspace, so a switch skipped both until a full page reload).
+    _ingestDrained = false; _trendRecorded = false;
     toast(wid ? ("Switched to " + (name || "the workspace")) : "Switched to your personal workspace");
     go(curScene || "overview");
   }
@@ -2494,7 +2498,7 @@ export function renderDeck(host, opts) {
           if (typeof s.notes === "string") saveNotes(s.notes);
           toast("Deck state imported");
           go(curScene);
-        } catch (e) { toast("Import failed: " + (e.message || "bad file")); }
+        } catch (e) { toast("Import failed: " + (e.message || "bad file"), "error"); }
       };
       rd.readAsText(f);
     };
@@ -3169,7 +3173,7 @@ export function renderDeck(host, opts) {
     const addGraphBtn = (id, items, linkName) => {
       const hx = grid.querySelector("#surfx-" + id); if (!hx || !items.length) return;
       hx.innerHTML = `<button class="dk-graphadd">Add ${items.length} to graph</button>`;
-      hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20261017d").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph"));
+      hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20261017d").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph", "error"));
     };
     // Subdomains (crt.sh)
     surface.subdomains(d).then((subs) => {
@@ -3695,7 +3699,7 @@ export function renderDeck(host, opts) {
       if (note === null) return; // cancelled
       b.disabled = true; b.textContent = "Sending…";
       try { await opts.onUpgradeRequest(plan, (note || "").trim()); toast("Upgrade request sent — we'll be in touch."); b.textContent = "Requested"; }
-      catch (e) { b.disabled = false; b.textContent = "Request upgrade"; toast("Couldn't send the request. Try again."); }
+      catch (e) { b.disabled = false; b.textContent = "Request upgrade"; toast("Couldn't send the request. Try again.", "error"); }
     });
   }
   // ---------- Team (workspace members & roles) ----------
@@ -3774,7 +3778,7 @@ export function renderDeck(host, opts) {
           <h2>${IC.book} Membership log <span class="dk-mut" style="font-weight:400">— append-only</span></h2>
           <table class="dk-natbl"><thead><tr><th>When</th><th>Changed by</th><th>Member</th><th>New role</th></tr></thead><tbody>${logRows}</tbody></table>
         </div>`;
-      const cp = el.querySelector("#dkTeamCopy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(myUid || ""); toast("User id copied"); } catch (_) { toast("Copy failed"); } };
+      const cp = el.querySelector("#dkTeamCopy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(myUid || ""); toast("User id copied"); } catch (_) { toast("Copy failed", "error"); } };
       const save = async (uid, role, label) => {
         try { await setMember(wid, uid, role, label); toast("Membership updated"); renderTeam(); }
         catch (e) { toast(String((e && e.message) || e) || "Update failed"); }
@@ -4322,7 +4326,7 @@ export function renderDeck(host, opts) {
     if (inEl) inEl.oninput = schedule;
     main.querySelectorAll("[data-opt]").forEach((s) => s.onchange = runNow);
     const gen = main.querySelector("#dkKitGen"); if (gen) gen.onclick = runNow;
-    main.querySelector("#dkKitCopy").onclick = async () => { try { await navigator.clipboard.writeText(outEl.textContent); toast("Copied to clipboard"); } catch (_) { toast("Copy failed"); } };
+    main.querySelector("#dkKitCopy").onclick = async () => { try { await navigator.clipboard.writeText(outEl.textContent); toast("Copied to clipboard"); } catch (_) { toast("Copy failed", "error"); } };
     const clr = main.querySelector("#dkKitClear"); if (clr) clr.onclick = () => { if (inEl) inEl.value = ""; outEl.textContent = ""; outEl.classList.remove("err"); if (inEl) inEl.focus(); };
     const sw = main.querySelector("#dkKitSwap"); if (sw) sw.onclick = () => { if (inEl && outEl.textContent && !outEl.classList.contains("err")) { inEl.value = outEl.textContent; runNow(); } };
     if (t.generate) runNow();
