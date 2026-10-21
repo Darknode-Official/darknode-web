@@ -26,14 +26,21 @@ export class IngestDO {
   async _verify(presented, scope) {
     const keyId = keyIdOf(presented);
     if (!keyId) return { ok: false, status: 401, error: "Malformed API key." };
-    const keys = await this._keys();
-    const rec = keys[keyId];
-    if (!rec || rec.revoked) return { ok: false, status: 401, error: "Unknown or revoked API key." };
-    const h = await hashKey(presented);
-    if (!timingSafeEqual(h, rec.hash)) return { ok: false, status: 401, error: "Invalid API key." };
-    if (scope && !hasScope(rec.scopes, scope)) return { ok: false, status: 403, error: `This key lacks the ${scope} scope.` };
-    rec.lastUsedAt = now(); await this.storage.put("keys", keys);
-    return { ok: true, keyId, scopes: rec.scopes };
+    // read-modify-write of `keys` spans the non-storage hashKey() await, so the
+    // automatic DO input gate does not cover it: serialize to stop a concurrent
+    // revoke/create from being lost (and lastUsedAt from clobbering it).
+    let out;
+    await this.state.blockConcurrencyWhile(async () => {
+      const keys = await this._keys();
+      const rec = keys[keyId];
+      if (!rec || rec.revoked) { out = { ok: false, status: 401, error: "Unknown or revoked API key." }; return; }
+      const h = await hashKey(presented);
+      if (!timingSafeEqual(h, rec.hash)) { out = { ok: false, status: 401, error: "Invalid API key." }; return; }
+      if (scope && !hasScope(rec.scopes, scope)) { out = { ok: false, status: 403, error: `This key lacks the ${scope} scope.` }; return; }
+      rec.lastUsedAt = now(); await this.storage.put("keys", keys);
+      out = { ok: true, keyId, scopes: rec.scopes };
+    });
+    return out;
   }
 
   async fetch(request) {
@@ -81,14 +88,23 @@ export class IngestDO {
     if (op === "create") {
       const { key, keyId, prefix } = generateKey();
       const scopes = normalizeScopes(body.scopes);
-      const keys = await this._keys();
-      keys[keyId] = { keyId, hash: await hashKey(key), scopes, label: String(body.label || "").slice(0, 80) || "API key", createdAt: now(), lastUsedAt: 0, revoked: false };
-      await this.storage.put("keys", keys);
+      // hash the new key inside the gate: a plain read-modify-write here would
+      // let a concurrent create/revoke drop this key (its await hashKey yields).
+      await this.state.blockConcurrencyWhile(async () => {
+        const keys = await this._keys();
+        keys[keyId] = { keyId, hash: await hashKey(key), scopes, label: String(body.label || "").slice(0, 80) || "API key", createdAt: now(), lastUsedAt: 0, revoked: false };
+        await this.storage.put("keys", keys);
+      });
       return reply({ key, keyId, prefix, scopes });   // full key shown once
     }
     if (op === "revoke") {
-      const keys = await this._keys(); const rec = keys[body.keyId]; if (!rec) return reply({ error: "not found" }, 404);
-      rec.revoked = true; await this.storage.put("keys", keys);
+      let missing = false;
+      await this.state.blockConcurrencyWhile(async () => {
+        const keys = await this._keys(); const rec = keys[body.keyId];
+        if (!rec) { missing = true; return; }
+        rec.revoked = true; await this.storage.put("keys", keys);
+      });
+      if (missing) return reply({ error: "not found" }, 404);
       return reply({ ok: true });
     }
     if (op === "drain") {

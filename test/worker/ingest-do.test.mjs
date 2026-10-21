@@ -4,7 +4,7 @@ import { IngestDO } from "../../worker/ingest.js";
 
 function memState() {
   const map = new Map();
-  return { storage: { async get(k) { return map.has(k) ? map.get(k) : undefined; }, async put(k, v) { map.set(k, v); }, async delete(k) { map.delete(k); } }, _map: map };
+  return { storage: { async get(k) { return map.has(k) ? map.get(k) : undefined; }, async put(k, v) { map.set(k, v); }, async delete(k) { map.delete(k); } }, blockConcurrencyWhile: async (fn) => fn(), _map: map };
 }
 const mgmt = (op, extra = {}, role = "owner") => new Request("https://ingest/", { method: "POST", headers: { "content-type": "application/json", "x-ing-uid": "u1", "x-ing-role": role }, body: JSON.stringify({ op, ...extra }) });
 const ingest = (key, body) => new Request("https://ingest/", { method: "POST", headers: { "x-ing-key": key, "content-type": "application/json" }, body });
