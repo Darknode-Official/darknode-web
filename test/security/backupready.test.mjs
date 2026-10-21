@@ -685,3 +685,13 @@ group("backupready: 3-2-1-1-0, score, exports", () => {
     assert.equal(DEFAULTS.restoreTestDays, 90);
   });
 });
+
+group("backupready / prototype safety", () => {
+  test("an asset named like an Object member is not falsely marked manual", () => {
+    const files = [F("j.csv", gen([genRow("some-vm", "Success", 2)])), F("a.csv", assets(["constructor,server,high,,,,prod"]))];
+    const r = run(files, { assetMap: {} });
+    const row = rec(r, "constructor");
+    assert.ok(row, "the asset appears in the recovery table");
+    assert.notEqual(row.matched, "manual", "with no assetMap entry it must not be manually matched");
+  });
+});

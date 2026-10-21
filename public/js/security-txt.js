@@ -32,7 +32,7 @@ var FIELD_SPECS = [
   { name: "Hiring", required: false, multiple: true, kind: "uri" }
 ];
 // lower-case field name → spec, for O(1) validator lookups.
-var SPEC_BY_NAME = {};
+var SPEC_BY_NAME = Object.create(null);
 FIELD_SPECS.forEach(function (s) { SPEC_BY_NAME[s.name.toLowerCase()] = s; });
 
 function toast(msg) {
@@ -162,7 +162,7 @@ function checkFieldValue(findings, spec, name, value, lineNo) {
 // case-insensitive, handles CRLF and trailing whitespace, understands a PGP
 // clear-signed document (notes it is signed but not cryptographically verified,
 // skips the Hash: armor header, undoes '- ' dash-escaping, parses only the signed body).
-function validateSecurityTxt(text) {
+export function validateSecurityTxt(text) {
   var findings = [];
   var fields = [];
   var signed = false;
@@ -193,7 +193,7 @@ function validateSecurityTxt(text) {
     findings.push({ level: "info", msg: "Document is PGP clear-signed. The signature is not verified here, but RFC 9116 recommends signing — good.", line: 0 });
   }
 
-  var counts = {};
+  var counts = Object.create(null);
   for (var i = startIdx; i < endIdx; i++) {
     var lineNo = i + 1;
     var trimmed = lines[i].replace(/\s+$/, "").replace(/^\s+/, "");

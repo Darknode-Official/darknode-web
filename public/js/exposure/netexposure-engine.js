@@ -855,7 +855,7 @@ export function parseNessus(text, file = "scan.nessus", ctx) {
       if (!port) continue;
       const rec = newRec(ip, port, it.attrs.protocol || "tcp");
       const svc = String(it.attrs.svc_name || "").toLowerCase();
-      setService(rec, svc in NESSUS_SVC ? NESSUS_SVC[svc] : svc);
+      setService(rec, Object.prototype.hasOwnProperty.call(NESSUS_SVC, svc) ? NESSUS_SVC[svc] : svc);
       const pid = String(it.attrs.pluginID || "");
       const out = (kid(it, "plugin_output") || {}).text || "";
       if (pid === "10107") { const m = out.match(/web server type is\s*:\s*\n+\s*(.+)/i); if (m) applyServerHeader(rec, m[1].trim()); }

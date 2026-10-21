@@ -959,7 +959,7 @@ function buildModel(records, assetsIn, opts, ctx) {
   } else {
     assets = sysList.filter((s) => s.events.length).map((s) => ({ name: s.name, type: s.resType, criticality: "medium", criticalitySource: "not stated (no asset list)", owner: "", rpoHours: null, rtoHours: null, environment: "", implicit: s.key }));
   }
-  const manual = (opts.assetMap && typeof opts.assetMap === "object") ? opts.assetMap : {};
+  const manual = (opts.assetMap && typeof opts.assetMap === "object") ? Object.assign(Object.create(null), opts.assetMap) : Object.create(null);
   const matchedSys = new Set();
   for (const a of assets) {
     const ks = new Set();
