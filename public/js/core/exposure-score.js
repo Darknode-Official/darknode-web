@@ -37,7 +37,7 @@ const DAY_MS = 86400000;
 const str = (v) => String(v == null ? "" : v).toLowerCase();
 const OPEN = new Set(["new", "open", "investigating"]);
 const toMs = (v) => { if (typeof v === "number") return Number.isFinite(v) ? v : null; if (typeof v === "string" && v) { const n = Date.parse(v); return Number.isFinite(n) ? n : null; } return null; };
-const CVE_RE = /CVE-\d{4}-\d{4,7}/gi;
+const CVE_RE = /CVE-\d{4}-\d{4,}/gi; // sequence is >=4 digits with NO upper bound (matches workflow.js), so an 8+ digit id is not truncated into a different, wrong CVE
 
 function cvesOf(e) {
   const d = (e && e.data) || {}, out = new Set();

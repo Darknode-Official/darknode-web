@@ -159,6 +159,34 @@ group("correlate/new cross-tool rules", () => {
     assert.ok(hits.find((x) => x.ruleId === "brute-force-success"));
   });
 
+  test("brute-force-success: a newer out-of-window attempt does not hide an older in-window chain", () => {
+    // attempt leg has two matches; the NEWEST (spraying) is 50d from the success (outside the 14d
+    // window), an OLDER brute_force is 5d from it (inside). The window search must still fire via
+    // the in-window pair — extra corroborating evidence must never cause a false negative.
+    const hits = correlate([
+      I("jane@corp.com"),
+      F("vpnaudit", "spraying", "jane@corp.com", "high", { at: day(0) }),            // newest attempt, out of window
+      F("signins", "cred_stuffing_success", "jane@corp.com", "critical", { at: day(50) }),
+      F("vpnaudit", "brute_force", "jane@corp.com", "high", { at: day(55) }),         // older attempt, in window
+    ]);
+    const h = hits.find((x) => x.ruleId === "brute-force-success");
+    assert.ok(h, "fires via the in-window brute_force+success pair");
+    assert.ok(h.legs.some((l) => l.findingTitle === "vpnaudit/brute_force"), "in-window evidence is chosen");
+    assert.notOk(h.legs.some((l) => l.findingTitle === "vpnaudit/spraying"), "the out-of-window finding is not chosen");
+  });
+
+  test("a windowed rule does not correlate across a leg whose evidence has no timestamp", () => {
+    // anomaly leg evidence has no updatedAt/createdAt (ts=0): it can't be placed in the 30d window,
+    // so the pair must NOT fire (the old times.length>=2 guard silently skipped the window check).
+    const anon = { id: "fx", type: "FINDING", name: "vpnaudit/impossible_travel", severity: "high", source: "vpnaudit", tags: [], updatedAt: "", data: { tool: "vpnaudit", category: "impossible_travel", assets: ["jane@corp.com"] } };
+    const hits = correlate([
+      I("jane@corp.com"),
+      F("caaudit", "mfa", "jane@corp.com", "high", { at: day(1) }),
+      anon,
+    ]);
+    assert.equal(hits.filter((h) => h.ruleId === "account-takeover").length, 0);
+  });
+
   test("oauth-overscope fires on a high-scope grant by a weak-MFA account", () => {
     const hits = correlate([
       I("sam@corp.com"),

@@ -215,18 +215,34 @@ export function correlate(entities, opts = {}) {
       // Order findings deterministically (newest first, id tiebreak) so leg selection, the time-window
       // check and the emitted evidence ids never depend on graph iteration order.
       const findingsSorted = findings.slice().sort((a, b) => (b.ts - a.ts) || String(a.id).localeCompare(String(b.id)));
-      const matched = [];
-      let ok = true;
-      for (const leg of rule.legs) {
-        const hit = findingsSorted.find((f) => leg.when(f));
-        if (!hit) { ok = false; break; }
-        matched.push({ leg, f: hit });
+      // Each leg's candidate findings (newest-first, id tiebreak — inherited from findingsSorted).
+      const perLeg = rule.legs.map((leg) => findingsSorted.filter((f) => leg.when(f)));
+      if (perLeg.some((list) => list.length === 0)) continue; // a leg with no evidence => no hit
+      let matched = null;
+      if (!rule.window) {
+        // No time constraint: newest finding per leg.
+        matched = rule.legs.map((leg, i) => ({ leg, f: perLeg[i][0] }));
+      } else {
+        // Windowed rule: find the MOST RECENT window [r-W, r] of width W that holds, for EVERY
+        // leg, at least one TIMESTAMPED finding, then take the newest in-window finding per leg.
+        // Searching every candidate (not just the newest) means extra corroborating evidence on
+        // one leg can no longer push a valid in-window chain out of view (fixes the false
+        // negative), and a leg whose only evidence is untimestamped cannot satisfy a time-boxed
+        // rule — so two findings of unknown relative time never correlate (fixes the false
+        // positive from the old times.length>=2 guard).
+        const W = rule.window;
+        const anchors = [];
+        for (const list of perLeg) for (const f of list) if (f.ts > 0) anchors.push(f.ts);
+        anchors.sort((a, b) => b - a); // newest first => most recent feasible window wins
+        for (const r of anchors) {
+          const lo = r - W;
+          const pick = perLeg.map((list) => list.find((f) => f.ts > 0 && f.ts >= lo && f.ts <= r));
+          if (pick.every(Boolean)) { matched = rule.legs.map((leg, i) => ({ leg, f: pick[i] })); break; }
+        }
+        if (!matched) continue; // no in-window combination exists
       }
-      if (!ok) continue;
-      // time window across the matched legs
-      const times = matched.map((m) => m.f.ts).filter((t) => t > 0);
-      const span = times.length >= 2 ? Math.max(...times) - Math.min(...times) : 0;
-      if (rule.window && times.length >= 2 && span > rule.window) continue;
+      const ts = matched.map((m) => m.f.ts).filter((t) => t > 0);
+      const span = ts.length >= 2 ? Math.max(...ts) - Math.min(...ts) : 0;
       hits.push({
         ruleId: rule.id, title: rule.title, severity: rule.severity, attack: rule.attack.slice(),
         subjectType: rule.subject, subjectKey, subjectName: idx.nameMap.get(prefix + subjectKey) || subjectKey,

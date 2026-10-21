@@ -79,10 +79,11 @@ function matchSelection(flat, sel) {
 }
 
 // ---- condition expression ----
-// Supports: identifiers, and, or, not, parentheses, "all of them", "1 of them",
-// "all of <prefix>*", "1 of <prefix>*". ("x of" with x>1 is treated as "1 of" i.e. any.)
+// Supports: identifiers, and, or, not, parentheses, "all of them", "N of them",
+// "all of <prefix>*", "N of <prefix>*". "N of" matches when at least N of the named
+// selections are true (Sigma semantics); "1 of" is the N=1 case (any).
 function tokenizeCond(s) {
-  const toks = []; const re = /\(|\)|\ball of them\b|\b1 of them\b|\ball of [A-Za-z0-9_*]+|\b1 of [A-Za-z0-9_*]+|\band\b|\bor\b|\bnot\b|[A-Za-z0-9_*]+/gi;
+  const toks = []; const re = /\(|\)|\ball of them\b|\b\d+ of them\b|\ball of [A-Za-z0-9_*]+|\b\d+ of [A-Za-z0-9_*]+|\band\b|\bor\b|\bnot\b|[A-Za-z0-9_*]+/gi;
   let m; while ((m = re.exec(s))) toks.push(m[0]);
   return toks;
 }
@@ -90,17 +91,19 @@ function evalCondition(cond, selResults, selNames) {
   const toks = tokenizeCond(str(cond || "").trim());
   let i = 0;
   const peek = () => toks[i], next = () => toks[i++];
-  const ofPrefix = (word) => { // "all of foo*" / "1 of them"
-    const m = /^(all|1) of (.+)$/i.exec(word); if (!m) return false;
+  const ofPrefix = (word) => { // "all of foo*" / "N of them"
+    const m = /^(all|\d+) of (.+)$/i.exec(word); if (!m) return false;
     const which = m[1].toLowerCase(), target = m[2].trim();
     const names = target === "them" ? selNames : selNames.filter((n) => matchPrefix(n, target));
     if (!names.length) return false;
-    return which === "all" ? names.every((n) => !!selResults[n]) : names.some((n) => !!selResults[n]);
+    const nMatch = names.filter((n) => !!selResults[n]).length;
+    if (which === "all") return nMatch === names.length;
+    return nMatch >= Math.max(1, parseInt(which, 10) || 1); // "N of": at least N selections true
   };
   function primary() {
     const t = peek();
     if (t === "(") { next(); const v = orExpr(); if (peek() === ")") next(); return v; }
-    if (/^(all|1) of /i.test(t)) { next(); return ofPrefix(t); }
+    if (/^(all|\d+) of /i.test(t)) { next(); return ofPrefix(t); }
     next(); return !!selResults[t];
   }
   function notExpr() { if (lc(peek()) === "not") { next(); return !notExpr(); } return primary(); }
@@ -144,7 +147,7 @@ export function evaluateRule(ruleOrYaml, events) {
   const matches = [];
   for (let idx = 0; idx < list.length; idx++) {
     const flat = flatten(list[idx]);
-    const selResults = {};
+    const selResults = Object.create(null); // null-proto: a condition naming "toString"/"constructor" (not a real selection) must be false, not an inherited member
     for (const name of rule.selectionNames) selResults[name] = matchSelection(flat, rule.detection[name]);
     if (evalCondition(rule.condition, selResults, rule.selectionNames)) matches.push({ index: idx, event: list[idx] });
   }

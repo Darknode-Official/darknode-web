@@ -64,4 +64,10 @@ group("exposure-score/score", () => {
     const ents = [F("a", "critical", day(40), { kev: true }), F("b", "high", day(5), { tags: ["internet-facing"] })];
     assert.equal(JSON.stringify(exposureScore(ents, { now: NOW })), JSON.stringify(exposureScore(ents, { now: NOW })));
   });
+
+  test("an 8+ digit CVE id is matched against KEV without truncation", () => {
+    const cve = "CVE-2021-12345678"; // the old /CVE-\d{4}-\d{4,7}/ truncated this to a different, wrong id
+    const r = exposureScore([F("f", "high", day(1), { cve })], { now: NOW, kevSet: new Set([cve]) });
+    assert.ok(r.top[0] && r.top[0].kev === true, "KEV x2 weight applied to the full 8-digit CVE");
+  });
 });

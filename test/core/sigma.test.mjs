@@ -94,4 +94,18 @@ group("sigma/evaluateRule", () => {
     assert.equal(evaluateRule(y, []).count, 0);
     assert.equal(JSON.stringify(evaluateRule(y, [{ EventID: 4625 }])), JSON.stringify(evaluateRule(y, [{ EventID: 4625 }])));
   });
+
+  test("a condition identifier that is not a defined selection is false (no Object.prototype leak)", () => {
+    // 'constructor' is not a selection; it must be false (was truthy via the plain-object proto chain).
+    const y = RULE("  selection:\n    EventID: 4625\n  condition: selection and not constructor");
+    assert.equal(evaluateRule(y, [{ EventID: 4625 }]).count, 1);
+  });
+
+  test("'N of them' requires at least N selections to match", () => {
+    const mk = (cond) => RULE("  s1:\n    a: 1\n  s2:\n    b: 2\n  s3:\n    c: 3\n  condition: " + cond);
+    const ev = [{ a: 1, b: 2 }]; // s1 and s2 match; s3 does not
+    assert.equal(evaluateRule(mk("2 of them"), ev).count, 1, "two match -> fires");
+    assert.equal(evaluateRule(mk("3 of them"), ev).count, 0, "only two match -> does not fire");
+    assert.equal(evaluateRule(mk("1 of them"), ev).count, 1);
+  });
 });

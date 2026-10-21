@@ -40,7 +40,7 @@ export function snapshot(entities, opts = {}) {
 
   const bySeverity = { critical: 0, high: 0, medium: 0, low: 0, info: 0 }; // over OPEN findings
   const byStatus = {}; for (const s of WORKFLOW_STATUSES) byStatus[s] = 0;
-  const byTool = {}, byCategory = {};
+  const byTool = Object.create(null), byCategory = Object.create(null); // keyed by untrusted tool/category strings — null-proto so "__proto__"/"constructor" are real counts, not pollution
   const sla = { overdue: 0, due_soon: 0, on_track: 0, excepted: 0, none: 0 };
   const aging = { "0-7": 0, "8-30": 0, "31-90": 0, "90+": 0 }; // open findings by age in days
   let open = 0, closed = 0, kevOpen = 0, withDue = 0, notOverdue = 0;
@@ -52,7 +52,7 @@ export function snapshot(entities, opts = {}) {
     if (isOpen(e)) {
       open++;
       const sev = str(e.severity);
-      if (sev in bySeverity) bySeverity[sev]++;
+      if (Object.prototype.hasOwnProperty.call(bySeverity, sev)) bySeverity[sev]++; // own-key only: `in` would match inherited "toString" etc. and make a NaN bucket
       const tool = e.source || (e.data && e.data.tool) || "unknown";
       byTool[tool] = (byTool[tool] || 0) + 1;
       const cat = str((e.data && e.data.category) || "uncategorised") || "uncategorised";

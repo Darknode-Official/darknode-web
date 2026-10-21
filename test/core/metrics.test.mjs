@@ -96,4 +96,16 @@ group("metrics/trendDelta", () => {
     const d = trendDelta(cur, null);
     assert.equal(d.open, null);
   });
+
+  test("untrusted category/severity keys don't pollute or corrupt the counts", () => {
+    const s = snapshot([
+      F("a", "high", "open", day(1), { category: "constructor" }, "nessus"),
+      F("b", "high", "open", day(1), { category: "__proto__" }, "nessus"),
+      F("c", "constructor", "open", day(1), { category: "linux" }, "nessus"), // bogus severity (a proto name)
+    ], { now: NOW });
+    assert.equal(s.byCategory["constructor"], 1); // a real count, not the inherited Object constructor
+    assert.equal(s.byCategory["__proto__"], 1);   // a real count, not a prototype write
+    assert.deepEqual(Object.keys(s.bySeverity).sort(), ["critical", "high", "info", "low", "medium"]); // no "constructor" NaN bucket leaked in
+    assert.equal(s.bySeverity.high, 2);
+  });
 });
