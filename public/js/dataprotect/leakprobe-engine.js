@@ -106,9 +106,13 @@ export function extractImports(jsText, baseUrl) {
 
 // The //# sourceMappingURL=... reference at the tail of a JS/CSS file, if any.
 export function extractSourceMapUrl(jsText, baseUrl) {
-  const m = String(jsText || "").match(/[#@]\s*sourceMappingURL\s*=\s*(\S+)/);
-  if (!m) return null;
-  const ref = m[1].trim();
+  // Take the LAST sourceMappingURL, not the first: the real annotation sits at the file
+  // tail, and an earlier occurrence (in a string literal or comment) must not win over it.
+  const re = /[#@]\s*sourceMappingURL\s*=\s*(\S+)/g;
+  let m, last = null;
+  while ((m = re.exec(String(jsText || "")))) last = m;
+  if (!last) return null;
+  const ref = last[1].trim();
   if (/^data:/i.test(ref)) return { inlineData: ref };          // inline map (base64)
   return { url: abs(ref, baseUrl) };
 }

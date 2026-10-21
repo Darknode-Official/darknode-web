@@ -139,7 +139,12 @@ export function parseMtaSts(txts, policyBody) {
 // Days until expiry from an ISO/parseable date string (floor, can be negative).
 export function certDaysLeft(notAfter, now = Date.now()) {
   if (!notAfter) return null;
-  const t = new Date(notAfter).getTime();
+  // crt.sh emits zoneless ISO (e.g. "2026-01-14T23:59:59"). new Date() would read that as
+  // LOCAL time, so the day count drifts by the viewer's UTC offset and can cross a band
+  // boundary. Parse a zoneless ISO as UTC (matching netexposure-engine's convention); any
+  // string carrying a Z/offset or other format falls through to the normal parser.
+  const m = String(notAfter).match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+  const t = m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)) : new Date(notAfter).getTime();
   if (isNaN(t)) return null;
   return Math.floor((t - now) / 86400000);
 }

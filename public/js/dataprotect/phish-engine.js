@@ -150,8 +150,12 @@ export function lookalike(host) {
   let best = null;
   for (const b of BRANDS) {
     if (stem === b) return { brand: b, stem, impersonation: false, near: false, distance: 0, exact: true };
+    // Near-miss only for brands of 5+ chars: a 1-2 edit distance on a 3-4 char brand
+    // (ups, att, amex, hsbc) matches ordinary short domains (us.com, art.com, apex.com)
+    // and floods false "lookalike" verdicts. Short brands are still caught by the
+    // exact-label impersonation check above.
     const d = levenshtein(stem, b);
-    if (d > 0 && d <= 2 && Math.abs(stem.length - b.length) <= 2 && (!best || d < best.distance)) best = { brand: b, stem, distance: d };
+    if (b.length >= 5 && d > 0 && d <= 2 && Math.abs(stem.length - b.length) <= 2 && (!best || d < best.distance)) best = { brand: b, stem, distance: d };
   }
   if (best) return { ...best, impersonation: false, near: true };
   return { brand: null, stem, impersonation: false, near: false, distance: null };
@@ -243,7 +247,11 @@ export function parseEmailHeaders(raw) {
   const split = text.indexOf("\n\n");
   const headerBlock = split >= 0 ? text.slice(0, split) : text;
   const body = split >= 0 ? text.slice(split + 2) : "";
-  const headers = {};
+  // Null-proto: header names come verbatim from a hostile email, and the name regex
+  // accepts "__proto__"/"constructor". A plain object would make headers["__proto__"]
+  // resolve to Object.prototype (truthy), so `|| []` is skipped and `.push` throws,
+  // crashing the whole triage on a single crafted header.
+  const headers = Object.create(null);
   const lines = headerBlock.split("\n");
   let cur = null;
   for (const line of lines) {
@@ -251,7 +259,7 @@ export function parseEmailHeaders(raw) {
     const m = line.match(/^([!-9;-~]+):\s?(.*)$/);
     if (m) { cur = { k: m[1].toLowerCase(), v: m[2] }; (headers[cur.k] = headers[cur.k] || []).push(cur); }
   }
-  const out = {};
+  const out = Object.create(null);
   for (const k in headers) out[k] = headers[k].map((e) => e.v);
   return { headers: out, body, hasHeaders: !!out["from"] || !!out["received"] || !!out["message-id"] };
 }
@@ -310,7 +318,10 @@ export function triageEmail(raw) {
   const nameLc = name.toLowerCase();
   // Whole-word match, not substring: "att" must not fire on "matthew", "ups" on "groups".
   const brandInName = BRANDS.find((b) => new RegExp("\\b" + b.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b").test(nameLc));
-  if (brandInName && fromReg && !fromReg.includes(brandInName)) add(4, `Display name mentions "${brandInName}" but the sending domain is ${fromReg || "unknown"}.`);
+  // The domain legitimately belongs to the brand only when its registrable STEM equals the
+  // brand. A substring test (`fromReg.includes`) wrongly cleared attacker.com / myamexclone.com.
+  const fromStem = (fromReg || "").split(".")[0];
+  if (brandInName && fromReg && fromStem !== brandInName) add(4, `Display name mentions "${brandInName}" but the sending domain is ${fromReg || "unknown"}.`);
   const fromLook = fromReg ? lookalike(fromDomain) : { near: false, impersonation: false };
   if (fromLook.impersonation) add(4, `From domain impersonates brand "${fromLook.brand}" in a subdomain.`);
   else if (fromLook.near) add(3, `From domain is a near-miss of brand "${fromLook.brand}".`);

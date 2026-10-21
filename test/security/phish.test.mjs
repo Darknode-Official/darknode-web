@@ -195,4 +195,26 @@ group("phish: defang, refang and report", () => {
     assert.ok(r.includes("hxxp://bad[.]example[.]ru/login") && r.includes("192[.]0[.]2[.]1"));
     assert.ok(r.includes("SIGNALS (1)") && r.includes("Blocked at gateway") && r.includes("Verdict: Suspicious"));
   });
+
+  test("a crafted __proto__/constructor header does not crash the parser or triage", () => {
+    const raw = ["From: a@b.com", "__proto__: x", "constructor: y", "Subject: hi", "", "body"].join("\n");
+    const h = parseEmailHeaders(raw);                   // threw a TypeError before the null-proto fix
+    assert.ok(h && h.headers && Array.isArray(h.headers["__proto__"]));
+    const r = triageEmail(raw);
+    assert.ok(r && r.verdict);
+  });
+
+  test("near-miss typosquat ignores short (<5) brands but still catches real ones", () => {
+    assert.notOk(lookalike("art.com").near);           // was a false near-miss of "att"
+    assert.notOk(lookalike("us.com").near);            // was "ups"
+    assert.notOk(lookalike("apex.com").near);          // was "amex"
+    assert.ok(lookalike("paypa1.com").near);           // genuine near-miss of paypal (6 chars)
+    assert.equal(lookalike("paypa1.com").brand, "paypal");
+    assert.ok(lookalike("att.secure-login.com").impersonation); // short brand still caught as an impersonation label
+  });
+
+  test("display-name spoof flags a sender whose stem only contains the brand as a substring", () => {
+    const r = triageEmail(["From: \"AMEX\" <security@myamexclone.com>", "Subject: verify", "", "x"].join("\n"));
+    assert.ok(r.findings.some((f) => /Display name mentions "amex"/.test(f.t)));
+  });
 });

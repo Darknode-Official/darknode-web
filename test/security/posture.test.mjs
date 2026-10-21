@@ -283,4 +283,10 @@ group("posture: certificate SAN coverage", () => {
     const r = gradeTls({ domain: "example.com", cert: { issuer: "CN=E5", notAfter: new Date(Date.now() + 90 * 86400000).toISOString(), names: "example.com", sigAlg: "sha1WithRSAEncryption" }, now: Date.now() });
     assert.equal(r.checks.find((c) => c.name === "Signature algorithm").status, "fail");
   });
+
+  test("certDaysLeft reads zoneless crt.sh dates as UTC, not viewer-local (no timezone drift)", () => {
+    const now = Date.UTC(2026, 0, 1, 0, 0, 0);
+    assert.equal(certDaysLeft("2026-01-31T23:59:59", now), certDaysLeft("2026-01-31T23:59:59Z", now));
+    assert.equal(certDaysLeft("2026-01-31T23:59:59Z", now), 30);
+  });
 });

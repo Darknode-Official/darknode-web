@@ -241,4 +241,10 @@ group("dlp: redaction and summary", () => {
     assert.equal(scan("ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789").grade, "critical");
     assert.equal(scan("nothing sensitive here at all").grade, "clean");
   });
+
+  test("a real PAN is still found when extra digits are glued to the greedy match", () => {
+    assert.ok(scan("card 4111 1111 1111 1111 end").findings.some((f) => f.id === "credit-card"));      // control: standalone
+    assert.ok(scan("pan 4111 1111 1111 1111 999 trailing").findings.some((f) => f.id === "credit-card")); // card + adjacent number
+    assert.ok(scan("ref 999 4111 1111 1111 1111 x").findings.some((f) => f.id === "credit-card"));      // number + card
+  });
 });

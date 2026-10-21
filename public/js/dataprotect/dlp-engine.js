@@ -92,7 +92,21 @@ export const DETECTORS = [
   {
     id: 'credit-card', label: 'Payment card number', kind: 'pii', severity: 'high',
     re: /\b(?:\d[ -]?){13,19}\b/g,
-    validate: (m) => luhnValid(m),
+    // The greedy run can glue a real PAN to an adjacent number (a 16-digit card followed
+    // by " 999" matches as 19 digits and fails Luhn, so the card is missed). Retry on
+    // group-boundary EDGE trims only — dropping leading or trailing whitespace/dash groups
+    // — never arbitrary digit windows, which would make random long digit runs pass Luhn.
+    validate: (m) => {
+      if (luhnValid(m)) return true;
+      const g = String(m).split(/[ -]+/).filter(Boolean);
+      for (let k = 1; k < g.length; k++) {
+        const tail = g.slice(k).join('');                 // drop k leading groups (a number before the card)
+        const head = g.slice(0, g.length - k).join('');   // drop k trailing groups (a number after the card)
+        if ((tail.length >= 13 && tail.length <= 19 && luhnValid(tail)) ||
+            (head.length >= 13 && head.length <= 19 && luhnValid(head))) return true;
+      }
+      return false;
+    },
     detail: (m) => cardBrand(m),
     advice: 'Never store full PANs; tokenise or truncate per PCI DSS.',
   },

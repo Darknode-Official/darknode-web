@@ -197,4 +197,9 @@ group("leakprobe: service & key intelligence", () => {
     assert.equal(classifyKey({ id: "gcp-key", where: "client-asset" }).exposure, "review");
     assert.notOk(classifyKey({ id: "openai-key", where: "backend-response" }).insecure === undefined);
   });
+
+  test("extractSourceMapUrl takes the last annotation, not an earlier decoy", () => {
+    const js = 'var s = "//# sourceMappingURL=decoy.map";\ncode();\n//# sourceMappingURL=real.js.map';
+    assert.equal(extractSourceMapUrl(js, "https://x.test/a.js").url, "https://x.test/real.js.map");
+  });
 });
