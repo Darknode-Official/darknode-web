@@ -571,4 +571,11 @@ group("k8saudit: contract", () => {
     const t = summaryText(analyze(parseInput(exampleDataset().files)));
     assert.ok(t.includes("Kubernetes Audit summary") && t.includes("Skipped checks:") && t.includes("[critical/"));
   });
+  test("a resource whose kind is a prototype member name does not crash the audit", () => {
+    for (const kind of ["constructor", "__proto__", "toString", "hasOwnProperty"]) {
+      const obj = { apiVersion: "v1", kind, metadata: { name: "x", namespace: "default" } };
+      const rep = analyze(parseInput([{ name: "dump.json", text: list([obj, ns("default")]) }]), { now: "2026-10-01" });
+      assert.ok(rep && Array.isArray(rep.findings), "analyze returned a report for kind=" + kind);
+    }
+  });
 });

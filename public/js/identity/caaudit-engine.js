@@ -150,7 +150,10 @@ export function isPhishingResistantMethod(m) {
   return PR_METHOD_RE.test(lower(m).replace(/[^a-z0-9]/g, ""));
 }
 // Weak default methods: SMS / voice / email (SCuBA MS.AAD.3.5).
-const WEAK_DEFAULT_RE = /^(mobilephone|alternatemobilephone|officephone|sms|voice|voicecall|email|phone|textmessage)/;
+// `phone(?!app)` so a legacy MSOL app method ("PhoneAppNotification",
+// "PhoneAppOTP" -- Authenticator push/OTP, not phone call/SMS) is NOT mis-bucketed
+// as a weak phone default, while "phone"/"phonecall" still match.
+const WEAK_DEFAULT_RE = /^(mobilephone|alternatemobilephone|officephone|sms|voice|voicecall|email|phone(?!app)|textmessage)/;
 export function isWeakDefaultMethod(m) {
   const s = lower(m).replace(/[^a-z0-9]/g, "");
   return !!s && WEAK_DEFAULT_RE.test(s);

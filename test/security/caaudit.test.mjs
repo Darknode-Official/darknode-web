@@ -150,6 +150,7 @@ group("caaudit: engine basics", () => {
     for (const m of ["fido2SecurityKey", "passKeyDeviceBound", "passKeyDeviceBoundAuthenticator", "windowsHelloForBusiness", "certificateBasedAuthentication"]) assert.ok(isPhishingResistantMethod(m), m);
     for (const m of ["microsoftAuthenticatorPush", "mobilePhone", "softwareOneTimePasscode", "email", "temporaryAccessPass"]) assert.notOk(isPhishingResistantMethod(m), m);
     assert.ok(isWeakDefaultMethod("mobilePhone")); assert.ok(isWeakDefaultMethod("email")); assert.notOk(isWeakDefaultMethod("microsoftAuthenticatorPush")); assert.notOk(isWeakDefaultMethod(""));
+    assert.notOk(isWeakDefaultMethod("PhoneAppNotification")); assert.notOk(isWeakDefaultMethod("PhoneAppOTP")); assert.ok(isWeakDefaultMethod("phoneCall")); // legacy MSOL app methods are not weak phone defaults
     assert.ok(isPhishingResistantStrength({ id: "00000000-0000-0000-0000-000000000004", displayName: "", allowedCombinations: [] }));
     assert.ok(isPhishingResistantStrength({ id: "custom", displayName: "Keys only", allowedCombinations: ["fido2", "windowsHelloForBusiness"] }));
     assert.notOk(isPhishingResistantStrength({ id: "00000000-0000-0000-0000-000000000002", displayName: "Multifactor authentication", allowedCombinations: ["password,sms", "fido2"] }));

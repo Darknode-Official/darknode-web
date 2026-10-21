@@ -29,11 +29,14 @@ const B = {
   hex: (r) => io(r, [
     { label: "Text -> Hex", fn: (s) => [...enc.encode(s)].map((b) => b.toString(16).padStart(2, "0")).join(" ") },
     { label: "Hex -> Text", fn: (s) => {
-      const t = s.trim();
-      // Accept both space-separated byte tokens ("48 65 6c") and contiguous hex
-      // ("48656c6c6f"); for contiguous input, left-pad an odd nibble and chunk into pairs.
-      const toks = /\s/.test(t) ? t.split(/\s+/) : ((t.length % 2 ? "0" + t : t).match(/../g) || []);
-      return new TextDecoder().decode(new Uint8Array(toks.map((h) => parseInt(h, 16))));
+      // Strip ALL whitespace so space-separated bytes ("48 65 6c"), word-grouped
+      // ("4865 6c6c"), and contiguous ("48656c6c6f") hex all decode the same; a token
+      // wider than one byte used to be truncated mod 256. Left-pad a lone odd nibble.
+      const t = s.replace(/\s+/g, "");
+      if (!t) return "";
+      if (/[^0-9a-fA-F]/.test(t)) throw new Error("not valid hex");
+      const pairs = (t.length % 2 ? "0" + t : t).match(/../g) || [];
+      return new TextDecoder().decode(new Uint8Array(pairs.map((h) => parseInt(h, 16))));
     } },
   ]),
   html: (r) => io(r, [
@@ -164,10 +167,18 @@ function parseCsv(text) {
 }
 
 B.jsonfmt = (r) => io(r, [{ label: "Format", fn: (s) => JSON.stringify(JSON.parse(s), null, 2) }, { label: "Minify", fn: (s) => JSON.stringify(JSON.parse(s)) }], "Paste JSON");
-B.csvjson = (r) => io(r, [{ label: "CSV -> JSON", fn: (s) => { const rows = parseCsv(s.trim()); const head = (rows.shift() || []).map((h) => h.trim()); return JSON.stringify(rows.map((rw) => Object.fromEntries(head.map((h, i) => [h, (rw[i] ?? "").trim()]))), null, 2); } }], "header row, then data rows");
+B.csvjson = (r) => io(r, [{ label: "CSV -> JSON", fn: (s) => { const rows = parseCsv(s.trim()); const head = (rows.shift() || []).map((h) => h.trim()); const seen = Object.create(null); const keys = head.map((h) => { const n = (seen[h] = (seen[h] || 0) + 1); return n > 1 ? h + "_" + n : h; }); /* de-dup repeated headers (a,a -> a,a_2) so no column is silently dropped */ return JSON.stringify(rows.map((rw) => Object.fromEntries(keys.map((k, i) => [k, (rw[i] ?? "").trim()]))), null, 2); } }], "header row, then data rows");
 B.unicode = (r) => io(r, [{ label: "Code points", fn: (s) => [...s].map((c) => c + "  U+" + c.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")).join("\n") }]);
 B.base32 = (r) => io(r, [{ label: "Encode", fn: base32enc }, { label: "Decode", fn: base32dec }]);
-B.binary = (r) => io(r, [{ label: "Text -> Binary", fn: (s) => [...enc.encode(s)].map((b) => b.toString(2).padStart(8, "0")).join(" ") }, { label: "Binary -> Text", fn: (s) => new TextDecoder().decode(new Uint8Array(s.trim().split(/\s+/).map((b) => parseInt(b, 2)))) }]);
+B.binary = (r) => io(r, [{ label: "Text -> Binary", fn: (s) => [...enc.encode(s)].map((b) => b.toString(2).padStart(8, "0")).join(" ") }, { label: "Binary -> Text", fn: (s) => {
+    // Strip ALL whitespace so space-grouped and contiguous bit strings both decode
+    // (a token wider than 8 bits used to be truncated mod 256). Left-pad to a byte.
+    const t = s.replace(/\s+/g, "");
+    if (!t) return "";
+    if (/[^01]/.test(t)) throw new Error("not valid binary");
+    const bytes = (t.length % 8 ? t.padStart(Math.ceil(t.length / 8) * 8, "0") : t).match(/.{8}/g) || [];
+    return new TextDecoder().decode(new Uint8Array(bytes.map((b) => parseInt(b, 2))));
+  } }]);
 B.morse = (r) => io(r, [{ label: "Text -> Morse", fn: (s) => s.toUpperCase().split("").map((c) => c === " " ? "/" : (MORSE[c] || "")).join(" ").trim() }, { label: "Morse -> Text", fn: (s) => s.trim().split(" ").map((c) => c === "/" ? " " : (MORSE_R[c] || "")).join("") }]);
 B.jsescape = (r) => io(r, [{ label: "Escape", fn: (s) => JSON.stringify(s).slice(1, -1) }, { label: "Unescape", fn: (s) => JSON.parse('"' + s + '"') }]);
 B.caesar = (r) => { r.innerHTML = `<div class="tk-row">Shift <input class="tk-f" id="cz-n" type="number" value="3" style="max-width:90px"></div><textarea class="tk-in" id="cz-in" rows="3" placeholder="Text"></textarea><div class="tk-btns"><button class="btn sm" id="cz-go">Shift</button></div><pre class="tk-out" id="cz-out"></pre>`; r.querySelector("#cz-go").onclick = () => { const n = ((+r.querySelector("#cz-n").value % 26) + 26) % 26; r.querySelector("#cz-out").textContent = r.querySelector("#cz-in").value.replace(/[a-z]/gi, (c) => { const base = c <= "Z" ? 65 : 97; return String.fromCharCode((c.charCodeAt(0) - base + n) % 26 + base); }); }; };

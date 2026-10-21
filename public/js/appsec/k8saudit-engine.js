@@ -265,7 +265,7 @@ export function parseCanI(text, name = "") {
 /** Classify + parse one file's text. */
 export function parseFile(text, name = "input") {
   const t = str(text).replace(/^﻿/, "");
-  const file = { name, kind: "unknown", objects: 0, kinds: {}, confidence: 0 };
+  const file = { name, kind: "unknown", objects: 0, kinds: Object.create(null), confidence: 0 };
   const res = { file, objects: [], kubeBench: null, canI: null, version: null, error: null };
   if (!t.trim()) { res.error = "empty file"; return res; }
   if (CANI_HEADER.test(t)) { res.canI = parseCanI(t, name); file.kind = "can-i"; file.confidence = 1; file.objects = res.canI.rows.length; return res; }
@@ -317,7 +317,7 @@ export function parseInput(input) {
     }
   }
   const objects = Array.from(seen.values()).sort(byRef);
-  const kinds = {};
+  const kinds = Object.create(null);
   for (const o of objects) kinds[o.kind] = (kinds[o.kind] || 0) + 1;
   canI.sort((a, b) => cmp(a.subject, b.subject));
   const stats = { files: files.length, objects: objects.length, duplicates, kinds: Object.fromEntries(Object.keys(kinds).sort().map((k) => [k, kinds[k]])), kubeBench: kubeBench ? kubeBench.Controls.length : 0, canI: canI.length, version: version ? version.gitVersion : null };
@@ -597,7 +597,11 @@ export function analyze(input, opts = {}, ctx) {
   const objects = ds.objects;
   const cluster = str(o.clusterName).trim() || "cluster";
   const allowed = (Array.isArray(o.allowedRegistries) ? o.allowedRegistries : str(o.allowedRegistries).split(/[\s,]+/)).map((x) => str(x).trim().replace(/\/+$/, "")).filter(Boolean).sort();
-  const idx = {};
+  // Null-proto: an object whose `kind` is a prototype member name ("constructor",
+  // "__proto__", "toString") would otherwise resolve to an inherited value, and
+  // `.push` on it throws -- taking out the whole audit (a malformed/hand-crafted
+  // dump or a maliciously named CRD).
+  const idx = Object.create(null);
   for (const x of objects) (idx[x.kind] || (idx[x.kind] = [])).push(x);
   const K = (k) => idx[k] || [];
   const has = (k) => K(k).length > 0 || !!o.assumeComplete;
