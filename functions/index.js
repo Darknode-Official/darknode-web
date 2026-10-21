@@ -369,11 +369,10 @@ const CHAT_ALLOWED_ORIGINS = [
   "https://darknode.ai",
   "https://www.darknode.ai",
   "https://darknode-official.github.io",
-  "https://darknode-web-e1s2.onrender.com",
 ];
 function chatOriginAllowed(origin) {
   if (!origin) return true;
-  try { const h = new URL(origin).hostname; if (h === "localhost" || h === "127.0.0.1") return true; return CHAT_ALLOWED_ORIGINS.includes(origin); } catch (_) { return false; }
+  try { const h = new URL(origin).hostname; if (h === "localhost" || h === "127.0.0.1") return true; if (/^darknode-web-[a-z0-9]+\.onrender\.com$/.test(h)) return true; return CHAT_ALLOWED_ORIGINS.includes(origin); } catch (_) { return false; }
 }
 const _chatRlWindow = 60000, _chatRlMax = 40, _chatRlHits = new Map();
 function chatRateLimited(ip) {

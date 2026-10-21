@@ -61,13 +61,15 @@ const ALLOWED_ORIGINS = [
   "https://darknode.ai",
   "https://www.darknode.ai",
   "https://darknode-official.github.io",
-  "https://darknode-web-e1s2.onrender.com",
 ];
 function originAllowed(origin) {
   if (!origin) return true; // non-browser client
   try {
     const h = new URL(origin).hostname;
     if (h === "localhost" || h === "127.0.0.1") return true;
+    // Our own Render mirror gets an auto-assigned subdomain whose suffix can change
+    // across redeploys; match the service prefix so a new suffix never breaks CORS.
+    if (/^darknode-web-[a-z0-9]+\.onrender\.com$/.test(h)) return true;
     return ALLOWED_ORIGINS.includes(origin);
   } catch (_) { return false; }
 }
