@@ -236,7 +236,7 @@ const SINK_STATUS = { pending: "open", escalate: "investigating", confirmed: "op
 export function toSinkFindings(rows, opts = {}) {
   const disp = opts.dispositions || {};
   return (rows || []).filter((r) => r && r.hit && r.matches.length).map((r) => {
-    const top = r.matches[0], d = disp[r.name] || "pending";
+    const top = r.matches[0], d = (Object.prototype.hasOwnProperty.call(disp, r.name) ? disp[r.name] : null) || "pending"; // hasOwnProperty: r.name is an external counterparty name; a plain-object disp would resolve "constructor"/"toString" to an inherited function
     const list = opts.listSource || "OFAC SDN";
     return {
       id: "sanctions:" + normName(r.name),

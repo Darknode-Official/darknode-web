@@ -320,7 +320,7 @@ export function renderSanctions(main) {
       listEntries: meta.count,
       params: p,
       totals: { screened: names.length, review: hits.length, strong },
-      dispositions: {}, // name -> disposition; hits default to "pending"
+      dispositions: Object.create(null), // name -> disposition (null-proto: keyed by external counterparty names); hits default to "pending"
     };
     for (const r of hits) currentAudit.dispositions[r.name] = "pending";
     auditUpsert(currentAudit);

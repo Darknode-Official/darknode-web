@@ -221,6 +221,14 @@ group("sanctions: Security Graph sink mapping", () => {
     assert.equal(iv.severity, "critical"); assert.equal(iv.confidence, "confirmed");
     assert.equal(toSinkFindings(screenBatch(["MAERSK LINE."], idx))[0].id, toSinkFindings(rows)[0].id);
   });
+  test("a counterparty named like an Object member defaults to pending, not an inherited function", () => {
+    const row = { hit: true, name: "constructor", matches: [{ uid: "9", name: "CONSTRUCTOR CO", matchedName: "CONSTRUCTOR CO", score: 95, band: "strong", type: "entity", program: "" }] };
+    const f = toSinkFindings([row]);
+    assert.equal(f[0].status, "open");                         // SINK_STATUS["pending"]
+    assert.ok(/Disposition: pending\b/.test(f[0].description));
+    assert.notOk(/function /.test(f[0].description));
+    assert.equal(f[0].assets[0].data.disposition, "pending");
+  });
   test("example list detection (no header row)", () => {
     const ex = "Darknode Test Shipping LLC\nVladimir Putin\nBank Melli Iran\nDarknode Test Trading Ltd\nNicolas Maduro\nTest User";
     assert.ok(sampleShare(ex, ex, 0) >= SAMPLE_SHARE);

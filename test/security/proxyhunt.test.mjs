@@ -205,6 +205,14 @@ group("proxyhunt: app catalogue", () => {
     assert.equal(classify({ host: "www.dropbox.com", app: "", instance: "" }, { ...o0, sanctioned: ["dropbox"] }).sanctioned, "yes");
     assert.equal(classify({ host: "www.dropbox.com", app: "", instance: "" }, o0).sanctioned, "no");
   });
+  test("own-domain instance match is exact/suffix, not substring (no exfil fail-open)", () => {
+    const o = { tenants: new Set(), ownDomains: ["corp.com"], sanctioned: [] };
+    assert.equal(classify({ host: "dropbox.com", app: "Dropbox", instance: "corp.com" }, o).instance, "corporate");       // exact
+    assert.equal(classify({ host: "dropbox.com", app: "Dropbox", instance: "team.corp.com" }, o).instance, "corporate");  // suffix
+    const sub = classify({ host: "dropbox.com", app: "Dropbox", instance: "corp.company-personal" }, o);                   // merely contains "corp.com"
+    assert.notEqual(sub.instance, "corporate");
+    assert.notEqual(sub.sanctioned, "yes");
+  });
 });
 
 group("proxyhunt: detections", () => {

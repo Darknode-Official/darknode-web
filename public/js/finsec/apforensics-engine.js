@@ -261,7 +261,7 @@ const weekday = (d) => (((d + 4) % 7) + 7) % 7; // 0 = Sunday
 export function normInvoice(v) {
   let s = str(v).toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!s) return "";
-  const p = s.match(/^(INVOICENO|INVOICENR|INVOICE|INVNO|INVNR|INV|BILLNO|BILL|NO|NR)(?=[A-Z0-9]*\d)/);
+  const p = s.match(/^(INVOICENO|INVOICENR|INVOICE|INVNO|INVNR|INV|BILLNO|BILL|NO|NR)(?=\d)/); // digit must follow the prefix IMMEDIATELY (separators already stripped) — else real ids like NOVA123/NORTH2024 get their leading letters eaten and distinct invoices collide
   if (p) s = s.slice(p[1].length);
   s = s.replace(/^0+(?=.)/, "");
   return s === "0" ? "" : s;

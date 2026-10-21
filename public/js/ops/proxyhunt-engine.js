@@ -922,7 +922,7 @@ export function classify(ev, o) {
   }
   if (ev.instance) {
     const inst = ev.instance.toLowerCase();
-    instance = o.ownDomains.some((d) => inst === d || inst.endsWith("." + d) || inst.includes(d)) || o.sanctioned.includes(inst) ? "corporate" : /personal/.test(inst) ? "personal" : instance || "other: " + inst;
+    instance = o.ownDomains.some((d) => inst === d || inst.endsWith("." + d)) || o.sanctioned.includes(inst) ? "corporate" : /personal/.test(inst) ? "personal" : instance || "other: " + inst;
   }
   let app = e.app;
   if (instance && (e.tenant || ev.instance)) app = e.app + " (" + (instance === "corporate" ? "corporate" : instance === "other tenant" ? "tenant " + ev.host.split(".")[0].replace(/-my$/, "") : instance) + ")";

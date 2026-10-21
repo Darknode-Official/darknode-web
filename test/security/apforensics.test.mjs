@@ -174,6 +174,12 @@ group("apforensics: normalisation and arithmetic", () => {
     assert.equal(normInvoice("Invoice No. 77"), "77");
     assert.equal(normInvoice("A-0012"), "A0012");
     assert.equal(normInvoice("0000"), "");
+    // prefix stripped only when a digit follows it immediately — real ids beginning with
+    // those letters must keep their leading letters (and stay distinct from each other).
+    assert.equal(normInvoice("NOVA123"), "NOVA123");
+    assert.equal(normInvoice("NORTH2024"), "NORTH2024");
+    assert.equal(normInvoice("NO5001"), "5001");
+    assert.notEqual(normInvoice("NO5001"), normInvoice("NOVA5001"));
   });
   test("toCents handles symbols, separators, negatives and rounding", () => {
     assert.equal(toCents("$1,234.56"), 123456);

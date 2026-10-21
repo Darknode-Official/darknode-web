@@ -1728,7 +1728,7 @@ export function analyze(dataset, opts = {}, ctx) {
         const a = r.aggregate, N = o[a.n], W = o[a.windowMin];
         const gfn = typeof a.group === "function" ? a.group : (e) => e.principal;
         for (const g of windows(events.filter(a.where), gfn, N, W)) {
-          const acts = {}; for (const e of g.events) acts[e.action] = (acts[e.action] || 0) + 1;
+          const acts = Object.create(null); for (const e of g.events) acts[e.action] = (acts[e.action] || 0) + 1; // null-proto: action name is operator-controlled; a plain {} makes acts["constructor"] a function → NaN ordering
           const top = Object.keys(acts).sort((x, y) => acts[y] - acts[x] || cmp(x, y)).slice(0, 3).map((k) => k + " x" + acts[k]).join(", ");
           addGroup(r, g.key, g.events, g.total, r.severity, r.confidence, [g.peak + " events within " + W + " min (threshold " + N + "); " + g.total + " in burst windows: " + top], looksLikeIp(g.key) ? [{ type: "ip", value: g.key }] : []);
         }

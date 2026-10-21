@@ -914,8 +914,9 @@ function buildReport(A, o, X, ctx) {
       if (c.nx >= o.nxMin && c.resp && c.nx / c.resp >= o.nxRatio) nxClients.push({ client, c });
     }
     nxClients.sort((a, b) => b.c.nx - a.c.nx || cmp(a.client, b.client));
-    for (const { client, c } of nxClients.slice(0, 30)) {
-      if (flagged.has(client)) continue;
+    for (const { client, c } of nxClients.filter((x) => !flagged.has(x.client)).slice(0, 30)) {
+      // skip DGA-flagged clients BEFORE the top-30 cap — otherwise a flagged client in the
+      // top 30 consumes a slot and a real non-DGA storm ranked below 30 is silently dropped.
       const ev = [];
       for (const r of [...c.nxDomains].sort()) { const d = A.domains.get(r); if (d) for (const e of d.nxRows) if (e.client === client) pushCapped(ev, e); }
       findings.push(finding({
