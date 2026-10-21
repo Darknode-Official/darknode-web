@@ -250,7 +250,7 @@ function validate(st) {
   if (!st.condition || !st.condition.trim()) {
     problems.push("A condition is required.");
   } else {
-    var KW = { and: 1, or: 1, not: 1, of: 1, all: 1, any: 1, them: 1 };
+    var KW = Object.assign(Object.create(null), { and: 1, or: 1, not: 1, of: 1, all: 1, any: 1, them: 1 }); // null-proto: a token "constructor"/"toString" must not resolve to an inherited member and skip the unknown-selection check
     var ids = st.condition.match(/[a-zA-Z_][a-zA-Z0-9_]*\*?/g) || [];
     ids.forEach(function (tok) {
       if (KW[tok.toLowerCase()]) return;

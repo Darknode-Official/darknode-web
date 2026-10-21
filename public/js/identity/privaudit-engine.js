@@ -768,12 +768,12 @@ export function analyze(dataset, opts = {}, ctx) {
           if (rot != null && days(rot, now) > o.keyRotationDays) stale.push({ user: r.user, key: "access_key_" + k, last_rotated: r["access_key_" + k + "_last_rotated"], ageDays: days(rot, now) });
           const used = parseDate(r["access_key_" + k + "_last_used_date"]);
           const ref = used != null ? used : rot;
-          if (ref != null && days(ref, now) > o.unusedDays) unused.push({ user: r.user, credential: "access_key_" + k, last_used: r["access_key_" + k + "_last_used_date"] || "never", last_rotated: r["access_key_" + k + "_last_rotated"], idleDays: days(ref, now) });
+          if (ref != null && days(ref, now) >= o.unusedDays) unused.push({ user: r.user, credential: "access_key_" + k, last_used: r["access_key_" + k + "_last_used_date"] || "never", last_rotated: r["access_key_" + k + "_last_rotated"], idleDays: days(ref, now) });
         }
         if (parseBool(r.password_enabled) === true) {
           const used = parseDate(r.password_last_used);
           const ref = used != null ? used : parseDate(r.password_last_changed) || parseDate(r.user_creation_time);
-          if (ref != null && days(ref, now) > o.unusedDays) unused.push({ user: r.user, credential: "password", last_used: r.password_last_used || "never", last_rotated: r.password_last_changed, idleDays: days(ref, now) });
+          if (ref != null && days(ref, now) >= o.unusedDays) unused.push({ user: r.user, credential: "password", last_used: r.password_last_used || "never", last_rotated: r.password_last_changed, idleDays: days(ref, now) });
         }
       }
       if (stale.length) {
@@ -786,8 +786,8 @@ export function analyze(dataset, opts = {}, ctx) {
       }
       if (unused.length) {
         unused.forEach((e) => flag("aws-credential-report", e.user, "unused-credential"));
-        push({ id: "aws_unused_credentials", title: "Credentials unused for more than " + o.unusedDays + " days", severity: "medium", confidence: "confirmed", category: "stale-access",
-          description: unused.length + " enabled credential(s) (passwords or active access keys) have not been used for more than " + o.unusedDays + " days.",
+        push({ id: "aws_unused_credentials", title: "Credentials unused for " + o.unusedDays + " days or more", severity: "medium", confidence: "confirmed", category: "stale-access",
+          description: unused.length + " enabled credential(s) (passwords or active access keys) have not been used for " + o.unusedDays + " days or more.",
           recommendation: "Deactivate the idle credentials; delete them after a grace period if nothing breaks.",
           controls: [C.cisAws_112, C.nistAC2_3, C.isoA518], evidence: sortBy(unused, "user", "credential"),
           assets: uniq(unused.map((e) => e.user)).map((u) => ident(principals.get("aws-credential-report|" + u))), tags: ["aws"] });

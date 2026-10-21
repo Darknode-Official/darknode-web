@@ -410,6 +410,17 @@ group("privaudit: AWS credential report detections", () => {
     assert.deepEqual(f.aws_unused_credentials.evidence.map((e) => e.user), ["legacy-svc"]);
     assert.equal(f.aws_unused_credentials.evidence[0].credential, "access_key_1");
   });
+  test("unused credential boundary: exactly 45 days idle is flagged (CIS AWS 1.12 is '45 or more', not 'more than')", () => {
+    const BOUNDARY = [
+      AWS_CRED_HEADERS.join(","),
+      // access_key_1 active, last used exactly 45 days before NOW (2026-08-17T12:00:00Z) -> days() === 45
+      "svc-45,arn:aws:iam::123456789012:user/svc-45,2024-01-01T00:00:00+00:00,false,N/A,N/A,N/A,false,true,2024-01-01T00:00:00+00:00,2026-08-17T12:00:00+00:00,us-east-1,s3,false,N/A,N/A,N/A,N/A,false,N/A,false,N/A",
+    ].join("\n");
+    const f2 = byId(run([{ name: "c.csv", text: BOUNDARY }]));
+    assert.ok(f2.aws_unused_credentials, "a credential idle exactly unusedDays days must fire");
+    assert.deepEqual(f2.aws_unused_credentials.evidence.map((e) => e.user), ["svc-45"]);
+    assert.ok(/days or more/.test(f2.aws_unused_credentials.title), "title reflects the inclusive boundary");
+  });
   test("two active access keys fires for deploy-bot (CIS AWS 1.13)", () => {
     assert.ok(f.aws_two_keys);
     assert.deepEqual(f.aws_two_keys.evidence.map((e) => e.user), ["deploy-bot"]);

@@ -163,7 +163,9 @@ export function cvssV3BaseScore(vector) {
             : 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15))            // CVSS v3.0
     : 6.42 * iss;
   const exploit = 8.22 * AV * AC * PR * UI;
-  const roundup = (x) => Math.ceil(x * 10) / 10;
+  // CVSS 3.1 integer Roundup: Math.ceil(x*10)/10 over-rounds when IEEE-754 leaves a value a hair
+  // above an exact tenth (the exact case the 3.1 spec replaced ceil-to-tenth to avoid).
+  const roundup = (x) => { const n = Math.round(x * 100000); return n % 10000 === 0 ? n / 100000 : (Math.floor(n / 10000) + 1) / 10; };
   if (impact <= 0) return 0;
   return roundup(Math.min(scopeChanged ? 1.08 * (impact + exploit) : impact + exploit, 10));
 }

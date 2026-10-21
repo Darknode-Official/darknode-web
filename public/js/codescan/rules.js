@@ -26,7 +26,10 @@ export function langOf(path) {
   if (/^\.env(\..+)?$/i.test(base)) return "env";
   if (/(^|\/)\.github\/workflows\/[^/]+\.ya?ml$/i.test(p)) return "gha";
   const ext = (base.includes(".") ? base.split(".").pop() : "").toLowerCase();
-  return EXT_LANG[ext] || "";
+  // hasOwnProperty guard: `ext` is derived from a scanned filename, so a path like "x.constructor"
+  // would otherwise resolve to the inherited Object.prototype.constructor (a truthy function) and
+  // be returned instead of "".
+  return Object.prototype.hasOwnProperty.call(EXT_LANG, ext) ? EXT_LANG[ext] : "";
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -460,14 +463,29 @@ export function cvssBase(vec) {
   return up(Math.min(changed ? 1.08 * (impact + expl) : impact + expl, 10));
 }
 
-// Lowest "fixed" version for this package across the advisory's affected ranges.
+// Compare two dotted version strings by their numeric release parts; lower sorts first.
+// (Prerelease/build suffixes are ignored — enough to pick the lowest fixed release reliably.)
+function cmpVer(a, b) {
+  const pa = String(a).split(/[.+-]/), pb = String(b).split(/[.+-]/);
+  const n = Math.max(pa.length, pb.length);
+  for (let k = 0; k < n; k++) {
+    const x = parseInt(pa[k], 10), y = parseInt(pb[k], 10);
+    const xn = isNaN(x) ? 0 : x, yn = isNaN(y) ? 0 : y;
+    if (xn !== yn) return xn - yn;
+  }
+  return 0;
+}
+
+// Lowest "fixed" version for this package across the advisory's affected ranges. OSV lists ranges
+// per release branch in no guaranteed order, so the minimal upgrade target is the lowest fixed
+// version, not whichever range happens to appear first.
 export function osvFixed(v, name) {
   const fixes = [];
   for (const a of v.affected || []) {
     if (a.package && a.package.name && a.package.name.toLowerCase() !== String(name).toLowerCase()) continue;
     for (const r of a.ranges || []) for (const e of r.events || []) if (e.fixed) fixes.push(e.fixed);
   }
-  return fixes[0] || "";
+  return fixes.sort(cmpVer)[0] || "";
 }
 
 // Dependency advisory hit → finding (shared by the browser scanner, commit watch and CLI).

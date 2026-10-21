@@ -147,6 +147,10 @@ group("caaudit: engine basics", () => {
     assert.deepEqual(splitList("a;b, c|d"), ["a", "b", "c", "d"]);
     assert.deepEqual(splitList(["x", "y"]), ["x", "y"]);
     assert.deepEqual(camelKeys({ DisplayName: "x", Conditions: { Users: { IncludeUsers: ["All"] } } }), { displayName: "x", conditions: { users: { includeUsers: ["All"] } } });
+    // A crafted "__proto__" key (JSON.parse makes it an OWN key) must not poison the output's prototype → fail-open.
+    const poisoned = camelKeys(JSON.parse('{"displayName":"x","__proto__":{"grantControls":"PWNED"}}'));
+    assert.equal(poisoned.displayName, "x");
+    assert.equal(poisoned.grantControls, undefined);
     for (const m of ["fido2SecurityKey", "passKeyDeviceBound", "passKeyDeviceBoundAuthenticator", "windowsHelloForBusiness", "certificateBasedAuthentication"]) assert.ok(isPhishingResistantMethod(m), m);
     for (const m of ["microsoftAuthenticatorPush", "mobilePhone", "softwareOneTimePasscode", "email", "temporaryAccessPass"]) assert.notOk(isPhishingResistantMethod(m), m);
     assert.ok(isWeakDefaultMethod("mobilePhone")); assert.ok(isWeakDefaultMethod("email")); assert.notOk(isWeakDefaultMethod("microsoftAuthenticatorPush")); assert.notOk(isWeakDefaultMethod(""));

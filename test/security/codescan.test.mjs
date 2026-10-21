@@ -113,6 +113,11 @@ group("codescan: python / go / php / java / infra", () => {
   });
   test("GitHub Actions script injection", () => hit(".github/workflows/ci.yml", "    steps:\n      - run: echo \"${{ github.event.issue.title }}\"", "gha.script-injection"));
   test("langOf", () => { assert.equal(langOf("a/b/Dockerfile"), "docker"); assert.equal(langOf(".github/workflows/x.yml"), "gha"); assert.equal(langOf("x.tsx"), "js"); });
+  test("langOf returns '' for an extension that names an Object.prototype member (no inherited function)", () => {
+    assert.equal(langOf("x.constructor"), "");
+    assert.equal(langOf("x.toString"), "");
+    assert.equal(langOf("x.unknownext"), "");
+  });
 });
 
 group("codescan: manifests + scoring", () => {
@@ -150,6 +155,11 @@ group("codescan: manifests + scoring", () => {
     assert.equal(osvSeverity({ database_specific: { severity: "MODERATE" } }), "medium");
     assert.equal(osvSeverity({ severity: [{ type: "CVSS_V3", score: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" }] }), "critical");
     assert.equal(osvFixed({ affected: [{ package: { name: "lodash" }, ranges: [{ events: [{ introduced: "0" }, { fixed: "4.17.21" }] }] }] }, "lodash"), "4.17.21");
+    // multi-branch advisory listed highest-first: must return the LOWEST fixed version (minimal upgrade), not fixes[0].
+    assert.equal(osvFixed({ affected: [
+      { package: { name: "pkg" }, ranges: [{ events: [{ introduced: "2.0.0" }, { fixed: "2.0.1" }] }] },
+      { package: { name: "pkg" }, ranges: [{ events: [{ introduced: "0" }, { fixed: "1.2.3" }] }] },
+    ] }, "pkg"), "1.2.3");
   });
   test("score + SARIF", () => {
     assert.equal(repoScore([]), 100);

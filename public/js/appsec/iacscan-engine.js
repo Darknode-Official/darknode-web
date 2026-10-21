@@ -646,7 +646,7 @@ const POLICY_TYPES = {
 };
 /** Policy documents carried by a resource: [{stmts|null, key}] */
 function policiesOf(r) {
-  if (!(r.type in POLICY_TYPES)) return [];
+  if (!Object.prototype.hasOwnProperty.call(POLICY_TYPES, r.type)) return []; // r.type is parser-controlled; `in` would walk the prototype chain ("constructor"/"__proto__")
   const p = r.props;
   if (r.type === "aws_iam_policy_document") return [{ stmts: policyStatements({ statement: p.statement }), key: "statement" }];
   const path = POLICY_TYPES[r.type];

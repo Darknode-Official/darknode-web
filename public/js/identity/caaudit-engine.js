@@ -173,7 +173,13 @@ export function camelKeys(o) {
   if (Array.isArray(o)) return o.map(camelKeys);
   if (o === null || typeof o !== "object") return o;
   const out = {};
-  for (const k of Object.keys(o)) out[k.charAt(0).toLowerCase() + k.slice(1)] = camelKeys(o[k]);
+  for (const k of Object.keys(o)) {
+    // JSON.parse leaves "__proto__" as an own key; a computed bracket assignment of an object value
+    // to out["__proto__"] would fire the prototype setter and make unset policy fields resolve through
+    // attacker data (fail-open MFA/grant analysis). Skip the prototype-manipulating names.
+    if (k === "__proto__" || k === "constructor" || k === "prototype") continue;
+    out[k.charAt(0).toLowerCase() + k.slice(1)] = camelKeys(o[k]);
+  }
   return out;
 }
 

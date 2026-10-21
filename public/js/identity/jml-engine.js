@@ -140,7 +140,7 @@ function csvQuote(v) { const s = String(v == null ? "" : v); return /[",\n\r]/.t
 
 /** Re-serialise rows as CSV with headers renamed through `map` (original header -> canonical name). */
 function toCsvRenamed(headers, rows, map) {
-  const hs = headers.map((h) => (map[h] || h));
+  const hs = headers.map((h) => (Object.prototype.hasOwnProperty.call(map, h) ? map[h] : h)); // a header named "constructor"/"toString" must not resolve to an inherited native function
   const out = [hs.map(csvQuote).join(",")];
   for (const r of rows) out.push(headers.map((h) => csvQuote(r[h])).join(","));
   return out.join("\n");
