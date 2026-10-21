@@ -309,7 +309,10 @@ function appRoles(record) {
   }
   const highRisk = [];
   for (const r of roles) {
-    const name = HIGH_RISK_APP_ROLES[r.id];
+    // r.id is an attacker-controlled resourceAccess id; guard the plain-object lookup
+    // so "constructor"/"__proto__" can't resolve to an inherited member and be pushed
+    // as a bogus tenant-wide role (a false high-severity finding).
+    const name = Object.prototype.hasOwnProperty.call(HIGH_RISK_APP_ROLES, r.id) ? HIGH_RISK_APP_ROLES[r.id] : undefined;
     const okRes = !r.resource || r.resource === GRAPH_APP || r.resource === EXO_APP;
     if (name && okRes) highRisk.push(name);
     else if (r.value && HIGH_RISK_VALUES.has(r.value.toLowerCase())) highRisk.push(r.value);

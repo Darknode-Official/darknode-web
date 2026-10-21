@@ -338,6 +338,13 @@ group("nhi: detections", () => {
     assert.ok(!find(neg, "entra_app_high_risk_role"));
   });
 
+  test("entra_app_high_risk_role ignores a reserved-word role id (prototype-key safety)", () => {
+    // "constructor"/"__proto__" index Object.prototype members; before the guard they
+    // resolved to the native Object function and were pushed as a bogus tenant-wide role.
+    assert.ok(!find(run([entraJson(entraApp("A", { secrets: [["a", 10, -200]], owners: ["x"], roles: ["constructor"] }))]), "entra_app_high_risk_role"));
+    assert.ok(!find(run([entraJson(entraApp("B", { secrets: [["a", 10, -200]], owners: ["x"], roles: ["__proto__"] }))]), "entra_app_high_risk_role"));
+  });
+
   test("Okta: departed creator (opts.departed, case-insensitive), skipped when no list; expired token is low; never-used token", () => {
     const files = [oktaCsv(["Old", oktaDate(400), "Former.User@darknode.ai", oktaDate(100), oktaDate(70), "00T1", "Expired"], ["Idle", oktaDate(120), "test@darknode.ai", "Never", oktaDate(-10), "00T2", "Active"])];
     const r = run(files, { departed: ["former.user@darknode.ai"] });

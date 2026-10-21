@@ -732,7 +732,10 @@ export function buildInventory(rows, o, progress) {
     if (!roleId || roleId === "00000000-0000-0000-0000-000000000000") continue;
     const resName = str(ar.resourceDisplayName);
     const isGraph = graphResourceIds.has(rid) || /^microsoft graph$/i.test(resName);
-    const named = (roleNames.get(rid) || new Map()).get(roleId) || ((isGraph || !resName) ? GRAPH_APP_ROLES[roleId] : "") || str(ar.appRoleValue || ar.permission || ar.scope);
+    // roleId is attacker-controlled; guard the plain-object lookup so "constructor"/
+    // "__proto__" can't resolve to an inherited member (garbled scope + lost note).
+    const graphRole = Object.prototype.hasOwnProperty.call(GRAPH_APP_ROLES, roleId) ? GRAPH_APP_ROLES[roleId] : "";
+    const named = (roleNames.get(rid) || new Map()).get(roleId) || ((isGraph || !resName) ? graphRole : "") || str(ar.appRoleValue || ar.permission || ar.scope);
     addScope(a, named || ("appRole:" + roleId), "application", { grantId: aid || undefined });
     if (!named) a.notes.add("appRoleId " + roleId + " not resolved (resource " + (resName || rid) + ")");
   }

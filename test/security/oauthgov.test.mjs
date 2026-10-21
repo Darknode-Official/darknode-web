@@ -466,6 +466,16 @@ group("oauthgov: engine contract", () => {
     assert.ok(a); assert.equal(a.name, "Acme Sync"); assert.equal(a.publisherVerified, false);
     assert.equal(inv.apps.size, 2);
   });
+  test("buildInventory ignores a reserved-word appRoleId (prototype-key safety)", () => {
+    // appRoleId "constructor" indexed GRAPH_APP_ROLES's inherited Object member before the
+    // guard: the scope was garbled to "function Object(){…}" and the "not resolved" note lost.
+    const p = parseInput(entraFiles([sp()], null, [appRole({ appRoleId: "constructor", resourceDisplayName: "" })]));
+    const inv = buildInventory(p.rows, { ...DEFAULTS }, null);
+    const a = inv.apps.get("entra:22222222-aaaa-4bbb-8ccc-000000000002");
+    assert.ok(a);
+    assert.ok(!(a.scopes || []).some((s) => /native code|object Object/.test(String(s && s.scope))));
+    assert.ok([...(a.notes || [])].some((n) => /not resolved/.test(String(n))));
+  });
   test("findingsToCsv / appsToCsv / revokeToCsv header rows and quoting", () => {
     const r = analyze(exampleDataset().rows, { now: "2026-10-05T00:00:00Z" });
     const csv = findingsToCsv(r.findings);

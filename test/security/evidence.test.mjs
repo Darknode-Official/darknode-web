@@ -538,3 +538,20 @@ group("evidence: example, exports, selfTest", () => {
     assert.equal(DEFAULTS.calendarMonths, 12);
   });
 });
+
+group("evidence: prototype-key safety (reserved-word external keys)", () => {
+  test("normFramework ignores inherited Object.prototype keys", () => {
+    // "constructor" normalizes to a key that indexes Object's constructor (truthy);
+    // without a hasOwnProperty guard it leaked back as a bogus framework id and crashed
+    // the plain-object catalog/tool lookups downstream.
+    assert.equal(normFramework("constructor"), "");
+    assert.equal(normFramework("__proto__"), "");
+    assert.equal(normFramework("toString"), "");
+    assert.equal(normFramework("valueOf"), "");
+  });
+  test("toolRuns tolerates a constructor-source entity without crashing", () => {
+    const runs = toolRuns([{ type: "FINDING", source: "constructor", updatedAt: "2026-01-01T00:00:00Z" }]);
+    assert.ok(Array.isArray(runs));
+    assert.equal(runs.length, 0);
+  });
+});

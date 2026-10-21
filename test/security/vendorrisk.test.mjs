@@ -431,3 +431,15 @@ group("vendorrisk: analyze, determinism, selfTest", () => {
     assert.equal(DEFAULTS.snapshotCap, 12);
   });
 });
+
+group("vendorrisk: prototype-key safety (enumSyn reserved words)", () => {
+  test("normalizeRecord never stores an inherited Object member for a reserved-word enum cell", () => {
+    // SYN[kind]["constructor"] resolved to the native Object function before the guard,
+    // so dataTier/dataTypes silently became a function instead of the blank fallback.
+    const rec = normalizeRecord({ legalName: "V", dataTier: "constructor", systemAccess: "__proto__", dataTypes: "constructor", integrations: "toString" });
+    assert.notEqual(typeof rec.dataTier, "function");
+    assert.notEqual(typeof rec.systemAccess, "function");
+    assert.ok(!(rec.dataTypes || []).some((x) => typeof x === "function"));
+    assert.ok(!(rec.integrations || []).some((x) => typeof x === "function"));
+  });
+});

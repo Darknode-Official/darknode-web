@@ -198,7 +198,7 @@ const SYN = {
   dataTypes: { personal: "pii", "personal data": "pii", health: "phi", hipaa: "phi", cardholder: "pci", card: "pci", payment: "pci", banking: "financial", secrets: "credentials", code: "source", "source code": "source", hr: "employee" },
   integrations: { "api key": "apikeys", api: "apikeys", "api keys": "apikeys", oauth: "oauth", "oauth app": "oauth", agent: "agent", "on-prem agent": "agent", saml: "sso", oidc: "sso" },
 };
-function enumSyn(kind, list, v, dflt) { const s = lc(v); return SYN[kind] && SYN[kind][s] ? SYN[kind][s] : enumOf(list, s, dflt); }
+function enumSyn(kind, list, v, dflt) { const s = lc(v); const row = SYN[kind]; if (row && Object.prototype.hasOwnProperty.call(row, s)) return row[s]; return enumOf(list, s, dflt); }
 const splitList = (v) => (Array.isArray(v) ? v : str(v).split(/[;,|\n]/)).map((x) => str(x).trim()).filter(Boolean);
 const bool = (v) => v === true || /^(y|yes|true|1|x)$/i.test(str(v).trim());
 

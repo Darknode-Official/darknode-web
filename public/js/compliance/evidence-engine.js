@@ -137,7 +137,9 @@ const refKey = (r) => r.fw + ":" + r.id;
 export function normFramework(s) {
   const t = str(s).toLowerCase().replace(/[^a-z0-9]/g, "");
   if (!t) return "";
-  if (FW[t]) return t;
+  // hasOwnProperty, not truthiness: a normalized value of "constructor" indexes
+  // Object.prototype's inherited member (truthy) and would leak as a bogus key.
+  if (Object.prototype.hasOwnProperty.call(FW, t)) return t;
   if (t.startsWith("soc2") || t === "soc" || t.includes("trustservices") || t === "tsc") return "soc2";
   if (t.includes("27001") || t === "iso" || t.includes("27002")) return "iso27001";
   if (t.startsWith("pci")) return "pci4";
@@ -566,7 +568,9 @@ export function toolRuns(entities) {
     if (!e || !["FINDING", "CONTROL", "ASSET"].includes(e.type)) continue;
     if ((e.tags || []).includes("sample") || (e.data && e.data._simulated)) continue;
     const tool = toolOf(e);
-    if (!TOOL_EVIDENCE_MAP[tool]) continue;
+    // tool is derived from an external graph-entity source; guard the plain-object
+    // lookup so "constructor"/"__proto__" can't pass as a known tool and crash suggest().
+    if (!Object.prototype.hasOwnProperty.call(TOOL_EVIDENCE_MAP, tool)) continue;
     const day = toDay(e.updatedAt || e.createdAt);
     if (!day) continue;
     const k = tool + "|" + day;
