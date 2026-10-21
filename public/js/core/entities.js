@@ -667,7 +667,7 @@ export function relationshipsFrom(fromType) {
 
 /** Human/AI-readable one-line description of a relationship's domain/range. */
 export function describeRelationship(relType) {
-  const rule = RELATIONSHIP_RULES[relType];
+  const rule = Object.prototype.hasOwnProperty.call(RELATIONSHIP_RULES, relType) ? RELATIONSHIP_RULES[relType] : null; // guard: an inherited name ("constructor") would otherwise return Object.prototype.constructor and crash fmt()
   if (!rule) return null;
   const fmt = (x) => (x === ANY ? "any" : x.join("|"));
   return `${fmt(rule.from)} --${relType}--> ${fmt(rule.to)}`;

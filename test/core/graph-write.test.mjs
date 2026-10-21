@@ -159,3 +159,22 @@ group("FINDING lifecycle schema", () => {
     assert.notOk(validateData("FINDING", { title: "t", resolution: "wontfix" }).ok);
   });
 });
+
+group("mergeToolData: prototype-named tool ids don't corrupt or lose data", () => {
+  test("a tool named __proto__ stores its payload as an own key, no proto poisoning", () => {
+    const first = mergeToolData(null, { risk: "high" }, "scanner-a");
+    const merged = mergeToolData(first, { c: 3 }, "__proto__");
+    // the prototype was NOT reassigned...
+    assert.equal(Object.getPrototypeOf(Object.create(null)), null);
+    assert.equal(({}).c, undefined);
+    // ...and the __proto__ source's payload is actually recorded
+    assert.ok(merged.bySource && Object.prototype.hasOwnProperty.call(merged.bySource, "__proto__"));
+    assert.equal(merged.bySource["__proto__"].c, 3);
+  });
+  test("an earlier tool named toString is still backed up into bySource", () => {
+    const first = mergeToolData(null, { risk: "low" }, "toString");
+    const merged = mergeToolData(first, { risk: "high" }, "scanner-b");
+    assert.ok(Object.prototype.hasOwnProperty.call(merged.bySource, "toString"));
+    assert.equal(merged.bySource["toString"].risk, "low");
+  });
+});

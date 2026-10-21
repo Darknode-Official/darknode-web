@@ -39,7 +39,7 @@ const byLink = (a, b) => (a.from + a.rel + a.to).localeCompare(b.from + b.rel + 
  */
 export function findingKey(toolId, f) {
   f = f || {};
-  const seed = f.id || [str(f.title), str(f.category), ...(f.assets || []).map(assetKey).sort()].join("|");
+  const seed = f.id || [str(f.title).trim(), str(f.category).trim(), ...(f.assets || []).map(assetKey).sort()].join("|");
   return cyrb53(str(toolId) + "|" + seed);
 }
 
@@ -68,7 +68,7 @@ export function fitUnder(data, cap = DATA_CAP) {
   return d;
 }
 
-const ownFields = (d) => { const o = {}; for (const k in d || {}) if (k !== "bySource" && k !== "_toolSource") o[k] = d[k]; return o; };
+const ownFields = (d) => { const o = Object.create(null); for (const k in d || {}) if (k !== "bySource" && k !== "_toolSource") o[k] = d[k]; return o; }; // null-proto: a JSON-parsed own "__proto__" field would otherwise hit the prototype setter on assignment
 const WF = new Set(WORKFLOW_FIELDS);
 // What a tool may write: never the workflow fields (owner, history, exception, ...), and
 // an unset resolution does not erase the one an analyst or reconcileRun recorded.
@@ -93,9 +93,12 @@ const keepWorkflow = (out, p) => { for (const k of WF) { if (k in p) out[k] = p[
  */
 export function mergeToolData(prev, incoming, toolName, cap = DATA_CAP) {
   const p = prev || {}, inc = toolFields(incoming), tool = str(toolName) || "unknown";
-  const bySource = { ...(p.bySource && typeof p.bySource === "object" ? p.bySource : {}) };
+  // null-proto: a tool named "__proto__" would otherwise hit the prototype setter on
+  // assignment (losing its payload + corrupting the object), and the `in`-test below
+  // would fail-open for inherited names ("toString", "constructor", ...).
+  const bySource = Object.assign(Object.create(null), p.bySource && typeof p.bySource === "object" ? p.bySource : null);
   const prevTool = str(p._toolSource);
-  if (prevTool && prevTool !== tool && !(prevTool in bySource)) bySource[prevTool] = toolFields(p);
+  if (prevTool && prevTool !== tool && !Object.prototype.hasOwnProperty.call(bySource, prevTool)) bySource[prevTool] = toolFields(p);
   delete bySource[tool];
   bySource[tool] = inc;
   // A single-source entity's top level already is that tool's data; storing it twice

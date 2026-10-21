@@ -176,3 +176,11 @@ group("sink-map: summarize", () => {
     assert.equal(s.byConfidence["__proto__"], 1);
   });
 });
+
+group("sink-map: findingKey normalizes title/category whitespace (stable dedup)", () => {
+  test("stray leading/trailing whitespace keys the same (no duplicate / verify-fixed works)", () => {
+    const a = findingKey("t", { title: "Weak TLS", category: "crypto", assets: [{ type: "HOST", name: "h1" }] });
+    const b = findingKey("t", { title: "  Weak TLS  ", category: " crypto ", assets: [{ type: "HOST", name: "h1" }] });
+    assert.equal(a, b);
+  });
+});

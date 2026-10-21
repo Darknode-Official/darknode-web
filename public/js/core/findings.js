@@ -10,6 +10,10 @@ export const FINDING_TYPES = ["FINDING", "VULNERABILITY"];
 export const SEV_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 export const OPEN_STATUSES = ["new", "open", "investigating"];
 const sevOf = (e) => String(e.severity || "").toLowerCase();
+// hasOwnProperty-guarded rank: a severity literally named "constructor"/"toString"
+// would otherwise resolve to an inherited member (truthy, so ?? -1 never fires) and
+// poison the comparator with NaN, scrambling the sort order.
+const sevRank = (s) => Object.prototype.hasOwnProperty.call(SEV_RANK, s) ? SEV_RANK[s] : -1;
 const isOpen = (e) => !e.status || OPEN_STATUSES.includes(String(e.status).toLowerCase());
 
 // Finding rows, most severe first, then most recently updated.
@@ -21,7 +25,7 @@ export function collectFindings(entities, opts = {}) {
       source: e.source || "manual", tags: e.tags || [], createdAt: e.createdAt || "", updatedAt: e.updatedAt || e.createdAt || "",
       sim: isSimulated(e),
     }))
-    .sort((a, b) => (SEV_RANK[b.severity] ?? -1) - (SEV_RANK[a.severity] ?? -1) || String(b.updatedAt).localeCompare(String(a.updatedAt)) || String(a.id).localeCompare(String(b.id)));
+    .sort((a, b) => sevRank(b.severity) - sevRank(a.severity) || String(b.updatedAt).localeCompare(String(a.updatedAt)) || String(a.id).localeCompare(String(b.id)));
 }
 
 export function filterFindings(rows, f = {}) {

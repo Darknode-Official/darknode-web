@@ -62,3 +62,15 @@ group("core/findings", () => {
     assert.deepEqual(sectionEntities(ents, { types: ["FINDING"] }).map((e) => e.id), ["a", "d"]);
   });
 });
+
+group("core/findings: severity sort is proto-safe", () => {
+  test("a finding whose severity is a prototype-member name doesn't scramble the order", () => {
+    const rows = collectFindings([
+      { id: "x", type: "FINDING", severity: "constructor", status: "open", updatedAt: "2026-10-01" },
+      { id: "y", type: "FINDING", severity: "critical", status: "open", updatedAt: "2026-10-01" },
+      { id: "z", type: "FINDING", severity: "low", status: "open", updatedAt: "2026-10-01" },
+    ]);
+    // critical (4) first, then low (1), then the bogus severity (ranked -1) last
+    assert.deepEqual(rows.map((r) => r.id), ["y", "z", "x"]);
+  });
+});

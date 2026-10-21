@@ -225,3 +225,11 @@ group("entities: relationships", () => {
     }
   });
 });
+
+group("entities: describeRelationship is proto-safe", () => {
+  test("a relationship name that is a prototype member returns null, not a crash", () => {
+    assert.equal(describeRelationship("constructor"), null);
+    assert.equal(describeRelationship("toString"), null);
+    assert.equal(describeRelationship("__proto__"), null);
+  });
+});
