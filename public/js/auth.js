@@ -57,7 +57,7 @@ import { startTour, tourDone } from "/js/tour.js";
 import { isDesktop, has as desktopHas, syncTitlebar } from "/js/core/desktop.js";
 if (isDesktop()) syncTitlebar();
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261021c"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261021d"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -382,7 +382,7 @@ function loadSupportChat() {
   try { if (document.documentElement.hasAttribute("data-embed")) return; } catch (_) {}
   _chatLoaded = true;
   const s = document.createElement("script");
-  s.src = "/js/darknode-chat.js?v=20261007e"; s.async = false;
+  s.src = "/js/darknode-chat.js?v=20261021d"; s.async = false;
   document.body.appendChild(s);
 }
 window.__loadSupportChat = loadSupportChat;
@@ -2142,7 +2142,7 @@ function renderApp(user) {
     else if (sec === "downloads") { import("/js/getapp.js?v=20261021c").then(m => live() && m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20261021c").then(m => live() && m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261017d").then(m => live() && m.renderAPI(main, user)); }
-    else if (sec === "docs") { import("/js/docs.js?v=20261021c").then(m => live() && m.renderDocs(main)); }
+    else if (sec === "docs") { import("/js/docs.js?v=20261021d").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261017d").then(m => live() && m.renderStrongroom(main)); }
     else if (sec === "vault") { import("/js/vault.js?v=20261018i").then(m => live() && m.renderVault(main)); }
