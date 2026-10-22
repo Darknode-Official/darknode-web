@@ -85,10 +85,11 @@ function renderSection(id) {
         <div class="dc-card"><div style="font-weight:700;margin-bottom:6px;color:var(--txt,#e2e8f0)">Desktop app</div><p style="color:var(--mut,#94a3b8);font-size:.9rem;margin:0">The console plus a VM lab runner, native scanners, live terminals and the autonomous Assistant.</p></div>
         <div class="dc-card"><div style="font-weight:700;margin-bottom:6px;color:var(--txt,#e2e8f0)">Terminal (CLI + Nexus)</div><p style="color:var(--mut,#94a3b8);font-size:.9rem;margin:0">A single dependency-free binary: the toolkit plus the Nexus coding agent. Runs anywhere.</p></div>
       </div>
-      <pre class="dc-pre"><code># terminal edition — one install, anywhere Node 18+ runs
-npm i -g darknode-cli    # sets up the free local AI on first run
-nexus                    # launch the AI coding agent
-nexus init               # optional: scaffold .nexus/ project context</code></pre>
+      <!-- NPM_SUSPENDED: revert this block to "npm i -g darknode-cli / nexus / nexus init" when the npm account is restored -->
+      <pre class="dc-pre"><code># terminal edition — runs anywhere Node 18+ is installed
+git clone https://github.com/Darknode-Official/darknode-cli
+cd darknode-cli &amp;&amp; node darknode.js nexus   # launch the AI coding agent
+node darknode.js nexus init                 # optional: scaffold .nexus/ project context</code></pre>
       <p style="color:var(--mut,#94a3b8);margin-top:16px">The desktop app and CLI use only systems you own or are authorized to test.</p>`;
 
     case 'nexus': return `

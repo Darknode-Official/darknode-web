@@ -108,8 +108,9 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
             </div>
             <h3>CLI</h3>
-            <p>One command: <code>npm i -g darknode-cli</code>. Run the full scanning and analysis toolset in CI/CD, fail builds on real findings, and ship results as artifacts.</p>
-            <span class="bento-tag">npm install</span>
+            <!-- NPM_SUSPENDED: restore <code>npm i -g darknode-cli</code> and the "npm install" tag when the npm account is back -->
+            <p>Clone and run: <code>git clone .../darknode-cli</code>. Run the full scanning and analysis toolset in CI/CD, fail builds on real findings, and ship results as artifacts.</p>
+            <span class="bento-tag">git clone</span>
           </div>
           <div class="bento-card">
             <div class="bento-icon">
@@ -231,13 +232,15 @@ export function renderLanding(view, actions) {
             <div class="tlv-num">1</div>
             <div class="tlv-body">
               <div class="tlv-text">
-                <h3>Install in one command</h3>
-                <p><code>npm i -g darknode-cli</code> or download the desktop app. Works on Linux, macOS, and Windows.</p>
+                <h3>Install from source</h3>
+                <!-- NPM_SUSPENDED: restore "Install in one command" + <code>npm i -g darknode-cli</code> when the npm account is back -->
+                <p><code>git clone</code> the CLI repo or download the desktop app. Works on Linux, macOS, and Windows.</p>
               </div>
               <div class="tlv-visual">
                 <div class="term-window demo-term">
                   <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">terminal</span></div>
-                  <pre class="tw-body"><span class="c-pl">$</span> npm i -g darknode-cli\n<span class="c-mut">+ darknode-cli@2.46.2</span>\n<span class="c-mut">added 1 package in 3.2s</span>\n\n<span class="c-pl">$</span> darknode --version\n<span class="c-ok">darknode v2.46.2</span></pre>
+                  <!-- NPM_SUSPENDED: restore the "npm i -g darknode-cli" terminal demo when the npm account is back -->
+                  <pre class="tw-body"><span class="c-pl">$</span> git clone https://github.com/Darknode-Official/darknode-cli\n<span class="c-mut">Cloning into 'darknode-cli'...</span>\n<span class="c-mut">done.</span>\n\n<span class="c-pl">$</span> node darknode.js --version\n<span class="c-ok">darknode v2.46.3</span></pre>
                 </div>
               </div>
             </div>

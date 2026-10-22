@@ -60,10 +60,11 @@ export function renderCliCoder(main) {
       <h1 class="nx-title">Code with cloud and local AI —<br>on your terms.</h1>
       <p class="nx-sub">Nexus is a single dependency-free binary that drives <b>Claude</b>, your <b>local</b> models, or <b>OpenCode</b> from one terminal UI. It reads &amp; writes files, runs commands, checkpoints every change, shows your real cost live, and keeps your secrets off the cloud.</p>
       <div class="nx-cta">
-        <pre class="code-block cta-cmd"><button class="cb-copy">copy</button><code>npm i -g darknode-cli</code></pre>
+        <!-- NPM_SUSPENDED: restore <code>npm i -g darknode-cli</code> here when the npm account is back -->
+        <pre class="code-block cta-cmd"><button class="cb-copy">copy</button><code>git clone https://github.com/Darknode-Official/darknode-cli &amp;&amp; cd darknode-cli &amp;&amp; node darknode.js nexus</code></pre>
         <button class="btn lg ghost" data-sec="downloads">All builds</button>
       </div>
-      <p class="nx-sub" style="margin-top:8px;opacity:.75">Works everywhere Node 18+ runs — Linux, macOS, Windows. Then run <code>nexus</code>.</p>
+      <p class="nx-sub" style="margin-top:8px;opacity:.75">Works everywhere Node 18+ runs — Linux, macOS, Windows. Needs git.</p>
       ${terminalMock()}
     </section>
 
@@ -109,12 +110,15 @@ export function renderCliCoder(main) {
     </div>
 
     <h2 class="nx-h2">Get started</h2>
-    <pre class="code-block"><button class="cb-copy">copy</button><code>npm i -g darknode-cli   # one install; sets up free local AI on first run
-nexus                   # start the agent (Claude if installed, else local)
-nexus init              # optional: scaffold .nexus/ project context
-nexus --tui -e ollama   # drive a 100% local, private agent</code></pre>
+    <!-- NPM_SUSPENDED: restore the npm install block (npm i -g darknode-cli / nexus / nexus init / nexus --tui -e ollama) when the npm account is back -->
+    <pre class="code-block"><button class="cb-copy">copy</button><code>git clone https://github.com/Darknode-Official/darknode-cli
+cd darknode-cli
+node darknode.js nexus              # start the agent (Claude if installed, else local)
+node darknode.js nexus init        # optional: scaffold .nexus/ project context
+node darknode.js nexus --tui -e ollama   # drive a 100% local, private agent</code></pre>
     <div class="btns" style="margin:12px 0;flex-wrap:wrap;gap:8px">
-      <a class="btn" href="https://www.npmjs.com/package/darknode-cli" target="_blank" rel="noopener">View on npm</a>
+      <!-- NPM_SUSPENDED: restore the "View on npm" link (https://www.npmjs.com/package/darknode-cli) when the npm account is back -->
+      <a class="btn" href="https://github.com/Darknode-Official/darknode-cli" target="_blank" rel="noopener">Source on GitHub</a>
       <button class="btn ghost" data-sec="dlguide">Download guide</button>
     </div>
 

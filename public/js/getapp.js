@@ -14,7 +14,9 @@ const REL_DL = TAG === "latest" ? RELEASES + "/latest/download" : RELEASES + "/d
 //   cliBinaries — prebuilt Darknode-cli-* binaries in the same release
 //   npm         — the `darknode-cli` package on npm
 // Until then the CLI is offered via `git clone` (works today, Node 18+).
-const PUBLISHED = { desktopApp: false, cliBinaries: false, npm: true };
+// NPM_SUSPENDED: npm account temporarily suspended — npm:false hides the "npm install" card and
+// makes every CLI download fall back to git clone / from-source. Flip npm back to true to restore.
+const PUBLISHED = { desktopApp: false, cliBinaries: false, npm: false };
 // Inside the desktop app there is nothing to download for the app itself.
 if (isDesktop()) PUBLISHED.desktopApp = false;
 
