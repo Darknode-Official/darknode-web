@@ -128,8 +128,8 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
             </div>
             <h3>REST API</h3>
-            <p>Every scanning and analysis engine behind a clean HTTP API. Generate a key, ship a request, wire Darknode into your pipelines and dashboards.</p>
-            <span class="bento-tag">API keys &middot; webhooks</span>
+            <p>Every scanning and analysis engine behind a clean HTTP API. Run the server with the CLI, set a token, and wire Darknode into your pipelines and dashboards &mdash; on your own infrastructure.</p>
+            <span class="bento-tag">self-hosted &middot; token auth</span>
           </div>
           <div class="bento-card">
             <div class="bento-icon">
@@ -569,7 +569,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-3.5-6.5L16 7m-8 10l-2.5 2.5M20.5 18.5L18 16M5.5 7L3.5 5.5"/><circle cx="12" cy="12" r="4"/></svg>
             </div>
             <h3>Multi-engine</h3>
-            <p>Switch between 8 AI providers, race them against each other, or ensemble their answers for higher accuracy.</p>
+            <p>Switch between 6 AI engines, race them against each other, or ensemble their answers for higher accuracy.</p>
           </div>
           <div class="nx-hl">
             <div class="nx-hl-icon">
@@ -1223,7 +1223,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Darknode supports 8 AI providers out of the box. For cloud models: Claude 3.5/4 (Anthropic), GPT-4o/o1 (OpenAI), Gemini 2.0 (Google), Mistral Large, and Cohere Command R+. For free local models: any Ollama-compatible model including Llama 3, Mixtral, CodeLlama, Phi-3, and Qwen. The Nexus AI agent can switch between providers mid-conversation, race multiple models against each other, or ensemble their answers for higher accuracy. You bring your own API key &mdash; Darknode never charges for AI tokens on any plan.</div>
+              <div class="faq-a-inner">Nexus drives 6 AI engines through one interface: Claude Code (Anthropic), the Gemini CLI (Google), Codex (OpenAI), OpenCode, Aider, and Ollama for free local models &mdash; any Ollama-compatible model including Llama 3, Mixtral, CodeLlama, Phi-3, and Qwen. Nexus can switch engines mid-conversation, race multiple models against each other, or ensemble their answers for higher accuracy. You can also point the local engine at any OpenAI-compatible endpoint (OpenRouter, Groq, DeepSeek, Together, Mistral, and others). You bring your own API key &mdash; Darknode never charges for AI tokens on any plan.</div>
             </div>
           </div>
 

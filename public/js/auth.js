@@ -1451,7 +1451,7 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
       <div class="dn-scopes">
         <div class="dn-scope"><b>recon:read</b><span>DNS, subdomains, ASN, WHOIS, favicon</span></div>
         <div class="dn-scope"><b>intel:read</b><span>CVE, threat feeds, IOC, reputation</span></div>
-        <div class="dn-scope"><b>tools:run</b><span>Execute any of the 192+ platform tools</span></div>
+        <div class="dn-scope"><b>tools:run</b><span>Execute any of the 125 platform tools</span></div>
         <div class="dn-scope"><b>ai:invoke</b><span>Darknode AI completions &amp; analysis</span></div>
         <div class="dn-scope"><b>graph:write</b><span>Push findings to the Security Graph</span></div>
         <div class="dn-scope"><b>rate</b><span>1000 requests / hour (local tier)</span></div>
