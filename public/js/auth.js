@@ -57,7 +57,7 @@ import { startTour, tourDone } from "/js/tour.js";
 import { isDesktop, has as desktopHas, syncTitlebar } from "/js/core/desktop.js";
 if (isDesktop()) syncTitlebar();
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261021a"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261021c"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -2138,11 +2138,11 @@ function renderApp(user) {
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => live() && m.renderLearnHub(main)); }
     else if (sec === "learndo") { import("/js/learndo.js?v=20261009a").then(m => live() && m.renderLearnDo(main)); }
     else if (sec === "engine") { import("/js/engine-tab.js?v=20260929t").then(m => live() && m.renderEngine(main)); }
-    else if (sec === "coder") { import("/js/coder.js?v=20261017e").then(m => live() && m.renderCliCoder(main)); }
-    else if (sec === "downloads") { import("/js/getapp.js?v=20261017e").then(m => live() && m.renderDownloads(main)); }
-    else if (sec === "dlguide") { import("/js/getapp.js?v=20261017e").then(m => live() && m.renderDownloadDocs(main)); }
+    else if (sec === "coder") { import("/js/coder.js?v=20261021c").then(m => live() && m.renderCliCoder(main)); }
+    else if (sec === "downloads") { import("/js/getapp.js?v=20261021c").then(m => live() && m.renderDownloads(main)); }
+    else if (sec === "dlguide") { import("/js/getapp.js?v=20261021c").then(m => live() && m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261017d").then(m => live() && m.renderAPI(main, user)); }
-    else if (sec === "docs") { import("/js/docs.js?v=20261017e").then(m => live() && m.renderDocs(main)); }
+    else if (sec === "docs") { import("/js/docs.js?v=20261021c").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261017d").then(m => live() && m.renderStrongroom(main)); }
     else if (sec === "vault") { import("/js/vault.js?v=20261018i").then(m => live() && m.renderVault(main)); }
