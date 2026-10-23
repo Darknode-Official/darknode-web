@@ -1011,7 +1011,7 @@ testing methodology for 10.10.14.7:
             </thead>
             <tbody>
               <tr><td>Price</td><td class="cmp-dn"><span class="cmp-highlight">Open-core &mdash; free to self-host</span></td></tr>
-              <tr><td>AI assistant</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Nexus &mdash; 33 modules, 8 backends (bring your own key or run Ollama locally)</td></tr>
+              <tr><td>AI assistant</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Nexus &mdash; 33 modules, 6 engines (bring your own key or run Ollama locally)</td></tr>
               <tr><td>Private and self-hosted</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Runs on your infrastructure, works offline and air-gapped</td></tr>
               <tr><td>Scanning engines</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Code, cloud, dependencies, secrets, forensics</td></tr>
               <tr><td>Interactive labs</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Cyber Range</td></tr>
