@@ -40,13 +40,6 @@ const curlFor = (path, body) => `curl -X POST ${BASE}${path} \\
   -H "X-API-Key: $DARKNODE_API_TOKEN" \\
   -d '${JSON.stringify(body)}'`;
 
-const TIERS = [
-  { name: "Free", price: "$0", calls: "forever", features: ["All endpoints", "Community support", "BYOK — bring your own API key", "Full security toolset", "5 MCP server integrations"] },
-  { name: "Pro", price: "$12", calls: "/month", features: ["Everything in Free", "Multi-agent pipelines (8 roles)", "Ghost Agents — background monitoring", "Attack Planner — AI pentest methodology", "25 MCP server integrations", "Priority support"] },
-  { name: "Team", price: "$25", calls: "/month", features: ["Everything in Pro", "Shared workspace & team labs", "Report Generator — professional reports", "Custom training scenarios & CTF builder", "Unlimited MCP integrations", "Plugin system & extension SDK"] },
-  { name: "Enterprise", price: "Custom", calls: "", features: ["Everything in Team", "SSO & SAML authentication", "Data isolation & tenant separation", "Admin dashboard & usage analytics", "Self-hosted deployment option", "Volume licensing"] },
-];
-
 export async function renderAPI(main, user) {
   main.innerHTML = `
     <h1 class="pg-h1">Darknode API</h1>
@@ -123,20 +116,6 @@ ${esc(curlFor(ENDPOINTS[0].path, ENDPOINTS[0].reqBody))}</code></pre>
       <div class="api-code-block" id="codeExampleBlock">
         <button class="api-code-copy" data-copy="codeExample">Copy</button>
         <pre><code id="codeExample">${esc(curlFor(ENDPOINTS[0].path, ENDPOINTS[0].reqBody))}</code></pre>
-      </div>
-    </div>
-
-    <div class="panel" style="margin-top:16px">
-      <div class="panel-h"><h2 class="pg-h2" style="margin:0">Pricing</h2></div>
-      <div class="api-tiers">
-        ${TIERS.map(tier => `
-          <div class="api-tier ${tier.name === "Pro" ? "api-tier-highlight" : ""}">
-            <h3>${esc(tier.name)}</h3>
-            <div class="api-tier-price">${esc(tier.price)}</div>
-            <div class="api-tier-calls">${esc(tier.calls)}</div>
-            <ul>${tier.features.map(f => `<li>${esc(f)}</li>`).join("")}</ul>
-          </div>
-        `).join("")}
       </div>
     </div>
 
