@@ -20,7 +20,7 @@ const TOOL_DOMAIN = {
   secret: ["codescan", "leakprobe", "dlp", "iacscan"],
   phishing: ["phishtriage"],
   data: ["dlp"],
-  financial: ["payees", "strongroom", "apforensics", "vault"],
+  financial: ["payees", "strongroom", "cloudspend"],
   supplychain: ["supplychain", "supply-chain-analyzer", "licenseaudit"],
 };
 function domainOfTool(tool) {

@@ -44,7 +44,7 @@ export function mountDropzone(el, {
   el.setAttribute("aria-label", label);
   el.innerHTML = `<div class="dn-dz-label">${esc(label)}</div>
     <div class="dn-dz-row"><button type="button" class="dn-dz-btn">Browse</button>
-      <span class="dn-dz-hint">Up to ${maxFiles} files, ${fmt(maxBytes)} each${unpack ? ", .zip/.gz unpacked" : ""}</span></div>
+      <span class="dn-dz-hint">Up to ${maxFiles} file${maxFiles === 1 ? "" : "s"}, ${fmt(maxBytes)} each${unpack ? ", .zip/.gz unpacked" : ""}</span></div>
     <div class="dn-dz-note">Processed in your browser. Nothing is uploaded.</div>
     <input type="file" class="dn-dz-input" tabindex="-1" aria-hidden="true"${multiple ? " multiple" : ""}${accept ? ` accept="${esc(accept)}"` : ""}>`;
   const input = el.querySelector(".dn-dz-input"), browse = el.querySelector(".dn-dz-btn");

@@ -1415,6 +1415,22 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-nvhb:hover,.dk[data-ui=deck] .dk-nvhb.on,.dk[data-ui=deck] .dk-nvhb:focus-visible{color:#fff;padding-right:70px}
 .dk[data-ui=deck] .dk-nvhb.on .no{color:var(--ix-mark)}
 .dk[data-ui=deck] .dk-nvi{margin-left:16px;padding-left:12px;border-left:1px solid var(--ix-line)}
+.dk[data-ui=deck] .dk-nvhr{display:flex;align-items:center;gap:2px}
+.dk[data-ui=deck] .dk-nvhr>.dk-nvh{flex:1;min-width:0}
+.dk[data-ui=deck] .dk-nvhx{appearance:none;border:0;background:none;cursor:pointer;text-align:left;border-radius:8px}
+.dk[data-ui=deck] .dk-nvhx:hover{color:#fff}
+.dk[data-ui=deck] .dk-nvtg{appearance:none;border:0;background:none;color:var(--ix-dim);cursor:pointer;flex:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 6px;margin-top:8px;border-radius:6px;font:500 10.5px/1 ui-monospace,"JetBrains Mono",monospace}
+.dk[data-ui=deck] .dk-nvtg:hover{color:var(--ix-tx);background:rgba(255,255,255,.05)}
+.dk[data-ui=deck] .dk-nvtg:focus-visible{outline:2px solid var(--ix-mark);outline-offset:-2px}
+.dk[data-ui=deck] .dk-nvtg svg{width:14px;height:14px;transition:transform .15s}
+.dk[data-ui=deck] .dk-nvtg .cnt{opacity:0;transition:opacity .15s}
+.dk[data-ui=deck] .dk-nvg.col .dk-nvtg svg{transform:rotate(-90deg)}
+.dk[data-ui=deck] .dk-nvg.col .dk-nvtg .cnt{opacity:1}
+.dk[data-ui=deck] .dk-nvg.col .dk-nvi{display:none}
+.dk[data-ui=deck] .dk-nvg.col{margin-bottom:0}
+.dk.nav-rail .dk-nvtg{display:none}
+.dk.nav-rail .dk-nvhx{pointer-events:none}
+.dk.nav-rail .dk-nvg.col .dk-nvi{display:block}
 .dk[data-ui=deck] .dk-nv{position:relative;font-weight:400;font-size:13.5px;color:var(--ix-mut);border-radius:6px;min-height:32px;padding:5px 8px;gap:10px;margin:0}
 .dk[data-ui=deck] .dk-nv svg{color:var(--ix-dim);width:16px;height:16px}
 .dk[data-ui=deck] .dk-nv:hover{background:rgba(255,255,255,.05);color:var(--ix-tx)}
@@ -1616,7 +1632,7 @@ export function renderDeck(host, opts) {
     { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access", IC.shield], ["tool", "privaudit", "Privileged Access", IC.key], ["tool", "nhi", "Non-Human Identities", IC.gear], ["tool", "jml", "Offboarding Verifier", IC.check], ["tool", "oauthgov", "OAuth App Governance", IC.plug], ["tool", "vpnaudit", "Remote Access Audit", IC.lock]] },
     { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree], ["tool", "iacscan", "IaC Scanner", IC.code], ["tool", "k8saudit", "Kubernetes Audit", IC.nodes], ["tool", "licenseaudit", "License Compliance", IC.scale], ["tool", "apispec", "API Security Review", IC.plug]] },
     { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "inventory", "Asset Inventory", IC.grid], ["scene", "correlations", "Correlations", IC.nodes], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "investigation", "Investigation Workspace", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "monitors", "Monitors", IC.bell], ["scene", "apikeys", "API & Ingest", IC.key], ["scene", "audit", "Audit Log", IC.lock], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Log Hunter", IC.cloud], ["tool", "dnshunt", "DNS Hunt", IC.search], ["tool", "proxyhunt", "Web Gateway Hunt", IC.eye], ["tool", "pentestreg", "Finding Tracker", IC.wrench]] },
-    { id: "finsec", g: "Financial Controls", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "vault", "Treasury Vault", IC.lock], ["tool", "payees", "Payee Control", IC.shield], ["tool", "sanctions", "Sanctions Screening", IC.scale], ["tool", "apforensics", "AP Forensics", IC.coins], ["tool", "cardaudit", "Card Audit", IC.brief], ["tool", "payrollguard", "Payroll Integrity", IC.note], ["tool", "cloudspend", "Cloud Spend Anomaly", IC.gauge]] },
+    { id: "finsec", g: "Fraud & Abuse", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "payees", "Payee Control", IC.shield], ["tool", "cloudspend", "Cloud Spend Anomaly", IC.gauge]] },
     { id: "risk", g: "Risk & Resilience", items: [["tool", "breachclock", "Breach Clock", IC.bell], ["tool", "riskreg", "Risk Register", IC.scale], ["tool", "vendorrisk", "Third-Party Risk", IC.nodes], ["tool", "backupready", "Backup Readiness", IC.folder]] },
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection Scanner", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key], ["tool", "evidence", "Control Evidence", IC.book], ["tool", "dataflow", "Processing Register", IC.folder], ["tool", "awareness", "Awareness Analytics", IC.pulse]] },
     { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
@@ -2273,7 +2289,6 @@ export function renderDeck(host, opts) {
     { type: "action", label: "Ask Darknode AI", group: "Action", icon: IC.spark, run: () => askAI("") },
     { type: "action", label: "Scan a codebase", group: "Action", icon: IC.term, run: () => openTool("codescan", secLabel["codescan"] || "Code Scanner") },
     { type: "action", label: "Protect the funds (analyze a ledger)", group: "Action", icon: IC.bolt, run: () => openTool("strongroom", secLabel["strongroom"] || "Fund Protection") },
-    { type: "action", label: "Open the treasury vault", group: "Action", icon: IC.star, run: () => openTool("vault", secLabel["vault"] || "Treasury Vault") },
     { type: "action", label: "Map an attack surface", group: "Action", icon: IC.radar, run: () => go("surface") },
     { type: "action", label: "Connect a provider", group: "Action", icon: IC.link, run: () => go("con") },
     { type: "action", label: "New investigation", group: "Action", icon: IC.folder, run: () => openTool("investigation", secLabel["investigation"] || "Investigation") },
@@ -2733,7 +2748,6 @@ export function renderDeck(host, opts) {
           <div class="dk-ovp"><h2 data-explain="panel.quick">${IC.grid} Quick actions</h2><div class="dk-qa">
             <button class="dk-qacard" data-tool="codescan"><span class="qi" style="--a:#3f78ff">${IC.term}</span><b>Scan a codebase</b><span>Connect GitHub and jump to each vulnerable line.</span></button>
             <button class="dk-qacard" data-tool="strongroom"><span class="qi" style="--a:#f59e0b">${IC.bolt}</span><b>Protect the funds</b><span>Screen a ledger for fraud and intrusion-to-theft chains.</span></button>
-            <button class="dk-qacard" data-tool="vault"><span class="qi" style="--a:#f59e0b">${IC.star}</span><b>Treasury vault</b><span>Controls and a tamper-evident ledger for funds at your bank.</span></button>
             <button class="dk-qacard" data-scene="con"><span class="qi" style="--a:#12a85f">${IC.link}</span><b>Connect a provider</b><span>Link an AI model or intel source.</span></button>
             <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>New investigation</b><span>Open the investigation workspace.</span></button>
             <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Security graph</b><span>Entities and their relationships.</span></button>
@@ -4429,12 +4443,39 @@ export function renderDeck(host, opts) {
       const items = grp.items.map(([kind, id, label, icon]) => navBtn(kind, id, label, icon, id === "tools" ? `<span class="nc">${TOTAL_TOOLS.toLocaleString()}</span>` : "")).join("");
       if (!grp.g) return `<div class="dk-nvg dk-nvg0">${items}</div>`;
       const n = String(++no).padStart(2, "0");
-      const head = SECTIONS[grp.id] ? `<button class="dk-nvh dk-nvhb${navKey === "section:" + grp.id ? " on" : ""}" data-scene="section" data-sect="${grp.id}" data-explain="nav.section">${chap(n)}<span class="gt">${esc(grp.g)}</span><span class="ov">Overview</span></button>` : `<div class="dk-nvh">${chap(n)}<span class="gt">${esc(grp.g)}</span></div>`;
-      return `<div class="dk-nvg">${head}<div class="dk-nvi">${items}</div></div>`;
+      const gid = grp.id || grp.g;
+      const head = SECTIONS[grp.id] ? `<button class="dk-nvh dk-nvhb${navKey === "section:" + grp.id ? " on" : ""}" data-scene="section" data-sect="${grp.id}" data-explain="nav.section">${chap(n)}<span class="gt">${esc(grp.g)}</span><span class="ov">Overview</span></button>` : `<button class="dk-nvh dk-nvhx" data-navtg="${esc(gid)}">${chap(n)}<span class="gt">${esc(grp.g)}</span></button>`;
+      return navGroup(gid, grp.g, head, items, grp.items.length);
     }).join("");
     const pinned = pins.filter((sec) => secLabel[sec]);
-    if (pinned.length) html += `<div class="dk-nvg"><div class="dk-nvh">${chap("P")}<span class="gt">Pinned</span></div><div class="dk-nvi">${pinned.map((sec) => navBtn("tool", sec, secLabel[sec], toolIcon(secLabel[sec]))).join("")}</div></div>`;
+    if (pinned.length) html += navGroup("pinned", "Pinned", `<button class="dk-nvh dk-nvhx" data-navtg="pinned">${chap("P")}<span class="gt">Pinned</span></button>`, pinned.map((sec) => navBtn("tool", sec, secLabel[sec], toolIcon(secLabel[sec]))).join(""), pinned.length);
     nav.innerHTML = html;
+    applyNavCollapse();
+  }
+  // Collapsible groups: a chevron beside each chapter folds its items away so the
+  // sidebar stays short. Folded state is remembered; with no saved choice every
+  // group starts folded except the one you are in. The active group always shows.
+  const LS_NAVCOL = "dn_deck_navcol";
+  let navCol = null;
+  try { navCol = JSON.parse(localStorage.getItem(LS_NAVCOL) || "null"); } catch (_) {}
+  function navGroup(gid, label, head, items, count){
+    return `<div class="dk-nvg" data-g="${esc(gid)}"><div class="dk-nvhr">${head}<button class="dk-nvtg" data-navtg="${esc(gid)}" aria-label="Show or hide ${esc(label)}"><span class="cnt">${count}</span>${IC.chevd}</button></div><div class="dk-nvi">${items}</div></div>`;
+  }
+  function applyNavCollapse(){
+    root.querySelectorAll("#dkSbNav .dk-nvg[data-g]").forEach((g) => {
+      const active = !!g.querySelector(".dk-nv.on, .dk-nvhb.on");
+      const folded = (navCol ? !!navCol[g.dataset.g] : true) && !active;
+      g.classList.toggle("col", folded);
+      g.querySelectorAll("[data-navtg]").forEach((b) => b.setAttribute("aria-expanded", String(!folded)));
+    });
+  }
+  function toggleNavGroup(gid){
+    const g = root.querySelector(`#dkSbNav .dk-nvg[data-g="${gid.replace(/["\\]/g, "")}"]`); if (!g) return;
+    if (!navCol) { navCol = {}; root.querySelectorAll("#dkSbNav .dk-nvg[data-g]").forEach((x) => { navCol[x.dataset.g] = x.classList.contains("col"); }); }
+    const fold = !g.classList.contains("col");
+    navCol[gid] = fold; g.classList.toggle("col", fold);
+    g.querySelectorAll("[data-navtg]").forEach((b) => b.setAttribute("aria-expanded", String(!g.classList.contains("col"))));
+    try { localStorage.setItem(LS_NAVCOL, JSON.stringify(navCol)); } catch (_) {}
   }
   function setNav(key, label){
     navKey = key; navLabel = label || "";
@@ -4443,6 +4484,7 @@ export function renderDeck(host, opts) {
       b.classList.toggle("on", on); if (on) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
     root.querySelectorAll("#dkSbNav .dk-nvhb").forEach((b) => b.classList.toggle("on", key === "section:" + b.dataset.sect));
+    applyNavCollapse();
     const meta = navIndex[key] || { group: key.indexOf("tool:") === 0 ? "Tools" : "Home", label: navLabel || (key.split(":")[1] || "").replace(/^\w/, (c) => c.toUpperCase()) };
     const crumb = $("#dkCrumb");
     if (crumb) crumb.innerHTML = `<span class="cg">${esc(meta.group)}</span><span class="cs" aria-hidden="true">/</span><b>${esc(meta.label)}</b>`;
@@ -4487,6 +4529,7 @@ export function renderDeck(host, opts) {
   side.addEventListener("pointerleave", () => fly.classList.remove("on"));
   side.addEventListener("scroll", () => fly.classList.remove("on"), true);
   buildSideNav();
+  $("#dkSbNav").addEventListener("click", (e) => { const t = e.target.closest("[data-navtg]"); if (t) { e.stopPropagation(); toggleNavGroup(t.dataset.navtg); } });
   applyNav();
 
   // ---------- hover explainers (3s dwell; ui/explain.js) ----------

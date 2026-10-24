@@ -210,7 +210,6 @@ const SIDE_DESC = {
   docs: "Documentation.",
   veil: "Hands-on onion-routing demo running real in-browser crypto.",
   strongroom: "Fund Protection — deterministic fraud screens on your ledger, plus cyber-financial fusion to catch intrusion-to-theft chains. Runs in your browser.",
-  sanctions: "Sanctions Screening — screen payees and vendors against the live OFAC SDN list (names + aliases). Matching runs in your browser; names are never uploaded.",
   signins: "Sign-in Forensics: load your Entra ID, Google Workspace or Okta sign-in export and find password spraying, impossible travel, legacy authentication and admins signing in without MFA. Runs in your browser; the log is never uploaded.",
   accessreview: "Access Review: reconcile your HR roster against your directory export to find leavers still enabled, stale logins, admins without MFA and accounts that belong to nobody on payroll. Produces the sign-off packet auditors ask for. Runs in your browser.",
   fwaudit: "Firewall Rule Audit: paste an iptables, Cisco ASA, pfSense, FortiGate or Windows Firewall export and get shadowed rules, any-to-any permits, exposed admin ports and missing default-deny, each with the fix. Runs in your browser.",
@@ -221,7 +220,6 @@ const SIDE_DESC = {
   tlsfleet: "Certificate & TLS Fleet Monitor — paste a list of domains and track certificate expiry, issuer and HSTS across all of them from certificate transparency logs. Keeps a persistent watchlist and flags certificates nearing expiry.",
   phishtriage: "Phishing & URL Triage — paste a suspicious link or a full email to get a risk read-out: live redirect unfurling, domain age, lookalike/homograph and obfuscation detection, SPF/DKIM/DMARC alignment and IOC extraction. Links are fetched server-side, never in your browser.",
   leakprobe: "Secret Exposure & Backend Leak Scanner — point it at a property you own to prove whether an API key or token (e.g. your Gemini key) is reachable from the browser or kept server-side. It scans the page's scripts, module graph, source maps and config for secrets, then GET-probes your backend endpoints, their error pages and common debug routes, and returns a placement verdict: client-exposed, backend-leaked, or server-side only. It shows the exact key values it finds (your own property) and no key is ever spent to test it.",
-  vault: "Treasury Vault — the control and record layer for funds held at your regulated bank: double-entry ledger, dual approvals, tamper-evident audit chain, and reconciliation. Not a bank; holds no money.",
   education: "Learning resources and courses.",
   downloads: "Get the Darknode OS and desktop app.",
   dlguide: "A step-by-step install guide.",
@@ -238,9 +236,6 @@ const SIDE_DESC = {
   vulnimport: "Import Nessus, Qualys, OpenVAS, Rapid7, Trivy, Grype, Snyk and Defender scans; dedupe, enrich with KEV and EPSS, prioritise and track remediation SLAs across imports.",
   fleetcomply: "Check Intune, Jamf, CrowdStrike, Defender and workstation audit exports for missing encryption, stale EDR, end-of-life operating systems, patch age and local admins.",
   k8saudit: "Audit a Kubernetes cluster dump for RBAC, pod security and network isolation gaps against the CIS Kubernetes Benchmark.",
-  apforensics: "Find duplicate payments, shell vendors, split invoices and employee-vendor matches in your accounts payable ledger.",
-  cardaudit: "Audit corporate card and expense data for split transactions, duplicate receipts, prohibited merchants and leaver spend.",
-  payrollguard: "Detect ghost employees, shared bank details, last-minute bank changes and pay spikes in your payroll register.",
   cloudspend: "Spot cloud bill spikes, new GPU families, new regions and dormant-account spend that signal abuse or crypto-mining.",
   breachclock: "Work out which breach notification deadlines apply to an incident and track each regulator clock to the hour.",
   riskreg: "Team risk register with Open FAIR-style Monte Carlo loss estimates, loss-exceedance curves, heatmap and treatment tracking.",
@@ -2040,7 +2035,7 @@ function renderApp(user) {
     else if (sec === "binanalyze") { import("/js/binary-analyzer.js?v=20260927b").then(m => live() && m.renderBinaryAnalyzer(main)); }
     else if (sec === "netmap") { import("/js/network-mapper.js?v=20261013m").then(m => live() && m.renderNetworkMapper(main)); }
     else if (sec === "loganalyze") { import("/js/log-analyzer.js").then(m => live() && m.renderLogAnalyzer(main)); }
-    else if (sec === "credaudit") { import("/js/credential-auditor.js?v=20261013m").then(m => live() && m.renderCredentialAuditor(main)); }
+    else if (sec === "credaudit") { import("/js/credential-auditor.js?v=20261024a").then(m => live() && m.renderCredentialAuditor(main)); }
     else if (sec === "memforensics") { import("/js/memory-forensics.js?v=20260924b").then(m => live() && m.renderMemoryForensics(main)); }
     else if (sec === "stego") { import("/js/steganography.js").then(m => live() && m.renderSteganography(main)); }
     else if (sec === "regexlab") { import("/js/regex-lab.js").then(m => live() && m.renderRegexLab(main)); }
@@ -2145,8 +2140,6 @@ function renderApp(user) {
     else if (sec === "docs") { import("/js/docs.js?v=20261021d").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261017d").then(m => live() && m.renderStrongroom(main)); }
-    else if (sec === "vault") { import("/js/vault.js?v=20261018i").then(m => live() && m.renderVault(main)); }
-    else if (sec === "sanctions") { import("/js/finsec/sanctions.js?v=20261017d").then(m => live() && m.renderSanctions(main)); }
     else if (sec === "signins") { import("/js/identity/signin-forensics.js?v=20261017f").then(m => live() && m.renderSigninForensics(main)); }
     else if (sec === "accessreview") { import("/js/identity/access-review.js?v=20261017d").then(m => live() && m.renderAccessReview(main)); }
     else if (sec === "fwaudit") { import("/js/infra/firewall-audit.js?v=20261017e").then(m => live() && m.renderFirewallAudit(main)); }
@@ -2167,9 +2160,6 @@ function renderApp(user) {
     else if (sec === "vulnimport") { import("/js/exposure/vulnimport.js?v=20261017e").then(m => live() && m.renderVulnImport(main)); }
     else if (sec === "fleetcomply") { import("/js/exposure/fleetcomply.js?v=20261016j").then(m => live() && m.renderFleetComply(main)); }
     else if (sec === "k8saudit") { import("/js/appsec/k8saudit.js?v=20261016k").then(m => live() && m.renderK8sAudit(main)); }
-    else if (sec === "apforensics") { import("/js/finsec/apforensics.js?v=20261017e").then(m => live() && m.renderApForensics(main)); }
-    else if (sec === "cardaudit") { import("/js/finsec/cardaudit.js?v=20261016m").then(m => live() && m.renderCardAudit(main)); }
-    else if (sec === "payrollguard") { import("/js/finsec/payrollguard.js?v=20261016n").then(m => live() && m.renderPayrollGuard(main)); }
     else if (sec === "cloudspend") { import("/js/finsec/cloudspend.js?v=20261016o").then(m => live() && m.renderCloudSpend(main)); }
     else if (sec === "breachclock") { import("/js/risk/breachclock.js?v=20261016p").then(m => live() && m.renderBreachClock(main)); }
     else if (sec === "riskreg") { import("/js/risk/riskreg.js?v=20261017c").then(m => live() && m.renderRiskRegister(main)); }
