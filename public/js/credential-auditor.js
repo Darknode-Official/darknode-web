@@ -528,16 +528,40 @@ function decodeJWT(token) {
     }
     if (payload.iat) result.issuedAt = new Date(payload.iat * 1000).toISOString();
     if (payload.nbf) result.notBefore = new Date(payload.nbf * 1000).toISOString();
-    if (header.alg === "none") result.warning = "Algorithm is 'none' — signature not verified. This is a known JWT attack vector.";
-    if (header.alg === "HS256" && header.typ === "JWT") result.note = "HMAC-SHA256 — symmetric key. Verify the secret is strong.";
-    if (header.alg && header.alg.startsWith("RS")) result.note = "RSA signature — check for key confusion attacks (RS256 → HS256).";
-    if (header.jku) result.warning = (result.warning || "") + " jku header present — potential JKU injection.";
-    if (header.jwk) result.warning = (result.warning || "") + " jwk header present — potential JWK injection.";
-    if (header.kid) result.note = (result.note || "") + " kid: " + header.kid;
+    // Security analysis lives in jwtFindings(result), which the UI renders as a
+    // severity-ranked review — kept in one place so the two can't drift apart.
     return result;
   } catch (e) {
     return { error: "Failed to decode: " + e.message };
   }
+}
+
+// Structured, deterministic security review of an already-decoded JWT. These are
+// design / known-attack-surface checks on the token itself — we do NOT and cannot
+// verify the signature here (the key isn't known). Returns findings most-severe
+// first; each is { level, title, detail }.
+function jwtFindings(d) {
+  if (!d || d.error) return [];
+  const f = [], h = d.header || {}, p = d.payload || {};
+  const alg = (h.alg == null ? "" : String(h.alg));
+  if (alg.toLowerCase() === "none") f.push({ level: "critical", title: "alg: none", detail: "The token declares no signature algorithm. A server that honours it accepts forged tokens — reject 'none' explicitly." });
+  else if (!alg) f.push({ level: "high", title: "No alg header", detail: "The header has no 'alg'. Verifiers that fall back to a permissive default can be tricked." });
+  if (!d.hasSig) f.push({ level: "high", title: "No signature segment", detail: "This is an unsigned token (two segments). Anyone can rewrite the payload." });
+  if (h.jku) f.push({ level: "high", title: "jku header present", detail: "'jku' points at a remote JWKS URL. Without a strict allow-list the verifier can be made to fetch an attacker's key (JKU injection)." });
+  if (h.jwk) f.push({ level: "high", title: "jwk header present", detail: "An embedded 'jwk' lets the token carry its own verification key — a forgery vector if the verifier trusts it." });
+  if (h.x5u) f.push({ level: "high", title: "x5u header present", detail: "'x5u' points at a remote certificate — same allow-list concern as jku." });
+  if (/^RS/.test(alg)) f.push({ level: "info", title: "RSA signature (" + alg + ")", detail: "Guard against RS->HS key confusion: a server that verifies HS256 using the RSA public key as the HMAC secret can be bypassed." });
+  else if (/^HS/.test(alg)) f.push({ level: "info", title: "HMAC signature (" + alg + ")", detail: "Symmetric key — security rests entirely on the secret's strength. Use a long, random secret." });
+  if (p.exp == null) f.push({ level: "medium", title: "No exp claim", detail: "The token never expires. A leaked token then stays valid forever — set a short 'exp'." });
+  else if (d.expired) f.push({ level: "medium", title: "Expired", detail: "exp is in the past (" + d.expires + "). A correct verifier rejects it; if yours still accepts it, expiry isn't being enforced." });
+  if (p.iat != null && p.exp != null) { const life = p.exp - p.iat; if (life > 30 * 86400) f.push({ level: "medium", title: "Very long lifetime", detail: "Valid for ~" + Math.round(life / 86400) + " days. Long-lived bearer tokens are hard to revoke once leaked." }); else if (life > 86400) f.push({ level: "low", title: "Long lifetime", detail: "Valid for ~" + Math.round(life / 3600) + " hours — prefer short access tokens plus a refresh token." }); }
+  if (p.nbf != null && (p.nbf * 1000) > Date.now()) f.push({ level: "info", title: "Not yet valid", detail: "nbf is in the future (" + new Date(p.nbf * 1000).toISOString() + ") — the token should be rejected until then." });
+  const SENS = /pass(word|wd)?|secret|api[_-]?key|private|ssn|credit|cvv/i;
+  const hot = Object.keys(p).filter((k) => SENS.test(k));
+  if (hot.length) f.push({ level: "medium", title: "Sensitive-looking claims", detail: "Claim(s) " + hot.join(", ") + " may carry secrets. A JWT payload is only base64 — not encrypted — so anyone holding the token can read it." });
+  const order = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+  f.sort((a, b) => order[a.level] - order[b.level]);
+  return f;
 }
 
 // ─── TOTP generator ───
@@ -1088,14 +1112,28 @@ function renderJWTTab(container) {
     if (decoded.issuedAt) infoRows.push({ k: "Issued At", v: decoded.issuedAt });
     if (decoded.notBefore) infoRows.push({ k: "Not Before", v: decoded.notBefore });
     infoRows.push({ k: "Has Signature", v: decoded.hasSig ? "Yes" : "No" });
-    if (decoded.note) infoRows.push({ k: "Note", v: decoded.note });
-    if (decoded.warning) infoRows.push({ k: "Warning", v: decoded.warning });
+    if (decoded.header && decoded.header.kid != null) infoRows.push({ k: "Key ID (kid)", v: String(decoded.header.kid) });
     html += '<div class="ca-table-wrap"><table class="ca-table"><tbody>';
     for (var row of infoRows) {
-      var cls = row.k === "Warning" ? ' class="ca-warn-row"' : "";
-      html += '<tr' + cls + '><td><strong>' + esc(row.k) + '</strong></td><td>' + esc(row.v) + '</td></tr>';
+      html += '<tr><td><strong>' + esc(row.k) + '</strong></td><td>' + esc(row.v) + '</td></tr>';
     }
     html += '</tbody></table></div>';
+    // Security review — severity-ranked, deterministic, local-only (no signature verification).
+    var findings = jwtFindings(decoded);
+    var SEVC = { critical: "#b00020", high: "#d9480f", medium: "#b58100", low: "#3b7dd8", info: "#667085" };
+    html += '<div class="ca-section" style="margin-top:14px">' +
+      '<h4 style="margin:0 0 8px">Security review <span style="color:#667085;font-weight:400">(' + findings.length + ')</span></h4>';
+    if (!findings.length) {
+      html += '<p class="ca-muted">No design-level issues flagged. This does not verify the signature — the signing key is not known here.</p>';
+    } else {
+      for (var fi of findings) {
+        html += '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(128,128,128,.18)">' +
+          '<span style="flex:0 0 auto;align-self:flex-start;font:600 11px/1.6 ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:#fff;background:' + SEVC[fi.level] + ';border-radius:4px;padding:1px 7px">' + esc(fi.level) + '</span>' +
+          '<span><strong>' + esc(fi.title) + '</strong><br><span class="ca-muted">' + esc(fi.detail) + '</span></span></div>';
+      }
+      html += '<p class="ca-muted" style="margin-top:8px;font-size:12px">Signature is not verified here (the key is unknown) — these are checks on the token\'s own contents.</p>';
+    }
+    html += '</div>';
     resultEl.innerHTML = html;
   };
 }

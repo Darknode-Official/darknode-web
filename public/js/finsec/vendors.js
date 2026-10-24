@@ -19,7 +19,16 @@ import {
   HOLD_HOURS, WATCH_DAYS, toSinkFindings,
 } from "/js/finsec/vendor-engine.js?v=20261017d";
 import { attachSinkButton } from "../core/sink.js";
-import { buildIndex, screenName } from "/js/finsec/sanctions-engine.js?v=20261019f";
+// The OFAC SDN engine is loaded lazily (dynamic import) so this tool keeps
+// working even if the sanctions module isn't present — screening then no-ops
+// rather than taking the whole payee register down with a load error.
+let _snc = null;
+function loadSncEngine() {
+  if (_snc) return Promise.resolve(_snc);
+  return import("/js/finsec/sanctions-engine.js?v=20261019f")
+    .then((m) => (_snc = m))
+    .catch(() => null);
+}
 
 // ── OFAC sanctions screening of payee names ──────────────────────────────
 // A payee register that doesn't check names against the sanctions list is a
@@ -33,9 +42,10 @@ const sancKey = (n) => String(n == null ? "" : n).trim().toLowerCase();
 function loadSncIndex() {
   if (_sncIndex) return Promise.resolve(_sncIndex);
   if (_sncPromise) return _sncPromise;
-  _sncPromise = fetch("/data/feeds/ofac-sdn.json", { cache: "default" })
-    .then((r) => (r.ok ? r.json() : null))
-    .then((feed) => { const e = feed && Array.isArray(feed.data) ? feed.data : null; _sncIndex = e && e.length ? buildIndex(e) : null; return _sncIndex; })
+  _sncPromise = loadSncEngine()
+    .then((eng) => (eng ? fetch("/data/feeds/ofac-sdn.json", { cache: "default" }) : null))
+    .then((r) => (r && r.ok ? r.json() : null))
+    .then((feed) => { const e = feed && Array.isArray(feed.data) ? feed.data : null; _sncIndex = e && e.length ? _snc.buildIndex(e) : null; return _sncIndex; })
     .catch(() => null);
   return _sncPromise;
 }
@@ -220,7 +230,7 @@ export function renderVendors(main) {
       let added = false;
       for (const v of list) {
         const k = sancKey(v.name); if (_sncCache.has(k)) continue;
-        const m = screenName(v.name, idx, { minScore: 70, limit: 1 })[0] || null;
+        const m = (_snc && _snc.screenName(v.name, idx, { minScore: 70, limit: 1 })[0]) || null;
         let flag = null;
         if (m) {
           const level = m.band === "exact" ? "block" : m.band === "strong" ? "high" : "medium";
