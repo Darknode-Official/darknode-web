@@ -1,6 +1,6 @@
 import { esc } from '/js/shared.js';
 
-const UPDATED = "September 2026";
+const UPDATED = "October 2026";
 
 const CMD_GROUPS = [
   ["Engines & models", [
@@ -50,6 +50,7 @@ const CMD_GROUPS = [
 ];
 
 const CHANGELOG = [
+  ["3.2.x", "Business security platform: the Darknode Deck with native Personal and Organization spaces (domain posture grading, certificate watch, link and email phishing checks, code-secret scanning, sensitive-data checks with redaction, domain portfolios and fleet views), a Web toolkit tab linking the hands-on web-security tools, plan-based tool availability, team workspaces, and removal of the off-topic financial tools."],
   ["3.1.x", "Current web console line: flagship platforms (PHANTOM packet/network ops, CITADEL SOC console, ORACLE threat-intel engine, SPECTRE cloud posture, CRUCIBLE defensive wargaming, NAVARCH maritime defense), a platform-wide Security Graph that cross-links findings, the Sentinel Eye 3D threat globe, 125 security tools plus 780 quick utilities, the Professional theme, the Darknode assistant (Help button in the top bar), and Nexus AI integration."],
   ["2.29.x", "Nexus multi-engine agent: /cowork model tiering, /lean /effort /cheap /estimate, local RAG (/index), /race /ensemble /bench, /plan /watch /agents (worktree-isolated), /guard /secrets /scan /redact /offline, git checkpoints (/undo /redo /rewind), MCP + hooks, ~56 commands. NEXUS.md now reaches the Claude engine; plan mode is truly read-only."],
   ["2.28.x", "Desktop Assistant: structured-output autonomous loop, permissions toggle, attack playbooks, MCP client, vision input. CLI recon/exploit toolkit."],
@@ -81,7 +82,7 @@ function renderSection(id) {
     case 'getting-started': return `
       <p style="color:var(--mut,#94a3b8);margin-bottom:20px">Darknode ships in three editions that share one toolkit:</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px">
-        <div class="dc-card"><div style="font-weight:700;margin-bottom:6px;color:var(--txt,#e2e8f0)">Web console</div><p style="color:var(--mut,#94a3b8);font-size:.9rem;margin:0">Recon, payloads, threat intel and the AI assistant in your browser. Nothing to install.</p></div>
+        <div class="dc-card"><div style="font-weight:700;margin-bottom:6px;color:var(--txt,#e2e8f0)">Web platform</div><p style="color:var(--mut,#94a3b8);font-size:.9rem;margin:0">Scan code, cloud, dependencies and web exposure, triage findings and build reports in your browser. Nothing to install.</p></div>
         <div class="dc-card"><div style="font-weight:700;margin-bottom:6px;color:var(--txt,#e2e8f0)">Desktop app</div><p style="color:var(--mut,#94a3b8);font-size:.9rem;margin:0">The console plus a VM lab runner, native scanners, live terminals and the autonomous Assistant.</p></div>
         <div class="dc-card"><div style="font-weight:700;margin-bottom:6px;color:var(--txt,#e2e8f0)">Terminal (CLI + Nexus)</div><p style="color:var(--mut,#94a3b8);font-size:.9rem;margin:0">A single dependency-free binary: the toolkit plus the Nexus coding agent. Runs anywhere.</p></div>
       </div>
@@ -122,10 +123,15 @@ node darknode.js nexus init                 # optional: scaffold .nexus/ project
 
     case 'faq': return `
       <div style="display:flex;flex-direction:column;gap:12px">
-        <details class="dc-details"><summary>Do I need an API key?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">No. The Claude engine drives your logged-in Claude Code CLI; the local engine talks to your own Ollama. Nexus stores no keys.</p></details>
+        <details class="dc-details"><summary>What is Darknode?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">A cybersecurity platform for businesses and individuals: scan your code, cloud, dependencies and web exposure, triage the findings, and fix what matters. It runs on the web, as a desktop app, in the terminal (CLI + Nexus), and as Darknode OS.</p></details>
+        <details class="dc-details"><summary>What are the Personal and Organization spaces?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">Two spaces in the Darknode Deck. Personal is for one person: check your domain, watch your certificates, check a suspicious link or email, scan a project for leaked keys, check text before you share it, and open the Web toolkit. Organization runs the same checks at company scale: a domain portfolio, a certificate fleet, a phishing triage queue, repository secret scans and data-loss review.</p></details>
+        <details class="dc-details"><summary>Where did the console go?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">The Darknode Deck is now the home screen after you sign in. The classic console is still there: open your account menu in the Deck and choose Classic console. To come back, choose Switch to the Deck from the console's account menu. Your choice is remembered in this browser.</p></details>
+        <details class="dc-details"><summary>Which tools do I get on my plan?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">Tools are shown according to your plan; anything outside your plan is simply not listed. Free covers the Personal space and platform basics; Pro adds exposure, application-security and reporting tools; Team adds the Organization space, identity and security-operations tools and team workspaces; Enterprise adds risk and compliance tooling.</p></details>
+        <details class="dc-details"><summary>Do the checks touch my systems?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">The domain and certificate checks read only public signals (HTTP headers, DNS, certificate transparency, security.txt). Secret and sensitive-data checks run entirely in your browser. The Web toolkit's API, WebSocket and fuzzing tools do send requests to the target you name, so use them only on systems you own or are authorized to test.</p></details>
+        <details class="dc-details"><summary>Do I need an API key for Nexus?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">No. The Claude engine drives your logged-in Claude Code CLI; the local engine talks to your own Ollama. Nexus stores no keys.</p></details>
         <details class="dc-details"><summary>Does my code leave my machine?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">Only if you use a cloud engine (Claude/OpenCode). The Ollama engine is fully local. <code class="dc-code">/redact</code> masks secrets before any cloud send; <code class="dc-code">/offline</code> blocks cloud entirely.</p></details>
         <details class="dc-details"><summary>How is Nexus different from Claude Code?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">Multiple engines (cloud + free local), a real cost-saving toolkit, git-native checkpoints, a built-in security preflight, and over 120 slash-commands.</p></details>
-        <details class="dc-details"><summary>Is it free?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">The software is free to use. Cloud model usage is billed by your provider; the local engine is free.</p></details>
+        <details class="dc-details"><summary>Is it free?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">The core platform, the CLI and Nexus are free. Paid Pro, Team and Enterprise plans (coming soon) add more tools. Cloud model usage in Nexus is billed by your provider; the local engine is free.</p></details>
         <details class="dc-details"><summary>Where is my project data stored?</summary><p style="color:var(--mut,#94a3b8);padding:12px 16px 0;margin:0">In <code class="dc-code">.nexus/</code> in your project (session, plan, index, memory) — gitignored automatically. Web-console account data is described in the Privacy Policy.</p></details>
       </div>`;
 
@@ -134,13 +140,13 @@ node darknode.js nexus init                 # optional: scaffold .nexus/ project
       <ol class="dc-ol" style="font-size:.9rem">
         <li><strong>License to use.</strong> The Software is provided as-is; all rights are reserved by the author.</li>
         <li><strong>Authorized use only.</strong> You will use the security tooling exclusively against systems you own or are explicitly authorized in writing to test. You are solely responsible for compliance with all applicable laws.</li>
-        <li><strong>No guarantee of detection or compliance.</strong> The analysis tools identify some potential issues; they do not and cannot find every vulnerability, misconfiguration, error, or wrongdoing, and may produce false positives and false negatives. A clean or passing result is not a certification, warranty, or representation that your code, systems, data, or finances are secure, correct, or compliant. The tools aid — they never replace — qualified human review, professional penetration testing, and independent audit.</li>
-        <li><strong>Financial &amp; forensic analysis.</strong> Financial-integrity features apply statistical and rule-based screens (such as Benford's Law, duplicate and anomaly detection, reconciliation checks) that flag items for your review. They are not an audit, not a determination of fraud or wrongdoing, and not accounting, tax, legal, or financial advice.</li>
-        <li><strong>No professional advice.</strong> Nothing we provide — findings, scores, mappings, analyses, or recommendations — is legal, accounting, tax, financial, audit, or other professional advice, or a certification of compliance. Obtain independent professional advice before relying on any output. You are solely responsible for the security and correctness of your own systems, data, and finances and for any decision made in reliance on a result.</li>
+        <li><strong>No guarantee of detection or compliance.</strong> The analysis tools identify some potential issues; they do not and cannot find every vulnerability, misconfiguration, or error, and may produce false positives and false negatives. A clean or passing result is not a certification, warranty, or representation that your code, systems, or data are secure, correct, or compliant. The tools aid — they never replace — qualified human review, professional penetration testing, and independent audit.</li>
+        <li><strong>No professional advice.</strong> Nothing we provide — findings, scores, mappings, analyses, or recommendations — is legal, accounting, tax, financial, audit, or other professional advice, or a certification of compliance. Obtain independent professional advice before relying on any output. You are solely responsible for the security and correctness of your own systems and data and for any decision made in reliance on a result.</li>
         <li><strong>No warranty.</strong> The Software and Services are provided "as is" and "as available", without warranty of any kind, express or implied, including merchantability, fitness for a particular purpose, accuracy, completeness, and non-infringement. Automated agents can make mistakes; review their output.</li>
         <li><strong>Limitation of liability.</strong> To the maximum extent permitted by law, the authors are not liable for any indirect, incidental, special, consequential, or punitive damages, or for lost profits, data, or business, arising from use of the Software or Services — even if advised of the possibility — and total aggregate liability will not exceed the greater of fees you paid in the prior 12 months or US$100.</li>
-        <li><strong>Self-hosted use.</strong> Where you run Darknode in your own environment, you alone control and are responsible for that deployment and all data processed within it; we have no access to it. We do not receive the source code, systems, or financial data you analyze client-side or on-premises.</li>
-        <li><strong>Third-party services.</strong> Cloud AI providers, model usage and billing are governed by those providers' own terms.</li>
+        <li><strong>Self-hosted use.</strong> Where you run Darknode in your own environment, you alone control and are responsible for that deployment and all data processed within it; we have no access to it. We do not receive the source code, systems, or data you analyze client-side or on-premises.</li>
+        <li><strong>AI features.</strong> The built-in web assistant sends messages through Darknode's edge proxy to a third-party model provider (currently Google Gemini); Darknode does not log or store them. Cloud AI providers, model usage and billing are governed by those providers' own terms.</li>
+        <li><strong>Plans.</strong> Which tools and spaces you can use depends on your plan; features outside your plan are not shown.</li>
         <li><strong>Changes.</strong> These terms may be updated; continued use constitutes acceptance.</li>
       </ol>
       <!-- The pointing-up emoji below is the one emoji the owner explicitly asked to keep here (points up at the terms); no other emojis in the UI. -->
@@ -153,13 +159,15 @@ node darknode.js nexus init                 # optional: scaffold .nexus/ project
         <li><strong>Web console.</strong> If you sign in, we store your account identifier and preferences to provide the service. We do not sell personal data.</li>
         <li><strong>Feedback.</strong> Feedback you submit is stored to improve the product and is readable only by you and the maintainers.</li>
         <li><strong>Retention &amp; deletion.</strong> You may request deletion of your account data at any time via Settings or by contacting the maintainers.</li>
+        <li><strong>In-browser tools.</strong> Most analysis runs in your browser. Check history and saved domain lists in the Deck spaces are kept in your browser's local storage. Live checks against a domain you enter are fetched through our edge proxy and are not stored.</li>
+        <li><strong>AI assistant.</strong> Questions to the built-in assistant pass through our edge proxy to the model provider and are not logged or stored by us.</li>
         <li><strong>Cookies.</strong> Only functional cookies/localStorage for auth and preferences.</li>
       </ul>`;
 
     case 'aup': return `
       <p style="color:var(--mut,#94a3b8);margin-bottom:16px;font-size:.9rem">You agree <strong>not</strong> to use Darknode to:</p>
       <ul class="dc-ul" style="font-size:.9rem">
-        <li>Access, scan, exploit or disrupt systems you do not own or lack written authorization to test.</li>
+        <li>Access, scan, exploit or disrupt systems you do not own or lack written authorization to test. This includes the web-security toolkit (API and WebSocket testers, fuzzers, header and CORS checks).</li>
         <li>Develop or distribute malware for malicious use, conduct denial-of-service attacks, or target individuals.</li>
         <li>Exfiltrate data, evade detection for unlawful purposes, or violate any law or third-party rights.</li>
       </ul>

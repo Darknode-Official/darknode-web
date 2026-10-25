@@ -167,3 +167,9 @@ body.landing .cta-final .cta-reassure,
 body.landing .cta-final .cta-sub {
   color: #d5dbdb !important;
 }
+body.landing .cta-final .cta-notify-h {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-size: 1.35rem !important;
+  font-weight: 750 !important;
+}

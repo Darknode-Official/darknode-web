@@ -57,7 +57,7 @@ import { startTour, tourDone } from "/js/tour.js";
 import { isDesktop, has as desktopHas, syncTitlebar } from "/js/core/desktop.js";
 if (isDesktop()) syncTitlebar();
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261021d"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261025b"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -1736,9 +1736,41 @@ function renderDesktopHome(user) {
     return;
   }
   view.innerHTML = "";
-  import("/js/admin.js?v=20261025a")
-    .then((m) => m.openDeck(user, { onSignOut: () => { m.closeDeck(); doLogout(); } }))
+  import("/js/deck/launch.js?v=20261025b")
+    .then((m) => m.openDeck(user, { isOwner: true, onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
+}
+// Web home: the Deck is the signed-in UI for everyone. The classic console stays one
+// click away (localStorage dn_ui = "console") and still serves embedded tool frames
+// (?embed=1), the desktop app's guest webview (?app=1) and the Deck's own fallback.
+const UI_PREF = "dn_ui";
+let _deckFailed = false;
+function deckIsHome() {
+  if (_deckFailed) return false;
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.get("embed") === "1" || q.get("app") === "1" || document.documentElement.hasAttribute("data-embed")) return false;
+    if (sessionStorage.getItem("dn_guest") === "1") return false;
+    return localStorage.getItem(UI_PREF) !== "console";
+  } catch (_) { return true; }
+}
+function setUiPref(v) { try { if (v) localStorage.setItem(UI_PREF, v); else localStorage.removeItem(UI_PREF); } catch (_) {} location.assign("/"); }
+function renderDeckHome(user) {
+  view.innerHTML = "";
+  // A deep link (/<sec>) opens that tool inside the Deck; the admin page only for the owner.
+  // (same mapping as the console's pathToSec: hyphenated paths are camelCase secs,
+  // except tool-<id> mini-tools, which stay as-is)
+  const raw = location.pathname.replace(/^\//, "").replace(/\/$/, "");
+  let startSec = !raw ? null : raw.startsWith("tool-") ? raw : raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+  if (startSec === "home" || (startSec === "admin" && !_isAdmin)) startSec = null;
+  import("/js/deck/launch.js?v=20261025b")
+    .then((m) => m.openDeck(user, {
+      isOwner: _isAdmin,
+      startSec: startSec || undefined,
+      onSignOut: () => { m.closeDeck(); doLogout(); },
+      onClassic: () => { m.closeDeck(); setUiPref("console"); },
+    }))
+    .catch(() => { _deckFailed = true; renderApp(user); });
 }
 function renderApp(user) {
   _appUid = user && user.uid || null;
@@ -1752,6 +1784,7 @@ function renderApp(user) {
   document.body.classList.add("app");
   // Desktop app (top frame only; tool iframes never see the bridge): the Deck is the home screen.
   if (isDesktop()) { renderDesktopHome(user); return; }
+  if (deckIsHome()) { renderDeckHome(user); return; }
   // Embed mode: when loaded as /<sec>?embed=1 (e.g. inside Darknode Command's
   // in-deck workspace iframe), strip the console chrome so only the live tool
   // shows, full-bleed and transparent. Reused by any host that frames a tool.
@@ -2137,7 +2170,7 @@ function renderApp(user) {
     else if (sec === "downloads") { import("/js/getapp.js?v=20261021c").then(m => live() && m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20261021c").then(m => live() && m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261017d").then(m => live() && m.renderAPI(main, user)); }
-    else if (sec === "docs") { import("/js/docs.js?v=20261021d").then(m => live() && m.renderDocs(main)); }
+    else if (sec === "docs") { import("/js/docs.js?v=20261025b").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261017d").then(m => live() && m.renderStrongroom(main)); }
     else if (sec === "signins") { import("/js/identity/signin-forensics.js?v=20261017f").then(m => live() && m.renderSigninForensics(main)); }
@@ -2146,7 +2179,7 @@ function renderApp(user) {
     else if (sec === "loghunt") { import("/js/ops/log-hunter.js?v=20261017e").then(m => live() && m.renderLogHunter(main)); }
     else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261025a").then(m => live() && m.renderVendors(main)); }
     else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261017e").then(m => live() && m.renderDlp(main)); }
-    else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261019i").then(m => live() && m.renderPosture(main)); }
+    else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261025b").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261017d").then(m => live() && m.renderTlsFleet(main)); }
     else if (sec === "phishtriage") { import("/js/dataprotect/phish.js?v=20261017d").then(m => live() && m.renderPhish(main)); }
     else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261017c").then(m => live() && m.renderLeakprobe(main)); }
@@ -2179,7 +2212,7 @@ function renderApp(user) {
     else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261017c").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261025a").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261025b").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261013c").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2400,6 +2433,7 @@ function renderApp(user) {
         <button class="menu-item menu-item-kbd" data-a="palette">Command palette<kbd>Ctrl K</kbd></button>
         <button class="menu-item" data-a="style">Switch theme style</button>
         <button class="menu-item" data-a="theme">Toggle light / dark</button>
+        <button class="menu-item" data-a="deck">Switch to the Deck</button>
         <button class="menu-item" data-a="tour">Replay walkthrough</button>
         <button class="menu-item" data-a="betaask">Request a Beta Lab tool</button>
         <div class="menu-div"></div>
@@ -2445,6 +2479,7 @@ function renderApp(user) {
     if (nb) return show(nb.dataset.nav);
     const a = lb.dataset.a;
     if (a === "logout") doLogout();
+    else if (a === "deck") setUiPref(null);
     else if (a === "theme") { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); }
     else if (a === "style") cycleStyle();
     else if (a === "palette") openPalette();
@@ -2909,49 +2944,63 @@ onAuthStateChanged(auth, async (user) => {
 
   // TOS acceptance check — must agree before using the platform
   const udoc = await getDoc(doc(db, "users", user.uid)).catch(() => null);
-  const tosAccepted = udoc && udoc.exists() && udoc.data().tosAccepted;
+  // Terms are versioned: bumping TOS_VERSION asks every account to accept the new text,
+  // including accounts that accepted an earlier version (they also see what changed).
+  const TOS_VERSION = "2026-10-25";
+  const ud = udoc && udoc.exists() ? udoc.data() : {};
+  const tosAccepted = !!ud.tosAccepted && ud.tosVersion === TOS_VERSION;
+  const tosReturning = !!ud.tosAccepted && !tosAccepted;
   if (!tosAccepted) {
     view.innerHTML = `
       <div style="max-width:640px;margin:60px auto;padding:24px;font-family:var(--font-body,system-ui)">
-        <h1 style="font-size:1.6rem;margin-bottom:8px">Terms of Service</h1>
-        <p style="color:var(--mut,#888);margin-bottom:20px">Please read and accept before continuing.</p>
+        <h1 style="font-size:1.6rem;margin-bottom:8px">${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
+        <p style="color:var(--mut,#888);margin-bottom:20px">${tosReturning ? "Please review the changes and accept to keep using Darknode." : "Please read and accept before continuing."}</p>
+        ${tosReturning ? `<div style="border:1px solid var(--line,#333);border-left:4px solid var(--acc,#2552c6);padding:14px 18px;margin-bottom:16px;border-radius:4px;font-size:.88rem;line-height:1.6">
+          <strong>What changed (October 25, 2026)</strong>
+          <ul style="margin:8px 0 0;padding-left:20px">
+            <li>The Darknode Deck is now the main signed-in workspace, with Personal and Organization spaces.</li>
+            <li>New section on AI features: the built-in assistant sends messages through our edge proxy to a model provider (currently Google Gemini); we do not log or store them.</li>
+            <li>New section on plans: which tools you can use depends on your plan.</li>
+            <li>Financial-analysis terms removed, since those tools were retired.</li>
+            <li>Prohibited use now names the web-security toolkit explicitly; sections renumbered.</li>
+          </ul></div>` : ""}
         <div style="background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:20px;max-height:400px;overflow-y:auto;font-size:.85rem;line-height:1.7;margin-bottom:20px;border-radius:4px" id="tosBox">
           <h3>Darknode Terms of Service</h3>
-          <p><strong>Last updated:</strong> October 11, 2026</p>
-          <p>By using Darknode ("the Platform"), including darknode.ai, the Darknode command center, the code, cloud, dependency and financial-integrity analysis engines, the Darknode CLI, the Nexus agent, Darknode OS, the API and MCP server, and all associated tools, you (and, where you act for an organization, that organization) agree to these terms. If you do not agree, do not use the Platform.</p>
+          <p><strong>Last updated:</strong> October 25, 2026</p>
+          <p>By using Darknode ("the Platform"), including darknode.ai, the Darknode command center, the Darknode Deck and its Personal and Organization spaces, the code, cloud, dependency and web-exposure analysis engines, the Darknode CLI, the Nexus agent, Darknode OS, the API and MCP server, and all associated tools, you (and, where you act for an organization, that organization) agree to these terms. If you do not agree, do not use the Platform.</p>
 
           <h4>1. Authorized Use Only</h4>
-          <p>Darknode is a platform for <strong>authorized security operations, vulnerability assessment, compliance review, financial-integrity analysis, and legitimate security research</strong> — used by and for organizations on their own code, systems, data, and finances, or on those of clients who have authorized the work in writing. Its tools are designed to help you find and fix problems in environments you are permitted to assess, not to attack systems you are not.</p>
+          <p>Darknode is a platform for <strong>authorized security operations, vulnerability assessment, compliance review, and legitimate security research</strong> — used by and for organizations on their own code, systems, and data, or on those of clients who have authorized the work in writing. Its tools are designed to help you find and fix problems in environments you are permitted to assess, not to attack systems you are not.</p>
           <p><strong>You MUST have explicit written authorization before testing any system, network, or application you do not own.</strong> This includes but is not limited to: penetration tests, vulnerability scans, social engineering assessments, wireless audits, and red team engagements. Unauthorized access to computer systems is a criminal offense under the Computer Fraud and Abuse Act (CFAA), the Computer Misuse Act, and equivalent laws worldwide.</p>
 
           <h4>2. No Guarantee of Security, Detection, or Compliance</h4>
-          <p>Darknode's tools perform <strong>automated analysis</strong> of code, dependencies, cloud configuration, systems and records. They identify <em>some</em> potential issues; they <strong>do not and cannot detect all vulnerabilities, misconfigurations, weaknesses, errors, or wrongdoing</strong>, and may produce both false positives and false negatives.</p>
-          <p><strong>A clean, passing, or "no findings" result is NOT a certification, warranty, or representation that your code, systems, data, or finances are secure, correct, compliant, or free of defects or fraud.</strong> Severity scores, risk ratings and compliance or framework mappings are informational aids only and are not a certification of compliance with any law, standard, or framework. The tools are an aid to — never a substitute for — qualified human review, professional penetration testing, and independent audit. <strong>You remain solely responsible for the security, correctness, and compliance of your own code, systems, data, and finances, and for any decision to act or not act on any result.</strong></p>
+          <p>Darknode's tools perform <strong>automated analysis</strong> of code, dependencies, cloud configuration, systems and records. They identify <em>some</em> potential issues; they <strong>do not and cannot detect all vulnerabilities, misconfigurations, weaknesses, errors, or weaknesses</strong>, and may produce both false positives and false negatives.</p>
+          <p><strong>A clean, passing, or "no findings" result is NOT a certification, warranty, or representation that your code, systems, or data are secure, correct, compliant, or free of defects.</strong> Severity scores, risk ratings and compliance or framework mappings are informational aids only and are not a certification of compliance with any law, standard, or framework. The tools are an aid to — never a substitute for — qualified human review, professional penetration testing, and independent audit. <strong>You remain solely responsible for the security, correctness, and compliance of your own code, systems, and data, and for any decision to act or not act on any result.</strong></p>
 
-          <h4>3. Financial &amp; Forensic Analysis Disclaimer</h4>
-          <p>The financial-integrity and forensic-analytics features apply statistical and rule-based <strong>screens</strong> (including techniques such as Benford's Law, duplicate-payment and anomaly detection, sequence and reconciliation checks). <strong>These are investigative screening aids that highlight items for your review. They are NOT an audit; NOT a determination, allegation, or accusation of fraud, error, or wrongdoing; and NOT accounting, tax, legal, financial, or investment advice.</strong> A flagged item means only that it warrants a closer look by a qualified professional; an unflagged item is not assurance of correctness. No audit, fiduciary, or advisory relationship is created. You and your qualified professionals are solely responsible for interpreting results and for any decision made in reliance on them.</p>
+          <h4>3. No Professional Advice</h4>
+          <p>Nothing Darknode provides — including scan results, findings, scores, compliance mappings, reports, or recommendations — constitutes legal, accounting, tax, financial, audit, regulatory, or other professional advice, or a certification of compliance. You are responsible for obtaining independent professional advice before relying on any output.</p>
 
-          <h4>4. No Professional Advice</h4>
-          <p>Nothing Darknode provides — including scan results, findings, scores, compliance mappings, financial analyses, reports, or recommendations — constitutes legal, accounting, tax, financial, audit, regulatory, or other professional advice, or a certification of compliance. You are responsible for obtaining independent professional advice before relying on any output.</p>
-
-          <h4>5. Disclaimer of Warranties</h4>
+          <h4>4. Disclaimer of Warranties</h4>
           <p>The Platform is provided <strong>"as is" and "as available"</strong> without warranties of any kind, express, implied, or statutory, including but not limited to merchantability, fitness for a particular purpose, title, non-infringement, accuracy, completeness, reliability, security, or availability. Darknode does not warrant that the Platform will be uninterrupted or error-free, that defects will be corrected, or that results will be accurate or complete.</p>
 
-          <h4>6. Limitation of Liability</h4>
-          <p><strong>To the maximum extent permitted by applicable law, Darknode, its owners, creators, contributors, affiliates, and suppliers shall NOT be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenue, data, goodwill, or business, business interruption, security breach, or third-party claim, arising out of or relating to the Platform or any result it produces — even if advised of the possibility of such damages, and regardless of the legal theory (contract, tort, negligence, strict liability, statute, or otherwise).</strong> This includes, without limitation, damages arising from: any undetected vulnerability, misconfiguration, error, or fraud; reliance on, or any action or inaction based on, any finding or the absence of a finding; any security incident, breach, or loss affecting your systems or data; any financial loss or decision; and the output or behavior of any automated tool or AI feature.</p>
+          <h4>5. Limitation of Liability</h4>
+          <p><strong>To the maximum extent permitted by applicable law, Darknode, its owners, creators, contributors, affiliates, and suppliers shall NOT be liable for any indirect, incidental, special, consequential, exemplary, or punitive damages, or for any loss of profits, revenue, data, goodwill, or business, business interruption, security breach, or third-party claim, arising out of or relating to the Platform or any result it produces — even if advised of the possibility of such damages, and regardless of the legal theory (contract, tort, negligence, strict liability, statute, or otherwise).</strong> This includes, without limitation, damages arising from: any undetected vulnerability, misconfiguration, or error; reliance on, or any action or inaction based on, any finding or the absence of a finding; any security incident, breach, or loss affecting your systems or data; any business decision; and the output or behavior of any automated tool or AI feature.</p>
           <p><strong>In all cases, Darknode's total aggregate liability for all claims arising out of or relating to the Platform shall not exceed the greater of (a) the total fees you actually paid to Darknode for the Platform in the twelve (12) months immediately before the event giving rise to the claim, or (b) one hundred U.S. dollars (US$100).</strong> Some jurisdictions do not allow certain exclusions or limitations; in those jurisdictions the above applies to the maximum extent permitted, and nothing here limits liability that cannot lawfully be limited.</p>
-          <p><strong>Indemnification.</strong> You agree to defend, indemnify, and hold harmless Darknode, its owners, creators, contributors, and affiliates from and against any and all claims, liabilities, damages, losses, and expenses (including reasonable legal fees) arising out of or related to: your use of the Platform; your reliance on any result; your code, systems, data, or finances; or your violation of these terms or of any law or third-party right.</p>
+          <p><strong>Indemnification.</strong> You agree to defend, indemnify, and hold harmless Darknode, its owners, creators, contributors, and affiliates from and against any and all claims, liabilities, damages, losses, and expenses (including reasonable legal fees) arising out of or related to: your use of the Platform; your reliance on any result; your code, systems, or data; or your violation of these terms or of any law or third-party right.</p>
 
-          <h4>7. Self-Hosted and On-Premises Use</h4>
-          <p>Where you install or run Darknode in your own browser, infrastructure, or environment (including self-hosted, on-premises, or air-gapped deployments), <strong>you alone control and are responsible for that deployment</strong> — its configuration, access controls, updates, and all data processed within it. Darknode has no access to, and accepts no responsibility or liability for, your self-hosted instance, its security, or the data you process with it. Darknode does not receive, store, or have access to the source code, systems, or financial data you analyze client-side or in your own environment.
+          <h4>6. Self-Hosted and On-Premises Use</h4>
+          <p>Where you install or run Darknode in your own browser, infrastructure, or environment (including self-hosted, on-premises, or air-gapped deployments), <strong>you alone control and are responsible for that deployment</strong> — its configuration, access controls, updates, and all data processed within it. Darknode has no access to, and accepts no responsibility or liability for, your self-hosted instance, its security, or the data you process with it. Darknode does not receive, store, or have access to the source code, systems, or data you analyze client-side or in your own environment.</p>
 
-          <h4>3. Real Security Data</h4>
+          <h4>7. Real Security Data</h4>
           <p>Darknode provides real-world security intelligence including CVE databases, exploit references, MITRE ATT&amp;CK mappings, APT group profiles, vulnerability data, and penetration testing methodologies. This information is sourced from publicly available databases and is provided for <strong>defensive security, education, and authorized testing purposes only</strong>. Darknode does not create exploits — it references publicly known vulnerabilities to help defenders understand and mitigate threats.</p>
 
-          <h4>4. BYOK (Bring Your Own Key)</h4>
-          <p>AI features require your own API keys. Darknode does not execute AI on its hosted servers and does not proxy, store, or log your prompts or API responses. You are solely responsible for your API usage, costs, compliance with your AI provider's terms, and any actions taken by AI agents operating with your keys.</p>
+          <h4>8. AI Features</h4>
+          <p>The built-in web assistant sends your messages through Darknode's edge proxy to a third-party model provider (currently Google Gemini) and returns the answer. Darknode does not log or store those prompts or responses; the provider processes them under its own terms. In Nexus, the CLI, and the desktop app you choose the engine: local models (such as Ollama) keep everything on your machine, and cloud engines use your own account or API key with that provider. AI output can be wrong; review it before acting on it. You are responsible for your own API usage and costs and for any actions taken by AI agents you run.</p>
 
-          <h4>5. User Responsibility</h4>
+          <h4>9. Plans and Feature Availability</h4>
+          <p>Which tools and spaces you can use depends on your plan. Features outside your plan are not shown. We may move features between plans, and features marked as coming soon may change before release.</p>
+
+          <h4>10. User Responsibility</h4>
           <p><strong>You are solely and entirely responsible for:</strong></p>
           <ul>
             <li>Obtaining proper written authorization before any security testing</li>
@@ -2962,10 +3011,10 @@ onAuthStateChanged(auth, async (user) => {
             <li>Any damage caused to systems, networks, or data during authorized testing</li>
           </ul>
 
-          <h4>6. Prohibited Activities</h4>
+          <h4>11. Prohibited Activities</h4>
           <p>You agree NOT to use Darknode for:</p>
           <ul>
-            <li>Attacking systems without explicit written authorization</li>
+            <li>Attacking, scanning, or probing systems without explicit written authorization, including with the web-security toolkit</li>
             <li>Creating, distributing, or deploying malware for malicious purposes</li>
             <li>Conducting denial-of-service attacks against unauthorized targets</li>
             <li>Stealing, selling, or exposing personal data or credentials</li>
@@ -2974,15 +3023,15 @@ onAuthStateChanged(auth, async (user) => {
           </ul>
           <p>Violation of these terms may result in immediate account termination and reporting to appropriate authorities.</p>
 
-          <h4>7. Intellectual Property</h4>
+          <h4>12. Intellectual Property</h4>
           <p>The Platform, its design, code, branding, documentation, and all related assets are the intellectual property of Darknode and its contributors, protected by copyright and trademark law. You may not copy, modify, distribute, or create derivative works from the Platform except as expressly permitted by the applicable open-source license.</p>
           <p><strong>Your content:</strong> You retain all rights to data, reports, scan results, and other outputs you create using the Platform. By using collaborative or cloud features, you grant Darknode a limited, non-exclusive license to process that content solely to provide the service.</p>
           <p>The Platform incorporates open-source components distributed under their respective licenses. A list is available in the project repository.</p>
 
-          <h4>8. Intended Users</h4>
-          <p>Darknode is intended for organizations and security, engineering, compliance, and finance professionals operating on systems, code, data, and records they own or are authorized to assess. Training, lab, and simulation features are provided for skills development within that authorized context. We do not endorse, encourage, or condone any unlawful activity.</p>
+          <h4>13. Intended Users</h4>
+          <p>Darknode is intended for individuals, organizations, and security, engineering, and compliance professionals operating on systems, code, and data they own or are authorized to assess. Training, lab, and simulation features are provided for skills development within that authorized context. We do not endorse, encourage, or condone any unlawful activity.</p>
 
-          <h4>9. Data &amp; Privacy</h4>
+          <h4>14. Data &amp; Privacy</h4>
           <p>We store minimal user data in Firebase (Google Cloud):</p>
           <ul>
             <li><strong>What we collect:</strong> email address, display name, profile photo URL, login timestamps, and ToS acceptance records.</li>
@@ -2994,26 +3043,26 @@ onAuthStateChanged(auth, async (user) => {
           </ul>
           <p><strong>Your rights (GDPR, CCPA, and similar laws):</strong> depending on your jurisdiction, you may have the right to access, correct, delete, or export your personal data, restrict processing, object to processing, or withdraw consent. To exercise any of these rights, email <strong>contact@darknode.ai</strong>. We will respond within 30 days. You also have the right to lodge a complaint with your local data protection authority.</p>
 
-          <h4>10. Account Termination</h4>
-          <p><strong>By you:</strong> you may stop using the Platform and request account deletion at any time by emailing contact@darknode.ai. Upon deletion, your data will be removed in accordance with Section 10.</p>
+          <h4>15. Account Termination</h4>
+          <p><strong>By you:</strong> you may stop using the Platform and request account deletion at any time by emailing contact@darknode.ai. Upon deletion, your data will be removed in accordance with Section 14.</p>
           <p><strong>By us:</strong> we may suspend or terminate your account immediately, without prior notice, if we reasonably believe you have violated these terms. We may also discontinue the Platform or any feature at any time with reasonable notice.</p>
 
-          <h4>11. Paid Plans &amp; Pricing</h4>
+          <h4>16. Paid Plans &amp; Pricing</h4>
           <p>The core Platform is free. Paid plans (when available) unlock additional professional features. Prices are listed on the pricing page and may change with at least <strong>30 days' notice</strong> before your next billing cycle. Refunds are handled on a case-by-case basis. Cancellation takes effect at the end of the current billing period. You are responsible for any applicable taxes.</p>
 
-          <h4>12. Service Availability</h4>
+          <h4>17. Service Availability</h4>
           <p>We aim for high availability but do not guarantee uninterrupted access. We are not liable for downtime caused by events beyond our reasonable control, including but not limited to: natural disasters, internet outages, hosting provider failures, government actions, cyberattacks, or other force majeure events. Scheduled maintenance will be announced when feasible.</p>
 
-          <h4>13. Dispute Resolution</h4>
+          <h4>18. Dispute Resolution</h4>
           <p>If a dispute arises, you agree to first attempt resolution by emailing contact@darknode.ai. If we cannot resolve it within 60 days, either party may pursue binding arbitration under the rules of a mutually agreed arbitration provider, conducted in English. <strong>You agree to resolve disputes on an individual basis and waive the right to participate in a class action.</strong> Nothing in this section prevents either party from seeking injunctive relief in court for intellectual property violations or imminent harm.</p>
 
-          <h4>14. Governing Law</h4>
+          <h4>19. Governing Law</h4>
           <p>These terms are governed by and construed in accordance with the laws of the State of California, United States, without regard to conflict-of-law principles. Any legal proceedings not subject to arbitration shall be brought in the state or federal courts located in California.</p>
 
-          <h4>15. Changes to These Terms</h4>
+          <h4>20. Changes to These Terms</h4>
           <p>We may update these terms from time to time. When we make material changes, we will notify you by email or by posting a notice on the Platform at least <strong>14 days before</strong> the changes take effect. If you continue to use the Platform after the effective date, you accept the updated terms. If you disagree, you may close your account before the changes take effect.</p>
 
-          <h4>16. General Provisions</h4>
+          <h4>21. General Provisions</h4>
           <ul>
             <li><strong>Entire agreement:</strong> these terms, together with any referenced policies, constitute the entire agreement between you and Darknode regarding the Platform and supersede all prior agreements.</li>
             <li><strong>Severability:</strong> if any provision of these terms is found to be unenforceable or invalid, that provision will be limited or eliminated to the minimum extent necessary, and the remaining provisions will remain in full force.</li>
@@ -3035,7 +3084,7 @@ onAuthStateChanged(auth, async (user) => {
         </div>
       </div>`;
     document.getElementById("tosAgree").onclick = async () => {
-      await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosAcceptedAt: serverTimestamp() }, { merge: true });
+      await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosVersion: TOS_VERSION, tosAcceptedAt: serverTimestamp() }, { merge: true });
       const enter = () => { try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {} renderApp(user); loadAnnouncement(); };
       if (fresh) playAccessGranted(user.displayName || ((user.email || "").split("@")[0]), enter);
       else enter();
