@@ -1819,17 +1819,17 @@ export function renderDeck(host, opts) {
       <div class="dk-wframe" id="dkWFrame"></div>
     </div>
 
-    <aside class="dk-drawer" id="dkDrawer"><span class="x" id="dkDrawerX">&times;</span><div id="dkDrawerBody"></div></aside>
+    <aside class="dk-drawer" id="dkDrawer"><span class="x" id="dkDrawerX" role="button" tabindex="0" aria-label="Close">&times;</span><div id="dkDrawerBody"></div></aside>
 
-    <div class="dk-spot" id="dkSpot">
+    <div class="dk-spot" id="dkSpot" role="dialog" aria-modal="true" aria-label="Search and commands">
       <div class="dk-sbox">
-        <div class="dk-srow">${IC_SEARCH}<input id="dkSpotIn" placeholder="Search tools, services or run a command…" autocomplete="off" spellcheck="false"></div>
+        <div class="dk-srow">${IC_SEARCH}<input id="dkSpotIn" aria-label="Search tools, services and commands" placeholder="Search tools, services or run a command…" autocomplete="off" spellcheck="false"></div>
         <div class="dk-sres" id="dkSpotRes"></div>
         <div class="dk-sfoot"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span><span style="margin-left:auto"><b>Tools, services &amp; actions</b></span></div>
       </div>
     </div>
 
-    <div class="dk-keys" id="dkKeys"></div>`;
+    <div class="dk-keys" id="dkKeys" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts"></div>`;
   (host || document.body).appendChild(root);
   const $ = (s) => root.querySelector(s);
 
@@ -1870,6 +1870,13 @@ export function renderDeck(host, opts) {
   function syncUrl(path){
     if (!primary) return;
     try { if (location.pathname !== path) history.replaceState(history.state, "", path + location.search); } catch (_) {}
+  }
+  // Shortcuts into tools/scenes above the plan are removed, not left as dead buttons
+  // (go()/openTool() refuse them); same rule as the sidebar: hidden, never badged.
+  function pruneLocked(el){
+    el.querySelectorAll(".dk-qacard[data-tool],.dk-qacard[data-scene],.mo[data-scene]").forEach((b) => {
+      if (isLocked(b.dataset.tool ? "tool:" + b.dataset.tool : "scene:" + b.dataset.scene)) b.remove();
+    });
   }
   function go(scene, arg){
     if (!SCENES[scene] || isLocked(scene === "section" ? "section:" + (SECTIONS[arg] ? arg : curSect) : "scene:" + scene)) scene = "overview";
@@ -2094,6 +2101,7 @@ export function renderDeck(host, opts) {
     }
   }
   $("#dkDrawerX").onclick = () => drawer.classList.remove("on");
+  $("#dkDrawerX").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); drawer.classList.remove("on"); } };
 
   // ---------- Entity / finding drill-down (reuses the drawer shell) ----------
   // Clicking a finding or an entity opens this inspector instead of jumping to the
@@ -2324,35 +2332,35 @@ export function renderDeck(host, opts) {
   // rather than opening a tool, so Ctrl+K is a true command palette.
   const ACTIONS = [
     { type: "action", label: "Ask Darknode AI", group: "Action", icon: IC.spark, run: () => askAI("") },
-    { type: "action", label: "Scan a codebase", group: "Action", icon: IC.term, run: () => openTool("codescan", secLabel["codescan"] || "Code Scanner") },
-    { type: "action", label: "Protect the funds (analyze a ledger)", group: "Action", icon: IC.bolt, run: () => openTool("strongroom", secLabel["strongroom"] || "Fund Protection") },
-    { type: "action", label: "Map an attack surface", group: "Action", icon: IC.radar, run: () => go("surface") },
-    { type: "action", label: "Connect a provider", group: "Action", icon: IC.link, run: () => go("con") },
-    { type: "action", label: "New investigation", group: "Action", icon: IC.folder, run: () => openTool("investigation", secLabel["investigation"] || "Investigation") },
-    { type: "action", label: "Open security graph", group: "Action", icon: IC.grid, run: () => openTool("secgraph", secLabel["secgraph"] || "Security Graph") },
+    { type: "action", label: "Scan a codebase", group: "Action", icon: IC.term, run: () => openTool("codescan", secLabel["codescan"] || "Code Scanner"), k: "tool:codescan" },
+    { type: "action", label: "Trace an intrusion to fund theft", group: "Action", icon: IC.bolt, run: () => openTool("strongroom", secLabel["strongroom"] || "Fund Protection"), k: "tool:strongroom" },
+    { type: "action", label: "Map an attack surface", group: "Action", icon: IC.radar, run: () => go("surface"), k: "scene:surface" },
+    { type: "action", label: "Connect a provider", group: "Action", icon: IC.link, run: () => go("con"), k: "scene:con" },
+    { type: "action", label: "New investigation", group: "Action", icon: IC.folder, run: () => openTool("investigation", secLabel["investigation"] || "Investigation"), k: "tool:investigation" },
+    { type: "action", label: "Open security graph", group: "Action", icon: IC.grid, run: () => openTool("secgraph", secLabel["secgraph"] || "Security Graph"), k: "tool:secgraph" },
     ...(primary ? [] : [{ type: "action", label: "Open full console", group: "Action", icon: IC.ext, run: () => exitDeck() }]),
-    { type: "action", label: "Go to Security Overview", group: "Navigate", icon: IC.home, run: () => go("overview") },
-    { type: "action", label: "Go to Attack Surface", group: "Navigate", icon: IC.radar, run: () => go("surface") },
-    { type: "action", label: "Go to Threats & Vulnerabilities", group: "Navigate", icon: IC.alert, run: () => go("threat") },
-    { type: "action", label: "Go to Cloud Posture", group: "Navigate", icon: IC.cloud, run: () => go("cloud") },
-    { type: "action", label: "Go to Compliance", group: "Navigate", icon: IC.shield, run: () => go("compliance") },
-    { type: "action", label: "Go to Findings", group: "Navigate", icon: IC.alert, run: () => go("findings") },
-    { type: "action", label: "Go to Reports", group: "Navigate", icon: IC.note, run: () => go("reports") },
-    { type: "action", label: "Go to Asset Inventory", group: "Navigate", icon: IC.tree, run: () => go("inventory") },
-    { type: "action", label: "Go to Correlations", group: "Navigate", icon: IC.nodes, run: () => go("correlations") },
-    { type: "action", label: "Go to Monitors", group: "Navigate", icon: IC.bell, run: () => go("monitors") },
-    { type: "action", label: "Go to API & Ingest", group: "Navigate", icon: IC.key, run: () => go("apikeys") },
-    { type: "action", label: "Go to Audit Log", group: "Navigate", icon: IC.lock, run: () => go("audit") },
-    { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.search, run: () => go("invest") },
-    { type: "action", label: "Go to Integrations", group: "Navigate", icon: IC.plug, run: () => go("con") },
-    { type: "action", label: "Go to Tool Library", group: "Navigate", icon: IC.grid, run: () => go("tools") },
-    { type: "action", label: "Go to Toolkit", group: "Navigate", icon: IC.wrench, run: () => go("toolkit") },
-    { type: "action", label: "Go to Activity", group: "Navigate", icon: IC.pulse, run: () => go("activity") },
-    { type: "action", label: "Go to Assistant", group: "Navigate", icon: IC.spark, run: () => go("assistant") },
-    { type: "action", label: "Go to Team", group: "Navigate", icon: IC.nodes, run: () => go("team") },
-    { type: "action", label: "Go to Plans & billing", group: "Navigate", icon: IC.star, run: () => go("plans") },
-    { type: "action", label: "Open Settings", group: "Navigate", icon: IC.gear, run: () => go("settings") },
-  ];
+    { type: "action", label: "Go to Security Overview", group: "Navigate", icon: IC.home, run: () => go("overview"), k: "scene:overview" },
+    { type: "action", label: "Go to Attack Surface", group: "Navigate", icon: IC.radar, run: () => go("surface"), k: "scene:surface" },
+    { type: "action", label: "Go to Threats & Vulnerabilities", group: "Navigate", icon: IC.alert, run: () => go("threat"), k: "scene:threat" },
+    { type: "action", label: "Go to Cloud Posture", group: "Navigate", icon: IC.cloud, run: () => go("cloud"), k: "scene:cloud" },
+    { type: "action", label: "Go to Compliance", group: "Navigate", icon: IC.shield, run: () => go("compliance"), k: "scene:compliance" },
+    { type: "action", label: "Go to Findings", group: "Navigate", icon: IC.alert, run: () => go("findings"), k: "scene:findings" },
+    { type: "action", label: "Go to Reports", group: "Navigate", icon: IC.note, run: () => go("reports"), k: "scene:reports" },
+    { type: "action", label: "Go to Asset Inventory", group: "Navigate", icon: IC.tree, run: () => go("inventory"), k: "scene:inventory" },
+    { type: "action", label: "Go to Correlations", group: "Navigate", icon: IC.nodes, run: () => go("correlations"), k: "scene:correlations" },
+    { type: "action", label: "Go to Monitors", group: "Navigate", icon: IC.bell, run: () => go("monitors"), k: "scene:monitors" },
+    { type: "action", label: "Go to API & Ingest", group: "Navigate", icon: IC.key, run: () => go("apikeys"), k: "scene:apikeys" },
+    { type: "action", label: "Go to Audit Log", group: "Navigate", icon: IC.lock, run: () => go("audit"), k: "scene:audit" },
+    { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.search, run: () => go("invest"), k: "scene:invest" },
+    { type: "action", label: "Go to Integrations", group: "Navigate", icon: IC.plug, run: () => go("con"), k: "scene:con" },
+    { type: "action", label: "Go to Tool Library", group: "Navigate", icon: IC.grid, run: () => go("tools"), k: "scene:tools" },
+    { type: "action", label: "Go to Toolkit", group: "Navigate", icon: IC.wrench, run: () => go("toolkit"), k: "scene:toolkit" },
+    { type: "action", label: "Go to Activity", group: "Navigate", icon: IC.pulse, run: () => go("activity"), k: "scene:activity" },
+    { type: "action", label: "Go to Assistant", group: "Navigate", icon: IC.spark, run: () => go("assistant"), k: "scene:assistant" },
+    { type: "action", label: "Go to Team", group: "Navigate", icon: IC.nodes, run: () => go("team"), k: "scene:team" },
+    { type: "action", label: "Go to Plans & billing", group: "Navigate", icon: IC.star, run: () => go("plans"), k: "scene:plans" },
+    { type: "action", label: "Open Settings", group: "Navigate", icon: IC.gear, run: () => go("settings"), k: "scene:settings" },
+  ].filter((a) => !a.k || !isLocked(a.k)); // same gate as go()/openTool: nothing above the plan is offered
   function spotIcon(m){
     if (m.type === "conn") return `<span class="ic">${logoHTML(m.it, "")}</span>`;
     if (m.type === "action") return `<span class="ic act">${m.icon || IC.bolt}</span>`;
@@ -2785,8 +2793,9 @@ export function renderDeck(host, opts) {
         <div>
           <div class="dk-ovp"><h2 data-explain="panel.activity">${IC.pulse} Recent activity <span class="mo" data-scene="activity">View all</span></h2><div class="dk-ovact">${actRows}</div></div>
           <div class="dk-ovp"><h2 data-explain="panel.quick">${IC.grid} Quick actions</h2><div class="dk-qa">
+            <button class="dk-qacard" data-scene="personal"><span class="qi" style="--a:#2552c6">${IC.shield}</span><b>Check your own exposure</b><span>Domains, certificates, leaked secrets and phishing links.</span></button>
             <button class="dk-qacard" data-tool="codescan"><span class="qi" style="--a:#3f78ff">${IC.term}</span><b>Scan a codebase</b><span>Connect GitHub and jump to each vulnerable line.</span></button>
-            <button class="dk-qacard" data-tool="strongroom"><span class="qi" style="--a:#f59e0b">${IC.bolt}</span><b>Protect the funds</b><span>Screen a ledger for fraud and intrusion-to-theft chains.</span></button>
+            <button class="dk-qacard" data-tool="strongroom"><span class="qi" style="--a:#f59e0b">${IC.bolt}</span><b>Trace intrusion to theft</b><span>Link breach signals to suspicious payments in a ledger.</span></button>
             <button class="dk-qacard" data-scene="con"><span class="qi" style="--a:#12a85f">${IC.link}</span><b>Connect a provider</b><span>Link an AI model or intel source.</span></button>
             <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>New investigation</b><span>Open the investigation workspace.</span></button>
             <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Security graph</b><span>Entities and their relationships.</span></button>
@@ -2802,6 +2811,7 @@ export function renderDeck(host, opts) {
           </div>
         </div>
       </div>`;
+    pruneLocked(el);
     el.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
     // quick AI ask bar -> prefill + open the assistant
     const askForm = el.querySelector("#dkAsk"), askIn = el.querySelector("#dkAskIn");
@@ -3502,6 +3512,7 @@ export function renderDeck(host, opts) {
         <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Open Security Graph</b><span>Visualise entities and their links.</span></button>
         <button class="dk-qacard" data-tool="incidents"><span class="qi" style="--a:#f5920b">${IC.folder}</span><b>Incident Tracker</b><span>Log incidents and track them to closure.</span></button>
       </div>`;
+    pruneLocked(el);
     el.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
     el.querySelector("#dkInvExport").onclick = () => withGraph((m) => {
       if (!m || !m.exportAll) { toast("Graph unavailable"); return; }
