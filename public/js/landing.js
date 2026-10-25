@@ -1213,7 +1213,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">No. Darknode is designed to run on your own infrastructure, including fully air-gapped. All scans and analysis run inside your environment. If you use the Nexus AI assistant with a local model (via Ollama), everything stays offline. If you bring a cloud API key (OpenAI, Anthropic, Google), your queries go directly to that provider &mdash; Darknode never proxies, logs, or stores your prompts or results. Your source code, scan data, saved findings, and secrets stay in your environment and are never transmitted anywhere.</div>
+              <div class="faq-a-inner">Your scans and saved findings stay with you. Self-hosted, the CLI, desktop app and Darknode OS run on your own machines and can run fully air-gapped. On darknode.ai, most analysis runs inside your browser; live checks against a domain (DNS, headers, certificate transparency) are fetched through our edge proxy and are not stored. The built-in web assistant sends your question through that same proxy to Google&rsquo;s Gemini model; we do not log or store prompts or answers. With Nexus you choose the engine: a local Ollama model keeps everything offline, and with a cloud engine your prompts go to that provider under its terms.</div>
             </div>
           </div>
 
@@ -1253,7 +1253,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. Darknode includes professional-grade tools for real engagements: the Security Console for managing multi-phase assessments, automated scan profiles for reconnaissance, vulnerability scanning and verification, the AI-powered report writer that generates client-ready PDF reports, and the engagement tracker for managing findings across multiple targets. Many professional security consultants use Darknode alongside traditional tools like Burp Suite. Always operate within your engagement scope, follow your rules of engagement, and document everything.</div>
+              <div class="faq-a-inner">Yes, within scope. Darknode covers the assessment workflow: scanning code, dependencies, cloud configuration and web exposure; triaging findings by real severity; and building a report you can hand over. The hands-on web-security tools (security headers, CSP, CORS, cookies, API and WebSocket testing) work against targets you name. Always operate within your engagement scope and rules of engagement, and keep written authorization for every system you test.</div>
             </div>
           </div>
 
@@ -1273,7 +1273,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Paid plans (coming soon) add team and enterprise features on top of the open-core platform. The core platform, every tool, and the CLI stay free to self-host. Pro, Team, and Enterprise tiers unlock extras like automated scan scheduling, vulnerability tracking, report generation, collaboration, SSO/RBAC, and air-gapped deployment.</div>
+              <div class="faq-a-inner">The core platform, the CLI and the self-hosted editions stay free. Paid Pro, Team and Enterprise plans (coming soon) add more of the platform: Pro adds exposure, application-security and reporting tools; Team adds the shared Organization space, identity and security-operations tools and team workspaces; Enterprise adds risk and compliance tooling. Tools are shown according to your plan, so you only see what your plan includes.</div>
             </div>
           </div>
 
@@ -1293,7 +1293,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">There are several ways to get support. The Nexus AI agent has a built-in <code>/docs</code> command that covers every feature and tool on the platform. For bug reports and feature requests, open an issue on our GitHub repository. The AI assistant can answer most questions about how to use specific tools, interpret scan results, or follow security methodologies. For account-related issues, use the in-app feedback form. Pro and Team subscribers also get priority email and chat support.</div>
+              <div class="faq-a-inner">Start with the docs on this site (Docs in the top menu), or run <code>/docs</code> inside Nexus to search every command and key. For bug reports and feature requests, open an issue on our GitHub repository. For account issues, use the in-app feedback form or email contact@darknode.ai.</div>
             </div>
           </div>
 
