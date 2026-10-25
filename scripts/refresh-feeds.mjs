@@ -107,50 +107,6 @@ function transformIpsum(body) {
   return { updated: nowIso(), source: "FireHOL + stamparm IPSUM", count: data.length, data };
 }
 
-// US Treasury OFAC Specially Designated Nationals (SDN) list + alias export.
-// Two public, keyless CSVs: SDN.CSV (primary names, no header) and ALT.CSV
-// (a.k.a. / f.k.a. aliases). Reshaped into one entry per designated party with
-// all its names folded in, for the browser-side Sanctions Screening tool.
-// `altBody` is passed through transformOfac via a closure set up in refreshOne.
-function makeOfacTransform(altGetter) {
-  const cell = (line) => {
-    const out = []; let f = "", q = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (q) { if (c === '"') { if (line[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
-      else if (c === '"') q = true;
-      else if (c === ",") { out.push(f); f = ""; }
-      else f += c;
-    }
-    out.push(f);
-    return out.map((x) => { const t = x.trim(); return t === "-0-" ? "" : t; });
-  };
-  return function transformOfac(body) {
-    const byId = new Map();
-    for (const line of body.split(/\r?\n/)) {
-      if (!line.trim()) continue;
-      const c = cell(line);
-      if (c.length < 4 || !/^\d+$/.test(c[0])) continue;
-      // remarks (c[11]) are not used by the screening tool and nearly double the
-      // on-disk size, so they are intentionally omitted to keep the daily commit small.
-      byId.set(c[0], { uid: c[0], name: c[1], type: c[2] || "", program: c[3] || "", names: [c[1]].filter(Boolean) });
-    }
-    if (!byId.size) throw new Error("OFAC SDN: no entries parsed");
-    const altBody = altGetter();
-    if (altBody) {
-      for (const line of altBody.split(/\r?\n/)) {
-        if (!line.trim()) continue;
-        const c = cell(line);
-        if (c.length < 4) continue;
-        const ent = byId.get(c[0]);
-        if (ent && c[3]) ent.names.push(c[3]);
-      }
-    }
-    const data = [...byId.values()];
-    return { updated: nowIso(), source: "US Treasury OFAC SDN", count: data.length, data };
-  };
-}
-
 // FIRST EPSS (Exploit Prediction Scoring System) daily scores.
 // Upstream is a ~390k-row gzipped CSV (one row per CVE). Only the top-N by
 // EPSS (EPSS_TOP_N) plus every CVE in the just-written cisa-kev-index.json (full KEV) are shipped, so
@@ -246,12 +202,7 @@ const FEEDS = [
     url: "https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt",
     transform: transformIpsum,
   },
-  {
-    file: "ofac-sdn.json",
-    url: "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/SDN.CSV",
-    alt: "https://sanctionslistservice.ofac.treas.gov/api/PublicationPreview/exports/ALT.CSV",
-    makeTransform: makeOfacTransform,
-  },
+
   // Listed after cisa-kev on purpose: the EPSS selection unions in the KEV
   // CVEs from the cisa-kev.json written earlier in the same run.
   {
@@ -305,7 +256,7 @@ async function fetchBytes(url) {
 async function refreshOne(feed) {
   const dest = join(FEEDS_DIR, feed.file);
   const body = feed.load ? await feed.load() : await fetchText(feed.url);
-  // A feed may carry an auxiliary file (e.g. OFAC aliases) and build its transform
+  // A feed may carry an auxiliary file (e.g. an alias list) and build its transform
   // from it. The aux fetch is best-effort: aliases improve recall but are not required.
   let transform = feed.transform;
   if (feed.makeTransform) {

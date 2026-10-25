@@ -517,13 +517,13 @@ export function renderLanding(view, actions) {
               <span class="nx-arch-tag">Layer 2</span>
             </div>
             <div class="nx-arch-pills">
-              <span class="nx-arch-pill">Agentic Planner</span>
-              <span class="nx-arch-pill">Multi-Agent</span>
+              <span class="nx-arch-pill">Planner</span>
+              <span class="nx-arch-pill">Agents</span>
               <span class="nx-arch-pill">Pipelines</span>
-              <span class="nx-arch-pill">Skill Forge</span>
-              <span class="nx-arch-pill">World Model</span>
-              <span class="nx-arch-pill">Codemod</span>
-              <span class="nx-arch-pill">Sandbox</span>
+              <span class="nx-arch-pill">Batch</span>
+              <span class="nx-arch-pill">Background Jobs</span>
+              <span class="nx-arch-pill">Race &amp; Ensemble</span>
+              <span class="nx-arch-pill">Cowork</span>
             </div>
           </div>
           <div class="nx-arch-connector"></div>
@@ -533,11 +533,12 @@ export function renderLanding(view, actions) {
               <span class="nx-arch-tag">Layer 3</span>
             </div>
             <div class="nx-arch-pills">
-              <span class="nx-arch-pill">Deep Memory (3-tier)</span>
+              <span class="nx-arch-pill">Memory</span>
               <span class="nx-arch-pill">Sessions</span>
-              <span class="nx-arch-pill">Context Engine</span>
-              <span class="nx-arch-pill">Thought Stream</span>
-              <span class="nx-arch-pill">Time Travel</span>
+              <span class="nx-arch-pill">Repo Map</span>
+              <span class="nx-arch-pill">Code Intel</span>
+              <span class="nx-arch-pill">File State</span>
+              <span class="nx-arch-pill">Rewind &amp; Undo</span>
             </div>
           </div>
           <div class="nx-arch-connector"></div>
@@ -547,18 +548,19 @@ export function renderLanding(view, actions) {
               <span class="nx-arch-tag">Layer 4</span>
             </div>
             <div class="nx-arch-pills">
-              <span class="nx-arch-pill">Verification Engine</span>
-              <span class="nx-arch-pill">Self-Evaluation</span>
-              <span class="nx-arch-pill">Ghost Agents</span>
+              <span class="nx-arch-pill">Verify</span>
               <span class="nx-arch-pill">Code Review</span>
               <span class="nx-arch-pill">Code Radar</span>
               <span class="nx-arch-pill">Smart Tests</span>
-              <span class="nx-arch-pill">Error Recovery</span>
+              <span class="nx-arch-pill">Invariants</span>
+              <span class="nx-arch-pill">Bisect</span>
+              <span class="nx-arch-pill">Diagnose</span>
+              <span class="nx-arch-pill">Loop Guard</span>
             </div>
           </div>
           <div class="nx-arch-connector"></div>
           <div class="nx-arch-layer nx-arch-l5">
-            <div class="nx-arch-footer-band">33 modules &mdash; 720,000+ lines of code across the Darknode ecosystem</div>
+            <div class="nx-arch-footer-band">82 modules &mdash; 720,000+ lines of code across the Darknode ecosystem</div>
           </div>
         </div>
 
@@ -576,7 +578,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0H5a2 2 0 01-2-2v-4m6 6h10a2 2 0 002-2v-4"/><path d="M14 9l-1 2 3 2-1 2"/></svg>
             </div>
             <h3>Autonomous</h3>
-            <p>Give it a goal -- it plans, executes, and verifies with zero babysitting. Ghost Agents run tasks in the background.</p>
+            <p>Give it a goal -- it plans, executes, and verifies with zero babysitting. Background jobs keep long tasks running while you work.</p>
           </div>
           <div class="nx-hl">
             <div class="nx-hl-icon">
@@ -589,27 +591,31 @@ export function renderLanding(view, actions) {
 
         <!-- Collapsible module list -->
         <details class="nx-details">
-          <summary>See all 33 modules &darr;</summary>
+          <summary>See the main modules &darr;</summary>
           <div class="nx-modules">
             <div class="nx-group">
               <h3>Intelligence</h3>
-              <span>Intent Router</span><span>Reasoning Engine</span><span>Prompt Engine</span><span>Metacognition</span><span>Knowledge Graph</span><span>Workspace Intel</span><span>Adaptive Learner</span>
+              <span>Code Intel</span><span>Repo Map</span><span>Read Symbol</span><span>Code Radar</span><span>Threat Model</span><span>Security KB</span><span>Threat Intel</span>
             </div>
             <div class="nx-group">
               <h3>Execution</h3>
-              <span>Agentic Planner</span><span>Multi-Agent</span><span>Pipelines</span><span>Skill Forge</span><span>World Model</span><span>Codemod</span><span>Sandbox</span><span>NXP Protocol</span>
+              <span>Planner</span><span>Agents</span><span>Pipelines</span><span>Batch</span><span>Background Jobs</span><span>Shell Run</span><span>Web Search</span><span>Browser</span>
             </div>
             <div class="nx-group">
               <h3>Memory</h3>
-              <span>Deep Memory (3-tier)</span><span>Sessions</span><span>Context Engine</span><span>Thought Stream</span><span>Time Travel</span>
+              <span>Memory</span><span>Sessions</span><span>File State</span><span>Rewind &amp; Undo</span><span>Todos</span>
             </div>
             <div class="nx-group">
               <h3>Quality</h3>
-              <span>Verification Engine</span><span>Self-Evaluation</span><span>Ghost Agents</span><span>Code Review</span><span>Code Radar</span><span>Smart Tests</span><span>Error Recovery</span>
+              <span>Verify</span><span>Code Review</span><span>Smart Tests</span><span>Invariants</span><span>Attest</span><span>Bisect</span><span>Explain Break</span><span>Diagnose</span><span>Loop Guard</span>
+            </div>
+            <div class="nx-group">
+              <h3>Security</h3>
+              <span>Vuln Scanner</span><span>Pentest Engine</span><span>Attack Planner</span><span>Finding Validation</span><span>Git Security</span><span>Env Audit</span><span>Incident Response</span><span>Report Generator</span>
             </div>
             <div class="nx-group">
               <h3>Infrastructure</h3>
-              <span>MCP Bridge</span><span>3D Modeler</span><span>Telemetry</span><span>Plugins</span><span>Git Intelligence</span><span>6 AI Engines</span>
+              <span>MCP Bridge</span><span>Ask Bridge</span><span>Guardrails</span><span>Redaction</span><span>Jail</span><span>Dashboard</span><span>6 AI Engines</span>
             </div>
           </div>
         </details>
@@ -1011,7 +1017,7 @@ testing methodology for 10.10.14.7:
             </thead>
             <tbody>
               <tr><td>Price</td><td class="cmp-dn"><span class="cmp-highlight">Open-core &mdash; free to self-host</span></td></tr>
-              <tr><td>AI assistant</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Nexus &mdash; 33 modules, 6 engines (bring your own key or run Ollama locally)</td></tr>
+              <tr><td>AI assistant</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Nexus &mdash; 82 modules, 6 engines (bring your own key or run Ollama locally)</td></tr>
               <tr><td>Private and self-hosted</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Runs on your infrastructure, works offline and air-gapped</td></tr>
               <tr><td>Scanning engines</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Code, cloud, dependencies, secrets, forensics</td></tr>
               <tr><td>Interactive labs</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Cyber Range</td></tr>

@@ -55,7 +55,7 @@ Every claim must be true of what ships. Check against the code, not memory:
 - Counts (tools, utilities, commands, engines): grep and fix every surface together:
   `grep -rnE "[0-9]{2,4}\+? (security )?(tools|utilities|commands|engines)" public --include=*.js --include=*.html | grep -v vendor`
   How to count (as of 2026-10-25: 141 tools, 780 quick utilities, stated as "140+ tools plus 780 quick utilities"):
-  tools = console NAV secs without the `tool-` prefix, minus pages (docs, downloads, dlguide, setup, education, toolbox, beta, api, coder, learn, refs, cheats, snippets, targets), plus Deck NAV_DEF `"tool"` ids not in the console NAV. Quick utilities = console NAV secs with the `tool-` prefix. Nexus "33 modules" are files in the separate Darknode-Official/nexus repo (`src/`).
+  tools = console NAV secs without the `tool-` prefix, minus pages (docs, downloads, dlguide, setup, education, toolbox, beta, api, coder, learn, refs, cheats, snippets, targets), plus Deck NAV_DEF `"tool"` ids not in the console NAV. Quick utilities = console NAV secs with the `tool-` prefix. Nexus modules = files in darknode-cli `lib/nexus/*.js` (82 as of 2026-10-25), the Nexus the site actually installs.
 - "Never leaves your machine / never proxied / not stored" claims vs the real data path (`worker/worker.js`, net.js dnFetch, Firestore writes).
 - "Coming soon", "priority support", customer or usage claims: only if real.
 - No simulated features presented as real; no prefilled inputs; no emojis; no native dialogs; placeholders short with a helper line; example emails `test@darknode.ai`, no real company or person names.
