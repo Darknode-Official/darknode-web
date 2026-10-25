@@ -694,6 +694,7 @@ const CSS = `
 .dk-wtitle .wi{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;background:linear-gradient(158deg,var(--a,#3f78ff),rgba(0,0,0,.34))}
 .dk-wtitle .wi svg{width:16px;height:16px}
 .dk-wtitle .wt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:560px){.dk-wbar{gap:8px;padding:10px 12px}.dk-wback{font-size:0;gap:0;padding:8px 10px}.dk-wtitle .wi{display:none}}
 .dk-wact{flex:none}
 .dk-wact.pinned{color:#b7791f;border-color:rgba(245,197,66,.4);background:rgba(245,197,66,.12)}
 .dk-wfull{margin-left:0;flex:none;font-size:12.5px;font-weight:600;color:#5a6680;cursor:pointer;padding:7px 12px;border-radius:10px;border:1px solid rgba(23,33,56,.1)}
@@ -1128,6 +1129,7 @@ const CSS = `
 .dk-srpin svg{width:15px;height:15px;fill:currentColor;stroke:none}
 .dk-sfoot{display:flex;align-items:center;gap:16px;padding:10px 16px;border-top:1px solid rgba(23,33,56,.08);font-size:11.5px;color:#6a7488}
 .dk-sfoot b{color:#5a6680;font-weight:600}
+.dk-sfoot>span{white-space:nowrap}@media(max-width:560px){.dk-sfoot{gap:12px}.dk-sfoot>span:last-child{display:none}}
 .dk-sfoot kbd{font:inherit;font-size:10.5px;background:rgba(23,33,56,.08);border:1px solid rgba(23,33,56,.12);padding:1px 6px;border-radius:5px;color:#5a6680;margin-right:3px}
 /* pin star on tool chips (tools scene) */
 .dk-gcpin{position:absolute;top:50%;margin-top:-12px;right:10px;z-index:2;appearance:none;border:0;background:rgba(23,33,56,.08);color:#8a93a6;cursor:pointer;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;opacity:0;transition:opacity .12s,color .12s,background .12s}
@@ -1457,7 +1459,7 @@ textarea.dk-kitio{min-height:120px}
 @media(max-width:1300px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 @media(max-width:720px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:520px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6{grid-template-columns:1fr!important}.dk[data-ui=deck] .dk-kpis6>*{grid-column:auto!important}}
-@media(max-width:1000px){.dk[data-ui=deck] .dk-crumb{display:none}}
+@media(max-width:1000px){.dk[data-ui=deck] .dk-crumb{display:none}.dk[data-ui=deck] .dk-top{grid-template-columns:auto auto minmax(0,1fr) auto}.dk[data-ui=deck] .dk-hsearch{max-width:440px}}
 @media(max-width:480px){.dk[data-ui=deck] .dk-brand .dk-wm{display:none}}
 .dk[data-ui=deck] .dk-kpis6>.dk-kpi:first-child .kn{font-size:30px}
 .dk[data-ui=deck] .dk-kpi{display:flex;flex-direction:column;background:var(--dk-surf);border:1px solid var(--dk-line);border-radius:10px;padding:16px 18px;grid-row:auto!important;justify-content:flex-start!important}
