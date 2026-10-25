@@ -32,6 +32,8 @@ export const EXPLAIN = {
 
   // ---- Navigation scenes ----
   "scene.overview": { title: "Security Overview", body: "Your home page: exposure, global threat climate, connected integrations, pinned tools and recent activity in one place." },
+  "scene.personal": { title: "Personal space", body: "Security checks for an individual or small site owner, built into the Deck: grade your domain and email setup, check a link or email you received, scan your code for leaked secrets, check text before you share it, and watch certificate expiry.", src: "Live public DNS, HTTP and certificate-transparency lookups; code and text are scanned in your browser." },
+  "scene.enterprise": { title: "Enterprise space", body: "Organization-wide checks built into the Deck: grade the whole domain portfolio, track the certificate fleet, triage reported phishing with a log, sweep repositories for credentials and review exports for regulated data.", src: "Live public DNS, HTTP and certificate-transparency lookups; files are scanned in your browser." },
   "scene.plans": { title: "Plans & billing", body: "Compare the Darknode plans — Free, Pro, Team and Enterprise — and what each includes. Preview pricing; checkout is not live yet.", src: "Preview pricing." },
   "scene.surface": { title: "Attack Surface", body: "Enter a domain to map what the internet can see: DNS records, subdomains from certificate logs, mail security and web headers.", src: "Live public DNS and certificate-transparency lookups." },
   "scene.cloud": { title: "Cloud Posture", body: "Paste IAM policies, bucket policies, security groups, Kubernetes manifests or Dockerfiles and get misconfigurations with fixes. Runs in your browser." },

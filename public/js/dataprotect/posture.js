@@ -8,9 +8,8 @@
 //
 //   renderPosture(main) -> void
 
-import { scorePosture, newestCert } from "/js/dataprotect/posture-engine.js?v=20261019i";
-import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
-import { dnFetch } from "/js/net.js";
+import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261019i";
+import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261025b";
 import { attachSinkButton } from "../core/sink.js";
 import { postureFindings } from "/js/dataprotect/dp-sink.js";
 
@@ -76,81 +75,6 @@ function injectStyle() {
   document.head.appendChild(st);
 }
 
-function cleanDomain(raw) {
-  let d = String(raw || "").trim();
-  d = d.replace(/^[a-z]+:\/\//i, "").replace(/\/.*$/, "").replace(/:\d+$/, "").replace(/^www\./i, "");
-  return d.toLowerCase();
-}
-const validDomain = (d) => /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(d);
-
-// Public DoH TXT (Cloudflare, Google fallback). Returns array of TXT strings.
-async function dohTXT(name) {
-  const decode = (j) => ((j && j.Answer) || []).filter((a) => a.type === 16 || a.type === "TXT")
-    .map((a) => String(a.data || "").replace(/^"|"$/g, "").replace(/"\s*"/g, ""));
-  const urls = [
-    "https://cloudflare-dns.com/dns-query?type=TXT&name=" + encodeURIComponent(name),
-    "https://dns.google/resolve?type=TXT&name=" + encodeURIComponent(name),
-  ];
-  for (const u of urls) {
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 8000);
-      const res = await fetch(u, { headers: { Accept: "application/dns-json" }, signal: ctrl.signal });
-      clearTimeout(t);
-      if (res.ok) return decode(await res.json());
-    } catch (_) {}
-  }
-  return [];
-}
-
-async function fetchCert(domain) {
-  const rows = await fetchCertRows(domain);
-  return rows.length ? newestCert(rows) : null;
-}
-
-async function fetchSecurityTxt(domain) {
-  for (const path of ["/.well-known/security.txt", "/security.txt"]) {
-    try {
-      const r = await dnFetch("https://" + domain + path, { raw: true, timeout: 12000 });
-      if (r.status === 200 && /contact\s*:/i.test(r.body || "")) return { present: true };
-    } catch (_) {}
-  }
-  return { present: false };
-}
-
-// Common DKIM selectors used by major mail providers / ESPs. We can only probe
-// well-known names over DoH — a miss is NOT proof that DKIM is absent (selectors
-// are arbitrary), which the engine reports honestly as "unknown".
-const DKIM_SELECTORS = [
-  "google", "default", "selector1", "selector2", "k1", "k2", "k3",
-  "dkim", "mail", "s1", "s2", "mandrill", "mxvault", "zoho", "fm1",
-  "fm2", "fm3", "protonmail", "scph0920", "pm", "amazonses", "sig1",
-];
-async function probeDkim(domain) {
-  const out = await Promise.all(DKIM_SELECTORS.map(async (selector) => {
-    try {
-      const txts = await dohTXT(selector + "._domainkey." + domain);
-      const present = txts.some((t) => /v\s*=\s*dkim1|(^|;)\s*k\s*=|(^|;)\s*p\s*=/i.test(String(t)));
-      return { selector, present };
-    } catch (_) { return { selector, present: false }; }
-  }));
-  return out;
-}
-
-// MTA-STS: the _mta-sts TXT record plus the policy file served from the
-// mta-sts.<domain> host (/.well-known/mta-sts.txt).
-async function fetchMtaSts(domain) {
-  const txts = await dohTXT("_mta-sts." + domain);
-  let policy = null;
-  if (txts.some((t) => /^v=stsv1\b/i.test(String(t).trim()))) {
-    try {
-      const r = await dnFetch("https://mta-sts." + domain + "/.well-known/mta-sts.txt", { raw: true, timeout: 12000 });
-      if (r.status === 200 && /mode\s*:/i.test(r.body || "")) policy = r.body;
-    } catch (_) {}
-  }
-  return { txts, policy };
-}
-
 export function renderPosture(main) {
   injectStyle();
   main.innerHTML = `
@@ -177,48 +101,11 @@ export function renderPosture(main) {
     btn.disabled = true;
     out.innerHTML = `<div class="ps-card"><span class="ps-spin"></span>Running live checks against <b>${esc(domain)}</b>…</div>`;
 
-    const [httpsP, httpP, spfP, dmarcP, certP, stxtP, dkimP, mtaP, tlsRptP] = await Promise.allSettled([
-      dnFetch("https://" + domain, { timeout: 14000 }),
-      dnFetch("http://" + domain, { timeout: 12000 }),
-      dohTXT(domain),
-      dohTXT("_dmarc." + domain),
-      fetchCert(domain),
-      fetchSecurityTxt(domain),
-      probeDkim(domain),
-      fetchMtaSts(domain),
-      dohTXT("_smtp._tls." + domain),
-    ]);
-    const val = (p) => (p.status === "fulfilled" ? p.value : null);
-    const https = val(httpsP), http = val(httpP);
-
-    if (!https && !http) {
+    const input = await collectPosture(domain);
+    if (!input) {
       out.innerHTML = `<div class="ps-card"><b>Could not reach ${esc(domain)}.</b><p class="ps-hint">The host did not respond over HTTP or HTTPS. Check the domain and try again.</p></div>`;
       btn.disabled = false; return;
     }
-
-    const headers = (https && https.headers) || (http && http.headers) || {};
-    const httpReached = !!http;
-    const httpFinal = http ? (http.finalUrl || http.url || "") : "";
-    const httpsFinal = https ? (https.finalUrl || https.url || "") : "";
-    const input = {
-      domain,
-      requestedUrl: httpReached ? "http://" + domain : "https://" + domain,
-      // Grade HTTPS on whether the HTTPS endpoint actually responded, and the
-      // redirect separately on where the HTTP endpoint ended up.
-      httpsOk: !!https,
-      httpTested: httpReached,
-      httpRedirectsToHttps: httpReached ? /^https:/i.test(httpFinal) : false,
-      finalUrl: httpsFinal || httpFinal,
-      headers,
-      // Set-Cookie flags come straight off the real response headers (the proxy
-      // preserves them); the engine folds cookie security into the headers score.
-      spfTxts: val(spfP) || [], dmarcTxts: val(dmarcP) || [],
-      dkimSelectors: val(dkimP) || [],
-      mtaStsTxts: (val(mtaP) && val(mtaP).txts) || [], mtaStsPolicy: (val(mtaP) && val(mtaP).policy) || null,
-      tlsRptTxts: val(tlsRptP) || [],
-      cert: val(certP), securityTxt: val(stxtP) || { present: false },
-      now: Date.now(),
-    };
     renderReport(out, scorePosture(input), run);
     btn.disabled = false;
   };
