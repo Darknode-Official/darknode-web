@@ -2450,7 +2450,7 @@ export function renderDeck(host, opts) {
       <div class="dk-mi-div"></div>
       <button class="dk-mi" id="dkMiExport">${IC.ext}<span>Export deck state<span class="sub">Connections, pins &amp; notes as JSON</span></span></button>
       <button class="dk-mi" id="dkMiImport">${IC.folder}<span>Import deck state</span></button>
-      ${primary ? (opts.isOwner ? `<button class="dk-mi" id="dkMiAdmin">${IC.gear}<span>Admin</span></button>` : "") : `<button class="dk-mi" id="dkMiConsole">${IC.ext}<span>Open full console</span></button>`}
+      ${primary ? (opts.isOwner ? `<button class="dk-mi" id="dkMiAdmin">${IC.gear}<span>Admin</span></button>` : "") + (typeof opts.onClassic === "function" ? `<button class="dk-mi" id="dkMiClassic">${IC.ext}<span>Classic console<span class="sub">Switch back any time from its account menu</span></span></button>` : "") : `<button class="dk-mi" id="dkMiConsole">${IC.ext}<span>Open full console</span></button>`}
       <div class="dk-mi-div"></div>
       <button class="dk-mi" id="dkMiExit">${IC.logout}<span>${primary ? "Sign out" : "Exit command center"}</span></button>`;
     popAcct.querySelector("[data-go]").onclick = () => { closeAllMenus(); go("overview"); };
@@ -2462,6 +2462,7 @@ export function renderDeck(host, opts) {
     popAcct.querySelector("#dkMiExport").onclick = () => { closeAllMenus(); exportDeckState(); };
     popAcct.querySelector("#dkMiImport").onclick = () => { closeAllMenus(); importDeckState(); };
     const miCon = popAcct.querySelector("#dkMiConsole"); if (miCon) miCon.onclick = exitDeck;
+    const miCls = popAcct.querySelector("#dkMiClassic"); if (miCls) miCls.onclick = () => { closeAllMenus(); opts.onClassic(); };
     const miAdm = popAcct.querySelector("#dkMiAdmin"); if (miAdm) miAdm.onclick = () => { closeAllMenus(); openTool("admin", "Admin"); };
     popAcct.querySelector("#dkMiExit").onclick = primary ? () => { closeAllMenus(); opts.onSignOut(); } : exitDeck;
   }

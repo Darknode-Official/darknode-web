@@ -1736,9 +1736,41 @@ function renderDesktopHome(user) {
     return;
   }
   view.innerHTML = "";
-  import("/js/admin.js?v=20261025b")
-    .then((m) => m.openDeck(user, { onSignOut: () => { m.closeDeck(); doLogout(); } }))
+  import("/js/deck/launch.js?v=20261025b")
+    .then((m) => m.openDeck(user, { isOwner: true, onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
+}
+// Web home: the Deck is the signed-in UI for everyone. The classic console stays one
+// click away (localStorage dn_ui = "console") and still serves embedded tool frames
+// (?embed=1), the desktop app's guest webview (?app=1) and the Deck's own fallback.
+const UI_PREF = "dn_ui";
+let _deckFailed = false;
+function deckIsHome() {
+  if (_deckFailed) return false;
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.get("embed") === "1" || q.get("app") === "1" || document.documentElement.hasAttribute("data-embed")) return false;
+    if (sessionStorage.getItem("dn_guest") === "1") return false;
+    return localStorage.getItem(UI_PREF) !== "console";
+  } catch (_) { return true; }
+}
+function setUiPref(v) { try { if (v) localStorage.setItem(UI_PREF, v); else localStorage.removeItem(UI_PREF); } catch (_) {} location.assign("/"); }
+function renderDeckHome(user) {
+  view.innerHTML = "";
+  // A deep link (/<sec>) opens that tool inside the Deck; the admin page only for the owner.
+  // (same mapping as the console's pathToSec: hyphenated paths are camelCase secs,
+  // except tool-<id> mini-tools, which stay as-is)
+  const raw = location.pathname.replace(/^\//, "").replace(/\/$/, "");
+  let startSec = !raw ? null : raw.startsWith("tool-") ? raw : raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+  if (startSec === "home" || (startSec === "admin" && !_isAdmin)) startSec = null;
+  import("/js/deck/launch.js?v=20261025b")
+    .then((m) => m.openDeck(user, {
+      isOwner: _isAdmin,
+      startSec: startSec || undefined,
+      onSignOut: () => { m.closeDeck(); doLogout(); },
+      onClassic: () => { m.closeDeck(); setUiPref("console"); },
+    }))
+    .catch(() => { _deckFailed = true; renderApp(user); });
 }
 function renderApp(user) {
   _appUid = user && user.uid || null;
@@ -1752,6 +1784,7 @@ function renderApp(user) {
   document.body.classList.add("app");
   // Desktop app (top frame only; tool iframes never see the bridge): the Deck is the home screen.
   if (isDesktop()) { renderDesktopHome(user); return; }
+  if (deckIsHome()) { renderDeckHome(user); return; }
   // Embed mode: when loaded as /<sec>?embed=1 (e.g. inside Darknode Command's
   // in-deck workspace iframe), strip the console chrome so only the live tool
   // shows, full-bleed and transparent. Reused by any host that frames a tool.
@@ -2400,6 +2433,7 @@ function renderApp(user) {
         <button class="menu-item menu-item-kbd" data-a="palette">Command palette<kbd>Ctrl K</kbd></button>
         <button class="menu-item" data-a="style">Switch theme style</button>
         <button class="menu-item" data-a="theme">Toggle light / dark</button>
+        <button class="menu-item" data-a="deck">Switch to the Deck</button>
         <button class="menu-item" data-a="tour">Replay walkthrough</button>
         <button class="menu-item" data-a="betaask">Request a Beta Lab tool</button>
         <div class="menu-div"></div>
@@ -2445,6 +2479,7 @@ function renderApp(user) {
     if (nb) return show(nb.dataset.nav);
     const a = lb.dataset.a;
     if (a === "logout") doLogout();
+    else if (a === "deck") setUiPref(null);
     else if (a === "theme") { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); }
     else if (a === "style") cycleStyle();
     else if (a === "palette") openPalette();
@@ -2909,12 +2944,26 @@ onAuthStateChanged(auth, async (user) => {
 
   // TOS acceptance check — must agree before using the platform
   const udoc = await getDoc(doc(db, "users", user.uid)).catch(() => null);
-  const tosAccepted = udoc && udoc.exists() && udoc.data().tosAccepted;
+  // Terms are versioned: bumping TOS_VERSION asks every account to accept the new text,
+  // including accounts that accepted an earlier version (they also see what changed).
+  const TOS_VERSION = "2026-10-25";
+  const ud = udoc && udoc.exists() ? udoc.data() : {};
+  const tosAccepted = !!ud.tosAccepted && ud.tosVersion === TOS_VERSION;
+  const tosReturning = !!ud.tosAccepted && !tosAccepted;
   if (!tosAccepted) {
     view.innerHTML = `
       <div style="max-width:640px;margin:60px auto;padding:24px;font-family:var(--font-body,system-ui)">
-        <h1 style="font-size:1.6rem;margin-bottom:8px">Terms of Service</h1>
-        <p style="color:var(--mut,#888);margin-bottom:20px">Please read and accept before continuing.</p>
+        <h1 style="font-size:1.6rem;margin-bottom:8px">${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
+        <p style="color:var(--mut,#888);margin-bottom:20px">${tosReturning ? "Please review the changes and accept to keep using Darknode." : "Please read and accept before continuing."}</p>
+        ${tosReturning ? `<div style="border:1px solid var(--line,#333);border-left:4px solid var(--acc,#2552c6);padding:14px 18px;margin-bottom:16px;border-radius:4px;font-size:.88rem;line-height:1.6">
+          <strong>What changed (October 25, 2026)</strong>
+          <ul style="margin:8px 0 0;padding-left:20px">
+            <li>The Darknode Deck is now the main signed-in workspace, with Personal and Organization spaces.</li>
+            <li>New section on AI features: the built-in assistant sends messages through our edge proxy to a model provider (currently Google Gemini); we do not log or store them.</li>
+            <li>New section on plans: which tools you can use depends on your plan.</li>
+            <li>Financial-analysis terms removed, since those tools were retired.</li>
+            <li>Prohibited use now names the web-security toolkit explicitly; sections renumbered.</li>
+          </ul></div>` : ""}
         <div style="background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:20px;max-height:400px;overflow-y:auto;font-size:.85rem;line-height:1.7;margin-bottom:20px;border-radius:4px" id="tosBox">
           <h3>Darknode Terms of Service</h3>
           <p><strong>Last updated:</strong> October 25, 2026</p>
@@ -3035,7 +3084,7 @@ onAuthStateChanged(auth, async (user) => {
         </div>
       </div>`;
     document.getElementById("tosAgree").onclick = async () => {
-      await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosAcceptedAt: serverTimestamp() }, { merge: true });
+      await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosVersion: TOS_VERSION, tosAcceptedAt: serverTimestamp() }, { merge: true });
       const enter = () => { try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {} renderApp(user); loadAnnouncement(); };
       if (fresh) playAccessGranted(user.displayName || ((user.email || "").split("@")[0]), enter);
       else enter();
