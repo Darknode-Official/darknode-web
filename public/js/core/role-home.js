@@ -1,7 +1,7 @@
 // Role-based home focus (Deck D8). PURE — no DOM, no network, deterministic. Given the graph
 // entities and a chosen role, it returns the handful of numbers and open findings that role
 // cares about first: a CISO wants exposure and trend, an analyst their own queue and the newest
-// criticals, IT ops the overdue patches, finance the payment-control findings. It reuses the
+// criticals, IT ops the overdue patches. It reuses the
 // D7 metrics engine and the D1 SLA engine so its numbers never disagree with the rest of the
 // Deck. Everything is derived from real findings; nothing is invented.
 import { slaState, isKnownExploited, OPEN_STATES, SEVERITY_LEVELS } from "./workflow.js";
@@ -20,13 +20,11 @@ export const ROLES = [
   { id: "ciso", label: "CISO" },
   { id: "analyst", label: "Analyst" },
   { id: "itops", label: "IT ops" },
-  { id: "finance", label: "Finance" },
 ];
 export const ROLE_IDS = ROLES.map((r) => r.id);
 
 const item = (e) => ({ id: e.id, name: String(e.name || e.id || ""), severity: SEVERITY_LEVELS.includes(low(e.severity)) ? low(e.severity) : "info", category: low((e.data || {}).category) });
 const isVuln = (e) => low(e.type) === "vulnerability" || low((e.data || {}).category).includes("vuln");
-const isFinancial = (e) => { const c = low((e.data || {}).category), t = low(e.source || (e.data || {}).tool); return /payment|payee|financial|fraud|treasury/.test(c) || /payees|strongroom|apforensics|vault/.test(t); };
 
 /**
  * roleFocus(entities, opts) -> { role, label, lead, metrics:[{label,value,sub?}], items:[{id,name,severity}], emptyText }
@@ -109,16 +107,5 @@ export function roleFocus(entities, opts = {}) {
     };
   }
 
-  // finance
-  const fin = open.filter(isFinancial);
-  const ranked = fin.slice().sort((a, b) => sevRank(a.severity) - sevRank(b.severity) || toMs(b.createdAt) - toMs(a.createdAt));
-  return {
-    role, label, lead: "Payment and treasury-control findings.",
-    metrics: [
-      { label: "Open controls", value: fin.length },
-      { label: "Critical + high", value: fin.filter((e) => /^(critical|high)$/.test(low(e.severity))).length },
-    ],
-    items: ranked.slice(0, 6).map(item),
-    emptyText: "No open payment-control findings. Run the payee or fund-protection tools to populate this.",
-  };
+  return null;
 }

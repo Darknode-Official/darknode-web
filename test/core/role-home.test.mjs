@@ -46,14 +46,9 @@ group("role-home/roleFocus", () => {
     assert.equal(r.items[0].id, "v1");
   });
 
-  test("finance focus picks financial-category/tool findings", () => {
-    const r = roleFocus([
-      F("pay", "high", 1, { category: "payment" }),
-      F("bec", "high", 1, { category: "", tool: "payees" }),
-      F("vuln", "high", 1, { category: "vulnerability" }),
-    ], { role: "finance", now: NOW });
-    assert.equal(r.metrics.find((m) => m.label === "Open controls").value, 2);
-    assert.ok(r.items.every((i) => i.id !== "vuln"));
+  test("the retired finance view is no longer a role", () => {
+    assert.ok(!ROLE_IDS.includes("finance"));
+    assert.equal(roleFocus([F("pay", "high", 1, { category: "payment" })], { role: "finance", now: NOW }), null);
   });
 
   test("closed findings are excluded and empty graph is safe", () => {

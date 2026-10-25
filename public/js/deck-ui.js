@@ -45,7 +45,7 @@ import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.
 import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
 import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018d";
 import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018d";
-import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261018f";
+import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261025c";
 import { makeMessage as makeBridge, parseMessage as parseBridge, MSG as BMSG } from "/js/core/tool-bridge.js?v=20261018g";
 
 const LS_CONN = "dn_deck_connections_v1";
@@ -2692,6 +2692,7 @@ export function renderDeck(host, opts) {
   function setupRoleFocus(el){
     const chips = el.querySelector("#dkRoles"), panel = el.querySelector("#dkRoleFocus"); if (!chips) return;
     let cur = readRole();
+    if (cur && !HOME_ROLES.some((r) => r.id === cur)) { cur = ""; writeRole(""); }   // a retired view (e.g. Finance)
     const fill = () => {
       if (!cur) { if (panel) { panel.hidden = true; panel.innerHTML = ""; } return; }
       withGraph((m) => {
