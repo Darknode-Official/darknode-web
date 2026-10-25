@@ -1736,7 +1736,7 @@ function renderDesktopHome(user) {
     return;
   }
   view.innerHTML = "";
-  import("/js/admin.js?v=20261021b")
+  import("/js/admin.js?v=20261025a")
     .then((m) => m.openDeck(user, { onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
@@ -2144,7 +2144,7 @@ function renderApp(user) {
     else if (sec === "accessreview") { import("/js/identity/access-review.js?v=20261017d").then(m => live() && m.renderAccessReview(main)); }
     else if (sec === "fwaudit") { import("/js/infra/firewall-audit.js?v=20261017e").then(m => live() && m.renderFirewallAudit(main)); }
     else if (sec === "loghunt") { import("/js/ops/log-hunter.js?v=20261017e").then(m => live() && m.renderLogHunter(main)); }
-    else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261017d").then(m => live() && m.renderVendors(main)); }
+    else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261025a").then(m => live() && m.renderVendors(main)); }
     else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261017e").then(m => live() && m.renderDlp(main)); }
     else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261019i").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261017d").then(m => live() && m.renderTlsFleet(main)); }
@@ -2179,7 +2179,7 @@ function renderApp(user) {
     else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261017c").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261021b").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261025a").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261013c").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }

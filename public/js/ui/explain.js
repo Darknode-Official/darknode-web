@@ -19,7 +19,7 @@ export const EXPLAIN = {
   // ---- Plans ----
   "plan.free": { title: "Free", body: "The full browser toolbox at no cost, for solo practitioners and evaluation. Data stays local to this browser. This is your current tier.", src: "Preview pricing — checkout is not live yet." },
   "plan.pro": { title: "Pro", body: "For professionals who need saved history, unlimited exports, cloud sync and priority access to Darknode AI.", src: "Preview pricing — checkout is not live yet." },
-  "plan.team": { title: "Team", body: "Shared workspaces with roles, server-enforced Treasury Vault approvals and audit, integrations and Google SSO.", src: "Preview pricing — checkout is not live yet." },
+  "plan.team": { title: "Team", body: "Shared workspaces with roles, integrations and Google SSO.", src: "Preview pricing — checkout is not live yet." },
   "plan.enterprise": { title: "Enterprise", body: "Self-hosted or private deployment, SAML SSO and SCIM, a compliance pack with DPA, and a dedicated support SLA. Priced per engagement.", src: "Contact sales — mailto link." },
   // ---- Overview KPIs ----
   "kpi.hot": { title: "Open critical and high", body: "How many critical or high severity findings in your security graph are still open (not resolved or closed). These drive most of the exposure score. Shows a dash until you have real findings.", src: "Your security graph. Sample and simulated data is excluded." },
