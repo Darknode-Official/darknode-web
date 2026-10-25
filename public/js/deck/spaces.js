@@ -31,7 +31,7 @@ export const SPACES = {
     steps: [["domain", "Check your domain"], ["certs", "Add your domains to certificate watch"], ["secrets", "Scan a project for secrets"], ["data", "Check something before you share it"]],
   },
   enterprise: {
-    kicker: "Enterprise space", title: "Organization security command",
+    kicker: "Organization space", title: "Organization security command",
     blurb: "Grade the whole public estate, keep every certificate ahead of expiry, triage what employees report, sweep repositories for credentials and review data before it leaves.",
     hero: "linear-gradient(120deg,#111827 0%,#1e293b 50%,#2552c6 100%)",
     tabs: [

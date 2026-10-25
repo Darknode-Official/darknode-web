@@ -27,7 +27,7 @@ import * as surface from "/js/deck-surface.js?v=20261011b";
 // stream and the notifications bell.
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
-import { tierFrom, rank, planLabel } from "/js/core/entitlements.js";
+import { tierFrom, rank, planLabel, TIERS } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261021a";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261025b";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
@@ -828,7 +828,15 @@ const CSS = `
 /* icon rail */
 .dk.nav-rail .dk-sbnav,.dk.nav-rail .dk-sbfoot{padding-left:10px;padding-right:10px}
 .dk.nav-rail .dk-nv{justify-content:center;padding:9px 0}
-.dk.nav-rail .dk-nv .nl,.dk.nav-rail .dk-nv .nc{display:none}
+.dk.nav-rail .dk-nv .nl,.dk.nav-rail .dk-nv .nc,.dk.nav-rail .dk-nv .dk-nlk{display:none}
+.dk-nv .dk-nlk{flex:none;font:700 10px/1 ui-monospace,"JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:#b58100;border:1px solid rgba(181,129,0,.45);border-radius:4px;padding:3px 5px}
+.dk-nv.lk .nl{opacity:.55}
+.dk-lockcard{max-width:720px;margin:48px auto;border:1px solid rgba(23,33,56,.12);border-top:5px solid #b58100;border-radius:14px;background:#fff;padding:32px 36px}
+.dk-lockk{font:800 11px/1 ui-monospace,"JetBrains Mono",monospace;letter-spacing:.14em;text-transform:uppercase;color:#b58100}
+.dk-lockcard h1{font-size:26px;letter-spacing:-.02em;margin:12px 0 10px}
+.dk-lockcard p{font-size:14.5px;line-height:1.55;color:#4a5263;margin:0}
+.dk-lockbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.dk-locknote{margin-top:16px!important;font-size:12.5px!important;border-left:3px solid #b58100;padding-left:10px}
 .dk.nav-rail .dk-nv.on::before{left:-10px}
 .dk.nav-rail .dk-nvh{font-size:0;padding:9px 6px}
 .dk.nav-rail .dk-nvh::after{content:"";display:block;height:1px;background:rgba(23,33,56,.1)}
@@ -1628,7 +1636,7 @@ export function renderDeck(host, opts) {
   // before the catalog is consumed, so tools that exist only in the Deck can be merged into it.
   const NAV_DEF = [
     { g: "", items: [["scene", "overview", "Security Overview", IC.home]] },
-    { id: "spaces", g: "Spaces", items: [["scene", "personal", "Personal", IC.shield], ["scene", "enterprise", "Enterprise", IC.brief]] },
+    { id: "spaces", g: "Spaces", items: [["scene", "personal", "Personal", IC.shield], ["scene", "enterprise", "Organization", IC.brief]] },
     { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert], ["tool", "posture", "Posture Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificate Monitor", IC.cert], ["tool", "fwaudit", "Firewall Rule Audit", IC.shield], ["tool", "vulnimport", "Vulnerability Import", IC.alert], ["tool", "fleetcomply", "Fleet Compliance", IC.gauge], ["tool", "dmarcreports", "DMARC Reports", IC.link], ["tool", "domainguard", "Domain Guard", IC.radar], ["tool", "netexposure", "Network Scan Diff", IC.nodes]] },
     { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access", IC.shield], ["tool", "privaudit", "Privileged Access", IC.key], ["tool", "nhi", "Non-Human Identities", IC.gear], ["tool", "jml", "Offboarding Verifier", IC.check], ["tool", "oauthgov", "OAuth App Governance", IC.plug], ["tool", "vpnaudit", "Remote Access Audit", IC.lock]] },
     { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree], ["tool", "iacscan", "IaC Scanner", IC.code], ["tool", "k8saudit", "Kubernetes Audit", IC.nodes], ["tool", "licenseaudit", "License Compliance", IC.scale], ["tool", "apispec", "API Security Review", IC.plug]] },
@@ -1638,6 +1646,15 @@ export function renderDeck(host, opts) {
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection Scanner", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key], ["tool", "evidence", "Control Evidence", IC.book], ["tool", "dataflow", "Processing Register", IC.folder], ["tool", "awareness", "Awareness Analytics", IC.pulse]] },
     { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
   ];
+  // Plan gating: every sidebar entry needs a minimum plan (group default, item override).
+  // Tool Library tools outside the sidebar stay free, as they are on the console.
+  const PLAN_GROUP = { exposure: "pro", code: "pro", identity: "team", detect: "team", finsec: "team", risk: "enterprise", compliance: "enterprise" };
+  const PLAN_ITEM = { enterprise: "team", findings: "pro", inventory: "pro", reports: "pro", activity: "pro", monitors: "pro", phishtriage: "pro", dlp: "pro", leakprobe: "pro", team: "team" };
+  const needTier = {}, navLabelOf = {};
+  for (const grp of NAV_DEF) {
+    if (grp.id) { needTier["section:" + grp.id] = PLAN_GROUP[grp.id] || "free"; navLabelOf["section:" + grp.id] = grp.g; }
+    for (const [kind, id, label] of grp.items) if (id !== "admin") { needTier[kind + ":" + id] = PLAN_ITEM[id] || PLAN_GROUP[grp.id] || "free"; navLabelOf[kind + ":" + id] = label; }
+  }
   // Tools registered only in the Deck sidebar (not in the console catalog) join `groups` so they
   // get hover preload, a Tool Library entry, a place in TOTAL_TOOLS and keep their pins.
   { const known = new Set(groups.flatMap((g) => g.items.map((it) => it.sec))), deckOnly = [];
@@ -1662,7 +1679,12 @@ export function renderDeck(host, opts) {
   const wsLabelText = () => (wsProfile.name || (opts.user && (opts.user.displayName || opts.user.email)) || "Workspace");
   // Effective plan tier (A4): server-resolved, owner always top. Drives the Plans
   // scene and the "your plan" badge. Upgrades are requested, never self-granted.
-  const planTier = tierFrom(opts.tier, opts.isOwner);
+  // The owner can preview the Deck as any plan (Settings); nobody else can change it here.
+  const LS_PREVIEW = "dn_deck_preview_tier";
+  const realTier = tierFrom(opts.tier, opts.isOwner);
+  let planTier = realTier;
+  if (opts.isOwner) { try { const p = localStorage.getItem(LS_PREVIEW); if (TIERS.includes(p)) planTier = p; } catch (_) {} }
+  const isLocked = (key) => rank(planTier) < rank(needTier[key] || "free");
   // Onboarding (A3): a short checklist whose steps complete from REAL signals, not a
   // manual tick. Only the "dismissed" flag persists; completion is always recomputed.
   let onbState = opts.onboarding || {};
@@ -1772,6 +1794,7 @@ export function renderDeck(host, opts) {
 
     <div class="dk-scene dk-ov dk-settings" id="dkSettings" hidden></div>
     <div class="dk-scene dk-ov dk-team" id="dkTeam" hidden></div>
+    <div class="dk-scene dk-ov dk-locked" id="dkLocked" hidden></div>
     <div class="dk-scene dk-ov dk-space" id="dkPersonal" hidden></div>
     <div class="dk-scene dk-ov dk-space" id="dkEnterprise" hidden></div>
 
@@ -1824,7 +1847,7 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", inventory: "#dkInventory", correlations: "#dkCorrelations", monitors: "#dkMonitors", apikeys: "#dkApiKeys", audit: "#dkAudit", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports", team: "#dkTeam", personal: "#dkPersonal", enterprise: "#dkEnterprise" };
+  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", inventory: "#dkInventory", correlations: "#dkCorrelations", monitors: "#dkMonitors", apikeys: "#dkApiKeys", audit: "#dkAudit", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports", team: "#dkTeam", locked: "#dkLocked", personal: "#dkPersonal", enterprise: "#dkEnterprise" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
@@ -1850,7 +1873,9 @@ export function renderDeck(host, opts) {
     try { if (location.pathname !== path) history.replaceState(history.state, "", path + location.search); } catch (_) {}
   }
   function go(scene, arg){
-    if (!SCENES[scene]) scene = "overview";
+    if (!SCENES[scene] || scene === "locked") scene = "overview";
+    { const key = scene === "section" ? "section:" + (SECTIONS[arg] ? arg : curSect) : "scene:" + scene;
+      if (isLocked(key)) { showLocked(key); return; } }
     curScene = scene;
     if (scene === "section") { if (SECTIONS[arg]) curSect = arg; try { localStorage.setItem("dn_deck_sect", curSect); } catch (_) {} }
     syncUrl("/");
@@ -2230,12 +2255,13 @@ export function renderDeck(host, opts) {
     const t = e.target.closest("[data-tool],.dk-gcard[data-sec],.dk-pin[data-sec],.dk-compcard[data-sec]");
     clearTimeout(warmT);
     const sec = t && (t.dataset.tool || t.dataset.sec);
-    if (!sec || live.has(sec) || !secLabel[sec]) return;
+    if (!sec || live.has(sec) || !secLabel[sec] || isLocked("tool:" + sec)) return;
     // one background load at a time, so sweeping the pointer across a grid stays cheap
     warmT = setTimeout(() => { for (const x of live.values()) if (!x.dataset.ready) return; toolFrame(sec, secLabel[sec] || t.dataset.label || sec); }, 300);
   });
   function openTool(sec, label, accent){
     if (!sec) return;
+    if (isLocked("tool:" + sec)) { showLocked("tool:" + sec, label); return; }
     label = label || sec; curSec = sec;
     syncUrl("/" + sec);
     const f = toolFrame(sec, label);
@@ -2253,6 +2279,44 @@ export function renderDeck(host, opts) {
   function closeTool(){
     sceneWork.hidden = true; hideTools();
     go(curScene || "overview");
+  }
+  // A sidebar entry above the current plan: say which plan includes it and what else
+  // that plan opens, with a way to compare plans or request the upgrade.
+  function showLocked(key, label){
+    const need = needTier[key] || "pro", name = label || navLabelOf[key] || "This tool";
+    closeAllMenus(); drawer.classList.remove("on");
+    sceneWork.hidden = true; hideTools();
+    for (const k in sceneEls) sceneEls[k].hidden = k !== "locked";
+    setNav(key, name);
+    const opens = NAV_DEF.filter((g) => g.g && g.items.some(([k, id]) => needTier[k + ":" + id] === need)).map((g) => g.g);
+    const previewing = opts.isOwner && planTier !== realTier;
+    sceneEls.locked.innerHTML = `
+      <div class="dk-lockcard">
+        <div class="dk-lockk">${esc(planLabel(need))} plan</div>
+        <h1>${esc(name)} is included in ${esc(planLabel(need))}</h1>
+        <p>You're on the <b>${esc(planLabel(planTier))}</b> plan. ${esc(planLabel(need))} also opens: ${esc(opens.join(", "))}.</p>
+        <div class="dk-lockbtns">
+          <button class="dk-tibtn pri" id="dkLockReq">Request ${esc(planLabel(need))}</button>
+          <button class="dk-tibtn" data-scene="plans">Compare plans</button>
+          ${previewing ? `<button class="dk-tibtn" id="dkLockStop">Stop previewing ${esc(planLabel(planTier))}</button>` : ""}
+        </div>
+        ${previewing ? `<p class="dk-locknote">Owner preview: you are viewing the Deck as a ${esc(planLabel(planTier))} user. Your real plan is ${esc(planLabel(realTier))}.</p>` : ""}
+      </div>`;
+    const req = sceneEls.locked.querySelector("#dkLockReq");
+    req.onclick = async () => {
+      if (typeof opts.onUpgradeRequest !== "function") { toast("Upgrade requests aren't available in this context."); return; }
+      req.disabled = true;
+      try { await opts.onUpgradeRequest(need, "Requested from " + name); toast("Upgrade request sent — we'll be in touch."); req.textContent = "Requested"; }
+      catch (_) { req.disabled = false; toast("Couldn't send the request. Try again.", "error"); }
+    };
+    const stop = sceneEls.locked.querySelector("#dkLockStop");
+    if (stop) stop.onclick = () => setPreviewTier("");
+  }
+  function setPreviewTier(t){
+    try { if (t) localStorage.setItem(LS_PREVIEW, t); else localStorage.removeItem(LS_PREVIEW); } catch (_) {}
+    planTier = t && TIERS.includes(t) ? t : realTier;
+    buildSideNav();
+    toast(t ? "Previewing the " + planLabel(t) + " plan" : "Preview off");
   }
   $("#dkWBack").onclick = closeTool;
   $("#dkWFull").onclick = () => { const s = curSec; if (primary) { window.open("/" + s, "_blank", "noopener"); return; } teardown(); onOpen(s); };
@@ -3670,19 +3734,19 @@ export function renderDeck(host, opts) {
     const PLANS = [
       { id: "free", name: "Free", price: "$0", unit: "forever", tag: "", a: "#64748b",
         blurb: "The full browser toolbox for solo practitioners and evaluation.",
-        feats: ["Every browser-based security tool", "Local-only security graph & cases", "Darknode AI assistant", "1 workspace, 1 seat"],
+        feats: ["Every browser-based security tool", "Personal space: domain, link, secret and data checks", "Local-only security graph & cases", "Darknode AI assistant", "1 workspace, 1 seat"],
         cta: "Current plan", cur: true },
       { id: "pro", name: "Pro", price: "$29", unit: "per user / month", tag: "Popular", a: "#2552c6",
         blurb: "For professionals who need history, exports and priority AI.",
-        feats: ["Everything in Free", "Unlimited saved findings & reports", "Priority Darknode AI — faster, higher limits", "Cloud sync across devices", "Email support"],
+        feats: ["Everything in Free", "Exposure and Application Security tools, findings and reports", "Unlimited saved findings & reports", "Priority Darknode AI — faster, higher limits", "Cloud sync across devices", "Email support"],
         cta: "Upgrade to Pro" },
       { id: "team", name: "Team", price: "$79", unit: "per user / month", tag: "", a: "#7c3aed",
         blurb: "Shared workspaces, roles and server-enforced Treasury controls.",
-        feats: ["Everything in Pro", "Shared team workspaces & roles", "Server-enforced VAULT approvals & audit", "Integrations (ticketing, chat webhooks)", "Activity & audit log"],
+        feats: ["Everything in Pro", "Organization space, Identity, Security Operations, Fraud & Abuse", "Shared team workspaces & roles", "Server-enforced VAULT approvals & audit", "Integrations (ticketing, chat webhooks)", "Activity & audit log"],
         cta: "Start Team trial" },
       { id: "enterprise", name: "Enterprise", price: "Custom", unit: "", tag: "", a: "#0f766e",
         blurb: "Scale, compliance and deployment on your terms.",
-        feats: ["Everything in Team", "Self-hosted / private deployment", "SSO & MFA (on the roadmap), custom roles", "Compliance pack & DPA", "Dedicated support & SLA"],
+        feats: ["Everything in Team", "Risk & Resilience and Compliance tools", "Self-hosted / private deployment", "SSO & MFA (on the roadmap), custom roles", "Compliance pack & DPA", "Dedicated support & SLA"],
         cta: "Contact sales" },
     ];
     // CTA depends on the effective tier: your current plan, something already
@@ -3859,6 +3923,10 @@ export function renderDeck(host, opts) {
             <button class="dk-settog${expOn ? " on" : ""}" id="dkSetExplain">${expOn ? "On" : "Off"}</button>
           </div>
           ${opts.isOwner ? `<div class="dk-setrow">
+            <div class="m"><div class="t">Preview as plan</div><div class="s">See the Deck exactly as a user on that plan does: locked tools show their plan. Owner only; your real plan is ${esc(planLabel(realTier))}.</div></div>
+            <select class="dk-setin" id="dkSetPreview" style="width:160px">${["", ...TIERS].map((t) => `<option value="${t}"${t === (planTier !== realTier ? planTier : "") ? " selected" : ""}>${t ? planLabel(t) : "Off (" + planLabel(realTier) + ")"}</option>`).join("")}</select>
+          </div>` : ""}
+          ${opts.isOwner ? `<div class="dk-setrow">
             <div class="m"><div class="t">Cool tool UI <span style="font-size:11px;color:#6b7589">(beta)</span></div><div class="s">Reskins embedded tools with gradients and rounded controls. Owner pilot — reloads open tools when changed.</div></div>
             <button class="dk-settog${cool ? " on" : ""}" id="dkSetCool">${cool ? "On" : "Off"}</button>
           </div>` : ""}
@@ -3915,6 +3983,8 @@ export function renderDeck(host, opts) {
 
     el.querySelector("#dkSetDense").onclick = (e) => { const d = root.classList.toggle("dense"); try { localStorage.setItem("dn_deck_density", d ? "compact" : "comfortable"); } catch (_) {} e.target.classList.toggle("on", d); e.target.textContent = d ? "Compact" : "Comfortable"; };
     el.querySelector("#dkSetExplain").onclick = (e) => { const on = !explainEnabled(); setExplainEnabled(on); e.target.classList.toggle("on", on); e.target.textContent = on ? "On" : "Off"; toast("Hover explanations " + (on ? "on" : "off")); };
+    const prevSel = el.querySelector("#dkSetPreview");
+    if (prevSel) prevSel.onchange = () => { setPreviewTier(prevSel.value); renderSettings(); };
     const coolBtn = el.querySelector("#dkSetCool");
     if (coolBtn) coolBtn.onclick = (e) => { const on = !coolOn(); try { localStorage.setItem("dn_cool_ui", on ? "1" : "0"); } catch (_) {} reloadToolsForCool(); e.target.classList.toggle("on", on); e.target.textContent = on ? "On" : "Off"; };
     el.querySelector("#dkSetPlans").onclick = () => go("plans");
@@ -4436,7 +4506,8 @@ export function renderDeck(host, opts) {
   NAV_DEF.forEach((grp) => { if (grp.id) navIndex["section:" + grp.id] = { group: grp.g, label: "Overview" }; grp.items.forEach(([kind, id, label]) => { navIndex[kind + ":" + id] = { group: grp.g || "Home", label }; }); });
   let navKey = "scene:overview", navLabel = "";
   function navBtn(kind, id, label, icon, extra){
-    return `<button class="dk-nv${navKey === kind + ":" + id ? " on" : ""}" data-${kind}="${esc(id)}" data-l="${esc(label)}"${navKey === kind + ":" + id ? ' aria-current="page"' : ""}>${icon}<span class="nl">${esc(label)}</span>${extra || ""}</button>`;
+    const lk = isLocked(kind + ":" + id) ? `<span class="dk-nlk" title="Needs the ${esc(planLabel(needTier[kind + ":" + id]))} plan">${needTier[kind + ":" + id] === "enterprise" ? "Ent" : esc(planLabel(needTier[kind + ":" + id]))}</span>` : "";
+    return `<button class="dk-nv${navKey === kind + ":" + id ? " on" : ""}${lk ? " lk" : ""}" data-${kind}="${esc(id)}" data-l="${esc(label)}"${navKey === kind + ":" + id ? ' aria-current="page"' : ""}>${icon}<span class="nl">${esc(label)}</span>${extra || ""}${lk}</button>`;
   }
   function buildSideNav(){
     const nav = $("#dkSbNav"); if (!nav) return;
