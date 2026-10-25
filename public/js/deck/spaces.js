@@ -15,6 +15,22 @@ const TOOLS = {
   data: () => import("./native/data-scan.js" + V),
 };
 
+// The console's hands-on web-security tools, surfaced in the Personal space. Each
+// opens in the Deck's own tool frame via ctx.openTool (the same path as the Tool
+// Library), so nothing is reimplemented here.
+const WEB_TOOLS = [
+  { sec: "xsslab", label: "Web Security Lab", desc: "Try XSS, injection and other web attacks against a safe in-browser target." },
+  { sec: "cspevaluator", label: "CSP Evaluator", desc: "Paste a Content-Security-Policy and find the gaps an attacker could use." },
+  { sec: "corstester", label: "CORS Tester", desc: "Check whether a site's cross-origin rules let other pages read its data." },
+  { sec: "headeranalyzer", label: "Header Analyzer", desc: "Grade a site's HTTP security headers and see what to add." },
+  { sec: "cookieinspect", label: "Cookie Analyzer", desc: "Inspect Set-Cookie flags (HttpOnly, Secure, SameSite) for weaknesses." },
+  { sec: "urldissect", label: "URL Dissector", desc: "Pull apart a URL and decode every layer of encoding inside it." },
+  { sec: "apitester", label: "API Tester", desc: "Send crafted requests to an API and read the raw response." },
+  { sec: "apifuzzer", label: "API Fuzzer", desc: "Probe an endpoint with many inputs to find ones it mishandles." },
+  { sec: "websockettester", label: "WebSocket Tester", desc: "Open a WebSocket, send frames and watch what comes back." },
+  { sec: "emailheader", label: "Email Header Analyzer", desc: "Trace an email's path and read its authentication results." },
+];
+
 export const SPACES = {
   personal: {
     kicker: "Personal space", title: "Your security, without the jargon",
@@ -27,6 +43,7 @@ export const SPACES = {
       { id: "secrets", label: "Code secrets", mod: "secrets", mode: "single", c: "#b00020", desc: "Find keys and passwords in your project before you push it." },
       { id: "data", label: "Safe to share?", mod: "data", mode: "single", c: "#7c3aed", desc: "Check text for personal data and credentials; get a redacted copy." },
       { id: "certs", label: "Certificates", mod: "certs", mode: "single", c: "#2f9e56", desc: "See when your site's certificates expire, before visitors get warnings." },
+      { id: "webkit", label: "Web toolkit", kind: "gallery", c: "#e8590c", desc: "Hands-on web-security tools: XSS lab, CSP and CORS checks, headers, cookies, API and WebSocket testers." },
     ],
     steps: [["domain", "Check your domain"], ["certs", "Add your domains to certificate watch"], ["secrets", "Scan a project for secrets"], ["data", "Check something before you share it"]],
   },
@@ -51,7 +68,7 @@ const LVL_C = { good: "#2f9e56", warn: "#b58100", bad: "#b00020" };
 
 function homeHTML(id, S) {
   const runs = readRuns(id);
-  const tools = S.tabs.filter((t) => t.mod);
+  const tools = S.tabs.filter((t) => t.mod || t.kind === "gallery");
   const by = (tool) => runs.filter((r) => r.tool === tool);
   const kpi = (v, l, c) => `<div class="ns-kpi" style="--c:${c}"><div class="v">${v}</div><div class="l">${esc(l)}</div></div>`;
   let kpis;
@@ -92,6 +109,15 @@ function homeHTML(id, S) {
     </div>`;
 }
 
+// The Web toolkit gallery: tiles that open an existing console tool in the Deck frame.
+function galleryHTML() {
+  return `
+    <div class="ns-card"><h2>Web security toolkit</h2>
+      <p class="ns-sub">Hands-on tools for testing a website or API you're allowed to test. Each opens in its own view; use them only against your own systems or ones you have permission to assess.</p>
+      <div class="ns-grid">${WEB_TOOLS.map((t) => `<button class="ns-tile" style="--c:#e8590c" data-sec="${esc(t.sec)}" data-label="${esc(t.label)}"><b>${esc(t.label)}</b><span>${esc(t.desc)}</span><em>Open</em></button>`).join("")}</div>
+    </div>`;
+}
+
 // Jump to a tool tab and, when a target is given, run the tool on it.
 async function openTab(st, { tab, target }) {
   await st.show(tab);
@@ -118,6 +144,7 @@ export function mountSpace(el, id, ctx = {}) {
       el.querySelectorAll("[data-pane]").forEach((p) => { p.hidden = p.dataset.pane !== t.id; });
       const pane = el.querySelector(`[data-pane="${t.id}"]`);
       if (t.id === "home") { pane.innerHTML = homeHTML(id, S); return; }
+      if (t.kind === "gallery") { pane.innerHTML = galleryHTML(t); return; }
       if (st.mounted.has(t.id)) return;
       st.mounted.add(t.id);
       pane.innerHTML = `<div class="ns-card"><span class="ns-spin"></span>Loading...</div>`;
@@ -128,6 +155,7 @@ export function mountSpace(el, id, ctx = {}) {
     el.addEventListener("click", async (e) => {
       const tb = e.target.closest("[data-tab]"); if (tb) { show(tb.dataset.tab); return; }
       const g = e.target.closest("[data-go]"); if (g) { show(g.dataset.go); el.scrollIntoView({ block: "start" }); return; }
+      const ot = e.target.closest("[data-sec]"); if (ot) { if (ctx.openTool) ctx.openTool(ot.dataset.sec, ot.dataset.label); return; }
       if (e.target.closest("[data-clear]")) {
         const ok = ctx.confirm ? await ctx.confirm("Clear the check history for this space? Saved domain lists are kept.") : true;
         if (ok) { clearRuns(id); show("home"); }
