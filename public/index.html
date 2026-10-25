@@ -128,7 +128,7 @@
   html[data-embed] body.app{--aws-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,Helvetica,Arial,sans-serif}</style>
   <script>!function(){var em=0;try{em=new URLSearchParams(location.search).get('embed')==='1'}catch(_){}var b='pro';try{b=localStorage.getItem('sw_boot_theme')||'pro'}catch(_){}document.documentElement.setAttribute('data-boot',b);var s='pro';try{s=localStorage.getItem('sw_style')||'pro'}catch(_){}if(s==='command'){s='pro';try{localStorage.setItem('sw_style','pro')}catch(_){}}if(em){s='pro';document.documentElement.setAttribute('data-theme','light');document.documentElement.setAttribute('data-embed','1')}document.documentElement.setAttribute('data-style',s)}()</script>
   <script>!function(){try{var d=window.darknode&&window.darknode.desktop;if(!d||!Array.isArray(d.caps))return;var h=document.documentElement;h.setAttribute('data-desktop',d.platform||'1');var l=document.createElement('link');l.rel='stylesheet';l.href='/css/desktop.css';document.head.appendChild(l)}catch(_){}}()</script>
-  <link rel="modulepreload" href="/js/auth.js?v=20261025c">
+  <link rel="modulepreload" href="/js/auth.js?v=20261025d">
   <link rel="modulepreload" href="/js/firebase.js?v=20261021a">
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js" crossorigin>
   <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js" crossorigin>
@@ -140,9 +140,9 @@
   <link rel="stylesheet" href="/css/aws.css?v=20261019g" media="all">
   <link rel="stylesheet" href="/css/aws-landing.css?v=20261025b" media="all">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[
-  {"@type":"Organization","@id":"https://darknode.ai/#org","name":"Darknode","alternateName":"Darknode-Official","url":"https://darknode.ai/","logo":"https://darknode.ai/logo-dark.svg","description":"Darknode is a cybersecurity platform with 125 interactive security tools plus 780 quick utilities, practice labs, AI tutoring, and the Nexus AI coding agent.","sameAs":["https://github.com/Darknode-Official"]},
+  {"@type":"Organization","@id":"https://darknode.ai/#org","name":"Darknode","alternateName":"Darknode-Official","url":"https://darknode.ai/","logo":"https://darknode.ai/logo-dark.svg","description":"Darknode is a cybersecurity platform with 140+ tools plus 780 quick utilities, practice labs, AI tutoring, and the Nexus AI coding agent.","sameAs":["https://github.com/Darknode-Official"]},
   {"@type":"WebSite","@id":"https://darknode.ai/#website","url":"https://darknode.ai/","name":"Darknode","publisher":{"@id":"https://darknode.ai/#org"}},
-  {"@type":"WebApplication","@id":"https://darknode.ai/#app","name":"Darknode","url":"https://darknode.ai/","applicationCategory":"SecurityApplication","applicationSubCategory":"Cybersecurity Platform","operatingSystem":"Web","description":"Cybersecurity platform with 125 security tools and 780 quick utilities, interactive practice labs, threat intelligence, and AI tutoring. Runs in your browser, private by default.","featureList":"Security tools, CTF practice labs, threat intelligence, OSINT, forensics, vulnerability management, AI security assistant","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@id":"https://darknode.ai/#org"}},
+  {"@type":"WebApplication","@id":"https://darknode.ai/#app","name":"Darknode","url":"https://darknode.ai/","applicationCategory":"SecurityApplication","applicationSubCategory":"Cybersecurity Platform","operatingSystem":"Web","description":"Cybersecurity platform with 140+ tools and 780 quick utilities, interactive practice labs, threat intelligence, and AI tutoring. Runs in your browser, private by default.","featureList":"Security tools, CTF practice labs, threat intelligence, OSINT, forensics, vulnerability management, AI security assistant","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@id":"https://darknode.ai/#org"}},
   {"@type":"SoftwareApplication","name":"Nexus","alternateName":"Darknode Nexus","url":"https://darknode.ai/","applicationCategory":"DeveloperApplication","operatingSystem":"Windows, macOS, Linux","description":"Nexus is Darknode's AI coding agent — a fast, private, terminal-native assistant for reading, writing, and refactoring code with real tools.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@id":"https://darknode.ai/#org"}}
   ]}</script>
 </head>
@@ -261,7 +261,7 @@
 
   <script>window.DARKNODE_PROXY_URL="https://darknode-proxy.darknode-ai.workers.dev/api/chat";</script>
   <script src="/js/user-keys.js?v=20261003a"></script>
-  <script type="module" src="/js/auth.js?v=20261025c"></script>
+  <script type="module" src="/js/auth.js?v=20261025d"></script>
   <script>if('serviceWorker' in navigator&&!document.documentElement.hasAttribute('data-desktop'))addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){})})</script>
   <!-- The Botpress support chat and its bridge are injected by auth.js after boot, on idle
        (loadSupportChat), so the third-party script can never delay the app. -->
