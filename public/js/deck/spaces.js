@@ -92,6 +92,13 @@ function homeHTML(id, S) {
     </div>`;
 }
 
+// Jump to a tool tab and, when a target is given, run the tool on it.
+async function openTab(st, { tab, target }) {
+  await st.show(tab);
+  const api = st.api[tab];
+  if (target && api && typeof api.run === "function") api.run(target);
+}
+
 // Mount (once) or refresh a space into `el`. ctx: { confirm(msg) -> Promise<bool> }.
 export function mountSpace(el, id, ctx = {}) {
   const S = SPACES[id]; if (!S) return;
@@ -102,7 +109,7 @@ export function mountSpace(el, id, ctx = {}) {
       <div class="ns-hero" style="--ns-hero:${S.hero}"><div class="k">${esc(S.kicker)}</div><h1>${esc(S.title)}</h1><p>${esc(S.blurb)}</p></div>
       <nav class="ns-tabs" role="tablist">${S.tabs.map((t) => `<button class="ns-tab" role="tab" data-tab="${t.id}">${esc(t.label)}</button>`).join("")}</nav>
       ${S.tabs.map((t) => `<section data-pane="${t.id}" hidden></section>`).join("")}</div>`;
-    const st = { cur: "home", mounted: new Set() };
+    const st = { cur: "home", mounted: new Set(), api: {} };
     el._ns = st;
     const show = async (tab) => {
       const t = S.tabs.find((x) => x.id === tab) || S.tabs[0];
@@ -114,7 +121,7 @@ export function mountSpace(el, id, ctx = {}) {
       if (st.mounted.has(t.id)) return;
       st.mounted.add(t.id);
       pane.innerHTML = `<div class="ns-card"><span class="ns-spin"></span>Loading...</div>`;
-      try { (await TOOLS[t.mod]()).mount(pane, { space: id, mode: t.mode }); }
+      try { st.api[t.id] = (await TOOLS[t.mod]()).mount(pane, { space: id, mode: t.mode }) || {}; }
       catch (e) { st.mounted.delete(t.id); pane.innerHTML = `<div class="ns-card"><b>This tool failed to load.</b><p class="ns-help">${esc((e && e.message) || e)}</p></div>`; }
     };
     st.show = show;
@@ -129,8 +136,9 @@ export function mountSpace(el, id, ctx = {}) {
     // Keep the home screen live when a tool records a run.
     window.addEventListener("dn-space-run", (e) => { if (e.detail && e.detail.space === id && st.cur === "home" && el.isConnected) show("home"); });
     let saved = "home"; try { saved = localStorage.getItem(LS) || "home"; } catch (_) {}
-    show(saved);
+    if (ctx.open) openTab(st, ctx.open); else show(saved);
     return;
   }
-  if (el._ns.cur === "home") el._ns.show("home");
+  if (ctx.open) openTab(el._ns, ctx.open);
+  else if (el._ns.cur === "home") el._ns.show("home");
 }

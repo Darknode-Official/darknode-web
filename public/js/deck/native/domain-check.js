@@ -77,7 +77,7 @@ export function mount(el, { space, mode }) {
       recordRun(space, { tool: "domain", target: d, summary: "Grade " + res.grade + " (" + res.counts.fail + " failing)", level: level(res), score: res.score, grade: res.grade });
     };
     btn.onclick = run; inp.onkeydown = (e) => { if (e.key === "Enter") run(); };
-    return;
+    return { run: (d) => { inp.value = d; run(); } };
   }
 
   el.innerHTML = `
