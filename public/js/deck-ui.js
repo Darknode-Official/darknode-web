@@ -1893,7 +1893,7 @@ export function renderDeck(host, opts) {
   // Shortcuts into tools/scenes above the plan are removed, not left as dead buttons
   // (go()/openTool() refuse them); same rule as the sidebar: hidden, never badged.
   function pruneLocked(el){
-    el.querySelectorAll(".dk-qacard[data-tool],.dk-qacard[data-scene],.mo[data-scene]").forEach((b) => {
+    el.querySelectorAll(".dk-qacard[data-tool],.dk-qacard[data-scene],.mo[data-scene],.mo[data-tool]").forEach((b) => {
       if (isLocked(b.dataset.tool ? "tool:" + b.dataset.tool : "scene:" + b.dataset.scene)) b.remove();
     });
   }
@@ -2471,6 +2471,7 @@ export function renderDeck(host, opts) {
       <button class="dk-mi" data-go="con">${IC.link}<span>Connect a provider<span class="sub">Link an AI model or intel source</span></span></button>
       <button class="dk-mi" data-tool="investigation">${IC.folder}<span>New investigation<span class="sub">Start an investigation workspace</span></span></button>
       <button class="dk-mi" data-tool="secgraph">${IC.grid}<span>Open security graph<span class="sub">Entities &amp; relationships</span></span></button>`;
+    popNew.querySelectorAll("[data-go],[data-tool]").forEach((b) => { if (isLocked(b.dataset.tool ? "tool:" + b.dataset.tool : "scene:" + b.dataset.go)) b.remove(); });
     popNew.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => { closeAllMenus(); go(b.dataset.go); });
     popNew.querySelectorAll("[data-tool]").forEach((b) => b.onclick = () => { closeAllMenus(); openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool); });
   }
@@ -2755,6 +2756,7 @@ export function renderDeck(host, opts) {
           ? f.items.map((it) => `<button class="rf-it" data-eid="${esc(it.id)}"><span class="dot" style="--c:${SEV_C[it.severity] || "#8a93a6"}"></span><span class="n">${esc(it.name)}</span><span class="s">${esc(it.severity)}</span></button>`).join("")
           : `<div class="dk-nempty">${esc(f.emptyText || "Nothing to show for this view yet.")}</div>`;
         panel.innerHTML = `<h2>${IC.gauge} ${esc(f.label)} focus <span class="mo" role="button" tabindex="0" data-scene="findings">All findings</span></h2><p class="rf-lead">${esc(f.lead)}</p><div class="rf-metrics">${metrics}</div><div class="rf-items">${items}</div>`;
+        pruneLocked(panel);
         panel.querySelectorAll(".rf-it[data-eid]").forEach((b) => b.onclick = () => { try { openEntityDrawer(b.dataset.eid); } catch (_) {} });
         const mo = panel.querySelector(".mo[data-scene]"); if (mo) mo.onclick = () => go("findings");
       });
@@ -3652,7 +3654,7 @@ export function renderDeck(host, opts) {
   function lazyScene(el, load, run){
     load().then(run, () => { if (el && !el.childElementCount) el.innerHTML = `<div class="dk-empty" role="alert">This view could not load. Check your connection and open it again.</div>`; });
   }
-  function renderFindings(){ lazyScene(sceneEls.findings, fqMod, (m) => m.mountFindingsQueue(sceneEls.findings, fqCtx())); }
+  function renderFindings(){ lazyScene(sceneEls.findings, fqMod, (m) => { m.mountFindingsQueue(sceneEls.findings, fqCtx()); pruneLocked(sceneEls.findings); }); }
   function paintFindings(g){ fqMod().then((m) => m.repaintFindingsQueue(g), () => {}); }
   function repaintInventory(g){ invMod().then((m) => m.repaintInventory(g), () => {}); }
   function repaintCorrelations(g){ corrMod().then((m) => m.repaintCorrelations(g), () => {}); }
