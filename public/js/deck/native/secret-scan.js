@@ -85,7 +85,7 @@ export function mount(el, { space, mode }) {
   };
   el.querySelector("#nsScGo").onclick = () => {
     const text = el.querySelector("#nsScIn").value; if (!text.trim()) { toast("Paste some code first"); return; }
-    const name = (el.querySelector("#nsScName").value || "").trim() || "pasted.txt";
+    const name = (el.querySelector("#nsScName").value || "").trim() || "pasted code";
     run([{ path: name, text }], 0, name);
   };
 }

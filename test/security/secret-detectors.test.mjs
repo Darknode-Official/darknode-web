@@ -165,9 +165,17 @@ group("secret-detectors: former Code Scanner rules", () => {
   });
   const ids = (text) => scanFile("src/settings.js", text + "\n").map((x) => x.ruleId);
   for (const [id, core] of Object.entries(CODESCAN_IDS)) test(id, () => {
-    const f = core === "pat-assignment" ? { pos: 'config.password = "' + r(16) + '"', neg: 'db_password = "' + r(16) + '"' } : fixture(core);
+    const f = core === "pat-assignment" ? { pos: 'config.password = "' + r(16) + '"', neg: 'password_hint = "' + r(16) + '"' } : fixture(core);
     assert.ok(ids(f.pos).includes(id), id + " missed its positive: " + f.pos.slice(0, 80));
     assert.ok(!ids(f.neg).includes(id), id + " fired on its negative");
+  });
+  test("secret.generic: a credential word ending a snake/kebab key counts (db_password, DB_PASSWORD, github-token); one inside it does not", () => {
+    for (const k of ["db_password", "DB_PASSWORD", "github-token", "stripe_api_key"]) assert.ok(ids(k + ' = "' + r(16) + '"').includes("secret.generic"), k);
+    for (const k of ["password_hint", "max_tokens", "token_type", "secret_name"]) assert.ok(!ids(k + ' = "' + r(16) + '"').includes("secret.generic"), k);
+  });
+  test("a live key keeps its severity in pasted code and in a .txt file (keys.txt is a classic leak); docs still soften it", () => {
+    const line = 'k = "sk_live_' + r(32) + '"\n', sev = (p) => (scanFile(p, line).find((x) => x.ruleId === "secret.stripe-live") || {}).sev;
+    assert.equal(sev("pasted code"), "critical"); assert.equal(sev("keys.txt"), "critical"); assert.equal(sev("README.md"), "low");
   });
 });
 

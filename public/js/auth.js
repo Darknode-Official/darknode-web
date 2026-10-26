@@ -2135,7 +2135,7 @@ function renderApp(user) {
     else if (sec === "emailauth") { import("/js/email-auth.js").then(m => live() && m.renderEmailAuth(main)); }
     else if (sec === "cookieinspect") { import("/js/cookie-inspector.js").then(m => live() && m.renderCookieInspector(main)); }
     else if (sec === "securitytxt") { import("/js/security-txt.js?v=20261021a").then(m => live() && m.renderSecurityTxt(main)); }
-    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261018i").then(m => live() && m.renderCodeScanner(main)); }
+    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261025g").then(m => live() && m.renderCodeScanner(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js?v=20261013b").then(m => live() && m.renderReconPlanner(main)); }
     else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20261013b").then(m => live() && m.renderAPIFuzzer(main)); }
     else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260928m").then(m => live() && m.renderPrivescToolkit(main)); }

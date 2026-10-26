@@ -47,7 +47,7 @@ export function mask(s) {
 const PLACEHOLDER = /(example|sample|dummy|placeholder|changeme|change_me|your[_-]?|xxxx|\*\*\*\*|<[^>]*>|\$\{[^}]*\}|\{\{[^}]*\}\}|process\.env|os\.environ|getenv|redacted|test[_-]?key|fake|1234567890|0123456789|abcdefghij|SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c|GEZDGNBVGY3TQOJQ)/i; // public samples: the jwt.io token, the RFC 4226 test secret
 const PLACEHOLDER_PASS = /^(?:pass(?:word)?|secret|pwd|root|admin|user|test|changeme|\*+|x+)$/i; // user:pass@host in docs and examples
 const KEY_BODY = /[A-Za-z0-9+/=]{40,}|\\n[A-Za-z0-9+/]{20,}/; // a real key block carries base64 material
-const TESTY_PATH = /(^|\/)(tests?|__tests__|spec|specs|fixtures?|examples?|samples?|docs?|mocks?)(\/|$)|\.(md|rst|txt|example|sample|template|dist)$|\.(test|spec)\.[a-z]+$/i;
+const TESTY_PATH = /(^|\/)(tests?|__tests__|spec|specs|fixtures?|examples?|samples?|docs?|mocks?)(\/|$)|\.(md|rst|example|sample|template|dist)$|\.(test|spec)\.[a-z]+$/i;
 const SKIP_LINE = 2000; // ignore pathological minified lines (regex cost + noise)
 
 // ── Secret rules (all text files) ──────────────────────────────────────────────
@@ -101,7 +101,7 @@ export const SECRET_RULES = [
   { id: "secret.db-url", title: "Database URL with password", detectors: ["conn-string"], pick: (h) => h.m[1], minLen: 4, sev: "high", cwe: 798,
     why: "Connection strings with an inline password give direct database access to anyone who reads the repo.",
     fix: "Move the connection string to an environment variable or secrets manager and rotate the password." },
-  { id: "secret.generic", title: "Hardcoded credential", detectors: ["pat-assignment"], accept: (h) => keyHoldsSecret(assignmentKey(h.whole), "."), minLen: 12, sev: "medium", cwe: 798, minEntropy: 3.5,
+  { id: "secret.generic", title: "Hardcoded credential", detectors: ["pat-assignment"], accept: (h) => keyHoldsSecret(assignmentKey(h.whole), "._-"), minLen: 12, sev: "medium", cwe: 798, minEntropy: 3.5,
     why: "Credentials embedded in source are readable by everyone with repo access and persist in git history.",
     fix: "Load the value from the environment or a secrets manager, rotate it, and purge it from history." }
 ];
