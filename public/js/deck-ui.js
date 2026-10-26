@@ -872,6 +872,7 @@ const CSS = `
   background:#ffffff;
   border:1px solid rgba(23,33,56,.12);box-shadow:0 12px 32px rgba(16,24,40,.14);display:none}
 .dk-pop.on{display:block;animation:dkPop .18s ease}
+@media (prefers-reduced-motion:reduce){.dk .dk-work.opening,.dk .dk-pop.on{animation:none}.dk *{transition-duration:0s!important}} /* spinners keep turning: they are the only sign of work */
 @keyframes dkPop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .dk-pop-h{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid rgba(23,33,56,.08);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#5a6680}
 .dk-pop-h button{appearance:none;border:0;background:transparent;color:#6a7488;font:inherit;font-size:11px;cursor:pointer;text-transform:none;letter-spacing:0}
