@@ -249,6 +249,32 @@ group("phish: defang, refang and report", () => {
     assert.ok(analyzeUrl("http://[::1]/").reasons.some((r) => /raw IP/.test(r.t)));
   });
 
+  test("email triage: lookalike Reply-To, strongest link reason, attacker header domains on the block list", () => {
+    const t = triageEmail(["Return-Path: <bounce@mailer-xyz.top>",
+      "Authentication-Results: mx.test; spf=fail smtp.mailfrom=mailer-xyz.top; dkim=none; dmarc=fail header.from=microsoft.com",
+      'From: "Microsoft 365" <no-reply@microsoft.com>', "Reply-To: support@m1crosoft-help.com", "Subject: x", "",
+      '<a href="https://login.microsoftonline.com.secure-verify.top/reset">x</a>'].join("\n"));
+    assert.equal(t.verdict.level, "high-risk");
+    assert.ok(t.findings.some((f) => /Reply-To domain \(m1crosoft-help\.com\) imitates brand "microsoft"/.test(f.t)));
+    assert.ok(t.findings.some((f) => /Risky link: .*\(Brand "microsoft" appears in a subdomain/.test(f.t)));   // not the weaker .top note
+    assert.ok(t.iocs.domains.includes("m1crosoft-help.com") && t.iocs.domains.includes("mailer-xyz.top"));
+  });
+
+  test("a legitimate message's mail-provider domains are never put on the block list or treated as a spoof", () => {
+    const t = triageEmail(["Return-Path: <bounces@em.sendgrid.net>", "Authentication-Results: mx; spf=pass; dkim=pass; dmarc=pass header.from=amazon.com",
+      'From: "Amazon" <ship@amazon.com>', "Subject: shipped", "", '<a href="https://www.amazon.com/x">x</a> https://amazon-adsystem.com/p.gif'].join("\n"));
+    assert.equal(t.verdict.level, "likely-legitimate");
+    assert.notOk(t.iocs.domains.includes("sendgrid.net"));
+  });
+
+  test("brand in a hyphenated registered name, digits read as either lookalike letter", () => {
+    assert.ok(lookalike("paypal-secure.com").inName);
+    assert.equal(lookalike("m1crosoft-help.com").brand, "microsoft");          // 1 = i here
+    assert.equal(lookalike("paypa1-login.com").brand, "paypal");               // 1 = l here
+    assert.notOk(lookalike("my-account.example.com").brand);
+    assert.notOk(lookalike("well-known.org").brand);
+  });
+
   test("display-name spoof flags a sender whose stem only contains the brand as a substring", () => {
     const r = triageEmail(["From: \"AMEX\" <security@myamexclone.com>", "Subject: verify", "", "x"].join("\n"));
     assert.ok(r.findings.some((f) => /Display name mentions "amex"/.test(f.t)));

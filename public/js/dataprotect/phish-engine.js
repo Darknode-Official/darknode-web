@@ -142,9 +142,10 @@ const CONFUSABLE = {
 };
 const skeleton = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/./gu, (c) => CONFUSABLE[c] || c);
 
-// Digit-for-letter swaps used in brand typosquats (paypa1, micr0soft).
-const LEET = { 0: "o", 1: "l", 3: "e", 4: "a", 5: "s", 7: "t" };
-const unleet = (t) => t.replace(/[013457]/g, (d) => LEET[d]);
+// Digit-for-letter swaps used in brand typosquats (paypa1, m1crosoft, micr0soft):
+// a digit may stand for any of its lookalike letters.
+const LEET = { 0: "o", 1: "il", 3: "e", 4: "a", 5: "s", 7: "t" };
+const leetIs = (t, b) => t.length === b.length && /\d/.test(t) && [...t].every((c, i) => c === b[i] || (LEET[c] || "").includes(b[i]));
 // TLD-looking labels that only appear mid-host to make it read as ending there.
 const FAKE_END = new Set(["com", "net", "org", "gov", "edu", "co"]);
 const ACCOUNT_WORD = /^(online|login|signin|secure|account|accounts|support|verify|id|auth|help|service|update|billing|wallet|mail)$/;
@@ -201,6 +202,7 @@ export function analyzeUrl(raw) {
   if (fakeAt > 0) out.reasons.push({ w: 2, t: `The address reads as if it ends at "${labels.slice(0, fakeAt + 1).join(".")}", but the real domain is "${reg}".` });
   if (look.homograph) out.reasons.push({ w: 4, t: `Its letters imitate "${look.brand}": "${look.shown}" reads as "${look.reads}".` });
   else if (look.impersonation) out.reasons.push({ w: 4, t: `Brand "${look.brand}" appears in a subdomain but the registered domain is "${reg}".` });
+  else if (look.inName) out.reasons.push({ w: 2, t: `The domain "${reg}" has the brand name "${look.brand}" in it but is a different domain from the brand's own; check who owns it.` });
   else if (look.near) out.reasons.push({ w: 3, t: `Domain stem "${look.stem}" is a near-miss (edit distance ${look.distance}) of brand "${look.brand}".` });
 
   out.severity = sevFromWeight(sumWeight(out.reasons));
@@ -233,7 +235,7 @@ function asciiLookalike(host) {
   // back to letters), or brand + account word (microsoftonline, appleid), but the
   // registered domain is not the brand's
   const sub = labels.slice(0, -reg.split(".").length);
-  const isBrand = (t, b) => t === b || unleet(t) === b || (t.startsWith(b) && ACCOUNT_WORD.test(t.slice(b.length)));
+  const isBrand = (t, b) => t === b || leetIs(t, b) || (t.startsWith(b) && ACCOUNT_WORD.test(t.slice(b.length)));
   for (const b of BRANDS) {
     if (labels.includes(b) || sub.some((l) => l.split("-").some((t) => isBrand(t, b))))
       return { brand: b, stem, impersonation: true, near: false, distance: 0 };
@@ -249,6 +251,9 @@ function asciiLookalike(host) {
     if (b.length >= 5 && d > 0 && d <= 2 && Math.abs(stem.length - b.length) <= 2 && (!best || d < best.distance)) best = { brand: b, stem, distance: d };
   }
   if (best) return { ...best, impersonation: false, near: true };
+  // the registered name carries the brand as a hyphen-part (paypal-secure.com, m1crosoft-help.com)
+  const part = stem.includes("-") && BRANDS.find((b) => stem.split("-").some((t) => t === b || leetIs(t, b)));
+  if (part) return { brand: part, stem, impersonation: false, near: true, inName: true, distance: 0 };
   return { brand: null, stem, impersonation: false, near: false, distance: null };
 }
 
@@ -416,13 +421,17 @@ export function triageEmail(raw) {
   const fromLook = fromReg ? lookalike(fromDomain) : { near: false, impersonation: false };
   if (fromLook.impersonation) add(4, `From domain impersonates brand "${fromLook.brand}" in a subdomain.`);
   else if (fromLook.homograph) add(4, `From domain imitates brand "${fromLook.brand}": "${fromLook.shown}" reads as "${fromLook.reads}".`);
+  else if (fromLook.inName) add(3, `From domain ${fromReg} has the brand name "${fromLook.brand}" in it but is a different domain from the brand's own.`);
   else if (fromLook.near) add(3, `From domain is a near-miss of brand "${fromLook.brand}".`);
+  // replies going to a brand lookalike is the classic BEC / credential-reset setup
+  const replyLook = replyTo && registrableDomain(replyTo) !== fromReg ? lookalike(replyTo) : null;
+  if (replyLook && (replyLook.impersonation || replyLook.near)) add(3, `Reply-To domain (${replyTo}) imitates brand "${replyLook.brand}".`);
 
   // body URLs
   const iocs = extractIOCs(body || raw);
   const urlAnalyses = iocs.urls.slice(0, 25).map(analyzeUrl);
   const riskyUrls = urlAnalyses.filter((u) => u.severity === "high" || u.severity === "critical");
-  for (const ru of riskyUrls.slice(0, 5)) add(3, `Risky link: ${ru.host} (${ru.reasons[0] ? ru.reasons[0].t : "suspicious"})`);
+  for (const ru of riskyUrls.slice(0, 5)) { const top = ru.reasons.slice().sort((a, b) => b.w - a.w)[0]; add(3, `Risky link: ${ru.host} (${top ? top.t : "suspicious"})`); }
   // From-domain mismatch vs links
   const linkRegs = Array.from(new Set(urlAnalyses.map((u) => u.registrable).filter(Boolean)));
   if (fromReg && linkRegs.length && !linkRegs.includes(fromReg) && brandInName) add(2, "None of the links point to the brand's own domain.");
@@ -432,17 +441,24 @@ export function triageEmail(raw) {
   // homograph signal must veto the "likely legitimate" DMARC-pass shortcut, even when
   // the signal's own weight is too low (e.g. a medium-severity link) to lift the score.
   const spoof =
-    fromLook.impersonation || fromLook.near ||
+    fromLook.impersonation || fromLook.near || !!(replyLook && (replyLook.impersonation || replyLook.near)) ||
     !!(brandInName && fromReg && !fromReg.includes(brandInName)) ||
-    urlAnalyses.some((u) => u.lookalike && (u.lookalike.impersonation || u.lookalike.near)) ||
+    urlAnalyses.some((u) => u.lookalike && (u.lookalike.impersonation || u.lookalike.near) && u.lookalike.brand !== fromStem) || // a brand mailing its own amazon-adsystem.com is not a spoof
     urlAnalyses.some((u) => (u.reasons || []).some((r) => /homograph|Punycode|Non-ASCII/.test(r.t)));
+  const verdict = verdictFromWeight(weight, auth, spoof);
+  // On a high-risk message the misaligned Reply-To / Return-Path domains are the attacker's
+  // too; on anything milder they are usually a mail provider and must not be blocked.
+  if (verdict.level === "high-risk") for (const d of [replyTo, returnPath]) {
+    const r = d && registrableDomain(d);
+    if (r && r !== fromReg && !iocs.domains.includes(r)) iocs.domains.push(r);
+  }
   return {
     mode: "email",
     from, fromDomain, fromReg, returnPath, replyTo, name, auth,
     subject: get("subject"), messageId: get("message-id"),
     iocs, urlAnalyses, spoof,
     findings: findings.sort((a, b) => b.w - a.w),
-    verdict: verdictFromWeight(weight, auth, spoof),
+    verdict,
   };
 }
 
