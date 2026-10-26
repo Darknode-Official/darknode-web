@@ -163,6 +163,7 @@ function injectStyle() {
   const st = document.createElement("style"); st.id = "fq-css";
   st.textContent = `
 .fq-tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin;border-bottom:1px solid rgba(23,33,56,.1);margin:0 0 12px}
+@media(max-width:560px){.fq-tabs{flex-wrap:wrap;overflow:visible;row-gap:0}}
 .fq-tab{appearance:none;border:0;background:none;font:inherit;font-size:12.5px;font-weight:600;color:#5a6680;padding:9px 12px 10px;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
 .fq-tab:hover{color:#141c2e}
 .fq-tab.on{color:var(--dk-acc,#2552c6);border-bottom-color:var(--dk-acc,#2552c6)}

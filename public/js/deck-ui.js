@@ -34,7 +34,7 @@ import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261018i";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
-import { mountFindingsQueue, repaintFindingsQueue, renderSlaSettings } from "/js/deck/findings-queue.js?v=20261018e";
+import { mountFindingsQueue, repaintFindingsQueue, renderSlaSettings } from "/js/deck/findings-queue.js?v=20261025g";
 import { mountInventory, repaintInventory } from "/js/deck/inventory.js?v=20261019b";
 import { mountCorrelations, repaintCorrelations } from "/js/deck/correlations.js?v=20261019c";
 import { mountMonitors } from "/js/deck/monitors.js?v=20261018j";
@@ -1381,7 +1381,7 @@ textarea.dk-kitio{min-height:120px}
   background:var(--dk-bg);color:var(--dk-tx);font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;font-feature-settings:"cv11","ss01";letter-spacing:-.003em}
 .dk[data-ui=deck] .dk-sky{background:var(--dk-bg)}
 .dk[data-ui=deck] h1,.dk[data-ui=deck] h2,.dk[data-ui=deck] h3,.dk[data-ui=deck] h4{color:var(--dk-tx)!important}
-.dk[data-ui=deck] .dk-ovhead h1,.dk[data-ui=deck] .dk-lede h1,.dk[data-ui=deck] .dk-ti h1,.dk[data-ui=deck] .dk-inv h1,.dk[data-ui=deck] .dk-surf h1,.dk[data-ui=deck] .dk-cloud h1,.dk[data-ui=deck] .dk-comp h1,.dk[data-ui=deck] .dk-con2 h1,.dk[data-ui=deck] .dk-plans h1{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-weight:500;font-size:32px;letter-spacing:-.015em;line-height:1.15}
+.dk[data-ui=deck] .dk-ovhead h1,.dk[data-ui=deck] .dk-lede h1,.dk[data-ui=deck] .dk-ti h1,.dk[data-ui=deck] .dk-inv h1,.dk[data-ui=deck] .dk-surf h1,.dk[data-ui=deck] .dk-cloud h1,.dk[data-ui=deck] .dk-comp h1,.dk[data-ui=deck] .dk-con2 h1,.dk[data-ui=deck] .dk-plans h1,.dk[data-ui=deck] .dk-ti-head h1{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-weight:500;font-size:32px;letter-spacing:-.015em;line-height:1.15}
 .dk[data-ui=deck] .dk-ovhead p{color:var(--dk-tx2);font-size:14px;max-width:none}
 .dk[data-ui=deck] .dk-ovhead .when{color:var(--dk-mut);font-size:13px}
 /* header: search, Ask AI, create, notifications, account. Nothing else. */
