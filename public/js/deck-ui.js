@@ -1597,6 +1597,7 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] :is(.dk-isel,.dk-isearch,.dk-isearch input,.dk-inv input,.dk-kitio,.dk-cloudin,.dk-cloudsel){background:var(--dk-bg)!important;border-color:var(--dk-line)!important;color:var(--dk-tx)!important}
 .dk[data-ui=deck] select:not([multiple]):not([size]){appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23716e68' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 11px center!important;background-size:10px 6px!important;padding-right:30px!important}
 .dk[data-ui=deck] .dk-isearch input{border:0!important}
+.dk[data-ui=deck] .dk-isearch:focus-within{border-color:rgba(79,134,255,.6)!important}
 .dk[data-ui=deck] .dk-astat{border-left-width:1px!important}
 /* tool pages are transparent in embed mode; let the scene tone (ink or cyber) show behind them */
 .dk[data-ui=deck] .dk-wframe iframe{background:transparent}
