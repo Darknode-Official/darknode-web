@@ -15,7 +15,7 @@ export function mount(el, { space, mode }) {
       <p class="ns-sub">${fleet
         ? "Track expiry across every public hostname. Reads the newest certificate each host has in the public certificate-transparency logs, so it also catches hosts nobody remembers."
         : "Know before your site's certificate expires and visitors see a security warning. Add the domains you run; the list is saved in this browser."}</p>
-      <textarea class="ns-ta" id="nsCwIn" style="min-height:${fleet ? 110 : 70}px" placeholder="One domain per line" spellcheck="false"></textarea>
+      <textarea class="ns-ta" id="nsCwIn" aria-label="Domains to watch" style="min-height:${fleet ? 110 : 70}px" placeholder="One domain per line" spellcheck="false"></textarea>
       <div class="ns-row"><button class="ns-btn" id="nsCwGo">Check certificates</button><button class="ns-btn ghost" id="nsCwCsv" disabled>Export CSV</button><span class="ns-help" id="nsCwSt" style="margin:0"></span></div>
       <p class="ns-help">Certificate-transparency lookups are public. Up to ${fleet ? 200 : 20} domains.</p></div>
     <div id="nsCwOut"></div>`;

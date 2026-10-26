@@ -54,7 +54,7 @@ export function mountInventory(el, ctx) {
     <div class="dk-ovhead"><div><h1>Asset Inventory</h1><p>One deduplicated view of every host and identity your tools have recorded — the same machine or person seen by several tools shown once — and which control sources cover each.</p></div></div>
     <div class="dk-ovp">
       <div class="inv-tabs" id="invTabs" role="tablist"></div>
-      <div class="dk-invbar"><div class="dk-isearch">${(ctx && ctx.IC_SEARCH) || ""}<input id="invQ" placeholder="Search inventory" value="${E(S.q)}" autocomplete="off" spellcheck="false"></div></div>
+      <div class="dk-invbar"><div class="dk-isearch">${(ctx && ctx.IC_SEARCH) || ""}<input id="invQ" aria-label="Search inventory" placeholder="Search inventory" value="${E(S.q)}" autocomplete="off" spellcheck="false"></div></div>
       <div id="invBody"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
     </div>`;
   const $ = (s) => el.querySelector(s);

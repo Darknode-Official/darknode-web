@@ -37,8 +37,8 @@ import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js
 // Work-queue scenes load on first visit (about 120 KB the Overview never needs).
 const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => { p = null; throw e; })); };
 const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261025g");
-const invMod = lazyMod("/js/deck/inventory.js?v=20261019b");
-const corrMod = lazyMod("/js/deck/correlations.js?v=20261019c");
+const invMod = lazyMod("/js/deck/inventory.js?v=20261025g");
+const corrMod = lazyMod("/js/deck/correlations.js?v=20261025g");
 const monMod = lazyMod("/js/deck/monitors.js?v=20261018j");
 const keysMod = lazyMod("/js/deck/apikeys.js?v=20261018c");
 const auditMod = lazyMod("/js/deck/audit.js?v=20261018c");
@@ -1933,7 +1933,7 @@ export function renderDeck(host, opts) {
   }
   // Native spaces; `open` = { tab, target } jumps straight to a tool (and runs it on target).
   function mountSpaceScene(id, open){
-    import("/js/deck/spaces.js?v=20261025b").then((m) => m.mountSpace(sceneEls[id], id, { open: open && open.tab ? open : null, openTool: (sec, label) => openTool(sec, label), confirm: (msg) => (window.dnConfirm ? window.dnConfirm(msg) : Promise.resolve(true)) })).catch(() => toast("Could not load this space"));
+    import("/js/deck/spaces.js?v=20261025g").then((m) => m.mountSpace(sceneEls[id], id, { open: open && open.tab ? open : null, openTool: (sec, label) => openTool(sec, label), confirm: (msg) => (window.dnConfirm ? window.dnConfirm(msg) : Promise.resolve(true)) })).catch(() => toast("Could not load this space"));
   }
   function openSpaceTool(id, tab, target){ go(id, { tab, target }); }
   // Any element carrying data-scene (KPI cards, "view all" links, quick actions)
@@ -2802,7 +2802,7 @@ export function renderDeck(host, opts) {
       </div>
       <form class="dk-ask" id="dkAsk">
         <span class="ai">${IC.spark}</span>
-        <input id="dkAskIn" placeholder="Ask Darknode AI…" autocomplete="off" spellcheck="false">
+        <input id="dkAskIn" aria-label="Ask Darknode AI" placeholder="Ask Darknode AI…" autocomplete="off" spellcheck="false">
         <button type="submit">${IC.bolt}Ask</button>
       </form>
       <div class="dk-askhint">Triage a CVE, draft a runbook, explain a finding or review a config.</div>
@@ -2848,7 +2848,7 @@ export function renderDeck(host, opts) {
         <div>
           <div class="dk-ovp"><h2 data-explain="panel.threat">${IC.radar} Threat level <span class="mo" role="button" tabindex="0" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
           <div class="dk-ovp"><h2 data-explain="panel.notes">${IC.note} Notes <span class="mo" role="button" tabindex="0" id="dkNotesClear">Clear</span></h2>
-            <textarea class="dk-notes" id="dkNotes" placeholder="Jot an IP, a hypothesis, a to-do"></textarea>
+            <textarea class="dk-notes" id="dkNotes" aria-label="Notes" placeholder="Jot an IP, a hypothesis, a to-do"></textarea>
             <div class="dk-notef"><span id="dkNotesSaved">Saved on this device</span><span id="dkNotesCount"></span></div>
           </div>
         </div>
@@ -3247,7 +3247,7 @@ export function renderDeck(host, opts) {
       <div class="dk-ti-head"><h1>Attack Surface</h1><span class="mo" role="button" tabindex="0" id="dkSurfFull">Open Posture Scorecard ${IC.ext}</span></div>
       <p class="dk-sublede">Enter a domain to map its real external footprint — certificate-transparency subdomains, DNS, registration, owning network, HTTP security headers, email authentication and security.txt. Everything is fetched live through the Darknode proxy; nothing is simulated.</p>
       <form class="dk-surfbar" id="dkSurfForm">
-        <input id="dkSurfIn" placeholder="Your domain" autocomplete="off" spellcheck="false" value="${esc(d0)}">
+        <input id="dkSurfIn" aria-label="Domain to map" placeholder="Your domain" autocomplete="off" spellcheck="false" value="${esc(d0)}">
         <button type="submit" class="dk-tibtn on">Map surface</button>
       </form>
       <div class="dk-surfhint">Use a domain you own or are authorised to assess. Lookups use authoritative public records (certificate transparency, DNS, RDAP registries, BGP origin data) and a single read-only HTTP GET.</div>
@@ -3397,9 +3397,9 @@ export function renderDeck(host, opts) {
       <div class="dk-cloudtop">
         <div class="dk-cloudwb">
           <div class="wbh"><h2>Posture workbench</h2></div>
-          <select id="dkCloudSel" class="dk-cloudsel"></select>
+          <select id="dkCloudSel" aria-label="Cloud check" class="dk-cloudsel"></select>
           <div id="dkCloudDesc" class="dk-clouddesc"></div>
-          <textarea id="dkCloudIn" class="dk-cloudin" spellcheck="false"></textarea>
+          <textarea id="dkCloudIn" aria-label="Cloud configuration to check" class="dk-cloudin" spellcheck="false"></textarea>
           <div class="dk-cloudbtns"><button id="dkCloudRun" class="dk-tibtn on">Run check</button><span class="mo" role="button" tabindex="0" id="dkCloudOpen">Open full tool</span></div>
           <div id="dkCloudOut" class="dk-cloudres" hidden></div>
         </div>
@@ -3542,10 +3542,10 @@ export function renderDeck(host, opts) {
       <div class="dk-ovp">
         <h2>${IC.folder} Entities <span class="mo" role="button" tabindex="0" data-tool="secgraph">Open graph</span></h2>
         <div class="dk-invbar">
-          <div class="dk-isearch">${IC_SEARCH}<input id="dkInvQ" placeholder="Search entities…" value="${esc(invF.q)}" autocomplete="off" spellcheck="false"></div>
-          <select id="dkInvType" class="dk-isel"></select>
-          <select id="dkInvSev" class="dk-isel"></select>
-          <select id="dkInvStatus" class="dk-isel"></select>
+          <div class="dk-isearch">${IC_SEARCH}<input id="dkInvQ" aria-label="Search entities" placeholder="Search entities…" value="${esc(invF.q)}" autocomplete="off" spellcheck="false"></div>
+          <select id="dkInvType" aria-label="Filter by type" class="dk-isel"></select>
+          <select id="dkInvSev" aria-label="Filter by severity" class="dk-isel"></select>
+          <select id="dkInvStatus" aria-label="Filter by status" class="dk-isel"></select>
           <label class="dk-invsim" data-explain="inv.sim"><input type="checkbox" id="dkInvSim"${invF.sim ? " checked" : ""}> Include simulated / sample</label>
         </div>
         <div class="dk-invsimnote" id="dkInvSimNote" hidden></div>
@@ -4361,7 +4361,7 @@ export function renderDeck(host, opts) {
       </div>
       <div class="dk-afbar">
         <button class="dk-afch${actFilter === "" ? " on" : ""}" data-cat="">All<span>${all.length}</span></button>${chips}
-        <div class="dk-isearch" style="margin-left:auto;max-width:280px"><input id="dkActQ" placeholder="Search events…" value="${esc(actQ)}" autocomplete="off" spellcheck="false"></div>
+        <div class="dk-isearch" style="margin-left:auto;max-width:280px"><input id="dkActQ" aria-label="Search events" placeholder="Search events…" value="${esc(actQ)}" autocomplete="off" spellcheck="false"></div>
       </div>
       <div class="dk-ovp"><h2>${IC.pulse} Event stream</h2><div class="dk-ovact" id="dkActStream"></div></div>`;
     el.querySelectorAll(".dk-afch").forEach((b) => b.onclick = () => { actFilter = b.dataset.cat; el.querySelectorAll(".dk-afch").forEach((x) => x.classList.toggle("on", x === b)); paintActStream(); });
@@ -4429,7 +4429,7 @@ export function renderDeck(host, opts) {
       <div class="dk-kithead"><div class="ki" style="--a:${cat.color || "#4f86ff"}">${IC.bolt}</div><div><h2>${esc(t.name)}</h2><p>${esc(t.desc)}</p></div></div>
       <div class="dk-kopts">${optsHTML}</div>
       ${t.generate ? `<button class="dk-b pri" id="dkKitGen" style="width:auto;align-self:flex-start">${IC.bolt}Generate</button>`
-        : `<div class="dk-kiofield"><label class="dk-klbl">Input</label><textarea id="dkKitIn" class="dk-kitio" placeholder="Paste or type here…" spellcheck="false"></textarea></div>`}
+        : `<div class="dk-kiofield"><label class="dk-klbl">Input</label><textarea id="dkKitIn" aria-label="Toolkit input" class="dk-kitio" placeholder="Paste or type here…" spellcheck="false"></textarea></div>`}
       <div class="dk-kiofield"><div class="dk-kobar"><label class="dk-klbl">Output</label><span class="dk-kcopy" role="button" tabindex="0" id="dkKitCopy">Copy</span>${t.generate ? "" : `<span class="dk-kcopy" role="button" tabindex="0" id="dkKitSwap">Use as input</span>`}<span class="dk-kcopy" role="button" tabindex="0" id="dkKitClear">Clear</span></div><pre id="dkKitOut" class="dk-kitio dk-kitout" aria-live="polite"></pre></div>`;
     const inEl = main.querySelector("#dkKitIn"), outEl = main.querySelector("#dkKitOut");
     const getOpts = () => { const o = {}; main.querySelectorAll("[data-opt]").forEach((s) => o[s.dataset.opt] = s.value); return o; };

@@ -59,7 +59,7 @@ export function mount(el, { space, mode }) {
     el.innerHTML = `
       <div class="ns-card"><h2>Check your domain</h2>
         <p class="ns-sub">Grades the website and email setup of a domain you own: HTTPS, security headers, SPF / DKIM / DMARC, certificate health and a security contact. Takes about 10 seconds.</p>
-        <div class="ns-form"><input class="ns-in" id="nsDcIn" placeholder="yourdomain.com" autocomplete="off" spellcheck="false"><button class="ns-btn" id="nsDcGo">Check domain</button></div>
+        <div class="ns-form"><input class="ns-in" id="nsDcIn" aria-label="Domain to check" placeholder="yourdomain.com" autocomplete="off" spellcheck="false"><button class="ns-btn" id="nsDcGo">Check domain</button></div>
         <p class="ns-help">Only public signals are read. Nothing intrusive is sent to the site.</p></div>
       <div id="nsDcOut"></div>`;
     const inp = el.querySelector("#nsDcIn"), btn = el.querySelector("#nsDcGo"), out = el.querySelector("#nsDcOut");

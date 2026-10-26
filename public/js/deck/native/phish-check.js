@@ -22,7 +22,7 @@ export function mount(el, { space, mode }) {
         ? "Triage what employees report. Paste a suspicious link or the full email source (headers included) for a verdict, the reasons behind it and the indicators to block. Every verdict lands in the triage log below."
         : "Paste a link you were sent, or the full source of an email (in most mail apps: Show original). You get a plain verdict and the reasons. Nothing is opened or clicked."}</p>
       <div class="ns-seg" id="nsPhMode"><button data-m="url" class="on">Link</button><button data-m="email">Email source</button></div>
-      <textarea class="ns-ta" id="nsPhIn" style="margin-top:10px;min-height:90px" placeholder="Paste a link" spellcheck="false"></textarea>
+      <textarea class="ns-ta" id="nsPhIn" aria-label="Link to check" style="margin-top:10px;min-height:90px" placeholder="Paste a link" spellcheck="false"></textarea>
       <div class="ns-row"><button class="ns-btn" id="nsPhGo">Check it</button></div>
       <p class="ns-help">Analysis runs in your browser on the text you paste. The link is never visited.</p></div>
     <div id="nsPhOut"></div>${queue ? `<div class="ns-card"><h2>Triage log<span class="r"><button class="ns-btn ghost sm" id="nsPhExp">Export</button></span></h2><div id="nsPhLog"></div></div>` : ""}`;

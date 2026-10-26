@@ -17,8 +17,8 @@ export function mount(el, { space, mode }) {
       <div class="ns-drop" id="nsScDrop">Drop a folder or files here, or <button class="ns-btn ghost sm" id="nsScPick">Choose folder</button> <button class="ns-btn ghost sm" id="nsScPickF">Choose files</button>
         <input type="file" id="nsScDir" webkitdirectory multiple hidden><input type="file" id="nsScFiles" multiple hidden></div>
       <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600;font-size:13px">Or paste code</summary>
-        <div class="ns-form" style="margin-top:8px"><input class="ns-in" id="nsScName" style="max-width:240px;flex:none" placeholder="File name, e.g. config.py" spellcheck="false"></div>
-        <textarea class="ns-ta" id="nsScIn" style="margin-top:8px" placeholder="Paste source code or a config file" spellcheck="false"></textarea>
+        <div class="ns-form" style="margin-top:8px"><input class="ns-in" id="nsScName" aria-label="File name" style="max-width:240px;flex:none" placeholder="File name, e.g. config.py" spellcheck="false"></div>
+        <textarea class="ns-ta" id="nsScIn" aria-label="Source code or config to scan" style="margin-top:8px" placeholder="Paste source code or a config file" spellcheck="false"></textarea>
         <div class="ns-row"><button class="ns-btn" id="nsScGo">Scan pasted code</button></div>
         <p class="ns-help">The file name sets the language for code checks. Secrets are detected in any file type.</p></details></div>
     <div id="nsScOut"></div>`;

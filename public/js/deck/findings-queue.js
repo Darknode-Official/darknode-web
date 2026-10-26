@@ -511,7 +511,7 @@ export function mountFindingsQueue(el, ctx) {
         <h2 data-explain="panel.findings">${IC.alert || ""} Finding queue <span class="mo" data-tool="secgraph">Open graph</span></h2>
         <div class="fq-tabs" id="fqTabs" role="tablist" aria-label="Queue views"></div>
         <div class="dk-invbar">
-          <div class="dk-isearch">${ctx.IC_SEARCH || ""}<input id="dkFndQ" placeholder="Search findings" value="${E(S.f.q)}" autocomplete="off" spellcheck="false"></div>
+          <div class="dk-isearch">${ctx.IC_SEARCH || ""}<input id="dkFndQ" aria-label="Search findings" placeholder="Search findings" value="${E(S.f.q)}" autocomplete="off" spellcheck="false"></div>
           <select id="dkFndSev" class="dk-isel" aria-label="Severity"></select>
           <select id="dkFndStatus" class="dk-isel" aria-label="Status"></select>
           <select id="dkFndSrc" class="dk-isel" aria-label="Source"></select>

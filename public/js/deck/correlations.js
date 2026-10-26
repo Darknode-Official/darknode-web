@@ -61,7 +61,7 @@ export function mountCorrelations(el, ctx) {
     <div class="dk-ovhead"><div><h1>Correlations</h1><p>Attack chains your tools only see together — the same host or person flagged by two different tools adds up to a risk neither reports alone. Every chain links back to the findings that prove it.</p></div></div>
     <div class="dk-ovp">
       <p class="cor-sub">Deterministic rules over the resolved inventory (${RULES.length} rules) — a live read of the findings you already have. Open any chain as a managed incident to track it to closure.</p>
-      <div class="dk-invbar"><div class="dk-isearch">${(ctx && ctx.IC_SEARCH) || ""}<input id="corQ" placeholder="Search correlations" value="${E(S.q)}" autocomplete="off" spellcheck="false"></div></div>
+      <div class="dk-invbar"><div class="dk-isearch">${(ctx && ctx.IC_SEARCH) || ""}<input id="corQ" aria-label="Search correlations" placeholder="Search correlations" value="${E(S.q)}" autocomplete="off" spellcheck="false"></div></div>
       <div id="corBody"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
     </div>`;
   let qT = 0; el.querySelector("#corQ").oninput = (e) => { clearTimeout(qT); qT = setTimeout(() => { S.q = e.target.value; refresh(); }, 150); };

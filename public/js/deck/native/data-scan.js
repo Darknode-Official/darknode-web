@@ -16,7 +16,7 @@ export function mount(el, { space, mode }) {
       <p class="ns-sub">${ent
         ? "Check documents, exports and logs for payment cards, bank numbers, national IDs, contact data and credentials before they leave the organization. Produce a redacted copy that is safe to send."
         : "Before you paste something into a chat, ticket or AI tool, check it for passwords, keys, card numbers and personal details, and get a cleaned-up copy."}</p>
-      <textarea class="ns-ta" id="nsDsIn" placeholder="Paste the text you want to check" spellcheck="false"></textarea>
+      <textarea class="ns-ta" id="nsDsIn" aria-label="Text to check" placeholder="Paste the text you want to check" spellcheck="false"></textarea>
       <div class="ns-row"><button class="ns-btn" id="nsDsGo">Check text</button><button class="ns-btn ghost" id="nsDsF">Check files</button><input type="file" id="nsDsFiles" multiple hidden></div>
       <p class="ns-help">Runs entirely in your browser. Card numbers are Luhn-checked and bank numbers checksum-validated, so random digits do not trigger.</p></div>
     <div id="nsDsOut"></div>`;
