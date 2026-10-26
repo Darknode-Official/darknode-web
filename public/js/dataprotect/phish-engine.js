@@ -81,7 +81,10 @@ const SHORTENERS = new Set([
   "rebrand.ly", "cutt.ly", "rb.gy", "shorturl.at", "tiny.cc", "lnkd.in", "t.ly",
 ]);
 
+const isIpHost = (h) => /^\d{1,3}(\.\d{1,3}){3}$/.test(h) || /^\[[0-9a-f:.]+\]$/i.test(h);
+
 export function registrableDomain(host) {
+  if (isIpHost(String(host || ""))) return String(host);
   const labels = String(host || "").toLowerCase().replace(/\.$/, "").split(".");
   if (labels.length <= 2) return labels.join(".");
   const lastTwo = labels.slice(-2).join(".");
@@ -90,6 +93,61 @@ export function registrableDomain(host) {
 }
 
 function hasNonAscii(s) { return /[^\x00-\x7F]/.test(String(s)); }
+
+// RFC 3492 punycode label decoder (xn--... -> Unicode), so a homograph can be
+// shown the way a browser or mail client would display it. null when invalid.
+function punyDecode(input) {
+  const base = 36, tmin = 1, tmax = 26;
+  let n = 128, i = 0, bias = 72;
+  const out = [], b = Math.max(0, input.lastIndexOf("-"));
+  for (let j = 0; j < b; j++) { if (input.charCodeAt(j) >= 0x80) return null; out.push(input.charCodeAt(j)); }
+  const adapt = (delta, points, first) => {
+    delta = first ? Math.floor(delta / 700) : delta >> 1;
+    delta += Math.floor(delta / points);
+    let k = 0;
+    while (delta > ((base - tmin) * tmax) >> 1) { delta = Math.floor(delta / (base - tmin)); k += base; }
+    return k + Math.floor(((base - tmin + 1) * delta) / (delta + 38));
+  };
+  for (let idx = b > 0 ? b + 1 : 0; idx < input.length;) {
+    const oldi = i;
+    for (let w = 1, k = base; ; k += base) {
+      if (idx >= input.length) return null;
+      const c = input.charCodeAt(idx++);
+      const digit = c >= 48 && c <= 57 ? c - 22 : c >= 97 && c <= 122 ? c - 97 : c >= 65 && c <= 90 ? c - 65 : base;
+      if (digit >= base) return null;
+      i += digit * w;
+      const t = k <= bias ? tmin : k >= bias + tmax ? tmax : k - bias;
+      if (digit < t) break;
+      w *= base - t;
+    }
+    bias = adapt(i - oldi, out.length + 1, oldi === 0);
+    n += Math.floor(i / (out.length + 1));
+    i %= out.length + 1;
+    if (n > 0x10ffff) return null;
+    out.splice(i++, 0, n);
+  }
+  return String.fromCodePoint(...out);
+}
+
+export function toUnicodeHost(host) {
+  return String(host || "").split(".").map((l) => (l.startsWith("xn--") ? punyDecode(l.slice(4)) || l : l)).join(".");
+}
+
+// Characters that render like Latin letters (Cyrillic/Greek/IPA lookalikes);
+// accents are stripped separately. Maps a displayed name to what it reads as.
+const CONFUSABLE = {
+  "\u0430": "a", "\u0435": "e", "\u043e": "o", "\u0440": "p", "\u0441": "c", "\u0443": "y", "\u0445": "x",
+  "\u0456": "i", "\u0458": "j", "\u0455": "s", "\u0501": "d", "\u04bb": "h", "\u04cf": "l", "\u0261": "g",
+  "\u03bf": "o", "\u03b1": "a", "\u03bd": "v", "\u03b9": "i", "\u03ba": "k", "\u03c1": "p", "\u0131": "i", "\u0251": "a",
+};
+const skeleton = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/./gu, (c) => CONFUSABLE[c] || c);
+
+// Digit-for-letter swaps used in brand typosquats (paypa1, micr0soft).
+const LEET = { 0: "o", 1: "l", 3: "e", 4: "a", 5: "s", 7: "t" };
+const unleet = (t) => t.replace(/[013457]/g, (d) => LEET[d]);
+// TLD-looking labels that only appear mid-host to make it read as ending there.
+const FAKE_END = new Set(["com", "net", "org", "gov", "edu", "co"]);
+const ACCOUNT_WORD = /^(online|login|signin|secure|account|accounts|support|verify|id|auth|help|service|update|billing|wallet|mail)$/;
 
 // ---- URL analysis ---------------------------------------------------------
 
@@ -109,8 +167,21 @@ export function analyzeUrl(raw) {
 
   if (hadScheme && out.scheme === "http") out.reasons.push({ w: 1, t: "Plain HTTP (not encrypted)." });
   if (u.username || u.password) out.reasons.push({ w: 4, t: `Embedded credentials in the URL (userinfo before @). The real host is "${out.host}".` });
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(out.host)) out.reasons.push({ w: 3, t: "The link points at a raw IP address, not a domain." });
-  if (out.host.startsWith("xn--") || out.host.includes(".xn--")) out.reasons.push({ w: 4, t: "Punycode host (xn--): possible homograph/lookalike domain." });
+  if (isIpHost(out.host)) {
+    out.reasons.push({ w: 3, t: "The link points at a raw IP address, not a domain." });
+    // URL() normalises 0x7f.1 / 2130706433 / 0177.0.0.1 to dotted form; say so when the link hid it
+    const typed = (s.match(/^[a-z][a-z0-9+.-]*:\/\/(?:[^@/?#]*@)?([^/:?#]+)/i) || [])[1];
+    if (typed && typed.toLowerCase() !== out.host && !typed.startsWith("[")) out.reasons.push({ w: 3, t: `The IP address is written in a disguised form ("${typed}"); it really is ${out.host}.` });
+  }
+  if (out.host.startsWith("xn--") || out.host.includes(".xn--")) {
+    out.display = toUnicodeHost(out.host);
+    // Latin mixed with Cyrillic/Greek in one label is the homograph trick; a name in a
+    // single script (bücher.de) is an ordinary international domain
+    const mixed = out.display === out.host || out.display.split(".").some((l) => /[a-z]/.test(l) && /[\u0370-\u03ff\u0400-\u04ff\u0500-\u052f]/.test(l));
+    out.reasons.push(mixed
+      ? { w: 4, t: out.display !== out.host ? `Punycode host (xn--): it displays as "${out.display}", mixing alphabets, a likely homograph/lookalike domain.` : "Punycode host (xn--): possible homograph/lookalike domain." }
+      : { w: 1, t: `Punycode host (xn--): an international name that displays as "${out.display}". Fine if that is the site you expect.` });
+  }
   if (hasNonAscii(out.host)) out.reasons.push({ w: 4, t: "Non-ASCII characters in the host: possible homograph attack." });
 
   const tld = reg.split(".").pop();
@@ -118,7 +189,7 @@ export function analyzeUrl(raw) {
 
   const labels = out.host.split(".");
   if (labels.length >= 5) out.reasons.push({ w: 2, t: `Unusually deep subdomain (${labels.length} labels) — brand names can hide here.` });
-  const hyphens = (out.host.match(/-/g) || []).length;
+  const hyphens = (out.host.replace(/(^|\.)xn--/g, "$1").match(/-/g) || []).length;
   if (hyphens >= 3) out.reasons.push({ w: 1, t: `Many hyphens in the host (${hyphens}).` });
   if (/\d/.test(reg.split(".")[0]) && /[a-z]/.test(reg.split(".")[0]) && (reg.match(/\d/g) || []).length >= 3) out.reasons.push({ w: 1, t: "Digits mixed into the domain name." });
 
@@ -126,7 +197,10 @@ export function analyzeUrl(raw) {
 
   // brand lookalike / impersonation
   const look = lookalike(out.host);
-  if (look.impersonation) out.reasons.push({ w: 4, t: `Brand "${look.brand}" appears in a subdomain but the registered domain is "${reg}".` });
+  const fakeAt = labels.slice(0, -reg.split(".").length).findIndex((l, i) => i > 0 && FAKE_END.has(l));
+  if (fakeAt > 0) out.reasons.push({ w: 2, t: `The address reads as if it ends at "${labels.slice(0, fakeAt + 1).join(".")}", but the real domain is "${reg}".` });
+  if (look.homograph) out.reasons.push({ w: 4, t: `Its letters imitate "${look.brand}": "${look.shown}" reads as "${look.reads}".` });
+  else if (look.impersonation) out.reasons.push({ w: 4, t: `Brand "${look.brand}" appears in a subdomain but the registered domain is "${reg}".` });
   else if (look.near) out.reasons.push({ w: 3, t: `Domain stem "${look.stem}" is a near-miss (edit distance ${look.distance}) of brand "${look.brand}".` });
 
   out.severity = sevFromWeight(sumWeight(out.reasons));
@@ -139,17 +213,34 @@ function sevFromWeight(w) { return w >= 7 ? "critical" : w >= 4 ? "high" : w >= 
 
 // Lookalike detection against the brand list.
 export function lookalike(host) {
-  const labels = String(host || "").toLowerCase().split(".");
+  host = String(host || "").toLowerCase();
+  // homograph: judge the name the way it is displayed (аpple.com reads as apple.com)
+  const shown = toUnicodeHost(host), reads = skeleton(shown);
+  if (reads !== host && /^[\x00-\x7f]+$/.test(reads)) {
+    const l = asciiLookalike(reads);
+    if (l.brand) return { ...l, exact: false, near: !l.impersonation, distance: l.distance || 0, stem: registrableDomain(host).split(".")[0], homograph: true, shown, reads };
+  }
+  return asciiLookalike(host);
+}
+
+function asciiLookalike(host) {
+  const labels = host.split(".");
   const reg = registrableDomain(host);
   const stem = reg.split(".")[0] || "";
-  // impersonation: a brand is a label somewhere but NOT the registrable stem
+  // a brand's own domain (outlook.office365.com) is not impersonating anyone
+  if (BRANDS.includes(stem)) return { brand: stem, stem, impersonation: false, near: false, distance: 0, exact: true };
+  // impersonation: a brand is a subdomain label, a hyphen-part of one (digits swapped
+  // back to letters), or brand + account word (microsoftonline, appleid), but the
+  // registered domain is not the brand's
+  const sub = labels.slice(0, -reg.split(".").length);
+  const isBrand = (t, b) => t === b || unleet(t) === b || (t.startsWith(b) && ACCOUNT_WORD.test(t.slice(b.length)));
   for (const b of BRANDS) {
-    if (labels.includes(b) && stem !== b) return { brand: b, stem, impersonation: true, near: false, distance: 0 };
+    if (labels.includes(b) || sub.some((l) => l.split("-").some((t) => isBrand(t, b))))
+      return { brand: b, stem, impersonation: true, near: false, distance: 0 };
   }
   // near-miss typosquat on the stem
   let best = null;
   for (const b of BRANDS) {
-    if (stem === b) return { brand: b, stem, impersonation: false, near: false, distance: 0, exact: true };
     // Near-miss only for brands of 5+ chars: a 1-2 edit distance on a 3-4 char brand
     // (ups, att, amex, hsbc) matches ordinary short domains (us.com, art.com, apex.com)
     // and floods false "lookalike" verdicts. Short brands are still caught by the
@@ -324,6 +415,7 @@ export function triageEmail(raw) {
   if (brandInName && fromReg && fromStem !== brandInName) add(4, `Display name mentions "${brandInName}" but the sending domain is ${fromReg || "unknown"}.`);
   const fromLook = fromReg ? lookalike(fromDomain) : { near: false, impersonation: false };
   if (fromLook.impersonation) add(4, `From domain impersonates brand "${fromLook.brand}" in a subdomain.`);
+  else if (fromLook.homograph) add(4, `From domain imitates brand "${fromLook.brand}": "${fromLook.shown}" reads as "${fromLook.reads}".`);
   else if (fromLook.near) add(3, `From domain is a near-miss of brand "${fromLook.brand}".`);
 
   // body URLs

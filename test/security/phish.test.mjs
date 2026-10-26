@@ -213,6 +213,42 @@ group("phish: defang, refang and report", () => {
     assert.ok(lookalike("att.secure-login.com").impersonation); // short brand still caught as an impersonation label
   });
 
+  test("brand hidden in a hyphenated, digit-swapped or account-word subdomain is an impersonation", () => {
+    const a = analyzeUrl("http://paypa1-secure-login.com.verify-account.ru/signin");
+    assert.equal(a.lookalike.brand, "paypal");
+    assert.ok(a.lookalike.impersonation);
+    assert.ok(a.reasons.some((r) => /reads as if it ends at "paypa1-secure-login\.com"/.test(r.t)));
+    assert.equal(lookalike("login.microsoftonline.com.evil.co").brand, "microsoft");
+    assert.ok(lookalike("appleid.verify-now.top").impersonation);
+    assert.notOk(lookalike("steamboat.example.com").impersonation);   // brand prefix + ordinary word
+    assert.notOk(lookalike("outlook.office365.com").impersonation);   // a brand's own domain
+    assert.notOk(lookalike("login.microsoftonline.com").impersonation);
+  });
+
+  test("punycode is decoded: a mixed-alphabet homograph names the brand, a plain IDN stays low", () => {
+    const a = analyzeUrl("https://xn--pple-43d.com/");
+    assert.equal(a.display, "\u0430pple.com");
+    assert.ok(a.lookalike.homograph);
+    assert.equal(a.lookalike.brand, "apple");
+    assert.equal(a.severity, "critical");
+    assert.notOk(a.reasons.some((r) => /hyphens/.test(r.t)));      // xn-- is not a hyphen trick
+    const b = analyzeUrl("https://xn--bcher-kva.de/");
+    assert.equal(b.display, "b\u00fccher.de");
+    assert.ok(["info", "low"].includes(b.severity));
+    const e = triageEmail(['From: "Apple" <no-reply@xn--pple-43d.com>', "Subject: x", "", "x"].join("\n"));
+    assert.ok(e.findings.some((f) => /imitates brand "apple"/.test(f.t)));
+  });
+
+  test("raw IPs: the destination is the IP, and disguised encodings are called out", () => {
+    assert.equal(analyzeUrl("http://192.168.4.20:8080/login.php").registrable, "192.168.4.20");
+    const a = analyzeUrl("http://0x7f.1/");
+    assert.equal(a.registrable, "127.0.0.1");
+    assert.ok(a.reasons.some((r) => /disguised form \("0x7f\.1"\)/.test(r.t)));
+    assert.ok(analyzeUrl("http://2130706433/").reasons.some((r) => /disguised/.test(r.t)));
+    assert.notOk(analyzeUrl("http://198.51.100.9/").reasons.some((r) => /disguised/.test(r.t)));
+    assert.ok(analyzeUrl("http://[::1]/").reasons.some((r) => /raw IP/.test(r.t)));
+  });
+
   test("display-name spoof flags a sender whose stem only contains the brand as a substring", () => {
     const r = triageEmail(["From: \"AMEX\" <security@myamexclone.com>", "Subject: verify", "", "x"].join("\n"));
     assert.ok(r.findings.some((f) => /Display name mentions "amex"/.test(f.t)));
