@@ -1954,6 +1954,19 @@ export function renderDeck(host, opts) {
 
   // ---------- drawer ----------
   const drawer = $("#dkDrawer"), drawerBody = $("#dkDrawerBody");
+  // Keyboard users land on the drawer's Close when it opens and go back where they were when it shuts.
+  let drawerOpener = null;
+  function showDrawer(){
+    if (!drawer.classList.contains("on")) drawerOpener = document.activeElement;
+    drawer.classList.add("on");
+    setTimeout(() => { if (drawer.classList.contains("on") && !drawer.contains(document.activeElement)) $("#dkDrawerX").focus({ preventScroll: true }); }, 0);
+  }
+  function closeDrawer(){
+    if (!drawer.classList.contains("on")) return;
+    const back = drawer.contains(document.activeElement) ? drawerOpener : null;
+    drawer.classList.remove("on"); drawerOpener = null;
+    if (back && back.isConnected && back.offsetParent) back.focus({ preventScroll: true });
+  }
   function openDrawer(it, mode){
     if (!it) return;
     const rec = conns[it.id] || {};
@@ -2033,7 +2046,7 @@ export function renderDeck(host, opts) {
         ${it.kind === "ai" && connected ? `<button class="dk-b" data-act="use">Use in Darknode AI</button>` : ""}
       </div>
       <p class="dk-note">${note}</p>`;
-    drawer.classList.add("on");
+    showDrawer();
     drawerBody.querySelector('[data-act="open"]').onclick = () => window.open("https://" + it.domain, "_blank", "noopener");
     const oauthBtn = drawerBody.querySelector('[data-act="oauth"]');
     if (oauthBtn) oauthBtn.onclick = () => {
@@ -2116,8 +2129,8 @@ export function renderDeck(host, opts) {
       if (customIn) { modelsEl.querySelector('[data-act="mcustomset"]').onclick = applyCustom; customIn.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); applyCustom(); } }; }
     }
   }
-  $("#dkDrawerX").onclick = () => drawer.classList.remove("on");
-  $("#dkDrawerX").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); drawer.classList.remove("on"); } };
+  $("#dkDrawerX").onclick = closeDrawer;
+  $("#dkDrawerX").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); closeDrawer(); } };
 
   // ---------- Entity / finding drill-down (reuses the drawer shell) ----------
   // Clicking a finding or an entity opens this inspector instead of jumping to the
@@ -2164,7 +2177,7 @@ export function renderDeck(host, opts) {
           <button class="dk-b pri" data-act="graph">Open in graph</button>
           <button class="dk-b" data-act="close">Close</button>
         </div>`;
-      drawer.classList.add("on");
+      showDrawer();
       drawerBody.querySelector("#dkDrwStatus").onchange = (ev) => {
         if (!m.updateEntity) return;
         m.updateEntity(id, { status: ev.target.value });
@@ -2174,8 +2187,8 @@ export function renderDeck(host, opts) {
         else if (curScene === "correlations") withGraph(repaintCorrelations);
         else if (curScene === "invest") withGraph(paintInvTable);
       };
-      drawerBody.querySelector('[data-act="graph"]').onclick = () => { drawer.classList.remove("on"); openTool("secgraph", secLabel["secgraph"] || "Security Graph"); };
-      drawerBody.querySelector('[data-act="close"]').onclick = () => drawer.classList.remove("on");
+      drawerBody.querySelector('[data-act="graph"]').onclick = () => { closeDrawer(); openTool("secgraph", secLabel["secgraph"] || "Security Graph"); };
+      drawerBody.querySelector('[data-act="close"]').onclick = closeDrawer;
       drawerBody.querySelectorAll(".dk-relr[data-eid]").forEach((b) => b.onclick = () => openEntityDrawer(b.dataset.eid));
     });
   }
@@ -4483,7 +4496,7 @@ export function renderDeck(host, opts) {
       if (e.defaultPrevented || [...document.querySelectorAll('[aria-modal="true"]')].some((m) => m.offsetParent && m !== spot && m !== keysEl)) return;
       if (popNew.classList.contains("on") || popBell.classList.contains("on") || popAcct.classList.contains("on")) { closeAllMenus(); return; }
       if (!sceneWork.hidden) { closeTool(); return; }
-      if (drawer.classList.contains("on")) { drawer.classList.remove("on"); return; }
+      if (drawer.classList.contains("on")) { closeDrawer(); return; }
       if (curScene !== "overview") { go("overview"); return; }
       if (!primary) exitDeck(); return;
     }
