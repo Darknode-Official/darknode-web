@@ -4480,7 +4480,7 @@ export function renderDeck(host, opts) {
   const SCENE_TITLE = { overview: "Security Overview", surface: "Attack Surface", threat: "Threats & Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "AI Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings", inventory: "Asset Inventory", correlations: "Correlations", monitors: "Monitors", apikeys: "API & Ingest", audit: "Audit Log" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
-    const nav = Object.entries(GOTO).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");
+    const nav = Object.entries(GOTO).filter(([, sc]) => !isLocked("scene:" + sc)).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");
     keysEl.innerHTML = `<div class="dk-keysbox">
       <h3>Keyboard shortcuts</h3><div class="sub">The deck is fully keyboard-drivable. Press Esc to close.</div>
       <div class="dk-keysgrp">Global</div>
@@ -4490,7 +4490,7 @@ export function renderDeck(host, opts) {
       <div class="dk-keyrow"><span>Close / back / exit</span><span class="kb"><kbd>Esc</kbd></span></div>
       <div class="dk-keysgrp">Jump to workspace</div>${nav}</div>`;
   }
-  const toggleKeys = (show) => { if (show && !keysEl.innerHTML) buildKeysOverlay(); keysEl.classList.toggle("on", show); };
+  const toggleKeys = (show) => { if (show) buildKeysOverlay(); /* rebuilt each time: the list follows the current plan */ keysEl.classList.toggle("on", show); };
   keysEl.addEventListener("click", (e) => { if (e.target === keysEl) toggleKeys(false); });
   const inTyping = (e) => { const t = e.target, n = t && t.tagName; return n === "INPUT" || n === "TEXTAREA" || n === "SELECT" || (t && t.isContentEditable); };
   let gPending = 0, gTimer = 0;
@@ -4519,7 +4519,7 @@ export function renderDeck(host, opts) {
     if (gPending) {
       gPending = 0; clearTimeout(gTimer);
       const sc = GOTO[e.key.toLowerCase()];
-      if (sc) { e.preventDefault(); if (!sceneWork.hidden) closeTool(); go(sc); }
+      if (sc && !isLocked("scene:" + sc)) { e.preventDefault(); if (!sceneWork.hidden) closeTool(); go(sc); }
       return;
     }
     if (e.key.toLowerCase() === "g") { gPending = 1; clearTimeout(gTimer); gTimer = setTimeout(() => gPending = 0, 900); }
