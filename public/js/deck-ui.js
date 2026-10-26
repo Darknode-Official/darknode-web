@@ -591,7 +591,7 @@ const CSS = `
 .dk-stat{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;margin-bottom:18px}
 .dk-stat.off{background:rgba(23,33,56,.07);color:#5a6680}.dk-stat.on{background:rgba(21,196,126,.16);color:#17a86a}
 .dk-stat.stored{background:rgba(217,154,16,.15);color:#a97a12}
-.dk-intlive{display:inline-block;margin-left:7px;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#17a86a;background:rgba(21,196,126,.14);border-radius:5px;padding:1px 6px;vertical-align:middle}
+.dk-intlive{display:inline-block;margin-left:7px;font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#11804f;background:rgba(21,196,126,.14);border-radius:5px;padding:1px 6px;vertical-align:middle}
 .dk-stat .d{width:7px;height:7px;border-radius:50%;background:currentColor}
 .dk-drawer .act{display:flex;flex-direction:column;gap:10px}
 .dk-b{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:12px;border:1px solid rgba(23,33,56,.14);background:rgba(23,33,56,.06);color:#1a2233;font:inherit;font-weight:600;font-size:13.5px;cursor:pointer}
@@ -805,7 +805,7 @@ const CSS = `
 @media(max-width:1100px){.dk-sectgrid{grid-template-columns:1fr}}
 .dk-sect .dk-qa{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 .dk-srcs{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
-.dk-src{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:10px 12px;border-radius:10px;border:1px dashed rgba(23,33,56,.18);background:rgba(23,33,56,.02);color:#8a93a6;min-height:48px}
+.dk-src{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:10px 12px;border-radius:10px;border:1px dashed rgba(23,33,56,.18);background:rgba(23,33,56,.02);color:#5f6a7f;min-height:48px}
 .dk-src .nm{flex:1 1 100%;min-width:0;font-weight:600;font-size:13px;overflow-wrap:break-word}
 .dk-src .st{font-size:11.5px;flex:1}
 .dk-srcpub{font-size:12.5px;color:#5a6680;line-height:1.55;margin:12px 0 0;overflow-wrap:break-word}.dk-srcpub b{color:#38435c}
@@ -1366,7 +1366,7 @@ textarea.dk-kitio{min-height:120px}
 .dk-intmeta{font-size:12.5px;color:#687388}
 .dk-intgrp{margin-bottom:24px}
 .dk-intgrp h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#6a7488;font-weight:700;margin:0 0 11px;display:flex;align-items:center;gap:8px}
-.dk-intgrp h2 span{color:#9aa3b5;font-weight:600}
+.dk-intgrp h2 span{color:#687388;font-weight:600}
 .dk-intcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 .dk-intcard{appearance:none;font:inherit;display:flex;align-items:center;gap:13px;text-align:left;cursor:pointer;background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:13px;padding:13px 15px;transition:border-color .15s,transform .15s}
 .dk-intcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
@@ -1379,7 +1379,7 @@ textarea.dk-kitio{min-height:120px}
 .dk-intcard .dk-stat .d{width:7px;height:7px;border-radius:50%}
 .dk-intcard .dk-stat.on{color:#0d7a44;background:rgba(18,168,95,.12)}.dk-intcard .dk-stat.on .d{background:#12a85f}
 .dk-intcard .dk-stat.ref{color:#8a5a00;background:rgba(245,146,11,.12)}.dk-intcard .dk-stat.ref .d{background:#f5920b}
-.dk-intcard .dk-stat.off{color:#687388;background:rgba(23,33,56,.06)}.dk-intcard .dk-stat.off .d{background:#9aa3b5}
+.dk-intcard .dk-stat.off{color:#566176;background:rgba(23,33,56,.06)}.dk-intcard .dk-stat.off .d{background:#9aa3b5}
 /* Isolation from legacy pro-theme.css hacks. Those rules match raw inline text such as
    [style*="background:#0"] / [style*="color:#e"] and class suffixes like [class$="-tabs"],
    recolouring/re-spacing Deck elements. So data colours are passed as --bg / --fg custom
@@ -1417,7 +1417,7 @@ textarea.dk-kitio{min-height:120px}
    numbered chapters (mono numerals, serif titles), items hanging off a hairline guide,
    and the current page marked on that guide rather than with a filled pill. */
 .dk[data-ui=deck]:not(.nav-rail):not(.nav-phone){--dk-sw:268px}
-.dk[data-ui=deck] .dk-sidebar{--ix-bg:#1a1917;--ix-tx:#d9d5cb;--ix-mut:#8c887e;--ix-dim:#5f5b53;--ix-line:rgba(255,255,255,.1);--ix-mark:#9db8ff;
+.dk[data-ui=deck] .dk-sidebar{--ix-bg:#1a1917;--ix-tx:#d9d5cb;--ix-mut:#8c887e;--ix-dim:#87827a;--ix-line:rgba(255,255,255,.1);--ix-mark:#9db8ff;
   background:var(--ix-bg);border-right:0;color:var(--ix-tx)}
 .dk[data-ui=deck] .dk-sbnav{padding:14px 14px 18px;scrollbar-color:rgba(255,255,255,.14) transparent}
 .dk[data-ui=deck] .dk-nvg{margin:0 0 6px}
