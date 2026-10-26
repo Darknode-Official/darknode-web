@@ -468,16 +468,27 @@ async function fetchKev(){
   })().catch((e) => { _kevPromise = null; throw e; });
   return _kevPromise;
 }
+// EPSS and ransomware.live are rate-limited through the worker: answers are kept 10 min
+// (like NVD/KEV above) and a failure is held 1 min, so revisiting a scene never re-hits them.
+function feedMemo(map, key, load, empty){
+  const h = map.get(key);
+  if (h && Date.now() - h.at < (h.ok ? 600000 : 60000)) return h.p;
+  const e = { at: Date.now(), ok: true, p: null };
+  e.p = load().catch(() => { e.ok = false; return empty; });
+  if (map.size >= 40) map.delete(map.keys().next().value);
+  map.set(key, e); return e.p;
+}
+const _epssMemo = new Map(), _ransomMemo = new Map();
 // EPSS exploit-probability (0..1) keyed by CVE id, for up to ~100 ids. Never throws
 // into the caller's critical path — returns {} if the feed is unavailable.
 async function fetchEpss(ids){
   ids = (ids || []).filter(Boolean).slice(0, 100);
   if (!ids.length) return {};
-  try {
+  return feedMemo(_epssMemo, ids.join(","), async () => {
     const er = await dnFetchJSON(EPSS_URL + encodeURIComponent(ids.join(",")), { timeout: 25000 });
     const out = {}; ((er && er.data) || []).forEach((d) => { if (d && d.cve) out[d.cve] = parseFloat(d.epss) || 0; });
     return out;
-  } catch (_) { return {}; }
+  }, {});
 }
 // Full detail for one CVE (NVD single-id query), parsed for in-app display so a
 // CVE opens inside Darknode instead of redirecting to nvd.nist.gov. Cached per id.
@@ -505,11 +516,11 @@ async function fetchCveDetail(id){
 
 // Recent ransomware-leak victims (honest live feed). Returns [] on failure.
 async function fetchRansom(limit){
-  try {
+  const arr = await feedMemo(_ransomMemo, "recent", async () => {
     const d = await dnFetchJSON(RANSOM_URL, { timeout: 25000 });
-    const arr = Array.isArray(d) ? d : (d && d.data) || [];
-    return arr.slice(0, limit || 12);
-  } catch (_) { return []; }
+    return Array.isArray(d) ? d : (d && d.data) || [];
+  }, []);
+  return arr.slice(0, limit || 12);
 }
 
 // Read-only views of the real usage counters the console home writes (auth.js).
