@@ -2384,6 +2384,17 @@ export function renderDeck(host, opts) {
     { type: "action", label: "New investigation", group: "Action", icon: IC.folder, run: () => openTool("investigation", secLabel["investigation"] || "Investigation"), k: "tool:investigation" },
     { type: "action", label: "Open security graph", group: "Action", icon: IC.grid, run: () => openTool("secgraph", secLabel["secgraph"] || "Security Graph"), k: "tool:secgraph" },
     ...(primary ? [] : [{ type: "action", label: "Open full console", group: "Action", icon: IC.ext, run: () => exitDeck() }]),
+    // the Personal / Organization space tools live in tabs, not the tool index
+    { type: "action", label: "Check my domain", group: "Personal", icon: IC.radar, run: () => openSpaceTool("personal", "domain"), k: "scene:personal", kw: "website email spf dkim dmarc https headers grade dns" },
+    { type: "action", label: "Check a link or email", group: "Personal", icon: IC.link, run: () => openSpaceTool("personal", "phish"), k: "scene:personal", kw: "phishing url suspicious scam safe lookalike spoof" },
+    { type: "action", label: "Find secrets in code", group: "Personal", icon: IC.key, run: () => openSpaceTool("personal", "secrets"), k: "scene:personal", kw: "keys api passwords credentials tokens leaked repository git" },
+    { type: "action", label: "Safe to share?", group: "Personal", icon: IC.eye, run: () => openSpaceTool("personal", "data"), k: "scene:personal", kw: "redact personal data pii credit card passwords leaked dlp" },
+    { type: "action", label: "Certificate expiry", group: "Personal", icon: IC.cert, run: () => openSpaceTool("personal", "certs"), k: "scene:personal", kw: "ssl tls https expiring certificates subdomains ct logs" },
+    { type: "action", label: "Domain portfolio", group: "Organization", icon: IC.radar, run: () => openSpaceTool("enterprise", "portfolio"), k: "scene:enterprise", kw: "domains website email spf dkim dmarc grade all" },
+    { type: "action", label: "Certificate fleet", group: "Organization", icon: IC.cert, run: () => openSpaceTool("enterprise", "certs"), k: "scene:enterprise", kw: "ssl tls https expiring certificates subdomains hostnames ct logs" },
+    { type: "action", label: "Phishing triage", group: "Organization", icon: IC.link, run: () => openSpaceTool("enterprise", "phish"), k: "scene:enterprise", kw: "email url link reported suspicious scam lookalike iocs" },
+    { type: "action", label: "Repository sweep", group: "Organization", icon: IC.key, run: () => openSpaceTool("enterprise", "secrets"), k: "scene:enterprise", kw: "secrets keys api passwords credentials tokens leaked code git" },
+    { type: "action", label: "Data-loss review", group: "Organization", icon: IC.eye, run: () => openSpaceTool("enterprise", "data"), k: "scene:enterprise", kw: "redact personal data pii credit card leaked dlp documents" },
     { type: "action", label: "Go to Security Overview", group: "Navigate", icon: IC.home, run: () => go("overview"), k: "scene:overview" },
     { type: "action", label: "Go to Attack Surface", group: "Navigate", icon: IC.radar, run: () => go("surface"), k: "scene:surface" },
     { type: "action", label: "Go to Threats & Vulnerabilities", group: "Navigate", icon: IC.alert, run: () => go("threat"), k: "scene:threat" },
@@ -2411,10 +2422,24 @@ export function renderDeck(host, opts) {
     if (m.type === "action") return `<span class="ic act">${m.icon || IC.bolt}</span>`;
     return `<span class="ic" style="--a:${hexOf(m.color)}">${esc(monogram(m.label))}</span>`;
   }
+  const SPOT_STOP = new Set(["a", "an", "the", "is", "are", "this", "that", "my", "our", "i", "to", "for", "of", "it", "in", "on", "do", "does", "how", "what", "can"]);
   function runSpot(q){
     q = q.trim().toLowerCase();
     const pool = ACTIONS.concat(index);
-    const base = (q ? pool.filter((t) => t.label.toLowerCase().includes(q) || (t.group||"").toLowerCase().includes(q)) : pool);
+    // Every query word must start a word of the label, group or keywords ("leaked password",
+    // "expiring cert"); a plain substring of the label still counts. Label hits rank first.
+    const qw = q.split(/[^a-z0-9]+/).filter((w) => w && !SPOT_STOP.has(w));
+    const words = (s) => String(s || "").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+    const score = (t) => {
+      const l = t.label.toLowerCase();
+      if (l.startsWith(q)) return 4;
+      if (l.includes(q)) return 3;
+      if (!qw.length) return 0;
+      const lw = words(l), all = lw.concat(words(t.group), words(t.kw));
+      if (!qw.every((w) => all.some((x) => x.startsWith(w)))) return 0;
+      return qw.every((w) => lw.some((x) => x.startsWith(w))) ? 2 : 1;
+    };
+    const base = q ? pool.map((t, i) => [t, score(t), i]).filter((x) => x[1]).sort((a, b) => b[1] - a[1] || a[2] - b[2]).map((x) => x[0]) : pool;
     // Graph entities and findings are only searched when there is a query, and ranked after
     // commands and tools so the palette stays a command palette by default.
     const graphHits = q ? graphIndex.filter((g) => g.label.toLowerCase().includes(q)).slice(0, 40) : [];
