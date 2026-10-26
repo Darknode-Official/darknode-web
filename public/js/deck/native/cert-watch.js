@@ -2,7 +2,7 @@
 // Native Certificate Watch: the newest publicly logged certificate for each domain
 // (certificate transparency via ct-fetch), banded by days to expiry with tls-engine.
 
-import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
+import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261025g";
 import { buildEntry, summarizeFleet, parseDomains, BANDS } from "/js/dataprotect/tls-engine.js";
 import { tlsFleetFindings } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
@@ -32,7 +32,7 @@ export function mount(el, { space, mode }) {
       <div class="ns-kpis">${kpi(s.counts.expired, "Expired", BANDS.expired.c)}${kpi(s.counts.urgent + s.counts.soon, "Expire within 30 days", BANDS.urgent.c)}${kpi(s.counts.watch, "Within 60 days", BANDS.watch.c)}${kpi(s.counts.ok, "Healthy", BANDS.ok.c)}</div>
       <div class="ns-card"><h2>Expiry, soonest first<span class="r" data-act></span></h2><div class="ns-scroll"><table class="ns-tbl">
         <thead><tr><th>Status</th><th>Domain</th><th>Days left</th><th>Expires</th><th>Issuer</th></tr></thead><tbody>
-        ${s.list.map((e) => `<tr><td><span class="ns-pill" style="background:${e.band.c}">${esc(e.band.label)}</span></td><td><b>${esc(e.domain)}</b></td><td style="font-weight:800;color:${e.band.c}">${e.daysLeft == null ? "-" : e.daysLeft}</td><td>${esc(e.notAfter ? String(e.notAfter).slice(0, 10) : "-")}</td><td>${esc(e.issuer || (e.ok ? "" : "No certificate found in CT logs"))}</td></tr>`).join("")}
+        ${s.list.map((e) => `<tr><td><span class="ns-pill" style="background:${e.band.c}">${esc(e.band.label)}</span></td><td><b>${esc(e.domain)}</b></td><td style="font-weight:800;color:${e.band.c}">${e.daysLeft == null ? "-" : e.daysLeft}</td><td>${esc(e.notAfter ? String(e.notAfter).slice(0, 10) : "-")}</td><td>${esc(e.issuer || (e.ok ? "" : e.unreachable ? "Lookup failed: the certificate logs did not answer. Check again in a minute." : "No certificate found in CT logs"))}</td></tr>`).join("")}
         ${pending ? `<tr><td colspan="5" style="color:var(--ns-mut)"><span class="ns-spin"></span>${pending} still checking...</td></tr>` : ""}
         </tbody></table></div></div>`;
     if (!pending && s.total) attachSinkButton(out.querySelector("[data-act]"), () => ({ findings: tlsFleetFindings(s.list) }), "tlsfleet", { dataset: fleet ? "certificate fleet" : "certificate watch" });
@@ -42,17 +42,20 @@ export function mount(el, { space, mode }) {
   go.onclick = async () => {
     const list = parseDomains(ta.value).slice(0, fleet ? 200 : 20);
     if (!list.length) { toast("Add at least one domain"); return; }
+    // say which lines were not domain names instead of dropping them silently
+    const bad = [...new Set(ta.value.split(/[\n,;]+/).map((t) => t.trim()).filter((t) => t && !parseDomains(t).length))];
+    const skipped = bad.length ? "Skipped " + bad.length + " that " + (bad.length === 1 ? "is" : "are") + " not a domain name: " + bad.slice(0, 5).join(", ") + (bad.length > 5 ? ", ..." : "") + ". " : "";
     writeList(space, "certs", list);
     go.disabled = true; csv.disabled = true; entries = new Array(list.length);
     let done = 0; render(list.length);
-    await pool(list, 4, async (d) => buildEntry(d, await fetchCertRows(d)), (e, i) => {
-      entries[i] = e && e.domain ? e : buildEntry(list[i], []); done++; st.textContent = done + " / " + list.length + " checked"; render(list.length - done);
+    await pool(list, 4, async (d) => { const rows = await fetchCertRows(d); return Object.assign(buildEntry(d, rows), { unreachable: !!rows.unreachable }); }, (e, i) => {
+      entries[i] = e && e.domain ? e : Object.assign(buildEntry(list[i], []), { unreachable: true }); done++; st.textContent = skipped + done + " / " + list.length + " checked"; render(list.length - done);
     });
     const s = render(0);
     go.disabled = false; csv.disabled = false;
     recordRun(space, { tool: "certs", target: list.length + " domain" + (list.length === 1 ? "" : "s"),
-      summary: s.alerting ? s.alerting + " expiring within 30 days or expired" : "All certificates healthy" + (s.soonest != null ? ", soonest in " + s.soonest + " days" : ""),
-      level: s.counts.expired || s.counts.urgent ? "bad" : s.alerting ? "warn" : "good", counts: s.counts });
+      summary: s.alerting ? s.alerting + " expiring within 30 days or expired" : s.counts.unknown ? s.counts.unknown + " could not be checked" : "All certificates healthy" + (s.soonest != null ? ", soonest in " + s.soonest + " days" : ""),
+      level: s.counts.expired || s.counts.urgent ? "bad" : s.alerting || s.counts.unknown ? "warn" : "good", counts: s.counts });
   };
   csv.onclick = () => {
     const q = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';

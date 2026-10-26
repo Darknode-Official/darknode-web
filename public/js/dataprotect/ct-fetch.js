@@ -18,13 +18,17 @@ function fromCertspotter(arr) {
 }
 
 // Returns an array of CT rows (possibly empty). Never throws.
+// An empty result carries .unreachable when neither log answered, so a caller can
+// tell "nothing logged" from "could not ask".
 export async function fetchCertRows(domain) {
   const d = encodeURIComponent(domain);
-  // 1) crt.sh (richest, but flaky)
+  let answered = false;
+  // 1) crt.sh (richest, but flaky and often slower than 10 s: past 15 s the proxy waits upstream longer)
   try {
-    const r = await dnFetch("https://crt.sh/?output=json&exclude=expired&q=" + d, { raw: true, timeout: 15000 });
+    const r = await dnFetch("https://crt.sh/?output=json&exclude=expired&q=" + d, { raw: true, timeout: 30000 });
     if (r.status && r.status < 500 && r.body && r.body.trim().startsWith("[")) {
       const a = JSON.parse(r.body);
+      answered = true;
       if (Array.isArray(a) && a.length) return a;
     }
   } catch (_) {}
@@ -35,10 +39,11 @@ export async function fetchCertRows(domain) {
     const r = await dnFetch(url, { raw: true, timeout: 15000 });
     if (r.body && r.body.trim().startsWith("[")) {
       const rows = fromCertspotter(JSON.parse(r.body));
+      answered = true;
       if (rows.length) return rows;
     }
   } catch (_) {}
-  return [];
+  return answered ? [] : Object.assign([], { unreachable: true });
 }
 
 // Subdomain discovery: every name under `domain` in CT. crt.sh (%.domain, full
