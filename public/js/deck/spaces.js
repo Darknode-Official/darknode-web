@@ -92,7 +92,9 @@ function homeHTML(id, S) {
       + kpi(cert ? (cert.counts && (cert.counts.expired + cert.counts.urgent + cert.counts.soon)) || 0 : "-", cert ? "Certificates expiring within 30 days" : "Fleet not loaded", cert ? LVL_C[cert.level] : "#8a93a6")
       + kpi(phish.length + data.length + (secrets ? 1 : 0), "Triage and reviews completed", "#2552c6");
   }
-  const attention = runs.filter((r) => r.level === "bad").slice(0, 8);
+  // in the Organization, only domains still in the portfolio, as the KPIs count them
+  const inList = id === "personal" ? null : new Set(readList(id, "domains"));
+  const attention = runs.filter((r) => r.level === "bad" && !(inList && inList.size && r.tool === "domain" && !inList.has(r.target))).slice(0, 8);
   const steps = S.steps.map(([tab, label]) => { const done = by(RUN_TOOL[tab]).length > 0; return `<li class="${done ? "done" : ""}"><span>${esc(label)}</span><button class="ns-btn ${done ? "ghost " : ""}sm" data-go="${tab}">${done ? "Run again" : "Start"}</button></li>`; }).join("");
   return `
     <div class="ns-kpis">${kpis}</div>
