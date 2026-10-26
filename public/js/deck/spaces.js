@@ -4,7 +4,7 @@
 // (no console pages in iframes). Home screens summarise only runs made in that
 // space, kept in this browser by ui.js recordRun().
 
-import { esc, ago, injectStyle, readRuns, clearRuns } from "./native/ui.js";
+import { esc, ago, injectStyle, readRuns, clearRuns, readList } from "./native/ui.js";
 
 const V = "?v=20261025g";
 const TOOLS = {
@@ -80,7 +80,10 @@ function homeHTML(id, S) {
       + kpi(sec ? (sec.counts && sec.counts.secrets) || 0 : "-", sec ? "Secrets in last code scan" : "Code not scanned yet", sec ? LVL_C[sec.level] : "#8a93a6")
       + kpi(phish.length, "Links and emails checked" + (risky ? ", " + risky + " flagged" : ""), risky ? "#b00020" : "#2552c6");
   } else {
-    const doms = by("domain"), graded = doms.filter((r) => r.score != null);
+    // the latest grade of each domain in the saved portfolio: re-runs, and domains since
+    // removed from the list (or graded under an old spelling like www.), must not skew the KPIs
+    const list = new Set(readList(id, "domains")), seen = new Set();
+    const doms = by("domain").filter((r) => (!list.size || list.has(r.target)) && !seen.has(r.target) && seen.add(r.target)), graded = doms.filter((r) => r.score != null);
     const avg = graded.length ? Math.round(graded.reduce((a, r) => a + r.score, 0) / graded.length) : null;
     const weak = doms.filter((r) => r.level === "bad").length;
     const cert = by("certs")[0], phish = by("phish"), secrets = by("secrets")[0], data = by("data");
