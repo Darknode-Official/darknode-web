@@ -221,6 +221,9 @@ async function handleFetch(request) {
   // genuinely needs a large JSON feed (e.g. the full CISA KEV catalog, ~1.8 MB)
   // may request more, clamped to 4 MB.
   let maxBytes = parseInt(u0.searchParams.get("max") || "", 10);
+  // Optional opt-in upstream timeout (seconds) for slow keyless sources (crt.sh often
+  // needs 15-20 s); default stays 10 s, clamped to 28 s.
+  let waitS = parseInt(u0.searchParams.get("t") || "", 10);
   if (request.method === "POST") {
     // Cap the request body BEFORE parsing — this control body is tiny ({url,...}),
     // so 64 KB is generous and stops an unbounded JSON parse (every other route
@@ -235,10 +238,12 @@ async function handleFetch(request) {
       if (b && b.method) method = String(b.method).toUpperCase();
       if (b && b.ua) ua = String(b.ua);
       if (b && b.max) maxBytes = parseInt(b.max, 10);
+      if (b && b.t) waitS = parseInt(b.t, 10);
     } catch (_) {}
   }
   const cap = Math.min(Math.max(Number.isFinite(maxBytes) ? maxBytes : 200000, 1), 4000000);
   const readCap = Math.max(cap, 1000000);
+  const waitMs = Math.min(Math.max(Number.isFinite(waitS) ? waitS : 10, 1), 28) * 1000;
   if (!target) return json({ error: "Missing url parameter" }, 400);
   if (!["GET", "HEAD", "POST"].includes(method)) method = "GET";
   ua = ua ? ua.slice(0, 256).replace(/[\r\n]/g, "") : "";
@@ -251,7 +256,7 @@ async function handleFetch(request) {
     let u; try { u = new URL(current); } catch (_) { return json({ error: "invalid URL" }, 400); }
     if (!hostAllowed(u)) return json({ error: "blocked (non-public or reserved host)" }, 403);
     const ctrl = new AbortController();
-    const to = setTimeout(() => ctrl.abort(), 10000);
+    const to = setTimeout(() => ctrl.abort(), waitMs);
     let res;
     try {
       res = await fetch(u.href, { method, redirect: "manual", signal: ctrl.signal, headers: reqHeaders });

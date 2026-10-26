@@ -5,7 +5,7 @@
 // (newestCert in posture-engine.js) consumes either source unchanged.
 // All fetches go through the Darknode proxy.
 
-import { dnFetch } from "/js/net.js";
+import { dnFetch, dnFetchJSON } from "/js/net.js";
 
 function fromCertspotter(arr) {
   if (!Array.isArray(arr)) return [];
@@ -41,4 +41,29 @@ export async function fetchCertRows(domain) {
   return [];
 }
 
-export default { fetchCertRows };
+// Subdomain discovery: every name under `domain` in CT. crt.sh (%.domain, full
+// history) first; Cert Spotter when crt.sh doesn't answer (unexpired certificates,
+// first page only). Unlike fetchCertRows this THROWS when both fail, so a caller can
+// tell "unreachable" from "no subdomains"; the array carries .source.
+const ctName = (n, d, set) => {
+  n = String(n || "").trim().toLowerCase().replace(/^\*\./, "");
+  if ((n === d || n.endsWith("." + d)) && /^[a-z0-9.\-_]+$/.test(n)) set.add(n); // "." + d: notexample.com is not under example.com
+};
+const errMsg = (e) => String((e && e.message) || e || "error").replace(/\.$/, "");
+export async function fetchSubdomainNames(domain) {
+  const d = String(domain || "").trim().toLowerCase(), set = new Set();
+  try {
+    // crt.sh can return a multi-megabyte JSON for popular domains; ask for the proxy's large-body cap
+    const rows = await dnFetchJSON("https://crt.sh/?q=%25." + encodeURIComponent(d) + "&output=json", { timeout: 30000, max: 4000000 });
+    (Array.isArray(rows) ? rows : []).forEach((r) => String(r.name_value || "").split(/\n/).forEach((n) => ctName(n, d, set)));
+    return Object.assign([...set].sort(), { source: "crt.sh" });
+  } catch (e1) {
+    let rows;
+    try { rows = await dnFetchJSON("https://api.certspotter.com/v1/issuances?domain=" + encodeURIComponent(d) + "&include_subdomains=true&expand=dns_names", { timeout: 20000 }); }
+    catch (e2) { throw new Error("Certificate transparency is unreachable right now (crt.sh: " + errMsg(e1) + "; Cert Spotter: " + errMsg(e2) + "). Try again in a minute."); }
+    (Array.isArray(rows) ? rows : []).forEach((r) => (r.dns_names || []).forEach((n) => ctName(n, d, set)));
+    return Object.assign([...set].sort(), { source: "certspotter" });
+  }
+}
+
+export default { fetchCertRows, fetchSubdomainNames };
