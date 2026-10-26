@@ -22,8 +22,11 @@ export function mount(el, { space, mode }) {
     <div id="nsDsOut"></div>`;
   const ta = el.querySelector("#nsDsIn"), out = el.querySelector("#nsDsOut"), fi = el.querySelector("#nsDsFiles");
 
-  const show = (text, label) => {
+  const show = (text, label, files) => {
     const res = scan(text);
+    // several files: which one holds what is the first thing a reviewer needs
+    const RANK = { critical: 4, high: 3, elevated: 2, low: 1, clean: 0 };
+    const per = files && files.length > 1 ? files.map((f) => ({ path: f.path, r: scan(f.text) })).sort((a, b) => RANK[b.r.grade] - RANK[a.r.grade] || b.r.counts.total - a.r.counts.total) : null;
     const [vlabel, vc, lvl] = GRADE[res.grade] || GRADE.clean;
     out.innerHTML = `
       <div class="ns-card" style="border-left:6px solid ${vc}">
@@ -34,6 +37,9 @@ export function mount(el, { space, mode }) {
           ${res.byType.map((t) => { const ex = res.findings.find((f) => f.id === t.id); return `<tr><td>${sevPill(t.severity)}</td><td><b>${esc(t.label)}</b></td><td>${t.count}</td><td class="mono">${esc(ex ? ex.masked : "")}</td></tr>`; }).join("")}
         </tbody></table></div>` : ""}
         <div class="ns-row" data-act></div></div>
+      ${per ? `<div class="ns-card"><h2>By file<span class="r">${per.filter((x) => x.r.counts.total).length} of ${per.length} with findings</span></h2><div class="ns-scroll"><table class="ns-tbl"><thead><tr><th>Result</th><th>File</th><th>Credentials</th><th>Personal data</th><th>Found</th></tr></thead><tbody>
+        ${per.map(({ path, r }) => { const [gl, gc] = GRADE[r.grade] || GRADE.clean; return `<tr><td><span class="ns-pill" style="background:${gc}">${esc(gl)}</span></td><td class="mono">${esc(path)}</td><td>${r.counts.secrets}</td><td>${r.counts.pii}</td><td>${esc(r.byType.map((t) => t.label + (t.count > 1 ? " x" + t.count : "")).join(", ") || "-")}</td></tr>`; }).join("")}
+      </tbody></table></div></div>` : ""}
       ${res.findings.length ? `<div class="ns-card"><h2>Redacted copy<span class="r"><select class="ns-in" id="nsDsSty" style="min-width:0;padding:5px 8px;font-size:12.5px"><option value="label">Labels</option><option value="mask">Partial mask</option><option value="block">Blocks</option></select></span></h2>
         <textarea class="ns-ta" id="nsDsRed" readonly style="min-height:160px"></textarea>
         <div class="ns-row"><button class="ns-btn" id="nsDsCopy">Copy redacted text</button></div></div>` : ""}`;
@@ -52,10 +58,12 @@ export function mount(el, { space, mode }) {
   el.querySelector("#nsDsGo").onclick = () => { const t = ta.value; if (!t.trim()) { toast("Paste some text first"); return; } show(t, "pasted text"); };
   el.querySelector("#nsDsF").onclick = () => fi.click();
   fi.onchange = async () => {
-    const { files } = await readFiles(fi.files, { maxFiles: 200 });
+    const { files, skipped } = await readFiles(fi.files, { maxFiles: 200 });
+    fi.value = ""; // choosing the same files again re-runs the check
     if (!files.length) { toast("No readable text files"); return; }
+    if (skipped.length) toast("Skipped " + skipped.length + " file" + (skipped.length === 1 ? "" : "s") + " (binary, too large, or dependency folders)");
     // File markers let dp-sink attribute each hit back to its file.
     const text = files.map((f) => "\n/* ===== " + f.path + " ===== */\n" + f.text).join("");
-    show(text, files.length === 1 ? files[0].path : files.length + " files");
+    show(text, files.length === 1 ? files[0].path : files.length + " files", files);
   };
 }
