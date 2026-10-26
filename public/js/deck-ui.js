@@ -1184,6 +1184,7 @@ textarea.dk-kitio{min-height:120px}
 .dk-kitout{min-height:120px;white-space:pre-wrap;word-break:break-word;overflow:auto;margin:0}
 .dk-kitout.err{color:#c0282a;border-color:rgba(240,72,74,.4);background:rgba(240,72,74,.08)}
 /* keyboard-shortcuts overlay */
+.dk-keys:focus{outline:none}
 .dk-keys{position:absolute;inset:0;z-index:95;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(3,6,13,.62)}
 .dk-keys.on{display:flex}
 .dk-keysbox{width:min(560px,94vw);max-height:84vh;overflow:auto;border-radius:14px;background:#ffffff;border:1px solid rgba(23,33,56,.14);box-shadow:0 24px 56px rgba(16,24,40,.18);padding:22px 24px 26px}
@@ -1849,7 +1850,7 @@ export function renderDeck(host, opts) {
       </div>
     </div>
 
-    <div class="dk-keys" id="dkKeys" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts"></div>`;
+    <div class="dk-keys" id="dkKeys" tabindex="-1" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts"></div>`;
   (host || document.body).appendChild(root);
   const $ = (s) => root.querySelector(s);
 
@@ -4493,11 +4494,29 @@ export function renderDeck(host, opts) {
       <div class="dk-keyrow"><span>Close / back / exit</span><span class="kb"><kbd>Esc</kbd></span></div>
       <div class="dk-keysgrp">Jump to workspace</div>${nav}</div>`;
   }
-  const toggleKeys = (show) => { if (show) buildKeysOverlay(); /* rebuilt each time: the list follows the current plan */ keysEl.classList.toggle("on", show); };
+  let keysOpener = null;
+  const toggleKeys = (show) => {
+    if (show) { buildKeysOverlay(); keysOpener = document.activeElement; } /* rebuilt each time: the list follows the current plan */
+    keysEl.classList.toggle("on", show);
+    if (show) keysEl.focus(); else if (keysOpener && keysOpener.isConnected && document.activeElement === keysEl) { keysOpener.focus(); keysOpener = null; }
+  };
   keysEl.addEventListener("click", (e) => { if (e.target === keysEl) toggleKeys(false); });
   const inTyping = (e) => { const t = e.target, n = t && t.tagName; return n === "INPUT" || n === "TEXTAREA" || n === "SELECT" || (t && t.isContentEditable); };
   let gPending = 0, gTimer = 0;
+  // An open dialog (search, shortcuts, CVE details, queue/ticket modals, dnModal) keeps Tab inside it.
+  const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  function trapTab(e){
+    const m = [...document.querySelectorAll('[aria-modal="true"]')].filter((x) => x.getClientRects().length).pop();
+    if (!m) return;
+    const f = [...m.querySelectorAll(FOCUSABLE)].filter((x) => x.getClientRects().length);
+    const a = document.activeElement;
+    if (!f.length) { e.preventDefault(); return; }
+    if (!m.contains(a)) { e.preventDefault(); f[0].focus(); }
+    else if (e.shiftKey && a === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+    else if (!e.shiftKey && a === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+  }
   function onKey(e){
+    if (e.key === "Tab" && !e.altKey && !e.ctrlKey && !e.metaKey) { trapTab(e); return; }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); spot.classList.contains("on") ? closeSpot(true) : openSpot(); return; }
     if (spot.classList.contains("on")) {
       if (e.key === "Escape") { e.preventDefault(); closeSpot(true); }
