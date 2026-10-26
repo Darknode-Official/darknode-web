@@ -821,6 +821,8 @@ const CSS = `
 .dk-nv:hover{background:rgba(23,33,56,.05);color:#141c2e}
 .dk-nv:hover svg{color:#38435c}
 .dk-nv:focus-visible{outline:2px solid #2f63e0;outline-offset:-2px}
+.dk [role=button][tabindex]:focus-visible{outline:2px solid #2f63e0;outline-offset:2px;border-radius:6px}
+.dk[data-ui=deck] [role=button][tabindex]:focus-visible{outline-color:var(--ix-mark,#8ab4ff)}
 .dk-nv.on{background:rgba(47,99,224,.1);color:#1f4fc4;font-weight:650}
 .dk-nv.on svg{color:#2f63e0}
 .dk-nv.on::before{content:"";position:absolute;left:-12px;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:#2f63e0}
@@ -1804,7 +1806,7 @@ export function renderDeck(host, opts) {
     <div class="dk-scene dk-asst" id="dkAssistant" hidden>
       <div class="dk-wbar">
         <div class="dk-wtitle"><span class="wi">${IC.spark}</span><span class="wt">Darknode AI</span></div>
-        <span class="dk-wfull" id="dkAsstFull">Open in full console</span>
+        <span class="dk-wfull" role="button" tabindex="0" id="dkAsstFull">Open in full console</span>
       </div>
       <div class="dk-wframe" id="dkAsstFrame"></div>
     </div>
@@ -1816,7 +1818,7 @@ export function renderDeck(host, opts) {
         <button class="dk-icbtn dk-wact" id="dkWPin" data-explain="btn.pin" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
         <button class="dk-icbtn dk-wact" id="dkWCopy" data-explain="btn.copy" title="Copy tool link" aria-label="Copy tool link">${IC.link}</button>
         <button class="dk-icbtn dk-wact" id="dkWTab" data-explain="btn.newtab" title="Open in a new tab" aria-label="Open in a new tab">${IC.ext}</button>
-        <span class="dk-wfull" id="dkWFull">Open in full console</span>
+        <span class="dk-wfull" role="button" tabindex="0" id="dkWFull">Open in full console</span>
       </div>
       <div class="dk-wframe" id="dkWFrame"></div>
     </div>
@@ -1921,6 +1923,14 @@ export function renderDeck(host, opts) {
   function openSpaceTool(id, tab, target){ go(id, { tab, target }); }
   // Any element carrying data-scene (KPI cards, "view all" links, quick actions)
   // routes to that workspace; data-sec opens a tool in the in-deck workspace.
+  // Clickable cards / links that aren't <button>s (tool cards, CVE rows, "All findings" links)
+  // carry role=button + tabindex=0; Enter or Space activates them like a real button.
+  root.addEventListener("keydown", (e) => {
+    if ((e.key !== "Enter" && e.key !== " ") || e.defaultPrevented) return; // an element with its own key handler already acted
+    const t = e.target;
+    if (!(t instanceof HTMLElement) || t.tagName === "BUTTON" || t.tagName === "A" || t.getAttribute("role") !== "button" || !t.hasAttribute("tabindex")) return;
+    e.preventDefault(); t.click();
+  });
   root.addEventListener("click", (e) => {
     const nav = e.target.closest("[data-scene]");
     if (nav && !nav.classList.contains("dk-tab") && nav.dataset.scene) { go(nav.dataset.scene, nav.dataset.sect); return; }
@@ -2185,7 +2195,7 @@ export function renderDeck(host, opts) {
         </nav>
         <div class="dk-tmain" id="dkToolMain">
           ${groups.map((g) => { const h = hexOf(g.color); return `<section class="dk-tsec" data-g="${g.id}"><div class="th" style="--fg:${h}"><span class="d"></span><h3>${esc(g.name)}</h3><span class="c">${g.items.length} tools</span></div>
-            <div class="dk-grid dkx">${g.items.map((it) => `<div class="dk-gcard" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name).toLowerCase())}" style="--a:${h}">
+            <div class="dk-grid dkx">${g.items.map((it) => `<div class="dk-gcard" role="button" tabindex="0" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name).toLowerCase())}" style="--a:${h}">
               <button class="dk-gcpin${pins.includes(it.sec) ? " on" : ""}" data-pin="${esc(it.sec)}" data-explain="btn.pin" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
               <span class="gi">${toolIcon(it.label, g.name)}</span>${it.badge === "live" ? '<span class="glive" data-explain="badge.live" title="Live data"></span>' : ""}
               <span class="gt">${esc(it.label)}</span><span class="garr">Open${IC_CHEV}</span></div>`).join("")}</div></section>`; }).join("")}
@@ -2716,7 +2726,7 @@ export function renderDeck(host, opts) {
         const items = f.items.length
           ? f.items.map((it) => `<button class="rf-it" data-eid="${esc(it.id)}"><span class="dot" style="--c:${SEV_C[it.severity] || "#8a93a6"}"></span><span class="n">${esc(it.name)}</span><span class="s">${esc(it.severity)}</span></button>`).join("")
           : `<div class="dk-nempty">${esc(f.emptyText || "Nothing to show for this view yet.")}</div>`;
-        panel.innerHTML = `<h2>${IC.gauge} ${esc(f.label)} focus <span class="mo" data-scene="findings">All findings</span></h2><p class="rf-lead">${esc(f.lead)}</p><div class="rf-metrics">${metrics}</div><div class="rf-items">${items}</div>`;
+        panel.innerHTML = `<h2>${IC.gauge} ${esc(f.label)} focus <span class="mo" role="button" tabindex="0" data-scene="findings">All findings</span></h2><p class="rf-lead">${esc(f.lead)}</p><div class="rf-metrics">${metrics}</div><div class="rf-items">${items}</div>`;
         panel.querySelectorAll(".rf-it[data-eid]").forEach((b) => b.onclick = () => { try { openEntityDrawer(b.dataset.eid); } catch (_) {} });
         const mo = panel.querySelector(".mo[data-scene]"); if (mo) mo.onclick = () => go("findings");
       });
@@ -2783,17 +2793,17 @@ export function renderDeck(host, opts) {
       <div class="dk-expnote" id="dkExpNote" hidden></div>
       <div class="dk-roles" id="dkRoles"></div>
       <div class="dk-ovp dk-rolefocus" id="dkRoleFocus" hidden></div>
-      <div class="dk-ovp"><h2 data-explain="panel.actions">${IC.bolt} Needs attention <span class="mo" data-scene="findings">All findings</span></h2><div id="dkTopAct"><div class="dk-loading"><span class="sp"></span>Ranking what needs attention…</div></div></div>
+      <div class="dk-ovp"><h2 data-explain="panel.actions">${IC.bolt} Needs attention <span class="mo" role="button" tabindex="0" data-scene="findings">All findings</span></h2><div id="dkTopAct"><div class="dk-loading"><span class="sp"></span>Ranking what needs attention…</div></div></div>
       <div class="dk-ovgrid3">
-        <div class="dk-ovp"><h2 data-explain="panel.pins">${IC.star} Pinned tools <span class="mo" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
+        <div class="dk-ovp"><h2 data-explain="panel.pins">${IC.star} Pinned tools <span class="mo" role="button" tabindex="0" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
         <div class="dk-ovp"><h2 data-explain="panel.system">${IC.radar} System status</h2><div id="dkSys" class="dk-sys"></div></div>
-        <div class="dk-ovp"><h2 data-explain="panel.integrations">${IC.link} Integrations <span class="mo" data-scene="con">Manage</span></h2>
+        <div class="dk-ovp"><h2 data-explain="panel.integrations">${IC.link} Integrations <span class="mo" role="button" tabindex="0" data-scene="con">Manage</span></h2>
           <div class="dk-gauge dk-intg"><div class="gmeta"><b>${linked.length}<small>of ${INTEGRATIONS.length} linked</small></b><div class="dk-meter"><i style="--p:${pct}%"></i></div><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the console."}</p></div></div>
         </div>
       </div>
       <div class="dk-ovgrid">
         <div>
-          <div class="dk-ovp"><h2 data-explain="panel.activity">${IC.pulse} Recent activity <span class="mo" data-scene="activity">View all</span></h2><div class="dk-ovact">${actRows}</div></div>
+          <div class="dk-ovp"><h2 data-explain="panel.activity">${IC.pulse} Recent activity <span class="mo" role="button" tabindex="0" data-scene="activity">View all</span></h2><div class="dk-ovact">${actRows}</div></div>
           <div class="dk-ovp"><h2 data-explain="panel.quick">${IC.grid} Quick actions</h2><div class="dk-qa">
             <button class="dk-qacard" data-scene="personal"><span class="qi" style="--a:#2552c6">${IC.shield}</span><b>Check your own exposure</b><span>Domains, certificates, leaked secrets and phishing links.</span></button>
             <button class="dk-qacard" data-tool="codescan"><span class="qi" style="--a:#3f78ff">${IC.term}</span><b>Scan a codebase</b><span>Connect GitHub and jump to each vulnerable line.</span></button>
@@ -2806,8 +2816,8 @@ export function renderDeck(host, opts) {
           </div></div>
         </div>
         <div>
-          <div class="dk-ovp"><h2 data-explain="panel.threat">${IC.radar} Threat level <span class="mo" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
-          <div class="dk-ovp"><h2 data-explain="panel.notes">${IC.note} Notes <span class="mo" id="dkNotesClear">Clear</span></h2>
+          <div class="dk-ovp"><h2 data-explain="panel.threat">${IC.radar} Threat level <span class="mo" role="button" tabindex="0" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
+          <div class="dk-ovp"><h2 data-explain="panel.notes">${IC.note} Notes <span class="mo" role="button" tabindex="0" id="dkNotesClear">Clear</span></h2>
             <textarea class="dk-notes" id="dkNotes" placeholder="Jot an IP, a hypothesis, a to-do"></textarea>
             <div class="dk-notef"><span id="dkNotesSaved">Saved on this device</span><span id="dkNotesCount"></span></div>
           </div>
@@ -2967,7 +2977,7 @@ export function renderDeck(host, opts) {
   function renderPins(){
     const box = root.querySelector("#dkPins"); if (!box) return;
     if (!pins.length) { box.innerHTML = `<div class="dk-nempty">No pinned tools yet. Hover any tool in the <b data-scene="tools" style="cursor:pointer;--fg:#2552c6">Tool Library</b> and tap the star, or pin from the command palette (Ctrl K).</div>`; return; }
-    box.innerHTML = pins.map((sec) => `<div class="dk-pin" data-sec="${esc(sec)}"><span class="pi">${toolIcon(secLabel[sec] || sec)}</span><span class="pl">${esc(secLabel[sec] || sec)}</span><button class="px" data-unpin="${esc(sec)}" title="Unpin" aria-label="Unpin">&times;</button></div>`).join("");
+    box.innerHTML = pins.map((sec) => `<div class="dk-pin" role="button" tabindex="0" data-sec="${esc(sec)}"><span class="pi">${toolIcon(secLabel[sec] || sec)}</span><span class="pl">${esc(secLabel[sec] || sec)}</span><button class="px" data-unpin="${esc(sec)}" title="Unpin" aria-label="Unpin">&times;</button></div>`).join("");
     box.querySelectorAll(".dk-pin").forEach((r) => r.onclick = (e) => { if (e.target.closest(".px")) return; openTool(r.dataset.sec, secLabel[r.dataset.sec] || r.dataset.sec); });
     box.querySelectorAll(".px").forEach((b) => b.onclick = (e) => { e.stopPropagation(); togglePin(b.dataset.unpin); });
   }
@@ -2997,7 +3007,7 @@ export function renderDeck(host, opts) {
   let _tiCves = [], _tiSev = "", _tiQ = "", _tiKev = new Set(), _tiEpss = {}, _tiPrio = false;
   function renderThreat(){
     const el = sceneEls.threat;
-    el.innerHTML = `<div class="dk-ti-head"><h1>Threat &amp; Vulnerabilities</h1><span class="mo" id="dkTiFull">Open CVE Search ${IC.ext}</span></div>
+    el.innerHTML = `<div class="dk-ti-head"><h1>Threat &amp; Vulnerabilities</h1><span class="mo" role="button" tabindex="0" id="dkTiFull">Open CVE Search ${IC.ext}</span></div>
       <div id="dkTiBody"><div class="dk-loading"><span class="sp"></span>Fetching the latest CVEs from the NVD…</div></div>`;
     el.querySelector("#dkTiFull").onclick = () => openTool("cvesearch", "CVE Search");
     fetchIntel(40).then((d) => {
@@ -3145,12 +3155,14 @@ export function renderDeck(host, opts) {
     const old = root.querySelector("#dkCveOv"); if (old) old.remove();
     const ov = document.createElement("div"); ov.id = "dkCveOv"; ov.className = "dk-cveov";
     ov.innerHTML = `<div class="dk-cveov-card" role="dialog" aria-modal="true" aria-label="${esc(id)} details"><div class="dk-cveov-top"><span class="t">${esc(id)}</span><button class="dk-cveov-x" type="button">Close</button></div><div class="dk-cveov-body"><div class="dk-loading"><span class="sp"></span>Loading ${esc(id)} from the NVD…</div></div></div>`;
+    const opener = document.activeElement; // keyboard users land back on the row they opened
     root.appendChild(ov);
-    const close = () => { ov.remove(); document.removeEventListener("keydown", onKey); };
-    const onKey = (e) => { if (e.key === "Escape") close(); };
+    const close = () => { ov.remove(); document.removeEventListener("keydown", onKey); if (opener && opener.isConnected && opener.focus) opener.focus(); };
+    const onKey = (e) => { if (e.key === "Escape") { e.preventDefault(); close(); } };
     document.addEventListener("keydown", onKey);
     ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     ov.querySelector(".dk-cveov-x").onclick = close;
+    ov.querySelector(".dk-cveov-x").focus();
     const body = ov.querySelector(".dk-cveov-body");
     fetchCveDetail(id).then((c) => {
       const kev = _tiKev.has(id), ep = _tiEpss[id];
@@ -3180,7 +3192,7 @@ export function renderDeck(host, opts) {
           const ep = _tiEpss[v.id];
           const badges = (kev ? `<span class="dk-kevb" title="On the CISA Known Exploited Vulnerabilities catalog">Known exploited</span>` : "")
             + (ep != null ? `<span class="dk-epssb" title="FIRST EPSS exploit probability (30-day)">EPSS ${(ep * 100).toFixed(1)}%</span>` : "");
-          return `<div class="dk-cve${kev ? " kev" : ""}" data-id="${esc(v.id)}"><div class="sv" style="--fg:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}${badges}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`;
+          return `<div class="dk-cve${kev ? " kev" : ""}" role="button" tabindex="0" data-id="${esc(v.id)}"><div class="sv" style="--fg:${SEV[v.severity].color}">${v.cvss == null ? "—" : v.cvss.toFixed(1)}<small>${SEV[v.severity].label}</small></div><div class="bd"><div class="id">${esc(v.id)}${badges}</div><div class="ti">${esc(v.title || "No description provided yet.")}</div><div class="dt">Published ${esc(v.date || "—")}</div></div></div>`;
         }).join("")
       : `<div class="dk-tnone">No CVEs match the filter.</div>`;
     box.querySelectorAll(".dk-cve").forEach((r) => r.onclick = () => openCveDetail(r.dataset.id));
@@ -3202,7 +3214,7 @@ export function renderDeck(host, opts) {
     const el = sceneEls.surface;
     const d0 = (typeof dom === "string" && dom) ? dom : _surfLast;
     el.innerHTML = `
-      <div class="dk-ti-head"><h1>Attack Surface</h1><span class="mo" id="dkSurfFull">Open Posture Scorecard ${IC.ext}</span></div>
+      <div class="dk-ti-head"><h1>Attack Surface</h1><span class="mo" role="button" tabindex="0" id="dkSurfFull">Open Posture Scorecard ${IC.ext}</span></div>
       <p class="dk-sublede">Enter a domain to map its real external footprint — certificate-transparency subdomains, DNS, registration, owning network, HTTP security headers, email authentication and security.txt. Everything is fetched live through the Darknode proxy; nothing is simulated.</p>
       <form class="dk-surfbar" id="dkSurfForm">
         <input id="dkSurfIn" placeholder="Your domain" autocomplete="off" spellcheck="false" value="${esc(d0)}">
@@ -3231,7 +3243,7 @@ export function renderDeck(host, opts) {
       { id: "email", title: "Email authentication", tool: "emailauth", label: "Email Auth Analyzer" },
       { id: "stxt", title: "security.txt", tool: "securitytxt", label: "security.txt Studio" }
     ];
-    grid.innerHTML = P.map((p) => `<div class="dk-surfp" id="surf-${p.id}"><div class="hd"><h2>${esc(p.title)}</h2><span class="hx" id="surfx-${p.id}"></span><span class="mo" data-opensec="${p.tool}" data-openlabel="${esc(p.label)}">Open tool</span></div><div class="bd" id="surfb-${p.id}"><div class="dk-loading"><span class="sp"></span>Looking up ${esc(d)}…</div></div></div>`).join("");
+    grid.innerHTML = P.map((p) => `<div class="dk-surfp" id="surf-${p.id}"><div class="hd"><h2>${esc(p.title)}</h2><span class="hx" id="surfx-${p.id}"></span><span class="mo" role="button" tabindex="0" data-opensec="${p.tool}" data-openlabel="${esc(p.label)}">Open tool</span></div><div class="bd" id="surfb-${p.id}"><div class="dk-loading"><span class="sp"></span>Looking up ${esc(d)}…</div></div></div>`).join("");
     grid.querySelectorAll("[data-opensec]").forEach((s) => s.onclick = () => openTool(s.dataset.opensec, s.dataset.openlabel));
     const bd = (id) => grid.querySelector("#surfb-" + id);
     const errHTML = (e) => `<div class="dk-errbox">${esc((e && e.message) || "Lookup failed.")}</div>`;
@@ -3358,7 +3370,7 @@ export function renderDeck(host, opts) {
           <select id="dkCloudSel" class="dk-cloudsel"></select>
           <div id="dkCloudDesc" class="dk-clouddesc"></div>
           <textarea id="dkCloudIn" class="dk-cloudin" spellcheck="false"></textarea>
-          <div class="dk-cloudbtns"><button id="dkCloudRun" class="dk-tibtn on">Run check</button><span class="mo" id="dkCloudOpen">Open full tool</span></div>
+          <div class="dk-cloudbtns"><button id="dkCloudRun" class="dk-tibtn on">Run check</button><span class="mo" role="button" tabindex="0" id="dkCloudOpen">Open full tool</span></div>
           <div id="dkCloudOut" class="dk-cloudres" hidden></div>
         </div>
         <div class="dk-cloudconn">
@@ -3498,7 +3510,7 @@ export function renderDeck(host, opts) {
       <div class="dk-kpis" id="dkInvKpis"><div class="dk-loading"><span class="sp"></span>Reading the security graph…</div></div>
       <div class="dk-invdash" id="dkInvDash"></div>
       <div class="dk-ovp">
-        <h2>${IC.folder} Entities <span class="mo" data-tool="secgraph">Open graph</span></h2>
+        <h2>${IC.folder} Entities <span class="mo" role="button" tabindex="0" data-tool="secgraph">Open graph</span></h2>
         <div class="dk-invbar">
           <div class="dk-isearch">${IC_SEARCH}<input id="dkInvQ" placeholder="Search entities…" value="${esc(invF.q)}" autocomplete="off" spellcheck="false"></div>
           <select id="dkInvType" class="dk-isel"></select>
@@ -3651,7 +3663,7 @@ export function renderDeck(host, opts) {
         <div class="dk-ovp"><h2 data-explain="panel.sectools">${IC.grid} Tools in this section</h2><div class="dk-qa">${cards}</div></div>
         <div>
           <div class="dk-ovp"><h2 data-explain="panel.latest">${IC.pulse} Latest results</h2><div class="dk-ovact" id="dkSectLatest"></div></div>
-          <div class="dk-ovp"><h2 data-explain="panel.sources">${IC.plug} Data sources <span class="mo" data-scene="con">Manage</span></h2>${srcs}${pubHTML}</div>
+          <div class="dk-ovp"><h2 data-explain="panel.sources">${IC.plug} Data sources <span class="mo" role="button" tabindex="0" data-scene="con">Manage</span></h2>${srcs}${pubHTML}</div>
         </div>
       </div>`;
     el.querySelectorAll("button[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.querySelector("b").textContent));
@@ -4382,7 +4394,7 @@ export function renderDeck(host, opts) {
       <div class="dk-kopts">${optsHTML}</div>
       ${t.generate ? `<button class="dk-b pri" id="dkKitGen" style="width:auto;align-self:flex-start">${IC.bolt}Generate</button>`
         : `<div class="dk-kiofield"><label class="dk-klbl">Input</label><textarea id="dkKitIn" class="dk-kitio" placeholder="Paste or type here…" spellcheck="false"></textarea></div>`}
-      <div class="dk-kiofield"><div class="dk-kobar"><label class="dk-klbl">Output</label><span class="dk-kcopy" id="dkKitCopy">Copy</span>${t.generate ? "" : `<span class="dk-kcopy" id="dkKitSwap">Use as input</span>`}<span class="dk-kcopy" id="dkKitClear">Clear</span></div><pre id="dkKitOut" class="dk-kitio dk-kitout" aria-live="polite"></pre></div>`;
+      <div class="dk-kiofield"><div class="dk-kobar"><label class="dk-klbl">Output</label><span class="dk-kcopy" role="button" tabindex="0" id="dkKitCopy">Copy</span>${t.generate ? "" : `<span class="dk-kcopy" role="button" tabindex="0" id="dkKitSwap">Use as input</span>`}<span class="dk-kcopy" role="button" tabindex="0" id="dkKitClear">Clear</span></div><pre id="dkKitOut" class="dk-kitio dk-kitout" aria-live="polite"></pre></div>`;
     const inEl = main.querySelector("#dkKitIn"), outEl = main.querySelector("#dkKitOut");
     const getOpts = () => { const o = {}; main.querySelectorAll("[data-opt]").forEach((s) => o[s.dataset.opt] = s.value); return o; };
     let rt = 0;
@@ -4457,6 +4469,8 @@ export function renderDeck(host, opts) {
     }
     if (keysEl.classList.contains("on")) { if (e.key === "Escape") { e.preventDefault(); toggleKeys(false); } return; }
     if (e.key === "Escape") {
+      // a dialog layered on top (CVE details, dnModal/dnConfirm) closes itself — Esc must not also leave the scene
+      if (e.defaultPrevented || [...document.querySelectorAll('[aria-modal="true"]')].some((m) => m.offsetParent && m !== spot && m !== keysEl)) return;
       if (popNew.classList.contains("on") || popBell.classList.contains("on") || popAcct.classList.contains("on")) { closeAllMenus(); return; }
       if (!sceneWork.hidden) { closeTool(); return; }
       if (drawer.classList.contains("on")) { drawer.classList.remove("on"); return; }
