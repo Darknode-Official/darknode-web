@@ -1,9 +1,10 @@
 // posture-collect.js: live data collection for the External Posture Scorecard,
 // shared by the console page (posture.js) and the Deck's native spaces. Returns the
-// input object scorePosture() grades, or null when the host answers neither HTTP nor HTTPS.
+// input object scorePosture() grades; throws (with the reason, e.g. the name does not
+// resolve) when the host answers neither HTTP nor HTTPS.
 
 import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261019i";
-import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
+import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261025g";
 import { dnFetch } from "/js/net.js";
 
 export function cleanDomain(raw) {
@@ -96,7 +97,7 @@ export async function collectPosture(domain) {
   const val = (p) => (p.status === "fulfilled" ? p.value : null);
   const https = val(httpsP), http = val(httpP);
 
-  if (!https && !http) return null;
+  if (!https && !http) throw new Error(String((httpsP.reason && httpsP.reason.message) || "It did not answer over HTTP or HTTPS."));
 
   const headers = (https && https.headers) || (http && http.headers) || {};
   const httpReached = !!http;

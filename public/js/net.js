@@ -43,6 +43,14 @@ export async function dnFetch(url, opts = {}) {
   let data;
   try { data = await res.json(); } catch (_) { throw new Error("The proxy returned an unreadable response."); }
   if (data && data.error) throw new Error(data.error);
+  // The worker runs on Cloudflare, so a host it cannot reach comes back as Cloudflare's
+  // own error page ("error code: 1016", HTTP 530) with Cloudflare's headers. That is
+  // not the site answering: callers would grade those headers as the site's.
+  const cf = data && data.status >= 400 && /^error code: (1\d{3})\s*$/.exec(String(data.body || ""));
+  if (cf) {
+    const why = { 1016: "its name does not resolve to an address (DNS lookup failed)", 1001: "its DNS could not be resolved", 1003: "it cannot be reached by bare IP address", 1020: "its firewall blocked the request", 1015: "it rate-limited the request" }[cf[1]];
+    throw new Error(new URL(String(url)).hostname + " could not be reached: " + (why || "Cloudflare error " + cf[1]) + ".");
+  }
   return data;
 }
 

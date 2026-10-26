@@ -4,7 +4,7 @@
 // portfolio graded side by side (mode "portfolio").
 
 import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261019i";
-import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261025b";
+import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261025g";
 import { postureFindings } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, GRADE_C, recordRun, readList, writeList, pool, download } from "./ui.js";
@@ -70,9 +70,10 @@ export function mount(el, { space, mode }) {
       if (!validDomain(d)) { toast("Enter a domain like yourdomain.com"); return; }
       writeList(space, "domain", [d]);
       btn.disabled = true; out.innerHTML = `<div class="ns-card"><span class="ns-spin"></span>Running live checks against <b>${esc(d)}</b>...</div>`;
-      const res = await grade(d).catch(() => null);
+      let why = "";
+      const res = await grade(d).catch((e) => { why = (e && e.message) || ""; return null; });
       btn.disabled = false;
-      if (!res) { out.innerHTML = `<div class="ns-card"><b>Could not reach ${esc(d)}.</b><p class="ns-help">It did not answer over HTTP or HTTPS. Check the spelling and try again.</p></div>`; return; }
+      if (!res) { out.innerHTML = `<div class="ns-card"><b>Could not reach ${esc(d)}.</b><p class="ns-help">${esc(why || "It did not answer over HTTP or HTTPS.")} Check the spelling and try again.</p></div>`; return; }
       out.innerHTML = reportHTML(res, { personal: true }); wireReport(out, res);
       recordRun(space, { tool: "domain", target: d, summary: "Grade " + res.grade + " (" + res.counts.fail + " failing)", level: level(res), score: res.score, grade: res.grade });
     };

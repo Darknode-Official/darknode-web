@@ -9,7 +9,7 @@
 //   renderPosture(main) -> void
 
 import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261019i";
-import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261025b";
+import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261025g";
 import { attachSinkButton } from "../core/sink.js";
 import { postureFindings } from "/js/dataprotect/dp-sink.js";
 
@@ -101,9 +101,10 @@ export function renderPosture(main) {
     btn.disabled = true;
     out.innerHTML = `<div class="ps-card"><span class="ps-spin"></span>Running live checks against <b>${esc(domain)}</b>…</div>`;
 
-    const input = await collectPosture(domain);
+    let input = null, why = "";
+    try { input = await collectPosture(domain); } catch (e) { why = (e && e.message) || ""; }
     if (!input) {
-      out.innerHTML = `<div class="ps-card"><b>Could not reach ${esc(domain)}.</b><p class="ps-hint">The host did not respond over HTTP or HTTPS. Check the domain and try again.</p></div>`;
+      out.innerHTML = `<div class="ps-card"><b>Could not reach ${esc(domain)}.</b><p class="ps-hint">${esc(why || "The host did not respond over HTTP or HTTPS.")} Check the domain and try again.</p></div>`;
       btn.disabled = false; return;
     }
     renderReport(out, scorePosture(input), run);
