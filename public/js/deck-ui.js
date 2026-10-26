@@ -34,12 +34,14 @@ import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261018i";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
-import { mountFindingsQueue, repaintFindingsQueue, renderSlaSettings } from "/js/deck/findings-queue.js?v=20261025g";
-import { mountInventory, repaintInventory } from "/js/deck/inventory.js?v=20261019b";
-import { mountCorrelations, repaintCorrelations } from "/js/deck/correlations.js?v=20261019c";
-import { mountMonitors } from "/js/deck/monitors.js?v=20261018j";
-import { mountApiKeys } from "/js/deck/apikeys.js?v=20261018c";
-import { mountAudit } from "/js/deck/audit.js?v=20261018c";
+// Work-queue scenes load on first visit (about 120 KB the Overview never needs).
+const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => { p = null; throw e; })); };
+const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261025g");
+const invMod = lazyMod("/js/deck/inventory.js?v=20261019b");
+const corrMod = lazyMod("/js/deck/correlations.js?v=20261019c");
+const monMod = lazyMod("/js/deck/monitors.js?v=20261018j");
+const keysMod = lazyMod("/js/deck/apikeys.js?v=20261018c");
+const auditMod = lazyMod("/js/deck/audit.js?v=20261018c");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261018c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
 import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
@@ -3622,13 +3624,19 @@ export function renderDeck(host, opts) {
   // The work queue itself (views, SLA, bulk triage, detail page) lives in deck/findings-queue.js.
   const fqCtx = () => ({ withGraph, esc, IC, IC_SEARCH, SEV_C, ST_C, toast, capword, agoISO, dl, findings, user, activeWorkspace, listMembers, openEntityDrawer,
     openTool: (id) => openTool(id, secLabel[id] || id), toolLabel: (id) => secLabel[id] || null, onboardHtml: ONBOARD, isActive: () => curScene === "findings" && sceneWork.hidden });
-  function renderFindings(){ mountFindingsQueue(sceneEls.findings, fqCtx()); }
-  function paintFindings(m){ repaintFindingsQueue(m); }
-  function renderInventory(){ mountInventory(sceneEls.inventory, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, agoISO: agoISO, toast }); }
-  function renderCorrelations(){ mountCorrelations(sceneEls.correlations, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, toast }); }
-  function renderMonitors(){ mountMonitors(sceneEls.monitors, { esc, IC, toast }); }
-  function renderApiKeys(){ mountApiKeys(sceneEls.apikeys, { esc, IC, toast }); }
-  function renderAudit(){ mountAudit(sceneEls.audit, { esc, IC, toast }); }
+  // First visit fetches the scene module; a failed fetch says so in the scene and retries next visit.
+  function lazyScene(el, load, run){
+    load().then(run, () => { if (el && !el.childElementCount) el.innerHTML = `<div class="dk-empty" role="alert">This view could not load. Check your connection and open it again.</div>`; });
+  }
+  function renderFindings(){ lazyScene(sceneEls.findings, fqMod, (m) => m.mountFindingsQueue(sceneEls.findings, fqCtx())); }
+  function paintFindings(g){ fqMod().then((m) => m.repaintFindingsQueue(g), () => {}); }
+  function repaintInventory(g){ invMod().then((m) => m.repaintInventory(g), () => {}); }
+  function repaintCorrelations(g){ corrMod().then((m) => m.repaintCorrelations(g), () => {}); }
+  function renderInventory(){ lazyScene(sceneEls.inventory, invMod, (m) => m.mountInventory(sceneEls.inventory, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, agoISO: agoISO, toast })); }
+  function renderCorrelations(){ lazyScene(sceneEls.correlations, corrMod, (m) => m.mountCorrelations(sceneEls.correlations, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, toast })); }
+  function renderMonitors(){ lazyScene(sceneEls.monitors, monMod, (m) => m.mountMonitors(sceneEls.monitors, { esc, IC, toast })); }
+  function renderApiKeys(){ lazyScene(sceneEls.apikeys, keysMod, (m) => m.mountApiKeys(sceneEls.apikeys, { esc, IC, toast })); }
+  function renderAudit(){ lazyScene(sceneEls.audit, auditMod, (m) => m.mountAudit(sceneEls.audit, { esc, IC, toast })); }
 
   // ---------- Section overview pages (one per sidebar group) ----------
   // What each section covers in the graph, and which integrations feed it. Coverage is
@@ -4023,7 +4031,7 @@ export function renderDeck(host, opts) {
     };
     const admBtn = el.querySelector("#dkSetAdmin");
     if (admBtn) admBtn.onclick = () => openTool("admin", "Admin");
-    renderSlaSettings(el.querySelector(".dk-setgrid"), fqCtx());
+    fqMod().then((m) => m.renderSlaSettings(el.querySelector(".dk-setgrid"), fqCtx()), () => {});
   }
 
   // ---------- Reporting center (native Deck scene) ----------
