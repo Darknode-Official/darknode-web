@@ -3,9 +3,10 @@
 // input object scorePosture() grades; throws (with the reason, e.g. the name does not
 // resolve) when the host answers neither HTTP nor HTTPS.
 
-import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261019i";
+import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261025g";
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261025g";
 import { dnFetch } from "/js/net.js";
+import { registrableDomain } from "/js/dataprotect/phish-engine.js?v=20261025g";
 
 export function cleanDomain(raw) {
   let d = String(raw || "").trim();
@@ -32,6 +33,16 @@ export async function dohTXT(name) {
     } catch (_) {}
   }
   return [];
+}
+
+// DMARC for a subdomain without its own record falls back to the organizational
+// domain's (RFC 7489 6.6.3); .from names that domain when the fallback answered.
+async function fetchDmarc(domain) {
+  const own = await dohTXT("_dmarc." + domain);
+  const org = registrableDomain(domain);
+  if (own.some((t) => /^v=dmarc1/i.test(String(t).trim())) || org === domain) return own;
+  const inherited = await dohTXT("_dmarc." + org);
+  return inherited.some((t) => /^v=dmarc1/i.test(String(t).trim())) ? Object.assign(inherited, { from: org }) : own;
 }
 
 async function fetchCert(domain) {
@@ -87,7 +98,7 @@ export async function collectPosture(domain) {
     dnFetch("https://" + domain, { timeout: 14000 }),
     dnFetch("http://" + domain, { timeout: 12000 }),
     dohTXT(domain),
-    dohTXT("_dmarc." + domain),
+    fetchDmarc(domain),
     fetchCert(domain),
     fetchSecurityTxt(domain),
     probeDkim(domain),
@@ -115,7 +126,7 @@ export async function collectPosture(domain) {
     headers,
     // Set-Cookie flags come straight off the real response headers (the proxy
     // preserves them); the engine folds cookie security into the headers score.
-    spfTxts: val(spfP) || [], dmarcTxts: val(dmarcP) || [],
+    spfTxts: val(spfP) || [], dmarcTxts: val(dmarcP) || [], dmarcFrom: (val(dmarcP) && val(dmarcP).from) || null,
     dkimSelectors: val(dkimP) || [],
     mtaStsTxts: (val(mtaP) && val(mtaP).txts) || [], mtaStsPolicy: (val(mtaP) && val(mtaP).policy) || null,
     tlsRptTxts: val(tlsRptP) || [],

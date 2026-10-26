@@ -236,6 +236,18 @@ group("posture: email auth depth", () => {
     const r = gradeEmail({ spfTxts: ["v=spf1 " + Array(12).fill("include:x.com").join(" ") + " -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"] });
     assert.equal(r.checks.find((c) => c.name === "SPF lookup budget").status, "fail");
   });
+  test("a subdomain inherits its organizational domain's DMARC, graded on sp= when set", () => {
+    const dm = (r) => r.checks.find((c) => c.name === "DMARC");
+    const own = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; sp=none; rua=mailto:a@b.com"] });
+    assert.equal(dm(own).status, "pass");
+    assert.ok(own.checks.some((c) => c.name === "DMARC subdomain policy"));      // sp=none weakens subdomains: flagged on the org domain
+    const sub = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; sp=none; rua=mailto:a@b.com"], dmarcFrom: "example.com" });
+    assert.equal(dm(sub).status, "warn");                                         // for the subdomain itself sp=none is the policy
+    assert.ok(/sp=none \(monitor only\) \(inherited from example\.com\)/.test(dm(sub).detail), dm(sub).detail);
+    assert.notOk(sub.checks.some((c) => c.name === "DMARC subdomain policy"));
+    const inh = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"], dmarcFrom: "example.com" });
+    assert.equal(dm(inh).status, "pass");                                         // no sp: p applies
+  });
   test("DMARC pct<100 and missing rua warn", () => {
     const r = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; pct=50"] });
     assert.equal(r.checks.find((c) => c.name === "DMARC coverage (pct)").status, "warn");

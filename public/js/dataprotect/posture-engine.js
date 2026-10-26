@@ -362,19 +362,23 @@ export function gradeEmail(input) {
   if (!dmarc.present) {
     checks.push({ name: "DMARC", status: "fail", detail: "No DMARC record.", advice: "Publish _dmarc with p=quarantine or p=reject." });
   } else {
-    if (dmarc.policy === "reject") {
-      checks.push({ name: "DMARC", status: "pass", detail: "DMARC p=reject (strongest)." });
-    } else if (dmarc.policy === "quarantine") {
-      checks.push({ name: "DMARC", status: "warn", detail: "DMARC p=quarantine.", advice: "Move to p=reject once reports are clean." });
+    // A subdomain with no record of its own is covered by its organizational domain's
+    // record (RFC 7489 6.6.3), whose sp= (else p=) is the policy that applies to it.
+    const pol = input.dmarcFrom ? dmarc.sp || dmarc.policy : dmarc.policy;
+    const via = input.dmarcFrom ? ` (inherited from ${input.dmarcFrom})` : "", tag = input.dmarcFrom && dmarc.sp ? "sp" : "p";
+    if (pol === "reject") {
+      checks.push({ name: "DMARC", status: "pass", detail: `DMARC ${tag}=reject (strongest)${via}.` });
+    } else if (pol === "quarantine") {
+      checks.push({ name: "DMARC", status: "warn", detail: `DMARC ${tag}=quarantine${via}.`, advice: "Move to p=reject once reports are clean." });
     } else {
-      checks.push({ name: "DMARC", status: "warn", detail: "DMARC p=none (monitor only).", advice: "Enforce with p=quarantine then p=reject." });
+      checks.push({ name: "DMARC", status: "warn", detail: `DMARC ${tag}=none (monitor only)${via}.`, advice: "Enforce with p=quarantine then p=reject." });
     }
     // pct<100 only enforces on a fraction of mail.
     if (dmarc.pct != null && dmarc.pct < 100) {
       checks.push({ name: "DMARC coverage (pct)", status: "warn", detail: `DMARC pct=${dmarc.pct} — the policy applies to only ${dmarc.pct}% of failing mail.`, advice: "Raise pct to 100 once confident." });
     }
     // Subdomain policy: without sp, subdomains inherit p (fine); flag only if weaker.
-    if (dmarc.sp && dmarc.sp === "none" && dmarc.policy !== "none") {
+    if (!input.dmarcFrom && dmarc.sp && dmarc.sp === "none" && dmarc.policy !== "none") {
       checks.push({ name: "DMARC subdomain policy", status: "warn", detail: `sp=none weakens enforcement for subdomains despite p=${dmarc.policy}.`, advice: "Set sp=reject (or drop sp to inherit p)." });
     }
     // Aggregate reporting (rua) is how you actually see SPF/DKIM alignment.

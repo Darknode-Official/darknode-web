@@ -3,7 +3,7 @@
 // checks graded by posture-engine. Personal = one domain; Enterprise = a saved
 // portfolio graded side by side (mode "portfolio").
 
-import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261019i";
+import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261025g";
 import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261025g";
 import { postureFindings } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
@@ -98,7 +98,7 @@ export function mount(el, { space, mode }) {
     out.innerHTML = `<div class="ns-card"><h2>Ranked by risk<span class="r">worst first</span></h2><div class="ns-scroll"><table class="ns-tbl">
       <thead><tr><th>Grade</th><th>Domain</th><th>Score</th><th>Failing</th><th>Warnings</th><th>Top issue</th><th></th></tr></thead><tbody>
       ${rows.map((r) => r.res ? `<tr><td><span class="ns-grade" style="background:${GRADE_C[r.res.grade] || "#667085"}">${esc(r.res.grade)}</span></td><td><b>${esc(r.domain)}</b></td><td>${r.res.score ?? "n/a"}</td><td style="color:#b00020;font-weight:700">${r.res.counts.fail}</td><td style="color:#b58100;font-weight:700">${r.res.counts.warn}</td><td>${esc(r.res.topActions[0] ? r.res.topActions[0].name : "None")}</td><td><button class="ns-btn ghost sm" data-d="${esc(r.domain)}">Details</button></td></tr>`
-        : `<tr><td><span class="ns-grade" style="background:#8a93a6">?</span></td><td><b>${esc(r.domain)}</b></td><td colspan="5" style="color:var(--ns-mut)">${r.pending ? '<span class="ns-spin"></span>Checking...' : "Unreachable over HTTP and HTTPS"}</td></tr>`).join("")}
+        : `<tr><td><span class="ns-grade" style="background:#8a93a6">?</span></td><td><b>${esc(r.domain)}</b></td><td colspan="5" style="color:var(--ns-mut)">${r.pending ? '<span class="ns-spin"></span>Checking...' : esc(r.why || "Unreachable over HTTP and HTTPS")}</td></tr>`).join("")}
       </tbody></table></div></div>`;
     out.querySelectorAll("[data-d]").forEach((b) => b.onclick = () => {
       const r = results.find((x) => x && x.domain === b.dataset.d); if (!r || !r.res) return;
@@ -106,14 +106,17 @@ export function mount(el, { space, mode }) {
     });
   };
   go.onclick = async () => {
-    const list = parseDomains(ta.value).slice(0, 50);
+    // same normalisation as the single check (www. dropped), so a pasted www.x.com grades x.com
+    const list = [...new Set(parseDomains(ta.value).map(cleanDomain))].slice(0, 50);
     if (!list.length) { toast("Add at least one domain"); return; }
+    const junk = [...new Set(ta.value.split(/[\n,;]+/).map((t) => t.trim()).filter((t) => t && !parseDomains(t).length))];
+    const skipped = junk.length ? "Skipped " + junk.length + " that " + (junk.length === 1 ? "is" : "are") + " not a domain name: " + junk.slice(0, 5).join(", ") + (junk.length > 5 ? ", ..." : "") + ". " : "";
     writeList(space, "domains", list); det.innerHTML = "";
     go.disabled = true; csv.disabled = true;
     results = list.map((domain) => ({ domain, pending: true })); table();
     let done = 0;
-    await pool(list, 3, (d) => grade(d).catch(() => null), (res, i) => {
-      results[i] = { domain: list[i], res }; done++; st.textContent = done + " / " + list.length + " checked"; table();
+    await pool(list, 3, (d) => grade(d), (res, i) => {
+      results[i] = res && !res.error ? { domain: list[i], res } : { domain: list[i], res: null, why: res && res.error }; done++; st.textContent = skipped + done + " / " + list.length + " checked"; table();
     });
     go.disabled = false; csv.disabled = false;
     const graded = results.filter((r) => r.res), bad = graded.filter((r) => level(r.res) === "bad").length;
