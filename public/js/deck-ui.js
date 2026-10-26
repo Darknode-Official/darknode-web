@@ -1751,17 +1751,17 @@ export function renderDeck(host, opts) {
     <div class="dk-top">
       <button class="dk-icbtn dk-sbtog" id="dkSbTog" data-explain="hdr.menu" aria-label="Toggle navigation" aria-controls="dkSide">${IC.menu}</button>
       <button class="dk-brand" id="dkBrand" data-explain="hdr.brand" title="Home"><img class="dk-mark" src="/logo-dark.svg?v=20261007b" alt=""><img class="dk-wm" src="/wordmark.svg" alt="Darknode"><span class="dk-wsname">${esc(wsLabelText())}</span></button>
-      <button class="dk-wschip" id="dkWsChip" data-explain="hdr.workspace" title="Switch workspace" aria-haspopup="true"><span class="nm">${esc(activeWorkspace() ? (loadActiveWsName() || "Team workspace") : wsLabelText())}</span>${IC.chevd}</button>
+      <button class="dk-wschip" id="dkWsChip" data-explain="hdr.workspace" title="Switch workspace" aria-haspopup="true" aria-expanded="false"><span class="nm">${esc(activeWorkspace() ? (loadActiveWsName() || "Team workspace") : wsLabelText())}</span>${IC.chevd}</button>
       <div class="dk-crumb" id="dkCrumb" aria-live="polite"></div>
       <button class="dk-hsearch" id="dkHSearch" data-explain="hdr.search" aria-label="Search">${IC_SEARCH}<span class="hs">Search tools, scenes and actions</span><kbd>Ctrl K</kbd></button>
       <div class="dk-right">
         <button class="dk-health" id="dkHealth" data-explain="hdr.health" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
         <button class="dk-icbtn dk-lbtn ai" id="dkAsstBtn" data-explain="hdr.assistant" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}<span class="lb">Ask AI</span></button>
         <button class="dk-icbtn" id="dkFindBtn" data-explain="hdr.search" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
-        <button class="dk-icbtn dk-lbtn" id="dkNew" data-explain="hdr.new" title="Quick create" aria-label="Quick create">${IC.plus}<span class="lb">New</span></button>
-        <button class="dk-icbtn" id="dkBell" data-explain="hdr.bell" title="Notifications" aria-label="Notifications">${IC.bell}<span class="dk-badge dkx" id="dkBadge" hidden></span></button>
+        <button class="dk-icbtn dk-lbtn" id="dkNew" aria-haspopup="true" aria-expanded="false" data-explain="hdr.new" title="Quick create" aria-label="Quick create">${IC.plus}<span class="lb">New</span></button>
+        <button class="dk-icbtn" id="dkBell" aria-haspopup="true" aria-expanded="false" data-explain="hdr.bell" title="Notifications" aria-label="Notifications">${IC.bell}<span class="dk-badge dkx" id="dkBadge" hidden></span></button>
         <span class="dk-clock" id="dkClock"></span>
-        <button class="dk-acct" id="dkAcct" data-explain="hdr.account" aria-label="Account"><span class="av" id="dkAvatar">DN</span>${IC.chevd}</button>
+        <button class="dk-acct" id="dkAcct" aria-haspopup="true" aria-expanded="false" data-explain="hdr.account" aria-label="Account"><span class="av" id="dkAvatar">DN</span>${IC.chevd}</button>
       </div>
     </div>
 
@@ -2367,8 +2367,10 @@ export function renderDeck(host, opts) {
       });
     } catch (_) { graphIndex = []; }
   }
-  const openSpot = () => { spot.classList.add("on"); spotIn.value = ""; buildGraphIndex(); runSpot(""); spotIn.focus(); };
-  const closeSpot = () => spot.classList.remove("on");
+  let spotOpener = null;
+  const openSpot = () => { spotOpener = document.activeElement !== document.body ? document.activeElement : null; spot.classList.add("on"); spotIn.value = ""; buildGraphIndex(); runSpot(""); spotIn.focus(); };
+  // cancel (Esc, Ctrl K, backdrop) hands focus back to whatever opened the palette; choosing a result does not
+  const closeSpot = (restore) => { spot.classList.remove("on"); if (restore && spotOpener && spotOpener.isConnected) spotOpener.focus(); spotOpener = null; };
   // Runnable commands in the palette (not just navigation) — these run an action
   // rather than opening a tool, so Ctrl+K is a true command palette.
   const ACTIONS = [
@@ -2425,7 +2427,7 @@ export function renderDeck(host, opts) {
   function moveSel(d){ if (!matches.length) return; selIdx = (selIdx + d + matches.length) % matches.length; spotRes.querySelectorAll(".dk-sr").forEach((r, i) => r.classList.toggle("sel", i === selIdx)); spotRes.querySelector(".dk-sr.sel")?.scrollIntoView({ block: "nearest" }); }
   $("#dkFindBtn").onclick = openSpot; $("#dkHSearch").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
   $("#dkAsstBtn").onclick = () => go("assistant");
-  spot.addEventListener("click", (e) => { if (e.target === spot) closeSpot(); });
+  spot.addEventListener("click", (e) => { if (e.target === spot) closeSpot(true); });
 
   // ---------- command-center chrome: status, quick-create, notifications, account ----------
   const popNew = $("#dkNewPop"), popBell = $("#dkBellPop"), popAcct = $("#dkAcctPop"), badge = $("#dkBadge"), health = $("#dkHealth");
@@ -2445,14 +2447,14 @@ export function renderDeck(host, opts) {
   const notifUnseen = (r) => r.acct ? !r.read : (r.ts > notifSeen);
 
   const popWs = $("#dkWsPop");
-  function closeAllMenus(){ [popNew, popWs, popBell, popAcct].forEach((p) => p && p.classList.remove("on")); }
+  function closeAllMenus(){ [popNew, popWs, popBell, popAcct].forEach((p) => p && p.classList.remove("on")); ["#dkNew", "#dkWsChip", "#dkBell", "#dkAcct"].forEach((id) => $(id)?.setAttribute("aria-expanded", "false")); }
   function toggleMenu(pop, btn, build){
     const open = pop.classList.contains("on");
     closeAllMenus();
     if (open) return;
     build();
     try { pop.style.right = Math.max(10, (window.innerWidth - btn.getBoundingClientRect().right) / zoomOf()) + "px"; } catch (_) {}
-    pop.classList.add("on");
+    pop.classList.add("on"); btn.setAttribute("aria-expanded", "true");
   }
   // The workspace switcher sits top-left, so its menu is positioned from the left edge.
   function toggleMenuLeft(pop, btn, build){
@@ -2461,7 +2463,7 @@ export function renderDeck(host, opts) {
     if (open) return;
     build();
     try { pop.style.right = "auto"; pop.style.left = Math.max(10, btn.getBoundingClientRect().left / zoomOf()) + "px"; } catch (_) {}
-    pop.classList.add("on");
+    pop.classList.add("on"); btn.setAttribute("aria-expanded", "true");
   }
   function setHealth(ok, text){ health.classList.toggle("warn", !ok); const t = health.querySelector(".t"); if (t) t.textContent = text; }
   function updateBadge(){ const n = mergedNotifs().filter(notifUnseen).length; if (n > 0) { badge.hidden = false; badge.textContent = n > 9 ? "9+" : String(n); } else { badge.hidden = true; badge.textContent = ""; } }
@@ -4496,9 +4498,9 @@ export function renderDeck(host, opts) {
   const inTyping = (e) => { const t = e.target, n = t && t.tagName; return n === "INPUT" || n === "TEXTAREA" || n === "SELECT" || (t && t.isContentEditable); };
   let gPending = 0, gTimer = 0;
   function onKey(e){
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); spot.classList.contains("on") ? closeSpot() : openSpot(); return; }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); spot.classList.contains("on") ? closeSpot(true) : openSpot(); return; }
     if (spot.classList.contains("on")) {
-      if (e.key === "Escape") { e.preventDefault(); closeSpot(); }
+      if (e.key === "Escape") { e.preventDefault(); closeSpot(true); }
       else if (e.key === "ArrowDown") { e.preventDefault(); moveSel(1); }
       else if (e.key === "ArrowUp") { e.preventDefault(); moveSel(-1); }
       else if (e.key === "Enter") { e.preventDefault(); chooseSpot(selIdx); }
@@ -4508,7 +4510,7 @@ export function renderDeck(host, opts) {
     if (e.key === "Escape") {
       // a dialog layered on top (CVE details, dnModal/dnConfirm) closes itself — Esc must not also leave the scene
       if (e.defaultPrevented || [...document.querySelectorAll('[aria-modal="true"]')].some((m) => m.offsetParent && m !== spot && m !== keysEl)) return;
-      if (popNew.classList.contains("on") || popBell.classList.contains("on") || popAcct.classList.contains("on")) { closeAllMenus(); return; }
+      if (popNew.classList.contains("on") || popWs.classList.contains("on") || popBell.classList.contains("on") || popAcct.classList.contains("on")) { closeAllMenus(); return; }
       if (!sceneWork.hidden) { closeTool(); return; }
       if (drawer.classList.contains("on")) { closeDrawer(); return; }
       if (curScene !== "overview") { go("overview"); return; }
