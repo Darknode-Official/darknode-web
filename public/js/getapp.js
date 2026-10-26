@@ -63,7 +63,7 @@ const edCard = (e) => `
 export function renderDownloads(main) {
   main.innerHTML = `
     <h1 class="pg-h1">Downloads</h1>
-    <p class="muted pg-sub">The desktop app, terminal edition, and the full Darknode OS VM go far beyond the web console &mdash; a native port scanner, DNS/WHOIS/TLS recon, subdomain enumeration, a code workbench, live terminals, an autonomous AI agent, and auto-configuring tools.</p>
+    <p class="muted pg-sub">The desktop app, terminal edition, and the full Darknode OS VM go far beyond the web Deck &mdash; a native port scanner, DNS/WHOIS/TLS recon, subdomain enumeration, a code workbench, live terminals, an autonomous AI agent, and auto-configuring tools.</p>
     <p style="margin:-6px 0 14px"><button class="btn ghost" data-sec="dlguide">Not sure which to download? Read the full guide &rarr;</button></p>
     <div class="dl-hero-grid">
     <div class="card dl-hero" style="border-color:color-mix(in srgb,var(--acc) 45%,transparent)">
