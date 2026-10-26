@@ -85,4 +85,6 @@ export function mount(el, { space, mode }) {
     recordRun(space, { tool: "phish", target: t.fromReg || t.fromDomain || "email", summary: t.verdict.label, level: lvl(sev) });
     log({ at: Date.now(), kind: "Email", subject: t.subject || t.from || "(no subject)", verdict: t.verdict.label, sev });
   };
+  // a link handed over from search: check it in Link mode
+  return { run: (link) => { el.querySelector('#nsPhMode button[data-m="url"]').click(); ta.value = link; el.querySelector("#nsPhGo").click(); } };
 }

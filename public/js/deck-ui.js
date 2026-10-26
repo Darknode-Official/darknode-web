@@ -2424,7 +2424,16 @@ export function renderDeck(host, opts) {
   }
   const SPOT_STOP = new Set(["a", "an", "the", "is", "are", "this", "that", "my", "our", "i", "to", "for", "of", "it", "in", "on", "do", "does", "how", "what", "can"]);
   function runSpot(q){
-    q = q.trim().toLowerCase();
+    const raw = q.trim();
+    q = raw.toLowerCase();
+    // a pasted domain or link: offer to check it right here, first in the list
+    const typed = [];
+    if (!isLocked("scene:personal") && !/\s/.test(raw)) {
+      const isLink = /^(https?:\/\/|www\.)/i.test(raw) || /^[^/]+\.[^/]+\//.test(raw);
+      const dom = /^(?:https?:\/\/)?([a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,})\.?\/?$/i.exec(raw);
+      if (dom) typed.push({ type: "action", label: "Check domain " + dom[1].toLowerCase(), group: "Personal", icon: IC.radar, run: () => openSpaceTool("personal", "domain", dom[1].toLowerCase()) });
+      if (isLink || dom) typed.push({ type: "action", label: "Check link " + (raw.length > 60 ? raw.slice(0, 57) + "..." : raw), group: "Personal", icon: IC.link, run: () => openSpaceTool("personal", "phish", raw) });
+    }
     const pool = ACTIONS.concat(index);
     // Every query word must start a word of the label, group or keywords ("leaked password",
     // "expiring cert"); a plain substring of the label still counts. Label hits rank first.
@@ -2443,7 +2452,7 @@ export function renderDeck(host, opts) {
     // Graph entities and findings are only searched when there is a query, and ranked after
     // commands and tools so the palette stays a command palette by default.
     const graphHits = q ? graphIndex.filter((g) => g.label.toLowerCase().includes(q)).slice(0, 40) : [];
-    matches = base.concat(graphHits).slice(0, 100);
+    matches = typed.concat(base, graphHits).slice(0, 100);
     selIdx = 0;
     spotRes.innerHTML = matches.length ? matches.map((m, i) => `<div class="dk-sr${i===0?" sel":""}" data-i="${i}">${spotIcon(m)}<span class="l">${esc(m.label)}</span><span class="g">${esc(m.group||"")}</span>${m.type === "tool" ? `<button class="dk-srpin${pins.includes(m.sec) ? " on" : ""}" data-pin="${esc(m.sec)}" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>` : ""}</div>`).join("")
       : `<div class="dk-empty">Nothing matches "${esc(q)}"</div>`;
