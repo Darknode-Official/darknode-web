@@ -17,6 +17,7 @@ group("codescan: secrets", () => {
     assert.ok(!f[0].snippet.includes("AKIAQ3EGRT7XZPLM4NHA"), "raw secret must not appear in snippet");
   });
   test("placeholder AWS key ignored", () => miss("src/a.js", 'k = "AKIAIOSFODNN7EXAMPLE"', "secret.aws-access-key"));
+  test("placeholders are counted so a UI can say why nothing was found", () => { const r = scanFile("a.py", 'k = "AKIAIOSFODNN7EXAMPLE"\nt = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"\n'); assert.equal(r.length, 0); assert.equal(r.placeholders, 2); assert.equal(scanFile("b.py", "x = 1\n").placeholders, 0); });
   test("GitHub token", () => hit("x.py", "t = 'ghp_" + "a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8'", "secret.github-token"));
   test("private key block", () => {
     hit("id_rsa", "-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW", "secret.private-key");

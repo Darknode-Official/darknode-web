@@ -2,7 +2,7 @@
 // Native Secret & Code Scan: codescan/rules.js over pasted code or a dropped project
 // folder, entirely in the browser. Secrets are shown masked; nothing is uploaded.
 
-import { scanFile, SEV_ORDER } from "/js/codescan/rules.js?v=20261013a";
+import { scanFile, SEV_ORDER } from "/js/codescan/rules.js?v=20261025g";
 import { esc, toast, sevPill, recordRun, readFiles, download } from "./ui.js";
 
 const rank = (s) => (s in SEV_ORDER ? SEV_ORDER[s] : 99);
@@ -29,7 +29,8 @@ export function mount(el, { space, mode }) {
 
   const run = (list, skipped, label) => {
     const hits = [];
-    for (const f of list) for (const h of scanFile(f.path, f.text)) hits.push({ ...h, path: f.path });
+    let placeholders = 0;
+    for (const f of list) { const r = scanFile(f.path, f.text); placeholders += r.placeholders || 0; for (const h of r) hits.push({ ...h, path: f.path }); }
     hits.sort((a, b) => rank(a.sev) - rank(b.sev) || (a.kind === "secret" ? -1 : 1));
     const secrets = hits.filter((h) => h.kind === "secret"), code = hits.filter((h) => h.kind !== "secret");
     const crit = hits.filter((h) => h.sev === "critical" || h.sev === "high").length;
@@ -46,7 +47,7 @@ export function mount(el, { space, mode }) {
           <span class="r"><button class="ns-btn ghost sm" id="nsScJson">Export JSON</button></span></h2>
           ${rows.length ? `<div class="ns-scroll" style="margin-top:10px"><table class="ns-tbl"><thead><tr><th>Severity</th><th>Finding</th><th>Where</th><th>What to do</th></tr></thead><tbody>
             ${rows.slice(0, 500).map((h) => `<tr><td>${sevPill(h.sev)}</td><td><b>${esc(h.title)}</b><div class="mono" style="color:var(--ns-mut);margin-top:3px">${esc(h.snippet)}</div></td><td class="mono">${esc(h.path)}:${h.line}</td><td style="font-size:12.5px">${esc(h.fix || h.why || "")}</td></tr>`).join("")}
-          </tbody></table></div>` : `<div class="ns-empty">${filter === "secret" ? "No secrets found. Nice." : "No risky code patterns found."}</div>`}
+          </tbody></table></div>` : `<div class="ns-empty">${filter === "secret" ? (placeholders ? `No real secrets found. ${placeholders} example or placeholder value${placeholders === 1 ? " was" : "s were"} skipped (like AWS's AKIA…EXAMPLE or 1234567890abcdef); real keys are reported.` : "No secrets found. Nice.") : "No risky code patterns found."}</div>`}
           ${secrets.length ? `<div class="ns-note">A secret that was ever committed or shared should be treated as leaked: revoke or rotate it at the provider first, then remove it from the code and its history.</div>` : ""}</div>`;
       out.querySelectorAll("[data-f]").forEach((b) => b.onclick = () => { filter = b.dataset.f; paint(); });
       out.querySelector("#nsScJson").onclick = () => download("secret-scan.json", JSON.stringify({ scanned: list.length, findings: hits.map(({ path, line, ruleId, title, sev, kind, snippet }) => ({ path, line, ruleId, title, sev, kind, snippet })) }, null, 2));

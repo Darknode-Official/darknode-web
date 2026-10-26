@@ -108,15 +108,18 @@ export const SECRET_RULES = [
 
 // First hit of a secret rule in `text`: { val, index } (index = start of the match), or null.
 function secretHit(rule, text) {
+  let sample = null; // a match the detector rejected as an example/placeholder value
   for (const id of rule.detectors) {
-    for (const h of findAll(detector(id), text)) {
+    const d = detector(id);
+    for (const h of findAll(d, text, { validate: false })) { // validated here so placeholder rejects can be reported
+      if (d.validate && !d.validate(h.value, h.whole, { text, index: h.start })) { if (PLACEHOLDER.test(h.value)) sample = h.value; continue; }
       if (rule.accept && !rule.accept(h)) continue;
       const val = rule.pick ? rule.pick(h) : h.value;
       if (!val || (rule.minLen && val.length < rule.minLen)) continue;
       return { val, index: h.index };
     }
   }
-  return null;
+  return sample ? { placeholder: sample } : null;
 }
 
 // ── Code rules (per language) ──────────────────────────────────────────────────
@@ -340,6 +343,7 @@ export function scanFile(path, text) {
   const lines = String(text || "").split(/\r?\n/);
   const testy = TESTY_PATH.test(path);
   const out = [];
+  const samples = new Set(); // secret-shaped values skipped as examples/placeholders (AKIA...EXAMPLE, sequential tokens) - lets a UI say why "nothing found"
   const seen = new Set();
   const push = (rule, i, col, snippet, extra) => {
     const key = rule.id + ":" + i;
@@ -358,9 +362,10 @@ export function scanFile(path, text) {
     for (const rule of SECRET_RULES) {
       const m = secretHit(rule, raw);
       if (!m) continue;
+      if (m.placeholder) { samples.add(i + ":" + m.placeholder); continue; }
       const val = m.val;
-      if (rule.id !== "secret.private-key" && PLACEHOLDER.test(val)) continue;
-      if (rule.minEntropy && entropy(val) < rule.minEntropy) continue;
+      if (rule.id !== "secret.private-key" && PLACEHOLDER.test(val)) { samples.add(i + ":" + val); continue; }
+      if (rule.minEntropy && entropy(val) < rule.minEntropy) { samples.add(i + ":" + val); continue; }
       if (rule.id === "secret.private-key" && !KEY_BODY.test(raw.slice(m.index)) && !KEY_BODY.test(lines[i + 1] || "")) continue; // a marker in a detector or a doc, no key
       if (rule.id === "secret.db-url" && PLACEHOLDER_PASS.test(val)) continue;
       if (rule.id === "secret.google-api-key" && /authDomain|firebaseapp\.com/.test(lines.slice(Math.max(0, i - 6), i + 7).join("\n"))) continue; // Firebase web config keys are public by design
@@ -411,6 +416,7 @@ export function scanFile(path, text) {
       f.why = "No untrusted input was traced to this line, so confirm where the value comes from before treating it as exploitable. " + f.why;
     }
   }
+  out.placeholders = samples.size;
   return out;
 }
 
