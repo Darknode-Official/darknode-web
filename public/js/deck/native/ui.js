@@ -110,6 +110,9 @@ export function injectStyle() {
 .ns-btn:disabled{opacity:.55;cursor:default}
 .ns-btn.ghost{background:var(--ns-surf);color:var(--ns-tx);border-color:var(--ns-line);font-weight:600}
 .ns-btn.sm{padding:6px 12px;font-size:12.5px}
+.ns-card .dn-sink-btn{appearance:none;font:inherit;font-size:12.5px;font-weight:600;background:var(--ns-surf);color:var(--ns-tx);border:1px solid var(--ns-line);padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.ns-card .dn-sink-btn:hover{filter:brightness(1.08)}
+.ns-card .dn-sink .muted{color:var(--ns-mut)}
 .ns-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .ns-seg{display:inline-flex;border:1px solid var(--ns-line);border-radius:8px;overflow:hidden}
 .ns-seg button{appearance:none;border:0;background:var(--ns-surf);color:var(--ns-tx2);font:inherit;font-size:13px;font-weight:600;padding:8px 14px;cursor:pointer}
