@@ -14,20 +14,31 @@ import { dnFetch, dnFetchJSON } from "/js/net.js";
 
 const clean = (d) => String(d || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^\*\./, "");
 
-// crt.sh certificate transparency → unique subdomains for a registrable domain.
+// Certificate transparency → unique subdomains for a registrable domain. crt.sh is
+// the full history but is often overloaded (slow, 502); Cert Spotter indexes the
+// same CT logs and answers when crt.sh doesn't, though only for unexpired
+// certificates and its first page of issuances — the result says which source answered.
+const ctName = (n, d, set) => {
+  n = String(n || "").trim().toLowerCase().replace(/^\*\./, "");
+  if ((n === d || n.endsWith("." + d)) && /^[a-z0-9.\-_]+$/.test(n)) set.add(n); // "." + d: notexample.com is not under example.com
+};
+const errMsg = (e) => String((e && e.message) || e || "error").replace(/\.$/, "");
 export async function subdomains(domain) {
   const d = clean(domain);
-  // crt.sh can return a multi-megabyte JSON for popular domains; request the
-  // proxy's large-body cap so the catalogue parses instead of truncating.
-  const rows = await dnFetchJSON("https://crt.sh/?q=%25." + encodeURIComponent(d) + "&output=json", { timeout: 30000, max: 4000000 });
   const set = new Set();
-  (Array.isArray(rows) ? rows : []).forEach((r) => {
-    String(r.name_value || "").split(/\n/).forEach((n) => {
-      n = n.trim().toLowerCase().replace(/^\*\./, "");
-      if (n && n.endsWith(d) && /^[a-z0-9.\-_]+$/.test(n)) set.add(n);
-    });
-  });
-  return [...set].sort();
+  try {
+    // crt.sh can return a multi-megabyte JSON for popular domains; request the
+    // proxy's large-body cap so the catalogue parses instead of truncating.
+    const rows = await dnFetchJSON("https://crt.sh/?q=%25." + encodeURIComponent(d) + "&output=json", { timeout: 30000, max: 4000000 });
+    (Array.isArray(rows) ? rows : []).forEach((r) => String(r.name_value || "").split(/\n/).forEach((n) => ctName(n, d, set)));
+    return Object.assign([...set].sort(), { source: "crt.sh" });
+  } catch (e1) {
+    let rows;
+    try { rows = await dnFetchJSON("https://api.certspotter.com/v1/issuances?domain=" + encodeURIComponent(d) + "&include_subdomains=true&expand=dns_names", { timeout: 20000 }); }
+    catch (e2) { throw new Error("Certificate transparency is unreachable right now (crt.sh: " + errMsg(e1) + "; Cert Spotter: " + errMsg(e2) + "). Try again in a minute."); }
+    (Array.isArray(rows) ? rows : []).forEach((r) => (r.dns_names || []).forEach((n) => ctName(n, d, set)));
+    return Object.assign([...set].sort(), { source: "certspotter" });
+  }
 }
 
 // DNS-over-HTTPS (Google first, Cloudflare fallback) for one record type.

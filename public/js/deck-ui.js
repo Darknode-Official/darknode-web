@@ -21,7 +21,7 @@ import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261010c";
 import { dnFetch, dnFetchJSON, proxyConfigured } from "/js/net.js";
 // Attack-surface data wrappers (crt.sh / DoH / RDAP / Team Cymru ASN / HTTP probe),
 // all through the proxy above. Data-only module; bump its ?v= when it changes.
-import * as surface from "/js/deck-surface.js?v=20261011b";
+import * as surface from "/js/deck-surface.js?v=20261025g";
 // Platform event bus (singleton — never version its import, or a second instance
 // would miss every event the rest of the app emits). Drives the live Activity
 // stream and the notifications bell.
@@ -3287,16 +3287,17 @@ export function renderDeck(host, opts) {
       hx.innerHTML = `<button class="dk-graphadd">Add ${items.length} to graph</button>`;
       hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20261017d").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph", "error"));
     };
-    // Subdomains (crt.sh)
+    // Subdomains (certificate transparency: crt.sh, Cert Spotter when crt.sh is down)
     surface.subdomains(d).then((subs) => {
+      const viaCs = subs.source === "certspotter";
       bd("subs").innerHTML = subs.length
-        ? `<div class="dk-surfcount">${subs.length} unique names from certificate transparency</div><div class="dk-chiplist">${subs.slice(0, 60).map((s) => `<span class="dk-chipv">${esc(s)}</span>`).join("")}${subs.length > 60 ? `<span class="dk-chipv more">+${subs.length - 60} more</span>` : ""}</div>`
+        ? `<div class="dk-surfcount">${subs.length} unique names from certificate transparency${viaCs ? " (via Cert Spotter: crt.sh did not answer, so only unexpired certificates)" : ""}</div><div class="dk-chiplist">${subs.slice(0, 60).map((s) => `<span class="dk-chipv">${esc(s)}</span>`).join("")}${subs.length > 60 ? `<span class="dk-chipv more">+${subs.length - 60} more</span>` : ""}</div>`
         : `<div class="dk-tnone">No subdomains found in certificate transparency logs.</div>`;
-      addGraphBtn("subs", subs.slice(0, 200).map((s) => ({ type: "DOMAIN", name: s, data: { source: "crt.sh", parent: d } })), "Subdomains");
+      addGraphBtn("subs", subs.slice(0, 200).map((s) => ({ type: "DOMAIN", name: s, data: { source: viaCs ? "certspotter" : "crt.sh", parent: d } })), "Subdomains");
     }).catch((e) => bd("subs").innerHTML = errHTML(e));
     // DNS
     surface.dns(d).then((rec) => {
-      const row = (k) => (rec[k] && rec[k].length) ? `<div class="dk-dnsrow"><span class="t">${k}</span><span class="v">${rec[k].slice(0, 8).map((x) => `<span class="ln" title="${esc(x)}">${esc(x)}</span>`).join("")}</span></div>` : "";
+      const row = (k) => (rec[k] && rec[k].length) ? `<div class="dk-dnsrow"><span class="t">${k}</span><span class="v">${rec[k].slice(0, 8).map((x) => `<span class="ln" title="${esc(x)}">${esc(x)}${k === "MX" && /^0 \.$/.test(x) ? " (null MX: accepts no email)" : ""}</span>`).join("")}</span></div>` : "";
       const html = ["A", "AAAA", "MX", "NS", "TXT"].map(row).join("");
       bd("dns").innerHTML = html || `<div class="dk-tnone">No DNS records resolved.</div>`;
       const ips = [].concat(rec.A || [], rec.AAAA || []);
