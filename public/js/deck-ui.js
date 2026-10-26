@@ -1697,10 +1697,12 @@ export function renderDeck(host, opts) {
     if (!aiConnected) { try { aiConnected = Object.keys(localStorage).some((k) => k.indexOf("dn_key_") === 0); } catch (_) {} }
     let hasGraph = false;
     try { const ents = Object.values((JSON.parse(localStorage.getItem(storeKeyFor(activeWorkspace()))) || {}).entities || {}); hasGraph = ents.some((e) => !isSimulated(e)); } catch (_) {}
+    // land ON the thing to do (the field / the first connect button), not just on its page
+    const focusIn = (sel) => setTimeout(() => { const el = root.querySelector(sel); if (el && el.offsetParent) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: "center" }); } }, 80);
     return [
-      { id: "ws", label: "Name your workspace", sub: "So reports and the header carry your brand", done: !!wsProfile.name, act: () => go("settings") },
-      { id: "ai", label: "Connect an AI model or key", sub: "Power triage, runbooks and explanations", done: aiConnected, act: () => go("con") },
-      { id: "scan", label: "Run your first scan", sub: "Map an attack surface or scan code to get a baseline", done: hasGraph, act: () => go(isLocked("scene:surface") ? "personal" : "surface") },
+      { id: "ws", label: "Name your workspace", sub: "So reports and the header carry your brand", done: !!wsProfile.name, act: () => { go("settings"); focusIn("#dkSetWsName"); } },
+      { id: "ai", label: "Connect an AI model or key", sub: "Power triage, runbooks and explanations", done: aiConnected, act: () => { go("con"); focusIn(".dk-intgrp button, .dk-intgrp [role=button]"); } },
+      { id: "scan", label: "Run your first scan", sub: "Map an attack surface or scan code to get a baseline", done: hasGraph, act: () => { if (isLocked("scene:surface")) go("personal"); else { go("surface"); focusIn("#dkSurfIn"); } } },
     ];
   }
   async function dismissOnboarding(){
