@@ -20,7 +20,11 @@ export const subdomains = (domain) => fetchSubdomainNames(clean(domain));
 
 // DNS-over-HTTPS (Google first, Cloudflare fallback) for one record type.
 async function doh(name, type) {
-  const parse = (j) => ((j && j.Answer) || []).map((a) => String(a.data || "").replace(/^"|"$/g, "")).filter(Boolean);
+  // Answer also carries the CNAME chain (www -> apex): keep only the requested type, so an alias
+  // target never shows up as an "A record" / IP. A long TXT record arrives as "chunk" "chunk".
+  const want = { A: 1, NS: 2, MX: 15, TXT: 16, AAAA: 28 }[type];
+  const parse = (j) => ((j && j.Answer) || []).filter((a) => !want || a.type == null || a.type === want)
+    .map((a) => String(a.data || "").replace(/^"|"$/g, "").replace(/"\s+"/g, "")).filter(Boolean);
   try {
     return parse(await dnFetchJSON("https://dns.google/resolve?name=" + encodeURIComponent(name) + "&type=" + type, { timeout: 15000 }));
   } catch (_) {
