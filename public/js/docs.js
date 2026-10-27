@@ -156,7 +156,7 @@ node darknode.js nexus init                 # optional: scaffold .nexus/ project
       <p style="color:var(--mut,#94a3b8);margin-bottom:16px;font-size:.9rem">We collect the minimum needed to run the Services.</p>
       <ul class="dc-ul" style="font-size:.9rem">
         <li><strong>Local edition.</strong> The CLI and desktop app run on your machine. Project state lives in <code class="dc-code">.nexus/</code>. We do not collect your code or prompts.</li>
-        <li><strong>Web console.</strong> If you sign in, we store your account identifier and preferences to provide the service. We do not sell personal data.</li>
+        <li><strong>Web Deck.</strong> If you sign in, we store your account identifier and preferences to provide the service. We do not sell personal data.</li>
         <li><strong>Feedback.</strong> Feedback you submit is stored to improve the product and is readable only by you and the maintainers.</li>
         <li><strong>Retention &amp; deletion.</strong> You may request deletion of your account data at any time via Settings or by contacting the maintainers.</li>
         <li><strong>In-browser tools.</strong> Most analysis runs in your browser. Check history and saved domain lists in the Deck spaces are kept in your browser's local storage. Live checks against a domain you enter are fetched through our edge proxy and are not stored.</li>
