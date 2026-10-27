@@ -17,32 +17,49 @@ function fromCertspotter(arr) {
   }));
 }
 
+// A certificate covers a host when it names it exactly or through a one-label wildcard
+// (*.example.com covers www.example.com, not example.com or a.b.example.com).
+export function certCovers(names, host) {
+  host = String(host || "").toLowerCase().replace(/\.$/, "");
+  const dot = host.indexOf("."), wild = dot > 0 && host.indexOf(".", dot + 1) > 0 ? "*" + host.slice(dot) : null;
+  return String(names || "").toLowerCase().split(/[\n,\s]+/).some((n) => n === host || (wild && n === wild));
+}
+
 // Returns an array of CT rows (possibly empty). Never throws.
-// An empty result carries .unreachable when neither log answered, so a caller can
-// tell "nothing logged" from "could not ask".
+// Only certificates that cover the host are returned: a log search for example.com also
+// lists registry.example.com-only certificates, and a host served by a wildcard is only
+// found by asking for *.parent. An empty result carries .unreachable when neither log
+// answered, so a caller can tell "nothing logged" from "could not ask".
 export async function fetchCertRows(domain) {
-  const d = encodeURIComponent(domain);
+  const host = String(domain || "").toLowerCase().replace(/\.$/, "");
+  const dot = host.indexOf("."), wild = dot > 0 && host.indexOf(".", dot + 1) > 0 ? "*" + host.slice(dot) : null;
+  const cover = (rows) => rows.filter((r) => certCovers(r.name_value || r.common_name, host));
   let answered = false;
   // 1) crt.sh (richest, but flaky and often slower than 10 s: past 15 s the proxy waits upstream longer)
-  try {
-    const r = await dnFetch("https://crt.sh/?output=json&exclude=expired&q=" + d, { raw: true, timeout: 30000 });
-    if (r.status && r.status < 500 && r.body && r.body.trim().startsWith("[")) {
-      const a = JSON.parse(r.body);
-      answered = true;
-      if (Array.isArray(a) && a.length) return a;
-    }
-  } catch (_) {}
-  // 2) certspotter fallback
-  try {
-    const url = "https://api.certspotter.com/v1/issuances?include_subdomains=false" +
-      "&expand=issuer&expand=not_before&expand=not_after&expand=dns_names&domain=" + d;
-    const r = await dnFetch(url, { raw: true, timeout: 15000 });
-    if (r.body && r.body.trim().startsWith("[")) {
-      const rows = fromCertspotter(JSON.parse(r.body));
-      answered = true;
-      if (rows.length) return rows;
-    }
-  } catch (_) {}
+  for (const q of wild ? [host, wild] : [host]) {
+    try {
+      const r = await dnFetch("https://crt.sh/?output=json&exclude=expired&q=" + encodeURIComponent(q), { raw: true, timeout: 30000 });
+      if (r.status && r.status < 500 && r.body && r.body.trim().startsWith("[")) {
+        const a = JSON.parse(r.body);
+        answered = true;
+        const rows = Array.isArray(a) ? cover(a) : [];
+        if (rows.length) return rows;
+      } else if (!answered) break;
+    } catch (_) { if (!answered) break; }
+  }
+  // 2) certspotter fallback (the parent domain's issuances carry its wildcard certificates)
+  for (const q of wild ? [host, wild.slice(2)] : [host]) {
+    try {
+      const url = "https://api.certspotter.com/v1/issuances?include_subdomains=false" +
+        "&expand=issuer&expand=not_before&expand=not_after&expand=dns_names&domain=" + encodeURIComponent(q);
+      const r = await dnFetch(url, { raw: true, timeout: 15000 });
+      if (r.body && r.body.trim().startsWith("[")) {
+        const rows = cover(fromCertspotter(JSON.parse(r.body)));
+        answered = true;
+        if (rows.length) return rows;
+      }
+    } catch (_) {}
+  }
   return answered ? [] : Object.assign([], { unreachable: true });
 }
 

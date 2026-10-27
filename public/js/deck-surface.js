@@ -11,7 +11,7 @@
 // ============================================================================
 
 import { dnFetch, dnFetchJSON } from "/js/net.js";
-import { fetchSubdomainNames } from "/js/dataprotect/ct-fetch.js?v=20261025g";
+import { fetchSubdomainNames } from "/js/dataprotect/ct-fetch.js?v=20261026a";
 
 const clean = (d) => String(d || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^\*\./, "");
 

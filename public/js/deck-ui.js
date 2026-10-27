@@ -21,7 +21,7 @@ import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261010c";
 import { dnFetch, dnFetchJSON, proxyConfigured } from "/js/net.js";
 // Attack-surface data wrappers (crt.sh / DoH / RDAP / Team Cymru ASN / HTTP probe),
 // all through the proxy above. Data-only module; bump its ?v= when it changes.
-import * as surface from "/js/deck-surface.js?v=20261025g";
+import * as surface from "/js/deck-surface.js?v=20261026a";
 // Platform event bus (singleton — never version its import, or a second instance
 // would miss every event the rest of the app emits). Drives the live Activity
 // stream and the notifications bell.

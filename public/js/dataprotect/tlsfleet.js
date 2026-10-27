@@ -9,7 +9,7 @@
 //   renderTlsFleet(main) -> void
 
 import { parseDomains, buildEntry, summarizeFleet, BANDS } from "/js/dataprotect/tls-engine.js?v=20261013i";
-import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261013i";
+import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
 import { dnFetch } from "/js/net.js";
 import { attachSinkButton } from "../core/sink.js";
 import { tlsFleetFindings } from "/js/dataprotect/dp-sink.js";
