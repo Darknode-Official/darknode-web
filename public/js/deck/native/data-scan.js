@@ -48,7 +48,8 @@ export function mount(el, { space, mode }) {
     const red = out.querySelector("#nsDsRed");
     if (red) {
       const sty = out.querySelector("#nsDsSty");
-      const paint = () => { red.value = redact(text, res.findings, sty.value); };
+      // one file: the file marker (kept for dp-sink attribution) is not part of the copy the user takes away
+      const paint = () => { const r = redact(text, res.findings, sty.value); red.value = files && files.length === 1 ? r.replace(/^\n\/\* ===== .+? ===== \*\/\n/, "") : r; };
       sty.onchange = paint; paint();
       out.querySelector("#nsDsCopy").onclick = async () => { try { await navigator.clipboard.writeText(red.value); toast("Redacted text copied"); } catch (_) { red.select(); toast("Select and copy the text"); } };
       if (ent) { const d = document.createElement("button"); d.className = "ns-btn ghost"; d.textContent = "Download redacted"; d.onclick = () => download("redacted.txt", red.value, "text/plain"); out.querySelector("#nsDsCopy").after(d); }
