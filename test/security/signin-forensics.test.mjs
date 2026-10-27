@@ -547,3 +547,15 @@ group("sif: Security Graph sink mapping", () => {
     assert.equal(f10.assets.filter((x) => x.type === "IDENTITY").length, 10);
   });
 });
+
+group("signin-forensics: impossible travel with country-level locations", () => {
+  const mk = (t, ip, o) => Object.assign({ ts: Date.UTC(2026, 9, 1, 10, t), user: "u@x", ip, success: true, app: "a", clientApp: "Browser", mfa: true, country: null, city: null, lat: null, lon: null, raw: {} }, o);
+  const travel = (recs) => analyze(recs.map((x, i) => Object.assign(x, { _i: i })), {}, {}).findings.filter((f) => f.id === "impossible_travel");
+  test("a city/coordinate fix and a same-country centroid are not impossible travel", () => {
+    assert.equal(travel([mk(0, "1.1.1.1", { lat: 40.71, lon: -74.01, country: "US" }), mk(30, "2.2.2.2", { country: "United States" })]).length, 0);
+    assert.equal(travel([mk(0, "1.1.1.1", { city: "Moscow", country: "RU" }), mk(20, "2.2.2.2", { country: "RU" })]).length, 0);
+  });
+  test("different countries are still compared", () => {
+    assert.equal(travel([mk(0, "1.1.1.1", { city: "London", country: "GB" }), mk(60, "2.2.2.2", { country: "JP" })]).length, 1);
+  });
+});

@@ -557,6 +557,8 @@ const COUNTRIES = {
   iq: [33.2, 43.7], iraq: [33.2, 43.7], kp: [40.3, 127.5], "north korea": [40.3, 127.5], is: [64.96, -19.02], iceland: [64.96, -19.02],
 };
 
+const countryPos = (c) => (c ? COUNTRIES[String(c).trim().toLowerCase()] || null : null);
+
 // Resolve a record's position. Returns { lat, lon, basis } or null.
 // basis: "coordinates" (from the export), "city" (gazetteer), "country" (centroid).
 export function resolvePlace(r) {
@@ -796,8 +798,16 @@ export function analyze(records, options, meta) {
         if (!r.success) continue;
         const pos = resolvePlace(r);
         if (!pos) { unresolved++; continue; }
-        if (prev && r.ip !== prev.ip) {
-          const km = haversineKm(prevPos.lat, prevPos.lon, pos.lat, pos.lon);
+        // a country-level fix is only a centroid: measured against a city or coordinates it put
+        // New York -> "US" (Kansas, ~1,800 km) or Moscow -> "RU" (~3,700 km) a few minutes apart as
+        // impossible travel. When either side is country-level, compare country to country only.
+        let a1 = prevPos, a2 = pos;
+        if (prev && r.ip !== prev.ip && (pos.basis === "country" || prevPos.basis === "country")) {
+          const c1 = countryPos(prev.country), c2 = countryPos(r.country);
+          a1 = c1 && c2 && (c1[0] !== c2[0] || c1[1] !== c2[1]) ? { lat: c1[0], lon: c1[1] } : null; a2 = a1 && { lat: c2[0], lon: c2[1] };
+        }
+        if (prev && r.ip !== prev.ip && a1) {
+          const km = haversineKm(a1.lat, a1.lon, a2.lat, a2.lon);
           const hours = Math.max(1 / 60, (r.ts - prev.ts) / 3600000);
           const kmh = km / hours;
           if (km >= o.travelMinKm && kmh > o.travelSpeedKmh) {
