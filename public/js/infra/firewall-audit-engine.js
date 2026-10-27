@@ -306,6 +306,9 @@ export function portsFromToken(tok) {
     const a = +m[1], b = +m[2]; if (a > 65535 || b > 65535 || a > b) return null; return [[a, b]];
   }
   if ((m = /^(\d+)\s*(?:\(|$)/.exec(tok))) { const a = +m[1]; return a > 65535 ? null : [[a, a]]; }
+  // iptables open-ended ranges: "1024:" = 1024-65535, ":1023" = 0-1023 (were unresolved)
+  if ((m = /^(\d+):$/.exec(tok))) { const a = +m[1]; return a > 65535 ? null : [[a, 65535]]; }
+  if ((m = /^:(\d+)$/.exec(tok))) { const b = +m[1]; return b > 65535 ? null : [[0, b]]; }
   if (SERVICES[tok] != null) { const p = SERVICES[tok]; return [[p, p]]; }
   return null;
 }
@@ -511,10 +514,13 @@ export function parseIptables(text) {
         case "-i": case "--in-interface": r.iface = val || ""; if (neg) r.restricted = true; i += 2; break;
         case "-o": case "--out-interface": r.oface = val || ""; if (neg) r.restricted = true; i += 2; break;
         case "--dport": case "--destination-port": case "--dports": case "--destination-ports": r.dp = val; if (neg) r.restricted = true; i += 2; break;
+        // -m iprange: the source/destination was read as ANY
+        case "--src-range": r.srcTok = [val || ""]; r.srcNeg = neg; i += 2; break;
+        case "--dst-range": r.dstTok = [val || ""]; r.dstNeg = neg; i += 2; break;
         case "--sport": case "--source-port": case "--sports": case "--source-ports": r.sp = val; if (neg) r.restricted = true; i += 2; break;
         case "--ports": r.dp = val; r.sp = val; i += 2; break;
         case "-m": case "--match": {
-          if (!["multiport", "state", "conntrack", "comment", "tcp", "udp", "icmp", "icmp6", "ipv6-icmp"].includes(val)) r.restricted = true;
+          if (!["multiport", "state", "conntrack", "comment", "tcp", "udp", "icmp", "icmp6", "ipv6-icmp", "iprange"].includes(val)) r.restricted = true;
           i += 2; break;
         }
         case "--state": case "--ctstate": {

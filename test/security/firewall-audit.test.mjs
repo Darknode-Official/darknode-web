@@ -642,3 +642,16 @@ group("firewall: ASA port operators and port groups", () => {
     assert.deepEqual(r[2].dstPorts.ranges, [[1024, 65535], [0, 52], [54, 65535]]);
   });
 });
+
+group("firewall: iptables open-ended ports and iprange", () => {
+  const r = parseIptables("*filter\n-A INPUT -p tcp --dport 1024: -j ACCEPT\n-A INPUT -p tcp -m multiport --dports 22,:1023 -j ACCEPT\n-A INPUT -p tcp -m iprange --src-range 1.2.3.4-1.2.3.9 --dport 22 -j ACCEPT\nCOMMIT").rules;
+  test("1024: and :1023 are ranges, not unresolved", () => {
+    assert.deepEqual(r[0].dstPorts.ranges, [[1024, 65535]]);
+    assert.deepEqual(r[1].dstPorts.ranges, [[22, 22], [0, 1023]]);
+    assert.equal(r[0].dstPorts.unresolved.length, 0);
+  });
+  test("--src-range sets the source (was ANY)", () => {
+    assert.equal(r[2].src.any, false);
+    assert.equal(fmtRange(r[2].src.ranges[0]), "1.2.3.4-1.2.3.9");
+  });
+});
