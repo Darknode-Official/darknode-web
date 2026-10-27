@@ -235,7 +235,21 @@ export function subnet24(ip) {
   const s = String(ip || "").trim();
   const m = s.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.\d{1,3}$/);
   if (m) return `${m[1]}.${m[2]}.${m[3]}.0/24`;
-  if (s.includes(":")) { const p = s.split(":"); return p.slice(0, 4).join(":") + "::/64"; }
+  if (s.includes(":")) {
+    // expand "::" first: a plain split put 2001:db8::1 in "2001:db8::1::/64", and the same /64
+    // written two ways (2001:db8:0:0:... vs 2001:0db8::...) never grouped
+    const v6 = s.replace(/%.*$/, "").toLowerCase();
+    const mapped = v6.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/);
+    if (mapped) return subnet24(mapped[1]);
+    const halves = v6.split("::");
+    if (halves.length <= 2) {
+      const head = halves[0] ? halves[0].split(":") : [], tail = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+      const fill = halves.length === 2 ? 8 - head.length - tail.length : 0;
+      const g = [...head, ...Array(Math.max(0, fill)).fill("0"), ...tail];
+      if (g.length === 8 && g.every((x) => /^[0-9a-f]{1,4}$/.test(x))) return g.slice(0, 4).map((x) => x.replace(/^0+(?=.)/, "")).join(":") + "::/64";
+    }
+    return s;
+  }
   return s;
 }
 

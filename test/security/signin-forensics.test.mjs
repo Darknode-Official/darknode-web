@@ -155,6 +155,10 @@ group("sif: source detection and value parsing", () => {
     assert.ok(hostingHint("DigitalOcean, LLC", "14061"));
     assert.equal(hostingHint("eircom limited", "5466"), null);
     assert.equal(subnet24("203.0.113.77"), "203.0.113.0/24");
+    // IPv6: "::" expanded, zeros normalised, so one /64 written two ways groups together
+    assert.equal(subnet24("2001:db8::1"), "2001:db8:0:0::/64");
+    assert.equal(subnet24("2001:0DB8:0000:0000:abcd::1"), "2001:db8:0:0::/64");
+    assert.equal(subnet24("::ffff:203.0.113.9"), "203.0.113.0/24");
   });
 });
 
