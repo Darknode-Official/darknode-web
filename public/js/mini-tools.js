@@ -86,7 +86,7 @@ export function renderMiniTool(main, id, opts = {}) {
   if (route) {
     // Swap the old URL for the route (no extra history entry), then ask the console to open it.
     // The link stays as a fallback if no console is listening (e.g. a bare embed).
-    main.innerHTML = `<div class="mt-shell"><p class="mt-empty">This tool is now part of a full console tool. <button type="button" class="mt-back" data-sec="${esc(route)}">Open it</button></p></div>`;
+    main.innerHTML = `<div class="mt-shell"><p class="mt-empty">This tool is now part of a larger tool. <button type="button" class="mt-back" data-sec="${esc(route)}">Open it</button></p></div>`;
     try { history.replaceState({ sec: route }, "", "/" + route); } catch (_) {}
     document.dispatchEvent(new CustomEvent("dn:navigate", { detail: route }));
     return;

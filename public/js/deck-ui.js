@@ -2867,7 +2867,7 @@ export function renderDeck(host, opts) {
         <div class="dk-ovp"><h2 data-explain="panel.pins">${IC.star} Pinned tools <span class="mo" role="button" tabindex="0" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
         <div class="dk-ovp"><h2 data-explain="panel.system">${IC.radar} System status</h2><div id="dkSys" class="dk-sys"></div></div>
         <div class="dk-ovp"><h2 data-explain="panel.integrations">${IC.link} Integrations <span class="mo" role="button" tabindex="0" data-scene="con">Manage</span></h2>
-          <div class="dk-gauge dk-intg"><div class="gmeta"><b>${linked.length}<small>of ${INTEGRATIONS.length} linked</small></b><div class="dk-meter"><i style="--p:${pct}%"></i></div><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the console."}</p></div></div>
+          <div class="dk-gauge dk-intg"><div class="gmeta"><b>${linked.length}<small>of ${INTEGRATIONS.length} linked</small></b><div class="dk-meter"><i style="--p:${pct}%"></i></div><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the Deck."}</p></div></div>
         </div>
       </div>
       <div class="dk-ovgrid">
