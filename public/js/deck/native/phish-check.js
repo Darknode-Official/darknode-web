@@ -2,7 +2,7 @@
 // Native Link & Email Check: phish-engine verdicts for a pasted link or a full email
 // source. Enterprise mode ("queue") keeps a triage log of everything reported.
 
-import { analyzeUrl, triageEmail, defangText, buildTriageReport } from "/js/dataprotect/phish-engine.js?v=20261026a";
+import { analyzeUrl, triageEmail, defangText, refangText, buildTriageReport } from "/js/dataprotect/phish-engine.js?v=20261026a";
 import { phishUrlFindings, phishEmailFindings } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, SEV, sevPill, recordRun, readList, writeList, ago, download } from "./ui.js";
@@ -49,7 +49,9 @@ export function mount(el, { space, mode }) {
   el.querySelector("#nsPhGo").onclick = () => {
     const raw = ta.value.trim(); if (!raw) { toast(m === "url" ? "Paste a link first" : "Paste the email source first"); return; }
     if (m === "url") {
-      const u = analyzeUrl(raw.split(/\s+/)[0]);
+      // the link may sit inside a pasted sentence ("Click here https://..."): analyse the link, not the first word
+      const toks = raw.split(/\s+/).map((t) => t.replace(/^[<("']+|[>)"',;.]+$/g, ""));
+      const u = analyzeUrl(toks.find((t) => /^(?:[a-z][a-z0-9+.-]*:\/\/|hxxps?:)/i.test(t)) || toks.find((t) => /[a-z0-9-]\.[a-z]{2,}/i.test(refangText(t))) || toks[0]);
       const [label, c] = URL_VERDICT[u.severity] || URL_VERDICT.info;
       out.innerHTML = `<div class="ns-card" style="border-left:6px solid ${c}">
         <div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${c}">Verdict</div>

@@ -24,3 +24,11 @@ group("deck: domain input cleaning", () => {
     for (const raw of ["8.8.8.8", "localhost", "example", "a..b.com"]) assert.notOk(validDomain(cleanDomain(raw)), raw);
   });
 });
+
+group("deck: link check picks the link out of a pasted sentence", () => {
+  const ph = readFileSync(new URL("../../public/js/deck/native/phish-check.js", import.meta.url), "utf8");
+  test("the analysed token is the first URL, else the first domain-looking word - never just the first word", () => {
+    assert.notOk(/analyzeUrl\(raw\.split\(\/\\s\+\/\)\[0\]\)/.test(ph));
+    assert.ok(/toks\.find\(\(t\) => \/\^\(\?:\[a-z\]\[a-z0-9\+\.-\]\*:\\\/\\\/\|hxxps\?:\)\/i\.test\(t\)\) \|\| toks\.find/.test(ph));
+  });
+});
