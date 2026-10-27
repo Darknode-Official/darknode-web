@@ -10,7 +10,9 @@ import { registrableDomain } from "/js/dataprotect/phish-engine.js?v=20261025g";
 
 export function cleanDomain(raw) {
   let d = String(raw || "").trim();
-  d = d.replace(/^[a-z]+:\/\//i, "").replace(/\/.*$/, "").replace(/:\d+$/, "").replace(/^www\./i, "");
+  // also accept what people paste: you@domain / mailto:, ?query or #hash without a path, a trailing root dot
+  d = d.replace(/^mailto:/i, "").replace(/^[a-z]+:\/\//i, "").replace(/[/?#].*$/, "").replace(/^[^@]*@/, "").replace(/:\d+$/, "").replace(/\.$/, "").replace(/^www\./i, "");
+  if (/[^\x00-\x7f]/.test(d)) { try { d = new URL("http://" + d).hostname; } catch (_) {} } // international names -> punycode (xn--)
   return d.toLowerCase();
 }
 export const validDomain = (d) => /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(d);
