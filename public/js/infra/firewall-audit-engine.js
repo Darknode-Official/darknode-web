@@ -317,6 +317,15 @@ export function portSet(opts) {
   return s;
 }
 export const ANY_PORTS = () => portSet({ any: true, text: "any" });
+// Cisco port operator -> ranges ("gt 1023" -> 1024-65535); null when the port can't be read
+function ciscoOpPorts(op, tok) {
+  const a = portsFromToken(tok); if (!a) return null;
+  const lo = a[0][0], hi = a[0][1];
+  if (op === "gt") return hi < 65535 ? [[hi + 1, 65535]] : [];
+  if (op === "lt") return lo > 0 ? [[0, lo - 1]] : [];
+  if (op === "neq") return [[0, lo - 1], [hi + 1, 65535]].filter((r) => r[0] <= r[1]);
+  return a;
+}
 export function parsePortSpec(spec) {
   // "22", "22-80", "22:80", "22,80,443", "ssh", "*", "any"
   const str = String(spec == null ? "" : spec).trim();
@@ -671,6 +680,8 @@ export function parseCisco(text) {
     } else if (cur.ports) { // service
       if ((m = /^port-object eq (\S+)/.exec(line))) { const p = portsFromToken(m[1]); if (p) cur.ports.push(...p); else cur.unresolved.push(m[1]); }
       else if ((m = /^port-object range (\S+) (\S+)/.exec(line))) { const a = portsFromToken(m[1]), b = portsFromToken(m[2]); if (a && b) cur.ports.push([a[0][0], b[0][1]]); else cur.unresolved.push(m[1] + "-" + m[2]); }
+      // gt/lt/neq were dropped: "eq 80" + "gt 1023" read as port 80 only, hiding the open range
+      else if ((m = /^port-object (gt|lt|neq) (\S+)/.exec(line))) { const r = ciscoOpPorts(m[1], m[2]); if (r) cur.ports.push(...r); else cur.unresolved.push(m[1] + " " + m[2]); }
       else if ((m = /^service-object object (\S+)/.exec(line)) || (m = /^group-object (\S+)/.exec(line))) cur.items.push({ ref: m[1] });
       else if ((m = /^(?:service-object|service) (tcp|udp|tcp-udp|ip|icmp|\S+)(.*)$/.exec(line))) {
         const proto = normProto(m[1]); const rest = tokenize(m[2]);
@@ -679,6 +690,7 @@ export function parseCisco(text) {
         const seg = di >= 0 ? rest.slice(di + 1) : rest.filter((x) => x !== "source");
         if (seg[0] === "eq") { ports = []; for (let q = 1; q < seg.length && ciscoPortTok(seg[q]); q++) { const p = portsFromToken(seg[q]); if (p) ports.push(...p); } anyP = false; }
         else if (seg[0] === "range") { const a = portsFromToken(seg[1]), b = portsFromToken(seg[2]); ports = a && b ? [[a[0][0], b[0][1]]] : []; anyP = false; }
+        else if (/^(gt|lt|neq)$/.test(seg[0] || "")) { ports = ciscoOpPorts(seg[0], seg[1]); anyP = false; if (!ports) { ports = []; cur.unresolved.push(seg[0] + " " + seg[1]); } } // was read as ANY port
         if (rest.includes("source") && di < 0) cur.unresolved.push("source-port filter");
         cur.items.push({ proto, ports: anyP ? null : ports });
       }
@@ -746,6 +758,8 @@ export function parseCisco(text) {
     if (t === "gt") { const a = portsFromToken(tk[i + 1]); return [a ? portSet({ ranges: [[a[0][0] + 1, 65535]] }) : portSet({ unresolved: ["gt " + tk[i + 1]] }), i + 2, false]; }
     if (t === "lt") { const a = portsFromToken(tk[i + 1]); return [a ? portSet({ ranges: [[0, a[0][0] - 1]] }) : portSet({ unresolved: ["lt " + tk[i + 1]] }), i + 2, false]; }
     if (t === "neq") { const a = portsFromToken(tk[i + 1]); const p = a ? a[0][0] : null; return [p != null ? portSet({ ranges: [[0, p - 1], [p + 1, 65535]].filter((r) => r[0] <= r[1]) }) : portSet({ unresolved: ["neq " + tk[i + 1]] }), i + 2, false]; }
+    // ASA port group: "permit tcp any any object-group WEB-PORTS" (object-group service NAME tcp) was read as ANY port
+    if (t === "object-group" && svcObjs[tk[i + 1]] && svcObjs[tk[i + 1]].proto && !netObjs[tk[i + 1]]) return [resolveSvc(tk[i + 1]).ports, i + 2, false];
     return [null, i, false];
   };
   const parseEntry = (aclName, tk, lineNo, raw, wildcard, standard) => {

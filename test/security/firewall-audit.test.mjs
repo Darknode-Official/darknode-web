@@ -619,3 +619,26 @@ group("fwa: Security Graph sink mapping", () => {
     assert.ok(sampleShare(trimmed, FX.iptables) >= SAMPLE_SHARE, "an example with a few rules deleted stays sample");
   });
 });
+
+group("firewall: ASA port operators and port groups", () => {
+  const cfg = [
+    "object-group network SRV", " network-object host 10.0.0.5",
+    "object-group service HIGH tcp", " port-object eq 80", " port-object gt 1023",
+    "object-group service SVC", " service-object tcp destination gt 1023", " service-object udp destination neq 53",
+    "access-list OUT extended permit tcp any any object-group HIGH",
+    "access-list OUT extended permit tcp any object-group HIGH object-group SRV",
+    "access-list OUT extended permit object-group SVC any any",
+  ].join("\n");
+  const r = parseCisco(cfg).rules;
+  test("port-object gt is kept next to eq (was dropped, leaving port 80 only)", () => {
+    assert.deepEqual(r[0].dstPorts.ranges, [[80, 80], [1024, 65535]]);
+  });
+  test("object-group port group after an address is a port set, not ANY", () => {
+    assert.deepEqual(r[1].srcPorts.ranges, [[80, 80], [1024, 65535]]);
+    assert.equal(r[1].dst.ranges.length, 1);
+  });
+  test("service-object destination gt/neq are ranges, not ANY", () => {
+    assert.equal(r[2].dstPorts.any, false);
+    assert.deepEqual(r[2].dstPorts.ranges, [[1024, 65535], [0, 52], [54, 65535]]);
+  });
+});
