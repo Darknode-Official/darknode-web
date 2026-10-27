@@ -150,6 +150,6 @@ export async function emailAuth(domain) {
   const dmarc = dmarcTxt.find((t) => /^v=DMARC1/i.test(t)) || "";
   return {
     spf: { present: !!spf, record: spf },
-    dmarc: { present: !!dmarc, record: dmarc, policy: (dmarc.match(/p=([a-z]+)/i) || [])[1] || "" }
+    dmarc: { present: !!dmarc, record: dmarc, policy: (dmarc.match(/\bp\s*=\s*([a-z]+)/i) || [])[1] || "" }
   };
 }

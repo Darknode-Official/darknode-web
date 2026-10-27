@@ -131,7 +131,7 @@ export function analyzeDNSRecords(records) {
     analysis.riskScore += 25;
   } else {
     const dmarc = dmarcRecords[0].value;
-    if (dmarc.includes("p=none")) {
+    if (/\bp\s*=\s*none\b/i.test(dmarc)) {
       analysis.findings.push({ severity: "medium", finding: "DMARC policy is 'none' — only monitoring, not enforcing" });
       analysis.riskScore += 10;
     }

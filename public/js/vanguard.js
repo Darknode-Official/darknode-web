@@ -559,7 +559,7 @@ function _vgPhase1_DNS(domain) {
               var txt = (a.data || '').replace(/"/g, '');
               if (/v=DMARC1/i.test(txt)) {
                 hasDMARC = true;
-                var policy = (txt.match(/p=(\w+)/i) || [])[1] || 'none';
+                var policy = (txt.match(/\bp\s*=\s*(\w+)/i) || [])[1] || 'none';
                 _vgLog('  ▸ DMARC policy: p=' + policy, policy === 'reject' ? 'success' : 'warning');
                 if (policy === 'none') {
                   _vgAddFinding({ severity: 'medium', title: 'Weak DMARC Policy (p=none)', description: 'DMARC policy is set to none — spoofed emails are not rejected.', phase: 'DNS', host: domain, remediation: 'Change DMARC policy to p=quarantine or p=reject' });
@@ -1125,7 +1125,7 @@ function _vgPhase8_Email() {
           });
         }
         if (emailResult.dmarc) {
-          var policy = (emailResult.dmarc.match(/p=(\w+)/i) || [])[1] || 'none';
+          var policy = (emailResult.dmarc.match(/\bp\s*=\s*(\w+)/i) || [])[1] || 'none';
           _vgLog('  DMARC: p=' + policy + ' — ' + emailResult.dmarc.substring(0, 80), policy === 'reject' ? 'success' : policy === 'quarantine' ? 'warning' : 'critical');
           if (policy === 'none') _vgAddFinding({ severity: 'medium', title: 'DMARC policy is "none"', detail: 'DMARC exists but policy is "none" — spoofed emails are not rejected', phase: 8, category: 'EMAIL' });
         } else {
@@ -1154,7 +1154,7 @@ function _vgPhase8_Email() {
           // Grade
           var hasSpf = !!emailResult.spf;
           var hasDmarc = !!emailResult.dmarc;
-          var dmarcStrong = hasDmarc && /p=(reject|quarantine)/i.test(emailResult.dmarc);
+          var dmarcStrong = hasDmarc && /\bp\s*=\s*(reject|quarantine)/i.test(emailResult.dmarc);
           var hasDkim = emailResult.dkim.length > 0;
           var spfStrong = hasSpf && /-all/.test(emailResult.spf);
 

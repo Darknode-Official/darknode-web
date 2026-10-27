@@ -28,4 +28,8 @@ group("deck surface: DNS over HTTPS", () => {
     const r = await m.securityTxt("example.com");
     assert.equal(r.found, true); assert.equal(r.contact, "mailto:test@darknode.ai");
   });
+  test("DMARC policy is read from the p= tag, not from inside sp=", async () => {
+    globalThis.__doh = (u) => /_dmarc/.test(u) ? { Answer: [{ type: 16, data: '"v=DMARC1; sp=none; p=reject; rua=mailto:test@darknode.ai"' }] } : { Answer: [] };
+    assert.equal((await m.emailAuth("example.com")).dmarc.policy, "reject");
+  });
 });
