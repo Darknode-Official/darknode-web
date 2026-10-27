@@ -1886,12 +1886,25 @@ export function renderDeck(host, opts) {
     return pins.includes(sec);
   }
   let curScene = "overview";
-  // Keep the address bar on what is actually showing, so a reload or a re-mount of
-  // the Deck never reopens a stale tool (e.g. /admin). Scenes live at "/" (the scene
-  // itself is restored from LS_SCENE); an open tool lives at "/<sec>".
+  // Every Deck page has a darknode.ai link and the address bar follows what is showing:
+  // an open tool is /<sec>, a page is /<scene> (the overview is /, a section is
+  // /area/<id>). compliance and tools are also tool ids, so those pages take another
+  // name. Navigating adds a history entry; boot and back/forward only replace it.
+  const SCENE_PATH = { overview: "", compliance: "compliance-center", tools: "all-tools", con: "connections", invest: "investigations" };
+  const scenePath = (scene, sect) => "/" + (scene === "section" ? "area/" + sect : scene in SCENE_PATH ? SCENE_PATH[scene] : scene);
+  // -> { scene, arg } for a Deck page path, null for anything else (a tool)
+  function routeOf(pathname){
+    const raw = String(pathname || "").replace(/^\/+|\/+$/g, "");
+    if (!raw) return { scene: "overview" };
+    const m = raw.match(/^area\/(\w+)$/);
+    if (m) return SECTIONS[m[1]] ? { scene: "section", arg: m[1] } : null;
+    for (const k in SCENES) if (k !== "section" && (k in SCENE_PATH ? SCENE_PATH[k] : k) === raw) return { scene: k };
+    return null;
+  }
+  let routing = true;
   function syncUrl(path){
     if (!primary) return;
-    try { if (location.pathname !== path) history.replaceState(history.state, "", path + location.search); } catch (_) {}
+    try { if (location.pathname !== path) history[routing ? "replaceState" : "pushState"](routing ? history.state : null, "", path + location.search); } catch (_) {}
   }
   // Shortcuts into tools/scenes above the plan are removed, not left as dead buttons
   // (go()/openTool() refuse them); same rule as the sidebar: hidden, never badged.
@@ -1904,7 +1917,7 @@ export function renderDeck(host, opts) {
     if (!SCENES[scene] || isLocked(scene === "section" ? "section:" + (SECTIONS[arg] ? arg : curSect) : "scene:" + scene)) scene = "overview";
     curScene = scene;
     if (scene === "section") { if (SECTIONS[arg]) curSect = arg; try { localStorage.setItem("dn_deck_sect", curSect); } catch (_) {} }
-    syncUrl("/");
+    syncUrl(scenePath(scene, curSect));
     try { localStorage.setItem(LS_SCENE, scene); } catch (_) {}
     closeAllMenus();
     sceneWork.hidden = true; hideTools();
@@ -4725,7 +4738,31 @@ export function renderDeck(host, opts) {
   // ---------- boot: restore the last workspace ----------
   let initial = "overview";
   try { const sv = localStorage.getItem(LS_SCENE); if (sv && SCENES[sv]) initial = sv; } catch (_) {}
-  rafId = requestAnimationFrame(() => { go(initial); if (opts.startSec) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec); });
+  // a page link (/surface, /area/code) opens that page; / restores the last one
+  const route0 = primary ? routeOf(location.pathname) : null;
+  if (route0 && route0.scene !== "overview") initial = route0.scene;
+  rafId = requestAnimationFrame(() => {
+    go(initial, route0 && route0.arg);
+    if (opts.startSec && !route0) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec);
+    routing = false;
+  });
+  // back / forward between Deck pages and tools
+  if (primary) {
+    const onPop = () => {
+      const r = routeOf(location.pathname);
+      routing = true;
+      try {
+        if (r) go(r.scene, r.arg);
+        else {
+          const raw = location.pathname.replace(/^\/+|\/+$/g, "");
+          const sec = raw.startsWith("tool-") ? raw : raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+          if (sec && secLabel[sec] && !isLocked("tool:" + sec)) openTool(sec, secLabel[sec]); else go("overview");
+        }
+      } finally { routing = false; }
+    };
+    window.addEventListener("popstate", onPop);
+    busOffs.push(() => window.removeEventListener("popstate", onPop));
+  }
 
   let swapped = null; // the re-rendered Deck after a plan preview switch
   function teardown(){

@@ -32,7 +32,7 @@ export async function getWhitelist() {
 }
 
 // The Deck launcher lives in its own module so every signed-in user can load it.
-import { openDeck, closeDeck } from "/js/deck/launch.js?v=20261026b";
+import { openDeck, closeDeck } from "/js/deck/launch.js?v=20261027a";
 export { openDeck, closeDeck };
 
 // ---- Preview UI: a light, single-surface alternate view of every tool, launched from
@@ -296,9 +296,9 @@ export async function renderAdmin(main, user) {
     }).catch(() => {});
   })();
 
-  // ---- AWS console: admin-only (auth.js honours dn_ui=console only for admins) ----
-  // The page may be framed inside the Deck, so the switch reloads the top window.
-  { const b = main.querySelector("#consoleLaunch"); if (b) b.onclick = () => { try { localStorage.setItem("dn_ui", "console"); } catch (_) {} try { window.top.location.assign("/"); } catch (_) { location.assign("/"); } }; }
+  // ---- AWS console: admin-only, at /console (auth.js gives that path the console only for admins) ----
+  // The page may be framed inside the Deck, so it opens in the top window.
+  { const b = main.querySelector("#consoleLaunch"); if (b) b.onclick = () => { try { window.top.location.assign("/console"); } catch (_) { location.assign("/console"); } }; }
 
   // ---- Preview UI launcher (sits beside the Deck button) ----
   (function wirePreview() {

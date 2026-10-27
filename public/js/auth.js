@@ -1737,15 +1737,17 @@ function renderDesktopHome(user) {
     return;
   }
   view.innerHTML = "";
-  import("/js/deck/launch.js?v=20261026b")
+  import("/js/deck/launch.js?v=20261027a")
     .then((m) => m.openDeck(user, { isOwner: true, onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
-// Web home: the Deck is the only signed-in UI for users. The AWS-style console is an
-// admin-only option, opened from the Admin page (localStorage dn_ui = "console", honoured
-// only for admins); it still serves embedded tool frames (?embed=1) and the desktop
-// app's guest webview (?app=1).
-const UI_PREF = "dn_ui";
+// Web home: the Deck is the only signed-in UI and owns every darknode.ai/<page> link.
+// The AWS-style console is the owner's alone and lives under /console/<page>, opened
+// from the Admin page; anyone else on a /console link gets that page in the Deck. The
+// console still renders the Deck's embedded tool frames (/<sec>?embed=1).
+const CONSOLE_BASE = "/console";
+const isConsolePath = (p) => p === CONSOLE_BASE || p.startsWith(CONSOLE_BASE + "/");
+try { localStorage.removeItem("dn_ui"); } catch (_) {} // the old sticky console switch; the path decides now
 let _deckFailed = false;
 function deckIsHome() {
   if (_deckFailed) return false;
@@ -1753,19 +1755,19 @@ function deckIsHome() {
     const q = new URLSearchParams(location.search);
     if (q.get("embed") === "1" || document.documentElement.hasAttribute("data-embed")) return false;
     // ?app=1 / desktop guests get the Deck too: the console is the owner's alone
-    return !(_isAdmin && localStorage.getItem(UI_PREF) === "console");
+    return !(_isAdmin && isConsolePath(location.pathname));
   } catch (_) { return true; }
 }
-function setUiPref(v) { try { if (v) localStorage.setItem(UI_PREF, v); else localStorage.removeItem(UI_PREF); } catch (_) {} location.assign("/"); }
+function setUiPref() { location.assign("/"); }
 function renderDeckHome(user) {
   view.innerHTML = "";
   // A deep link (/<sec>) opens that tool inside the Deck; the admin page only for the owner.
   // (same mapping as the console's pathToSec: hyphenated paths are camelCase secs,
   // except tool-<id> mini-tools, which stay as-is)
-  const raw = location.pathname.replace(/^\//, "").replace(/\/$/, "");
+  const raw = location.pathname.replace(/^\/(console(\/|$))?/, "").replace(/\/$/, "");
   let startSec = !raw ? null : raw.startsWith("tool-") ? raw : raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
   if (startSec === "home" || (startSec === "admin" && !_isAdmin)) startSec = null;
-  import("/js/deck/launch.js?v=20261026b")
+  import("/js/deck/launch.js?v=20261027a")
     .then((m) => m.openDeck(user, {
       isOwner: _isAdmin,
       startSec: startSec || undefined,
@@ -1968,8 +1970,12 @@ function renderApp(user) {
     else import("/js/section-help.js?v=20261010j").then((m) => { _secHelp = m.SECTION_HELP; paint(_secHelp); }).catch(() => {});
   }
   // URL path <-> section mapping
-  const secToPath = (s) => s === "home" ? "/" : "/" + s.replace(/([A-Z])/g, "-$1").toLowerCase();
+  // The console's own links live under /console (the bare /<page> links belong to the Deck);
+  // embedded tool frames keep the bare path the Deck opened them at.
+  const conBase = new URLSearchParams(location.search).get("embed") === "1" ? "" : CONSOLE_BASE;
+  const secToPath = (s) => s === "home" ? conBase || "/" : conBase + "/" + s.replace(/([A-Z])/g, "-$1").toLowerCase();
   const pathToSec = (p) => {
+    if (p && isConsolePath(p)) p = p.slice(CONSOLE_BASE.length);
     if (!p || p === "/") return "home";
     const raw = p.replace(/^\//, "");
     // Toolbox mini-tool secs are literally hyphenated (e.g. tool-base64, tool-w-jwt-analyzer)
@@ -2225,7 +2231,7 @@ function renderApp(user) {
     else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261017c").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261026b").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261027a").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261026a").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2698,7 +2704,7 @@ function renderApp(user) {
   // ---- restore last frame (section + typed text), else last section ----
   let frame = null; try { frame = JSON.parse(localStorage.getItem(FRAME)); } catch (_) {}
   let lastSec; try { lastSec = localStorage.getItem("sw_last_sec"); } catch (_) {}
-  const pathSec = location.pathname !== "/" ? pathToSec(location.pathname) : null;
+  const pathSec = location.pathname !== "/" && location.pathname !== CONSOLE_BASE ? pathToSec(location.pathname) : null;
   const HEAVY = new Set(["sentineleye","prometheus","hydra","aegis","vanguard","phantom","citadel","oracle","spectre","crucible","navarch","beta"]);
   const startSec = pathSec || (frame && frame.sec) || lastSec || "home";
   // A restored/deep-linked `tool-<id>` sec must still exist in the manifest; mini-tools

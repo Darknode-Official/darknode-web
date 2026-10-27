@@ -9,8 +9,16 @@ const src = (f) => readFileSync(new URL("../../public/js/" + f, import.meta.url)
 const auth = src("auth.js"), admin = src("admin.js");
 
 group("deck: console is admin-only", () => {
-  test("a saved dn_ui=console preference is honoured only for admins", () => {
-    assert.ok(/return !\(_isAdmin && localStorage\.getItem\(UI_PREF\) === "console"\);/.test(auth));
+  test("the console lives under /console and only admins get it there", () => {
+    assert.ok(/return !\(_isAdmin && isConsolePath\(location\.pathname\)\);/.test(auth));
+    assert.notOk(/localStorage\.getItem\(UI_PREF\)/.test(auth));
+  });
+  test("the console's own links are /console/<page>; embedded tool frames keep the bare path", () => {
+    assert.ok(/const conBase = new URLSearchParams\(location\.search\)\.get\("embed"\) === "1" \? "" : CONSOLE_BASE;/.test(auth));
+    assert.ok(/if \(p && isConsolePath\(p\)\) p = p\.slice\(CONSOLE_BASE\.length\);/.test(auth));
+  });
+  test("a non-admin on a /console link gets that page in the Deck", () => {
+    assert.ok(/location\.pathname\.replace\(\/\^\\\/\(console\(\\\/\|\$\)\)\?\/, ""\)/.test(auth));
   });
   test("the Deck no longer offers users a switch to the console", () => {
     assert.ok(!/onClassic:/.test(auth));
@@ -19,9 +27,10 @@ group("deck: console is admin-only", () => {
     assert.ok(/if \(_isAdmin\) \{ _deckFailed = true; renderApp\(user\); return; \}/.test(auth));
     assert.ok(/Your workspace did not load/.test(auth) && /id="dkRetry"/.test(auth));
   });
-  test("the Admin page carries the console switch, and it reloads the top window", () => {
+  test("the Admin page carries the console button, and it opens /console in the top window", () => {
     assert.ok(/id="consoleLaunch">Open AWS console</.test(admin));
-    assert.ok(/localStorage\.setItem\("dn_ui", "console"\)[\s\S]{0,80}window\.top\.location\.assign\("\/"\)/.test(admin));
+    assert.ok(/window\.top\.location\.assign\("\/console"\)/.test(admin));
+    assert.notOk(/dn_ui/.test(admin.replace(/\/\/.*$/gm, "")));
   });
   test("desktop / ?app=1 guests get the Deck, not the console", () => {
     assert.notOk(/q\.get\("app"\) === "1" \|\| document\.documentElement/.test(auth));
