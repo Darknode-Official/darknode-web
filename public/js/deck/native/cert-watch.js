@@ -50,12 +50,12 @@ export function mount(el, { space, mode }) {
   };
 
   go.onclick = async () => {
-    const list = parseDomains(ta.value).slice(0, fleet ? 200 : 20);
+    const all = parseDomains(ta.value), cap = fleet ? 200 : 20, list = all.slice(0, cap);
     if (!list.length) { toast("Add at least one domain"); return; }
     // say which lines were not domain names instead of dropping them silently
     const bad = [...new Set(ta.value.split(/[\n,;]+/).map((t) => t.trim()).filter((t) => t && !parseDomains(t).length))];
-    const skipped = bad.length ? "Skipped " + bad.length + " that " + (bad.length === 1 ? "is" : "are") + " not a domain name: " + bad.slice(0, 5).join(", ") + (bad.length > 5 ? ", ..." : "") + ". " : "";
-    writeList(space, "certs", list);
+    const skipped = (all.length > cap ? "Checking the first " + cap + "; " + (all.length - cap) + " more are over the limit. " : "") + (bad.length ? "Skipped " + bad.length + " that " + (bad.length === 1 ? "is" : "are") + " not a domain name: " + bad.slice(0, 5).join(", ") + (bad.length > 5 ? ", ..." : "") + ". " : "");
+    writeList(space, "certs", all); // the whole list stays saved, not just the part checked
     go.disabled = true; csv.disabled = true; entries = new Array(list.length);
     let done = 0; render(list.length);
     await pool(list, 4, async (d) => { const rows = await fetchCertRows(d); return Object.assign(buildEntry(d, rows), { unreachable: !!rows.unreachable }); }, (e, i) => {

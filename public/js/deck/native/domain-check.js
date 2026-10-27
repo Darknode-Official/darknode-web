@@ -107,11 +107,11 @@ export function mount(el, { space, mode }) {
   };
   go.onclick = async () => {
     // same normalisation as the single check (www. dropped), so a pasted www.x.com grades x.com
-    const list = [...new Set(parseDomains(ta.value).map(cleanDomain))].slice(0, 50);
+    const all = [...new Set(parseDomains(ta.value).map(cleanDomain))], list = all.slice(0, 50);
     if (!list.length) { toast("Add at least one domain"); return; }
     const junk = [...new Set(ta.value.split(/[\n,;]+/).map((t) => t.trim()).filter((t) => t && !parseDomains(t).length))];
-    const skipped = junk.length ? "Skipped " + junk.length + " that " + (junk.length === 1 ? "is" : "are") + " not a domain name: " + junk.slice(0, 5).join(", ") + (junk.length > 5 ? ", ..." : "") + ". " : "";
-    writeList(space, "domains", list); det.innerHTML = "";
+    const skipped = (all.length > 50 ? "Checking the first 50; " + (all.length - 50) + " more are over the limit. " : "") + (junk.length ? "Skipped " + junk.length + " that " + (junk.length === 1 ? "is" : "are") + " not a domain name: " + junk.slice(0, 5).join(", ") + (junk.length > 5 ? ", ..." : "") + ". " : "");
+    writeList(space, "domains", all); det.innerHTML = ""; // the whole list stays saved, not just the part checked
     go.disabled = true; csv.disabled = true;
     results = list.map((domain) => ({ domain, pending: true })); table();
     let done = 0;
