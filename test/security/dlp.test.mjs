@@ -108,6 +108,13 @@ group("dlp: detectors", () => {
     assert.ok(scan("config blob dGhpc0lzQVZlcnlMb25nUmFuZG9tQmFzZTY0VG9rZW5YWVo=").findings.some((f) => f.id === "high-entropy"));
     assert.notOk(scan("the quick brown fox jumps over the lazy dog again and again").findings.some((f) => f.id === "high-entropy"));
   });
+  test("high-entropy sweep skips labelled digests but keeps unlabelled or credential-labelled hex", () => {
+    const he = (t) => scan(t).findings.some((f) => f.id === "high-entropy");
+    const h64 = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
+    for (const t of ["commit 3b54462b9f1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e", "sha256: " + h64, "image@sha256:" + h64, "MD5 (a.iso) = d41d8cd98f00b204e9800998ecf8427e",
+      '"integrity": "sha512-Vq2UZRvn6q3Ylyh6s3U6YUMm3l9+ZL2vhyc1A6Ow2HPdS0ZdYC8pxfCNqx7pLgOU8u+9N8uwW1d8K6x3E7UCQ=="']) assert.notOk(he(t), t);
+    for (const t of ["token 3b54462b9f1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e", "api_key=3b54462b9f1c2d3e4f5a6b7c8d9e0f1a", "password_hash: 5f4dcc3b5aa765d61d8327deb882cf995f4dcc3b"]) assert.ok(he(t), t);
+  });
   test("detectors filter narrows scan", () => {
     const r = scan("bob@corp.com AKIAIOSFODNN7EXAMPLE", { detectors: ["email"] });
     assert.ok(r.findings.every((f) => f.id === "email"));

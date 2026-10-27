@@ -172,6 +172,8 @@ const ENTROPY_MIN_LEN = 24;
 const ENTROPY_B64 = 4.2;   // bits/char threshold for base64-ish blobs
 const ENTROPY_HEX = 3.0;   // hex alphabet tops out near 4 bits/char
 
+const DIGEST_LABEL = /\b(?:commit|sha-?(?:1|224|256|384|512)?|md5|hash|checksum|digest|revision|rev)\b[^\n]{0,24}?[\s:=@#("'`]$/i;
+
 function looksLikeWords(tok) {
   // Reject tokens that are really joined English (low digit/mixed-case mix).
   return /^[A-Za-z]+$/.test(tok) || /^[A-Za-z]+(?:[._-][A-Za-z]+)+$/.test(tok);
@@ -193,6 +195,9 @@ export function scanEntropy(text, alreadyFound, opts = {}) {
     const need = isHex ? ENTROPY_HEX : b64Need;
     if (H < need) continue;
     if (isHex && tok.length < 32) continue; // short hex is often an id, not a secret
+    // a labelled digest (commit / sha256: / md5 ... = / SRI sha512-...) is a checksum, not a secret;
+    // unlabelled hex stays flagged (old GitHub tokens were 40-char hex)
+    if (/^sha(?:256|384|512)-/i.test(tok) || (isHex && DIGEST_LABEL.test(text.slice(Math.max(0, m.index - 40), m.index)))) continue;
     const start = m.index, end = m.index + tok.length;
     if (covers(start, end)) continue;
     hits.push({
