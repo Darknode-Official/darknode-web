@@ -67,10 +67,13 @@ export async function pool(items, n, fn, onEach) {
 
 // Read dropped/picked files as text, skipping binaries and anything huge.
 export async function readFiles(fileList, { maxBytes = 2 * 1024 * 1024, maxFiles = 2000 } = {}) {
-  const files = Array.from(fileList || []).slice(0, maxFiles), out = [], skipped = [];
-  for (const f of files) {
+  const out = [], skipped = [];
+  for (const f of Array.from(fileList || [])) {
     const path = f.webkitRelativePath || f.name;
     if (/(^|\/)(node_modules|\.git|dist|build|vendor)\//.test(path)) { skipped.push(path); continue; }
+    // cap AFTER dropping dependency folders: a picked repo lists node_modules first, and a cap applied
+    // before the filter could fill up with them and never read the project's own files
+    if (out.length >= maxFiles) { skipped.push(path); continue; }
     if (f.size > maxBytes) { skipped.push(path); continue; }
     const text = await f.text();
     if (/\u0000/.test(text.slice(0, 4000))) { skipped.push(path); continue; }
