@@ -106,7 +106,7 @@ export function decodeText(bytes) {
 // ---------------------------------------------------------------------------
 function nonEmptyLines(text, max) {
   const out = [];
-  const lines = text.split(/\r?\n/);
+  const lines = text.split(/\r\n|\r|\n/); // a lone CR ends a line too (classic Mac / old Excel-for-Mac CSV)
   for (const l of lines) { if (l.trim()) { out.push(l); if (max && out.length >= max) break; } }
   return out;
 }
@@ -256,8 +256,8 @@ function* iterCsvRows(text, delimiter) {
     }
     if (c === '"') { quoted = true; any = true; sawQuote = true; i++; continue; }
     if (c === d) { row.push(field); field = ""; any = true; i++; continue; }
-    if (c === "\r") { i++; continue; }
-    if (c === "\n") {
+    if (c === "\r" || c === "\n") { // CRLF, LF, or a lone CR (classic Mac line endings) ends the record
+      if (c === "\r" && s[i + 1] === "\n") i++;
       row.push(field); field = ""; i++;
       // Skip a truly blank line, but keep a row of explicitly-quoted empty fields ("","")
       // — the quote marks it as a real record, unlike a bare `,` or an empty line.
@@ -274,15 +274,17 @@ function headerKeys(row) {
   const seen = {}, out = [];
   for (const h of row) {
     const base = String(h).trim();
-    seen[base] = (seen[base] || 0) + 1;
-    out.push(seen[base] > 1 ? `${base}_${seen[base]}` : base);
+    let k = base, n = 1;
+    while (Object.prototype.hasOwnProperty.call(seen, k)) k = `${base}_${++n}`; // a,a,a_2 -> a, a_2, a_2_2 (never a repeat)
+    seen[k] = 1; out.push(k);
   }
   return out;
 }
 
 function rowToObject(keys, row) {
   const o = {};
-  for (let i = 0; i < keys.length; i++) o[keys[i]] = row[i] === undefined ? "" : row[i];
+  // defineProperty, so a "__proto__" column is kept as data instead of setting the prototype
+  for (let i = 0; i < keys.length; i++) Object.defineProperty(o, keys[i], { value: row[i] === undefined ? "" : row[i], enumerable: true, writable: true, configurable: true });
   for (let i = keys.length; i < row.length; i++) o[`_${i + 1}`] = row[i];
   return o;
 }
@@ -314,7 +316,7 @@ export function parseCsv(text, opts = {}) {
 // ---------------------------------------------------------------------------
 // One JSON value per line; blank lines skipped; errors carry the 1-based line.
 export function* iterNdjson(text) {
-  const lines = String(text || "").replace(/^\uFEFF/, "").split(/\r?\n/);
+  const lines = String(text || "").replace(/^\uFEFF/, "").split(/\r\n|\r|\n/);
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
     if (!l.trim()) continue;

@@ -535,3 +535,19 @@ group("ingest/determinism", () => {
     assert.deepEqual(parseCsv(ENTRA_CSV), parseCsv(ENTRA_CSV));
   });
 });
+
+group("ingest/csv: line endings and header keys", () => {
+  test("a classic-Mac file (lone CR line endings) splits into rows; a CR inside quotes stays data", () => {
+    const r = parseCsv("user,ip\rtest@darknode.ai,192.0.2.1\rb@darknode.ai,192.0.2.2\r");
+    assert.deepEqual(r.headers, ["user", "ip"]); assert.equal(r.rows.length, 2); assert.equal(r.rows[1].ip, "192.0.2.2");
+    assert.equal(parseCsv('a,b\n"x\ry",2\n').rows[0].a, "x\ry");
+  });
+  test("de-duplicated header keys never repeat (a,a,a_2)", () => {
+    const r = parseCsv("a,a,a_2\n1,2,3\n");
+    assert.deepEqual(r.headers, ["a", "a_2", "a_2_2"]); assert.deepEqual(Object.values(r.rows[0]), ["1", "2", "3"]);
+  });
+  test("a __proto__ column is kept as data, not used as the prototype", () => {
+    const row = parseCsv("__proto__,x\n1,2\n").rows[0];
+    assert.equal(Object.getPrototypeOf(row), Object.prototype); assert.deepEqual(Object.keys(row), ["__proto__", "x"]);
+  });
+});
