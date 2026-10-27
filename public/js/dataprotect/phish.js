@@ -11,7 +11,7 @@
 import {
   analyzeUrl, triageEmail, extractIOCs, parseEmailHeaders, registrableDomain, lookalike,
   defangText, refangText, buildTriageReport,
-} from "/js/dataprotect/phish-engine.js?v=20261025g";
+} from "/js/dataprotect/phish-engine.js?v=20261026a";
 import { dnFetch, dnFetchJSON } from "/js/net.js";
 import { attachSinkButton } from "../core/sink.js";
 import { phishUrlFindings, phishEmailFindings } from "/js/dataprotect/dp-sink.js";

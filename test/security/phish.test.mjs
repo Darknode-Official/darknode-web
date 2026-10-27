@@ -23,6 +23,11 @@ group("phish: domain helpers", () => {
     assert.equal(registrableDomain("shop.alibaba.com.cn"), "alibaba.com.cn");
     assert.equal(registrableDomain("a.b.site.com.br"), "site.com.br");
   });
+  test("a defanged link is analysed as the link it stands for", () => {
+    const d = analyzeUrl("hxxp://paypal[.]com[.]secure-login[.]xyz/verify"), l = analyzeUrl("http://paypal.com.secure-login.xyz/verify");
+    assert.equal(d.host, l.host); assert.equal(d.severity, l.severity); assert.equal(d.severity, "critical");
+    assert.equal(analyzeUrl("HXXPS://micros0ft-support(.)com").host, "micros0ft-support.com");
+  });
   test("levenshtein", () => {
     assert.equal(levenshtein("paypal", "paypa1"), 1);
     assert.equal(levenshtein("", "abc"), 3);

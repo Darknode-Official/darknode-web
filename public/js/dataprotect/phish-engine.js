@@ -155,7 +155,7 @@ const ACCOUNT_WORD = /^(online|login|signin|secure|account|accounts|support|veri
 export function analyzeUrl(raw) {
   const out = { input: raw, host: "", scheme: "", reasons: [], severity: "info" };
   let u;
-  let s = String(raw || "").trim();
+  let s = refangText(String(raw || "").trim()); // a defanged IOC (hxxps://evil[.]com) is analysed as the link it stands for
   const hadScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
   if (!hadScheme) s = "http://" + s; // tolerate scheme-less
   try { u = new URL(s); } catch (_) { out.reasons.push({ w: 3, t: "Unparseable URL." }); out.severity = "medium"; return out; }
