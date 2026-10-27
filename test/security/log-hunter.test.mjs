@@ -580,3 +580,16 @@ group("log-hunter: a prototype-named file can't crash or pollute", () => {
     assert.equal(({}).lines, undefined, "Object.prototype was not polluted");
   });
 });
+
+group("log-hunter: RFC 5424 syslog", () => {
+  test("header with PROCID/MSGID/structured data is parsed, sshd message classified", () => {
+    const r = parseText([
+      "<34>1 2026-10-11T22:14:15.003Z web1 sshd 123 - - Failed password for root from 2001:db8::5 port 22 ssh2",
+      '<34>1 2026-10-11T22:14:16Z web1 sshd 123 ID47 [ex@1 a="x\\]y"] Accepted password for bob from 10.0.0.1 port 22 ssh2',
+    ].join("\n"), "auth.log");
+    const [a, b] = r.events;
+    assert.equal(a.action, "auth_fail"); assert.equal(a.user, "root"); assert.equal(a.host, "web1");
+    assert.equal(a.ts, Date.UTC(2026, 9, 11, 22, 14, 15, 3));
+    assert.equal(b.action, "auth_ok"); assert.equal(b.user, "bob"); assert.equal(b.ip, "10.0.0.1");
+  });
+});

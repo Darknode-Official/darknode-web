@@ -491,6 +491,8 @@ function parseWebJson(o, rec, line) {
 // Linux auth / syslog / journald
 // ---------------------------------------------------------------------------
 const SYSLOG = /^(?:<\d+>\d?\s*)?(?:(\w{3}\s+\d{1,2} \d{2}:\d{2}:\d{2})|(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d+)?(?:Z|[+-]\d{2}:?\d{2})?))\s+(\S+)\s+([\w.\-/()]+?)(?:\[(\d+)\])?:\s+(.*)$/;
+// RFC 5424: <pri>1 TIMESTAMP HOST APP PROCID MSGID [SD|-] MSG
+const SYSLOG5424 = /^<\d+>1 (\S+) (\S+) (\S+) (\S+) \S+ (?:-|(?:\[(?:[^\]\\]|\\.)*\])+)(?: \uFEFF?(.*))?$/;
 const LINUX_HINT = /Failed password|Accepted (publickey|password|keyboard-interactive)|Invalid user|Connection closed by|Disconnected from|sudo:|pam_unix|useradd|usermod|groupadd|BREAK-IN|authentication failure|maximum authentication attempts|crontab|CRON|systemd|session opened|sshd/;
 const PRIV_GROUPS = /^(sudo|wheel|admin|root|adm|docker|lxd|shadow)$/i;
 const SUDO_SUSP = [
@@ -565,9 +567,10 @@ function parseLinuxMsg(prog, msg) {
 }
 
 function parseLinux(line, rec, st) {
-  const m = line.match(SYSLOG);
+  let m = line.match(SYSLOG);
   let ts = null, host = null, prog = null, msg = line;
   if (m) { ts = parseTs(m[1] || m[2], st.assumeYear); host = m[3]; prog = m[4]; msg = m[6]; }
+  else if ((m = line.match(SYSLOG5424))) { ts = m[1] === "-" ? null : parseTs(m[1], st.assumeYear); host = m[2] === "-" ? null : m[2]; prog = m[3] === "-" ? null : m[3]; msg = m[5] || ""; }
   else if (!LINUX_HINT.test(line)) return null;
   else {
     // fragments without a syslog prefix, e.g. "sshd[123]: Failed password ..."
