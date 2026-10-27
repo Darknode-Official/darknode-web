@@ -1241,10 +1241,10 @@ textarea.dk-kitio{min-height:120px}
 .dk-shlist{display:flex;flex-direction:column;gap:3px;margin-top:4px}
 .dk-shrow{display:flex;align-items:center;gap:9px;font-size:12.5px;padding:5px 0}
 .dk-shrow .d{flex:none;width:8px;height:8px;border-radius:50%}
-.dk-shrow.ok .d{background:#12a85f}.dk-shrow.no .d{background:#e0383a}
+.dk-shrow.ok .d{background:#12a85f}.dk-shrow.no .d{background:#e0383a}.dk-shrow.warn .d{background:#d98a00}
 .dk-shrow .l{color:#38435c;font-weight:600}
 .dk-shrow .v{margin-left:auto;font-size:11.5px;color:#6a7488}
-.dk-shrow.ok .v{color:#0d7a44}.dk-shrow.no .v{color:#c0352f}
+.dk-shrow.ok .v{color:#0d7a44}.dk-shrow.no .v{color:#c0352f}.dk-shrow.warn .v{color:#9a6200}
 .dk-techline{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .dk-rec{font-size:11px;color:#5a6680;background:rgba(23,33,56,.04);border-radius:7px;padding:7px 10px;margin-top:8px;overflow-wrap:anywhere;line-height:1.5;font-variant-numeric:tabular-nums}
 /* cloud */
@@ -3360,8 +3360,10 @@ export function renderDeck(host, opts) {
     }).catch((e) => bd("http").innerHTML = errHTML(e));
     // Email auth
     surface.emailAuth(d).then((m) => {
-      const line = (lbl, o, extra) => `<div class="dk-shrow ${o.present ? "ok" : "no"}"><span class="d"></span><span class="l">${esc(lbl)}</span><span class="v">${o.present ? (extra || "configured") : "missing"}</span></div>`;
-      bd("email").innerHTML = `<div class="dk-shlist">${line("SPF", m.spf)}${line("DMARC", m.dmarc, m.dmarc.policy ? "p=" + m.dmarc.policy : "")}</div>${m.spf.record ? `<div class="dk-rec">${esc(m.spf.record)}</div>` : ""}${m.dmarc.record ? `<div class="dk-rec">${esc(m.dmarc.record)}</div>` : ""}`;
+      // two records of one kind is invalid (SPF permerror; DMARC applies no policy); p=none only monitors
+      const line = (lbl, o, extra, warn) => { const st = o.multiple ? "no" : !o.present ? "no" : warn ? "warn" : "ok"; return `<div class="dk-shrow ${st}"><span class="d"></span><span class="l">${esc(lbl)}</span><span class="v">${o.multiple ? o.multiple + " records - invalid, treated as none" : o.present ? (extra || "configured") : "missing"}</span></div>`; };
+      const pol = (m.dmarc.policy || "").toLowerCase();
+      bd("email").innerHTML = `<div class="dk-shlist">${line("SPF", m.spf)}${line("DMARC", m.dmarc, pol ? "p=" + esc(pol) + (pol === "none" ? " (monitoring only)" : "") : "no p= tag", !pol || pol === "none")}</div>${m.spf.record ? `<div class="dk-rec">${esc(m.spf.record)}</div>` : ""}${m.dmarc.record ? `<div class="dk-rec">${esc(m.dmarc.record)}</div>` : ""}`;
     }).catch((e) => bd("email").innerHTML = errHTML(e));
     // security.txt
     surface.securityTxt(d).then((s) => {

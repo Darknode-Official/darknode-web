@@ -146,10 +146,11 @@ export async function emailAuth(domain) {
     doh(d, "TXT").catch(() => []),
     doh("_dmarc." + d, "TXT").catch(() => [])
   ]);
-  const spf = txt.find((t) => /^v=spf1/i.test(t)) || "";
-  const dmarc = dmarcTxt.find((t) => /^v=DMARC1/i.test(t)) || "";
+  const spfs = txt.filter((t) => /^v=spf1(\s|$)/i.test(t)), dmarcs = dmarcTxt.filter((t) => /^v=DMARC1\s*(;|$)/i.test(t));
+  const spf = spfs[0] || "", dmarc = dmarcs[0] || "";
+  // more than one record of a kind is invalid (RFC 7208 4.5 permerror / RFC 7489 6.6.3 no policy): multiple = the count
   return {
-    spf: { present: !!spf, record: spf },
-    dmarc: { present: !!dmarc, record: dmarc, policy: (dmarc.match(/\bp\s*=\s*([a-z]+)/i) || [])[1] || "" }
+    spf: { present: !!spf, record: spfs.join("\n"), multiple: spfs.length > 1 ? spfs.length : 0 },
+    dmarc: { present: !!dmarc, record: dmarcs.join("\n"), multiple: dmarcs.length > 1 ? dmarcs.length : 0, policy: (dmarc.match(/\bp\s*=\s*([a-z]+)/i) || [])[1] || "" }
   };
 }

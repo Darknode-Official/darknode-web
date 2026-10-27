@@ -32,6 +32,12 @@ group("deck surface: DNS over HTTPS", () => {
     globalThis.__doh = (u) => /_dmarc/.test(u) ? { Answer: [{ type: 16, data: '"v=DMARC1; sp=none; p=reject; rua=mailto:test@darknode.ai"' }] } : { Answer: [] };
     assert.equal((await m.emailAuth("example.com")).dmarc.policy, "reject");
   });
+  test("two SPF (or DMARC) records are flagged as invalid, not shown as configured", async () => {
+    globalThis.__doh = (u) => /_dmarc/.test(u) ? { Answer: [{ type: 16, data: '"v=DMARC1; p=reject"' }] }
+      : /type=TXT$/.test(u) ? { Answer: [{ type: 16, data: '"v=spf1 include:a.example -all"' }, { type: 16, data: '"v=spf1 mx ~all"' }, { type: 16, data: '"v=spf10 x"' }] } : { Answer: [] };
+    const r = await m.emailAuth("example.com");
+    assert.equal(r.spf.multiple, 2); assert.equal(r.dmarc.multiple, 0); assert.equal(r.dmarc.policy, "reject");
+  });
   test("the surface input reduces a pasted link, email, host:port, trailing dot or IDN to the bare domain", () => {
     const ui = readFileSync(new URL("../../public/js/deck-ui.js", import.meta.url), "utf8");
     const surfClean = new Function("return " + /const surfClean = (\(d\) => \{.*?return s; \});/.exec(ui)[1])();
