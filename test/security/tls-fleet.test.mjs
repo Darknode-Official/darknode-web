@@ -34,6 +34,8 @@ group("tls-fleet: parsing", () => {
       ["example.com", "api.example.com", "foo.co"]);
     assert.deepEqual(parseDomains(""), []);
     assert.deepEqual(parseDomains("notadomain localhost"), []);
+    assert.deepEqual(parseDomains("münchen.de\ntest@darknode.ai, mailto:test@darknode.ai example.com. https://u:p@b.com:8443/x?y bar.com#x 8.8.8.8"),
+      ["xn--mnchen-3ya.de", "darknode.ai", "example.com", "b.com", "bar.com"]);
   });
 });
 

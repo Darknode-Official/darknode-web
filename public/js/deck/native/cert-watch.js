@@ -3,7 +3,7 @@
 // (certificate transparency via ct-fetch), banded by days to expiry with tls-engine.
 
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
-import { buildEntry, summarizeFleet, parseDomains, BANDS } from "/js/dataprotect/tls-engine.js";
+import { buildEntry, summarizeFleet, parseDomains, BANDS } from "/js/dataprotect/tls-engine.js?v=20261026a";
 import { tlsFleetFindings } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, recordRun, readList, writeList, pool, download } from "./ui.js";

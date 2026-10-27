@@ -64,8 +64,9 @@ export function mount(el, { space, mode }) {
     const root = (list[0].path.split("/")[0]) || "files";
     setTimeout(() => run(list, skipped.length, list.length > 1 ? root : list[0].path), 0);
   };
-  dir.onchange = () => fromFiles(dir.files);
-  files.onchange = () => fromFiles(files.files);
+  // copy then clear, so choosing the same folder again (after fixing a finding) re-runs the scan
+  dir.onchange = () => { const l = Array.from(dir.files || []); dir.value = ""; fromFiles(l); };
+  files.onchange = () => { const l = Array.from(files.files || []); files.value = ""; fromFiles(l); };
   drop.ondragover = (e) => { e.preventDefault(); drop.classList.add("over"); };
   drop.ondragleave = () => drop.classList.remove("over");
   drop.ondrop = async (e) => {

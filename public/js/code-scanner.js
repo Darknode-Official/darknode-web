@@ -200,7 +200,7 @@ export function renderCodeScanner(main) {
       src.innerHTML = `<h2 class="cs-h2">Scan a folder on this computer</h2>
         <p class="cs-p">Pick a project folder. Files are read locally and never leave your browser.</p>
         <label class="cs-btn pri" style="width:max-content">Choose folder<input id="csDir" type="file" webkitdirectory multiple hidden></label>`;
-      src.querySelector("#csDir").onchange = (e) => { const files = [...(e.target.files || [])]; if (files.length) runLocal(files); };
+      src.querySelector("#csDir").onchange = (e) => { const files = [...(e.target.files || [])]; e.target.value = ""; if (files.length) runLocal(files); };
       return;
     }
     if (!gh.connected()) {

@@ -8,7 +8,7 @@ import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/postur
 import { postureFindings } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, GRADE_C, recordRun, readList, writeList, pool, download } from "./ui.js";
-import { parseDomains } from "/js/dataprotect/tls-engine.js";
+import { parseDomains } from "/js/dataprotect/tls-engine.js?v=20261026a";
 
 const ST = { pass: ["#2f9e56", "Pass"], warn: ["#b58100", "Warn"], fail: ["#b00020", "Fail"], info: ["#2f7d9e", "Info"], na: ["#8a93a6", "N/A"] };
 const level = (res) => (res.grade === "A" || res.grade === "B" ? "good" : res.grade === "C" ? "warn" : "bad");
