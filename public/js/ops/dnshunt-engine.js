@@ -425,7 +425,8 @@ function isoTs(s) {
   if (w) {
     let h = +w[4];
     if (w[7]) { const pm = w[7].toUpperCase() === "P"; if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
-    return Date.UTC(+w[3], +w[1] - 1, +w[2], h, +w[5], +w[6]);
+    let mo = +w[1], d = +w[2]; if (mo > 12 && d <= 12) [mo, d] = [d, mo]; if (mo < 1 || mo > 12 || d < 1 || d > new Date(Date.UTC(+w[3], mo, 0)).getUTCDate()) return null; // 25/12/2024 is day-first; reject instead of rolling over
+    return Date.UTC(+w[3], mo - 1, d, h, +w[5], +w[6]);
   }
   return null;
 }

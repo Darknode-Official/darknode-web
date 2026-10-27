@@ -197,7 +197,7 @@ export function toDay(v) {
   let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
   if (m) return valid(+m[1], +m[2], +m[3]);
   m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
-  if (m) return valid(+m[3], +m[1], +m[2]);
+  if (m) return +m[1] > 12 ? valid(+m[3], +m[2], +m[1]) : valid(+m[3], +m[1], +m[2]); // 25/12/2024 can only be day-first
   const t = Date.parse(s);
   if (!Number.isFinite(t)) return null;
   return new Date(t).toISOString().slice(0, 10);

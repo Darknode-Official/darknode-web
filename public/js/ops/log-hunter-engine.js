@@ -307,7 +307,8 @@ export function parseTs(s, assumeYear) {
   if ((m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})(?:\s*([AP])M)?$/i))) {
     let h = +m[4];
     if (m[7]) { const pm = m[7].toUpperCase() === "P"; if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
-    return Date.UTC(+m[3], +m[1] - 1, +m[2], h, +m[5], +m[6]);
+    let mo = +m[1], d = +m[2]; if (mo > 12 && d <= 12) [mo, d] = [d, mo]; if (mo < 1 || mo > 12 || d < 1 || d > new Date(Date.UTC(+m[3], mo, 0)).getUTCDate()) return null; // 25/12/2024 is day-first; reject instead of rolling over
+    return Date.UTC(+m[3], mo - 1, d, h, +m[5], +m[6]);
   }
   if ((m = str.match(/^\/Date\((\d+)\)\/$/))) return Number(m[1]);
   if (/^\d{9,19}$/.test(str)) return epochNorm(Number(str));
