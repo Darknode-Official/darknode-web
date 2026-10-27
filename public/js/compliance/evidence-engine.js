@@ -1024,7 +1024,7 @@ const FINDING_COLS = ["severity", "confidence", "category", "title", "descriptio
 
 /** Findings as CSV with fixed columns. */
 export function findingsToCsv(findings) {
-  const q = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+  const q = (v) => { let s = String(v ?? ""); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a leading = + - @ would run as a spreadsheet formula
   const head = FINDING_COLS.join(",");
   const body = (findings || []).map((f) => [
     f.severity, f.confidence, f.category, f.title, f.description, f.recommendation,

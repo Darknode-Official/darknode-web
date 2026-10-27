@@ -1903,7 +1903,7 @@ function clean(o) {
 // ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
-const q = (v) => '"' + str(v).replace(/"/g, '""') + '"';
+const q = (v) => { let s = str(v); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a leading = + - @ would run as a spreadsheet formula
 const FINDING_COLS = ["severity", "confidence", "category", "title", "description", "recommendation", "controls", "assets", "evidenceCount"];
 
 /** Findings as CSV with fixed columns. */

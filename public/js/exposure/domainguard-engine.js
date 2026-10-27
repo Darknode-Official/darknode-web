@@ -1329,7 +1329,7 @@ export function analyze(dataset, opts = {}, ctx) {
 // Exports
 // ---------------------------------------------------------------------------
 const FINDING_COLS = ["severity", "confidence", "category", "title", "description", "recommendation", "controls", "evidenceCount", "assets"];
-const q = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+const q = (v) => { let s = String(v == null ? "" : v); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a leading = + - @ would run as a spreadsheet formula
 
 /** Findings as CSV with fixed columns. */
 export function findingsToCsv(findings) {

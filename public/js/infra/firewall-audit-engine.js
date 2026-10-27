@@ -1547,7 +1547,7 @@ export function resultToJson(res) {
     policies: res.policies, internal: res.internal, notes: res.notes, findings: res.findings, exposure: res.exposure, rules: res.rules.map(ruleToPlain),
   }, null, 2);
 }
-const csvQ = (s) => `"${String(s == null ? "" : s).replace(/"/g, '""')}"`;
+const csvQ = (v) => { let s = String(v == null ? "" : v); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a leading = + - @ would run as a spreadsheet formula
 export function findingsToCsv(findings) {
   const out = ["id,severity,confidence,type,title,rules,lines,fix,references,attack"];
   for (const f of findings) out.push([f.id, f.severity, f.confidence, f.type, csvQ(f.title), csvQ(f.evidence.map((e) => "#" + e.idx).join(" ")), csvQ(f.evidence.map((e) => e.lineNo).join(" ")), csvQ(f.fix), csvQ(f.refs.join("; ")), csvQ(f.attack)].join(","));

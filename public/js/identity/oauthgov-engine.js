@@ -1071,7 +1071,7 @@ function countBy(items, key) {
 // ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
-const q = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+const q = (v) => { let s = String(v == null ? "" : v); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a leading = + - @ would run as a spreadsheet formula
 const csv = (cols, rows, pick) => [cols.join(","), ...(rows || []).map((r) => pick(r).map(q).join(","))].join("\n");
 
 const FINDING_COLS = ["severity", "confidence", "category", "check", "title", "description", "recommendation", "controls", "assets", "evidenceCount"];

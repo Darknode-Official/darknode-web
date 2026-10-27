@@ -1025,14 +1025,14 @@ export function userTimeline(result, records, user) {
 // Exports / text
 // ---------------------------------------------------------------------------
 export function findingsToCsv(findings) {
-  const q = (s) => `"${String(s == null ? "" : s).replace(/"/g, '""')}"`;
+  const q = (v) => { let s = String(v == null ? "" : v); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a leading = + - @ would run as a spreadsheet formula
   const lines = ["severity,confidence,detection,technique,user,ip,title,description,recommended_action,evidence_count"];
   for (const f of findings) lines.push([f.severity, f.confidence, f.id, q(f.technique), q(f.user), q(f.ip), q(f.title), q(f.description), q(f.action), f.evidenceTotal].join(","));
   return lines.join("\n") + "\n";
 }
 
 export function evidenceToCsv(findings) {
-  const q = (s) => `"${String(s == null ? "" : s).replace(/"/g, '""')}"`;
+  const q = (v) => { let s = String(v == null ? "" : v); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a leading = + - @ would run as a spreadsheet formula
   const lines = ["finding_key,detection,severity,timestamp_utc,user,ip,outcome,app,client_app,mfa,country,city,failure_reason,note"];
   for (const f of findings) for (const e of f.evidence) lines.push([q(f.key), f.id, f.severity, q(iso(e.ts)), q(e.user), q(e.ip), e.success ? "success" : "failure", q(e.app), q(e.clientApp), e.mfa === null ? "" : e.mfa, q(e.country), q(e.city), q(e.failureReason), q(e.note)].join(","));
   return lines.join("\n") + "\n";

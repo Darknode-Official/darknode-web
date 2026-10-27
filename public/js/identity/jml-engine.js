@@ -915,7 +915,7 @@ function countBy(items, key) {
 // Exports
 // ---------------------------------------------------------------------------
 const FINDING_COLS = ["severity", "confidence", "category", "title", "description", "recommendation", "controls", "evidenceCount"];
-const q = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+const q = (v) => { let s = String(v ?? ""); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a leading = + - @ would run as a spreadsheet formula
 
 /** Findings as CSV with fixed columns. */
 export function findingsToCsv(findings) {

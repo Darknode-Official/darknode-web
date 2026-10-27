@@ -1360,7 +1360,7 @@ export function analyzeText(text, settings, file) {
 // ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
-const csvq = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+const csvq = (v) => { let s = String(v == null ? "" : v); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a leading = + - @ would run as a spreadsheet formula
 export function findingsToCsv(findings) {
   const head = "id,severity,confidence,finding,technique,technique_name,tactic,source,ip,user,host,count,first_seen,last_seen,threshold,detail,action,evidence_lines";
   const rows = findings.map((f) => [f.id, f.severity, f.confidence, f.name, f.technique, f.techniqueName, f.tactic, f.source, f.ip || "", f.user || "", f.host || "", f.count,

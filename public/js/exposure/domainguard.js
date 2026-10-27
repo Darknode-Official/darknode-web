@@ -18,9 +18,9 @@ import {
   DEFAULTS, LIMITS, TOOL_ID, TAKEOVER_FINGERPRINTS, parseInput, parseDomainList, findingsToCsv, exampleDataset,
   planDomainQueries, spfIncludeTargets, txtStrings, rrData, dohStatus, normName, generateLookalikes, registrableDomain,
   matchTakeoverProvider, cnameChain, snapshotOf, dnsFixList, lookalikesToCsv, summaryText, isDomainName,
-} from "./domainguard-engine.js?v=20261019j";
+} from "./domainguard-engine.js?v=20261026b";
 
-const ENGINE = engineUrl("./domainguard-engine.js?v=20261019j", import.meta);
+const ENGINE = engineUrl("./domainguard-engine.js?v=20261026b", import.meta);
 const P = "dmg";
 const RUNS_KEY = "dn_domainguard_runs";
 const DRAFT_KEY = "dn_domainguard_draft";

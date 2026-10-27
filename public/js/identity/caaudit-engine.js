@@ -940,7 +940,7 @@ function countBy(items, key) {
 // ---------------------------------------------------------------------------
 // CSV serialisers
 // ---------------------------------------------------------------------------
-const q = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+const q = (v) => { let s = String(v ?? ""); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a leading = + - @ would run as a spreadsheet formula
 const FINDING_COLS = ["severity", "confidence", "category", "id", "title", "description", "recommendation", "controls", "assets", "evidenceCount"];
 
 /** Findings as CSV with fixed columns. */
