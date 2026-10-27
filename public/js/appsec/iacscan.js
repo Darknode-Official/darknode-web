@@ -141,10 +141,10 @@ export function renderIacScan(main) {
     let added = 0;
     const skipped = skippedIn.slice();
     for (const f of list) {
+      if (/(^|\/)(\.git|node_modules|\.terraform)\//.test(f.name)) { skipped.push({ name: f.name, reason: "vendored or VCS directory" }); continue; } // before reading: a repo can hold tens of thousands of these
       if (state.files.size >= MAX_FILES) { skipped.push({ name: f.name, reason: "over " + MAX_FILES + " files" }); continue; }
       let text = "";
       try { text = await f.text(); } catch (e) { skipped.push({ name: f.name, reason: "unreadable" }); continue; }
-      if (/(^|\/)(\.git|node_modules|\.terraform)\//.test(f.name)) { skipped.push({ name: f.name, reason: "vendored or VCS directory" }); continue; }
       state.files.set(f.name, { name: f.name, text, size: text.length, archive: f.fromArchive || "", cls: classify(f.name, text) });
       added++;
     }

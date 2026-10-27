@@ -2194,7 +2194,7 @@ function renderApp(user) {
     else if (sec === "nhi") { import("/js/identity/nhi.js?v=20261016d").then(m => live() && m.renderNhi(main)); }
     else if (sec === "jml") { import("/js/identity/jml.js?v=20261017c").then(m => live() && m.renderJml(main)); }
     else if (sec === "oauthgov") { import("/js/identity/oauthgov.js?v=20261016f").then(m => live() && m.renderOauthGov(main)); }
-    else if (sec === "iacscan") { import("/js/appsec/iacscan.js?v=20261016g").then(m => live() && m.renderIacScan(main)); }
+    else if (sec === "iacscan") { import("/js/appsec/iacscan.js?v=20261026a").then(m => live() && m.renderIacScan(main)); }
     else if (sec === "cloudtrail") { import("/js/ops/cloudtrail.js?v=20261016h").then(m => live() && m.renderCloudTrail(main)); }
     else if (sec === "vulnimport") { import("/js/exposure/vulnimport.js?v=20261017e").then(m => live() && m.renderVulnImport(main)); }
     else if (sec === "fleetcomply") { import("/js/exposure/fleetcomply.js?v=20261016j").then(m => live() && m.renderFleetComply(main)); }
