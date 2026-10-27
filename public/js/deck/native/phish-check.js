@@ -30,7 +30,7 @@ export function mount(el, { space, mode }) {
   let m = "url";
   el.querySelectorAll("#nsPhMode button").forEach((b) => b.onclick = () => {
     m = b.dataset.m; el.querySelectorAll("#nsPhMode button").forEach((x) => x.classList.toggle("on", x === b));
-    ta.placeholder = m === "url" ? "Paste a link" : "Paste the full email source, headers included"; ta.style.minHeight = m === "url" ? "90px" : "200px";
+    ta.placeholder = m === "url" ? "Paste a link" : "Paste the full email source, headers included"; ta.style.minHeight = m === "url" ? "90px" : "200px"; ta.setAttribute("aria-label", m === "url" ? "Link to check" : "Email source to check");
   });
 
   const log = (entry) => {
@@ -48,6 +48,8 @@ export function mount(el, { space, mode }) {
 
   el.querySelector("#nsPhGo").onclick = () => {
     const raw = ta.value.trim(); if (!raw) { toast(m === "url" ? "Paste a link first" : "Paste the email source first"); return; }
+    // a full email source pasted in Link mode: triage the email, not its first link
+    if (m === "url" && /^from:/im.test(raw) && /^(received|return-path|delivered-to|authentication-results|message-id|subject):/im.test(raw)) { el.querySelector('#nsPhMode button[data-m="email"]').click(); toast("That is an email source: checking it as an email"); }
     if (m === "url") {
       // the link may sit inside a pasted sentence ("Click here https://..."): analyse the link, not the first word
       const toks = raw.split(/\s+/).map((t) => t.replace(/^[<("']+|[>)"',;.]+$/g, ""));
@@ -79,7 +81,7 @@ export function mount(el, { space, mode }) {
       <h2 style="font-size:15px;margin:14px 0 4px">Why</h2>
       <ul style="margin:0;padding-left:18px">${t.findings.map((f) => `<li style="margin:4px 0">${esc(f.t)}</li>`).join("") || "<li>No warning signs in the headers or links.</li>"}</ul>
       ${t.urlAnalyses.length ? `<h2 style="font-size:15px;margin:14px 0 6px">Links in the message (${t.urlAnalyses.length})</h2><div class="ns-scroll"><table class="ns-tbl"><tbody>${t.urlAnalyses.map((u) => `<tr><td style="width:90px">${sevPill(u.severity)}</td><td class="mono">${esc(defangText(u.input))}</td></tr>`).join("")}</tbody></table></div>` : ""}
-      ${queue && (io.domains || []).length ? `<h2 style="font-size:15px;margin:14px 0 6px">Indicators to block</h2><div class="ns-mono">${esc(defangText([].concat(io.domains || [], io.ips || []).join("\n"))).replace(/\n/g, "<br>")}</div>` : ""}
+      ${queue && ((io.domains || []).length || (io.ips || []).length) ? `<h2 style="font-size:15px;margin:14px 0 6px">Indicators to block</h2><div class="ns-mono">${esc(defangText([].concat(io.domains || [], io.ips || []).join("\n"))).replace(/\n/g, "<br>")}</div>` : ""}
       <div class="ns-row" data-act>${queue ? `<button class="ns-btn ghost sm" data-rep>Download report</button>` : ""}</div></div>`;
     const rep = out.querySelector("[data-rep]");
     if (rep) rep.onclick = () => download("phishing-triage.txt", buildTriageReport(t), "text/plain");
