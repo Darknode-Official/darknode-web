@@ -68,7 +68,7 @@ export function mount(el, { space, mode }) {
       level: s.counts.expired || s.counts.urgent ? "bad" : s.alerting || s.counts.unknown ? "warn" : "good", counts: s.counts });
   };
   csv.onclick = () => {
-    const q = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+    const q = (v) => { let s = String(v == null ? "" : v); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a cell a spreadsheet would run as a formula is kept as text
     const s = summarizeFleet(entries.filter(Boolean));
     download("certificates.csv", [["domain", "status", "days_left", "not_after", "issuer"].join(",")].concat(s.list.map((e) => [e.domain, e.band.label, e.daysLeft, e.notAfter, e.issuer].map(q).join(","))).join("\n"), "text/csv");
   };

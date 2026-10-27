@@ -125,7 +125,7 @@ export function mount(el, { space, mode }) {
     for (const r of graded) recordRun(space, { tool: "domain", target: r.domain, summary: "Grade " + r.res.grade + " (" + r.res.counts.fail + " failing)", level: level(r.res), score: r.res.score, grade: r.res.grade });
   };
   csv.onclick = () => {
-    const q = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+    const q = (v) => { let s = String(v == null ? "" : v); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; // a cell a spreadsheet would run as a formula is kept as text
     const lines = [["domain", "grade", "score", "failing", "warnings", "top_issue"].join(",")].concat(results.filter(Boolean).map((r) => r.res
       ? [r.domain, r.res.grade, r.res.score, r.res.counts.fail, r.res.counts.warn, r.res.topActions[0] ? r.res.topActions[0].name : ""].map(q).join(",")
       : [r.domain, "", "", "", "", "unreachable"].map(q).join(",")));
