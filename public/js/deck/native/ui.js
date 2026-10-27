@@ -30,8 +30,20 @@ export function download(name, text, type = "application/json") {
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 
+// localStorage is shared by every account that signs in on this browser, so saved lists and run
+// history are keyed by the signed-in uid (window.__dnUid, kept by auth.js). Data saved before this
+// moves to the first signed-in account that opens it; guests and Test Mode keep the plain key.
+function skey(space, name) {
+  const plain = "dn_space_" + space + "_" + name;
+  let u = null; try { u = window.__dnUid || null; } catch (_) {}
+  if (!u) return plain;
+  const k = "dn_space_u_" + u + "_" + space + "_" + name;
+  try { if (localStorage.getItem(k) == null) { const old = localStorage.getItem(plain); if (old != null) { localStorage.setItem(k, old); localStorage.removeItem(plain); } } } catch (_) {}
+  return k;
+}
+
 // ---- run history: what the home screens summarise. Real runs only. ----
-const HKEY = (space) => "dn_space_" + space + "_runs";
+const HKEY = (space) => skey(space, "runs");
 const HMAX = 200;
 export function readRuns(space) {
   try { const v = JSON.parse(localStorage.getItem(HKEY(space)) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; }
@@ -47,9 +59,9 @@ export function clearRuns(space) { try { localStorage.removeItem(HKEY(space)); }
 
 // Saved per-space lists (domains to watch, etc.).
 export function readList(space, name) {
-  try { const v = JSON.parse(localStorage.getItem("dn_space_" + space + "_" + name) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; }
+  try { const v = JSON.parse(localStorage.getItem(skey(space, name)) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; }
 }
-export function writeList(space, name, v) { try { localStorage.setItem("dn_space_" + space + "_" + name, JSON.stringify(v)); } catch (_) {} }
+export function writeList(space, name, v) { try { localStorage.setItem(skey(space, name), JSON.stringify(v)); } catch (_) {} }
 
 // Run async jobs with a concurrency cap; onEach(result, i) fires as each settles.
 export async function pool(items, n, fn, onEach) {

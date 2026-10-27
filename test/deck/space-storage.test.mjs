@@ -1,0 +1,31 @@
+// Native-space lists and run history live in localStorage, which every account signing in on the
+// same browser shares; they are keyed by the signed-in uid so the next user does not see them.
+
+import { test, group, assert } from "../harness.mjs";
+import { readList, writeList, readRuns, recordRun } from "../../public/js/deck/native/ui.js";
+
+const mem = new Map();
+globalThis.localStorage = { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, String(v)), removeItem: (k) => mem.delete(k) };
+globalThis.window = globalThis.window || {};
+if (!window.dispatchEvent) window.dispatchEvent = () => {};
+
+group("deck: native space storage is per account", () => {
+  test("one account's saved domains and runs are not visible to the next", () => {
+    mem.clear();
+    window.__dnUid = "userA"; writeList("personal", "certs", ["a.example"]); recordRun("personal", { tool: "certs", target: "1 domain", summary: "ok", level: "good" });
+    window.__dnUid = "userB";
+    assert.equal(readList("personal", "certs").length, 0); assert.equal(readRuns("personal").length, 0);
+    window.__dnUid = "userA";
+    assert.equal(readList("personal", "certs").join(), "a.example"); assert.equal(readRuns("personal").length, 1);
+  });
+  test("data saved before scoping moves to the first signed-in account, once", () => {
+    mem.clear(); mem.set("dn_space_org_domains", JSON.stringify(["old.example"]));
+    window.__dnUid = "userA"; assert.equal(readList("org", "domains").join(), "old.example");
+    assert.equal(mem.has("dn_space_org_domains"), false);
+    window.__dnUid = "userB"; assert.equal(readList("org", "domains").length, 0);
+  });
+  test("no uid keeps the plain key", () => {
+    mem.clear(); window.__dnUid = null; writeList("personal", "domain", ["x.example"]);
+    assert.ok(mem.has("dn_space_personal_domain"));
+  });
+});
