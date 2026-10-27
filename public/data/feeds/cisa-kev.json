@@ -1,8 +1,30 @@
 {
- "updated": "2026-10-26T11:17:29.270Z",
+ "updated": "2026-10-27T10:42:14.506Z",
  "source": "CISA KEV",
  "count": 500,
  "data": [
+  {
+   "cve": "CVE-2026-109618",
+   "vendor": "PHP Group",
+   "product": "PHP",
+   "name": "PHP Memory Corruption Vulnerability",
+   "description": "PHP contains an out-of-memory corruption vulnerability that allows for unauthenticated remote code execution.",
+   "dateAdded": "2026-10-26",
+   "dueDate": "2026-10-29",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-109619",
+   "vendor": "PHP Group",
+   "product": "PHP",
+   "name": "PHP Stale Internal Request-State Vulnerability",
+   "description": "PHP contains a stale internal request-state vulnerability that allows for unauthenticated remote code execution.",
+   "dateAdded": "2026-10-26",
+   "dueDate": "2026-10-29",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
   {
    "cve": "CVE-2026-114625",
    "vendor": "Arista",
@@ -5478,28 +5500,6 @@
    "description": "7-Zip contains a protection mechanism failure vulnerability that allows remote attackers to bypass the Mark-of-the-Web security feature to execute arbitrary code in the context of the current user.",
    "dateAdded": "2025-02-06",
    "dueDate": "2025-02-27",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2024-53104",
-   "vendor": "Linux",
-   "product": "Kernel",
-   "name": "Linux Kernel Out-of-Bounds Write Vulnerability",
-   "description": "Linux kernel contains an out-of-bounds write vulnerability in the uvc_parse_streaming component of the USB Video Class (UVC) driver that could allow for physical escalation of privilege.",
-   "dateAdded": "2025-02-05",
-   "dueDate": "2025-02-26",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2018-19410",
-   "vendor": "Paessler",
-   "product": "PRTG Network Monitor",
-   "name": "Paessler PRTG Network Monitor Local File Inclusion Vulnerability",
-   "description": "Paessler PRTG Network Monitor contains a local file inclusion vulnerability that allows a remote, unauthenticated attacker to create users with read-write privileges (including administrator).",
-   "dateAdded": "2025-02-04",
-   "dueDate": "2025-02-25",
    "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
    "ransomware": "Unknown"
   }

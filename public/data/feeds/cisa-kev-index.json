@@ -1,8 +1,8 @@
 {
- "updated": "2026-10-26T11:17:29.324Z",
+ "updated": "2026-10-27T10:42:14.571Z",
  "source": "CISA KEV (full catalog index)",
- "catalogVersion": "2026.10.23",
- "count": 1756,
+ "catalogVersion": "2026.10.26",
+ "count": 1758,
  "data": [
   {
    "cve": "CVE-2002-0367",
@@ -8267,6 +8267,16 @@
    "cve": "CVE-2026-106931",
    "dateAdded": "2026-10-20",
    "dueDate": "2026-10-23"
+  },
+  {
+   "cve": "CVE-2026-109618",
+   "dateAdded": "2026-10-26",
+   "dueDate": "2026-10-29"
+  },
+  {
+   "cve": "CVE-2026-109619",
+   "dateAdded": "2026-10-26",
+   "dueDate": "2026-10-29"
   },
   {
    "cve": "CVE-2026-110447",
