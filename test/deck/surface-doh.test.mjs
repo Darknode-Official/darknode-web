@@ -32,4 +32,9 @@ group("deck surface: DNS over HTTPS", () => {
     globalThis.__doh = (u) => /_dmarc/.test(u) ? { Answer: [{ type: 16, data: '"v=DMARC1; sp=none; p=reject; rua=mailto:test@darknode.ai"' }] } : { Answer: [] };
     assert.equal((await m.emailAuth("example.com")).dmarc.policy, "reject");
   });
+  test("the surface input reduces a pasted link, email, host:port, trailing dot or IDN to the bare domain", () => {
+    const ui = readFileSync(new URL("../../public/js/deck-ui.js", import.meta.url), "utf8");
+    const surfClean = new Function("return " + /const surfClean = (\(d\) => \{.*?return s; \});/.exec(ui)[1])();
+    for (const [i, o] of [["https://Example.com/a?utm=1", "example.com"], ["example.com.", "example.com"], ["test@darknode.ai", "darknode.ai"], ["example.com:8443", "example.com"], ["b\u00fccher.de", "xn--bcher-kva.de"]]) assert.equal(surfClean(i), o);
+  });
 });

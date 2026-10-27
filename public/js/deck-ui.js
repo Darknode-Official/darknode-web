@@ -3278,7 +3278,7 @@ export function renderDeck(host, opts) {
 
   // ---------- Attack Surface workspace (real external recon via the proxy) ----------
   let _surfLast = "";
-  const surfClean = (d) => String(d || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^\*\./, "");
+  const surfClean = (d) => { let s = String(d || "").trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/[/?#].*$/, "").replace(/^.*@/, "").replace(/:\d+$/, "").replace(/^\*\./, "").replace(/\.$/, ""); try { s = new URL("http://" + s).hostname; } catch (_) {} return s; }; // a pasted link, email, host:port, trailing dot or IDN all reduce to the bare (punycode) domain
   function renderSurface(dom){
     const el = sceneEls.surface;
     const d0 = (typeof dom === "string" && dom) ? dom : _surfLast;
@@ -3299,7 +3299,7 @@ export function renderDeck(host, opts) {
   function runSurface(raw){
     const el = sceneEls.surface;
     const d = surfClean(raw);
-    if (!d || !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)) { toast("Enter a valid domain name"); return; }
+    if (!d || !/^[a-z0-9.-]+\.(?:[a-z]{2,}|xn--[a-z0-9-]+)$/.test(d)) { toast("Enter a valid domain name"); return; }
     if (!proxyConfigured()) { el.querySelector("#dkSurfGrid").hidden = false; el.querySelector("#dkSurfGrid").innerHTML = `<div class="dk-errbox">Live lookups are unavailable — the Darknode proxy is not configured in this environment.</div>`; return; }
     _surfLast = d;
     const grid = el.querySelector("#dkSurfGrid"); grid.hidden = false;
