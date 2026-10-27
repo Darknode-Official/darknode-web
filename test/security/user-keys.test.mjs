@@ -35,6 +35,16 @@ function loadDnKeys() {
 }
 
 group("user-keys: account isolation", () => {
+  test("Deck connection keys (dn_key_<provider>) are per account, and browser-wide leftovers are scrubbed", () => {
+    const { dnKeys, win, store } = loadDnKeys();
+    store.set("dn_key_openai", "sk-left-by-someone"); store.set("dn_key_virustotal", "vt-left");
+    dnKeys.scrubLegacy();
+    assert.equal(store.has("dn_key_openai") || store.has("dn_key_virustotal"), false);
+    win.__dnUid = "userA"; dnKeys.set("dn_key_openai", "sk-A");
+    win.__dnUid = "userB"; assert.equal(dnKeys.get("dn_key_openai"), null);
+    const src = ["deck-ui.js", "webai.js", "ioc-enrichment.js", "openrouter-connect.js"].map((f) => readFileSync(join(pub, "js", f), "utf8")).join("\n");
+    assert.notOk(/localStorage\.(get|set|remove)Item\(\s*["']dn_key_/.test(src), "no direct dn_key_ localStorage access");
+  });
   test("a second user cannot read the first user's key", () => {
     const { dnKeys, win } = loadDnKeys();
     win.__dnUid = "userA";

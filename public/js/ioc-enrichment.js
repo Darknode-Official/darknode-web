@@ -9,7 +9,7 @@ import { esc } from '/js/shared.js';
  * run entirely client-side with no network. Live enrichment is opt-in (a button)
  * and degrades gracefully when offline or when a required key is missing.
  *
- * API keys are read from localStorage as dn_key_<provider> (set via the Deck).
+ * API keys are read per account as dn_key_<provider> through window.dnKeys (set via the Deck).
  * Nothing is ever hardcoded. Only CSP-allowlisted hosts are contacted.
  */
 
@@ -287,7 +287,7 @@ function extract(text) {
 /* ---- live enrichment (opt-in, graceful) -------------------------------- */
 
 function readKey(provider) {
-  try { return (localStorage.getItem('dn_key_' + provider) || '').trim(); } catch (_) { return ''; }
+  try { return ((window.dnKeys && window.dnKeys.get('dn_key_' + provider)) || '').trim(); } catch (_) { return ''; }
 }
 
 function withTimeout(promise, ms) {

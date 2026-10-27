@@ -88,7 +88,7 @@ export async function completeOpenRouterConnect() {
       return { done: true, ok: false };
     }
     try {
-      localStorage.setItem("dn_key_openrouter", String(key).trim());
+      window.dnKeys.set("dn_key_openrouter", String(key).trim()); // per account (user-keys.js)
       const conns = JSON.parse(localStorage.getItem(CONN_LS) || "{}") || {};
       conns.openrouter = { connected: true, method: "account", hasKey: true, at: Date.now() };
       localStorage.setItem(CONN_LS, JSON.stringify(conns));

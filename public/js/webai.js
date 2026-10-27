@@ -22,8 +22,8 @@ function _key(provider) {
   const map = { claude: "sw_claude_key", openai: "sw_openai_key", gemini: "sw_gemini_key", groq: "sw_groq_key", openrouter: "sw_openrouter_key", mistral: "sw_mistral_key" };
   // Per-account storage (see user-keys.js): one user never reads another's key.
   try { const u = (window.dnKeys ? (window.dnKeys.get(map[provider]) || "") : "").trim(); if (u) return u; } catch (_) {}
-  // Keys connected through DarkDeck are stored as dn_key_<provider> (same provider ids).
-  try { const d = (localStorage.getItem("dn_key_" + provider) || "").trim(); if (d) return d; } catch (_) {}
+  // Keys connected through DarkDeck are stored per account as dn_key_<provider> (same provider ids).
+  try { const d = ((window.dnKeys && window.dnKeys.get("dn_key_" + provider)) || "").trim(); if (d) return d; } catch (_) {}
   return "";
 }
 
@@ -632,7 +632,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
       const key = String(val[0] || "").trim();
       if (!key) return;
       try {
-        localStorage.setItem("dn_key_" + prov, key);
+        window.dnKeys.set("dn_key_" + prov, key); // per account (user-keys.js)
         const conns = JSON.parse(localStorage.getItem("dn_deck_connections_v1") || "{}") || {};
         conns[prov] = Object.assign({}, conns[prov], { connected: true, method: "key", hasKey: true, at: Date.now() });
         localStorage.setItem("dn_deck_connections_v1", JSON.stringify(conns));

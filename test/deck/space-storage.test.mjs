@@ -24,8 +24,9 @@ group("deck: native space storage is per account", () => {
     assert.equal(mem.has("dn_space_org_domains"), false);
     window.__dnUid = "userB"; assert.equal(readList("org", "domains").length, 0);
   });
-  test("no uid keeps the plain key", () => {
+  test("no uid, or a per-session guest / Test Mode uid, keeps the plain key", () => {
     mem.clear(); window.__dnUid = null; writeList("personal", "domain", ["x.example"]);
+    window.__dnUid = "test-0a1b"; writeList("personal", "certs", ["y.example"]); assert.ok(mem.has("dn_space_personal_certs"));
     assert.ok(mem.has("dn_space_personal_domain"));
   });
 });

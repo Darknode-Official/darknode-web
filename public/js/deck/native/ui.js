@@ -32,11 +32,11 @@ export function download(name, text, type = "application/json") {
 
 // localStorage is shared by every account that signs in on this browser, so saved lists and run
 // history are keyed by the signed-in uid (window.__dnUid, kept by auth.js). Data saved before this
-// moves to the first signed-in account that opens it; guests and Test Mode keep the plain key.
+// moves to the first signed-in account that opens it; guests and Test Mode (a per-session uid) keep the plain key.
 function skey(space, name) {
   const plain = "dn_space_" + space + "_" + name;
   let u = null; try { u = window.__dnUid || null; } catch (_) {}
-  if (!u) return plain;
+  if (!u || /^(test|app-guest)-/.test(u)) return plain;
   const k = "dn_space_u_" + u + "_" + space + "_" + name;
   try { if (localStorage.getItem(k) == null) { const old = localStorage.getItem(plain); if (old != null) { localStorage.setItem(k, old); localStorage.removeItem(plain); } } } catch (_) {}
   return k;

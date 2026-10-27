@@ -6,7 +6,7 @@ import { auth, db, googleProvider, githubProvider, isAdminUser, GOOGLE_CLIENT_ID
 // Finish an OpenRouter account-link if we've just returned from its consent page
 // (?code in the URL). Runs once on load, independent of auth; stores the user's
 // minted key before anything renders. The promise lets the deck re-open cleanly.
-window.__orConnect = import("/js/openrouter-connect.js?v=20261010c")
+window.__orConnect = import("/js/openrouter-connect.js?v=20261026a")
   .then((m) => m.completeOpenRouterConnect()).catch(() => ({ done: false }));
 
 // Cached super-admin flag for the current session, read from the signed ID token
@@ -775,7 +775,8 @@ function renderAuth(mode = "signin") {
 
   const err = (m) => { document.getElementById("err").textContent = m; };
   document.getElementById("testMode").onclick = () => {
-    const fakeUser = { uid: _guestUid("test"), email: "test@darknode.ai", displayName: "Test User", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") };
+    const tuid = _guestUid("test"); try { window.__dnUid = tuid; } catch (_) {} // keys saved this session stay per session (user-keys.js)
+    const fakeUser = { uid: tuid, email: "test@darknode.ai", displayName: "Test User", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") };
     renderApp(fakeUser);
   };
   document.getElementById("google").onclick = async () => {
@@ -2057,7 +2058,7 @@ function renderApp(user) {
     requestAnimationFrame(() => { main.style.minHeight = ""; });
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261014h").then(m => live() && m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261026a").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderTargets(main)); }
@@ -2133,7 +2134,7 @@ function renderApp(user) {
     else if (sec === "dossier") { import("/js/target-dossier.js").then(m => live() && m.renderDossier(main)); }
     else if (sec === "payloadstudio") { import("/js/payload-studio.js?v=20261013m").then(m => live() && m.renderPayloadStudio(main)); }
     else if (sec === "sigma") { import("/js/sigma-builder.js?v=20261018f").then(m => live() && m.renderSigmaBuilder(main)); }
-    else if (sec === "iocenrich") { import("/js/ioc-enrichment.js").then(m => live() && m.renderIocEnrichment(main)); }
+    else if (sec === "iocenrich") { import("/js/ioc-enrichment.js?v=20261026a").then(m => live() && m.renderIocEnrichment(main)); }
     else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => live() && m.renderEmbedSDK(main)); }
     else if (sec === "mcpconnect") { import("/js/mcp-connector.js").then(m => live() && m.renderMcpConnector(main)); }
     else if (sec === "cvsscalc") { import("/js/cvss-calculator.js?v=20261013b").then(m => live() && m.renderCvssCalculator(main)); }

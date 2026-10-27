@@ -44,7 +44,14 @@
   // Remove the legacy un-namespaced credential keys. Idempotent; called once on
   // boot by auth.js. Scrubbing also closes the cross-user window on any browser
   // that still carries a previous account's global keys.
-  function scrubLegacy() { try { for (var i = 0; i < LEGACY.length; i++) localStorage.removeItem(LEGACY[i]); } catch (_) {} }
+  // Deck connection keys were also written un-namespaced as dn_key_<provider>.
+  function scrubLegacy() {
+    try {
+      for (var i = 0; i < LEGACY.length; i++) localStorage.removeItem(LEGACY[i]);
+      var rm = [], k; for (i = 0; i < localStorage.length; i++) { k = localStorage.key(i); if (k && k.indexOf("dn_key_") === 0) rm.push(k); }
+      for (i = 0; i < rm.length; i++) localStorage.removeItem(rm[i]);
+    } catch (_) {}
+  }
 
   // Remove every namespaced credential for one uid (used by an explicit "clear"
   // and defensively available for logout).

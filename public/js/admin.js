@@ -291,7 +291,7 @@ export async function renderAdmin(main, user) {
     btn.addEventListener("click", launchDeck);
     // Returning from an OpenRouter account-link: finish the handshake, then re-open
     // the deck so the user lands back where they started and sees it connected.
-    import("/js/openrouter-connect.js?v=20261010c").then(({ shouldReopenDeck }) => {
+    import("/js/openrouter-connect.js?v=20261026a").then(({ shouldReopenDeck }) => {
       if (shouldReopenDeck()) Promise.resolve(window.__orConnect).finally(launchDeck);
     }).catch(() => {});
   })();

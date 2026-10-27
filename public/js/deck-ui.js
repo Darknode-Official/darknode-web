@@ -14,7 +14,7 @@
 //     onExit : () => void      // leave the deck
 // ============================================================================
 
-import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261010c";
+import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261026a";
 // Live-data layer: the SSRF-guarded worker proxy. dnFetchJSON routes keyless public
 // feeds (CISA KEV, FIRST EPSS, ransomware.live, crt.sh, DoH, RDAP, BGPView) through
 // /api/fetch; it throws on failure and never fabricates. net.js is stateless.
@@ -1710,7 +1710,7 @@ export function renderDeck(host, opts) {
   let onbState = opts.onboarding || {};
   function onbSteps(){
     let aiConnected = INTEGRATIONS.some((i) => i.kind === "ai" && conns[i.id] && conns[i.id].connected);
-    if (!aiConnected) { try { aiConnected = Object.keys(localStorage).some((k) => k.indexOf("dn_key_") === 0); } catch (_) {} }
+    if (!aiConnected) { try { const u = window.dnKeys && window.dnKeys.uid(); aiConnected = !!u && Object.keys(localStorage).some((k) => k.indexOf("dnk:" + u + ":dn_key_") === 0); } catch (_) {} }
     let hasGraph = false;
     try { const ents = Object.values((JSON.parse(localStorage.getItem(storeKeyFor(activeWorkspace()))) || {}).entities || {}); hasGraph = ents.some((e) => !isSimulated(e)); } catch (_) {}
     // land ON the thing to do (the field / the first connect button), not just on its page
@@ -2089,7 +2089,7 @@ export function renderDeck(host, opts) {
         e.preventDefault();
         const key = String(inp.value || "").trim();
         conns[it.id] = { connected: true, method: "key", hasKey: !!key, at: Date.now() };
-        if (key) { try { localStorage.setItem("dn_key_" + it.id, key); } catch (_) {} }
+        if (key) { try { window.dnKeys.set("dn_key_" + it.id, key); } catch (_) {} } // per account (user-keys.js)
         saveConns(conns); toast(`${it.name} connected`); refreshConnState(it); openDrawer(it);
       };
     }
@@ -2099,13 +2099,13 @@ export function renderDeck(host, opts) {
       saveConns(conns); toast(`${it.name} connected`); refreshConnState(it); openDrawer(it);
     };
     const discBtn = drawerBody.querySelector('[data-act="disc"]');
-    if (discBtn) discBtn.onclick = () => { delete conns[it.id]; saveConns(conns); try { localStorage.removeItem("dn_key_" + it.id); } catch (_) {} toast(`${it.name} disconnected`); refreshConnState(it); openDrawer(it); };
+    if (discBtn) discBtn.onclick = () => { delete conns[it.id]; saveConns(conns); try { window.dnKeys.del("dn_key_" + it.id); } catch (_) {} toast(`${it.name} disconnected`); refreshConnState(it); openDrawer(it); };
     const useBtn = drawerBody.querySelector('[data-act="use"]');
     if (useBtn) useBtn.onclick = () => {
       let hasKey = false;
       try {
         localStorage.setItem("dn_ai_pref_provider", it.id);
-        hasKey = !!(localStorage.getItem("dn_key_" + it.id) || "").trim();
+        hasKey = !!((window.dnKeys && window.dnKeys.get("dn_key_" + it.id)) || "").trim();
         // Ensure a concrete model is chosen so the assistant uses a definite one.
         if (mlist && !(localStorage.getItem("dn_model_" + it.id) || "").trim()) localStorage.setItem("dn_model_" + it.id, mlist[0].id);
       } catch (_) {}
