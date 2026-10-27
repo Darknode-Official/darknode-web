@@ -182,6 +182,9 @@ group("oauthgov: scope risk model", () => {
   });
   test("spot values: mail/files/directory/admin/basic", () => {
     assert.equal(scopeRisk("Mail.ReadWrite").risk, "critical"); assert.equal(scopeRisk("Mail.ReadWrite").class, "mail");
+    assert.equal(scopeRisk("https://graph.microsoft.com/Mail.Send").risk, "high"); // fully qualified Graph scope
+    assert.equal(scopeRisk("00000003-0000-0000-c000-000000000000/Files.ReadWrite.All").risk, "critical");
+    assert.equal(scopeRisk("full_access_as_app").risk, "critical"); // EWS: every mailbox
     assert.equal(scopeRisk("drive.file").risk, "low"); assert.equal(scopeRisk("userinfo.email").risk, "low");
     assert.equal(scopeRisk("https://www.googleapis.com/auth/gmail.readonly").risk, "high");
     assert.equal(scopeRisk("https://mail.google.com").risk, "critical", "trailing slash normalised");

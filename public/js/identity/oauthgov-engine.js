@@ -88,6 +88,10 @@ export const SCOPE_RISK = {
   "Mail.ReadWrite": R("critical", "mail", "Read, create, modify and delete mail in the mailbox"),
   "Mail.Read": R("high", "mail", "Read all mail in the mailbox"),
   "Mail.ReadBasic": R("medium", "mail", "Read mail headers (no body or attachments)"),
+  // Exchange Online (EWS / legacy): not Graph, but the classic mailbox-wide grants
+  "full_access_as_app": R("critical", "mail", "Full access to every mailbox in the tenant through EWS"),
+  "EWS.AccessAsUser.All": R("high", "mail", "Full access to the user's mailbox through EWS"),
+  "EWS.full_access_as_app": R("critical", "mail", "Full access to every mailbox in the tenant through EWS"),
   "Mail.Send": R("high", "mail", "Send mail as the user (business email compromise, internal phishing)"),
   "MailboxSettings.ReadWrite": R("high", "mail", "Change mailbox rules and forwarding (classic persistence)"),
   "MailboxSettings.Read": R("medium", "mail", "Read mailbox rules and settings"),
@@ -229,6 +233,9 @@ export function scopeRisk(scope, kind = "delegated", hint = {}) {
   const raw = String(scope == null ? "" : scope).trim();
   let lc = raw.toLowerCase();
   if (lc === "https://mail.google.com") lc += "/";
+  // a fully qualified Graph scope (https://graph.microsoft.com/Mail.Send, as consent exports and
+  // token scp values write it) was "not in the risk table"
+  lc = lc.replace(/^(?:https:\/\/(?:graph\.microsoft\.com|outlook\.office(?:365)?\.com)\/|00000003-0000-0000-c000-000000000000\/)(?=[a-z])/, "");
   let e = SCOPE_INDEX.get(lc);
   if (!e && lc && !lc.includes("/") && !lc.includes(":")) e = SCOPE_INDEX.get(GOOGLE_PREFIX + lc);
   const out = e
