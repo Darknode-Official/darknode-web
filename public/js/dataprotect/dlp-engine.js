@@ -91,19 +91,21 @@ export const DETECTORS = [
   secret('pat-assignment', 'pat-assignment', { validate: (v, whole) => keyHoldsSecret(assignmentKey(whole)) && PAT.validate(v) }),
   {
     id: 'credit-card', label: 'Payment card number', kind: 'pii', severity: 'high',
-    re: /\b(?:\d[ -]?){13,19}\b/g,
+    re: /\b\d(?:[ -]?\d){12,18}\b/g, // 13-19 digits that END on a digit (a trailing space was swallowed and glued the next word on redaction)
     // The greedy run can glue a real PAN to an adjacent number (a 16-digit card followed
     // by " 999" matches as 19 digits and fails Luhn, so the card is missed). Retry on
     // group-boundary EDGE trims only — dropping leading or trailing whitespace/dash groups
     // — never arbitrary digit windows, which would make random long digit runs pass Luhn.
     validate: (m) => {
       if (luhnValid(m)) return true;
-      const g = String(m).split(/[ -]+/).filter(Boolean);
+      // returns the trimmed text so only the card is reported/redacted, not the neighbour
+      const s = String(m), g = [...s.matchAll(/\d+/g)];
+      const ok = (raw) => { const d = raw.replace(/\D/g, ''); return d.length >= 13 && d.length <= 19 && luhnValid(d); };
       for (let k = 1; k < g.length; k++) {
-        const tail = g.slice(k).join('');                 // drop k leading groups (a number before the card)
-        const head = g.slice(0, g.length - k).join('');   // drop k trailing groups (a number after the card)
-        if ((tail.length >= 13 && tail.length <= 19 && luhnValid(tail)) ||
-            (head.length >= 13 && head.length <= 19 && luhnValid(head))) return true;
+        const tail = s.slice(g[k].index);                                   // drop k leading groups (a number before the card)
+        const last = g[g.length - 1 - k], head = s.slice(0, last.index + last[0].length); // drop k trailing groups (a number after the card)
+        if (ok(tail)) return tail;
+        if (ok(head)) return head;
       }
       return false;
     },
@@ -237,13 +239,16 @@ export function scan(text, opts = {}) {
     let m;
     while ((m = det.re.exec(text))) {
       const whole = m[0];
-      const value = det.group ? [].concat(det.group).map((g) => m[g]).find((v) => v != null) : whole;
+      let value = det.group ? [].concat(det.group).map((g) => m[g]).find((v) => v != null) : whole;
       if (!value) { if (m.index === det.re.lastIndex) det.re.lastIndex++; continue; }
       // anchor on the captured value's position within the match
       const vOff = det.group ? whole.indexOf(value) : 0;
-      const start = m.index + (vOff < 0 ? 0 : vOff);
+      let start = m.index + (vOff < 0 ? 0 : vOff);
+      const verdict = det.validate ? det.validate(value, whole, { opts, text, index: start }) : true;
+      if (!verdict) continue;
+      // a validator may narrow the hit to a substring of the value (card edge-trim)
+      if (typeof verdict === 'string' && verdict !== value && value.includes(verdict)) { start += value.indexOf(verdict); value = verdict; }
       const end = start + value.length;
-      if (det.validate && !det.validate(value, whole, { opts, text, index: start })) continue;
       found.push({
         id: det.id, label: det.label, kind: det.kind, severity: det.severity,
         value, masked: det.mask ? det.mask(value) : maskValue(value),

@@ -254,4 +254,14 @@ group("dlp: redaction and summary", () => {
     assert.ok(scan("pan 4111 1111 1111 1111 999 trailing").findings.some((f) => f.id === "credit-card")); // card + adjacent number
     assert.ok(scan("ref 999 4111 1111 1111 1111 x").findings.some((f) => f.id === "credit-card"));      // number + card
   });
+
+  test("card hits cover only the card: no trailing space, no glued neighbour number", () => {
+    const one = (t) => scan(t).findings.find((f) => f.id === "credit-card");
+    assert.equal(one("pay 4111 1111 1111 1111 now").value, "4111 1111 1111 1111");
+    assert.equal(redact("pay 4111 1111 1111 1111 now", scan("pay 4111 1111 1111 1111 now").findings), "pay [REDACTED:credit-card] now");
+    assert.equal(one("pan 4111 1111 1111 1111 999 x").value, "4111 1111 1111 1111");
+    assert.equal(one("ref 999 4111 1111 1111 1111 x").value, "4111 1111 1111 1111");
+    const t = "card 4111111111111111 999";
+    assert.equal(redact(t, scan(t).findings), "card [REDACTED:credit-card] 999");
+  });
 });
