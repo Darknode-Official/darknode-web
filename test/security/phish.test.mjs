@@ -284,4 +284,11 @@ group("phish: defang, refang and report", () => {
     const r = triageEmail(["From: \"AMEX\" <security@myamexclone.com>", "Subject: verify", "", "x"].join("\n"));
     assert.ok(r.findings.some((f) => /Display name mentions "amex"/.test(f.t)));
   });
+  test("a brand's exact name on a new generic TLD is flagged; .com/.net/.org and country domains are not", () => {
+    for (const u of ["https://apple.support/id", "https://microsoft.online/", "https://paypal.xyz/"]) assert.ok(analyzeUrl(u).reasons.some((r) => /not where that brand's sites live/.test(r.t)), u);
+    for (const u of ["https://amazon.co.uk/", "https://paypal.me/x", "https://paypal.com/", "https://www.amazon.com.br/", "https://adobe.io/"]) assert.equal(analyzeUrl(u).severity, "info", u);
+    const r = triageEmail(["From: Apple <support@apple.support>", "Authentication-Results: mx; spf=pass; dkim=pass; dmarc=pass header.from=apple.support", "Subject: Your Apple ID", "", "x"].join("\n"));
+    assert.ok(r.findings.some((f) => /apple\.support uses the brand name "apple" on \.support/.test(f.t)));
+    assert.notEqual(r.verdict.level, "likely-legitimate");
+  });
 });

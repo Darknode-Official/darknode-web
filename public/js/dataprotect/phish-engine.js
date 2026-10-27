@@ -203,6 +203,7 @@ export function analyzeUrl(raw) {
   if (look.homograph) out.reasons.push({ w: 4, t: `Its letters imitate "${look.brand}": "${look.shown}" reads as "${look.reads}".` });
   else if (look.impersonation) out.reasons.push({ w: 4, t: `Brand "${look.brand}" appears in a subdomain but the registered domain is "${reg}".` });
   else if (look.inName) out.reasons.push({ w: 2, t: `The domain "${reg}" has the brand name "${look.brand}" in it but is a different domain from the brand's own; check who owns it.` });
+  else if (look.oddTld) out.reasons.push({ w: 3, t: `"${reg}" uses the brand name "${look.brand}" on .${look.oddTld}, which is not where that brand's sites live (they use .com or a country domain); check who owns it.` });
   else if (look.near) out.reasons.push({ w: 3, t: `Domain stem "${look.stem}" is a near-miss (edit distance ${look.distance}) of brand "${look.brand}".` });
 
   out.severity = sevFromWeight(sumWeight(out.reasons));
@@ -230,7 +231,13 @@ function asciiLookalike(host) {
   const reg = registrableDomain(host);
   const stem = reg.split(".")[0] || "";
   // a brand's own domain (outlook.office365.com) is not impersonating anyone
-  if (BRANDS.includes(stem)) return { brand: stem, stem, impersonation: false, near: false, distance: 0, exact: true };
+  // ...but only on .com/.net/.org or a country domain (amazon.co.uk, paypal.me): the bare brand on a new
+  // generic TLD (apple.support, microsoft.online, paypal.xyz) is a standard phishing registration
+  if (BRANDS.includes(stem)) {
+    const suf = reg.slice(stem.length + 1);
+    if (suf && !/^(com|net|org|[a-z]{2}|[a-z]{2,4}\.[a-z]{2})$/.test(suf)) return { brand: stem, stem, impersonation: false, near: true, oddTld: suf, distance: 0, exact: false };
+    return { brand: stem, stem, impersonation: false, near: false, distance: 0, exact: true };
+  }
   // impersonation: a brand is a subdomain label, a hyphen-part of one (digits swapped
   // back to letters), or brand + account word (microsoftonline, appleid), but the
   // registered domain is not the brand's
@@ -422,6 +429,7 @@ export function triageEmail(raw) {
   if (fromLook.impersonation) add(4, `From domain impersonates brand "${fromLook.brand}" in a subdomain.`);
   else if (fromLook.homograph) add(4, `From domain imitates brand "${fromLook.brand}": "${fromLook.shown}" reads as "${fromLook.reads}".`);
   else if (fromLook.inName) add(3, `From domain ${fromReg} has the brand name "${fromLook.brand}" in it but is a different domain from the brand's own.`);
+  else if (fromLook.oddTld) add(3, `From domain ${fromReg} uses the brand name "${fromLook.brand}" on .${fromLook.oddTld}, not the brand's own domain.`);
   else if (fromLook.near) add(3, `From domain is a near-miss of brand "${fromLook.brand}".`);
   // replies going to a brand lookalike is the classic BEC / credential-reset setup
   const replyLook = replyTo && registrableDomain(replyTo) !== fromReg ? lookalike(replyTo) : null;
