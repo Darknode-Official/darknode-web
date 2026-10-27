@@ -1,7 +1,0 @@
-<!doctype html><html><head><meta charset="utf-8"></head><body><script>window.DARKNODE_PROXY_URL="https://darknode-proxy.darknode-ai.workers.dev/api/chat"; window.__errs=[]; addEventListener("error",e=>__errs.push(String(e.message)+" @"+(e.filename||"").split("/").pop()+":"+e.lineno)); addEventListener("unhandledrejection",e=>__errs.push("rej: "+String(e.reason&&e.reason.stack||e.reason).slice(0,300)));</script>
-<script type="module">
-import { renderDeck } from "/js/deck-ui.js?v=sec1";
-import * as nav from "/js/console-nav.js?v=20261013k";
-const tier = new URLSearchParams(location.search).get("tier") || "enterprise";
-renderDeck(document.body, {isOwner:false, tier, groups:(nav.NAV||[]).map(g=>({id:g.id,name:g.name,color:g.color,items:g.items||[]})), user:{displayName:"Test", email:"test@darknode.ai"}, onSignOut(){}});
-</script></body></html>
