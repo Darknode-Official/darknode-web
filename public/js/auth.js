@@ -1751,8 +1751,8 @@ function deckIsHome() {
   if (_deckFailed) return false;
   try {
     const q = new URLSearchParams(location.search);
-    if (q.get("embed") === "1" || q.get("app") === "1" || document.documentElement.hasAttribute("data-embed")) return false;
-    if (sessionStorage.getItem("dn_guest") === "1") return false;
+    if (q.get("embed") === "1" || document.documentElement.hasAttribute("data-embed")) return false;
+    // ?app=1 / desktop guests get the Deck too: the console is the owner's alone
     return !(_isAdmin && localStorage.getItem(UI_PREF) === "console");
   } catch (_) { return true; }
 }
@@ -1791,6 +1791,12 @@ function renderApp(user) {
   document.body.classList.add("app");
   // Desktop app (top frame only; tool iframes never see the bridge): the Deck is the home screen.
   if (isDesktop()) { renderDesktopHome(user); return; }
+  // ?embed=1 is only for tool frames inside the Deck. Opened directly in a tab by anyone but the
+  // owner it would be the console, so drop it: the same /<sec> path then opens that tool in the Deck.
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.get("embed") === "1" && !_isAdmin && window.parent === window) { q.delete("embed"); q.delete("ink"); const qs = q.toString(); location.replace(location.pathname + (qs ? "?" + qs : "") + location.hash); return; }
+  } catch (_) {}
   if (deckIsHome()) { renderDeckHome(user); return; }
   // Embed mode: when loaded as /<sec>?embed=1 (e.g. inside Darknode Command's
   // in-deck workspace iframe), strip the console chrome so only the live tool

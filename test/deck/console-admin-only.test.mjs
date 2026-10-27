@@ -23,4 +23,11 @@ group("deck: console is admin-only", () => {
     assert.ok(/id="consoleLaunch">Open AWS console</.test(admin));
     assert.ok(/localStorage\.setItem\("dn_ui", "console"\)[\s\S]{0,80}window\.top\.location\.assign\("\/"\)/.test(admin));
   });
+  test("desktop / ?app=1 guests get the Deck, not the console", () => {
+    assert.notOk(/q\.get\("app"\) === "1" \|\| document\.documentElement/.test(auth));
+    assert.notOk(/if \(sessionStorage\.getItem\("dn_guest"\) === "1"\) return false;/.test(auth));
+  });
+  test("?embed=1 opened directly in a tab by a non-admin drops to the Deck; the Deck's own tool frames keep it", () => {
+    assert.ok(/if \(q\.get\("embed"\) === "1" && !_isAdmin && window\.parent === window\) \{ q\.delete\("embed"\);/.test(auth));
+  });
 });
