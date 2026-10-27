@@ -551,3 +551,14 @@ group("ingest/csv: line endings and header keys", () => {
     assert.equal(Object.getPrototypeOf(row), Object.prototype); assert.deepEqual(Object.keys(row), ["__proto__", "x"]);
   });
 });
+
+group("ingest/cef+leef: real-world quirks", () => {
+  test("CEF: an unescaped '=' inside a value (a URL query) stays in that value", () => {
+    const e = parseCef("CEF:0|Fortinet|FortiGate|7.0|13|web|5|request=http://x.example/?a=b&c=d act=blocked src=192.0.2.1").ext;
+    assert.deepEqual(e, { request: "http://x.example/?a=b&c=d", act: "blocked", src: "192.0.2.1" });
+  });
+  test("LEEF 2.0 without the optional delimiter field keeps attributes that contain '|'", () => {
+    assert.deepEqual(parseLeef("LEEF:2.0|V|P|1|E|src=192.0.2.1\tmsg=a|b\tdst=192.0.2.2").ext, { src: "192.0.2.1", msg: "a|b", dst: "192.0.2.2" });
+    assert.deepEqual(parseLeef("LEEF:2.0|V|P|1|E|^|src=192.0.2.1^msg=x").ext, { src: "192.0.2.1", msg: "x" });
+  });
+});

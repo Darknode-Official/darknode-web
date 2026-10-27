@@ -546,6 +546,9 @@ function parseKvExtension(s) {
   const eqs = [];
   for (let i = 0; i < s.length; i++) { if (s[i] === "\\") { i++; continue; } if (s[i] === "=") eqs.push(i); }
   const keyStart = (p) => { let k = p - 1; while (k >= 0 && !/\s/.test(s[k])) k--; return k + 1; };
+  // many vendors leave "=" inside values unescaped (request=http://x/?a=b): an "=" only starts a
+  // new pair when the word before it is a key, otherwise it belongs to the current value
+  for (let e = eqs.length - 1; e >= 0; e--) if (!/^[A-Za-z0-9_.\-[\]]+$/.test(s.slice(keyStart(eqs[e]), eqs[e]))) eqs.splice(e, 1);
   for (let e = 0; e < eqs.length; e++) {
     const p = eqs[e];
     const ks = keyStart(p);
@@ -591,7 +594,9 @@ export function parseLeef(line) {
   if (parts.length < 5) return null;
   const [vendor, product, deviceVersion, eventId] = parts;
   let delimiter = "\t", attrs;
-  if (is2 && parts.length === 6) {
+  // the 2.0 delimiter field is optional: a sixth field means attrs held a "|" when parts[4] is itself attrs (has "=")
+  if (is2 && parts.length === 6 && parts[4].includes("=")) attrs = parts[4] + "|" + parts[5];
+  else if (is2 && parts.length === 6) {
     const d = parts[4];
     attrs = parts[5];
     if (d === "") delimiter = "\t";
