@@ -177,7 +177,8 @@ export function parseTime(v) {
     if (y < 1971 || y > 2199) return null;
     let h = +(m[4] || 0);
     if (m[7]) { const pm = /pm/i.test(m[7]); if (h === 12) h = pm ? 12 : 0; else if (pm) h += 12; }
-    const t = Date.UTC(y, +m[1] - 1, +m[2], h, +(m[5] || 0), +(m[6] || 0));
+    let mo = +m[1], d = +m[2]; if (mo > 12 && d <= 12) [mo, d] = [d, mo]; if (mo < 1 || mo > 12 || d < 1 || d > new Date(Date.UTC(y, mo, 0)).getUTCDate()) return null; // 25/12/2024 is day-first; reject instead of rolling over
+    const t = Date.UTC(y, mo - 1, d, h, +(m[5] || 0), +(m[6] || 0));
     return Number.isFinite(t) ? t : null;
   }
   return null;

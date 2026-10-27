@@ -16,9 +16,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, PRODUCTS, PRODUCT_LABEL, FORMAT_LABEL, DEFAULT_INTERNAL_CIDRS, parseInput, columnSpec,
   findingsToCsv, revocationCsv, blocklistText, userReportText, summaryText, exampleDataset,
-} from "./vpnaudit-engine.js?v=20261017c";
+} from "./vpnaudit-engine.js?v=20261026b";
 
-const ENGINE = engineUrl("./vpnaudit-engine.js?v=20261017c", import.meta);
+const ENGINE = engineUrl("./vpnaudit-engine.js?v=20261026b", import.meta);
 const FEED_URL = "/data/feeds/malicious-ips.json";
 const P = "vpa";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };

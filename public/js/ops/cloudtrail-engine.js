@@ -99,7 +99,8 @@ export function parseTs(v) {
   if (m) {
     let h = Number(m[4]);
     if (m[7]) { const pm = m[7].toUpperCase() === "PM"; if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
-    return Date.UTC(Number(m[3]), Number(m[1]) - 1, Number(m[2]), h, Number(m[5]), Number(m[6] || 0));
+    let mo = Number(m[1]), d = Number(m[2]); if (mo > 12 && d <= 12) [mo, d] = [d, mo]; if (mo < 1 || mo > 12 || d < 1 || d > new Date(Date.UTC(Number(m[3]), mo, 0)).getUTCDate()) return null; // 25/12/2024 is day-first; reject instead of rolling over
+    return Date.UTC(Number(m[3]), mo - 1, d, h, Number(m[5]), Number(m[6] || 0));
   }
   const t = Date.parse(s);
   return Number.isFinite(t) ? t : NaN;

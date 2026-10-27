@@ -361,7 +361,8 @@ export function parseTime(v, tc = {}) {
   if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AP]M)?$/i))) {
     let h = +m[4];
     if (m[7]) { const pm = m[7].toUpperCase() === "PM"; if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
-    return localToUtc(+m[3], +m[1], +m[2], h, +m[5], +(m[6] || 0), z);
+    let mo = +m[1], d = +m[2]; if (mo > 12 && d <= 12) [mo, d] = [d, mo]; if (mo < 1 || mo > 12 || d < 1 || d > new Date(Date.UTC(+m[3], mo, 0)).getUTCDate()) return null; // 25/12/2024 is day-first; reject instead of rolling over
+    return localToUtc(+m[3], mo, d, h, +m[5], +(m[6] || 0), z);
   }
   if (/(z|utc|gmt|[+-]\d{2}:?\d{2})$/i.test(s)) { const t = Date.parse(s); return Number.isFinite(t) ? t : null; }
   return null;
@@ -373,7 +374,9 @@ export function parseDay(v) {
   if (!s) return null;
   let m;
   if ((m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/))) return { y: +m[1], mo: +m[2], d: +m[3] };
-  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return { y: +m[3], mo: +m[1], d: +m[2] };
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) { let mo = +m[1], d = +m[2]; if (mo > 12 && d <= 12) [mo, d] = [d, mo]; if (mo < 1 || mo > 12 || d < 1 || d > new Date(Date.UTC(+m[3], mo, 0)).getUTCDate()) return null; // 25/12/2024 is day-first; reject instead of rolling over
+    return { y: +m[3], mo, d };
+  }
   if ((m = s.match(/^(\d{1,2})[.-]([A-Za-z]{3})[.-](\d{4})/))) { const mo = MON[m[2].toLowerCase()]; return mo ? { y: +m[3], mo, d: +m[1] } : null; }
   return null;
 }

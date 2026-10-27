@@ -97,6 +97,9 @@ const CVE_RE = /CVE-\d{4}-\d{4,}/gi;
 /** Every CVE id in a string or array, upper-cased, unique, sorted. */
 export function extractCves(v) { return uniqSorted((str(Array.isArray(v) ? v.join(" ") : v).match(CVE_RE) || []).map((c) => c.toUpperCase())); }
 
+// Date.UTC rolls an out-of-range field over (2024-13-45 -> 2025-02-14): reject instead
+const okYmd = (y, mo, d, h, mi, se) => mo >= 1 && mo <= 12 && d >= 1 && h <= 23 && mi <= 59 && se <= 60 &&
+  d <= new Date(Date.UTC(y, mo, 0)).getUTCDate();
 /** Parse a timestamp from the formats scanners emit; returns epoch ms or null. */
 export function parseTs(v) {
   const s = str(v);
@@ -105,6 +108,7 @@ export function parseTs(v) {
   if (/^\d{13}$/.test(s)) return Number(s);
   let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?)?\s*(Z|UTC|GMT|[+-]\d{2}:?\d{2})?$/i);
   if (m) {
+    if (!okYmd(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0))) return null;
     const t = Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
     if (m[7] && /^[+-]/.test(m[7])) { const z = m[7].replace(":", ""); const off = (Number(z.slice(1, 3)) * 60 + Number(z.slice(3, 5))) * 60000; return z[0] === "+" ? t - off : t + off; }
     return t;
@@ -113,7 +117,10 @@ export function parseTs(v) {
   if (m) {
     let h = +(m[4] || 0);
     if (m[7]) { const pm = /pm/i.test(m[7]); if (h === 12) h = pm ? 12 : 0; else if (pm) h += 12; }
-    return Date.UTC(+m[3], +m[1] - 1, +m[2], h, +(m[5] || 0), +(m[6] || 0));
+    let mo = +m[1], d = +m[2];
+    if (mo > 12 && d <= 12) [mo, d] = [d, mo]; // 25/12/2024 can only be day-first
+    if (!okYmd(+m[3], mo, d, h, +(m[5] || 0), +(m[6] || 0))) return null;
+    return Date.UTC(+m[3], mo - 1, d, h, +(m[5] || 0), +(m[6] || 0));
   }
   return parseMonthName(s);
 }

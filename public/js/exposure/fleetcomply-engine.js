@@ -129,7 +129,10 @@ export function parseTs(v) {
   }
   const hm = (h, mi, se, ap) => { h = +(h || 0); if (ap) { ap = ap.toUpperCase(); if (ap === "PM" && h < 12) h += 12; if (ap === "AM" && h === 12) h = 0; } return [h, +(mi || 0), +(se || 0)]; };
   m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:,?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?/i);
-  if (m) { const [h, mi, se] = hm(m[4], m[5], m[6], m[7]); return Date.UTC(+m[3], +m[1] - 1, +m[2], h, mi, se); }
+  if (m) {
+    let mo = +m[1], d = +m[2]; if (mo > 12 && d <= 12) [mo, d] = [d, mo]; if (mo < 1 || mo > 12 || d < 1 || d > new Date(Date.UTC(+m[3], mo, 0)).getUTCDate()) return null; // 25/12/2024 is day-first; reject instead of rolling over
+    const [h, mi, se] = hm(m[4], m[5], m[6], m[7]); return Date.UTC(+m[3], mo - 1, d, h, mi, se);
+  }
   m = s.match(/^(?:\w{3},?\s+)?([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})(?:,?\s+(?:at\s+)?(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?/i);
   if (m && MONTHS[m[1].toLowerCase()] != null) { const [h, mi, se] = hm(m[4], m[5], m[6], m[7]); return Date.UTC(+m[3], MONTHS[m[1].toLowerCase()], +m[2], h, mi, se); }
   m = s.match(/^(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})/);
