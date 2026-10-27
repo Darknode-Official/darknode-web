@@ -6,7 +6,7 @@
 
 import { esc, ago, injectStyle, readRuns, clearRuns, readList } from "./native/ui.js";
 
-const V = "?v=20261026a";
+const V = "?v=20261026b";
 const TOOLS = {
   domain: () => import("./native/domain-check.js" + V),
   certs: () => import("./native/cert-watch.js" + V),

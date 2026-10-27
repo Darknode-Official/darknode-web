@@ -56,7 +56,10 @@ async function fetchSecurityTxt(domain) {
   for (const path of ["/.well-known/security.txt", "/security.txt"]) {
     try {
       const r = await dnFetch("https://" + domain + path, { raw: true, timeout: 12000 });
-      if (r.status === 200 && /contact\s*:/i.test(r.body || "")) return { present: true };
+      // a site that answers every path with its HTML app is not publishing security.txt (RFC 9116: a
+      // plain-text "Contact:" field at the start of a line)
+      const b = String(r.body || "");
+      if (r.status === 200 && !/^\s*</.test(b) && /^contact\s*:/im.test(b)) return { present: true };
     } catch (_) {}
   }
   return { present: false };

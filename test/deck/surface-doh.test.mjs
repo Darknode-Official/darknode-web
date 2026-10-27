@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const src = readFileSync(new URL("../../public/js/deck-surface.js", import.meta.url), "utf8")
-  .replace(/^import \{ dnFetch, dnFetchJSON \} from "\/js\/net\.js";/m, "const dnFetch = null; const dnFetchJSON = async (u) => globalThis.__doh(u);")
+  .replace(/^import \{ dnFetch, dnFetchJSON \} from "\/js\/net\.js";/m, "const dnFetch = async (u, o) => globalThis.__fetch(u, o); const dnFetchJSON = async (u) => globalThis.__doh(u);")
   .replace(/^import \{ fetchSubdomainNames \}.*$/m, "const fetchSubdomainNames = null;");
 const f = join(mkdtempSync(join(tmpdir(), "surf-")), "s.mjs"); writeFileSync(f, src);
 const m = await import(f);
@@ -20,5 +20,12 @@ group("deck surface: DNS over HTTPS", () => {
     const r = await m.dns("www.example.com");
     assert.equal(r.A.join(), "192.0.2.10");
     assert.equal(r.TXT[0], "v=spf1 include:a.example -all");
+  });
+  test("security.txt: an HTML page served for every path is not one; Contact must start a line", async () => {
+    globalThis.__fetch = async () => ({ status: 200, body: "<!doctype html><script>var o={contact: 1}</script>" });
+    assert.equal((await m.securityTxt("example.com")).found, false);
+    globalThis.__fetch = async () => ({ status: 200, body: "Contact: mailto:test@darknode.ai\r\nExpires: 2030-01-01T00:00:00Z\r\n" });
+    const r = await m.securityTxt("example.com");
+    assert.equal(r.found, true); assert.equal(r.contact, "mailto:test@darknode.ai");
   });
 });

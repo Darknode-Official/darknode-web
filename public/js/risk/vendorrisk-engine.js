@@ -656,7 +656,7 @@ export function gradeDomain(raw, { now, legalName = "", certWarnDays = DEFAULTS.
   // security.txt
   if (!raw.securityTxt) put("securitytxt", "skip", "not run");
   else if (raw.securityTxt.error) put("securitytxt", "error", raw.securityTxt.error);
-  else if (raw.securityTxt.status !== 200 || !/contact\s*:/i.test(str(raw.securityTxt.body))) put("securitytxt", "warn", "No /.well-known/security.txt with a Contact field (HTTP " + raw.securityTxt.status + ")");
+  else if (raw.securityTxt.status !== 200 || /^\s*</.test(str(raw.securityTxt.body)) || !/^contact\s*:/im.test(str(raw.securityTxt.body))) put("securitytxt", "warn", "No /.well-known/security.txt with a Contact field (HTTP " + raw.securityTxt.status + ")");
   else {
     const s = parseSecurityTxt(raw.securityTxt.body);
     if (!s.expires) put("securitytxt", "warn", "Present but no Expires field (required by RFC 9116); Contact " + s.contact.join(", "));

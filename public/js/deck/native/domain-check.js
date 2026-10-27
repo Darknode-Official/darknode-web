@@ -4,7 +4,7 @@
 // portfolio graded side by side (mode "portfolio").
 
 import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261025g";
-import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261026a";
+import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261026b";
 import { postureFindings } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, GRADE_C, recordRun, readList, writeList, pool, download } from "./ui.js";

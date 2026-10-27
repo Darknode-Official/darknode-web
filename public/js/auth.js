@@ -2192,7 +2192,7 @@ function renderApp(user) {
     else if (sec === "loghunt") { import("/js/ops/log-hunter.js?v=20261017e").then(m => live() && m.renderLogHunter(main)); }
     else if (sec === "payees") { import("/js/finsec/vendors.js?v=20261025e").then(m => live() && m.renderVendors(main)); }
     else if (sec === "dlp") { import("/js/dataprotect/dlp.js?v=20261026a").then(m => live() && m.renderDlp(main)); }
-    else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261026a").then(m => live() && m.renderPosture(main)); }
+    else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261026b").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261026a").then(m => live() && m.renderTlsFleet(main)); }
     else if (sec === "phishtriage") { import("/js/dataprotect/phish.js?v=20261026a").then(m => live() && m.renderPhish(main)); }
     else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261017c").then(m => live() && m.renderLeakprobe(main)); }
@@ -2210,7 +2210,7 @@ function renderApp(user) {
     else if (sec === "breachclock") { import("/js/risk/breachclock.js?v=20261016p").then(m => live() && m.renderBreachClock(main)); }
     else if (sec === "riskreg") { import("/js/risk/riskreg.js?v=20261017c").then(m => live() && m.renderRiskRegister(main)); }
     else if (sec === "evidence") { import("/js/compliance/evidence.js?v=20261017c").then(m => live() && m.renderEvidence(main)); }
-    else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261016s").then(m => live() && m.renderVendorRisk(main)); }
+    else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261026b").then(m => live() && m.renderVendorRisk(main)); }
     else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261017e").then(m => live() && m.renderBackupReady(main)); }
     else if (sec === "dmarcreports") { import("/js/exposure/dmarcreports.js?v=20261017c").then(m => live() && m.renderDmarcReports(main)); }
     else if (sec === "domainguard") { import("/js/exposure/domainguard.js?v=20261017c").then(m => live() && m.renderDomainGuard(main)); }

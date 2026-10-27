@@ -9,7 +9,7 @@
 //   renderPosture(main) -> void
 
 import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261025g";
-import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261026a";
+import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261026b";
 import { attachSinkButton } from "../core/sink.js";
 import { postureFindings } from "/js/dataprotect/dp-sink.js";
 

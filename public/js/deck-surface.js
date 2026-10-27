@@ -133,8 +133,9 @@ export async function securityTxt(domain) {
   const d = clean(domain);
   const r = await dnFetch("https://" + d + "/.well-known/security.txt", { raw: true, timeout: 15000 });
   const body = String(r.body || "");
-  const found = r.status === 200 && /contact\s*:/i.test(body);
-  const contact = (body.match(/contact\s*:\s*(.+)/i) || [])[1] || "";
+  // an HTML page served for every path is not a security.txt; the field must start a line (RFC 9116)
+  const found = r.status === 200 && !/^\s*</.test(body) && /^contact\s*:/im.test(body);
+  const contact = (body.match(/^contact\s*:\s*(.+)/im) || [])[1] || "";
   return { found, status: r.status, contact: contact.trim(), body: found ? body.slice(0, 1200) : "" };
 }
 

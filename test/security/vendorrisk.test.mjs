@@ -183,6 +183,8 @@ group("vendorrisk: posture grading from fixture responses", () => {
     assert.ok(/Expired/.test(g({ status: 200, body: "Contact: mailto:sec@x.test\nExpires: 2025-01-01T00:00:00Z\n" }).evidence));
     assert.ok(/no Expires/.test(g({ status: 200, body: "Contact: mailto:sec@x.test\n" }).evidence));
     assert.equal(g({ status: 404, body: "" }).status, "warn");
+    assert.equal(g({ status: 200, body: "<!doctype html><html><script>var o={contact: 1}</script></html>" }).status, "warn", "an HTML page served for every path is not a security.txt");
+    assert.equal(g({ status: 200, body: "# policy\nsee contact: below\n" }).status, "warn", "Contact must start a line");
     assert.deepEqual(parseSecurityTxt("Contact: a\ncontact: b\nExpires: z").contact, ["a", "b"]);
   });
   test("leak tracker: exact match vs unrelated substring hits; 404 body = zero rows; rate limit = error", () => {
