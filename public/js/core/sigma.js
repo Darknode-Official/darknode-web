@@ -35,12 +35,30 @@ const valuesFor = (flat, field) => flat.get(lc(field)) || [];
 // All scalar string values of an event, for keyword (fieldless) matching.
 function allValues(flat) { const out = []; for (const arr of flat.values()) for (const v of arr) out.push(v); return out; }
 
+// Sigma wildcards (as pySigma reads them): * = any run, ? = one character; \* \? \\ are the
+// literal characters. Returns null when the value has no wildcard or escape (plain compare).
+const escRe = (c) => c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function wildRe(sv, mods) {
+  let re = "", wild = false;
+  for (let i = 0; i < sv.length; i++) {
+    const c = sv[i];
+    if (c === "\\" && (sv[i + 1] === "*" || sv[i + 1] === "?" || sv[i + 1] === "\\")) { re += escRe(sv[++i]); wild = true; continue; } // an escape also needs the pattern path (a\*b is the literal a*b)
+    if (c === "*") { re += "[\\s\\S]*"; wild = true; } else if (c === "?") { re += "[\\s\\S]"; wild = true; } else re += escRe(c);
+  }
+  if (!wild) return null;
+  const head = mods.includes("contains") || mods.includes("endswith") ? "" : "^", tail = mods.includes("contains") || mods.includes("startswith") ? "" : "$";
+  return new RegExp(head + re + tail, mods.includes("cased") ? "" : "i");
+}
+// Modifiers this evaluator implements; compileRule refuses anything else rather than mis-match.
+const MODS = new Set(["contains", "startswith", "endswith", "all", "re", "cased", "exists"]);
+
 // Match one spec value against one event value under the given modifiers.
 function matchValue(eventVal, specVal, mods) {
   if (specVal === null) return eventVal == null || eventVal === "";
   if (eventVal == null) return false;
   const ev = str(eventVal), sv = str(specVal);
   if (mods.includes("re")) { try { return new RegExp(sv, mods.includes("cased") ? "" : "i").test(ev); } catch (_) { return false; } }
+  if (typeof specVal === "string") { const w = wildRe(sv, mods); if (w) return w.test(ev); }
   const a = mods.includes("cased") ? ev : ev.toLowerCase();
   const b = mods.includes("cased") ? sv : sv.toLowerCase();
   if (mods.includes("contains")) return a.includes(b);
@@ -57,6 +75,7 @@ function matchField(flat, rawKey, spec) {
   const field = parts[0];
   const mods = parts.slice(1).map(lc);
   const evVals = valuesFor(flat, field);
+  if (mods.includes("exists")) { const has = evVals.some((v) => v != null && v !== ""); return (spec === true || lc(spec) === "true") ? has : !has; }
   const specVals = Array.isArray(spec) ? spec : [spec];
   const need = mods.includes("all");
   const test = (sv) => (spec === null ? matchValue(evVals.length ? evVals[0] : null, null, mods) : evVals.some((ev) => matchValue(ev, sv, mods)));
@@ -132,6 +151,10 @@ export function compileRule(yamlText) {
   if (!condition || typeof condition !== "string") return { ok: false, error: "Missing a `condition:` under detection." };
   const selectionNames = Object.keys(detection).filter((k) => k !== "condition");
   if (!selectionNames.length) return { ok: false, error: "The detection has no search identifiers." };
+  // an unimplemented modifier (cidr, base64, windash, gt...) must not silently fall back to plain equality
+  const bad = new Set(), scan = (sel) => { if (Array.isArray(sel)) sel.forEach(scan); else if (sel && typeof sel === "object") for (const k of Object.keys(sel)) for (const m of str(k).split("|").slice(1)) if (!MODS.has(lc(m))) bad.add(lc(m)); };
+  for (const n of selectionNames) scan(detection[n]);
+  if (bad.size) return { ok: false, error: "Unsupported field modifier" + (bad.size > 1 ? "s" : "") + ": " + [...bad].join(", ") + ". Supported: contains, startswith, endswith, all, re, cased, exists." };
   return { ok: true, rule: { title: str(doc.title || "Untitled rule"), id: str(doc.id || ""), level: lc(doc.level || ""), description: str(doc.description || ""), detection, condition, selectionNames } };
 }
 

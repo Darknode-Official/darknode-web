@@ -109,3 +109,29 @@ group("sigma/evaluateRule", () => {
     assert.equal(evaluateRule(mk("1 of them"), ev).count, 1);
   });
 });
+
+group("sigma/wildcards, escapes, exists, unsupported modifiers", () => {
+  const R = (sel) => "title: t\ndetection:\n  sel:\n" + sel + "\n  condition: sel\n";
+  const n = (sel, e) => evaluateRule(R(sel), [e]).count;
+  const img = { Image: "C:\\Windows\\System32\\powershell.exe" };
+  test("* and ? are wildcards in plain and modifier values", () => {
+    assert.equal(n("    Image: '*\\powershell.exe'", img), 1);
+    assert.equal(n("    Image: '*\\cmd.exe'", img), 0);
+    assert.equal(n("    Image: 'C:\\Windows\\\\*\\power?hell.exe'", img), 1, "\\\\* is a backslash then a wildcard");
+    assert.equal(n("    CommandLine|contains: 'enc*AAA'", { CommandLine: "ps -enc AAA" }), 1);
+  });
+  test("\\* is a literal star; a backslash before a normal letter stays a backslash", () => {
+    assert.equal(n("    User: 'a\\*b'", { User: "a*b" }), 1);
+    assert.equal(n("    User: 'a\\*b'", { User: "axb" }), 0);
+    assert.equal(n("    Image|endswith: '\\powershell.exe'", img), 1);
+  });
+  test("exists: true / false", () => {
+    assert.equal(n("    Image|exists: true", img), 1);
+    assert.equal(n("    Foo|exists: true", img), 0);
+    assert.equal(n("    Foo|exists: false", img), 1);
+  });
+  test("an unimplemented modifier is refused, not evaluated as plain equality", () => {
+    const c = compileRule(R("    SrcIp|cidr: 10.0.0.0/8"));
+    assert.equal(c.ok, false); assert.ok(/Unsupported field modifier: cidr/.test(c.error));
+  });
+});

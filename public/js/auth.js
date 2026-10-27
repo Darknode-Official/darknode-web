@@ -2139,7 +2139,7 @@ function renderApp(user) {
     else if (sec === "emailheader") { import("/js/email-header.js?v=20260924b").then(m => live() && m.renderEmailHeader(main)); }
     else if (sec === "dossier") { import("/js/target-dossier.js").then(m => live() && m.renderDossier(main)); }
     else if (sec === "payloadstudio") { import("/js/payload-studio.js?v=20261013m").then(m => live() && m.renderPayloadStudio(main)); }
-    else if (sec === "sigma") { import("/js/sigma-builder.js?v=20261018f").then(m => live() && m.renderSigmaBuilder(main)); }
+    else if (sec === "sigma") { import("/js/sigma-builder.js?v=20261026b").then(m => live() && m.renderSigmaBuilder(main)); }
     else if (sec === "iocenrich") { import("/js/ioc-enrichment.js?v=20261026a").then(m => live() && m.renderIocEnrichment(main)); }
     else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => live() && m.renderEmbedSDK(main)); }
     else if (sec === "mcpconnect") { import("/js/mcp-connector.js").then(m => live() && m.renderMcpConnector(main)); }
