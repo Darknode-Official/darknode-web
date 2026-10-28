@@ -955,7 +955,7 @@ export function gradeVendor(record, postureResults, policy, { now, ...opts } = {
   for (const f of findings) { f.evidenceCount = Math.max(f.evidenceCount, f.evidence.length); f.evidence = f.evidence.slice(0, 50); }
   findings.sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity] || a.id.localeCompare(b.id));
   const docsExpiring = hasDates ? rec.docs.filter((d) => isDate(d.expires) && daysUntil(d.expires, now) >= 0 && daysUntil(d.expires, now) <= o.upcomingDays).length : 0;
-  return { id: rec.id || "", legalName: vn, criticality: rec.criticality, inherent, credit, posture, residual, diff, trend: trendOf(rec), nextReview: nr, docsExpiring, lastChecked: latest ? latest.at : "", findings };
+  return { id: rec.id || "", legalName: vn, criticality: rec.criticality, inherent, credit, posture, residual, diff, trend: trendOf(rec), nextReview: nr, docsExpiring, lastChecked: latest ? latest.at : "", findings, held: heldIds(results, id) };
 }
 
 // ---------------------------------------------------------------------------
@@ -1089,6 +1089,7 @@ export function analyze(dataset, opts = {}, ctx) {
   if (noDomain.length) skipped.push({ check: "posture-domains", reason: noDomain.length + " vendor(s) have no domain to check: " + noDomain.slice(0, 10).join(", ") });
   skipped.push({ check: "dkim", reason: "DKIM is not checkable without the vendor's selector names" });
 
+  const held = graded.flatMap((g) => g.held);
   const findings = graded.flatMap((g) => g.findings).sort((a, b) => SEV_RANK[a.severity] - SEV_RANK[b.severity] || a.id.localeCompare(b.id));
   const vendors = graded.map((g, i) => ({
     id: g.id, legalName: g.legalName, criticality: g.criticality || "", inherent: g.inherent.score, inherentBand: g.inherent.band,
@@ -1119,7 +1120,14 @@ export function analyze(dataset, opts = {}, ctx) {
     docsExpiring: expiring.filter((e) => e.daysLeft >= 0).length, docsExpired: expiring.filter((e) => e.daysLeft < 0).length,
     reviewsOverdue: overdue.length, checked: vendors.filter((v) => v.lastChecked).length,
   };
-  return { summary, findings, tables: { vendors, grid, expiring, overdue, worst, graded }, skipped, meta: { tool: TOOL_ID, version: VERSION, rows: n, now: str(now) } };
+  return { summary, findings, held, tables: { vendors, grid, expiring, overdue, worst, graded }, skipped, meta: { tool: TOOL_ID, version: VERSION, rows: n, now: str(now) } };
+}
+
+// A posture check that errored (a lookup that failed) decides nothing, so the finding it
+// would raise is held: the sink then does not offer the last one as verified fixed.
+const HELD_PREFIX = { dmarc: "dmarc-", spf: "spf-all-", cert: "cert-", rdap: "domain-exp-", securitytxt: "sectxt-", leak: "leak-" };
+function heldIds(results, id) {
+  return (results || []).filter((r) => r.status === "error" && HELD_PREFIX[r.check]).map((r) => id(HELD_PREFIX[r.check] + r.domain));
 }
 
 // ---------------------------------------------------------------------------
