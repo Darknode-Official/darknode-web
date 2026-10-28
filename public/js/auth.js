@@ -36,7 +36,7 @@ import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf a
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
 const MINI_COUNT = _MINI_TOOLS.length;
-import { showToast } from "/js/toast.js?v=20261019f";
+import { showToast } from "/js/toast.js?v=20261027b";
 // Expose the toast helper globally: inline handlers and dynamically-imported
 // tool modules call window.showToast rather than importing it.
 try { window.showToast = showToast; } catch (_) {}

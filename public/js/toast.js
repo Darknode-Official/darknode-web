@@ -7,7 +7,7 @@ function ensureContainer() {
   container = document.createElement("div");
   container.className = "toast-stack";
   Object.assign(container.style, {
-    position: "fixed", top: "72px", right: "20px", zIndex: "9999",
+    position: "fixed", top: "72px", right: "20px", zIndex: "100001", // above the fixed Deck (99999) and its dialogs (100000)
     display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px", pointerEvents: "none", maxWidth: "380px"
   });
   document.body.appendChild(container);
