@@ -2745,7 +2745,7 @@ export function renderDeck(host, opts) {
   async function autoDrainIngest() {
     if (_ingestDrained) return; _ingestDrained = true;
     try {
-      const { ingestAvailable, drainIngest } = await import("/js/deck/ingest-client.js");
+      const { ingestAvailable, drainIngest } = await import("/js/deck/ingest-client.js?v=20261027c");
       if (!ingestAvailable()) return;
       const r = await drainIngest();
       const n = (r.created || 0) + (r.updated || 0);

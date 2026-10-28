@@ -32,14 +32,16 @@ export const createKey = (label, scopes) => keysApi({ op: "create", label, scope
 export const revokeKey = (keyId) => keysApi({ op: "revoke", keyId });
 export const peekQueue = () => keysApi({ op: "peek" });
 
-// Drain the server queue and publish each batch through the normal sink.
+// Drain the server queue and publish each batch through the normal sink. No dataset: a
+// batch's source is only its format (ingest:sarif), so two repos' scans or two single
+// alerts share it, and a dataset would offer every earlier batch's findings as "fixed".
 export async function drainIngest() {
   const { batches } = await keysApi({ op: "drain" });
   if (!batches || !batches.length) return { batches: 0, created: 0, updated: 0 };
   const { publishFindings } = await import("/js/core/sink.js");
   let created = 0, updated = 0;
   for (const b of batches) {
-    try { const r = await publishFindings(b.source || "ingest", b.findings || [], { dataset: "ingest", quiet: true }); created += r.created || 0; updated += r.updated || 0; }
+    try { const r = await publishFindings(b.source || "ingest", b.findings || [], { quiet: true }); created += r.created || 0; updated += r.updated || 0; }
     catch (_) {}
   }
   return { batches: batches.length, created, updated };
