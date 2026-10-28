@@ -1906,11 +1906,18 @@ export function renderDeck(host, opts) {
     if (!sec) return false;
     const i = pins.indexOf(sec);
     if (i >= 0) pins.splice(i, 1); else pins.unshift(sec);
-    if (pins.length > 12) pins.length = 12;
+    if (pins.length > 12) { const drop = pins.pop(); pins.length = 12; toast((secLabel[drop] || drop) + " was unpinned - the overview holds 12 pins"); }
     savePins(pins);
     if (curScene === "overview") renderPins();   // keep the overview widget in sync
     buildSideNav();
+    syncPinBtns();
     return pins.includes(sec);
+  }
+  // Every pin star shows the saved pins: a tool pinned from its header, from the palette, or
+  // dropped by the 12-pin cap must not keep a stale star in the Tool Library (built once).
+  function syncPinBtns(){
+    root.querySelectorAll(".dk-gcpin[data-pin], .dk-srpin[data-pin]").forEach((b) => { const on = pins.includes(b.dataset.pin); b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    const wp = $("#dkWPin"); if (wp && curSec) { wp.classList.toggle("pinned", pins.includes(curSec)); wp.setAttribute("aria-pressed", pins.includes(curSec)); }
   }
   let curScene = "overview";
   // Every Deck page has a darknode.ai link and the address bar follows what is showing:
@@ -2272,7 +2279,7 @@ export function renderDeck(host, opts) {
         <div class="dk-tmain" id="dkToolMain">
           ${groups.map((g) => { const h = hexOf(g.color); return `<section class="dk-tsec" data-g="${g.id}"><div class="th" style="--fg:${h}"><span class="d"></span><h3>${esc(g.name)}</h3><span class="c">${g.items.length} tools</span></div>
             <div class="dk-grid dkx">${g.items.map((it) => `<div class="dk-gcard" role="button" tabindex="0" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name + " " + (TOOL_KW[it.sec] || "")).toLowerCase())}" style="--a:${h}">
-              <button class="dk-gcpin${pins.includes(it.sec) ? " on" : ""}" data-pin="${esc(it.sec)}" data-explain="btn.pin" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
+              <button class="dk-gcpin${pins.includes(it.sec) ? " on" : ""}" data-pin="${esc(it.sec)}" data-explain="btn.pin" title="Pin to overview" aria-label="Pin to overview" aria-pressed="${pins.includes(it.sec)}">${IC.star}</button>
               <span class="gi">${toolIcon(it.label, g.name)}</span>${it.badge === "live" ? '<span class="glive" data-explain="badge.live" title="Live data"></span>' : ""}
               <span class="gt">${esc(it.label)}</span><span class="garr">Open${IC_CHEV}</span></div>`).join("")}</div></section>`; }).join("")}
           <div class="dk-tnone" id="dkToolNone" hidden>No tools match your search.</div>
@@ -2284,8 +2291,7 @@ export function renderDeck(host, opts) {
     });
     sceneTools.querySelectorAll(".dk-gcpin").forEach((b) => b.onclick = (e) => {
       e.stopPropagation();
-      const on = togglePin(b.dataset.pin);
-      b.classList.toggle("on", on);
+      togglePin(b.dataset.pin);
     });
     sceneTools.querySelectorAll("#dkToolNav .dk-tcat").forEach((b) => b.onclick = () => {
       if (b.dataset.cat === "__toolkit") { go("toolkit"); return; }   // instant utilities live in their own scene
@@ -2367,7 +2373,7 @@ export function renderDeck(host, opts) {
     if (f.dataset.ready) wLoad.remove();
     else { wLoad.innerHTML = '<div><div class="sp"></div>Loading ' + esc(label) + '…</div>'; wFrame.appendChild(wLoad); }
     wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + toolIcon(label) + '</span><span class="wt">' + esc(label) + '</span>';
-    const pinBtn = $("#dkWPin"); if (pinBtn) pinBtn.classList.toggle("pinned", pins.includes(sec));
+    const pinBtn = $("#dkWPin"); if (pinBtn) { pinBtn.classList.toggle("pinned", pins.includes(sec)); pinBtn.setAttribute("aria-pressed", pins.includes(sec)); }
     drawer.classList.remove("on"); closeAllMenus();
     setNav("tool:" + sec, label);
     for (const k in sceneEls) sceneEls[k].hidden = true;
@@ -2386,7 +2392,7 @@ export function renderDeck(host, opts) {
   $("#dkWBack").onclick = closeTool;
   $("#dkWFull").onclick = () => { const s = curSec; if (primary) { window.open("/" + s, "_blank", "noopener"); return; } teardown(); onOpen(s); };
   if (primary) { $("#dkWFull").hidden = true; $("#dkBrand").title = "Home"; $("#dkAsstFull").textContent = "Open in new tab"; }
-  $("#dkWPin").onclick = () => { if (!curSec) return; const on = togglePin(curSec); $("#dkWPin").classList.toggle("pinned", on); toast(on ? "Pinned to overview" : "Unpinned"); };
+  $("#dkWPin").onclick = () => { if (!curSec) return; const on = togglePin(curSec); toast(on ? "Pinned to overview" : "Unpinned"); };
   $("#dkWCopy").onclick = async () => { if (!curSec) return; try { await navigator.clipboard.writeText(location.origin + "/" + curSec); toast("Tool link copied"); } catch (_) { toast("Copy failed", "error"); } };
   $("#dkWTab").onclick = () => { if (curSec) window.open("/" + curSec, "_blank", "noopener"); };
 
@@ -2499,10 +2505,10 @@ export function renderDeck(host, opts) {
     const graphHits = q ? graphIndex.filter((g) => g.label.toLowerCase().includes(q)).slice(0, 40) : [];
     matches = typed.concat(base, graphHits).slice(0, 100);
     selIdx = 0;
-    spotRes.innerHTML = matches.length ? matches.map((m, i) => `<div class="dk-sr${i===0?" sel":""}" data-i="${i}">${spotIcon(m)}<span class="l">${esc(m.label)}</span><span class="g">${esc(m.group||"")}</span>${m.type === "tool" ? `<button class="dk-srpin${pins.includes(m.sec) ? " on" : ""}" data-pin="${esc(m.sec)}" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>` : ""}</div>`).join("")
+    spotRes.innerHTML = matches.length ? matches.map((m, i) => `<div class="dk-sr${i===0?" sel":""}" data-i="${i}">${spotIcon(m)}<span class="l">${esc(m.label)}</span><span class="g">${esc(m.group||"")}</span>${m.type === "tool" ? `<button class="dk-srpin${pins.includes(m.sec) ? " on" : ""}" data-pin="${esc(m.sec)}" title="Pin to overview" aria-label="Pin to overview" aria-pressed="${pins.includes(m.sec)}">${IC.star}</button>` : ""}</div>`).join("")
       : `<div class="dk-empty">Nothing matches "${esc(q)}"</div>`;
     spotRes.querySelectorAll(".dk-sr").forEach((r) => r.onclick = (e) => { if (e.target.closest(".dk-srpin")) return; chooseSpot(+r.dataset.i); });
-    spotRes.querySelectorAll(".dk-srpin").forEach((b) => b.onclick = (e) => { e.stopPropagation(); b.classList.toggle("on", togglePin(b.dataset.pin)); });
+    spotRes.querySelectorAll(".dk-srpin").forEach((b) => b.onclick = (e) => { e.stopPropagation(); togglePin(b.dataset.pin); });
   }
   function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "action") { closeSpot(); try { m.run(); } catch (_) {} } else if (m.type === "conn") { closeSpot(); go("con"); openDrawer(m.it); } else if (m.type === "entity") { closeSpot(); try { openEntityDrawer(m.id); } catch (_) {} } else { closeSpot(); openTool(m.sec, m.label); } }
   function moveSel(d){ if (!matches.length) return; selIdx = (selIdx + d + matches.length) % matches.length; spotRes.querySelectorAll(".dk-sr").forEach((r, i) => r.classList.toggle("sel", i === selIdx)); spotRes.querySelector(".dk-sr.sel")?.scrollIntoView({ block: "nearest" }); }
