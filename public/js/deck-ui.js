@@ -1733,9 +1733,36 @@ export function renderDeck(host, opts) {
     return wsProfile;
   }
 
+  // Search terms a tool's name does not carry ("dns" should find Subdomain Enum and Email Auth,
+  // "ssl" the certificate tools). Used by the palette and the Tool Library search.
+  const TOOL_KW = {
+    subdomains: "dns subdomain attack surface", emailauth: "dns spf dkim dmarc email spoofing", dmarcreports: "dns dmarc email spf dkim aggregate rua",
+    domainguard: "dns typosquat lookalike domain phishing", dnshunt: "dns tunneling dga queries", dns: "records mx txt dnssec zone transfer",
+    addressintel: "ip geolocation whois", asnexplorer: "ip bgp network whois", techfingerprint: "stack framework cms",
+    sslinspector: "tls ssl certificate https", tlsfleet: "tls ssl certificate expiry https", headeranalyzer: "http security headers hsts csp",
+    cspevaluator: "content security policy xss headers", cookieinspect: "http cookie samesite secure httponly", corstester: "http origin cross-origin",
+    networkscanner: "port scan services", netexposure: "port scan nmap exposure diff", networktools: "ping traceroute whois ip",
+    firewall: "acl rules iptables", fwaudit: "acl rules firewall audit", packetanalyzer: "hex packet decode ethernet tcp ip protocol",
+    cvesearch: "vulnerability nvd cve", vulndb: "vulnerability cve nvd kev", cvetimeline: "vulnerability cve", cvsscalc: "vulnerability severity score",
+    vulnimport: "vulnerability scanner nessus qualys import", exploitdb: "exploit poc vulnerability",
+    breachlookup: "breach leaked password email pwned", credaudit: "password credential", leakprobe: "secret api key token leak",
+    codescan: "sast code vulnerability static analysis secrets", supplychain: "sbom dependency npm package sca", iacscan: "terraform cloudformation infrastructure as code",
+    k8saudit: "kubernetes k8s container cluster", licenseaudit: "license open source dependency", apispec: "openapi swagger api",
+    signins: "login sign-in identity azure entra okta google workspace", accessreview: "identity user access recertification hr roster okta entra sox", caaudit: "identity conditional access entra azure",
+    privaudit: "identity admin privileged", nhi: "identity service account api key machine", jml: "identity offboarding leaver",
+    oauthgov: "identity oauth consent app", vpnaudit: "vpn remote access", phishtriage: "phishing url email link",
+    emailheader: "email headers phishing spoofing received", loghunt: "logs syslog ssh brute force detection", cloudtrail: "aws cloud logs audit",
+    proxyhunt: "proxy web gateway logs", loganalyze: "logs detection", sigma: "detection rule siem", yarabuilder: "malware detection rule",
+    iocenrich: "ioc indicator ip domain hash threat intel", binanalyze: "malware binary pe elf", memforensics: "memory dump volatility",
+    hashsuite: "hash md5 sha256", cryptotools: "encryption cipher", encoding: "base64 url hex decode",
+    incidents: "incident response ir", investigation: "case investigation", pentestreg: "findings pentest remediation",
+    riskreg: "risk register", vendorrisk: "vendor third-party supplier risk", backupready: "backup ransomware recovery",
+    compliance: "soc2 iso 27001 nist pci hipaa audit", fedcompliance: "fedramp nist 800-53 cmmc", evidence: "compliance audit evidence soc2",
+    dlp: "data loss pii sensitive data", posture: "security score posture", securitytxt: "vulnerability disclosure rfc 9116",
+  };
   // flat index for spotlight: tools + integrations
   const index = [];
-  for (const g of groups) for (const it of g.items) index.push({ type: "tool", sec: it.sec, label: it.label, group: g.name, color: g.color, badge: it.badge });
+  for (const g of groups) for (const it of g.items) index.push({ type: "tool", sec: it.sec, label: it.label, group: g.name, color: g.color, badge: it.badge, kw: TOOL_KW[it.sec] || "" });
   for (const it of INTEGRATIONS) index.push({ type: "conn", id: it.id, label: it.name, group: it.kind === "ai" ? "AI model" : "Security", it });
 
   let conns = loadConns();
@@ -2244,7 +2271,7 @@ export function renderDeck(host, opts) {
         </nav>
         <div class="dk-tmain" id="dkToolMain">
           ${groups.map((g) => { const h = hexOf(g.color); return `<section class="dk-tsec" data-g="${g.id}"><div class="th" style="--fg:${h}"><span class="d"></span><h3>${esc(g.name)}</h3><span class="c">${g.items.length} tools</span></div>
-            <div class="dk-grid dkx">${g.items.map((it) => `<div class="dk-gcard" role="button" tabindex="0" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name).toLowerCase())}" style="--a:${h}">
+            <div class="dk-grid dkx">${g.items.map((it) => `<div class="dk-gcard" role="button" tabindex="0" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name + " " + (TOOL_KW[it.sec] || "")).toLowerCase())}" style="--a:${h}">
               <button class="dk-gcpin${pins.includes(it.sec) ? " on" : ""}" data-pin="${esc(it.sec)}" data-explain="btn.pin" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
               <span class="gi">${toolIcon(it.label, g.name)}</span>${it.badge === "live" ? '<span class="glive" data-explain="badge.live" title="Live data"></span>' : ""}
               <span class="gt">${esc(it.label)}</span><span class="garr">Open${IC_CHEV}</span></div>`).join("")}</div></section>`; }).join("")}
@@ -2277,7 +2304,7 @@ export function renderDeck(host, opts) {
       const inCat = !!q || toolCat === "all" || sec.dataset.g === toolCat;
       let any = false;
       sec.querySelectorAll(".dk-gcard").forEach((c) => {
-        const hit = inCat && (!q || c.dataset.txt.includes(q));
+        const hit = inCat && (!q || q.split(/\s+/).every((w) => c.dataset.txt.includes(w)));
         c.style.display = hit ? "" : "none";
         if (hit) { any = true; shown++; }
       });
