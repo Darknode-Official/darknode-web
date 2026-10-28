@@ -93,7 +93,7 @@ function paint() {
     <div style="margin:0 0 14px;display:flex;gap:8px;flex-wrap:wrap"><button class="mon-btn pri" id="monAdd">Add certificate monitor</button><button class="mon-btn" id="monAddKev">Add KEV/EPSS watch</button></div>
     <div id="monFormSlot"></div>
     ${monHtml}
-    ${logPanel("Recent runs", (S.data.history || []).slice(0, 8), (h) => `<b>${E((S.data.monitors.find((m) => m.id === h.id) || {}).name || h.id)}</b> — ${h.error ? ("error: " + E(h.error)) : `${h.found} open, ${h.added} new, ${h.changed} changed, ${h.alerted} alerted`} · ${E(ago(h.at))}`)}
+    ${logPanel("Recent runs", (S.data.history || []).slice(0, 8), (h) => `<b>${E((S.data.monitors.find((m) => m.id === h.id) || {}).name || h.id)}</b> — ${h.error ? ("error: " + E(h.error)) : `${h.found} open, ${h.added} new, ${h.changed} changed, ${h.alerted} alerted${h.graphError ? ", not synced to Findings: " + E(h.graphError) : ""}`} · ${E(ago(h.at))}`)}
     ${logPanel("Delivery log", (S.data.deliveries || []).slice(0, 8), (d) => `<b>${E(d.type)}</b> ${d.ok ? "delivered" : "failed"} (${d.status})${d.error ? " — " + E(d.error) : ""} · ${E(ago(d.at))}`)}`;
 
   box.querySelector("#monAdd").onclick = () => { const was = S.adding && S.kind === "cert-expiry"; S.kind = "cert-expiry"; S.adding = !was; renderForm(); };
