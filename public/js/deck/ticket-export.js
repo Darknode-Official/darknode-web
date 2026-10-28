@@ -3,7 +3,7 @@
 // Boards get an import-ready CSV (built by core/tickets.js, downloaded locally);
 // GitHub gets real issues through the REST API with the user's own token. The token
 // is sent only to api.github.com, kept in sessionStorage unless the user opts in to
-// "Remember on this device" (localStorage, dn_ key), and never written anywhere else.
+// "Remember on this device" (the per-account key store), and never written anywhere else.
 //
 //   openTicketExport(entities, { onLinked }) -> Promise<void> (resolves when closed)
 //   onLinked(entityId, { url, label }) is awaited after each issue GitHub creates.
@@ -25,6 +25,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const store = (kind) => { try { return kind === "local" ? window.localStorage : window.sessionStorage; } catch (_) { return null; } };
 const sget = (kind, k) => { try { return store(kind)?.getItem(k) || ""; } catch (_) { return ""; } };
 const sset = (kind, k, v) => { try { v ? store(kind)?.setItem(k, v) : store(kind)?.removeItem(k); } catch (_) {} };
+// The token belongs to the signed-in account, not the browser: the session copy is keyed by uid
+// (a tab can sign out and in as someone else) and a remembered one lives in the per-account key
+// store (user-keys.js). A token remembered under the old browser-wide key is dropped, not migrated.
+const uid = () => { try { return window.__dnUid || ""; } catch (_) { return ""; } };
+const sessKey = () => TOKEN_KEY + "_u_" + (uid() || "none");
+const keyGet = () => { try { return (window.dnKeys && window.dnKeys.get(TOKEN_KEY)) || ""; } catch (_) { return ""; } };
+const keySet = (v) => { try { if (window.dnKeys) v ? window.dnKeys.set(TOKEN_KEY, v) : window.dnKeys.del(TOKEN_KEY); } catch (_) {} };
+sset("local", TOKEN_KEY, ""); sset("session", TOKEN_KEY, "");
 
 const TARGETS = [
   { id: "jira", label: "Jira", file: "jira", make: (l, o) => toJiraCsv(l, { issueType: o.type }),
@@ -131,8 +139,8 @@ export function openTicketExport(entities, { onLinked } = {}) {
     }
 
     function paintGithub() {
-      const remembered = !!sget("local", TOKEN_KEY);
-      const tok = sget("session", TOKEN_KEY) || sget("local", TOKEN_KEY);
+      const remembered = !!keyGet();
+      const tok = sget("session", sessKey()) || keyGet();
       body.innerHTML = `<p class="tkx-note">Creates one issue per finding in your repository using your own token. Findings already linked to an issue in the same repository are skipped. Labels are applied only if the token's owner has push access.</p>
         <label class="tkx-fld"><span class="tkx-lbl">Repository</span><input class="dn-modal-in" data-k="repo" placeholder="owner/repo" autocomplete="off" spellcheck="false" value="${esc(sget("local", REPO_KEY))}"></label>
         <label class="tkx-fld"><span class="tkx-lbl">Fine-grained token</span><input class="dn-modal-in" data-k="token" type="password" placeholder="Token" autocomplete="off" spellcheck="false" value="${esc(tok)}"><span class="tkx-help">Needs repository access to this repo with Issues: Read and write. Sent only to api.github.com.</span></label>
@@ -142,7 +150,7 @@ export function openTicketExport(entities, { onLinked } = {}) {
         <div class="tkx-prog" data-prog hidden><div data-ptxt></div><div class="tkx-bar"><i></i></div><ul class="tkx-res"></ul></div>`;
       const $ = (s) => body.querySelector(s);
       const forget = $("[data-forget]");
-      if (forget) forget.onclick = () => { sset("session", TOKEN_KEY, ""); sset("local", TOKEN_KEY, ""); toast("GitHub token removed from this browser", "info"); paintGithub(); };
+      if (forget) forget.onclick = () => { sset("session", sessKey(), ""); keySet(""); toast("GitHub token removed from this browser", "info"); paintGithub(); };
       $("[data-go]").onclick = () => runGithub($);
     }
 
@@ -154,8 +162,8 @@ export function openTicketExport(entities, { onLinked } = {}) {
       if (!rp) { err.textContent = "Enter the repository as owner/repo."; return; }
       if (!token || /\s/.test(token)) { err.textContent = "Enter a GitHub token."; return; }
       const remember = $('[data-k="remember"]').checked;
-      sset("session", TOKEN_KEY, token);
-      sset("local", TOKEN_KEY, remember ? token : "");
+      sset("session", sessKey(), token);
+      keySet(remember ? token : "");
       sset("local", REPO_KEY, rp.owner + "/" + rp.repo);
 
       const todo = list.filter((e) => !hasGithubTicket(e, rp.owner, rp.repo));
@@ -194,7 +202,7 @@ export function openTicketExport(entities, { onLinked } = {}) {
           line("tkx-ok", "#" + j.number, `<a href="${esc(j.html_url)}" target="_blank" rel="noopener noreferrer">${esc(payload.title)}</a>`);
           try { if (typeof onLinked === "function") await onLinked(e.id, { url: j.html_url, label: "GitHub #" + j.number }); }
           catch (x) { line("tkx-bad", "Link", esc("Issue created but the finding could not be updated: " + (x && x.message || x))); }
-        } else if (r.status === 401) { sset("session", TOKEN_KEY, ""); sset("local", TOKEN_KEY, ""); stopped = "GitHub rejected the token (401). Check that it is valid and not expired."; break; }
+        } else if (r.status === 401) { sset("session", sessKey(), ""); keySet(""); stopped = "GitHub rejected the token (401). Check that it is valid and not expired."; break; }
         else if (r.status === 403 || r.status === 429) {
           const ra = Number(r.headers.get("retry-after")), rem = r.headers.get("x-ratelimit-remaining"), reset = Number(r.headers.get("x-ratelimit-reset"));
           const wait = ra ? `Retry in ${ra} s.` : rem === "0" && reset ? `Retry after ${new Date(reset * 1000).toLocaleTimeString()}.` : "Wait at least a minute before retrying.";
