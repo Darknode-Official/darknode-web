@@ -18,6 +18,7 @@
 // Money stays in VAULT, which is server-authored and hash-chained.
 
 import { wins } from "../public/js/core/graph-merge.js";
+import { mergeToolData, nextStatus, toolSeverity } from "../public/js/core/sink-map.js";
 import { verifyIdToken } from "./vault-auth.js";
 import { isSuspended } from "./gate.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
@@ -48,6 +49,35 @@ const clampStr = (v, max) => (typeof v === "string" ? v.slice(0, max) : v);
 
 // Keep only known fields and bound the big ones, so a client cannot store an arbitrary
 // oversized blob. A tombstone keeps just its id + ordering key + the deleted flag.
+// Key-order-insensitive JSON, so a merge that only reorders keys counts as no change.
+const stable = (v) => Array.isArray(v) ? "[" + v.map(stable).join(",") + "]"
+  : v && typeof v === "object" ? "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + stable(v[k])).join(",") + "}"
+  : JSON.stringify(v === undefined ? null : v);
+
+// A server monitor ("monitor:<id>" writer) sends whole entities built from its own run, with
+// none of the analyst's workflow state. Replacing the stored record on LWW would wipe the
+// owner, comments, history, exception, tickets and severity override, and reset a finding an
+// analyst is investigating or accepted back to open; losing LWW to a newer analyst edit would
+// drop the monitor's change instead. So a monitor write onto a live record merges the way a
+// browser tool's does (sink-map mergeToolData / nextStatus / toolSeverity), keeps the first-seen
+// createdAt, and applies only when the merge changes something, stamped strictly later than
+// the stored record so every client takes it. Returns null when there is nothing to apply.
+function monitorMerge(cur, inc, fields, key) {
+  const cd = cur.data && typeof cur.data === "object" ? cur.data : {};
+  const data = mergeToolData(cd, inc.data && typeof inc.data === "object" ? inc.data : {}, inc.source || "monitor");
+  const status = nextStatus(cur.status, inc.status, cd.resolution) || cur.status;
+  if (status !== cur.status && (status === "open" || status === "new")) delete data.resolution; // reopened: the old "fixed" no longer holds
+  const merged = { ...cur, ...inc, data, status, severity: toolSeverity(cd, inc.severity) || cur.severity,
+    source: cur.source || inc.source, createdAt: cur.createdAt || inc.createdAt };
+  if (cur.tags || inc.tags) merged.tags = [...new Set([...(cur.tags || []), ...(inc.tags || [])])];
+  const a = sanitize(merged, fields, key), b = sanitize(cur, fields, key);
+  delete a[key]; delete b[key];
+  if (stable(a) === stable(b)) return null;
+  const ti = Date.parse(inc[key]), tc = Date.parse(cur[key]);
+  merged[key] = new Date(Math.max(Number.isNaN(ti) ? 0 : ti, Number.isNaN(tc) ? Date.now() : tc + 1)).toISOString();
+  return merged;
+}
+
 function sanitize(rec, fields, key) {
   if (rec.deleted) { const t = { id: rec.id, deleted: true }; t[key] = clampStr(rec[key], 40); return t; }
   const out = {};
@@ -111,13 +141,16 @@ export class GraphDO {
     const keys = items.map((r) => prefix + r.id);
     const existing = keys.length ? await this.storage.get(keys) : new Map();
     let n = 0;
-    for (const rec of items) {
+    const fields = prefix === "e:" ? ENTITY_FIELDS : REL_FIELDS;
+    const monitor = prefix === "e:" && String(state.uid || "").startsWith("monitor:");
+    for (let rec of items) {
       const k = prefix + rec.id;
       const cur = existing.get(k);
-      if (!wins(rec, cur, key)) continue;
+      if (monitor && cur && !cur.deleted && !rec.deleted) { rec = monitorMerge(cur, rec, fields, key); if (!rec) continue; }
+      else if (!wins(rec, cur, key)) continue;
+      else if (monitor && !rec.deleted) rec = { ...rec, data: mergeToolData({}, rec.data && typeof rec.data === "object" ? rec.data : {}, rec.source || "monitor") }; // stored as the merge would leave it, so an unchanged rerun is a no-op
       if (!cur) { if (state.count >= MAX_STORED) continue; state.count++; }
       state.rev++;
-      const fields = prefix === "e:" ? ENTITY_FIELDS : REL_FIELDS;
       state.put[k] = { ...sanitize(rec, fields, key), _rev: state.rev, _by: state.uid || "" };
       // Maintain the rev-cursor index: move this record's single "x:" entry to its new rev.
       // Deleting the stale entry keeps the index size bounded to the record count (a no-op when

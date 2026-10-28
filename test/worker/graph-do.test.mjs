@@ -211,3 +211,41 @@ group("GraphDO/rev-cursor delta index", () => {
     assert.equal(delta.json.relationships[0].id, "r-1");
   });
 });
+
+group("GraphDO/monitor writes keep analyst workflow", () => {
+  const fnd = (extra = {}) => ({ id: "f-1", type: "FINDING", name: "Certificate expiring: test.darknode.ai", source: "monitor:m1", createdAt: "2026-10-01T00:00:00.000Z", updatedAt: "2026-10-01T00:00:00.000Z", severity: "medium", status: "open", data: { findingKey: "k1", tool: "monitor:m1", description: "expires in 20 days" }, ...extra });
+  const stored = (st) => st._map.get("e:f-1");
+
+  test("a worsened monitor run keeps owner, comments, triage status and severity override", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    await push(g, { entities: [fnd()] }, "monitor:m1");
+    const edited = { ...stored(st), status: "investigating", updatedAt: "2026-10-05T00:00:00.000Z", data: { ...stored(st).data, owner: "u1", comments: [{ by: "u1", text: "on it" }], commentCount: 1 } };
+    await push(g, { entities: [edited] }, "u1");
+    const r = await push(g, { entities: [fnd({ severity: "high", updatedAt: "2026-10-03T00:00:00.000Z", data: { findingKey: "k1", tool: "monitor:m1", description: "expires in 5 days" } })] }, "monitor:m1");
+    assert.equal(r.json.applied.entities, 1);
+    const s = stored(st);
+    assert.equal(s.data.owner, "u1");
+    assert.equal(s.data.commentCount, 1);
+    assert.equal(s.status, "investigating");
+    assert.equal(s.severity, "high");
+    assert.equal(s.data.description, "expires in 5 days");
+    assert.equal(s.createdAt, "2026-10-01T00:00:00.000Z");
+    assert.ok(Date.parse(s.updatedAt) > Date.parse("2026-10-05T00:00:00.000Z"));
+  });
+
+  test("a monitor resolve closes the finding without dropping its workflow; an unchanged rerun applies nothing", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    await push(g, { entities: [fnd()] }, "monitor:m1");
+    assert.equal((await push(g, { entities: [fnd()] }, "monitor:m1")).json.applied.entities, 0, "an unchanged rerun of a new finding is a no-op");
+    await push(g, { entities: [{ ...stored(st), updatedAt: "2026-10-05T00:00:00.000Z", data: { ...stored(st).data, owner: "u1", severityOverride: "low" }, severity: "low" }] }, "u1");
+    const resolved = fnd({ status: "resolved", severity: "high", updatedAt: "2026-10-04T00:00:00.000Z", data: { findingKey: "k1", tool: "monitor:m1", resolution: "fixed" } });
+    await push(g, { entities: [resolved] }, "monitor:m1");
+    const s = stored(st);
+    assert.equal(s.status, "resolved");
+    assert.equal(s.data.resolution, "fixed");
+    assert.equal(s.data.owner, "u1");
+    assert.equal(s.severity, "low");
+    const again = await push(g, { entities: [resolved] }, "monitor:m1");
+    assert.equal(again.json.applied.entities, 0);
+  });
+});
