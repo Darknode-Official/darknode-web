@@ -113,7 +113,7 @@ export const EXPLAIN = {
   "hdr.search": { title: "Search", body: "Jump to any tool, page or action by typing part of its name. Shortcut: Ctrl K." },
   "hdr.health": { title: "Threat feed status", body: "Green when the live vulnerability feed loaded. If it is down, threat numbers show a dash rather than stale values." },
   "hdr.assistant": { title: "AI assistant", body: "Open Darknode AI, ready to type. Back returns you to the page you were on." },
-  "hdr.new": { title: "Quick create", body: "Start something new: scan a codebase, map a domain, open an investigation or connect a provider." },
+  "hdr.new": { title: "Quick create", body: "Start something new: ask Darknode AI or connect a provider, and on plans that include them, open an investigation or the security graph." },
   "hdr.bell": { title: "Notifications", body: "Recent events from your tools and connections. The badge counts what you have not seen." },
   "hdr.account": { title: "Account", body: "Your profile, settings, keyboard shortcuts, density, hover explanations and sign out." },
 

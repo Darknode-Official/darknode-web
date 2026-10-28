@@ -256,7 +256,7 @@ const IC = {
 };
 
 // Platform severity palette (same thresholds the Threat Feed uses).
-const SEV = { CRITICAL:{label:"Critical",color:"#f0484a"}, HIGH:{label:"High",color:"#ff7a2f"}, MEDIUM:{label:"Medium",color:"#b7791f"}, LOW:{label:"Low",color:"#12a85f"} };
+const SEV = { CRITICAL:{label:"Critical",color:"#f0484a"}, HIGH:{label:"High",color:"#ff7a2f"}, MEDIUM:{label:"Medium",color:"#b7791f"}, LOW:{label:"Low",color:"#12a85f"}, NONE:{label:"Unscored",color:"#8a93a6"} }; // NONE: NVD has not scored it yet (not "Low")
 
 // ===================== built-in Toolkit (instant, client-side, private) =====================
 // Every tool is a pure function of (input, opts). Nothing leaves the browser — ideal for a
@@ -415,7 +415,7 @@ function _mapCVE(v){
   const score = pick && pick.cvssData ? pick.cvssData.baseScore : null;
   const d = ((cve.descriptions || []).find((x) => x.lang === "en") || {}).value || "";
   const first = (d.split(/(?<=\.)\s/)[0] || d);
-  return { id: cve.id, cvss: score, severity: score == null ? "LOW" : sevOf(score), title: first.length > 150 ? first.slice(0, 147) + "…" : first, date: String(cve.published || "").slice(0, 10) };
+  return { id: cve.id, cvss: score, severity: score == null ? "NONE" : sevOf(score), title: first.length > 150 ? first.slice(0, 147) + "…" : first, date: String(cve.published || "").slice(0, 10) };
 }
 async function fetchIntel(n){
   n = n || 30;
@@ -3074,17 +3074,17 @@ export function renderDeck(host, opts) {
       setHealth(true, "Threat feed live");
       sysSet("feed", "", "Live");
       const kn = el.querySelector('[data-k="cve"] .kn'); if (kn) kn.textContent = (d.total || 0).toLocaleString();
-      const c = d.counts || {}, order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
-      const sum = order.reduce((n, k) => n + (c[k] || 0), 0) || 1;
+      const c = d.counts || {}, order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].concat(c.NONE ? ["NONE"] : []);
+      const sum = order.reduce((n, k) => n + (k === "NONE" ? 0 : c[k] || 0), 0) || 1; // the share of SCORED CVEs; unscored ones are not "low"
       const hot = (c.CRITICAL || 0) + (c.HIGH || 0);
       sig.cveHot = hot; sig.cveTotal = (d.cves || []).length; recomputeExposure();
       const box = el.querySelector("#dkOvThreat"); if (!box) return;
-      const bar = order.map((k) => `<span style="width:${(c[k] || 0) / sum * 100}%;--bg:${SEV[k].color}"></span>`).join("");
+      const bar = order.map((k) => `<span style="width:${(c[k] || 0) / (sum + (c.NONE || 0)) * 100}%;--bg:${SEV[k].color}"></span>`).join("");
       const leg = order.map((k) => `<span><i style="--bg:${SEV[k].color}"></i>${SEV[k].label} ${c[k] || 0}</span>`).join("");
       const p = Math.round(hot / sum * 100);
       const level = p >= 50 ? "Elevated" : p >= 25 ? "Guarded" : "Low";
       const col = p >= 50 ? "#f0484a" : p >= 25 ? "#b7791f" : "#12a85f";
-      box.innerHTML = `<div class="dk-gauge"><div class="ring" style="--p:${p};--c:${col}"><i>${p}%</i></div><div class="gmeta"><b>${level} — ${hot} critical/high</b><p>Across the ${d.cves.length} most-recent CVEs (NVD, last ${d.days} days).</p></div></div><div class="dk-sevbar">${bar}</div><div class="dk-sevleg">${leg}</div>`;
+      box.innerHTML = `<div class="dk-gauge"><div class="ring" style="--p:${p};--c:${col}"><i>${p}%</i></div><div class="gmeta"><b>${level} — ${hot} critical/high</b><p>Across the ${d.cves.length} most-recent CVEs (NVD, last ${d.days} days)${c.NONE ? `; ${c.NONE} not yet scored` : ""}.</p></div></div><div class="dk-sevbar">${bar}</div><div class="dk-sevleg">${leg}</div>`;
     }).catch(() => {
       setHealth(false, "Threat feed delayed");
       sysSet("feed", "warn", "Delayed");
@@ -3139,7 +3139,7 @@ export function renderDeck(host, opts) {
       setHealth(true, "Threat feed live");
       _tiCves = d.cves || []; _tiSev = ""; _tiQ = ""; _tiKev = new Set(); _tiEpss = {}; _tiPrio = true;
       const c = d.counts || {};
-      const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((k) => `<button class="dk-sevchip dk-sevfilter" data-sev="${k}"><div class="n" style="--fg:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></button>`).join("")
+      const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].concat(c.NONE ? ["NONE"] : []).map((k) => `<button class="dk-sevchip dk-sevfilter" data-sev="${k}"><div class="n" style="--fg:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></button>`).join("")
         + `<div class="dk-sevchip"><div class="n">${(d.total || 0).toLocaleString()}</div><div class="l">Published 7d</div></div>`
         + `<div class="dk-sevchip" id="dkTiKevChip"><div class="n" style="--fg:#e0383a">—</div><div class="l">Known-exploited</div></div>`;
       const charts = buildThreatCharts(d.cves);
@@ -3215,11 +3215,11 @@ export function renderDeck(host, opts) {
   // and a CVSS-band distribution. No extra network calls, no fabricated data.
   function buildThreatCharts(cves){
     cves = cves || [];
-    const ORD = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+    const ORD = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"];
     // 7-day trend
     const days = [];
     for (let i = 6; i >= 0; i--) { const dt = new Date(Date.now() - i * 86400000); days.push(dt.toISOString().slice(0, 10)); }
-    const byDay = {}; days.forEach((k) => byDay[k] = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, total: 0 });
+    const byDay = {}; days.forEach((k) => byDay[k] = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, NONE: 0, total: 0 });
     cves.forEach((v) => { const b = byDay[v.date]; if (b) { b[v.severity] = (b[v.severity] || 0) + 1; b.total++; } });
     const maxDay = Math.max(1, ...days.map((k) => byDay[k].total));
     const cols = days.map((k) => {
@@ -3292,8 +3292,8 @@ export function renderDeck(host, opts) {
     fetchCveDetail(id).then((c) => {
       const kev = _tiKev.has(id), ep = _tiEpss[id];
       const best = c.metrics[0];
-      const sevKey = best && best.severity ? String(best.severity).toUpperCase() : (best && best.score != null ? sevOf(best.score) : "LOW");
-      const sv = SEV[sevKey] || SEV.LOW;
+      const sevKey = best && best.severity ? String(best.severity).toUpperCase() : (best && best.score != null ? sevOf(best.score) : "NONE");
+      const sv = SEV[sevKey] || SEV.NONE;
       const badges = (kev ? `<span class="dk-kevb" title="On the CISA Known Exploited Vulnerabilities catalog">Known exploited</span>` : "") + (ep != null ? `<span class="dk-epssb" title="FIRST EPSS exploit probability (30-day)">EPSS ${(ep * 100).toFixed(1)}%</span>` : "");
       const metricRows = c.metrics.length ? c.metrics.map((mt) => { const mc = SEV[String(mt.severity || "").toUpperCase()] || sv; return `<tr><td>CVSS ${esc(mt.version)}</td><td><b style="--c:${mc.color};color:var(--c)">${mt.score == null ? "—" : mt.score}${mt.severity ? " " + esc(mt.severity) : ""}</b></td><td class="vec">${esc(mt.vector || "—")}</td></tr>`; }).join("") : `<tr><td colspan="3" style="color:var(--mut)">No CVSS metrics have been published for this CVE yet.</td></tr>`;
       const cweHtml = c.cwes.length ? c.cwes.map((w) => `<span class="dk-cveov-tag">${esc(w)}</span>`).join("") : `<span style="color:var(--mut)">None listed</span>`;
@@ -3327,7 +3327,7 @@ export function renderDeck(host, opts) {
     const rows = base.map((v) => ({ ...v, kev: _tiKev.has(v.id), epss: _tiEpss[v.id] != null ? _tiEpss[v.id] : null }));
     let blob, name;
     if (fmt === "json") { blob = new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" }); name = "darknode-cves.json"; }
-    else { const q = (x) => { let s = String(x == null ? "" : x); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; const lines = rows.map((v) => [v.id, v.cvss == null ? "" : v.cvss, v.severity, v.kev ? "yes" : "no", v.epss == null ? "" : v.epss, v.date || "", v.title || ""].map(q).join(",")); blob = new Blob(["id,cvss,severity,kev,epss,published,title\n" + lines.join("\n")], { type: "text/csv" }); name = "darknode-cves.csv"; }
+    else { const q = (x) => { let s = String(x == null ? "" : x); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; const lines = rows.map((v) => [v.id, v.cvss == null ? "" : v.cvss, v.severity === "NONE" ? "unscored" : v.severity, v.kev ? "yes" : "no", v.epss == null ? "" : v.epss, v.date || "", v.title || ""].map(q).join(",")); blob = new Blob(["id,cvss,severity,kev,epss,published,title\n" + lines.join("\n")], { type: "text/csv" }); name = "darknode-cves.csv"; }
     const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast("Exported " + rows.length + " CVEs");
   }
