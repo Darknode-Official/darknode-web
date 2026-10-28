@@ -3347,7 +3347,7 @@ export function renderDeck(host, opts) {
   }
 
   // ---------- Attack Surface workspace (real external recon via the proxy) ----------
-  let _surfLast = "";
+  let _surfLast = "", _surfRun = 0;
   const surfClean = (d) => { let s = String(d || "").trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/[/?#].*$/, "").replace(/^.*@/, "").replace(/:\d+$/, "").replace(/^\*\./, "").replace(/\.$/, ""); try { s = new URL("http://" + s).hostname; } catch (_) {} return s; }; // a pasted link, email, host:port, trailing dot or IDN all reduce to the bare (punycode) domain
   function renderSurface(dom){
     const el = sceneEls.surface;
@@ -3384,10 +3384,12 @@ export function renderDeck(host, opts) {
     ];
     grid.innerHTML = P.map((p) => `<div class="dk-surfp" id="surf-${p.id}"><div class="hd"><h2>${esc(p.title)}</h2><span class="hx" id="surfx-${p.id}"></span><span class="mo" role="button" tabindex="0" data-opensec="${p.tool}" data-openlabel="${esc(p.label)}">Open tool</span></div><div class="bd" id="surfb-${p.id}"><div class="dk-loading"><span class="sp"></span>Looking up ${esc(d)}…</div></div></div>`).join("");
     grid.querySelectorAll("[data-opensec]").forEach((s) => s.onclick = () => openTool(s.dataset.opensec, s.dataset.openlabel));
-    const bd = (id) => grid.querySelector("#surfb-" + id);
+    // A later search reuses these panel ids; results from an earlier run write to a detached box.
+    const run = ++_surfRun, stale = () => run !== _surfRun;
+    const bd = (id) => (!stale() && grid.querySelector("#surfb-" + id)) || document.createElement("div");
     const errHTML = (e) => `<div class="dk-errbox">${esc((e && e.message) || "Lookup failed.")}</div>`;
     const addGraphBtn = (id, items, linkName) => {
-      const hx = grid.querySelector("#surfx-" + id); if (!hx || !items.length) return;
+      const hx = !stale() && grid.querySelector("#surfx-" + id); if (!hx || !items.length) return;
       hx.innerHTML = `<button class="dk-graphadd">Add ${items.length} to graph</button>`;
       hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20261017d").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph", "error"));
     };
