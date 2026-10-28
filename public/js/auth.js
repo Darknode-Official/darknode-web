@@ -2174,7 +2174,7 @@ function renderApp(user) {
     else if (sec === "asnexplorer") { import("/js/asn-explorer.js?v=20261013b").then(m => live() && m.renderAsnExplorer(main)); }
     else if (sec === "breachlookup") { import("/js/breach-lookup.js").then(m => live() && m.renderBreachLookup(main)); }
     else if (sec === "corstester") { import("/js/cors-tester.js?v=20261013m").then(m => live() && m.renderCorsTester(main)); }
-    else if (sec === "cvesearch") { import("/js/cve-search.js?v=20261017d").then(m => live() && m.renderCveSearch(main)); }
+    else if (sec === "cvesearch") { import("/js/cve-search.js?v=20261027c").then(m => live() && m.renderCveSearch(main)); }
     else if (sec === "darknetradar") { import("/js/darknet-radar.js?v=20261013c").then(m => live() && m.renderDarknetRadar(main)); }
     else if (sec === "headeranalyzer") { import("/js/header-analyzer.js?v=20261013b").then(m => live() && m.renderHeaderAnalyzer(main)); }
     else if (sec === "identitymatrix") { import("/js/identity-matrix.js?v=20260924b").then(m => live() && m.renderIdentityMatrix(main)); }
