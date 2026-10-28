@@ -300,12 +300,14 @@ function _ipScope(ip){
 }
 function _refang(s){
   return s
-    .replace(/\[\.\]|\(\.\)|\{\.\}|\[dot\]|\s+dot\s+/gi, ".")
+    .replace(/\[\.\]|\(\.\)|\{\.\}|\s?[\[({]dot[\])}]\s?/gi, ".") // a bare " dot " is prose, not a defanged dot
     .replace(/\[:\/\/\]/g, "://")
     .replace(/\[@\]|\[at\]/gi, "@")
     .replace(/hxxp/gi, "http");
 }
-function _defang(s){ return s.replace(/:\/\//g, "[://]").replace(/\bhttp/gi, "hxxp").replace(/\./g, "[.]").replace(/@/g, "[@]"); }
+// Already-bracketed parts are left alone so defanging twice is a no-op; only a URL scheme
+// becomes hxxp, not every word starting with http.
+function _defang(s){ return s.replace(/\bhttp(s?)(?=:\/\/)/gi, "hxxp$1").replace(/(?<!\[):\/\/(?!\])/g, "[://]").replace(/(?<![[({])\.(?![\])}])/g, "[.]").replace(/(?<!\[)@(?!\])/g, "[@]"); }
 function _entropyBits(s){ if (!s) return 0; const f = {}; for (const c of s) f[c] = (f[c] || 0) + 1; let h = 0; for (const k in f){ const p = f[k] / s.length; h -= p * Math.log2(p); } return h * s.length; }
 
 const TK_CATS = [
