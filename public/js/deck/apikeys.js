@@ -141,7 +141,8 @@ async function doCreate(slot) {
 }
 
 async function doRevoke(keyId, row) {
-  const ok = window.dnConfirm ? await window.dnConfirm("Revoke this API key? Any pipeline using it will stop working.") : true;
+  if (!window.dnConfirm) { toast("Confirmation unavailable — key not revoked.", "error"); return; } // fail closed, as Monitors does
+  const ok = await window.dnConfirm("Revoke this API key? Any pipeline using it will stop working.");
   if (!ok) return;
   try { await revokeKey(keyId); await load(); toast("Key revoked.", "ok"); }
   catch (e) { toast(e.message || "Could not revoke.", "error"); }
@@ -152,7 +153,7 @@ async function drain() {
   try {
     const r = await drainIngest();
     if (!r.batches) toast("No pending findings to pull.", "ok");
-    else toast(`Pulled ${r.batches} batch${r.batches === 1 ? "" : "es"}: ${r.created} added, ${r.updated} updated.`, "ok");
+    else toast(`Pulled ${r.batches} batch${r.batches === 1 ? "" : "es"}: ${r.created} added, ${r.updated} updated.` + (r.failed ? ` ${r.failed} could not be added to the graph; send ${r.failed === 1 ? "it" : "them"} again.` : ""), r.failed ? "error" : "ok");
     await load();
   } catch (e) { toast(e.message || "Pull failed.", "error"); }
 }

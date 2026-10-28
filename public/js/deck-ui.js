@@ -2750,6 +2750,7 @@ export function renderDeck(host, opts) {
       if (!ingestAvailable()) return;
       const r = await drainIngest();
       const n = (r.created || 0) + (r.updated || 0);
+      if (r.failed) toast(`${r.failed} batch${r.failed === 1 ? "" : "es"} sent to the ingest API could not be added to the graph; send ${r.failed === 1 ? "it" : "them"} again.`, "error");
       if (r.batches && n) { toast(`Pulled ${n} finding${n === 1 ? "" : "s"} sent to the ingest API`, "success"); if (curScene === "findings") withGraph(paintFindings); else if (curScene === "inventory") withGraph(repaintInventory); }
     } catch (_) {}
   }
