@@ -1888,7 +1888,7 @@ export function renderDeck(host, opts) {
   let curScene = "overview";
   // Every Deck page has a darknode.ai link and the address bar follows what is showing:
   // an open tool is /<sec>, a page is /<scene> (the overview is /, a section is
-  // /area/<id>). compliance and tools are also tool ids, so those pages take another
+  // /area/<id>, a Personal/Organization tab is /personal/<tab>). compliance and tools are also tool ids, so those pages take another
   // name. Navigating adds a history entry; boot and back/forward only replace it.
   const SCENE_PATH = { overview: "", compliance: "compliance-center", tools: "all-tools", con: "connections", invest: "investigations" };
   const scenePath = (scene, sect) => "/" + (scene === "section" ? "area/" + sect : scene in SCENE_PATH ? SCENE_PATH[scene] : scene);
@@ -1898,13 +1898,16 @@ export function renderDeck(host, opts) {
     if (!raw) return { scene: "overview" };
     const m = raw.match(/^area\/(\w+)$/);
     if (m) return SECTIONS[m[1]] ? { scene: "section", arg: m[1] } : null;
+    const sp = raw.match(/^(personal|enterprise)\/([\w-]+)$/);
+    if (sp) return { scene: sp[1], arg: { tab: sp[2] } };
     for (const k in SCENES) if (k !== "section" && (k in SCENE_PATH ? SCENE_PATH[k] : k) === raw) return { scene: k };
     return null;
   }
   let routing = true;
-  function syncUrl(path){
+  function syncUrl(path, replace){
     if (!primary) return;
-    try { if (location.pathname !== path) history[routing ? "replaceState" : "pushState"](routing ? history.state : null, "", path + location.search); } catch (_) {}
+    const rep = routing || replace;
+    try { if (location.pathname !== path) history[rep ? "replaceState" : "pushState"](rep ? history.state : null, "", path + location.search); } catch (_) {}
   }
   // Shortcuts into tools/scenes above the plan are removed, not left as dead buttons
   // (go()/openTool() refuse them); same rule as the sidebar: hidden, never badged.
@@ -1949,7 +1952,9 @@ export function renderDeck(host, opts) {
   }
   // Native spaces; `open` = { tab, target } jumps straight to a tool (and runs it on target).
   function mountSpaceScene(id, open){
-    import("/js/deck/spaces.js?v=20261026b").then((m) => m.mountSpace(sceneEls[id], id, { open: open && open.tab ? open : null, openTool: (sec, label) => openTool(sec, label), confirm: (msg) => (window.dnConfirm ? window.dnConfirm(msg) : Promise.resolve(true)) })).catch(() => toast("Could not load this space"));
+    import("/js/deck/spaces.js?v=20261027b").then((m) => m.mountSpace(sceneEls[id], id, { open: open && open.tab ? open : null, openTool: (sec, label) => openTool(sec, label),
+      // a tab change replaces the page's link (/personal/<tab>); only while this space is what's showing
+      onTab: (tab) => { if (curScene === id && sceneWork.hidden) syncUrl(scenePath(id) + (tab && tab !== "home" ? "/" + tab : ""), true); }, confirm: (msg) => (window.dnConfirm ? window.dnConfirm(msg) : Promise.resolve(true)) })).catch(() => toast("Could not load this space"));
   }
   function openSpaceTool(id, tab, target){ go(id, { tab, target }); }
   // Any element carrying data-scene (KPI cards, "view all" links, quick actions)

@@ -130,7 +130,7 @@ async function openTab(st, { tab, target }) {
   if (target && api && typeof api.run === "function") api.run(target);
 }
 
-// Mount (once) or refresh a space into `el`. ctx: { confirm(msg) -> Promise<bool> }.
+// Mount (once) or refresh a space into `el`. ctx: { confirm(msg) -> Promise<bool>, onTab(tab) }.
 export function mountSpace(el, id, ctx = {}) {
   const S = SPACES[id]; if (!S) return;
   injectStyle();
@@ -145,6 +145,7 @@ export function mountSpace(el, id, ctx = {}) {
     const show = async (tab) => {
       const t = S.tabs.find((x) => x.id === tab) || S.tabs[0];
       st.cur = t.id; try { localStorage.setItem(LS, t.id); } catch (_) {}
+      if (ctx.onTab) ctx.onTab(t.id); // the host keeps the address bar on this tab
       el.querySelectorAll(".ns-tab").forEach((b) => { const on = b.dataset.tab === t.id; b.classList.toggle("on", on); b.setAttribute("aria-selected", String(on)); });
       el.querySelectorAll("[data-pane]").forEach((p) => { p.hidden = p.dataset.pane !== t.id; });
       const pane = el.querySelector(`[data-pane="${t.id}"]`);
@@ -174,4 +175,5 @@ export function mountSpace(el, id, ctx = {}) {
   }
   if (ctx.open) openTab(el._ns, ctx.open);
   else if (el._ns.cur === "home") el._ns.show("home");
+  else if (ctx.onTab) ctx.onTab(el._ns.cur);
 }
