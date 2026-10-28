@@ -3953,7 +3953,7 @@ export function renderDeck(host, opts) {
     el.innerHTML = `<div class="dk-ti-head"><h1>Team</h1></div><div class="dk-ovp"><div class="dk-loading"><span class="sp"></span>Loading members…</div></div>`;
     const myUid = user && user.uid;
     listMembers(wid).then(({ members, log }) => {
-      if (curScene !== "team") return;
+      if (curScene !== "team" || activeWorkspace() !== wid) return; // switched workspace while loading
       const meRow = members.find((m) => m.uid === myUid);
       const myRole = meRow ? meRow.role : "viewer";
       const canManage = canDo(myRole, "manageMembers");
@@ -4024,7 +4024,7 @@ export function renderDeck(host, opts) {
         save(uid, el.querySelector("#dkTeamRole").value, (el.querySelector("#dkTeamLabel").value || "").trim());
       };
     }).catch((e) => {
-      if (curScene !== "team") return;
+      if (curScene !== "team" || activeWorkspace() !== wid) return;
       el.innerHTML = `<div class="dk-ti-head"><h1>Team</h1></div><div class="dk-ovp"><p class="dk-mut">Could not load members. ${esc(String((e && e.message) || e))}</p></div>`;
     });
   }
