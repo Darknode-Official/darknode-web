@@ -52,6 +52,8 @@ import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261025
 import { makeMessage as makeBridge, parseMessage as parseBridge, MSG as BMSG } from "/js/core/tool-bridge.js?v=20261018g";
 
 const LS_CONN = "dn_deck_connections_v1";
+// AI providers whose key the AI Assistant (webai.js) uses, calling the provider directly from the browser.
+const AI_DIRECT = new Set(["claude", "openai", "groq", "openrouter", "mistral", "perplexity", "deepseek", "together", "xai", "cohere", "fireworks", "cerebras"]);
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
 const LS_NOTIF_SEEN = "dn_deck_notif_seen"; // ts of the last notification they read
 const LS_PINS = "dn_deck_pins_v1";          // user-pinned tools (sec ids) shown on the overview
@@ -2079,14 +2081,20 @@ export function renderDeck(host, opts) {
     const secKeyNote = isLiveInt(it)
       ? "Your key is stored only in this browser (localStorage). Darknode's IOC enrichment uses it directly when you analyze indicators."
       : "Your key is stored only in this browser (localStorage). No Darknode feature consumes this provider yet — connecting keeps it ready for when a tool supports it.";
+    // AI keys: the assistant calls these providers straight from the browser (webai.js OAI_COMPAT +
+    // Claude) - the old note said calls went "through its own proxy", and promised a use for Gemini
+    // (Darknode AI uses Darknode's own Gemini access) and Hugging Face keys that nothing reads.
+    const aiKeyNote = AI_DIRECT.has(it.id)
+      ? `Your key is stored only in this browser, under your account. When you pick a ${esc(it.name)} model in the AI Assistant, the request goes straight from your browser to ${esc(it.name)} - Darknode's servers never see the key.`
+      : `Your key is stored only in this browser, under your account. Nothing in Darknode uses a ${esc(it.name)} key yet${it.id === "gemini" ? " (the assistant's Darknode AI model is Gemini, free through Darknode's own access)" : ""} - connecting keeps it ready.`;
     const note = keyForm
-      ? (it.kind === "sec" ? secKeyNote : "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy.")
+      ? (it.kind === "sec" ? secKeyNote : aiKeyNote)
       : oauthProv
       ? "Connect signs you in to OpenRouter and creates a key tied to YOUR OpenRouter account — one login reaches Claude, GPT, Gemini, Llama and more. Calls spend your OpenRouter credits; the default model here is free, so it can cost nothing. No provider lets another site charge your Claude/ChatGPT subscription — this is the honest, lowest-cost alternative."
       : it.account
         ? `Darknode runs ${esc(it.name)} with your own API key — add one above. No provider lets another site bill your existing ${esc(it.name)} subscription, so the "Open to sign in" button only opens ${esc(it.name)}; it can't grant API access on its own. Tip: connect OpenRouter once to reach ${esc(it.name)}, GPT, Gemini and more through a single login.`
         : it.connect === "key"
-          ? (it.kind === "sec" ? secKeyNote : "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy.")
+          ? (it.kind === "sec" ? secKeyNote : aiKeyNote)
           : "Linking records this service as available to Darknode. No credentials are stored.";
     const mlist = it.kind === "ai" && MODELS[it.id] ? MODELS[it.id] : null;
     let curModel = "";
