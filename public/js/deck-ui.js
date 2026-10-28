@@ -2242,11 +2242,11 @@ export function renderDeck(host, opts) {
         const dir = r.fromId === id ? "→" : "←";
         const osev = String(o.severity || "").toLowerCase();
         const olabel = m.getEntityTypeLabel ? m.getEntityTypeLabel(o.type) : o.type;
-        return `<button class="dk-relr" data-eid="${esc(otherId)}"><span class="pdot" style="--c:${SEV_C[osev] || "#8a93a6"}"></span><span class="rn">${esc(o.name || "—")}</span><span class="rt">${esc(_relLabel(r.type))} ${dir} ${esc(olabel)}</span></button>`;
+        return `<button class="dk-relr" data-eid="${esc(otherId)}"><span class="pdot" style="--c:${SEV_C[osev] || "#8a93a6"}"></span><span class="rn">${esc(cleanTitle(o) || "—")}</span><span class="rt">${esc(_relLabel(r.type))} ${dir} ${esc(olabel)}</span></button>`;
       }).filter(Boolean).join("");
       const statusOpts = ["new", "open", "investigating", "resolved", "closed"].map((s) => `<option value="${s}"${e.status === s ? " selected" : ""}>${capword(s)}</option>`).join("");
       drawerBody.innerHTML = `
-        <div class="dk-dhead"><div><h3>${esc(e.name || "—")}</h3><div class="k">${esc(typeLabel)}${sim ? ' · <span class="dk-simchip">Sample</span>' : ""}</div></div></div>
+        <div class="dk-dhead"><div><h3>${esc(cleanTitle(e) || "—")}</h3><div class="k">${esc(typeLabel)}${sim ? ' · <span class="dk-simchip">Sample</span>' : ""}</div></div></div>
         <div class="dk-drwpills">
           ${e.severity ? `<span class="pill" style="--c:${SEV_C[sev] || "#8a93a6"}">${capword(e.severity)}</span>` : ""}
           <span class="pill" style="--c:${ST_C[e.status] || "#8a93a6"}">${capword(e.status || "new")}</span>
