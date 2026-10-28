@@ -4,6 +4,7 @@
 // known-exploited detection, so these reports never disagree with the Findings queue or the
 // board pack. Every number traces to a real finding; nothing is invented.
 import { slaState, isKnownExploited, OPEN_STATES, SEVERITY_LEVELS } from "./workflow.js";
+import { cleanTitle } from "./queue-format.js";
 
 const low = (v) => String(v == null ? "" : v).toLowerCase();
 const OPEN = new Set(OPEN_STATES);
@@ -20,7 +21,7 @@ function itemOf(e, policy, now, kevSet) {
   const d = e.data || {};
   return {
     id: e.id,
-    name: String(e.name || e.id || ""),
+    name: cleanTitle(e) || String(e.id || ""),
     severity: sevOf(e),
     source: e.source || d.tool || "unknown",
     category: low(d.category) || "",
@@ -118,7 +119,7 @@ export function slaReport(entities, opts = {}) {
       if (s.state === "overdue") {
         row.overdue++; overall.overdue++; if (kev) overall.kevOverdue++;
         const daysOverdue = s.daysLeft == null ? 0 : Math.max(0, -s.daysLeft);
-        breaches.push({ id: e.id, name: String(e.name || e.id || ""), severity: sev, source: e.source || (e.data && e.data.tool) || "unknown", daysOverdue, kev });
+        breaches.push({ id: e.id, name: cleanTitle(e) || String(e.id || ""), severity: sev, source: e.source || (e.data && e.data.tool) || "unknown", daysOverdue, kev });
       } else { row.onTrack++; overall.onTrack++; if (s.state === "due_soon") row.dueSoon++; }
     }
   }

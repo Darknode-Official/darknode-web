@@ -3593,7 +3593,7 @@ export function renderDeck(host, opts) {
         + kpiC(gaps.toLocaleString(), "Open gaps", gaps ? "#e0383a" : "#8a93a6", "comp.gaps");
       const roll = el.querySelector("#dkCompRoll");
       if (roll) roll.innerHTML = ents.length
-        ? ents.slice(0, 8).map((e) => `<div class="r"><span class="dot" style="--bg:${SEV_C[String(e.severity || "").toLowerCase()] || "#9aa4ba"}"></span><span class="tx">${esc(e.name || "—")}</span><span class="ct">${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</span><span class="ag">${agoISO(e.updatedAt)}</span></div>`).join("")
+        ? ents.slice(0, 8).map((e) => `<div class="r"><span class="dot" style="--bg:${SEV_C[String(e.severity || "").toLowerCase()] || "#9aa4ba"}"></span><span class="tx">${esc(cleanTitle(e) || "—")}</span><span class="ct">${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</span><span class="ag">${agoISO(e.updatedAt)}</span></div>`).join("")
         : `<div class="dk-onb"><p>No controls or reports recorded yet. Run a self-assessment or framework mapping below and its results show up here, feeding the counts above.</p></div>`;
     });
   }
@@ -3825,7 +3825,7 @@ export function renderDeck(host, opts) {
       const lat = el.querySelector("#dkSectLatest");
       const first = grp.items[0];
       lat.innerHTML = ents.length
-        ? ents.slice(0, 8).map((e) => `<div class="r"><span class="dot" style="--bg:${SEV_C[String(e.severity || "").toLowerCase()] || "#9aa4ba"}"></span><span class="tx">${esc(e.name || "—")}</span><span class="ct">${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</span><span class="ag">${agoISO(e.updatedAt)}</span></div>`).join("")
+        ? ents.slice(0, 8).map((e) => `<div class="r"><span class="dot" style="--bg:${SEV_C[String(e.severity || "").toLowerCase()] || "#9aa4ba"}"></span><span class="tx">${esc(cleanTitle(e) || "—")}</span><span class="ct">${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</span><span class="ag">${agoISO(e.updatedAt)}</span></div>`).join("")
         : `<div class="dk-onb"><p>Nothing recorded in this section yet. Results appear here when its tools add them to the security graph.</p>${first ? `<button class="dk-tibtn on" data-${first[0]}="${esc(first[1])}">Start with ${esc(first[2])}</button>` : ""}</div>`;
       lat.querySelectorAll("button[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
     });
