@@ -110,9 +110,12 @@ export class MonitorDO {
     const held = [];
     for (const ev of events) {
       // carry cert window into the rule check for cert monitors
-      if (m.type === "cert-expiry") { ev.kind = ev.kind === "resolved" ? "resolved" : "cert"; ev.daysToExpiry = findings.find((f) => f.key === ev.key)?.daysToExpiry; }
+      // Only new and worsened events take the cert/KEV path. A "changed" event here is just the
+      // title moving (expires in 10 days -> 9, EPSS 61% -> 62%) and re-alerted every run.
+      const real = ev.kind === "new" || ev.kind === "worsened";
+      if (m.type === "cert-expiry" && real) { ev.kind = "cert"; ev.daysToExpiry = findings.find((f) => f.key === ev.key)?.daysToExpiry; }
       // a new/worsened KEV-or-high-EPSS match alerts regardless of severity (onKev path)
-      else if (m.type === "kev-epss" && ev.kind !== "resolved") ev.kind = "kev";
+      else if (m.type === "kev-epss" && real) ev.kind = "kev";
       const d = shouldAlert(ev, rules, t0);
       if (d.alert) alerted.push(ev); else if (d.suppressed) held.push(ev);
     }
