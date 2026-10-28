@@ -3,7 +3,7 @@
 // to the one before it, so "Verify chain" can prove nothing has been altered or dropped.
 import { auditAvailable, auditLog, auditVerify } from "./audit-client.js";
 
-const S = { ctx: null, el: null, data: null, busy: false };
+const S = { ctx: null, el: null, data: null, busy: false, seq: 0 }; // seq: a reply for a previous mount/workspace is dropped
 const E = (s) => (S.ctx && S.ctx.esc ? S.ctx.esc(s) : String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])));
 const toast = (m, t) => { try { S.ctx && S.ctx.toast && S.ctx.toast(m, t); } catch (_) {} };
 const when = (ts) => { if (!ts) return "-"; const d = new Date(ts); return d.toLocaleString(undefined, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" }); };
@@ -34,7 +34,7 @@ function injectStyle() {
 
 export function mountAudit(el, ctx) {
   injectStyle();
-  S.ctx = ctx || S.ctx; S.el = el;
+  S.ctx = ctx || S.ctx; S.el = el; S.data = null;
   el.innerHTML = `
     <div class="dk-ovhead"><div><h1>Audit Log</h1><p>Every change to this workspace's Security Graph, newest first. Entries are hash-chained — each one commits to the previous — so a single altered or removed record can be detected. Readable by owners and admins.</p></div></div>
     <div class="dk-ovp" id="auditBody"><div class="dk-loading"><span class="sp"></span>Loading…</div></div>`;
@@ -44,9 +44,10 @@ export function repaintAudit() {}
 
 async function load() {
   const box = S.el && S.el.querySelector("#auditBody"); if (!box) return;
+  const my = ++S.seq;
   if (!auditAvailable()) { box.innerHTML = `<div class="audit-off">The audit log needs the cloud proxy, which this build has not configured. Nothing to show yet.</div>`; return; }
-  try { S.data = await auditLog(); paint(); }
-  catch (e) { box.innerHTML = `<div class="audit-off">${E(e.message || String(e))}</div>`; }
+  try { const d = await auditLog(); if (my !== S.seq) return; S.data = d; paint(); }
+  catch (e) { if (my !== S.seq) return; box.innerHTML = `<div class="audit-off">${E(e.message || String(e))}</div>`; }
 }
 
 function paint(chain) {
@@ -78,11 +79,13 @@ function paint(chain) {
 
 async function verify() {
   if (S.busy) return; S.busy = true;
+  const my = S.seq;
   toast("Verifying the audit chain…");
   try {
     const v = await auditVerify();
+    if (my !== S.seq) return;
     paint(v);
     toast(v.ok ? "Chain verified: " + v.entries + " entries intact." : "Chain is broken at entry " + v.brokenAt + ".", v.ok ? "ok" : "error");
-  } catch (e) { toast(e.message || "Verify failed.", "error"); }
+  } catch (e) { if (my === S.seq) toast(e.message || "Verify failed.", "error"); }
   finally { S.busy = false; }
 }
