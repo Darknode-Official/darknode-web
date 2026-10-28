@@ -1872,7 +1872,7 @@ export function renderDeck(host, opts) {
       <div class="dk-wframe" id="dkWFrame"></div>
     </div>
 
-    <aside class="dk-drawer" id="dkDrawer"><span class="x" id="dkDrawerX" role="button" tabindex="0" aria-label="Close">&times;</span><div id="dkDrawerBody"></div></aside>
+    <aside class="dk-drawer" id="dkDrawer" role="dialog" aria-label="Details"><span class="x" id="dkDrawerX" role="button" tabindex="0" aria-label="Close">&times;</span><div id="dkDrawerBody"></div></aside>
 
     <div class="dk-spot" id="dkSpot" role="dialog" aria-modal="true" aria-label="Search and commands">
       <div class="dk-sbox">
@@ -2029,6 +2029,7 @@ export function renderDeck(host, opts) {
   function showDrawer(){
     if (!drawer.classList.contains("on")) drawerOpener = document.activeElement;
     drawer.classList.add("on");
+    const h = drawerBody.querySelector("h3"); drawer.setAttribute("aria-label", h ? h.textContent.trim() : "Details"); // what a screen reader announces
     setTimeout(() => { if (drawer.classList.contains("on") && !drawer.contains(document.activeElement)) $("#dkDrawerX").focus({ preventScroll: true }); }, 0);
   }
   function closeDrawer(){
