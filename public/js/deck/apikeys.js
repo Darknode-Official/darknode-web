@@ -4,7 +4,7 @@
 // same sink every tool uses.
 import { ingestAvailable, ingestBaseUrl, ingestWorkspaceId, listKeys, createKey, revokeKey, peekQueue, drainIngest } from "/js/deck/ingest-client.js?v=20261027c";
 
-const S = { ctx: null, el: null, data: null, wid: "", busy: false, created: null };
+const S = { ctx: null, el: null, data: null, wid: "", busy: false, created: null, seq: 0 }; // seq: a reply for a previous mount/workspace is dropped
 const E = (s) => (S.ctx && S.ctx.esc ? S.ctx.esc(s) : String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])));
 const toast = (m, t) => { try { S.ctx && S.ctx.toast && S.ctx.toast(m, t); } catch (_) {} };
 const ago = (ts) => { if (!ts) return "never"; const s = Math.floor((Date.now() - ts) / 1000); if (s < 60) return "just now"; if (s < 3600) return Math.floor(s / 60) + "m ago"; if (s < 86400) return Math.floor(s / 3600) + "h ago"; return Math.floor(s / 86400) + "d ago"; };
@@ -51,14 +51,17 @@ export function repaintApiKeys() {}
 
 async function load() {
   const box = S.el && S.el.querySelector("#apikBody"); if (!box) return;
+  const my = ++S.seq;
   if (!ingestAvailable()) { box.innerHTML = `<div class="apik-off">The ingest API is not available on this build — it needs the cloud proxy. Nothing to configure yet.</div>`; return; }
   try {
-    S.wid = await ingestWorkspaceId();
-    S.data = await listKeys();
+    const wid = await ingestWorkspaceId();
+    const data = await listKeys();
     let q = { pending: 0 }; try { q = await peekQueue(); } catch (_) {}
+    if (my !== S.seq) return;
+    S.wid = wid; S.data = data;
     S.pending = q.pending || 0;
     paint();
-  } catch (e) { box.innerHTML = `<div class="apik-off">${E(e.message || String(e))}</div>`; }
+  } catch (e) { if (my !== S.seq) return; box.innerHTML = `<div class="apik-off">${E(e.message || String(e))}</div>`; }
 }
 
 function paint() {

@@ -5,7 +5,7 @@
 // server-side as worker-safe engines are extracted.
 import { monitorApi, monitoringAvailable } from "./monitor-client.js";
 
-const S = { ctx: null, el: null, data: null, adding: false, busy: false };
+const S = { ctx: null, el: null, data: null, adding: false, busy: false, seq: 0 }; // seq: a reply for a previous mount/workspace is dropped
 const E = (s) => (S.ctx && S.ctx.esc ? S.ctx.esc(s) : String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])));
 const toast = (m, t) => { try { S.ctx && S.ctx.toast && S.ctx.toast(m, t); } catch (_) {} };
 const ago = (ts) => { if (!ts) return "never"; const s = Math.floor((Date.now() - ts) / 1000); if (s < 60) return s + "s ago"; if (s < 3600) return Math.floor(s / 60) + "m ago"; if (s < 86400) return Math.floor(s / 3600) + "h ago"; return Math.floor(s / 86400) + "d ago"; };
@@ -61,11 +61,15 @@ export function repaintMonitors() {}
 
 async function load() {
   const box = S.el && S.el.querySelector("#monBody"); if (!box) return;
+  const my = ++S.seq;
   if (!monitoringAvailable()) { box.innerHTML = `<div class="mon-off">Monitoring is not available on this build — it needs the cloud proxy. Nothing to configure yet.</div>`; return; }
   try {
-    S.data = await monitorApi({ op: "list" });
+    const data = await monitorApi({ op: "list" });
+    if (my !== S.seq) return;
+    S.data = data;
     paint();
   } catch (e) {
+    if (my !== S.seq) return;
     box.innerHTML = `<div class="mon-off">${E(e.message || String(e))}</div>`;
   }
 }
