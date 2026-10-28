@@ -86,6 +86,7 @@ export function openTicketExport(entities, { onLinked } = {}) {
   const list = exportable(all);
   const sampleCount = all.length - list.length;
   let target = "jira", running = false, abort = false;
+  const made = new Set(); // "owner/repo#id" issued in this dialog, so a re-run never duplicates one whose link-back failed
 
   return new Promise((resolve) => {
     const prevFocus = document.activeElement;
@@ -166,7 +167,8 @@ export function openTicketExport(entities, { onLinked } = {}) {
       keySet(remember ? token : "");
       sset("local", REPO_KEY, rp.owner + "/" + rp.repo);
 
-      const todo = list.filter((e) => !hasGithubTicket(e, rp.owner, rp.repo));
+      const rk = (rp.owner + "/" + rp.repo).toLowerCase() + "#";
+      const todo = list.filter((e) => !hasGithubTicket(e, rp.owner, rp.repo) && !made.has(rk + e.id));
       const skipped = list.length - todo.length;
       if (!todo.length) { err.textContent = "Every selected finding already has an issue in " + rp.owner + "/" + rp.repo + "."; return; }
       const ok = typeof window.dnConfirm === "function"
@@ -198,7 +200,7 @@ export function openTicketExport(entities, { onLinked } = {}) {
         } catch (x) { stopped = "Network error reaching api.github.com: " + (x && x.message || x); break; }
         const msg = (j && j.message) || "";
         if (r.status === 201 && j && j.html_url) {
-          created++;
+          created++; made.add(rk + e.id);
           line("tkx-ok", "#" + j.number, `<a href="${esc(j.html_url)}" target="_blank" rel="noopener noreferrer">${esc(payload.title)}</a>`);
           try { if (typeof onLinked === "function") await onLinked(e.id, { url: j.html_url, label: "GitHub #" + j.number }); }
           catch (x) { line("tkx-bad", "Link", esc("Issue created but the finding could not be updated: " + (x && x.message || x))); }
