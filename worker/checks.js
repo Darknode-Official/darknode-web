@@ -53,7 +53,9 @@ export async function certExpiryCheck(domains, deps = {}) {
   if (!f) return [];
   const out = [];
   for (const domain of (domains || [])) {
-    const dom = String(domain || "").trim().toLowerCase();
+    // a monitor saved with "https://site.com/path", host:port or *.site gets no CT rows for that
+    // string and was skipped every run (shown as 0 open); look up the hostname
+    const dom = String(domain || "").trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/[/?#].*$/, "").replace(/^[^@]*@/, "").replace(/:\d+$/, "").replace(/^\*\./, "").replace(/\.$/, "");
     if (!dom) continue;
     const rows = await fetchCertRows(dom, f);
     const cert = newestCert(rows, now);

@@ -23,6 +23,15 @@ group("checks/cert-expiry", () => {
     assert.equal(out[0].key, "cert:a.test.darknode.ai");
   });
 
+  test("a domain saved as a URL, host:port or wildcard is looked up by its hostname", async () => {
+    const f = ctFetch({ "a.test.darknode.ai": [cert(day(10))] });
+    for (const d of ["https://a.test.darknode.ai/login?x=1", "a.test.darknode.ai:443", "*.a.test.darknode.ai", "A.test.darknode.ai."]) {
+      const out = await certExpiryCheck([d], { fetch: f, now: NOW, warnDays: 21 });
+      assert.equal(out.length, 1, d);
+      assert.equal(out[0].key, "cert:a.test.darknode.ai");
+    }
+  });
+
   test("an already-expired cert is critical", async () => {
     const f = ctFetch({ "b.test.darknode.ai": [cert(day(-3))] });
     const out = await certExpiryCheck(["b.test.darknode.ai"], { fetch: f, now: NOW });

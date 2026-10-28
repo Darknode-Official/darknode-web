@@ -12,7 +12,7 @@ import { collection, query, orderBy, limit, onSnapshot, addDoc, serverTimestamp 
 import { synthFromScratch } from "/js/engine/gamegen-scratch.js?v=20261008b";
 
 let showToast = (m) => { try { console.log(m); } catch (_) {} };
-import("/js/toast.js?v=20261027b").then((m) => { if (m.showToast) showToast = m.showToast; }).catch(() => {});
+import("/js/toast.js?v=20261027c").then((m) => { if (m.showToast) showToast = m.showToast; }).catch(() => {});
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const subs = [];        // Firestore unsubscribe fns for this view

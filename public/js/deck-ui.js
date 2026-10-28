@@ -40,7 +40,7 @@ const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => {
 const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261025g");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261025g");
 const corrMod = lazyMod("/js/deck/correlations.js?v=20261027c");
-const monMod = lazyMod("/js/deck/monitors.js?v=20261018j");
+const monMod = lazyMod("/js/deck/monitors.js?v=20261027c");
 const keysMod = lazyMod("/js/deck/apikeys.js?v=20261018c");
 const auditMod = lazyMod("/js/deck/audit.js?v=20261018c");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261018c";

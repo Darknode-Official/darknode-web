@@ -180,6 +180,7 @@ export class MonitorDO {
       if (RETRY_BACKOFF_MS[i]) await sleep(RETRY_BACKOFF_MS[i]);
       const res = await deliver(channel, alert, { fetch: deps.fetch });
       await this._log("deliveries", DELIVERY_CAP, { at: now(), type: channel.type, url: channel.url, status: res.status, ok: res.ok, attempt: i + 1, error: res.error });
+      if (deps.report) deps.report.last = res; // the caller (a channel test) can say why it failed
       if (res.ok) return true;
     }
     return false;
@@ -254,8 +255,10 @@ export class MonitorDO {
     }
     if (op === "test") {
       const ch = body.channel; if (!ch || !ch.url) return reply({ error: "channel.url required" }, 400);
-      const ok = await this._deliverWithRetry(ch, { title: "Darknode test alert", severity: "info", text: "This is a test from your Deck monitor configuration.", url: body.deckUrl }, {});
-      return reply({ ok });
+      const report = {};
+      const ok = await this._deliverWithRetry(ch, { title: "Darknode test alert", severity: "info", text: "This is a test from your Deck monitor configuration.", url: body.deckUrl }, { report });
+      const last = report.last || {};
+      return reply(ok ? { ok } : { ok, status: last.status || 0, error: last.error || "" });
     }
     return reply({ error: "unknown op: " + op }, 400);
     });
