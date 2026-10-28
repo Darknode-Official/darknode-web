@@ -306,7 +306,7 @@ function renderReport(out, text, res, rerun, sample) {
   attachSinkButton(out.querySelector("#dlpCsv").parentElement, () => ({ findings: dlpFindings(res, text), sample: !!sample }), "dlp"); // no dataset: each scan is different text, so findings missing from it are not "fixed"
   out.querySelector("#dlpCsv").addEventListener("click", () => {
     const head = ["severity", "type", "label", "kind", "line", "col", "detail", "masked"];
-    const cell = (v) => { const s = String(v == null ? "" : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const cell = (v) => { const s = String(v == null ? "" : v).replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'"); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const lines = [head.join(",")];
     for (const f of res.findings) {
       lines.push([f.severity, f.id, f.label, f.kind, f.line, f.col, f.detail || "", f.masked].map(cell).join(","));

@@ -612,7 +612,7 @@ export async function renderAdmin(main, user) {
   $("#copyEmails").onclick = () => { navigator.clipboard?.writeText(emailsOf(users)); dmsg(users.filter((u) => u.email).length + " emails copied"); };
   $("#copyOwnerless").onclick = () => { const l = users.filter((u) => !isOwnerRow(u)); navigator.clipboard?.writeText(emailsOf(l)); dmsg(l.filter((u) => u.email).length + " emails copied"); };
   $("#expCsv").onclick = () => {
-    const esc2 = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const esc2 = (v) => `"${String(v ?? "").replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'").replace(/"/g, '""')}"`;
     const rows = [["email", "name", "uid", "lastSeen", "banned"]].concat(users.map((u) => [u.email, u.name, u.uid, fmtDate(u.lastSeen), (wl.banned || []).includes((u.email || "").toLowerCase()) ? "yes" : "no"]));
     const csv = rows.map((r) => r.map(esc2).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));

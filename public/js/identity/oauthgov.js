@@ -376,7 +376,7 @@ export function renderOauthGov(main) {
     d.querySelector("[data-ev]").addEventListener("click", () => {
       const rows = f.evidence || [];
       const keys = []; for (const r of rows) for (const k of Object.keys(r)) if (!keys.includes(k)) keys.push(k);
-      const q = (v) => '"' + String(v == null ? "" : typeof v === "object" ? JSON.stringify(v) : v).replace(/"/g, '""') + '"';
+      const q = (v) => '"' + String(v == null ? "" : typeof v === "object" ? JSON.stringify(v) : v).replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'").replace(/"/g, '""') + '"';
       download(TOOL_ID + "-evidence-" + fileStamp() + ".csv", [keys.join(","), ...rows.map((r) => keys.map((k) => q(r[k])).join(","))].join("\n"), "text/csv");
     });
     d.scrollIntoView({ block: "nearest", behavior: "smooth" });

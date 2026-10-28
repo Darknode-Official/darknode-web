@@ -440,7 +440,7 @@ export function renderSigninForensics(main) {
 // from running the detections on this text.
 // ---------------------------------------------------------------------------
 function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
-const q = (s) => `"${String(s == null ? "" : s).replace(/"/g, '""')}"`;
+const q = (s) => `"${String(s == null ? "" : s).replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'").replace(/"/g, '""')}"`;
 const Z = (t) => new Date(t).toISOString().replace(/\.\d{3}Z$/, "Z");
 const MIN = 60000, DAY = 86400000;
 const EX_T0 = Date.UTC(2026, 8, 21, 8, 0, 0); // Mon 2026-09-21 08:00Z

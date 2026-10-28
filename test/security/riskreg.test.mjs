@@ -457,6 +457,10 @@ group("riskreg: register, history, exports", () => {
     assert.equal(csv[0], "severity,confidence,category,title,description,recommendation,controls,evidenceCount");
     assert.equal(csv.length, r.findings.length + 1);
   });
+  test("findingsToCsv keeps formula-looking text inert (a title from an imported register is untrusted)", () => {
+    const line = findingsToCsv([{ severity: "high", confidence: "likely", category: "x", title: "=HYPERLINK(\"http://x\")", description: "-2", recommendation: "@SUM(A1)", controls: [], evidenceCount: 0 }]).split("\n")[1];
+    assert.ok(line.includes('"\'=HYPERLINK') && line.includes('"\'@SUM') && line.includes('"-2"'), line);
+  });
 });
 
 group("riskreg: example, determinism, self-test", () => {

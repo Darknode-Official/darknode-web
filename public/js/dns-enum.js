@@ -192,7 +192,7 @@ function _deExportJSON(data, filename) {
 
 function _deExportCSV(rows, headers, filename) {
   let csv = headers.join(',') + '\n';
-  for (const r of rows) csv += headers.map(h => `"${String(r[h]||'').replace(/"/g,'""')}"`).join(',') + '\n';
+  for (const r of rows) csv += headers.map(h => `"${String(r[h]||'').replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'").replace(/"/g,'""')}"`).join(',') + '\n';
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);

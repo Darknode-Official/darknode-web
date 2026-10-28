@@ -882,7 +882,7 @@ function renderLINDDUN(el) {
 function renderRequirements(el, showTab) {
   var g = generateRequirements();
   var csv = function() {
-    var q = function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; };
+    var q = function(v) { return '"' + String(v).replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'").replace(/"/g, '""') + '"'; };
     return ["ID,Category,Requirement,Priority,Verification"].concat(g.reqs.map(function(r) { return [r.id, CAT_NAME[r.category], r.requirement, r.priority, r.verification].map(q).join(","); })).join("\n");
   };
   var th = 'style="text-align:left;padding:6px;border-bottom:1px solid var(--line)"', td = 'style="padding:6px;border-bottom:1px solid var(--line);vertical-align:top"';

@@ -834,7 +834,7 @@ export function renderAPIFuzzer(container) {
       ext = 'json';
     } else {
       const header = 'Payload,Status,Time(ms),Size(bytes),Anomaly';
-      const rows = results.map(r => `"${r.payload.replace(/"/g, '""')}",${r.status},${r.time},${r.size},${r.anomaly}`);
+      const rows = results.map(r => `"${String(r.payload).replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'").replace(/"/g, '""')}",${r.status},${r.time},${r.size},${r.anomaly}`);
       content = [header, ...rows].join('\n');
       mime = 'text/csv';
       ext = 'csv';
