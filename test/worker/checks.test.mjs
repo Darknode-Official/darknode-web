@@ -23,6 +23,15 @@ group("checks/cert-expiry", () => {
     assert.equal(out[0].key, "cert:a.test.darknode.ai");
   });
 
+  test("a domain saved as a URL, host:port or wildcard is looked up by its hostname", async () => {
+    const f = ctFetch({ "a.test.darknode.ai": [cert(day(10))] });
+    for (const d of ["https://a.test.darknode.ai/login?x=1", "a.test.darknode.ai:443", "*.a.test.darknode.ai", "A.test.darknode.ai."]) {
+      const out = await certExpiryCheck([d], { fetch: f, now: NOW, warnDays: 21 });
+      assert.equal(out.length, 1, d);
+      assert.equal(out[0].key, "cert:a.test.darknode.ai");
+    }
+  });
+
   test("an already-expired cert is critical", async () => {
     const f = ctFetch({ "b.test.darknode.ai": [cert(day(-3))] });
     const out = await certExpiryCheck(["b.test.darknode.ai"], { fetch: f, now: NOW });
@@ -39,6 +48,13 @@ group("checks/cert-expiry", () => {
     const f = ctFetch({});
     const out = await certExpiryCheck(["unknown.test.darknode.ai"], { fetch: f, now: NOW });
     assert.equal(out.length, 0);
+  });
+
+  test("a domain neither log answered for is held; one they answered with no rows is not", async () => {
+    const down = await certExpiryCheck(["u.test.darknode.ai"], { fetch: ctFetch({}), now: NOW });
+    assert.deepEqual(down.held, ["cert:u.test.darknode.ai"]);
+    const empty = await certExpiryCheck(["u.test.darknode.ai"], { fetch: ctFetch({ "u.test.darknode.ai": [] }), now: NOW });
+    assert.deepEqual(empty.held, []);
   });
 
   test("newest leaf wins when several certs exist", async () => {

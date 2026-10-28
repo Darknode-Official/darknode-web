@@ -91,6 +91,13 @@ group("metrics/trendDelta", () => {
     assert.equal(d.slaCompliancePct, null); // cur has no due dates
   });
 
+  test("critical + high compares against a stored trend row (deck/trend-store compact)", async () => {
+    const { compact } = await import("../../public/js/deck/trend-store.js");
+    const cur = snapshot([F("a", "critical", "open", day(1)), F("b", "high", "open", day(1)), F("c", "high", "open", day(1))], { now: NOW });
+    const prev = compact(snapshot([F("a", "critical", "open", day(100))], { now: NOW - 91 * 86400000 }));
+    assert.equal(trendDelta(cur, prev).criticalHigh, 2);
+  });
+
   test("null previous gives null deltas, not a throw", () => {
     const cur = snapshot([F("a", "high", "open", day(1))], { now: NOW });
     const d = trendDelta(cur, null);

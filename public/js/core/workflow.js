@@ -307,18 +307,19 @@ export function applyBulk(entities, change, ctx = {}) {
  * accepted / false_positive / duplicate are never touched. With no dataset name nothing is
  * marked fixed (an unnamed input says nothing about what disappeared). ctx.regressOnly
  * ignores the dataset scope and returns only regressions (a key present in the run is the
- * same finding whatever input it came from).
+ * same finding whatever input it came from). ctx.held = findingKeys the run could not
+ * re-check (a lookup that failed): never marked fixed, and never reopened either.
  * This is the ONLY place a tool run reopens a fixed finding (sink-map nextStatus defers
  * to it for sink findings), so every reopen gets a history entry.
  * @param {string} toolId
  * @param {string} dataset
  * @param {object[]} prevEntities
  * @param {Iterable<string>} currentKeys
- * @param {{ now?: number, regressOnly?: boolean }} [ctx]
+ * @param {{ now?: number, regressOnly?: boolean, held?: Iterable<string> }} [ctx]
  * @returns {{ fixed: {id:string,updates:object}[], regressed: {id:string,updates:object}[] }}
  */
 export function reconcileRun(toolId, dataset, prevEntities, currentKeys, ctx = {}) {
-  const now = clock(ctx.now), uid = "system:" + str(toolId), keys = new Set(currentKeys || []);
+  const now = clock(ctx.now), uid = "system:" + str(toolId), keys = new Set(currentKeys || []), held = new Set(ctx.held || []);
   const fixed = [], regressed = [];
   const canFix = !ctx.regressOnly && !!dataset;
   for (const e of prevEntities || []) {
@@ -327,7 +328,7 @@ export function reconcileRun(toolId, dataset, prevEntities, currentKeys, ctx = {
     if (d.tool !== toolId || !d.findingKey) continue;
     if (!ctx.regressOnly && d.dataset !== dataset) continue;
     const st = statusOf(e), present = keys.has(d.findingKey);
-    if (canFix && OPEN_STATES.includes(st) && !present) {
+    if (canFix && OPEN_STATES.includes(st) && !present && !held.has(d.findingKey)) {
       const prevRes = d.resolution == null ? null : d.resolution;
       const data = addHistory(d, { resolution: "fixed", verifiedBy: str(toolId), verifiedAt: now },
         [entry(now, uid, "status", st, "resolved"), ...(prevRes !== "fixed" ? [entry(now, uid, "resolution", prevRes, "fixed")] : [])]);

@@ -3,7 +3,7 @@
 // input object scorePosture() grades; throws (with the reason, e.g. the name does not
 // resolve) when the host answers neither HTTP nor HTTPS.
 
-import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261025g";
+import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261027c";
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
 import { dnFetch } from "/js/net.js";
 import { registrableDomain } from "/js/dataprotect/phish-engine.js?v=20261026b";
@@ -34,7 +34,8 @@ export async function dohTXT(name) {
       if (res.ok) return decode(await res.json());
     } catch (_) {}
   }
-  return [];
+  // neither resolver answered: not the same as "no record", so the engine can say it could not check
+  return Object.assign([], { failed: true });
 }
 
 // DMARC for a subdomain without its own record falls back to the organizational
@@ -42,14 +43,14 @@ export async function dohTXT(name) {
 async function fetchDmarc(domain) {
   const own = await dohTXT("_dmarc." + domain);
   const org = registrableDomain(domain);
-  if (own.some((t) => /^v=dmarc1/i.test(String(t).trim())) || org === domain) return own;
+  if (own.some((t) => /^v=dmarc1/i.test(String(t).trim())) || org === domain || own.failed) return own;
   const inherited = await dohTXT("_dmarc." + org);
-  return inherited.some((t) => /^v=dmarc1/i.test(String(t).trim())) ? Object.assign(inherited, { from: org }) : own;
+  return inherited.some((t) => /^v=dmarc1/i.test(String(t).trim())) ? Object.assign(inherited, { from: org }) : inherited.failed ? inherited : own;
 }
 
 async function fetchCert(domain) {
   const rows = await fetchCertRows(domain);
-  return rows.length ? newestCert(rows) : null;
+  return rows.length ? newestCert(rows) : rows.unreachable ? { unreachable: true } : null;
 }
 
 async function fetchSecurityTxt(domain) {
@@ -135,7 +136,9 @@ export async function collectPosture(domain) {
     dkimSelectors: val(dkimP) || [],
     mtaStsTxts: (val(mtaP) && val(mtaP).txts) || [], mtaStsPolicy: (val(mtaP) && val(mtaP).policy) || null,
     tlsRptTxts: val(tlsRptP) || [],
-    cert: val(certP), securityTxt: val(stxtP) || { present: false },
+    cert: val(certP) && !val(certP).unreachable ? val(certP) : null,
+    certUnreachable: certP.status === "rejected" || !!(val(certP) && val(certP).unreachable),
+    securityTxt: val(stxtP) || { present: false },
     now: Date.now(),
   };
   return input;

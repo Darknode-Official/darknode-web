@@ -162,7 +162,7 @@ function injectStyle() {
   if (document.getElementById("fq-css")) return;
   const st = document.createElement("style"); st.id = "fq-css";
   st.textContent = `
-.fq-tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin;border-bottom:1px solid rgba(23,33,56,.1);margin:0 0 12px}
+.fq-tabs{display:flex;gap:2px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;border-bottom:1px solid rgba(23,33,56,.1);margin:0 0 12px}
 @media(max-width:560px){.fq-tabs{flex-wrap:wrap;overflow:visible;row-gap:0}}
 .fq-tab{appearance:none;border:0;background:none;font:inherit;font-size:12.5px;font-weight:600;color:#5a6680;padding:9px 12px 10px;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
 .fq-tab:hover{color:#141c2e}
@@ -472,7 +472,7 @@ function exceptionFlow(ids, e) {
     if (exp == null) return "Pick a valid expiry date.";
     // A chosen register entry wins; "Other" (or no register entries) uses the free-text id.
     let riskId = "";
-    if (risks.length) { const sel = String(v.riskSel || ""); riskId = sel && sel !== RISK_OTHER ? sel : (sel === RISK_OTHER ? String(v.riskId || "").trim() : ""); }
+    if (risks.length) { const sel = String(v.riskSel || ""); riskId = sel && sel !== RISK_OTHER ? sel : String(v.riskId || "").trim(); } // an id typed without picking "Other" is kept, not dropped
     else riskId = String(v.riskId || "").trim();
     return { op: "exception", reason: v.reason, approver: v.approver, expiresAt: exp, riskId };
   }, x ? "Risk exception replaced" : "Risk exception added");

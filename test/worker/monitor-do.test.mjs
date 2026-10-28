@@ -89,6 +89,32 @@ group("monitor DO/run + alert", () => {
     assert.equal(net.deliveries.length, 1, "no duplicate alert on an unchanged cert");
   });
 
+  test("a day later the same expiring cert does not alert again; crossing into the last week does", async () => {
+    const st = memState(); const mon = new MonitorDO(st);
+    await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 21 }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    const base = Date.now(), D = 86400000;
+    const net = fakeNet(new Date(base + 10 * D).toISOString());
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base });
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base + D });
+    assert.equal(net.deliveries.length, 1, "expires in 10 days -> 9 days is only a title change");
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base + 4 * D });
+    assert.equal(net.deliveries.length, 2, "high -> critical at 6 days alerts");
+  });
+
+  test("a run where the certificate logs do not answer keeps the finding open, and it does not re-alert when they are back", async () => {
+    const st = memState(); const mon = new MonitorDO(st);
+    await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 21 }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    const base = Date.now();
+    const net = fakeNet(new Date(base + 10 * 86400000).toISOString());
+    const down = async (url, opts) => (url.includes("crt.sh") || url.includes("certspotter") ? { ok: false, status: 502, json: async () => null } : net.fetch(url, opts));
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base });
+    await mon.runDue({ force: true, fetch: down, sleep: async () => {}, now: base });
+    const m = Object.values(await st.storage.get("monitors"))[0];
+    assert.deepEqual(m.lastResults.map((f) => f.key), ["cert:a.test.darknode.ai"], "an outage is not a resolution");
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base });
+    assert.equal(net.deliveries.length, 1, "no resolved/new alert pair around the outage");
+  });
+
   test("a healthy cert run finds nothing and alerts nothing", async () => {
     const st = memState(); const mon = new MonitorDO(st);
     await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 21 }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
@@ -146,6 +172,39 @@ group("monitor DO/kev-epss", () => {
     assert.equal(net.deliveries.length, 1, "a new KEV match alerts regardless of severity");
     await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
     assert.equal(net.deliveries.length, 1, "no new change on the second run");
+  });
+
+  test("an EPSS score moving by a point is not a new alert", async () => {
+    const st = memState();
+    const mon = new MonitorDO(st, graphEnv([{ name: "app", data: { cves: ["CVE-2024-0001"] } }]));
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "KEV", type: "kev-epss", config: { epssFloor: 0.5 }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    const a = kevNet([], [{ cve: "CVE-2024-0001", epss: 0.61 }]), b = kevNet([], [{ cve: "CVE-2024-0001", epss: 0.62 }]);
+    await mon.runDue({ force: true, fetch: a.fetch, sleep: async () => {} });
+    assert.equal(a.deliveries.length, 1, "the first EPSS match alerts");
+    await mon.runDue({ force: true, fetch: b.fetch, sleep: async () => {} });
+    assert.equal(b.deliveries.length, 0, "61% -> 62% only changes the title");
+  });
+
+  test("a feed or the inventory that does not answer fails the run instead of resolving every match", async () => {
+    const st = memState();
+    let graphUp = true;
+    const env = { GRAPH: { idFromName: (n) => n, get: () => ({ fetch: async () => (graphUp ? { ok: true, status: 200, json: async () => ({ entities: [{ name: "app", data: { cves: ["CVE-2021-44228"] } }] }) } : { ok: false, status: 503, json: async () => null }) }) } };
+    const mon = new MonitorDO(st, env);
+    await st.storage.put("wid", "ws1");
+    await post(mon, { op: "upsert", monitor: { name: "KEV", type: "kev-epss", config: { epssFloor: 0.5 }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    const net = kevNet();
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    const feedDown = async (url, opts) => (url.includes("epss-top") ? { ok: false, status: 500, json: async () => null } : net.fetch(url, opts));
+    const r = await mon.runDue({ force: true, fetch: feedDown, sleep: async () => {} });
+    assert.ok(r.ran[0].error, "the run reports the outage");
+    graphUp = false;
+    assert.ok((await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} })).ran[0].error);
+    graphUp = true;
+    const m = Object.values(await st.storage.get("monitors"))[0];
+    assert.deepEqual(m.lastResults.map((f) => f.key), ["kev:CVE-2021-44228"]);
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    assert.equal(net.deliveries.length, 1, "the match is not alerted again after the outage");
   });
 
   test("no CVEs in the workspace graph means nothing found and nothing delivered", async () => {

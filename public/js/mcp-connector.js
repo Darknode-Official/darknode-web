@@ -9,7 +9,7 @@
 // calls. Everything it produces is computed locally from the live tool catalog
 // and shown in copyable code boxes.
 
-import { NAV } from "/js/console-nav.js?v=20261013k";
+import { NAV } from "/js/console-nav.js?v=20261019f";
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

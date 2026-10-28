@@ -62,8 +62,8 @@ export function mount(el, { space, mode }) {
         <div style="margin-top:6px;font-size:13px">Real destination domain: <b>${esc(u.registrable || u.host || "unknown")}</b></div>
         ${u.reasons.length ? `<ul style="margin:12px 0 0;padding-left:18px">${u.reasons.map((r) => `<li style="margin:4px 0">${esc(r.t)}</li>`).join("")}</ul>` : `<p class="ns-help">None of the checks fired: no lookalike brand, raw IP, punycode, risky TLD, embedded credentials or shortener. A clean result is not a guarantee; if the message was unexpected, verify with the sender another way.</p>`}
         <div class="ns-row" data-act></div></div>`;
-      attachSinkButton(out.querySelector("[data-act]"), () => ({ findings: phishUrlFindings(u) }), "phishtriage", { dataset: "link triage" });
-      recordRun(space, { tool: "phish", target: u.registrable || u.host || "link", summary: label, level: lvl(u.severity) });
+      attachSinkButton(out.querySelector("[data-act]"), () => ({ findings: phishUrlFindings(u) }), "phishtriage", { dataset: "link triage " + u.input }); // per link: a different link is not a re-run, and its absent findings are not "fixed"
+      recordRun(space, { tool: "phish", target: u.registrable || u.host || "link", key: "link " + u.input, summary: label, level: lvl(u.severity) });
       log({ at: Date.now(), kind: "Link", subject: defangText(u.host || raw.slice(0, 80)), verdict: label, sev: u.severity });
       return;
     }
@@ -85,8 +85,8 @@ export function mount(el, { space, mode }) {
       <div class="ns-row" data-act>${queue ? `<button class="ns-btn ghost sm" data-rep>Download report</button>` : ""}</div></div>`;
     const rep = out.querySelector("[data-rep]");
     if (rep) rep.onclick = () => download("phishing-triage.txt", buildTriageReport(t), "text/plain");
-    attachSinkButton(out.querySelector("[data-act]"), () => ({ findings: phishEmailFindings(t) }), "phishtriage", { dataset: "email triage" });
-    recordRun(space, { tool: "phish", target: t.fromReg || t.fromDomain || "email", summary: t.verdict.label, level: lvl(sev) });
+    attachSinkButton(out.querySelector("[data-act]"), () => ({ findings: phishEmailFindings(t) }), "phishtriage", { dataset: t.messageId ? "email triage " + t.messageId : undefined }); // per message; no Message-ID, no re-run to compare
+    recordRun(space, { tool: "phish", target: t.fromReg || t.fromDomain || "email", key: "email " + (t.messageId || (t.from || "") + "|" + (t.subject || "")), summary: t.verdict.label, level: lvl(sev) });
     log({ at: Date.now(), kind: "Email", subject: t.subject || t.from || "(no subject)", verdict: t.verdict.label, sev });
   };
   // a link handed over from search: check it in Link mode

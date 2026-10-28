@@ -93,7 +93,7 @@ function paint() {
     <div style="margin:0 0 14px;display:flex;gap:8px;flex-wrap:wrap"><button class="mon-btn pri" id="monAdd">Add certificate monitor</button><button class="mon-btn" id="monAddKev">Add KEV/EPSS watch</button></div>
     <div id="monFormSlot"></div>
     ${monHtml}
-    ${logPanel("Recent runs", (S.data.history || []).slice(0, 8), (h) => `<b>${E((S.data.monitors.find((m) => m.id === h.id) || {}).name || h.id)}</b> — ${h.error ? ("error: " + E(h.error)) : `${h.found} open, ${h.added} new, ${h.changed} changed, ${h.alerted} alerted`} · ${E(ago(h.at))}`)}
+    ${logPanel("Recent runs", (S.data.history || []).slice(0, 8), (h) => `<b>${E((S.data.monitors.find((m) => m.id === h.id) || {}).name || h.id)}</b> — ${h.error ? ("error: " + E(h.error)) : `${h.found} open, ${h.added} new, ${h.changed} changed, ${h.alerted} alerted${h.graphError ? ", not synced to Findings: " + E(h.graphError) : ""}`} · ${E(ago(h.at))}`)}
     ${logPanel("Delivery log", (S.data.deliveries || []).slice(0, 8), (d) => `<b>${E(d.type)}</b> ${d.ok ? "delivered" : "failed"} (${d.status})${d.error ? " — " + E(d.error) : ""} · ${E(ago(d.at))}`)}`;
 
   box.querySelector("#monAdd").onclick = () => { const was = S.adding && S.kind === "cert-expiry"; S.kind = "cert-expiry"; S.adding = !was; renderForm(); };
@@ -118,25 +118,30 @@ function renderForm() {
   if (!S.adding) { slot.innerHTML = ""; return; }
   const kev = S.kind === "kev-epss";
   const specific = kev
-    ? `<div class="mon-field"><label>EPSS alert floor (0–1)</label><input id="mfEpss" type="number" min="0" max="1" step="0.05" placeholder="0.5"><p class="hint">A CVE in your graph alerts when it is in the CISA KEV catalogue, or its EPSS exploit-prediction score is at or above this floor. Nothing is sent anywhere; the match runs against the current feeds.</p></div>`
-    : `<div class="mon-field"><label>Domains</label><textarea id="mfDomains" placeholder="one per line or comma-separated" spellcheck="false"></textarea><p class="hint">Hostnames to watch, e.g. test.darknode.ai. Certificate transparency logs are checked; nothing is sent to the domains.</p></div>
-    <div class="mon-field"><label>Warn when expiring within (days)</label><input id="mfWarn" type="number" min="1" max="365" placeholder="21"></div>`;
+    ? `<div class="mon-field"><label for="mfEpss">EPSS alert floor (0–1)</label><input id="mfEpss" type="number" min="0" max="1" step="0.05" placeholder="0.5"><p class="hint">A CVE in your graph alerts when it is in the CISA KEV catalogue, or its EPSS exploit-prediction score is at or above this floor. Nothing is sent anywhere; the match runs against the current feeds.</p></div>`
+    : `<div class="mon-field"><label for="mfDomains">Domains</label><textarea id="mfDomains" placeholder="one per line or comma-separated" spellcheck="false"></textarea><p class="hint">Hostnames to watch, e.g. test.darknode.ai. Certificate transparency logs are checked; nothing is sent to the domains.</p></div>
+    <div class="mon-field"><label for="mfWarn">Warn when expiring within (days)</label><input id="mfWarn" type="number" min="1" max="365" placeholder="21"></div>`;
   slot.innerHTML = `<div class="mon-form">
     <h3>${kev ? "New KEV / EPSS watch" : "New certificate-expiry monitor"}</h3>
-    <div class="mon-field"><label>Name</label><input id="mfName" placeholder="${kev ? "Known-exploited vulnerabilities" : "Public certificates"}" autocomplete="off"></div>
+    <div class="mon-field"><label for="mfName">Name</label><input id="mfName" placeholder="${kev ? "Known-exploited vulnerabilities" : "Public certificates"}" autocomplete="off"></div>
     ${specific}
-    <div class="mon-field"><label>Check interval (minutes)</label><input id="mfInt" type="number" min="15" max="10080" placeholder="1440"></div>
-    <div class="mon-field"><label>Alert channel</label>
-      <div class="mon-chrow"><select id="mfChType">${CHANNELS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select><input id="mfChUrl" placeholder="incoming webhook URL" autocomplete="off" spellcheck="false"></div>
+    <div class="mon-field"><label for="mfInt">Check interval (minutes)</label><input id="mfInt" type="number" min="15" max="10080" placeholder="1440"></div>
+    <div class="mon-field"><label for="mfChUrl">Alert channel</label>
+      <div class="mon-chrow"><select id="mfChType" aria-label="Channel type">${CHANNELS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select><input id="mfChUrl" placeholder="incoming webhook URL" autocomplete="off" spellcheck="false"></div>
       <p class="hint">Optional. For a signed webhook you can add a shared secret below; Slack/Teams/Discord use their own incoming-webhook URL.</p>
     </div>
-    <div class="mon-field"><label>Webhook signing secret (signed webhook only)</label><input id="mfChSecret" placeholder="leave blank unless using a signed webhook" autocomplete="off"></div>
+    <div class="mon-field"><label for="mfChSecret">Webhook signing secret (signed webhook only)</label><input id="mfChSecret" placeholder="leave blank unless using a signed webhook" autocomplete="off"></div>
     <div style="display:flex;gap:8px"><button class="mon-btn pri" id="mfSave">Save monitor</button><button class="mon-btn" id="mfTest">Test channel</button><button class="mon-btn" id="mfCancel">Cancel</button></div>
   </div>`;
   const $ = (s) => slot.querySelector(s);
   $("#mfCancel").onclick = () => { S.adding = false; renderForm(); };
   $("#mfSave").onclick = () => saveMonitor(slot);
   $("#mfTest").onclick = () => testChannel(slot);
+}
+
+export function hostOf(x) {
+  let h = String(x || "").trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/[/?#].*$/, "").replace(/^[^@]*@/, "").replace(/:\d+$/, "").replace(/^\*\./, "").replace(/\.$/, "");
+  return /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$/.test(h) ? h : "";
 }
 
 function readForm(slot) {
@@ -147,12 +152,18 @@ function readForm(slot) {
   const channels = chUrl ? [{ type: chType, url: chUrl, ...(chType === "webhook" && chSecret ? { secret: chSecret } : {}) }] : [];
   const intervalMs = Math.max(15, Math.min(10080, Number($("#mfInt").value) || 1440)) * 60000;
   if (S.kind === "kev-epss") {
-    const floorEl = $("#mfEpss"), floorRaw = floorEl ? Number(floorEl.value) : NaN;
+    // an empty field is Number("") = 0, which would alert on every CVE with any EPSS score
+    const floorEl = $("#mfEpss"), floorTxt = floorEl ? floorEl.value.trim() : "", floorRaw = floorTxt ? Number(floorTxt) : NaN;
     const epssFloor = Number.isFinite(floorRaw) ? Math.max(0, Math.min(1, floorRaw)) : 0.5;
     return { name: ($("#mfName").value || "").trim() || "KEV / EPSS watch", type: "kev-epss", config: { epssFloor }, intervalMs, channels };
   }
-  const domains = ($("#mfDomains").value || "").split(/[\s,]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+  // A pasted URL ("https://site.com/path"), host:port or *.wildcard is reduced to its hostname;
+  // the CT lookup finds nothing for anything else and the monitor would sit at "0 open".
+  const raw = ($("#mfDomains").value || "").split(/[\s,]+/).map((x) => x.trim()).filter(Boolean);
+  const domains = [], bad = [];
+  for (const x of raw) { const h = hostOf(x); if (h) { if (!domains.includes(h)) domains.push(h); } else bad.push(x); }
   return {
+    bad,
     name: ($("#mfName").value || "").trim() || "Certificate monitor",
     type: "cert-expiry",
     config: { domains, warnDays: Math.max(1, Math.min(365, Number($("#mfWarn").value) || 21)) },
@@ -164,6 +175,8 @@ function readForm(slot) {
 async function saveMonitor(slot) {
   if (S.busy) return;
   const mon = readForm(slot);
+  if (mon.bad && mon.bad.length) { toast("Not a domain name: " + mon.bad.slice(0, 3).join(", ") + (mon.bad.length > 3 ? " and " + (mon.bad.length - 3) + " more" : "") + ". Use hostnames such as test.darknode.ai.", "warn"); return; }
+  delete mon.bad;
   if (mon.type === "cert-expiry" && !mon.config.domains.length) { toast("Add at least one domain.", "warn"); return; }
   S.busy = true;
   try { await monitorApi({ op: "upsert", monitor: mon }); toast("Monitor saved.", "ok"); S.adding = false; await load(); }
@@ -175,7 +188,7 @@ async function testChannel(slot) {
   const mon = readForm(slot);
   if (!mon.channels.length) { toast("Add a channel URL to test.", "warn"); return; }
   const deckUrl = location.origin + location.pathname + "#monitors";
-  try { const r = await monitorApi({ op: "test", channel: mon.channels[0], deckUrl }); toast(r.ok ? "Test alert sent." : "Delivery failed — check the URL.", r.ok ? "ok" : "error"); }
+  try { const r = await monitorApi({ op: "test", channel: mon.channels[0], deckUrl }); toast(r.ok ? "Test alert sent." : "Delivery failed" + (r.error ? ": " + r.error : r.status ? " (HTTP " + r.status + ")" : "") + ". Check the URL.", r.ok ? "ok" : "error"); }
   catch (e) { toast(e.message || "Test failed.", "error"); }
 }
 

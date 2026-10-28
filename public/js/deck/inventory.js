@@ -33,6 +33,7 @@ function injectStyle() {
 .inv-cell.no{color:#c62828;font-weight:700}
 .inv-src{display:inline-block;font-size:10.5px;background:rgba(23,33,56,.06);color:#45506a;border-radius:20px;padding:1px 8px;margin:1px 3px 1px 0;white-space:nowrap}
 .inv-open{appearance:none;border:0;background:none;font:inherit;color:var(--dk-acc,#2552c6);font-weight:600;cursor:pointer;padding:0;text-align:left}
+#invBody .dk-itable td:first-child{min-width:150px} /* host/identity names stay readable on a phone; the table scrolls instead */
 .inv-open:hover{text-decoration:underline}
 .inv-sug{font-size:12px;color:#7a4a00;background:rgba(245,146,11,.1);border-radius:8px;padding:8px 11px;margin:10px 0 0}
 .inv-covbar{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid rgba(37,82,198,.22);background:rgba(37,82,198,.04);border-radius:10px;padding:11px 14px;margin:0 0 16px}
@@ -85,21 +86,24 @@ export function repaintInventory(m) {
     // Publishing uses the FULL resolved inventory, never the search-filtered subset,
     // so a search never causes the sink to auto-resolve findings for hidden rows.
     S.allAssets = assets; S.allIds = idRes.clusters;
-    box.innerHTML = coverageView(assets.filter(matchAsset), idRes.clusters.filter(matchId), coverageFindings(assets, idRes.clusters).length);
+    // Open coverage findings already in the queue: publishing re-checks them, so the button
+    // stays usable to close fixed gaps even when no new gap is left.
+    const openCov = ents.filter((e) => e && e.type === "FINDING" && e.data && e.data.tool === "coverage" && !["resolved", "closed"].includes(e.status)).length;
+    box.innerHTML = coverageView(assets.filter(matchAsset), idRes.clusters.filter(matchId), coverageFindings(assets, idRes.clusters).length, openCov);
   }
   box.querySelectorAll("[data-open]").forEach((b) => b.onclick = () => S.ctx.openEntityDrawer && S.ctx.openEntityDrawer(b.dataset.open));
   const covBtn = box.querySelector("#invCovCreate");
   if (covBtn) covBtn.onclick = async () => {
     if (covBtn.disabled) return;
     const findings = coverageFindings(S.allAssets || [], S.allIds || []);
-    if (!findings.length) return;
     const toast = S.ctx && S.ctx.toast;
     covBtn.disabled = true; const prev = covBtn.textContent; covBtn.textContent = "Publishing…";
     let res = null;
-    try { const sink = await import("/js/core/sink.js"); res = await sink.publishFindings("coverage", findings, { quiet: true }); } catch (_) { res = null; }
+    try { const sink = await import("/js/core/sink.js"); res = await sink.publishFindings("coverage", findings, { dataset: "Inventory coverage", quiet: true }); } catch (_) { res = null; }
     covBtn.textContent = prev;
     if (!res) { covBtn.disabled = false; if (toast) toast("Could not publish coverage findings", "error"); return; }
-    if (toast) toast(`${res.created} added, ${res.updated} updated in the Findings queue`, "success");
+    if (toast && findings.length) toast(`${res.created} added, ${res.updated} updated in the Findings queue`, "success");
+    else if (toast && !res.fixed) toast("No coverage finding was closed", "info"); // a fixed one toasts from the sink
     refresh();                                       // reflect the new graph state
   };
 }
@@ -120,7 +124,7 @@ function idTable(rows, suggestions) {
   <div class="dk-itwrap"><table class="dk-itable"><thead><tr><th>Identity</th><th>Email addresses</th><th>Seen by</th></tr></thead><tbody>${rows.map((c) => `<tr><td>${openCell(c)}</td><td>${c.emails.length ? c.emails.map((e) => E(e)).join("<br>") : '<span class="dk-mut">—</span>'}</td><td>${srcChips(c.sources)}</td></tr>`).join("")}</tbody></table></div>${sug}`;
 }
 
-function coverageView(assets, ids, actionable) {
+function coverageView(assets, ids, actionable, openCov) {
   const aCov = coverageMatrix(assets, ASSET_COV);
   const iCov = coverageMatrix(ids, IDENTITY_COV);
   const cell = (hit) => `<td class="inv-cell ${hit ? "yes" : "no"}">${hit ? "Yes" : "No"}</td>`;
@@ -132,7 +136,7 @@ function coverageView(assets, ids, actionable) {
   };
   // Actionable = gaps where the subject is already in scope for the control (a managed
   // host missing backup, a signed-in account not reconciled against HR), not every "No".
-  const bar = `<div class="inv-covbar"><div class="inv-covtxt"><b>${(actionable || 0).toLocaleString()}</b> trackable coverage finding${actionable === 1 ? "" : "s"} — blind spots on subjects already in scope for the control. Publishing them adds owned, SLA-tracked findings to the queue and auto-closes any gap that is now covered.</div><button class="inv-covbtn" id="invCovCreate"${actionable ? "" : " disabled"}>Create coverage findings</button></div>`;
+  const bar = `<div class="inv-covbar"><div class="inv-covtxt"><b>${(actionable || 0).toLocaleString()}</b> trackable coverage finding${actionable === 1 ? "" : "s"} — blind spots on subjects already in scope for the control. Publishing them adds owned, SLA-tracked findings to the queue and auto-closes any gap that is now covered.</div><button class="inv-covbtn" id="invCovCreate"${actionable || openCov ? "" : " disabled"}>${actionable || !openCov ? "Create coverage findings" : "Close fixed coverage findings"}</button></div>`;
   return `<p class="inv-sub">Which control sources have observed each host and identity. A "No" is a blind spot — an asset with no backup, an endpoint not in the fleet tool, a user not reconciled against HR.</p>
     ${bar}
     <h2 style="font-size:15px;margin:4px 0 8px">Host coverage</h2>${matrix(assets, ASSET_COV, aCov, "Host")}

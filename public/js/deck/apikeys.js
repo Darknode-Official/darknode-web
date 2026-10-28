@@ -2,7 +2,7 @@
 // A key is shown once; only its hash is stored server-side. Findings sent to the ingest
 // endpoint queue on the server and are pulled into the Security Graph here, through the
 // same sink every tool uses.
-import { ingestAvailable, ingestBaseUrl, ingestWorkspaceId, listKeys, createKey, revokeKey, peekQueue, drainIngest } from "./ingest-client.js";
+import { ingestAvailable, ingestBaseUrl, ingestWorkspaceId, listKeys, createKey, revokeKey, peekQueue, drainIngest } from "/js/deck/ingest-client.js?v=20261027c";
 
 const S = { ctx: null, el: null, data: null, wid: "", busy: false, created: null };
 const E = (s) => (S.ctx && S.ctx.esc ? S.ctx.esc(s) : String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])));
@@ -103,12 +103,12 @@ function paint() {
   box.querySelector("#apikNew").onclick = () => renderForm(true);
   box.querySelector("#apikDrain").onclick = drain;
   box.querySelectorAll(".apik-row").forEach((row) => { const b = row.querySelector('[data-act="revoke"]'); if (b) b.onclick = () => doRevoke(row.dataset.id, row); });
-  if (S.created) { const inp = box.querySelector("#apikKeyVal"); if (inp) { const cp = box.querySelector("#apikCopy"); if (cp) cp.onclick = () => { inp.select(); try { navigator.clipboard.writeText(inp.value); toast("Key copied.", "ok"); } catch (_) {} }; } }
+  if (S.created) { const inp = box.querySelector("#apikKeyVal"); if (inp) { const cp = box.querySelector("#apikCopy"); if (cp) cp.onclick = async () => { inp.select(); try { await navigator.clipboard.writeText(inp.value); toast("Key copied.", "ok"); } catch (_) { toast("Could not copy - the key is selected; press Ctrl+C (Cmd+C) to copy it.", "warn"); } }; } }
 }
 
 function newKeyPanel(c) {
   return `<div class="apik-new"><h3>Your new API key</h3>
-    <div class="apik-keybox"><input id="apikKeyVal" readonly value="${E(c.key)}"><button class="apik-btn" id="apikCopy">Copy</button></div>
+    <div class="apik-keybox"><input id="apikKeyVal" aria-label="New API key" readonly value="${E(c.key)}"><button class="apik-btn" id="apikCopy">Copy</button></div>
     <p class="apik-warn">Copy it now — it is shown once and cannot be retrieved again. Store it as a CI secret (e.g. DARKNODE_KEY).</p></div>`;
 }
 
@@ -116,7 +116,7 @@ function renderForm(open) {
   const slot = S.el && S.el.querySelector("#apikFormSlot"); if (!slot) return;
   if (!open) { slot.innerHTML = ""; return; }
   slot.innerHTML = `<div class="apik-form">
-    <div class="apik-field"><label>Label</label><input type="text" id="afLabel" placeholder="CI pipeline" autocomplete="off"></div>
+    <div class="apik-field"><label for="afLabel">Label</label><input type="text" id="afLabel" placeholder="CI pipeline" autocomplete="off"></div>
     <div class="apik-field"><label>Scopes</label>
       <label class="apik-chk"><input type="checkbox" id="afIngest" checked> Ingest findings (ingest:write)</label>
       <label class="apik-chk"><input type="checkbox" id="afRead"> Read findings back (findings:read)</label>
@@ -133,6 +133,7 @@ async function doCreate(slot) {
   const scopes = [];
   if (slot.querySelector("#afIngest").checked) scopes.push("ingest:write");
   if (slot.querySelector("#afRead").checked) scopes.push("findings:read");
+  if (!scopes.length) { toast("Pick at least one scope.", "warn"); return; } // the server would otherwise grant ingest:write
   S.busy = true;
   try { const r = await createKey(label, scopes); S.created = r; await load(); toast("API key created.", "ok"); }
   catch (e) { toast(e.message || "Could not create key.", "error"); }
@@ -140,7 +141,8 @@ async function doCreate(slot) {
 }
 
 async function doRevoke(keyId, row) {
-  const ok = window.dnConfirm ? await window.dnConfirm("Revoke this API key? Any pipeline using it will stop working.") : true;
+  if (!window.dnConfirm) { toast("Confirmation unavailable — key not revoked.", "error"); return; } // fail closed, as Monitors does
+  const ok = await window.dnConfirm("Revoke this API key? Any pipeline using it will stop working.");
   if (!ok) return;
   try { await revokeKey(keyId); await load(); toast("Key revoked.", "ok"); }
   catch (e) { toast(e.message || "Could not revoke.", "error"); }
@@ -151,7 +153,7 @@ async function drain() {
   try {
     const r = await drainIngest();
     if (!r.batches) toast("No pending findings to pull.", "ok");
-    else toast(`Pulled ${r.batches} batch${r.batches === 1 ? "" : "es"}: ${r.created} added, ${r.updated} updated.`, "ok");
+    else toast(`Pulled ${r.batches} batch${r.batches === 1 ? "" : "es"}: ${r.created} added, ${r.updated} updated.` + (r.failed ? ` ${r.failed} could not be added to the graph; send ${r.failed === 1 ? "it" : "them"} again.` : ""), r.failed ? "error" : "ok");
     await load();
   } catch (e) { toast(e.message || "Pull failed.", "error"); }
 }

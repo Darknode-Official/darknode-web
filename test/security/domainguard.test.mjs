@@ -389,6 +389,18 @@ group("domainguard: analyze, diff, exports", () => {
     assert.ok(s.pass, "failed: " + s.tests.filter((t) => !t.pass).map((t) => t.name).join(", "));
   });
   test("analyze is byte-identical across runs", () => assert.equal(JSON.stringify(analyze(ex.dataset, { now: ex.now })), JSON.stringify(r)));
+  test("a lookup that errored holds the issues it decides, so they are not offered as fixed", () => {
+    const mk = (dm) => ({ domains: [{ domain: "m.example" }], observations: { "m.example": obs("m.example", { txt: ["v=spf1 ip4:192.0.2.0/24 -all"], dmarc: dm }) } });
+    const was = analyze(mk(null), { now: ex.now });
+    assert.ok(was.findings.some((f) => f.id === "domainguard:dmarc_missing"));
+    assert.ok(!was.held.includes("domainguard:dmarc_missing"), "an answered lookup holds nothing");
+    const cur = mk(null); cur.observations["m.example"].dns.DMARC = { error: "timeout" };
+    const now = analyze(cur, { now: ex.now });
+    assert.ok(!now.findings.some((f) => f.id === "domainguard:dmarc_missing"));
+    assert.ok(now.held.includes("domainguard:dmarc_missing"));
+    const unchecked = analyze({ domains: [{ domain: "m.example" }], observations: {} }, { now: ex.now });
+    assert.ok(unchecked.held.includes("domainguard:expiry_critical") && unchecked.held.includes("domainguard:spf_missing"), "a domain not checked holds every issue");
+  });
   test("example covers parked, takeover, expiry and lookalike-with-MX", () => {
     const fid = r.findings.map((f) => f.id);
     for (const id of ["domainguard:parked_unlocked", "domainguard:expiry_critical", "takeover:careers.darknode-acq.test.darknode.ai", "domainguard:lookalike_mx_new:darknode.test.darknode.ai"]) assert.ok(fid.includes(id), id);

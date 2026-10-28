@@ -47,7 +47,7 @@ export function mount(el, { space, mode }) {
           <span class="r"><button class="ns-btn ghost sm" id="nsScJson">Export JSON</button></span></h2>
           ${rows.length ? `<div class="ns-scroll" style="margin-top:10px"><table class="ns-tbl"><thead><tr><th>Severity</th><th>Finding</th><th>Where</th><th>What to do</th></tr></thead><tbody>
             ${rows.slice(0, 500).map((h) => `<tr><td>${sevPill(h.sev)}</td><td><b>${esc(h.title)}</b><div class="mono" style="color:var(--ns-mut);margin-top:3px">${esc(h.snippet)}</div></td><td class="mono">${esc(h.path)}:${h.line}</td><td style="font-size:12.5px">${esc(h.fix || h.why || "")}</td></tr>`).join("")}
-          </tbody></table></div>` : `<div class="ns-empty">${filter === "secret" ? (placeholders ? `No real secrets found. ${placeholders} example or placeholder value${placeholders === 1 ? " was" : "s were"} skipped (like AWS's AKIA…EXAMPLE or 1234567890abcdef); real keys are reported.` : "No secrets found. Nice.") : "No risky code patterns found."}</div>`}
+          </tbody></table></div>${rows.length > 500 ? `<p class="ns-help">Showing the first 500 of ${rows.length}. Export JSON for the full list.</p>` : ""}` : `<div class="ns-empty">${filter === "secret" ? (placeholders ? `No real secrets found. ${placeholders} example or placeholder value${placeholders === 1 ? " was" : "s were"} skipped (like AWS's AKIA…EXAMPLE or 1234567890abcdef); real keys are reported.` : "No secrets found. Nice.") : "No risky code patterns found."}</div>`}
           ${secrets.length ? `<div class="ns-note">A secret that was ever committed or shared should be treated as leaked: revoke or rotate it at the provider first, then remove it from the code and its history.</div>` : ""}</div>`;
       out.querySelectorAll("[data-f]").forEach((b) => b.onclick = () => { filter = b.dataset.f; paint(); });
       out.querySelector("#nsScJson").onclick = () => download("secret-scan.json", JSON.stringify({ scanned: list.length, findings: hits.map(({ path, line, ruleId, title, sev, kind, snippet }) => ({ path, line, ruleId, title, sev, kind, snippet })) }, null, 2));
@@ -62,7 +62,8 @@ export function mount(el, { space, mode }) {
     const { files: list, skipped } = await readFiles(fl, { maxFiles: repo ? 5000 : 2000 });
     if (!list.length) { out.innerHTML = `<div class="ns-card ns-empty">No readable text files (dependencies, build output and binaries are skipped).</div>`; return; }
     const root = (list[0].path.split("/")[0]) || "files";
-    setTimeout(() => run(list, skipped.length, list.length > 1 ? root : list[0].path), 0);
+    // loose files picked together have no folder: name the run by its count, not the first file
+    setTimeout(() => run(list, skipped.length, list.length > 1 ? (list[0].path.includes("/") ? root : list.length + " files") : list[0].path), 0);
   };
   // copy then clear, so choosing the same folder again (after fixing a finding) re-runs the scan
   dir.onchange = () => { const l = Array.from(dir.files || []); dir.value = ""; fromFiles(l); };

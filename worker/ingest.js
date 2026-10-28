@@ -13,8 +13,20 @@ import { resolveWorkspaceRole, canDo } from "./workspace.js";
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
 const QUEUE_CAP = 2000;           // max findings held awaiting a browser drain
 const BODY_CAP = 4 * 1024 * 1024;
+const CHUNK_BYTES = 1024 * 1024;  // well under the 2 MB DO value limit
+const FIELD_CAP = 64 * 1024;      // one finding's text field, so a single finding always fits a chunk
+const chunkKey = (batchId, i) => "qc:" + batchId + ":" + i;
+const countOf = (b) => (Array.isArray(b.findings) ? b.findings.length : b.count || 0);
 const now = () => Date.now();
 const batchId = () => "b_" + now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+// Clip a finding's long free-text fields (rule help can be many KB, repeated per result).
+const capFields = (f) => {
+  const out = Object.assign({}, f);
+  for (const k of ["title", "description", "recommendation"]) if (typeof out[k] === "string" && out[k].length > FIELD_CAP) out[k] = out[k].slice(0, FIELD_CAP) + " [truncated]";
+  if (out.evidence != null && JSON.stringify(out.evidence).length > FIELD_CAP) out.evidence = ["[evidence over 64 KB was dropped at ingest]"];
+  return out;
+};
 
 const safeKey = (k) => ({ keyId: k.keyId, prefix: keyPrefix(k.keyId), scopes: k.scopes, label: k.label, createdAt: k.createdAt, lastUsedAt: k.lastUsedAt || 0, revoked: !!k.revoked });
 
@@ -24,6 +36,30 @@ export class IngestDO {
   // "constructor" must be an ordinary own entry, never reach Object.prototype.
   async _keys() { return Object.assign(Object.create(null), await this.storage.get("keys")); }
   async _queue() { return (await this.storage.get("queue")) || []; }
+
+  // A SQLite-backed DO caps one stored value at 2 MB, and a batch grows on parsing (every
+  // SARIF result copies its rule's help text: a 95 KB upload became 2.7 MB of findings), so
+  // the whole queue under one key failed to save. Each batch's findings now live in chunks of
+  // at most CHUNK_BYTES under their own keys; "queue" holds only the small index. Index
+  // entries written before this change carry `findings` inline and are still read.
+  async _putBatch(entry, findings) {
+    const chunks = []; let cur = [], size = 2;
+    for (const f of findings) {
+      const n = JSON.stringify(f).length + 1;
+      if (cur.length && size + n > CHUNK_BYTES) { chunks.push(cur); cur = []; size = 2; }
+      cur.push(f); size += n;
+    }
+    if (cur.length) chunks.push(cur);
+    for (let i = 0; i < chunks.length; i++) await this.storage.put(chunkKey(entry.batchId, i), chunks[i]);
+    return Object.assign(entry, { count: findings.length, chunks: chunks.length });
+  }
+  async _batchFindings(b) {
+    if (Array.isArray(b.findings)) return b.findings;
+    const out = [];
+    for (let i = 0; i < (b.chunks || 0); i++) out.push(...((await this.storage.get(chunkKey(b.batchId, i))) || []));
+    return out;
+  }
+  async _dropBatch(b) { for (let i = 0; i < (b.chunks || 0); i++) await this.storage.delete(chunkKey(b.batchId, i)); }
 
   async _verify(presented, scope) {
     const keyId = keyIdOf(presented);
@@ -55,21 +91,22 @@ export class IngestDO {
       const url = new URL(request.url);
       if (request.method === "GET" || url.pathname.endsWith("/findings")) {
         const v = await this._verify(apiKey, "findings:read"); if (!v.ok) return reply({ error: v.error }, v.status);
-        const q = await this._queue();
-        const findings = q.flatMap((b) => b.findings.map((f) => ({ title: f.title, severity: f.severity, category: f.category, source: b.source, receivedAt: b.receivedAt })));
+        const q = await this._queue(), findings = [];
+        for (const b of q) for (const f of await this._batchFindings(b)) findings.push({ title: f.title, severity: f.severity, category: f.category, source: b.source, receivedAt: b.receivedAt });
         return reply({ pending: findings.length, findings });
       }
       const v = await this._verify(apiKey, "ingest:write"); if (!v.ok) return reply({ error: v.error }, v.status);
       const text = await request.text();
       if (text.length > BODY_CAP) return reply({ error: "Body too large." }, 413);
-      const { format, findings, errors } = ingestToFindings(text);
-      if (!findings.length) return reply({ format, accepted: 0, rejected: errors.length, errors: errors.slice(0, 20) }, errors.length ? 422 : 200);
+      const { format, findings: parsed, errors } = ingestToFindings(text);
+      if (!parsed.length) return reply({ format, accepted: 0, rejected: errors.length, errors: errors.slice(0, 20) }, errors.length ? 422 : 200);
+      const findings = parsed.map(capFields);
       const queue = await this._queue();
       const source = "ingest:" + format;
-      queue.push({ batchId: batchId(), source, findings, receivedAt: now() });
+      queue.push(await this._putBatch({ batchId: batchId(), source, receivedAt: now() }, findings));
       // enforce the cap by dropping the oldest batches
-      let total = queue.reduce((n, b) => n + b.findings.length, 0);
-      while (total > QUEUE_CAP && queue.length > 1) { total -= queue.shift().findings.length; }
+      let total = queue.reduce((n, b) => n + countOf(b), 0);
+      while (total > QUEUE_CAP && queue.length > 1) { const old = queue.shift(); total -= countOf(old); await this._dropBatch(old); }
       await this.storage.put("queue", queue);
       return reply({ format, accepted: findings.length, rejected: errors.length, errors: errors.slice(0, 20), queued: total });
     }
@@ -110,13 +147,15 @@ export class IngestDO {
       return reply({ ok: true });
     }
     if (op === "drain") {
-      const queue = await this._queue();
+      const queue = await this._queue(), batches = [];
+      for (const b of queue) batches.push({ batchId: b.batchId, source: b.source, receivedAt: b.receivedAt, findings: await this._batchFindings(b) });
       await this.storage.put("queue", []);
-      return reply({ batches: queue });   // the browser publishes these through the sink
+      for (const b of queue) await this._dropBatch(b);
+      return reply({ batches });   // the browser publishes these through the sink
     }
     if (op === "peek") {
       const queue = await this._queue();
-      return reply({ pending: queue.reduce((n, b) => n + b.findings.length, 0), batches: queue.length });
+      return reply({ pending: queue.reduce((n, b) => n + countOf(b), 0), batches: queue.length });
     }
     return reply({ error: "unknown op: " + op }, 400);
   }

@@ -3,7 +3,7 @@
 // Graph through graph-bridge.js and renders the shared "Add to Security Graph"
 // button. The mapping itself lives in core/sink-map.js (pure, node-tested).
 
-import { toEntities } from "./sink-map.js";
+import { toEntities, findingKey } from "./sink-map.js";
 import { reconcileRun, expiredExceptions } from "./workflow.js";
 
 const toast = (msg, kind) => { try { window.showToast && window.showToast(msg, kind); } catch (_) {} };
@@ -16,7 +16,7 @@ const plural = (n, one, many) => n + " " + (n === 1 ? one : many);
 // applied automatically for any real run (a findingKey seen again is the same finding,
 // whatever input it came from); "no longer present -> fixed" needs a named dataset and
 // the user's confirmation. Expired exceptions are lapsed on every publish.
-async function reconcileAfterRun(sg, toolId, dataset, keys, sample) {
+async function reconcileAfterRun(sg, toolId, dataset, keys, sample, held) {
   const res = { fixed: 0, regressed: 0, expired: 0 };
   const batch = sg.batch || ((fn) => fn());
   const findings = () => sg.listEntities({ type: ["FINDING", "VULNERABILITY"] }) || [];
@@ -30,7 +30,7 @@ async function reconcileAfterRun(sg, toolId, dataset, keys, sample) {
       toast(plural(exp.length, "risk exception expired", "risk exceptions expired") + "; affected findings are back in the queue", "warning");
     }
     if (sample) return res;
-    const rec = reconcileRun(toolId, dataset, findings(), keys, { now, regressOnly: !dataset });
+    const rec = reconcileRun(toolId, dataset, findings(), keys, { now, regressOnly: !dataset, held });
     if (rec.regressed.length) {
       apply(rec.regressed);
       res.regressed = rec.regressed.length;
@@ -43,7 +43,7 @@ async function reconcileAfterRun(sg, toolId, dataset, keys, sample) {
       { submitText: "Mark fixed" });
     if (!ok) return res;
     // Recompute on the graph as it is now: the user may have triaged during the prompt.
-    const fresh = reconcileRun(toolId, dataset, findings(), keys, { now: Date.now() }).fixed;
+    const fresh = reconcileRun(toolId, dataset, findings(), keys, { now: Date.now(), held }).fixed;
     apply(fresh);
     res.fixed = fresh.length;
     if (fresh.length) toast(plural(fresh.length, "finding", "findings") + " marked verified fixed", "success");
@@ -56,13 +56,14 @@ async function reconcileAfterRun(sg, toolId, dataset, keys, sample) {
  * stable key) and sample data never merges into real entities.
  * @param {string} toolId
  * @param {object[]} findings common Finding shape (see sink-map.js)
- * @param {{ dataset?: string, sample?: boolean, link?: string|null, quiet?: boolean }} [o]
+ * @param {{ dataset?: string, sample?: boolean, link?: string|null, quiet?: boolean, held?: string[] }} [o]
+ * held = finding ids the run could not re-check (a lookup failed): they are not offered as fixed.
  * After the write (real runs only) regressions are reopened, findings missing from the
  * last run of the same named dataset are offered as verified fixed, and expired risk
  * exceptions are lapsed (see reconcileAfterRun).
  * @returns {Promise<{ created:number, updated:number, skipped:number, entities:object[], fixed:number, regressed:number, expired:number }>}
  */
-export async function publishFindings(toolId, findings, { dataset, sample, link, quiet = true } = {}) {
+export async function publishFindings(toolId, findings, { dataset, sample, link, quiet = true, held } = {}) {
   const gb = await import("/js/graph-bridge.js");
   const sg = await import("/js/security-graph.js");
   const { items, links } = toEntities(toolId, findings, { dataset, sample });
@@ -81,7 +82,7 @@ export async function publishFindings(toolId, findings, { dataset, sample, link,
   });
   const out = { created: r.created || 0, updated: r.updated || 0, skipped: items.length - (r.entities || []).length, entities: r.entities || [] };
   const keys = items.filter((it) => it.type === "FINDING").map((it) => it.data && it.data.findingKey).filter(Boolean);
-  Object.assign(out, await reconcileAfterRun(sg, toolId, dataset, keys, !!sample));
+  Object.assign(out, await reconcileAfterRun(sg, toolId, dataset, keys, !!sample, (held || []).map((id) => findingKey(toolId, { id }))));
   if (!quiet) toast(`${out.created} added, ${out.updated} updated in Security Graph`, "success");
   try { document.dispatchEvent(new CustomEvent("dn:findings:published", { detail: { toolId, created: out.created, updated: out.updated } })); } catch (_) {}
   // Same "/js/core/bus.js" specifier as every other importer: the bus is a singleton.
@@ -96,7 +97,7 @@ export async function publishFindings(toolId, findings, { dataset, sample, link,
  * Render the shared sink button into `container`. getFindings() → { findings, sample }.
  * Returns update(): re-reads findings and refreshes the count / disabled state.
  * @param {HTMLElement} container
- * @param {() => { findings: object[], sample?: boolean }} getFindings
+ * @param {() => { findings: object[], sample?: boolean, held?: string[] }} getFindings
  * @param {string} toolId
  * @param {{ dataset?: string, allowSample?: boolean, label?: string }} [o]
  * @returns {() => void}
@@ -136,7 +137,7 @@ export function attachSinkButton(container, getFindings, toolId, { dataset, allo
     if (!findings.length || (r.sample && !allowSample)) return;
     btn.disabled = true;
     try {
-      const res = await publishFindings(toolId, findings, { dataset, sample: !!r.sample });
+      const res = await publishFindings(toolId, findings, { dataset, sample: !!r.sample, held: r.held });
       done = true;
       btn.textContent = "Added to graph";
       toast(`Security Graph: ${res.created} added, ${res.updated} updated`, "success");

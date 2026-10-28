@@ -6,6 +6,7 @@ import {
   scorePosture, parseHSTS, parseSPF, parseDMARC, certDaysLeft, newestCert, letterGrade, selfTest, gradeTransport,
   spfLookupCount, parseSetCookie, certCoversDomain, parseMtaSts, parseCSP, gradeCSPDeep, gradeHeaders, gradeEmail, gradeTls,
 } from "../../public/js/dataprotect/posture-engine.js";
+import { postureFindings, postureHeld } from "../../public/js/dataprotect/dp-sink.js";
 
 group("posture: HTTPS vs HTTP-redirect are distinct signals", () => {
   test("working HTTPS with a non-redirecting HTTP endpoint still passes HTTPS", () => {
@@ -270,6 +271,24 @@ group("posture: email auth depth", () => {
   test("TLS-RPT present passes", () => {
     const r = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"], tlsRptTxts: ["v=TLSRPTv1; rua=mailto:t@b.com"] });
     assert.equal(r.checks.find((c) => c.name === "TLS-RPT").status, "pass");
+  });
+  test("a DNS lookup that failed is could-not-check, not a missing record", () => {
+    const fail = () => Object.assign([], { failed: true });
+    const r = gradeEmail({ spfTxts: fail(), dmarcTxts: fail(), mtaStsTxts: fail(), tlsRptTxts: fail() });
+    for (const n of ["SPF", "DMARC", "MTA-STS", "TLS-RPT"]) assert.equal(r.checks.find((c) => c.name === n).status, "na", n);
+    assert.equal(r.checks.filter((c) => c.status === "fail" || c.status === "warn").length, 0);
+    const absent = gradeEmail({ spfTxts: [], dmarcTxts: [] });
+    assert.equal(absent.checks.find((c) => c.name === "DMARC").status, "fail", "an answered empty lookup is still no record");
+  });
+  test("a failed lookup holds the last run's findings so they are not offered as fixed", () => {
+    const base = { domain: "x.test", requestedUrl: "https://x.test", httpsOk: true, finalUrl: "https://x.test", headers: {}, securityTxt: { present: false } };
+    const was = postureFindings(scorePosture({ ...base, spfTxts: ["v=spf1 ~all"], dmarcTxts: ["v=DMARC1; p=none"], cert: { issuer: "CN=R1", notAfter: new Date(Date.now() + 3 * 86400000).toISOString(), names: "x.test" } }));
+    const now = scorePosture({ ...base, spfTxts: Object.assign([], { failed: true }), dmarcTxts: Object.assign([], { failed: true }), cert: null, certUnreachable: true });
+    const held = new Set(postureHeld(now));
+    const lost = was.filter((f) => /^posture\|x\.test\|(email|tls)\|/.test(f.id) && !postureFindings(now).some((g) => g.id === f.id));
+    assert.ok(lost.length >= 3, "the run lost its email and certificate findings");
+    for (const f of lost) assert.ok(held.has(f.id), f.id);
+    assert.deepEqual(postureHeld(scorePosture({ ...base, spfTxts: [], dmarcTxts: [], cert: null })), [], "an answered lookup holds nothing");
   });
 });
 

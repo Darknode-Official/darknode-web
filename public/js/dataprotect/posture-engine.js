@@ -337,8 +337,13 @@ export function gradeHeaders(input) {
 
 export function gradeEmail(input) {
   const checks = [];
+  // a DNS lookup that failed (neither resolver answered) is "could not check", not "no record";
+  // holds names the checks that lookup decides, so their earlier findings are not offered as fixed
+  const failed = (txts) => !!(txts && txts.failed);
   const spf = parseSPF(input.spfTxts);
-  if (!spf.present) {
+  if (failed(input.spfTxts)) {
+    checks.push({ name: "SPF", status: "na", detail: "The DNS lookup for SPF failed, so it could not be checked.", holds: ["SPF lookup budget"] });
+  } else if (!spf.present) {
     checks.push({ name: "SPF", status: "fail", detail: "No SPF record.", advice: "Publish an SPF TXT record ending in -all." });
   } else if (spf.qualifier === "-") {
     checks.push({ name: "SPF", status: "pass", detail: "SPF present with a hard fail (-all)." });
@@ -359,7 +364,9 @@ export function gradeEmail(input) {
     }
   }
   const dmarc = parseDMARC(input.dmarcTxts);
-  if (!dmarc.present) {
+  if (failed(input.dmarcTxts)) {
+    checks.push({ name: "DMARC", status: "na", detail: "The DNS lookup for DMARC failed, so it could not be checked.", holds: ["DMARC coverage (pct)", "DMARC subdomain policy", "DMARC reporting (rua)"] });
+  } else if (!dmarc.present) {
     checks.push({ name: "DMARC", status: "fail", detail: "No DMARC record.", advice: "Publish _dmarc with p=quarantine or p=reject." });
   } else {
     // A subdomain with no record of its own is covered by its organizational domain's
@@ -399,7 +406,9 @@ export function gradeEmail(input) {
 
   // MTA-STS: enforces TLS for inbound SMTP.
   const mta = parseMtaSts(input.mtaStsTxts, input.mtaStsPolicy);
-  if (!mta.present) {
+  if (failed(input.mtaStsTxts)) {
+    checks.push({ name: "MTA-STS", status: "na", detail: "The DNS lookup for MTA-STS failed, so it could not be checked." });
+  } else if (!mta.present) {
     checks.push({ name: "MTA-STS", status: "warn", detail: "No _mta-sts TXT record.", advice: "Publish MTA-STS (TXT + /.well-known/mta-sts.txt policy) to require TLS for inbound mail." });
   } else if (mta.mode === "enforce") {
     checks.push({ name: "MTA-STS", status: "pass", detail: "MTA-STS policy present in enforce mode." });
@@ -411,7 +420,7 @@ export function gradeEmail(input) {
 
   // TLS-RPT: SMTP TLS failure reporting.
   const hasTlsRpt = (input.tlsRptTxts || []).some((t) => /^v=tlsrptv1\b/i.test(String(t).trim()));
-  checks.push(hasTlsRpt
+  checks.push(failed(input.tlsRptTxts) ? { name: "TLS-RPT", status: "na", detail: "The DNS lookup for TLS-RPT failed, so it could not be checked." } : hasTlsRpt
     ? { name: "TLS-RPT", status: "pass", detail: "SMTP TLS reporting (_smtp._tls TXT) is configured." }
     : { name: "TLS-RPT", status: "warn", detail: "No TLS-RPT record.", advice: "Publish _smtp._tls TXT (v=TLSRPTv1; rua=…) to receive SMTP TLS failure reports." });
 
@@ -422,7 +431,9 @@ export function gradeTls(input) {
   const checks = [];
   const cert = input.cert;
   if (!cert) {
-    checks.push({ name: "Certificate", status: "na", detail: "No certificate transparency data was available." });
+    checks.push(input.certUnreachable
+      ? { name: "Certificate", status: "na", detail: "The certificate-transparency logs did not answer, so the certificate could not be checked.", holds: ["Certificate validity", "Signature algorithm", "Key strength", "Name coverage", "Issuer"] }
+      : { name: "Certificate", status: "na", detail: "No certificate transparency data was available." });
     return { key: "tls", label: "Certificate", weight: 20, checks };
   }
   // Honesty: CT shows the newest certificate ISSUED for the domain, which is not

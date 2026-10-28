@@ -32,14 +32,14 @@ export async function getWhitelist() {
 }
 
 // The Deck launcher lives in its own module so every signed-in user can load it.
-import { openDeck, closeDeck } from "/js/deck/launch.js?v=20261027b";
+import { openDeck, closeDeck } from "/js/deck/launch.js?v=20261027c";
 export { openDeck, closeDeck };
 
 // ---- Preview UI: a light, single-surface alternate view of every tool, launched from
 // the admin page like the Deck. Same NAV taxonomy, self-contained module (scoped .pvx). ----
 let _previewOff = null;
 export async function openPreview(user) {
-  const nav = await import("/js/console-nav.js?v=20261013k");
+  const nav = await import("/js/console-nav.js?v=20261019f");
   const { renderPreview } = await import("/js/preview-ui.js?v=20261019h");
   if (_previewOff) { try { _previewOff(); } catch (_) {} _previewOff = null; }
   document.querySelectorAll("body > .pvx").forEach((n) => n.remove());

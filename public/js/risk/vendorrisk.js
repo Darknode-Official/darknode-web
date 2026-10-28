@@ -20,9 +20,9 @@ import {
   REGISTER_SCHEMA, COLUMNS, COLUMN_LABELS, parseInput, analyze, findingsToCsv, exampleDataset, normalizeRecord, validateRecord, addHistory,
   gradeDomain, makeSnapshot, addSnapshot, diffSnapshots, registerToCsv, icsEvents, onePager, matchPayees, daysUntil, docLabel, csvToRecords,
   registrableGuess, leakResponse, mergePolicy, cleanDomain,
-} from "./vendorrisk-engine.js?v=20261026b";
+} from "./vendorrisk-engine.js?v=20261027c";
 
-const ENGINE = engineUrl("./vendorrisk-engine.js?v=20261026b", import.meta);
+const ENGINE = engineUrl("./vendorrisk-engine.js?v=20261027c", import.meta);
 const P = "tpr";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -722,7 +722,7 @@ export function renderVendorRisk(main) {
       if (!ev.length) { toast("No renewal, review or expiry dates to export", "warning"); return; }
       download(TOOL_ID + "-calendar-" + stamp() + ".ics", toIcs(ev), "text/calendar");
     });
-    attachSinkButton(ex, () => ({ findings: result ? result.findings : [], sample: !!example }), TOOL_ID, { dataset: example ? "synthetic example" : "vendor register" });
+    attachSinkButton(ex, () => ({ findings: result ? result.findings : [], held: result ? result.held : [], sample: !!example }), TOOL_ID, { dataset: example ? "synthetic example" : "vendor register" });
     const note = document.createElement("p");
     note.className = P + "-help"; note.style.width = "100%";
     note.textContent = "Saved vendors are already mirrored as VENDOR entities. The graph button adds one FINDING per finding, linked to its VENDOR and DOMAIN entities.";

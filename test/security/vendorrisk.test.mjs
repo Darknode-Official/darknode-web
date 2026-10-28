@@ -272,6 +272,13 @@ group("vendorrisk: findings positive and negative", () => {
     assert.ok(f.controls.length >= 1 && f.controls.every((c) => c.framework && c.id));
     assert.equal(f.evidenceCount, 1);
   });
+  test("a check that errored holds the finding it raised last time, so it is not offered as fixed", () => {
+    const was = G({ sendsMail: true }, [{ domain: "d.test", check: "leak", status: "fail", evidence: "listed" }, { domain: "d.test", check: "dmarc", status: "fail", evidence: "No v=DMARC1" }]);
+    const now = G({ sendsMail: true }, [{ domain: "d.test", check: "leak", status: "error", evidence: "rate limited" }, { domain: "d.test", check: "dmarc", status: "error", evidence: "timeout" }]);
+    assert.equal(now.findings.length, was.findings.length - 2);
+    for (const f of was.findings.filter((x) => /-(leak|dmarc)-/.test(x.id))) assert.ok(now.held.includes(f.id), f.id);
+    assert.deepEqual(was.held, [], "checks that answered hold nothing");
+  });
 });
 
 group("vendorrisk: snapshots and diffs", () => {

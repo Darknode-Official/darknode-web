@@ -3,15 +3,15 @@
 // checks graded by posture-engine. Personal = one domain; Enterprise = a saved
 // portfolio graded side by side (mode "portfolio").
 
-import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261025g";
-import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261026b";
-import { postureFindings } from "/js/dataprotect/dp-sink.js";
+import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261027c";
+import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261027c";
+import { postureFindings, postureHeld } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, GRADE_C, recordRun, readList, writeList, pool, download } from "./ui.js";
 import { parseDomains } from "/js/dataprotect/tls-engine.js?v=20261026a";
 
 const ST = { pass: ["#2f9e56", "Pass"], warn: ["#b58100", "Warn"], fail: ["#b00020", "Fail"], info: ["#2f7d9e", "Info"], na: ["#8a93a6", "N/A"] };
-const level = (res) => (res.grade === "A" || res.grade === "B" ? "good" : res.grade === "C" ? "warn" : "bad");
+const level = (res) => (res.grade === "A" || res.grade === "B" ? "good" : res.grade === "C" || res.score == null ? "warn" : "bad"); // N/A (nothing assessable) is not a D or F
 
 async function grade(domain) {
   const input = await collectPosture(domain);
@@ -50,7 +50,7 @@ function wireReport(box, res) {
   const j = document.createElement("button"); j.className = "ns-btn ghost sm"; j.textContent = "Export JSON";
   j.onclick = () => download("domain-check-" + res.domain + ".json", JSON.stringify(res, null, 2));
   act.appendChild(j);
-  attachSinkButton(act, () => ({ findings: postureFindings(res) }), "posture", { dataset: "posture " + res.domain });
+  attachSinkButton(act, () => ({ findings: postureFindings(res), held: postureHeld(res) }), "posture", { dataset: "posture " + res.domain });
 }
 
 export function mount(el, { space, mode }) {
@@ -84,7 +84,7 @@ export function mount(el, { space, mode }) {
   el.innerHTML = `
     <div class="ns-card"><h2>Domain portfolio<span class="r" id="nsPfCount"></span></h2>
       <p class="ns-sub">Grade every public domain the organization owns in one pass and rank them by risk. The list is saved in this browser so you can re-run it.</p>
-      <textarea class="ns-ta" id="nsPfIn" style="min-height:96px" placeholder="One domain per line" spellcheck="false"></textarea>
+      <textarea class="ns-ta" id="nsPfIn" aria-label="Domains to grade" style="min-height:96px" placeholder="One domain per line" spellcheck="false"></textarea>
       <div class="ns-row"><button class="ns-btn" id="nsPfGo">Grade portfolio</button><button class="ns-btn ghost" id="nsPfCsv" disabled>Export CSV</button><span class="ns-help" id="nsPfSt" style="margin:0"></span></div>
       <p class="ns-help">Up to 50 domains, 3 at a time. Only public signals are read.</p></div>
     <div id="nsPfOut"></div><div id="nsPfDet"></div>`;
@@ -119,9 +119,9 @@ export function mount(el, { space, mode }) {
       results[i] = res && !res.error ? { domain: list[i], res } : { domain: list[i], res: null, why: res && res.error }; done++; st.textContent = skipped + done + " / " + list.length + " checked"; table();
     });
     go.disabled = false; csv.disabled = false;
-    const graded = results.filter((r) => r.res), bad = graded.filter((r) => level(r.res) === "bad").length;
-    const avg = graded.length ? Math.round(graded.reduce((a, r) => a + (r.res.score || 0), 0) / graded.length) : null;
-    recordRun(space, { tool: "portfolio", target: list.length + " domains", summary: (avg == null ? "No domain reachable" : "Average score " + avg) + ", " + bad + " graded D or F", level: bad ? "bad" : graded.some((r) => level(r.res) === "warn") ? "warn" : "good", score: avg, counts: { domains: list.length, bad } });
+    const graded = results.filter((r) => r.res), scored = graded.filter((r) => r.res.score != null), bad = graded.filter((r) => level(r.res) === "bad").length;
+    const avg = scored.length ? Math.round(scored.reduce((a, r) => a + r.res.score, 0) / scored.length) : null; // an N/A score is left out, not counted as 0
+    recordRun(space, { tool: "portfolio", target: list.length + " domains", summary: (avg == null ? (graded.length ? "No domain could be scored" : "No domain reachable") : "Average score " + avg) + ", " + bad + " graded D or F", level: bad ? "bad" : graded.some((r) => level(r.res) === "warn") ? "warn" : "good", score: avg, counts: { domains: list.length, bad } });
     for (const r of graded) recordRun(space, { tool: "domain", target: r.domain, summary: "Grade " + r.res.grade + " (" + r.res.counts.fail + " failing)", level: level(r.res), score: r.res.score, grade: r.res.grade });
   };
   csv.onclick = () => {

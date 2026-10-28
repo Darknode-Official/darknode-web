@@ -327,6 +327,11 @@ group("workflow: reconcileRun", () => {
     assert.deepEqual(r.fixed, []);
     assert.deepEqual(r.regressed.map((x) => x.id).sort(), ["back", "back2"]);
   });
+  test("held keys (a lookup that failed) are neither marked fixed nor reopened", () => {
+    const r = reconcileRun("tool", "ds.csv", prev, ["k-stays"], { now: NOW, held: ["k-gone", "k-back"] });
+    assert.deepEqual(r.fixed.map((x) => x.id), ["inv"]);
+    assert.deepEqual(r.regressed, []);
+  });
   test("does not mutate the input entities", () => {
     reconcileRun("tool", "ds.csv", prev, cur, { now: NOW });
     assert.equal(prev[0].status, "open"); assert.equal(prev[0].data.history, undefined);

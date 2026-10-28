@@ -1,5 +1,6 @@
 // Toast notification system
 const COLORS = { info: "#2563eb", success: "#16a34a", error: "#dc2626", warning: "#d97706" };
+const ALIAS = { ok: "success", warn: "warning", err: "error", danger: "error" };
 let container;
 
 function ensureContainer() {
@@ -44,6 +45,7 @@ const MAX_TOASTS = 4;
 export function showToast(message, type = "info", duration = 4000) {
   ensureStyles();
   ensureContainer();
+  type = ALIAS[type] || type; // callers also say "ok"/"warn" - they showed as a blue "ok"/"warn" info toast
 
   // De-dupe: if an identical toast is already showing (e.g. spamming the
   // density toggle), just refresh it with a little bump instead of stacking.

@@ -48,6 +48,26 @@ export function postureFindings(res) {
   return out;
 }
 
+/**
+ * Finding ids a posture run could not re-check: every check whose lookup failed ("na"
+ * with holds), plus the checks that lookup decides. Passed to the sink as held, so a
+ * failed lookup is never offered as "verified fixed".
+ * @param {object} res posture-engine scorePosture() output
+ * @returns {string[]}
+ */
+export function postureHeld(res) {
+  const domain = str(res && res.domain).trim().toLowerCase();
+  if (!domain) return [];
+  const out = [];
+  for (const cat of (res.categories || [])) {
+    for (const c of (cat.checks || [])) {
+      if (c.status !== "na" || !Array.isArray(c.holds)) continue;
+      for (const name of [c.name, ...c.holds]) out.push(`posture|${domain}|${str(cat.key)}|${str(name)}`);
+    }
+  }
+  return out;
+}
+
 // ---- Certificate & TLS Fleet Monitor (tlsfleet) ------------------------------
 
 const TLS_SEV = { expired: "critical", urgent: "high", soon: "medium", watch: "low" };
@@ -97,6 +117,26 @@ export function tlsFleetFindings(entries) {
       });
     }
   }
+  return out;
+}
+
+/**
+ * Finding ids a run could not re-check: the certificate logs did not answer, the HSTS
+ * fetch failed, or the domain was past the run's cap. Passed to the sink as held, so a
+ * failed lookup is never offered as "verified fixed".
+ * @param {object[]} entries tls-engine buildEntry() objects (plus .unreachable, .hsts)
+ * @param {string[]} [skipped] domains not checked at all
+ * @returns {string[]}
+ */
+export function tlsFleetHeld(entries, skipped) {
+  const out = [];
+  for (const e of entries || []) {
+    if (!e || !e.domain) continue;
+    const domain = str(e.domain).toLowerCase();
+    if (e.pending || e.unreachable || e.error) out.push(`tlsfleet|${domain}|cert-expiry`);
+    if (e.pending || e.hsts == null) out.push(`tlsfleet|${domain}|hsts`);
+  }
+  for (const x of skipped || []) { const domain = str(x).toLowerCase(); out.push(`tlsfleet|${domain}|cert-expiry`, `tlsfleet|${domain}|hsts`); }
   return out;
 }
 

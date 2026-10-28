@@ -18,9 +18,9 @@ import {
   DEFAULTS, LIMITS, TOOL_ID, TAKEOVER_FINGERPRINTS, parseInput, parseDomainList, findingsToCsv, exampleDataset,
   planDomainQueries, spfIncludeTargets, txtStrings, rrData, dohStatus, normName, generateLookalikes, registrableDomain,
   matchTakeoverProvider, cnameChain, snapshotOf, dnsFixList, lookalikesToCsv, summaryText, isDomainName,
-} from "./domainguard-engine.js?v=20261026b";
+} from "./domainguard-engine.js?v=20261027c";
 
-const ENGINE = engineUrl("./domainguard-engine.js?v=20261026b", import.meta);
+const ENGINE = engineUrl("./domainguard-engine.js?v=20261027c", import.meta);
 const P = "dmg";
 const RUNS_KEY = "dn_domainguard_runs";
 const DRAFT_KEY = "dn_domainguard_draft";
@@ -525,7 +525,7 @@ export function renderDomainGuard(main) {
     ex.querySelector('[data-x="txt"]').addEventListener("click", () => download(stamp() + "-summary.txt", summaryText(r) + "\n\nSeverity totals: " + JSON.stringify(summarize(r.findings).bySeverity) + (isExample ? "\n\nSYNTHETIC EXAMPLE - not real data." : ""), "text/plain"));
     ex.querySelector('[data-x="fix"]').addEventListener("click", () => download(stamp() + "-dns-fixes.txt", dnsFixList(r), "text/plain"));
     ex.querySelector('[data-x="look"]').addEventListener("click", () => download(stamp() + "-lookalikes.csv", lookalikesToCsv(r.tables.lookalikes), "text/csv"));
-    attachSinkButton(ex, () => ({ findings: r.findings, sample: isExample }), TOOL_ID, { dataset: isExample ? "synthetic example" : "domain portfolio " + (r.meta.now || "").slice(0, 10) });
+    attachSinkButton(ex, () => ({ findings: r.findings, held: r.held, sample: isExample }), TOOL_ID, { dataset: isExample ? "synthetic example" : "domain portfolio " + (r.meta.now || "").slice(0, 10) });
   }
 
   function bindRows(panel, rows, onPick) {
