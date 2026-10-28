@@ -4253,7 +4253,7 @@ export function renderDeck(host, opts) {
   }
   function boardHtml(d){
     const b = boardData(d), m = reportMeta(), s = b.snap;
-    const period = b.prev ? `Compared with ${esc(b.prev.day)} (${b.series.length}-day history)` : "No prior period yet — this is the first recorded snapshot";
+    const period = b.prev ? `Compared with ${esc(b.prev.day)} (${b.series.length}-day history)` : b.series.length > 1 ? `No prior period yet — ${b.series.length} days recorded, none from 90 or more days ago` : "No prior period yet — this is the first recorded snapshot";
     const rows = boardMetricRows(b).map((r) => `<tr><td>${esc(r[0])}</td><td><b>${esc(r[1])}</b></td><td>${esc(r[2])}</td></tr>`).join("");
     const aging = Object.entries(s.aging).map(([k, v]) => `<tr><td>${esc(k)} days</td><td>${v}</td></tr>`).join("");
     const top = (s.exposure.top || []).slice(0, 5).map((t) => `<li><b>${esc(t.name)}</b> — ${esc(t.severity)}${t.kev ? ", KEV" : ""}${t.overdue ? ", overdue" : ""}${t.exposed ? ", internet-facing" : ""}</li>`).join("");
@@ -4265,7 +4265,7 @@ export function renderDeck(host, opts) {
   }
   function boardMd(d){
     const b = boardData(d), m = reportMeta(), s = b.snap;
-    const period = b.prev ? `Compared with ${b.prev.day} (${b.series.length}-day history)` : "No prior period yet — first recorded snapshot";
+    const period = b.prev ? `Compared with ${b.prev.day} (${b.series.length}-day history)` : b.series.length > 1 ? `No prior period yet — ${b.series.length} days recorded, none from 90 or more days ago` : "No prior period yet — first recorded snapshot";
     const rows = boardMetricRows(b).map((r) => `| ${r[0]} | ${r[1]} | ${r[2]} |`).join("\n");
     const aging = Object.entries(s.aging).map(([k, v]) => `- ${k} days: ${v}`).join("\n");
     const top = (s.exposure.top || []).slice(0, 5).map((t) => `- ${t.name} — ${t.severity}${t.kev ? ", KEV" : ""}${t.overdue ? ", overdue" : ""}${t.exposed ? ", internet-facing" : ""}`).join("\n");
