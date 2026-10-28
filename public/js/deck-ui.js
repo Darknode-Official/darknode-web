@@ -778,7 +778,8 @@ const CSS = `
 @media(min-width:2200px){.dk{--dkz:1.18}}
 @media(min-width:2800px){.dk{--dkz:1.3}}
 .dk.dense{zoom:calc(var(--dkz,1) * .9)}
-.dk td,.dk th{overflow-wrap:anywhere}
+.dk td{overflow-wrap:anywhere}
+.dk th{overflow-wrap:break-word} /* anywhere let a narrow table squash headers letter by letter ("Vul/n sca/n") instead of scrolling */
 .dk-nvhb{appearance:none;border:0;background:none;font-family:inherit;cursor:pointer;width:100%;display:flex;align-items:center;gap:6px;text-align:left;border-radius:8px}
 .dk-nvhb .ov{margin-left:auto;font-size:10px;font-weight:600;letter-spacing:0;text-transform:none;opacity:0;transition:opacity .15s}
 .dk-nvhb:hover,.dk-nvhb.on,.dk-nvhb:focus-visible{color:#2552c6}

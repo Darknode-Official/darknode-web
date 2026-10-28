@@ -33,6 +33,7 @@ function injectStyle() {
 .inv-cell.no{color:#c62828;font-weight:700}
 .inv-src{display:inline-block;font-size:10.5px;background:rgba(23,33,56,.06);color:#45506a;border-radius:20px;padding:1px 8px;margin:1px 3px 1px 0;white-space:nowrap}
 .inv-open{appearance:none;border:0;background:none;font:inherit;color:var(--dk-acc,#2552c6);font-weight:600;cursor:pointer;padding:0;text-align:left}
+#invBody .dk-itable td:first-child{min-width:150px} /* host/identity names stay readable on a phone; the table scrolls instead */
 .inv-open:hover{text-decoration:underline}
 .inv-sug{font-size:12px;color:#7a4a00;background:rgba(245,146,11,.1);border-radius:8px;padding:8px 11px;margin:10px 0 0}
 .inv-covbar{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid rgba(37,82,198,.22);background:rgba(37,82,198,.04);border-radius:10px;padding:11px 14px;margin:0 0 16px}
@@ -135,7 +136,7 @@ function coverageView(assets, ids, actionable, openCov) {
   };
   // Actionable = gaps where the subject is already in scope for the control (a managed
   // host missing backup, a signed-in account not reconciled against HR), not every "No".
-  const bar = `<div class="inv-covbar"><div class="inv-covtxt"><b>${(actionable || 0).toLocaleString()}</b> trackable coverage finding${actionable === 1 ? "" : "s"} — blind spots on subjects already in scope for the control. Publishing them adds owned, SLA-tracked findings to the queue and auto-closes any gap that is now covered.</div><button class="inv-covbtn" id="invCovCreate"${actionable || openCov ? "" : " disabled"}>${actionable ? "Create coverage findings" : "Close fixed coverage findings"}</button></div>`;
+  const bar = `<div class="inv-covbar"><div class="inv-covtxt"><b>${(actionable || 0).toLocaleString()}</b> trackable coverage finding${actionable === 1 ? "" : "s"} — blind spots on subjects already in scope for the control. Publishing them adds owned, SLA-tracked findings to the queue and auto-closes any gap that is now covered.</div><button class="inv-covbtn" id="invCovCreate"${actionable || openCov ? "" : " disabled"}>${actionable || !openCov ? "Create coverage findings" : "Close fixed coverage findings"}</button></div>`;
   return `<p class="inv-sub">Which control sources have observed each host and identity. A "No" is a blind spot — an asset with no backup, an endpoint not in the fleet tool, a user not reconciled against HR.</p>
     ${bar}
     <h2 style="font-size:15px;margin:4px 0 8px">Host coverage</h2>${matrix(assets, ASSET_COV, aCov, "Host")}
