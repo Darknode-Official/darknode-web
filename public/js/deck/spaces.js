@@ -86,11 +86,11 @@ function homeHTML(id, S) {
     const doms = by("domain").filter((r) => (!list.size || list.has(r.target)) && !seen.has(r.target) && seen.add(r.target)), graded = doms.filter((r) => r.score != null);
     const avg = graded.length ? Math.round(graded.reduce((a, r) => a + r.score, 0) / graded.length) : null;
     const weak = doms.filter((r) => r.level === "bad").length;
-    const cert = by("certs")[0], phish = by("phish"), secrets = by("secrets")[0], data = by("data");
+    const cert = by("certs")[0], phish = by("phish"), secrets = by("secrets"), data = by("data");
     kpis = kpi(avg == null ? "-" : avg, graded.length ? "Avg domain score, " + graded.length + " graded" : "No domains graded", avg == null ? "#8a93a6" : avg >= 80 ? "#2f9e56" : avg >= 60 ? "#b58100" : "#b00020")
       + kpi(weak, "Domains graded D or F", weak ? "#b00020" : "#2f9e56")
       + kpi(cert ? (cert.counts && (cert.counts.expired + cert.counts.urgent + cert.counts.soon)) || 0 : "-", cert ? "Certificates expiring within 30 days" : "Fleet not loaded", cert ? LVL_C[cert.level] : "#8a93a6")
-      + kpi(phish.length + data.length + (secrets ? 1 : 0), "Triage and reviews completed", "#2552c6");
+      + kpi(phish.length + data.length + secrets.length, "Triage and reviews completed", "#2552c6");
   }
   // in the Organization, only domains still in the portfolio, as the KPIs count them
   const inList = id === "personal" ? null : new Set(readList(id, "domains"));
