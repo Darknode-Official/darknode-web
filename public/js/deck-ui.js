@@ -29,7 +29,7 @@ import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel, TIERS } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261021a";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261025b";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261027b";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
 import { readRuns } from "/js/deck/native/ui.js"; // same URL the space tools import
@@ -2518,7 +2518,7 @@ export function renderDeck(host, opts) {
   function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "action") { closeSpot(); try { m.run(); } catch (_) {} } else if (m.type === "conn") { closeSpot(); go("con"); openDrawer(m.it); } else if (m.type === "entity") { closeSpot(); try { openEntityDrawer(m.id); } catch (_) {} } else { closeSpot(); openTool(m.sec, m.label); } }
   function moveSel(d){ if (!matches.length) return; selIdx = (selIdx + d + matches.length) % matches.length; spotRes.querySelectorAll(".dk-sr").forEach((r, i) => r.classList.toggle("sel", i === selIdx)); spotRes.querySelector(".dk-sr.sel")?.scrollIntoView({ block: "nearest" }); }
   $("#dkFindBtn").onclick = openSpot; $("#dkHSearch").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
-  $("#dkAsstBtn").onclick = () => go("assistant");
+  $("#dkAsstBtn").onclick = () => { go("assistant"); focusAsst(); };
   spot.addEventListener("click", (e) => { if (e.target === spot) closeSpot(true); });
 
   // ---------- command-center chrome: status, quick-create, notifications, account ----------
@@ -4563,13 +4563,25 @@ export function renderDeck(host, opts) {
     f.onload = () => { f.classList.add("in"); const l = asstFrame.querySelector(".dk-wload"); if (l) setTimeout(() => l.remove(), 180); };
     asstFrame.appendChild(f);
   }
+  // Put the cursor in the message box (same-origin frame) when the user asked to open the assistant;
+  // the box renders after the frame's scripts run, so retry briefly.
+  function focusAsst(){
+    let n = 0;
+    const tick = () => {
+      const f = asstFrame.querySelector("iframe"); let t = null;
+      try { t = f && f.contentDocument && f.contentDocument.getElementById("aiMsg"); } catch (_) {}
+      if (t && t.offsetParent && document.activeElement !== f) { f.focus(); t.focus(); return; }
+      if (++n < 30) setTimeout(tick, 100);
+    };
+    tick();
+  }
   $("#dkAsstFull").onclick = () => { if (primary) { window.open("/ai", "_blank", "noopener"); return; } teardown(); onOpen("ai"); };
   // Prefill the embedded assistant with a question and open it. webai.js reads
   // sw_ai_prefill on load, so we reload the iframe to deliver a fresh prompt.
   function askAI(text){
     text = String(text || "").trim();
     if (text) { try { sessionStorage.setItem("sw_ai_prefill", text); } catch (_) {} asstLoaded = false; asstFrame.innerHTML = ""; }
-    go("assistant");
+    go("assistant"); focusAsst();
   }
 
   // ---------- keyboard & shortcuts ----------

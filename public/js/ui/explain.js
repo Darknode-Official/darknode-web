@@ -112,7 +112,7 @@ export const EXPLAIN = {
   "hdr.workspace": { title: "Workspace", body: "Switch between your personal workspace and any team you belong to. Each workspace has its own security graph; a team's graph is shared with its members." },
   "hdr.search": { title: "Search", body: "Jump to any tool, page or action by typing part of its name. Shortcut: Ctrl K." },
   "hdr.health": { title: "Threat feed status", body: "Green when the live vulnerability feed loaded. If it is down, threat numbers show a dash rather than stale values." },
-  "hdr.assistant": { title: "AI assistant", body: "Open Darknode AI in a side panel without leaving the page you are on." },
+  "hdr.assistant": { title: "AI assistant", body: "Open Darknode AI, ready to type. Back returns you to the page you were on." },
   "hdr.new": { title: "Quick create", body: "Start something new: scan a codebase, map a domain, open an investigation or connect a provider." },
   "hdr.bell": { title: "Notifications", body: "Recent events from your tools and connections. The badge counts what you have not seen." },
   "hdr.account": { title: "Account", body: "Your profile, settings, keyboard shortcuts, density, hover explanations and sign out." },
