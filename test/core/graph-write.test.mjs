@@ -178,3 +178,16 @@ group("mergeToolData: prototype-named tool ids don't corrupt or lose data", () =
     assert.equal(merged.bySource["toString"].risk, "low");
   });
 });
+
+group("security graph: prototype-named ids from sync or import", () => {
+  test("a remote __proto__ / constructor record is refused and lookups keep working", () => {
+    SG.clearAll();
+    const t = new Date().toISOString();
+    assert.equal(SG.applyRemote({ entities: [{ id: "__proto__", type: "ASSET", name: "x", updatedAt: t }, { id: "constructor", type: "ASSET", name: "y", updatedAt: t }] }), 0);
+    assert.equal(SG.findEntity("ASSET", "missing"), null);
+    assert.equal(SG.applyRemote({ relationships: [{ id: "r-proto", fromId: "constructor", toId: "toString", type: "affects", createdAt: t }] }), 0);
+    SG.importEntities([{ id: "__proto__", type: "ASSET", name: "imported" }]);
+    const got = SG.findEntity("ASSET", "imported");
+    assert.ok(got && got.id !== "__proto__");
+  });
+});

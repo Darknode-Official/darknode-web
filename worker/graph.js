@@ -131,7 +131,7 @@ export class GraphDO {
 
   async applyKind(list, prefix, key, state) {
     if (!Array.isArray(list) || !list.length) return 0;
-    const valid = list.slice(0, MAX_PER_PUSH).filter((r) => r && typeof r.id === "string" && r.id && GRAPH_ID.test(r.id));
+    const valid = list.slice(0, MAX_PER_PUSH).filter((r) => r && typeof r.id === "string" && r.id && GRAPH_ID.test(r.id) && !(r.id in Object.prototype));
     // Collapse duplicate ids within one push to the LWW winner, so each record is applied once:
     // otherwise the id would get two "x:" index entries (one orphaned forever) and rev would
     // inflate by the duplicate count for a single effective change.
