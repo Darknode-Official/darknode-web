@@ -1304,6 +1304,7 @@ textarea.dk-kitio{min-height:120px}
 .dk-setrow{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,33,56,.08)}
 .dk-setrow:last-child{border-bottom:0}
 .dk-setrow .m{flex:1;min-width:0}
+.dk-setrow.wrap{flex-wrap:wrap}.dk-setrow.wrap .m{flex:1 1 150px} /* a wide field drops below its label instead of squeezing it to a word per line */
 .dk-setrow .m .t{font-size:13px;font-weight:600;color:#1f2838}
 .dk-setrow .m .s{font-size:12px;color:#6b7589;line-height:1.45;margin-top:2px;overflow-wrap:anywhere}
 .dk-setin{font:inherit;font-size:13px;color:#1a2233;background:rgba(23,33,56,.04);border:1px solid rgba(23,33,56,.16);border-radius:8px;padding:8px 11px;outline:none;min-width:0}
@@ -4026,9 +4027,9 @@ export function renderDeck(host, opts) {
       <div class="dk-setgrid">
         <div class="dk-ovp">
           <h2>${IC.home} Workspace</h2>
-          <div class="dk-setrow">
+          <div class="dk-setrow wrap">
             <div class="m"><div class="t">Workspace name</div><div class="s">Shown in the header, on plans and in exported reports. Leave blank to use your account name.</div></div>
-            <input class="dk-setin" id="dkSetWsName" type="text" maxlength="48" placeholder="Your company or team" value="${esc(wsProfile.name || "")}" autocomplete="off" spellcheck="false" style="width:200px">
+            <input class="dk-setin" id="dkSetWsName" type="text" maxlength="48" placeholder="Your company or team" value="${esc(wsProfile.name || "")}" autocomplete="off" spellcheck="false" style="flex:1 1 160px;max-width:260px">
           </div>
           <div class="dk-setrow">
             <div class="m"><div class="t">Accent colour</div><div class="s">A hex colour for workspace accents. Optional.</div></div>
