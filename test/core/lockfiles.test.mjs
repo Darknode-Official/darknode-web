@@ -61,6 +61,7 @@ group("lockfiles: one parser per format", () => {
     assert.deepEqual(floorVersion("1.x"), { version: "1.0.0", exact: false });
     assert.deepEqual(floorVersion("~2.3.x"), { version: "2.3.0", exact: false });
     assert.deepEqual(floorVersion("~> 1.2"), { version: "1.2", exact: false });
+    assert.deepEqual(parseLockfile("gemfile", "# gem 'old', '1.0'\ngem 'rails', '7.1.0' # gem 'x'\n  gem \"puma\"\n").map((d) => d.name), ["rails", "puma"]);
     const r = parseLockfile("requirements", "requests<2.0\nflask!=2.1\ndjango>=4.2,<5\n");
     assert.deepEqual(r.map((d) => [d.name, d.version]), [["requests", ""], ["flask", ""], ["django", "4.2"]]);
   });

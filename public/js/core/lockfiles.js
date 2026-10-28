@@ -339,7 +339,7 @@ export function parseGemfileLock(text) {
 export function parseGemfile(text) {
   const deps = [];
   linesOf(text).forEach((line, i) => {
-    const m = line.match(/gem\s+['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"])?/);
+    const m = line.match(/^\s*gem\s+['"]([^'"]+)['"]\s*(?:,\s*['"]([^'"]+)['"])?/);
     if (m) { const { version, exact } = floorVersion(m[2] || ""); deps.push({ name: m[1], version, spec: String(m[2] || ""), exact, type: "production", ecosystem: "gem", direct: true, line: i + 1 }); }
   });
   return deps.length ? deps : null;
