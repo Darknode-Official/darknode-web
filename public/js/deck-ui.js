@@ -32,6 +32,7 @@ import * as findings from "/js/core/findings.js?v=20261021a";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261025b";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
+import { readRuns } from "/js/deck/native/ui.js"; // same URL the space tools import
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261018i";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
 // Work-queue scenes load on first visit (about 120 KB the Overview never needs).
@@ -1713,12 +1714,14 @@ export function renderDeck(host, opts) {
     if (!aiConnected) { try { const u = window.dnKeys && window.dnKeys.uid(); aiConnected = !!u && Object.keys(localStorage).some((k) => k.indexOf("dnk:" + u + ":dn_key_") === 0); } catch (_) {} }
     let hasGraph = false;
     try { const ents = Object.values((JSON.parse(localStorage.getItem(storeKeyFor(activeWorkspace()))) || {}).entities || {}); hasGraph = ents.some((e) => !isSimulated(e)); } catch (_) {}
+    // a check run in a space (domain, certificates, links...) is a first scan too: on the Free plan that is where this step sends you
+    if (!hasGraph) hasGraph = readRuns("personal").length > 0 || readRuns("enterprise").length > 0;
     // land ON the thing to do (the field / the first connect button), not just on its page
     const focusIn = (sel) => setTimeout(() => { const el = root.querySelector(sel); if (el && el.offsetParent) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: "center" }); } }, 80);
     return [
       { id: "ws", label: "Name your workspace", sub: "So reports and the header carry your brand", done: !!wsProfile.name, act: () => { go("settings"); focusIn("#dkSetWsName"); } },
       { id: "ai", label: "Connect an AI model or key", sub: "Power triage, runbooks and explanations", done: aiConnected, act: () => { go("con"); focusIn(".dk-intgrp button, .dk-intgrp [role=button]"); } },
-      { id: "scan", label: "Run your first scan", sub: "Map an attack surface or scan code to get a baseline", done: hasGraph, act: () => { if (isLocked("scene:surface")) go("personal"); else { go("surface"); focusIn("#dkSurfIn"); } } },
+      { id: "scan", label: "Run your first scan", sub: isLocked("scene:surface") ? "Check a domain you own to get a baseline" : "Map an attack surface or scan code to get a baseline", done: hasGraph, act: () => { if (isLocked("scene:surface")) openSpaceTool("personal", "domain"); else { go("surface"); focusIn("#dkSurfIn"); } } },
     ];
   }
   async function dismissOnboarding(){
