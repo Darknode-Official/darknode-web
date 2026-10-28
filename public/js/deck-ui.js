@@ -38,7 +38,7 @@ import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js
 // Work-queue scenes load on first visit (about 120 KB the Overview never needs).
 const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => { p = null; throw e; })); };
 const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
-const invMod = lazyMod("/js/deck/inventory.js?v=20261025g");
+const invMod = lazyMod("/js/deck/inventory.js?v=20261027c");
 const corrMod = lazyMod("/js/deck/correlations.js?v=20261027c");
 const monMod = lazyMod("/js/deck/monitors.js?v=20261027c");
 const keysMod = lazyMod("/js/deck/apikeys.js?v=20261027c");
