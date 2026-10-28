@@ -51,8 +51,11 @@ export function readRuns(space) {
 // run = { tool, target, summary, level: "good"|"warn"|"bad", score?, counts?, key? }
 // A re-run replaces the earlier run of the same check: same tool and key (the target when
 // no key is given, so a tool whose target is shared by different checks passes a key).
+const LIST_TOOLS = new Set(["certs", "portfolio"]);
 export function recordRun(space, run) {
-  const k = (r) => r.key || r.target;
+  // certs and portfolio check the whole saved list ("5 domains"): the newest run replaces the
+  // last whatever the count, or a fixed list kept its old "bad" run on the home screen
+  const k = (r) => (LIST_TOOLS.has(r.tool) ? "" : r.key || r.target);
   const list = readRuns(space).filter((r) => !(r.tool === run.tool && k(r) === k(run)));
   list.unshift({ ...run, at: Date.now() });
   try { localStorage.setItem(HKEY(space), JSON.stringify(list.slice(0, HMAX))); } catch (_) {}
