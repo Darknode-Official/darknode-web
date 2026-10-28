@@ -6,6 +6,7 @@
 // mapped to them, with counts and severity. This reports only what the findings themselves
 // assert — it does not reproduce any framework catalogue or guess coverage of controls that
 // no finding mentions, so it stays honest and license-clean.
+import { cleanTitle } from "./queue-format.js";
 const str = (v) => String(v == null ? "" : v).trim();
 const OPEN = new Set(["new", "open", "investigating"]);
 const SEV = ["critical", "high", "medium", "low", "info"];
@@ -36,7 +37,7 @@ export function frameworkMap(entities) {
       if (!fw.has(label)) fw.set(label, new Map());
       const ctrls = fw.get(label);
       if (!ctrls.has(id)) ctrls.set(id, []);
-      ctrls.get(id).push({ id: e.id, name: str(e.name), severity: sevOf(e) });
+      ctrls.get(id).push({ id: e.id, name: cleanTitle(e), severity: sevOf(e) });
     }
   }
 
