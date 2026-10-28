@@ -206,10 +206,20 @@ function toolIcon(label, group){
 
 function loadConns(){ try { return JSON.parse(localStorage.getItem(LS_CONN) || "{}") || {}; } catch (_) { return {}; } }
 function saveConns(c){ try { localStorage.setItem(LS_CONN, JSON.stringify(c)); } catch (_) {} }
-function loadPins(){ try { const v = JSON.parse(localStorage.getItem(LS_PINS) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
-function savePins(p){ try { localStorage.setItem(LS_PINS, JSON.stringify(p)); } catch (_) {} }
-function loadNotes(){ try { return localStorage.getItem(LS_NOTES) || ""; } catch (_) { return ""; } }
-function saveNotes(t){ try { localStorage.setItem(LS_NOTES, t); } catch (_) {} }
+// Notes and pins are per account: localStorage is shared by every account on this browser.
+// Same rule as the native spaces (deck/native/ui.js): pre-existing data moves to the first
+// signed-in account once; guests and Test Mode (per-session uid) keep the plain key.
+function userKey(plain){
+  let u = null; try { u = window.__dnUid || null; } catch (_) {}
+  if (!u || /^(test|app-guest)-/.test(u)) return plain;
+  const k = plain + "_u_" + u;
+  try { if (localStorage.getItem(k) == null) { const old = localStorage.getItem(plain); if (old != null) { localStorage.setItem(k, old); localStorage.removeItem(plain); } } } catch (_) {}
+  return k;
+}
+function loadPins(){ try { const v = JSON.parse(localStorage.getItem(userKey(LS_PINS)) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
+function savePins(p){ try { localStorage.setItem(userKey(LS_PINS), JSON.stringify(p)); } catch (_) {} }
+function loadNotes(){ try { return localStorage.getItem(userKey(LS_NOTES)) || ""; } catch (_) { return ""; } }
+function saveNotes(t){ try { localStorage.setItem(userKey(LS_NOTES), t); } catch (_) {} }
 
 // ---- top-bar + workspace icons (kept tiny, stroked, on-theme) ----
 const IC = {
