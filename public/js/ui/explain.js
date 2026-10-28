@@ -112,8 +112,8 @@ export const EXPLAIN = {
   "hdr.workspace": { title: "Workspace", body: "Switch between your personal workspace and any team you belong to. Each workspace has its own security graph; a team's graph is shared with its members." },
   "hdr.search": { title: "Search", body: "Jump to any tool, page or action by typing part of its name. Shortcut: Ctrl K." },
   "hdr.health": { title: "Threat feed status", body: "Green when the live vulnerability feed loaded. If it is down, threat numbers show a dash rather than stale values." },
-  "hdr.assistant": { title: "AI assistant", body: "Open Darknode AI in a side panel without leaving the page you are on." },
-  "hdr.new": { title: "Quick create", body: "Start something new: scan a codebase, map a domain, open an investigation or connect a provider." },
+  "hdr.assistant": { title: "AI assistant", body: "Open Darknode AI, ready to type. Back returns you to the page you were on." },
+  "hdr.new": { title: "Quick create", body: "Start something new: ask Darknode AI or connect a provider, and on plans that include them, open an investigation or the security graph." },
   "hdr.bell": { title: "Notifications", body: "Recent events from your tools and connections. The badge counts what you have not seen." },
   "hdr.account": { title: "Account", body: "Your profile, settings, keyboard shortcuts, density, hover explanations and sign out." },
 
@@ -123,7 +123,7 @@ export const EXPLAIN = {
   "panel.integrations": { title: "Integrations", body: "How many of the available providers you have connected, and which ones." },
   "panel.activity": { title: "Recent activity", body: "The latest events in this workspace. Entries marked Sample came from simulations or demos and do not affect your metrics." },
   "panel.quick": { title: "Quick actions", body: "Common starting points. Each opens the real tool." },
-  "panel.threat": { title: "Threat level", body: "How many of the 30 most recent CVEs are critical or high, split by severity.", src: "NVD, fetched live." },
+  "panel.threat": { title: "Threat level", body: "How many of the 40 most recent CVEs are critical or high, split by severity. CVEs NVD has not scored yet are shown as Unscored, not counted as low.", src: "NVD, fetched live." },
   "panel.notes": { title: "Notes", body: "A scratchpad for IPs, hypotheses and to-dos. Saved in this browser only." },
 
   "panel.actions": { title: "Top actions", body: "The most important things to do next, ranked: open critical findings, known-exploited CVEs published this week, open high findings, critical CVEs, then gaps in your connected sources.", src: "Your security graph (sample data excluded), NVD and CISA KEV, fetched live." },

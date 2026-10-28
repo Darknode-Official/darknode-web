@@ -128,9 +128,14 @@ async function openTab(st, { tab, target }) {
   await st.show(tab);
   const api = st.api[tab];
   if (target && api && typeof api.run === "function") api.run(target);
+  else { // land in the tool's first field, ready to type
+    const pane = st.el && st.el.querySelector(`[data-pane="${st.cur}"]`);
+    const f = pane && [...pane.querySelectorAll("input, textarea")].find((x) => !x.disabled && x.offsetParent && /^(text|url|search|email|)$/.test(x.type === "textarea" ? "" : x.getAttribute("type") || ""));
+    if (f) f.focus({ preventScroll: true });
+  }
 }
 
-// Mount (once) or refresh a space into `el`. ctx: { confirm(msg) -> Promise<bool> }.
+// Mount (once) or refresh a space into `el`. ctx: { confirm(msg) -> Promise<bool>, onTab(tab) }.
 export function mountSpace(el, id, ctx = {}) {
   const S = SPACES[id]; if (!S) return;
   injectStyle();
@@ -140,11 +145,12 @@ export function mountSpace(el, id, ctx = {}) {
       <div class="ns-hero" style="--ns-hero:${S.hero}"><div class="k">${esc(S.kicker)}</div><h1>${esc(S.title)}</h1><p>${esc(S.blurb)}</p></div>
       <nav class="ns-tabs" role="tablist">${S.tabs.map((t) => `<button class="ns-tab" role="tab" data-tab="${t.id}">${esc(t.label)}</button>`).join("")}</nav>
       ${S.tabs.map((t) => `<section data-pane="${t.id}" hidden></section>`).join("")}</div>`;
-    const st = { cur: "home", mounted: new Set(), api: {} };
+    const st = { cur: "home", mounted: new Set(), api: {}, el };
     el._ns = st;
     const show = async (tab) => {
       const t = S.tabs.find((x) => x.id === tab) || S.tabs[0];
       st.cur = t.id; try { localStorage.setItem(LS, t.id); } catch (_) {}
+      if (ctx.onTab) ctx.onTab(t.id); // the host keeps the address bar on this tab
       el.querySelectorAll(".ns-tab").forEach((b) => { const on = b.dataset.tab === t.id; b.classList.toggle("on", on); b.setAttribute("aria-selected", String(on)); });
       el.querySelectorAll("[data-pane]").forEach((p) => { p.hidden = p.dataset.pane !== t.id; });
       const pane = el.querySelector(`[data-pane="${t.id}"]`);
@@ -174,4 +180,5 @@ export function mountSpace(el, id, ctx = {}) {
   }
   if (ctx.open) openTab(el._ns, ctx.open);
   else if (el._ns.cur === "home") el._ns.show("home");
+  else if (ctx.onTab) ctx.onTab(el._ns.cur);
 }

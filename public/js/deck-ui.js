@@ -29,9 +29,10 @@ import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel, TIERS } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261021a";
-import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261025b";
+import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261027b";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
+import { readRuns } from "/js/deck/native/ui.js"; // same URL the space tools import
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261018i";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
 // Work-queue scenes load on first visit (about 120 KB the Overview never needs).
@@ -51,6 +52,8 @@ import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261025
 import { makeMessage as makeBridge, parseMessage as parseBridge, MSG as BMSG } from "/js/core/tool-bridge.js?v=20261018g";
 
 const LS_CONN = "dn_deck_connections_v1";
+// AI providers whose key the AI Assistant (webai.js) uses, calling the provider directly from the browser.
+const AI_DIRECT = new Set(["claude", "openai", "groq", "openrouter", "mistral", "perplexity", "deepseek", "together", "xai", "cohere", "fireworks", "cerebras"]);
 const LS_SCENE = "dn_deck_scene";          // last workspace selected
 const LS_NOTIF_SEEN = "dn_deck_notif_seen"; // ts of the last notification they read
 const LS_PINS = "dn_deck_pins_v1";          // user-pinned tools (sec ids) shown on the overview
@@ -255,7 +258,7 @@ const IC = {
 };
 
 // Platform severity palette (same thresholds the Threat Feed uses).
-const SEV = { CRITICAL:{label:"Critical",color:"#f0484a"}, HIGH:{label:"High",color:"#ff7a2f"}, MEDIUM:{label:"Medium",color:"#b7791f"}, LOW:{label:"Low",color:"#12a85f"} };
+const SEV = { CRITICAL:{label:"Critical",color:"#f0484a"}, HIGH:{label:"High",color:"#ff7a2f"}, MEDIUM:{label:"Medium",color:"#b7791f"}, LOW:{label:"Low",color:"#12a85f"}, NONE:{label:"Unscored",color:"#8a93a6"} }; // NONE: NVD has not scored it yet (not "Low")
 
 // ===================== built-in Toolkit (instant, client-side, private) =====================
 // Every tool is a pure function of (input, opts). Nothing leaves the browser — ideal for a
@@ -414,10 +417,10 @@ function _mapCVE(v){
   const score = pick && pick.cvssData ? pick.cvssData.baseScore : null;
   const d = ((cve.descriptions || []).find((x) => x.lang === "en") || {}).value || "";
   const first = (d.split(/(?<=\.)\s/)[0] || d);
-  return { id: cve.id, cvss: score, severity: score == null ? "LOW" : sevOf(score), title: first.length > 150 ? first.slice(0, 147) + "…" : first, date: String(cve.published || "").slice(0, 10) };
+  return { id: cve.id, cvss: score, severity: score == null ? "NONE" : sevOf(score), title: first.length > 150 ? first.slice(0, 147) + "…" : first, date: String(cve.published || "").slice(0, 10) };
 }
-async function fetchIntel(n){
-  n = n || 30;
+async function fetchIntel(){
+  const n = 40; // one sample for every view: the cache kept whichever size was asked first (30 or 40), so the overview and Threats page disagreed by visit order
   if (_cveCache && Date.now() - _cveAt < 600000) return _cveCache;  // 10-min cache
   if (_cvePromise) return _cvePromise;
   _cvePromise = (async () => {
@@ -1303,6 +1306,7 @@ textarea.dk-kitio{min-height:120px}
 .dk-setrow{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(23,33,56,.08)}
 .dk-setrow:last-child{border-bottom:0}
 .dk-setrow .m{flex:1;min-width:0}
+.dk-setrow.wrap{flex-wrap:wrap}.dk-setrow.wrap .m{flex:1 1 150px} /* a wide field drops below its label instead of squeezing it to a word per line */
 .dk-setrow .m .t{font-size:13px;font-weight:600;color:#1f2838}
 .dk-setrow .m .s{font-size:12px;color:#6b7589;line-height:1.45;margin-top:2px;overflow-wrap:anywhere}
 .dk-setin{font:inherit;font-size:13px;color:#1a2233;background:rgba(23,33,56,.04);border:1px solid rgba(23,33,56,.16);border-radius:8px;padding:8px 11px;outline:none;min-width:0}
@@ -1668,10 +1672,10 @@ export function renderDeck(host, opts) {
   if (opts.isOwner) { try { const p = localStorage.getItem(LS_PREVIEW); if (TIERS.includes(p)) planTier = p; } catch (_) {} }
   const PLAN_GROUP = { exposure: "pro", code: "pro", identity: "team", detect: "team", finsec: "team", risk: "enterprise", compliance: "enterprise" };
   const PLAN_ITEM = { enterprise: "team", findings: "pro", inventory: "pro", reports: "pro", activity: "pro", monitors: "pro", phishtriage: "pro", dlp: "pro", leakprobe: "pro", team: "team" };
-  const needTier = {};
+  const needTier = {}, navName = {}; // navName keeps the names of entries the plan hides
   for (const grp of NAV_DEF) {
-    if (grp.id) needTier["section:" + grp.id] = PLAN_GROUP[grp.id] || "free";
-    for (const [kind, id] of grp.items) if (id !== "admin") needTier[kind + ":" + id] = PLAN_ITEM[id] || PLAN_GROUP[grp.id] || "free";
+    if (grp.id) { needTier["section:" + grp.id] = PLAN_GROUP[grp.id] || "free"; navName["section:" + grp.id] = grp.g; }
+    for (const [kind, id, label] of grp.items) { navName[kind + ":" + id] = label; if (id !== "admin") needTier[kind + ":" + id] = PLAN_ITEM[id] || PLAN_GROUP[grp.id] || "free"; }
   }
   const isLocked = (key) => rank(planTier) < rank(needTier[key] || "free");
   for (let i = NAV_DEF.length - 1; i >= 0; i--) {
@@ -1713,12 +1717,14 @@ export function renderDeck(host, opts) {
     if (!aiConnected) { try { const u = window.dnKeys && window.dnKeys.uid(); aiConnected = !!u && Object.keys(localStorage).some((k) => k.indexOf("dnk:" + u + ":dn_key_") === 0); } catch (_) {} }
     let hasGraph = false;
     try { const ents = Object.values((JSON.parse(localStorage.getItem(storeKeyFor(activeWorkspace()))) || {}).entities || {}); hasGraph = ents.some((e) => !isSimulated(e)); } catch (_) {}
+    // a check run in a space (domain, certificates, links...) is a first scan too: on the Free plan that is where this step sends you
+    if (!hasGraph) hasGraph = readRuns("personal").length > 0 || readRuns("enterprise").length > 0;
     // land ON the thing to do (the field / the first connect button), not just on its page
     const focusIn = (sel) => setTimeout(() => { const el = root.querySelector(sel); if (el && el.offsetParent) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: "center" }); } }, 80);
     return [
       { id: "ws", label: "Name your workspace", sub: "So reports and the header carry your brand", done: !!wsProfile.name, act: () => { go("settings"); focusIn("#dkSetWsName"); } },
       { id: "ai", label: "Connect an AI model or key", sub: "Power triage, runbooks and explanations", done: aiConnected, act: () => { go("con"); focusIn(".dk-intgrp button, .dk-intgrp [role=button]"); } },
-      { id: "scan", label: "Run your first scan", sub: "Map an attack surface or scan code to get a baseline", done: hasGraph, act: () => { if (isLocked("scene:surface")) go("personal"); else { go("surface"); focusIn("#dkSurfIn"); } } },
+      { id: "scan", label: "Run your first scan", sub: isLocked("scene:surface") ? "Check a domain you own to get a baseline" : "Map an attack surface or scan code to get a baseline", done: hasGraph, act: () => { if (isLocked("scene:surface")) openSpaceTool("personal", "domain"); else { go("surface"); focusIn("#dkSurfIn"); } } },
     ];
   }
   async function dismissOnboarding(){
@@ -1733,9 +1739,36 @@ export function renderDeck(host, opts) {
     return wsProfile;
   }
 
+  // Search terms a tool's name does not carry ("dns" should find Subdomain Enum and Email Auth,
+  // "ssl" the certificate tools). Used by the palette and the Tool Library search.
+  const TOOL_KW = {
+    subdomains: "dns subdomain attack surface", emailauth: "dns spf dkim dmarc email spoofing", dmarcreports: "dns dmarc email spf dkim aggregate rua",
+    domainguard: "dns typosquat lookalike domain phishing", dnshunt: "dns tunneling dga queries", dns: "records mx txt dnssec zone transfer",
+    addressintel: "ip geolocation whois", asnexplorer: "ip bgp network whois", techfingerprint: "stack framework cms",
+    sslinspector: "tls ssl certificate https", tlsfleet: "tls ssl certificate expiry https", headeranalyzer: "http security headers hsts csp",
+    cspevaluator: "content security policy xss headers", cookieinspect: "http cookie samesite secure httponly", corstester: "http origin cross-origin",
+    networkscanner: "port scan services", netexposure: "port scan nmap exposure diff", networktools: "ping traceroute whois ip",
+    firewall: "acl rules iptables", fwaudit: "acl rules firewall audit", packetanalyzer: "hex packet decode ethernet tcp ip protocol",
+    cvesearch: "vulnerability nvd cve", vulndb: "vulnerability cve nvd kev", cvetimeline: "vulnerability cve", cvsscalc: "vulnerability severity score",
+    vulnimport: "vulnerability scanner nessus qualys import", exploitdb: "exploit poc vulnerability",
+    breachlookup: "breach leaked password email pwned", credaudit: "password credential", leakprobe: "secret api key token leak",
+    codescan: "sast code vulnerability static analysis secrets", supplychain: "sbom dependency npm package sca", iacscan: "terraform cloudformation infrastructure as code",
+    k8saudit: "kubernetes k8s container cluster", licenseaudit: "license open source dependency", apispec: "openapi swagger api",
+    signins: "login sign-in identity azure entra okta google workspace", accessreview: "identity user access recertification hr roster okta entra sox", caaudit: "identity conditional access entra azure",
+    privaudit: "identity admin privileged", nhi: "identity service account api key machine", jml: "identity offboarding leaver",
+    oauthgov: "identity oauth consent app", vpnaudit: "vpn remote access", phishtriage: "phishing url email link",
+    emailheader: "email headers phishing spoofing received", loghunt: "logs syslog ssh brute force detection", cloudtrail: "aws cloud logs audit",
+    proxyhunt: "proxy web gateway logs", loganalyze: "logs detection", sigma: "detection rule siem", yarabuilder: "malware detection rule",
+    iocenrich: "ioc indicator ip domain hash threat intel", binanalyze: "malware binary pe elf", memforensics: "memory dump volatility",
+    hashsuite: "hash md5 sha256", cryptotools: "encryption cipher", encoding: "base64 url hex decode",
+    incidents: "incident response ir", investigation: "case investigation", pentestreg: "findings pentest remediation",
+    riskreg: "risk register", vendorrisk: "vendor third-party supplier risk", backupready: "backup ransomware recovery",
+    compliance: "soc2 iso 27001 nist pci hipaa audit", fedcompliance: "fedramp nist 800-53 cmmc", evidence: "compliance audit evidence soc2",
+    dlp: "data loss pii sensitive data", posture: "security score posture", securitytxt: "vulnerability disclosure rfc 9116",
+  };
   // flat index for spotlight: tools + integrations
   const index = [];
-  for (const g of groups) for (const it of g.items) index.push({ type: "tool", sec: it.sec, label: it.label, group: g.name, color: g.color, badge: it.badge });
+  for (const g of groups) for (const it of g.items) index.push({ type: "tool", sec: it.sec, label: it.label, group: g.name, color: g.color, badge: it.badge, kw: TOOL_KW[it.sec] || "" });
   for (const it of INTEGRATIONS) index.push({ type: "conn", id: it.id, label: it.name, group: it.kind === "ai" ? "AI model" : "Security", it });
 
   let conns = loadConns();
@@ -1841,7 +1874,7 @@ export function renderDeck(host, opts) {
       <div class="dk-wframe" id="dkWFrame"></div>
     </div>
 
-    <aside class="dk-drawer" id="dkDrawer"><span class="x" id="dkDrawerX" role="button" tabindex="0" aria-label="Close">&times;</span><div id="dkDrawerBody"></div></aside>
+    <aside class="dk-drawer" id="dkDrawer" role="dialog" aria-label="Details"><span class="x" id="dkDrawerX" role="button" tabindex="0" aria-label="Close">&times;</span><div id="dkDrawerBody"></div></aside>
 
     <div class="dk-spot" id="dkSpot" role="dialog" aria-modal="true" aria-label="Search and commands">
       <div class="dk-sbox">
@@ -1879,16 +1912,23 @@ export function renderDeck(host, opts) {
     if (!sec) return false;
     const i = pins.indexOf(sec);
     if (i >= 0) pins.splice(i, 1); else pins.unshift(sec);
-    if (pins.length > 12) pins.length = 12;
+    if (pins.length > 12) { const drop = pins.pop(); pins.length = 12; toast((secLabel[drop] || drop) + " was unpinned - the overview holds 12 pins"); }
     savePins(pins);
     if (curScene === "overview") renderPins();   // keep the overview widget in sync
     buildSideNav();
+    syncPinBtns();
     return pins.includes(sec);
+  }
+  // Every pin star shows the saved pins: a tool pinned from its header, from the palette, or
+  // dropped by the 12-pin cap must not keep a stale star in the Tool Library (built once).
+  function syncPinBtns(){
+    root.querySelectorAll(".dk-gcpin[data-pin], .dk-srpin[data-pin]").forEach((b) => { const on = pins.includes(b.dataset.pin); b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    const wp = $("#dkWPin"); if (wp && curSec) { wp.classList.toggle("pinned", pins.includes(curSec)); wp.setAttribute("aria-pressed", pins.includes(curSec)); }
   }
   let curScene = "overview";
   // Every Deck page has a darknode.ai link and the address bar follows what is showing:
   // an open tool is /<sec>, a page is /<scene> (the overview is /, a section is
-  // /area/<id>). compliance and tools are also tool ids, so those pages take another
+  // /area/<id>, a Personal/Organization tab is /personal/<tab>). compliance and tools are also tool ids, so those pages take another
   // name. Navigating adds a history entry; boot and back/forward only replace it.
   const SCENE_PATH = { overview: "", compliance: "compliance-center", tools: "all-tools", con: "connections", invest: "investigations" };
   const scenePath = (scene, sect) => "/" + (scene === "section" ? "area/" + sect : scene in SCENE_PATH ? SCENE_PATH[scene] : scene);
@@ -1898,13 +1938,16 @@ export function renderDeck(host, opts) {
     if (!raw) return { scene: "overview" };
     const m = raw.match(/^area\/(\w+)$/);
     if (m) return SECTIONS[m[1]] ? { scene: "section", arg: m[1] } : null;
+    const sp = raw.match(/^(personal|enterprise)\/([\w-]+)$/);
+    if (sp) return { scene: sp[1], arg: { tab: sp[2] } };
     for (const k in SCENES) if (k !== "section" && (k in SCENE_PATH ? SCENE_PATH[k] : k) === raw) return { scene: k };
     return null;
   }
   let routing = true;
-  function syncUrl(path){
+  function syncUrl(path, replace){
     if (!primary) return;
-    try { if (location.pathname !== path) history[routing ? "replaceState" : "pushState"](routing ? history.state : null, "", path + location.search); } catch (_) {}
+    const rep = routing || replace;
+    try { if (location.pathname !== path) history[rep ? "replaceState" : "pushState"](rep ? history.state : null, "", path + location.search); } catch (_) {}
   }
   // Shortcuts into tools/scenes above the plan are removed, not left as dead buttons
   // (go()/openTool() refuse them); same rule as the sidebar: hidden, never badged.
@@ -1949,7 +1992,9 @@ export function renderDeck(host, opts) {
   }
   // Native spaces; `open` = { tab, target } jumps straight to a tool (and runs it on target).
   function mountSpaceScene(id, open){
-    import("/js/deck/spaces.js?v=20261026b").then((m) => m.mountSpace(sceneEls[id], id, { open: open && open.tab ? open : null, openTool: (sec, label) => openTool(sec, label), confirm: (msg) => (window.dnConfirm ? window.dnConfirm(msg) : Promise.resolve(true)) })).catch(() => toast("Could not load this space"));
+    import("/js/deck/spaces.js?v=20261027b").then((m) => m.mountSpace(sceneEls[id], id, { open: open && open.tab ? open : null, openTool: (sec, label) => openTool(sec, label),
+      // a tab change replaces the page's link (/personal/<tab>); only while this space is what's showing
+      onTab: (tab) => { if (curScene === id && sceneWork.hidden) syncUrl(scenePath(id) + (tab && tab !== "home" ? "/" + tab : ""), true); }, confirm: (msg) => (window.dnConfirm ? window.dnConfirm(msg) : Promise.resolve(true)) })).catch(() => toast("Could not load this space"));
   }
   function openSpaceTool(id, tab, target){ go(id, { tab, target }); }
   // Any element carrying data-scene (KPI cards, "view all" links, quick actions)
@@ -1986,6 +2031,7 @@ export function renderDeck(host, opts) {
   function showDrawer(){
     if (!drawer.classList.contains("on")) drawerOpener = document.activeElement;
     drawer.classList.add("on");
+    const h = drawerBody.querySelector("h3"); drawer.setAttribute("aria-label", h ? h.textContent.trim() : "Details"); // what a screen reader announces
     setTimeout(() => { if (drawer.classList.contains("on") && !drawer.contains(document.activeElement)) $("#dkDrawerX").focus({ preventScroll: true }); }, 0);
   }
   function closeDrawer(){
@@ -2035,14 +2081,20 @@ export function renderDeck(host, opts) {
     const secKeyNote = isLiveInt(it)
       ? "Your key is stored only in this browser (localStorage). Darknode's IOC enrichment uses it directly when you analyze indicators."
       : "Your key is stored only in this browser (localStorage). No Darknode feature consumes this provider yet — connecting keeps it ready for when a tool supports it.";
+    // AI keys: the assistant calls these providers straight from the browser (webai.js OAI_COMPAT +
+    // Claude) - the old note said calls went "through its own proxy", and promised a use for Gemini
+    // (Darknode AI uses Darknode's own Gemini access) and Hugging Face keys that nothing reads.
+    const aiKeyNote = AI_DIRECT.has(it.id)
+      ? `Your key is stored only in this browser, under your account. When you pick a ${esc(it.name)} model in the AI Assistant, the request goes straight from your browser to ${esc(it.name)} - Darknode's servers never see the key.`
+      : `Your key is stored only in this browser, under your account. Nothing in Darknode uses a ${esc(it.name)} key yet${it.id === "gemini" ? " (the assistant's Darknode AI model is Gemini, free through Darknode's own access)" : ""} - connecting keeps it ready.`;
     const note = keyForm
-      ? (it.kind === "sec" ? secKeyNote : "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy.")
+      ? (it.kind === "sec" ? secKeyNote : aiKeyNote)
       : oauthProv
       ? "Connect signs you in to OpenRouter and creates a key tied to YOUR OpenRouter account — one login reaches Claude, GPT, Gemini, Llama and more. Calls spend your OpenRouter credits; the default model here is free, so it can cost nothing. No provider lets another site charge your Claude/ChatGPT subscription — this is the honest, lowest-cost alternative."
       : it.account
         ? `Darknode runs ${esc(it.name)} with your own API key — add one above. No provider lets another site bill your existing ${esc(it.name)} subscription, so the "Open to sign in" button only opens ${esc(it.name)}; it can't grant API access on its own. Tip: connect OpenRouter once to reach ${esc(it.name)}, GPT, Gemini and more through a single login.`
         : it.connect === "key"
-          ? (it.kind === "sec" ? secKeyNote : "Your key is stored only in this browser (localStorage) and never leaves your device from here. Darknode routes calls through its own proxy.")
+          ? (it.kind === "sec" ? secKeyNote : aiKeyNote)
           : "Linking records this service as available to Darknode. No credentials are stored.";
     const mlist = it.kind === "ai" && MODELS[it.id] ? MODELS[it.id] : null;
     let curModel = "";
@@ -2239,8 +2291,8 @@ export function renderDeck(host, opts) {
         </nav>
         <div class="dk-tmain" id="dkToolMain">
           ${groups.map((g) => { const h = hexOf(g.color); return `<section class="dk-tsec" data-g="${g.id}"><div class="th" style="--fg:${h}"><span class="d"></span><h3>${esc(g.name)}</h3><span class="c">${g.items.length} tools</span></div>
-            <div class="dk-grid dkx">${g.items.map((it) => `<div class="dk-gcard" role="button" tabindex="0" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name).toLowerCase())}" style="--a:${h}">
-              <button class="dk-gcpin${pins.includes(it.sec) ? " on" : ""}" data-pin="${esc(it.sec)}" data-explain="btn.pin" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>
+            <div class="dk-grid dkx">${g.items.map((it) => `<div class="dk-gcard" role="button" tabindex="0" data-sec="${esc(it.sec)}" data-label="${esc(it.label)}" data-txt="${esc((it.label + " " + g.name + " " + (TOOL_KW[it.sec] || "")).toLowerCase())}" style="--a:${h}">
+              <button class="dk-gcpin${pins.includes(it.sec) ? " on" : ""}" data-pin="${esc(it.sec)}" data-explain="btn.pin" title="Pin to overview" aria-label="Pin to overview" aria-pressed="${pins.includes(it.sec)}">${IC.star}</button>
               <span class="gi">${toolIcon(it.label, g.name)}</span>${it.badge === "live" ? '<span class="glive" data-explain="badge.live" title="Live data"></span>' : ""}
               <span class="gt">${esc(it.label)}</span><span class="garr">Open${IC_CHEV}</span></div>`).join("")}</div></section>`; }).join("")}
           <div class="dk-tnone" id="dkToolNone" hidden>No tools match your search.</div>
@@ -2252,8 +2304,7 @@ export function renderDeck(host, opts) {
     });
     sceneTools.querySelectorAll(".dk-gcpin").forEach((b) => b.onclick = (e) => {
       e.stopPropagation();
-      const on = togglePin(b.dataset.pin);
-      b.classList.toggle("on", on);
+      togglePin(b.dataset.pin);
     });
     sceneTools.querySelectorAll("#dkToolNav .dk-tcat").forEach((b) => b.onclick = () => {
       if (b.dataset.cat === "__toolkit") { go("toolkit"); return; }   // instant utilities live in their own scene
@@ -2272,7 +2323,7 @@ export function renderDeck(host, opts) {
       const inCat = !!q || toolCat === "all" || sec.dataset.g === toolCat;
       let any = false;
       sec.querySelectorAll(".dk-gcard").forEach((c) => {
-        const hit = inCat && (!q || c.dataset.txt.includes(q));
+        const hit = inCat && (!q || q.split(/\s+/).every((w) => c.dataset.txt.includes(w)));
         c.style.display = hit ? "" : "none";
         if (hit) { any = true; shown++; }
       });
@@ -2335,7 +2386,7 @@ export function renderDeck(host, opts) {
     if (f.dataset.ready) wLoad.remove();
     else { wLoad.innerHTML = '<div><div class="sp"></div>Loading ' + esc(label) + '…</div>'; wFrame.appendChild(wLoad); }
     wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + toolIcon(label) + '</span><span class="wt">' + esc(label) + '</span>';
-    const pinBtn = $("#dkWPin"); if (pinBtn) pinBtn.classList.toggle("pinned", pins.includes(sec));
+    const pinBtn = $("#dkWPin"); if (pinBtn) { pinBtn.classList.toggle("pinned", pins.includes(sec)); pinBtn.setAttribute("aria-pressed", pins.includes(sec)); }
     drawer.classList.remove("on"); closeAllMenus();
     setNav("tool:" + sec, label);
     for (const k in sceneEls) sceneEls[k].hidden = true;
@@ -2354,7 +2405,7 @@ export function renderDeck(host, opts) {
   $("#dkWBack").onclick = closeTool;
   $("#dkWFull").onclick = () => { const s = curSec; if (primary) { window.open("/" + s, "_blank", "noopener"); return; } teardown(); onOpen(s); };
   if (primary) { $("#dkWFull").hidden = true; $("#dkBrand").title = "Home"; $("#dkAsstFull").textContent = "Open in new tab"; }
-  $("#dkWPin").onclick = () => { if (!curSec) return; const on = togglePin(curSec); $("#dkWPin").classList.toggle("pinned", on); toast(on ? "Pinned to overview" : "Unpinned"); };
+  $("#dkWPin").onclick = () => { if (!curSec) return; const on = togglePin(curSec); toast(on ? "Pinned to overview" : "Unpinned"); };
   $("#dkWCopy").onclick = async () => { if (!curSec) return; try { await navigator.clipboard.writeText(location.origin + "/" + curSec); toast("Tool link copied"); } catch (_) { toast("Copy failed", "error"); } };
   $("#dkWTab").onclick = () => { if (curSec) window.open("/" + curSec, "_blank", "noopener"); };
 
@@ -2467,15 +2518,15 @@ export function renderDeck(host, opts) {
     const graphHits = q ? graphIndex.filter((g) => g.label.toLowerCase().includes(q)).slice(0, 40) : [];
     matches = typed.concat(base, graphHits).slice(0, 100);
     selIdx = 0;
-    spotRes.innerHTML = matches.length ? matches.map((m, i) => `<div class="dk-sr${i===0?" sel":""}" data-i="${i}">${spotIcon(m)}<span class="l">${esc(m.label)}</span><span class="g">${esc(m.group||"")}</span>${m.type === "tool" ? `<button class="dk-srpin${pins.includes(m.sec) ? " on" : ""}" data-pin="${esc(m.sec)}" title="Pin to overview" aria-label="Pin to overview">${IC.star}</button>` : ""}</div>`).join("")
+    spotRes.innerHTML = matches.length ? matches.map((m, i) => `<div class="dk-sr${i===0?" sel":""}" data-i="${i}">${spotIcon(m)}<span class="l">${esc(m.label)}</span><span class="g">${esc(m.group||"")}</span>${m.type === "tool" ? `<button class="dk-srpin${pins.includes(m.sec) ? " on" : ""}" data-pin="${esc(m.sec)}" title="Pin to overview" aria-label="Pin to overview" aria-pressed="${pins.includes(m.sec)}">${IC.star}</button>` : ""}</div>`).join("")
       : `<div class="dk-empty">Nothing matches "${esc(q)}"</div>`;
     spotRes.querySelectorAll(".dk-sr").forEach((r) => r.onclick = (e) => { if (e.target.closest(".dk-srpin")) return; chooseSpot(+r.dataset.i); });
-    spotRes.querySelectorAll(".dk-srpin").forEach((b) => b.onclick = (e) => { e.stopPropagation(); b.classList.toggle("on", togglePin(b.dataset.pin)); });
+    spotRes.querySelectorAll(".dk-srpin").forEach((b) => b.onclick = (e) => { e.stopPropagation(); togglePin(b.dataset.pin); });
   }
   function chooseSpot(i){ const m = matches[i]; if (!m) return; if (m.type === "action") { closeSpot(); try { m.run(); } catch (_) {} } else if (m.type === "conn") { closeSpot(); go("con"); openDrawer(m.it); } else if (m.type === "entity") { closeSpot(); try { openEntityDrawer(m.id); } catch (_) {} } else { closeSpot(); openTool(m.sec, m.label); } }
   function moveSel(d){ if (!matches.length) return; selIdx = (selIdx + d + matches.length) % matches.length; spotRes.querySelectorAll(".dk-sr").forEach((r, i) => r.classList.toggle("sel", i === selIdx)); spotRes.querySelector(".dk-sr.sel")?.scrollIntoView({ block: "nearest" }); }
   $("#dkFindBtn").onclick = openSpot; $("#dkHSearch").onclick = openSpot; spotIn.oninput = () => runSpot(spotIn.value);
-  $("#dkAsstBtn").onclick = () => go("assistant");
+  $("#dkAsstBtn").onclick = () => { go("assistant"); focusAsst(); };
   spot.addEventListener("click", (e) => { if (e.target === spot) closeSpot(true); });
 
   // ---------- command-center chrome: status, quick-create, notifications, account ----------
@@ -3027,21 +3078,21 @@ export function renderDeck(host, opts) {
       sig.kevTotal = k.total || 0; recomputeExposure();
     }).catch(() => { const kn = el.querySelector('[data-k="kev"] .kn'); if (kn) kn.textContent = "—"; });
     // async: live threat level + CVE KPI
-    fetchIntel(30).then((d) => {
+    fetchIntel().then((d) => {
       setHealth(true, "Threat feed live");
       sysSet("feed", "", "Live");
       const kn = el.querySelector('[data-k="cve"] .kn'); if (kn) kn.textContent = (d.total || 0).toLocaleString();
-      const c = d.counts || {}, order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
-      const sum = order.reduce((n, k) => n + (c[k] || 0), 0) || 1;
+      const c = d.counts || {}, order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].concat(c.NONE ? ["NONE"] : []);
+      const sum = order.reduce((n, k) => n + (k === "NONE" ? 0 : c[k] || 0), 0) || 1; // the share of SCORED CVEs; unscored ones are not "low"
       const hot = (c.CRITICAL || 0) + (c.HIGH || 0);
       sig.cveHot = hot; sig.cveTotal = (d.cves || []).length; recomputeExposure();
       const box = el.querySelector("#dkOvThreat"); if (!box) return;
-      const bar = order.map((k) => `<span style="width:${(c[k] || 0) / sum * 100}%;--bg:${SEV[k].color}"></span>`).join("");
+      const bar = order.map((k) => `<span style="width:${(c[k] || 0) / (sum + (c.NONE || 0)) * 100}%;--bg:${SEV[k].color}"></span>`).join("");
       const leg = order.map((k) => `<span><i style="--bg:${SEV[k].color}"></i>${SEV[k].label} ${c[k] || 0}</span>`).join("");
       const p = Math.round(hot / sum * 100);
       const level = p >= 50 ? "Elevated" : p >= 25 ? "Guarded" : "Low";
       const col = p >= 50 ? "#f0484a" : p >= 25 ? "#b7791f" : "#12a85f";
-      box.innerHTML = `<div class="dk-gauge"><div class="ring" style="--p:${p};--c:${col}"><i>${p}%</i></div><div class="gmeta"><b>${level} — ${hot} critical/high</b><p>Across the ${d.cves.length} most-recent CVEs (NVD, last ${d.days} days).</p></div></div><div class="dk-sevbar">${bar}</div><div class="dk-sevleg">${leg}</div>`;
+      box.innerHTML = `<div class="dk-gauge"><div class="ring" style="--p:${p};--c:${col}"><i>${p}%</i></div><div class="gmeta"><b>${level} — ${hot} critical/high</b><p>Across the ${d.cves.length} most-recent CVEs (NVD, last ${d.days} days)${c.NONE ? `; ${c.NONE} not yet scored` : ""}.</p></div></div><div class="dk-sevbar">${bar}</div><div class="dk-sevleg">${leg}</div>`;
     }).catch(() => {
       setHealth(false, "Threat feed delayed");
       sysSet("feed", "warn", "Delayed");
@@ -3092,11 +3143,11 @@ export function renderDeck(host, opts) {
     el.innerHTML = `<div class="dk-ti-head"><h1>Threat &amp; Vulnerabilities</h1><span class="mo" role="button" tabindex="0" id="dkTiFull">Open CVE Search ${IC.ext}</span></div>
       <div id="dkTiBody"><div class="dk-loading"><span class="sp"></span>Fetching the latest CVEs from the NVD…</div></div>`;
     el.querySelector("#dkTiFull").onclick = () => openTool("cvesearch", "CVE Search");
-    fetchIntel(40).then((d) => {
+    fetchIntel().then((d) => {
       setHealth(true, "Threat feed live");
       _tiCves = d.cves || []; _tiSev = ""; _tiQ = ""; _tiKev = new Set(); _tiEpss = {}; _tiPrio = true;
       const c = d.counts || {};
-      const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((k) => `<button class="dk-sevchip dk-sevfilter" data-sev="${k}"><div class="n" style="--fg:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></button>`).join("")
+      const chips = ["CRITICAL", "HIGH", "MEDIUM", "LOW"].concat(c.NONE ? ["NONE"] : []).map((k) => `<button class="dk-sevchip dk-sevfilter" data-sev="${k}"><div class="n" style="--fg:${SEV[k].color}">${c[k] || 0}</div><div class="l">${SEV[k].label}</div></button>`).join("")
         + `<div class="dk-sevchip"><div class="n">${(d.total || 0).toLocaleString()}</div><div class="l">Published 7d</div></div>`
         + `<div class="dk-sevchip" id="dkTiKevChip"><div class="n" style="--fg:#e0383a">—</div><div class="l">Known-exploited</div></div>`;
       const charts = buildThreatCharts(d.cves);
@@ -3172,11 +3223,11 @@ export function renderDeck(host, opts) {
   // and a CVSS-band distribution. No extra network calls, no fabricated data.
   function buildThreatCharts(cves){
     cves = cves || [];
-    const ORD = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+    const ORD = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"];
     // 7-day trend
     const days = [];
     for (let i = 6; i >= 0; i--) { const dt = new Date(Date.now() - i * 86400000); days.push(dt.toISOString().slice(0, 10)); }
-    const byDay = {}; days.forEach((k) => byDay[k] = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, total: 0 });
+    const byDay = {}; days.forEach((k) => byDay[k] = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, NONE: 0, total: 0 });
     cves.forEach((v) => { const b = byDay[v.date]; if (b) { b[v.severity] = (b[v.severity] || 0) + 1; b.total++; } });
     const maxDay = Math.max(1, ...days.map((k) => byDay[k].total));
     const cols = days.map((k) => {
@@ -3249,8 +3300,8 @@ export function renderDeck(host, opts) {
     fetchCveDetail(id).then((c) => {
       const kev = _tiKev.has(id), ep = _tiEpss[id];
       const best = c.metrics[0];
-      const sevKey = best && best.severity ? String(best.severity).toUpperCase() : (best && best.score != null ? sevOf(best.score) : "LOW");
-      const sv = SEV[sevKey] || SEV.LOW;
+      const sevKey = best && best.severity ? String(best.severity).toUpperCase() : (best && best.score != null ? sevOf(best.score) : "NONE");
+      const sv = SEV[sevKey] || SEV.NONE;
       const badges = (kev ? `<span class="dk-kevb" title="On the CISA Known Exploited Vulnerabilities catalog">Known exploited</span>` : "") + (ep != null ? `<span class="dk-epssb" title="FIRST EPSS exploit probability (30-day)">EPSS ${(ep * 100).toFixed(1)}%</span>` : "");
       const metricRows = c.metrics.length ? c.metrics.map((mt) => { const mc = SEV[String(mt.severity || "").toUpperCase()] || sv; return `<tr><td>CVSS ${esc(mt.version)}</td><td><b style="--c:${mc.color};color:var(--c)">${mt.score == null ? "—" : mt.score}${mt.severity ? " " + esc(mt.severity) : ""}</b></td><td class="vec">${esc(mt.vector || "—")}</td></tr>`; }).join("") : `<tr><td colspan="3" style="color:var(--mut)">No CVSS metrics have been published for this CVE yet.</td></tr>`;
       const cweHtml = c.cwes.length ? c.cwes.map((w) => `<span class="dk-cveov-tag">${esc(w)}</span>`).join("") : `<span style="color:var(--mut)">None listed</span>`;
@@ -3284,7 +3335,7 @@ export function renderDeck(host, opts) {
     const rows = base.map((v) => ({ ...v, kev: _tiKev.has(v.id), epss: _tiEpss[v.id] != null ? _tiEpss[v.id] : null }));
     let blob, name;
     if (fmt === "json") { blob = new Blob([JSON.stringify(rows, null, 2)], { type: "application/json" }); name = "darknode-cves.json"; }
-    else { const q = (x) => { let s = String(x == null ? "" : x); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; const lines = rows.map((v) => [v.id, v.cvss == null ? "" : v.cvss, v.severity, v.kev ? "yes" : "no", v.epss == null ? "" : v.epss, v.date || "", v.title || ""].map(q).join(",")); blob = new Blob(["id,cvss,severity,kev,epss,published,title\n" + lines.join("\n")], { type: "text/csv" }); name = "darknode-cves.csv"; }
+    else { const q = (x) => { let s = String(x == null ? "" : x); if (/^[=+@\t\r-]/.test(s) && !/^-\d+(\.\d+)?$/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }; const lines = rows.map((v) => [v.id, v.cvss == null ? "" : v.cvss, v.severity === "NONE" ? "unscored" : v.severity, v.kev ? "yes" : "no", v.epss == null ? "" : v.epss, v.date || "", v.title || ""].map(q).join(",")); blob = new Blob(["id,cvss,severity,kev,epss,published,title\n" + lines.join("\n")], { type: "text/csv" }); name = "darknode-cves.csv"; }
     const url = URL.createObjectURL(blob), a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     toast("Exported " + rows.length + " CVEs");
   }
@@ -3777,7 +3828,7 @@ export function renderDeck(host, opts) {
   // ---------- Overview "Top actions": ranked, real, each with a next step ----------
   function renderTopActions(){
     const box = sceneEls.overview.querySelector("#dkTopAct"); if (!box) return;
-    Promise.allSettled([new Promise((r) => withGraph(r)), fetchIntel(30), fetchKev()]).then(([g, iv, kv]) => {
+    Promise.allSettled([new Promise((r) => withGraph(r)), fetchIntel(), fetchKev()]).then(([g, iv, kv]) => {
       if (!box.isConnected) return;
       const m = g.value;
       const acts = findings.topActions({
@@ -3985,9 +4036,9 @@ export function renderDeck(host, opts) {
       <div class="dk-setgrid">
         <div class="dk-ovp">
           <h2>${IC.home} Workspace</h2>
-          <div class="dk-setrow">
+          <div class="dk-setrow wrap">
             <div class="m"><div class="t">Workspace name</div><div class="s">Shown in the header, on plans and in exported reports. Leave blank to use your account name.</div></div>
-            <input class="dk-setin" id="dkSetWsName" type="text" maxlength="48" placeholder="Your company or team" value="${esc(wsProfile.name || "")}" autocomplete="off" spellcheck="false" style="width:200px">
+            <input class="dk-setin" id="dkSetWsName" type="text" maxlength="48" placeholder="Your company or team" value="${esc(wsProfile.name || "")}" autocomplete="off" spellcheck="false" style="flex:1 1 160px;max-width:260px">
           </div>
           <div class="dk-setrow">
             <div class="m"><div class="t">Accent colour</div><div class="s">A hex colour for workspace accents. Optional.</div></div>
@@ -4520,13 +4571,25 @@ export function renderDeck(host, opts) {
     f.onload = () => { f.classList.add("in"); const l = asstFrame.querySelector(".dk-wload"); if (l) setTimeout(() => l.remove(), 180); };
     asstFrame.appendChild(f);
   }
+  // Put the cursor in the message box (same-origin frame) when the user asked to open the assistant;
+  // the box renders after the frame's scripts run, so retry briefly.
+  function focusAsst(){
+    let n = 0;
+    const tick = () => {
+      const f = asstFrame.querySelector("iframe"); let t = null;
+      try { t = f && f.contentDocument && f.contentDocument.getElementById("aiMsg"); } catch (_) {}
+      if (t && t.offsetParent && document.activeElement !== f) { f.focus(); t.focus(); return; }
+      if (++n < 30) setTimeout(tick, 100);
+    };
+    tick();
+  }
   $("#dkAsstFull").onclick = () => { if (primary) { window.open("/ai", "_blank", "noopener"); return; } teardown(); onOpen("ai"); };
   // Prefill the embedded assistant with a question and open it. webai.js reads
   // sw_ai_prefill on load, so we reload the iframe to deliver a fresh prompt.
   function askAI(text){
     text = String(text || "").trim();
     if (text) { try { sessionStorage.setItem("sw_ai_prefill", text); } catch (_) {} asstLoaded = false; asstFrame.innerHTML = ""; }
-    go("assistant");
+    go("assistant"); focusAsst();
   }
 
   // ---------- keyboard & shortcuts ----------
@@ -4741,9 +4804,20 @@ export function renderDeck(host, opts) {
   // a page link (/surface, /area/code) opens that page; / restores the last one
   const route0 = primary ? routeOf(location.pathname) : null;
   if (route0 && route0.scene !== "overview") initial = route0.scene;
+  // a link to a page or tool above the plan: open Plans and say why, instead of quietly
+  // landing somewhere else (the page itself stays hidden, as in the sidebar)
+  const lockedKey = route0 && route0.scene !== "overview" ? (route0.scene === "section" ? "section:" + route0.arg : "scene:" + route0.scene)
+    : opts.startSec && !route0 ? "tool:" + opts.startSec : null;
+  const lockedLink = lockedKey && isLocked(lockedKey) && !isLocked("scene:plans") ? lockedKey : null;
   rafId = requestAnimationFrame(() => {
-    go(initial, route0 && route0.arg);
-    if (opts.startSec && !route0) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec);
+    if (lockedLink) {
+      go("plans");
+      const name = navName[lockedLink] || lockedLink.split(":")[1];
+      toast(name + " is part of the " + planLabel(needTier[lockedLink]) + " plan");
+    } else {
+      go(initial, route0 && route0.arg);
+      if (opts.startSec && !route0) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec);
+    }
     routing = false;
   });
   // back / forward between Deck pages and tools

@@ -97,7 +97,10 @@ export async function deliver(channel, alert, deps = {}) {
     headers["x-darknode-timestamp"] = String(Date.now());
   }
   try {
-    const res = await f(channel.url, { method: "POST", headers, body: bodyStr });
+    // redirect:"manual": fetch follows redirects by default, so a public URL answering 307 would
+    // carry this POST to a private host the guard above never saw. Webhooks don't redirect.
+    const res = await f(target.href, { method: "POST", headers, body: bodyStr, redirect: "manual" });
+    if (res.status >= 300 && res.status < 400) return { ok: false, status: res.status, error: "webhook answered with a redirect (" + res.status + "), which is not followed - use the final URL" };
     return { ok: res.ok, status: res.status };
   } catch (e) {
     return { ok: false, status: 0, error: e.message || String(e) };

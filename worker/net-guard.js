@@ -58,6 +58,13 @@ export function hostAllowed(u) {
     if (h === "::1" || h === "::") return false;
     if (h.startsWith("fe80") || h.startsWith("fc") || h.startsWith("fd")) return false;
     if (h.startsWith("::ffff:") && ipv4Private(h.slice(7))) return false;
+    // An IPv4 address carried in IPv6 reaches that IPv4 host. URL() rewrites ::ffff:169.254.169.254
+    // to ::ffff:a9fe:a9fe, which the dotted check above never saw; also NAT64 (64:ff9b::),
+    // the deprecated IPv4-compatible ::a.b.c.d, and 6to4 (2002:AABB:CCDD::).
+    const hx = (a, b) => { const x = parseInt(a, 16), y = parseInt(b, 16); return [x >> 8, x & 255, y >> 8, y & 255].join("."); };
+    const emb = /^(?:::ffff:|64:ff9b::|::)([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(h) || /^2002:([0-9a-f]{1,4}):([0-9a-f]{1,4})(?::|$)/.exec(h);
+    if (emb && ipv4Private(hx(emb[1], emb[2]))) return false;
+    if (/^(?:64:ff9b::|::)(\d+\.\d+\.\d+\.\d+)$/.test(h) && ipv4Private(h.replace(/^.*:/, ""))) return false;
   }
   return true;
 }
