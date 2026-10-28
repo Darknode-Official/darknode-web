@@ -43,6 +43,22 @@ group("paths/choke findings", () => {
     assert.equal(r.subjects.length, 0);
   });
 
+  test("a fixed, closed or sample finding is not a leg, so it is not offered as a fix", () => {
+    const ents = (st, extra = {}) => [
+      I("adm@corp.com"),
+      Object.assign(F("f-mfa", "caaudit", "mfa", "adm@corp.com"), { status: st }, extra),
+      F("f-trav", "vpnaudit", "impossible_travel", "adm@corp.com"),
+      F("f-priv", "privaudit", "standing-privilege", "adm@corp.com"),
+    ];
+    assert.ok(chokePoints(ents("open")).chains.length >= 2);
+    for (const st of ["resolved", "closed", "Resolved"]) {
+      const r = chokePoints(ents(st));
+      assert.ok(!r.findings.some((f) => f.findingId === "f-mfa"), st);
+      assert.ok(!r.chains.some((c) => c.legs.some((l) => l.findingId === "f-mfa")), st);
+    }
+    assert.ok(!chokePoints(ents("open", { tags: ["sample"] })).findings.some((f) => f.findingId === "f-mfa"));
+  });
+
   test("deterministic across input order", () => {
     const base = [
       I("adm@corp.com"), A("web01.corp.com"),

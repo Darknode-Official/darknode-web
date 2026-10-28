@@ -8,6 +8,7 @@
 // it can never corrupt the graph.
 import { resolveAssets, resolveIdentities, hostParts, canonIp, identityKeys } from "./resolve.js";
 import { cyrb53 } from "./hash.js";
+import { isSimulated } from "./posture.js";
 
 const str = (v) => String(v == null ? "" : v).trim();
 const lc = (v) => str(v).toLowerCase();
@@ -182,6 +183,7 @@ function subjectsOf(f, idx) {
 // correlate(entities, { now }) -> hits[], each:
 //   { ruleId, title, severity, attack, subjectType, subjectKey, subjectName,
 //     explanation, legs:[{ id, label, findingId, findingTitle }], window, span }
+const CLOSED = new Set(["resolved", "closed"]);
 export function correlate(entities, opts = {}) {
   const ents = entities || [];
   const idx = buildIndex(ents);
@@ -190,6 +192,8 @@ export function correlate(entities, opts = {}) {
   const views = [];
   for (const e of ents) {
     if (e.type !== "FINDING" && e.type !== "VULNERABILITY") continue;
+    // a fixed / false-positive / closed finding is no longer a leg of anything, and sample data never is
+    if (CLOSED.has(lc(e.status)) || isSimulated(e)) continue;
     const d = e.data || {};
     const tags = e.tags || [];
     const title = str(e.name).replace(/\s*\([a-z0-9_-]+:[^)]*\)\s*$/i, ""); // strip "(tool:key)"
