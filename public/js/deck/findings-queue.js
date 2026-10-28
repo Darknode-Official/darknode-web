@@ -472,7 +472,7 @@ function exceptionFlow(ids, e) {
     if (exp == null) return "Pick a valid expiry date.";
     // A chosen register entry wins; "Other" (or no register entries) uses the free-text id.
     let riskId = "";
-    if (risks.length) { const sel = String(v.riskSel || ""); riskId = sel && sel !== RISK_OTHER ? sel : (sel === RISK_OTHER ? String(v.riskId || "").trim() : ""); }
+    if (risks.length) { const sel = String(v.riskSel || ""); riskId = sel && sel !== RISK_OTHER ? sel : String(v.riskId || "").trim(); } // an id typed without picking "Other" is kept, not dropped
     else riskId = String(v.riskId || "").trim();
     return { op: "exception", reason: v.reason, approver: v.approver, expiresAt: exp, riskId };
   }, x ? "Risk exception replaced" : "Risk exception added");
