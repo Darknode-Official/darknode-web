@@ -40,8 +40,9 @@ export class MonitorDO {
       if (!wid || !this.env || !this.env.GRAPH) return [];
       const stub = this.env.GRAPH.get(this.env.GRAPH.idFromName(wid));
       const res = await stub.fetch("https://graph/?since=0", { headers: { "x-graph-uid": wid } });
-      if (!res.ok) return [];
+      if (!res.ok) return null; // could not read the inventory: not the same as an empty one
       const data = await res.json().catch(() => null);
+      if (!data) return null;
       // Exclude the monitor's OWN writes (source "monitor:*"). A kev-epss run now writes
       // VULNERABILITY(CVE) + FINDING nodes back into this same graph; re-reading them as
       // inventory would be a feedback loop — a patched CVE would never clear because the
@@ -49,7 +50,7 @@ export class MonitorDO {
       // count as the workspace's real CVE inventory.
       const inventory = ((data && data.entities) || []).filter((e) => !String((e && e.source) || "").startsWith("monitor:"));
       return cvesFromEntities(inventory);
-    } catch (_) { return []; }
+    } catch (_) { return null; }
   }
   // Push a monitor's findings into THIS workspace's GraphDO (same wid as the MonitorDO).
   // Returns { synced, error }; never throws. The per-workspace DO is itself the access
@@ -100,9 +101,18 @@ export class MonitorDO {
     let findings = [];
     // The kev-epss check grades the workspace's own CVE inventory, read from its graph.
     const extra = m.type === "kev-epss" ? { cves: await this._graphCves(), feedBase: deps.feedBase } : {};
-    try { findings = await runCheck(m.type, m.config || {}, { fetch: deps.fetch, now: t0, ...extra }); }
+    // A lookup that got no answer is not a clean result: diffing it would resolve every open
+    // finding (closing them in the graph) and alert them all as new once the source is back.
+    try {
+      if (m.type === "kev-epss" && extra.cves == null) throw new Error("could not read the workspace's CVE inventory; nothing changed this run");
+      findings = await runCheck(m.type, m.config || {}, { fetch: deps.fetch, now: t0, ...extra });
+      if (findings && findings.unreachable) throw new Error("a feed did not answer; nothing changed this run");
+    }
     catch (e) { await this._log("history", HISTORY_CAP, { id: m.id, at: t0, error: String(e.message || e) }); return { id: m.id, error: String(e.message || e) }; }
 
+    // a domain whose lookup got no answer keeps its last finding as it was (checks.js held)
+    const prevByKey = new Map((m.lastResults || []).map((f) => [f.key, f]));
+    findings = [...findings, ...(findings.held || []).filter((k) => prevByKey.has(k) && !findings.some((f) => f.key === k)).map((k) => prevByKey.get(k))];
     const diff = diffFindings(m.lastResults || [], findings);
     const events = diffToEvents(diff, m.id, t0);
     const rules = { ...defaultAlertRules(), ...(m.rules || {}) };

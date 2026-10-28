@@ -50,6 +50,13 @@ group("checks/cert-expiry", () => {
     assert.equal(out.length, 0);
   });
 
+  test("a domain neither log answered for is held; one they answered with no rows is not", async () => {
+    const down = await certExpiryCheck(["u.test.darknode.ai"], { fetch: ctFetch({}), now: NOW });
+    assert.deepEqual(down.held, ["cert:u.test.darknode.ai"]);
+    const empty = await certExpiryCheck(["u.test.darknode.ai"], { fetch: ctFetch({ "u.test.darknode.ai": [] }), now: NOW });
+    assert.deepEqual(empty.held, []);
+  });
+
   test("newest leaf wins when several certs exist", async () => {
     const f = ctFetch({ "d.test.darknode.ai": [cert(day(5)), cert(day(400))] });
     const out = await certExpiryCheck(["d.test.darknode.ai"], { fetch: f, now: NOW, warnDays: 21 });

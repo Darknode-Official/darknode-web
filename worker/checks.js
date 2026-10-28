@@ -19,19 +19,21 @@ function fromCertspotter(arr) {
 }
 
 // Fetch certificate-transparency rows for a domain, worker-native. crt.sh first
-// (richest, flaky), certspotter as a fallback. Never throws; returns [] on failure.
+// (richest, flaky), certspotter as a fallback. Never throws; returns [] on failure,
+// marked .unreachable when neither log answered (as opposed to answering with no rows).
 export async function fetchCertRows(domain, f) {
   const d = encodeURIComponent(domain);
+  let answered = false;
   try {
     const r = await f("https://crt.sh/?output=json&exclude=expired&q=" + d, { headers: { accept: "application/json" } });
-    if (r.ok) { const a = await r.json().catch(() => null); if (Array.isArray(a) && a.length) return a; }
+    if (r.ok) { const a = await r.json().catch(() => null); if (Array.isArray(a)) answered = true; if (Array.isArray(a) && a.length) return a; }
   } catch (_) {}
   try {
     const url = "https://api.certspotter.com/v1/issuances?include_subdomains=false&expand=issuer&expand=not_before&expand=not_after&expand=dns_names&domain=" + d;
     const r = await f(url, { headers: { accept: "application/json" } });
-    if (r.ok) { const a = await r.json().catch(() => null); const rows = fromCertspotter(a); if (rows.length) return rows; }
+    if (r.ok) { const a = await r.json().catch(() => null); if (Array.isArray(a)) answered = true; const rows = fromCertspotter(a); if (rows.length) return rows; }
   } catch (_) {}
-  return [];
+  return answered ? [] : Object.assign([], { unreachable: true });
 }
 
 const sev = (days, warnDays) => {
@@ -51,13 +53,16 @@ export async function certExpiryCheck(domains, deps = {}) {
   const now = deps.now || Date.now();
   const warnDays = deps.warnDays || 21;
   if (!f) return [];
-  const out = [];
+  // held: domains whose lookup got no answer this run. The monitor keeps their last finding
+  // as it was, instead of reading the gap as "resolved" and alerting it as new next run.
+  const out = [], held = [];
   for (const domain of (domains || [])) {
     // a monitor saved with "https://site.com/path", host:port or *.site gets no CT rows for that
     // string and was skipped every run (shown as 0 open); look up the hostname
     const dom = String(domain || "").trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/[/?#].*$/, "").replace(/^[^@]*@/, "").replace(/:\d+$/, "").replace(/^\*\./, "").replace(/\.$/, "");
     if (!dom) continue;
     const rows = await fetchCertRows(dom, f);
+    if (rows.unreachable) { held.push("cert:" + dom); continue; }
     const cert = newestCert(rows, now);
     if (!cert || !cert.notAfter) continue;            // no CT data: skip, don't invent
     const days = certDaysLeft(cert.notAfter, now);
@@ -72,7 +77,7 @@ export async function certExpiryCheck(domains, deps = {}) {
       category: "certificate", tool: "monitor:cert-expiry",
     });
   }
-  return out;
+  return Object.assign(out, { held });
 }
 
 // ---- KEV / EPSS watch (Deck D4 + D9 "what affects you", server-side) --------------------
@@ -102,10 +107,10 @@ export function cvesFromEntities(entities) {
   return [...out];
 }
 
-// Fetch one mirrored feed ({data:[{cve,...}]}) and return its data array; [] on any failure.
+// Fetch one mirrored feed ({data:[{cve,...}]}) and return its data array; null on any failure.
 async function fetchFeed(url, f) {
   try { const r = await f(url, { headers: { accept: "application/json" } }); if (r.ok) { const j = await r.json().catch(() => null); if (j && Array.isArray(j.data)) return j.data; } } catch (_) {}
-  return [];
+  return null;
 }
 
 // matchKevEpss(cves, ctx) -> findings[]. PURE. ctx: { kev: Map cve->{dueDate,dateAdded}, epss:
@@ -142,7 +147,9 @@ export async function kevEpssCheck(cfg, deps = {}) {
     fetchFeed(base + "/data/feeds/cisa-kev-index.json", f),
     fetchFeed(base + "/data/feeds/epss-top.json", f),
   ]);
-  if (!kevRows.length && !epssRows.length) return [];   // feeds unreachable: skip, don't invent
+  // a feed that did not answer: skip, don't invent, and mark the run unreachable so the monitor
+  // does not read its matches as resolved (and alert them as new when the feed is back)
+  if (!kevRows || !epssRows) return Object.assign([], { unreachable: true });
   const kev = new Map();
   for (const r of kevRows) if (r && r.cve) kev.set(String(r.cve).toUpperCase(), { dueDate: r.dueDate || "", dateAdded: r.dateAdded || "" });
   const epss = new Map();
