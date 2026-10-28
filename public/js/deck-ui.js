@@ -37,7 +37,7 @@ import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, lis
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
 // Work-queue scenes load on first visit (about 120 KB the Overview never needs).
 const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => { p = null; throw e; })); };
-const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261025g");
+const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261025g");
 const corrMod = lazyMod("/js/deck/correlations.js?v=20261027c");
 const monMod = lazyMod("/js/deck/monitors.js?v=20261027c");
@@ -796,6 +796,7 @@ const CSS = `
 .dk .dk-actform input{height:34px;border-radius:8px;border:1px solid rgba(23,33,56,.16);padding:0 10px;font:inherit;font-size:13px;width:190px;background:#fff;color:#1a2233;outline:none}
 .dk .dk-actform input:focus{border-color:#4f86ff}
 @media(max-width:720px){.dk-act{flex-wrap:wrap}.dk-actform{width:100%}.dk .dk-actform input{flex:1;width:auto;min-width:0}}
+.dk-fndbulk[hidden],.dk-tibtn[hidden],.dk-surfgrid[hidden]{display:none}
 .dk-fndbulk{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;margin-bottom:10px;border-radius:10px;background:rgba(79,134,255,.08);border:1px solid rgba(79,134,255,.22);font-size:13px;color:#38435c}
 .dk-fndbulk .dk-tibtn{height:32px}
 .dk-fndt th.ck,.dk-fndt td.ck{width:36px}
