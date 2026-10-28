@@ -48,6 +48,26 @@ export function postureFindings(res) {
   return out;
 }
 
+/**
+ * Finding ids a posture run could not re-check: every check whose lookup failed ("na"
+ * with holds), plus the checks that lookup decides. Passed to the sink as held, so a
+ * failed lookup is never offered as "verified fixed".
+ * @param {object} res posture-engine scorePosture() output
+ * @returns {string[]}
+ */
+export function postureHeld(res) {
+  const domain = str(res && res.domain).trim().toLowerCase();
+  if (!domain) return [];
+  const out = [];
+  for (const cat of (res.categories || [])) {
+    for (const c of (cat.checks || [])) {
+      if (c.status !== "na" || !Array.isArray(c.holds)) continue;
+      for (const name of [c.name, ...c.holds]) out.push(`posture|${domain}|${str(cat.key)}|${str(name)}`);
+    }
+  }
+  return out;
+}
+
 // ---- Certificate & TLS Fleet Monitor (tlsfleet) ------------------------------
 
 const TLS_SEV = { expired: "critical", urgent: "high", soon: "medium", watch: "low" };

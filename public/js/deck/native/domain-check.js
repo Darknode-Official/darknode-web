@@ -3,9 +3,9 @@
 // checks graded by posture-engine. Personal = one domain; Enterprise = a saved
 // portfolio graded side by side (mode "portfolio").
 
-import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261025g";
-import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261026b";
-import { postureFindings } from "/js/dataprotect/dp-sink.js";
+import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261027c";
+import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261027c";
+import { postureFindings, postureHeld } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, GRADE_C, recordRun, readList, writeList, pool, download } from "./ui.js";
 import { parseDomains } from "/js/dataprotect/tls-engine.js?v=20261026a";
@@ -50,7 +50,7 @@ function wireReport(box, res) {
   const j = document.createElement("button"); j.className = "ns-btn ghost sm"; j.textContent = "Export JSON";
   j.onclick = () => download("domain-check-" + res.domain + ".json", JSON.stringify(res, null, 2));
   act.appendChild(j);
-  attachSinkButton(act, () => ({ findings: postureFindings(res) }), "posture", { dataset: "posture " + res.domain });
+  attachSinkButton(act, () => ({ findings: postureFindings(res), held: postureHeld(res) }), "posture", { dataset: "posture " + res.domain });
 }
 
 export function mount(el, { space, mode }) {
