@@ -852,7 +852,7 @@ function renderAuth(mode = "signin") {
     if (!panel) return;
     if (!panel.hidden) { panel.hidden = true; return; }
     panel.hidden = false;
-    try { const m = await import("/js/beta-lab.js?v=20261018i"); m.mountRequestForm(panel, { user: null }); }
+    try { const m = await import("/js/beta-lab.js?v=20261027c"); m.mountRequestForm(panel, { user: null }); }
     catch (_) { panel.textContent = "Beta Lab is unavailable right now."; }
   });
   on("toSignup", () => renderAuth("signup"));
@@ -1737,7 +1737,7 @@ function renderDesktopHome(user) {
     return;
   }
   view.innerHTML = "";
-  import("/js/deck/launch.js?v=20261027b")
+  import("/js/deck/launch.js?v=20261027c")
     .then((m) => m.openDeck(user, { isOwner: true, onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
@@ -1767,7 +1767,7 @@ function renderDeckHome(user) {
   const raw = location.pathname.replace(/^\/(console(\/|$))?/, "").replace(/\/$/, "");
   let startSec = !raw ? null : raw.startsWith("tool-") ? raw : raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
   if (startSec === "home" || (startSec === "admin" && !_isAdmin)) startSec = null;
-  import("/js/deck/launch.js?v=20261027b")
+  import("/js/deck/launch.js?v=20261027c")
     .then((m) => m.openDeck(user, {
       isOwner: _isAdmin,
       startSec: startSec || undefined,
@@ -2121,7 +2121,7 @@ function renderApp(user) {
     else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
     else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/navarch.js?v=20261014g").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
     else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261017d").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
-    else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261018i").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
+    else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261027c").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
     else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261014f").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js?v=20261013b").then(m => live() && m.renderCspEvaluator(main)); }
     else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => live() && m.renderWaybackRecon(main)); }
@@ -2231,7 +2231,7 @@ function renderApp(user) {
     else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261017c").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261027a").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261027c").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261026a").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2512,7 +2512,7 @@ function renderApp(user) {
       ov.onclick = (ev) => { if (ev.target === ov) close(); };
       document.body.appendChild(ov);
       document.getElementById("betaAskClose").onclick = close;
-      import("/js/beta-lab.js?v=20261018i").then((m) => m.mountRequestForm(ov.querySelector(".beta-ask-mount"), { user })).catch(() => { ov.querySelector(".beta-ask-mount").textContent = "Beta Lab is unavailable right now."; });
+      import("/js/beta-lab.js?v=20261027c").then((m) => m.mountRequestForm(ov.querySelector(".beta-ask-mount"), { user })).catch(() => { ov.querySelector(".beta-ask-mount").textContent = "Beta Lab is unavailable right now."; });
     }
   };
   if (moreMenu) moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); show("setup", b.dataset.more); };
@@ -2848,7 +2848,7 @@ function tourSteps(isOwner) {
 async function accessAllowed(user) {
   if (_isAdmin) return true;
   try {
-    const { getWhitelist } = await import("/js/admin.js");
+    const { getWhitelist } = await import("/js/admin.js?v=20261027c");
     const cfg = await getWhitelist();
     const banned = ((cfg && cfg.banned) || []).map((e) => String(e).toLowerCase());
     if (banned.includes((user.email || "").toLowerCase())) return false;
