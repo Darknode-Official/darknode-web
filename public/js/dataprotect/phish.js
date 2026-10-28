@@ -287,7 +287,7 @@ async function runUrl(out, text) {
   out.querySelector("#phxHead").insertAdjacentHTML("beforeend", exportBar());
   const finalReg = unf.ok ? analyzeUrl(unf.finalUrl || url).registrable : "";
   const urlFindings = phishUrlFindings({ input: a.input, host: a.host, registrable: a.registrable, finalUrl: unf.ok ? unf.finalUrl : "", finalRegistrable: finalReg, severity: sevFromWeight(sumW(allReasons)), reasons: allReasons });
-  attachSinkButton(out.querySelector("#phxHead"), () => ({ findings: urlFindings, sample: text === SAMPLE_URL }), "phishtriage", { dataset: "link triage" });
+  attachSinkButton(out.querySelector("#phxHead"), () => ({ findings: urlFindings, sample: text === SAMPLE_URL }), "phishtriage", { dataset: "link triage " + a.input }); // per link: a different link is not a re-run, and its absent findings are not "fixed"
 }
 
 function iocsCard(iocs) {
@@ -344,7 +344,7 @@ async function runEmail(out, text) {
   LAST = { mode: "email", verdict: v.label, from: r.from, fromReg: r.fromReg, returnPath: r.returnPath, replyTo: r.replyTo, subject: r.subject, auth: r.auth, links: r.urlAnalyses, reasons: r.findings, iocs: r.iocs };
   out.querySelector(".phx-card").insertAdjacentHTML("beforeend", exportBar());
   const toHdr = (parseEmailHeaders(text).headers.to || [])[0] || "";
-  attachSinkButton(out.querySelector(".phx-card"), () => ({ findings: phishEmailFindings(r, { to: toHdr }) }), "phishtriage", { dataset: "email triage" });
+  attachSinkButton(out.querySelector(".phx-card"), () => ({ findings: phishEmailFindings(r, { to: toHdr }) }), "phishtriage", { dataset: r.messageId ? "email triage " + r.messageId : undefined }); // per message; no Message-ID, no re-run to compare
 
   const ageEl = out.querySelector("#phxEmAge");
   if (r.fromReg) {

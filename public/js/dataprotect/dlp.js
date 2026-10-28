@@ -303,7 +303,7 @@ function renderReport(out, text, res, rerun, sample) {
     };
     download("dlp-report.json", JSON.stringify(report, null, 2), "application/json");
   });
-  attachSinkButton(out.querySelector("#dlpCsv").parentElement, () => ({ findings: dlpFindings(res, text), sample: !!sample }), "dlp", { dataset: "dlp scan" });
+  attachSinkButton(out.querySelector("#dlpCsv").parentElement, () => ({ findings: dlpFindings(res, text), sample: !!sample }), "dlp"); // no dataset: each scan is different text, so findings missing from it are not "fixed"
   out.querySelector("#dlpCsv").addEventListener("click", () => {
     const head = ["severity", "type", "label", "kind", "line", "col", "detail", "masked"];
     const cell = (v) => { const s = String(v == null ? "" : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };

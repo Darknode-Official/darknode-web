@@ -44,7 +44,7 @@ export function mount(el, { space, mode }) {
         <textarea class="ns-ta" id="nsDsRed" readonly style="min-height:160px"></textarea>
         <div class="ns-row"><button class="ns-btn" id="nsDsCopy">Copy redacted text</button></div></div>` : ""}`;
     const act = out.querySelector("[data-act]");
-    if (ent) attachSinkButton(act, () => ({ findings: dlpFindings(res, text) }), "dlp", { dataset: "dlp " + label });
+    if (ent) attachSinkButton(act, () => ({ findings: dlpFindings(res, text) }), "dlp", { dataset: files && files.length === 1 ? "dlp " + label : undefined }); // only one named file is a re-runnable subject; "pasted text" / "N files" are different inputs each time
     const red = out.querySelector("#nsDsRed");
     if (red) {
       const sty = out.querySelector("#nsDsSty");
