@@ -1,8 +1,30 @@
 {
- "updated": "2026-10-27T10:42:14.506Z",
+ "updated": "2026-10-28T11:26:14.180Z",
  "source": "CISA KEV",
  "count": 500,
  "data": [
+  {
+   "cve": "CVE-2026-48356",
+   "vendor": "Adobe",
+   "product": "Commerce and Magento",
+   "name": "Adobe Commerce and Magento Unrestricted Upload of File with Dangerous Type Vulnerability",
+   "description": "Adobe Commerce and Magento contain an unrestricted upload of file with dangerous type vulnerability that could result in arbitrary code execution in the context of the current user, potentially gaining elevated access or control over the victim's account or session.",
+   "dateAdded": "2026-10-27",
+   "dueDate": "2026-11-10",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-111497",
+   "vendor": "Google",
+   "product": "Brotli",
+   "name": "Google Brotli Unchecked Return Value Vulnerability",
+   "description": "Google Brotli contains an unchecked return value vulnerability that allows a remote unauthenticated attacker to corrupt adjacent decoder state memory, disclose sensitive memory contents, cause a denial of service, or potentially execute arbitrary code using a crafted Brotli-compressed stream.",
+   "dateAdded": "2026-10-27",
+   "dueDate": "2026-11-10",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
   {
    "cve": "CVE-2026-109618",
    "vendor": "PHP Group",
@@ -5476,28 +5498,6 @@
    "product": "Office Outlook",
    "name": "Microsoft Outlook Improper Input Validation Vulnerability",
    "description": "Microsoft Outlook contains an improper input validation vulnerability that allows for remote code execution. Successful exploitation of this vulnerability would allow an attacker to bypass the Office Protected View and open in editing mode rather than protected mode.",
-   "dateAdded": "2025-02-06",
-   "dueDate": "2025-02-27",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2022-23748",
-   "vendor": "Audinate",
-   "product": "Dante Discovery",
-   "name": "Dante Discovery Process Control Vulnerability",
-   "description": "Dante Discovery contains a process control vulnerability in mDNSResponder.exe that all allows for a DLL sideloading attack. A local attacker can leverage this vulnerability in the Dante Application Library to execute arbitrary code.",
-   "dateAdded": "2025-02-06",
-   "dueDate": "2025-02-27",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-0411",
-   "vendor": "7-Zip",
-   "product": "7-Zip",
-   "name": "7-Zip Mark of the Web Bypass Vulnerability",
-   "description": "7-Zip contains a protection mechanism failure vulnerability that allows remote attackers to bypass the Mark-of-the-Web security feature to execute arbitrary code in the context of the current user.",
    "dateAdded": "2025-02-06",
    "dueDate": "2025-02-27",
    "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
