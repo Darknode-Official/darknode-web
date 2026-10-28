@@ -641,7 +641,7 @@ function renderFindingsTab(panel, inv, main, show) {
   const findings = getRelated(inv.id).filter(r => r.type === 'FINDING');
   findings.sort((a, b) => {
     const sevOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4 };
-    return (sevOrder[a.severity] || 5) - (sevOrder[b.severity] || 5);
+    return (sevOrder[a.severity] ?? 5) - (sevOrder[b.severity] ?? 5);
   });
 
   panel.innerHTML = `

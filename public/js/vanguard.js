@@ -1301,7 +1301,7 @@ function _vgPhase10_Report() {
     report += '<h2>DETAILED FINDINGS (' + _vgState.findings.length + ')</h2><div class="card"><table><tr><th>Severity</th><th>Finding</th><th>Detail</th><th>Phase</th></tr>';
     var sorted = _vgState.findings.slice().sort(function(a, b) {
       var order = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
-      return (order[a.severity] || 4) - (order[b.severity] || 4);
+      return (order[a.severity] ?? 4) - (order[b.severity] ?? 4);
     });
     sorted.forEach(function(f) {
       var cls = f.severity === 'critical' ? 'crit' : f.severity === 'high' ? 'high' : f.severity === 'medium' ? 'med' : 'low';
