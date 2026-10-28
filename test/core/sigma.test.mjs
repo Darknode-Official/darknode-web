@@ -61,6 +61,21 @@ group("sigma/evaluateRule", () => {
     assert.equal(r.count, 1);
   });
 
+  test("keyword wildcards match like Sigma (*mimikatz*, ?)", () => {
+    const r = evaluateRule(RULE("  keywords:\n    - '*sekurlsa::*'\n    - 'who?mi'\n  condition: keywords"),
+      [{ cmd: "mimikatz SEKURLSA::logonpasswords" }, { cmd: "whoami" }, { cmd: "dir" }]);
+    assert.equal(r.count, 2);
+  });
+
+  test("refuses a condition it would misread", () => {
+    const sel = "  selection:\n    EventID: 4625\n";
+    for (const c of ["selection | count() > 5", "selction", "selection and not fliter", "selection*", "(selection", "selection)", "1 of filter*"]) {
+      const r = compileRule(RULE(sel + "  condition: " + c));
+      assert.equal(r.ok, false, c);
+    }
+    for (const c of ["selection", "not selection", "1 of sel*", "all of them", "(selection or selection)"]) assert.equal(compileRule(RULE(sel + "  condition: " + c)).ok, true, c);
+  });
+
   test("'1 of selection*' and 'all of them'", () => {
     const y = RULE("  selection_a:\n    EventID: 1\n  selection_b:\n    EventID: 2\n  condition: 1 of selection*");
     const r = evaluateRule(y, [{ EventID: 2 }, { EventID: 3 }]);
@@ -98,7 +113,9 @@ group("sigma/evaluateRule", () => {
   test("a condition identifier that is not a defined selection is false (no Object.prototype leak)", () => {
     // 'constructor' is not a selection; it must be false (was truthy via the plain-object proto chain).
     const y = RULE("  selection:\n    EventID: 4625\n  condition: selection and not constructor");
-    assert.equal(evaluateRule(y, [{ EventID: 4625 }]).count, 1);
+    assert.equal(compileRule(y).ok, false); // refused up front now
+    const rule = { title: "t", detection: { selection: { EventID: 4625 } }, condition: "selection and not constructor", selectionNames: ["selection"] };
+    assert.equal(evaluateRule(rule, [{ EventID: 4625 }]).count, 1);
   });
 
   test("'N of them' requires at least N selections to match", () => {

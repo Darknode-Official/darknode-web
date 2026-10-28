@@ -52,6 +52,8 @@ function wildRe(sv, mods) {
 // Modifiers this evaluator implements; compileRule refuses anything else rather than mis-match.
 const MODS = new Set(["contains", "startswith", "endswith", "all", "re", "cased", "exists"]);
 
+const KW_MODS = ["contains"]; // keywords are a case-insensitive search anywhere in a value
+
 // Match one spec value against one event value under the given modifiers.
 function matchValue(eventVal, specVal, mods) {
   if (specVal === null) return eventVal == null || eventVal === "";
@@ -87,14 +89,14 @@ function matchSelection(flat, sel) {
   if (sel == null) return false;
   if (Array.isArray(sel)) {
     if (sel.every((x) => x == null || typeof x !== "object")) { // keyword list
-      const hay = allValues(flat).map(lc);
-      return sel.some((kw) => { const k = lc(kw); return hay.some((h) => h.includes(k)); });
+      const hay = allValues(flat);
+      return sel.some((kw) => kw != null && hay.some((h) => matchValue(h, kw, KW_MODS))); // wildcards (*mimikatz*) apply, as in Sigma
     }
     return sel.some((m) => matchSelection(flat, m)); // list of maps -> OR
   }
   if (typeof sel === "object") return Object.keys(sel).every((k) => matchField(flat, k, sel[k])); // map -> AND
   // a bare scalar selection is treated as a single keyword
-  { const k = lc(sel); return allValues(flat).map(lc).some((h) => h.includes(k)); }
+  return allValues(flat).some((h) => matchValue(h, sel, KW_MODS));
 }
 
 // ---- condition expression ----
@@ -136,6 +138,28 @@ function matchPrefix(name, pattern) {
   return name === pattern;
 }
 
+// A condition the evaluator would misread must be refused, not run: an aggregation
+// ("selection | count() > 5") or a stray symbol was dropped by the tokenizer, and an
+// unknown or misspelled identifier silently evaluated false, so the rule over-matched
+// or never fired.
+function checkCondition(cond, names) {
+  if (/\|/.test(cond)) return "Aggregation conditions (after |, such as count() or near) are not supported.";
+  if (cond.replace(/\(|\)|\ball of them\b|\b\d+ of them\b|\ball of [A-Za-z0-9_*]+|\b\d+ of [A-Za-z0-9_*]+|\band\b|\bor\b|\bnot\b|[A-Za-z0-9_*]+/gi, "").trim()) return "The condition has characters it cannot read. Use selection names with and, or, not, parentheses, \"1 of name*\" or \"all of them\".";
+  let depth = 0;
+  for (const t of tokenizeCond(cond)) {
+    if (t === "(") depth++;
+    else if (t === ")") { if (--depth < 0) return "The condition has an unmatched \")\"."; }
+    else if (/^(and|or|not)$/i.test(t)) continue;
+    else {
+      const m = /^(?:all|\d+) of (.+)$/i.exec(t), target = m ? m[1] : t;
+      if (m && target.toLowerCase() === "them") continue;
+      if (!m && t.includes("*")) return "\"" + t + "\" needs a quantifier, such as \"1 of " + t + "\" or \"all of " + t + "\".";
+      if (!names.some((n) => matchPrefix(n, target))) return "The condition names \"" + target + "\", which is not a search identifier under detection.";
+    }
+  }
+  return depth ? "The condition has an unmatched \"(\"." : "";
+}
+
 /**
  * compileRule(yamlText) -> { ok:true, rule } | { ok:false, error }
  * rule = { title, id, level, description, detection, condition, selectionNames }
@@ -154,6 +178,7 @@ export function compileRule(yamlText) {
   // an unimplemented modifier (cidr, base64, windash, gt...) must not silently fall back to plain equality
   const bad = new Set(), scan = (sel) => { if (Array.isArray(sel)) sel.forEach(scan); else if (sel && typeof sel === "object") for (const k of Object.keys(sel)) for (const m of str(k).split("|").slice(1)) if (!MODS.has(lc(m))) bad.add(lc(m)); };
   for (const n of selectionNames) scan(detection[n]);
+  const condErr = checkCondition(condition, selectionNames); if (condErr) return { ok: false, error: condErr };
   if (bad.size) return { ok: false, error: "Unsupported field modifier" + (bad.size > 1 ? "s" : "") + ": " + [...bad].join(", ") + ". Supported: contains, startswith, endswith, all, re, cased, exists." };
   return { ok: true, rule: { title: str(doc.title || "Untitled rule"), id: str(doc.id || ""), level: lc(doc.level || ""), description: str(doc.description || ""), detection, condition, selectionNames } };
 }
