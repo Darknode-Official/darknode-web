@@ -338,7 +338,10 @@ const TOOLKIT = [
       const ipv4 = grab(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g).filter(_isIPv4);
       const urls = grab(/\bhttps?:\/\/[^\s"'<>]+/gi);
       const emails = grab(/\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/gi);
-      const domains = grab(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi).filter((d) => !emails.some((e) => e.endsWith(d)) && !_isIPv4(d));
+      // Domains from the text with emails cut out (a local part like john.smith is not a domain; an
+      // email's own domain is listed under Emails), and file names such as invoice.pdf left out.
+      const FILE_EXT = /\.(exe|dll|sys|scr|msi|bat|cmd|ps1|vbs|js|jar|pdf|docx?|xlsx?|pptx?|rtf|txt|log|csv|json|xml|ya?ml|ini|cfg|conf|html?|php|aspx?|jsp|png|jpe?g|gif|bmp|svg|tmp|dat|bin|iso|img|lnk|hta|eml|msg)$/i;
+      const domains = uniq((t.replace(/\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/gi, " ").match(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi) || [])).filter((d) => !_isIPv4(d) && !FILE_EXT.test(d));
       const md5 = grab(/\b[a-f0-9]{32}\b/gi), sha1 = grab(/\b[a-f0-9]{40}\b/gi), sha256 = grab(/\b[a-f0-9]{64}\b/gi);
       const cves = grab(/\bCVE-\d{4}-\d{4,7}\b/gi);
       const sec = (title, arr) => arr.length ? title + " (" + arr.length + "):\n" + arr.join("\n") + "\n\n" : "";
