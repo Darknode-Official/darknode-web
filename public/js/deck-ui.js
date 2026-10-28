@@ -28,7 +28,7 @@ import * as surface from "/js/deck-surface.js?v=20261026b";
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel, TIERS } from "/js/core/entitlements.js";
-import * as findings from "/js/core/findings.js?v=20261021a";
+import * as findings from "/js/core/findings.js?v=20261028a";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261027b";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
@@ -40,16 +40,16 @@ const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => {
 const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261027c");
 const corrMod = lazyMod("/js/deck/correlations.js?v=20261027c");
-const monMod = lazyMod("/js/deck/monitors.js?v=20261027c");
-const keysMod = lazyMod("/js/deck/apikeys.js?v=20261027c");
-const auditMod = lazyMod("/js/deck/audit.js?v=20261018c");
+const monMod = lazyMod("/js/deck/monitors.js?v=20261028a");
+const keysMod = lazyMod("/js/deck/apikeys.js?v=20261028a");
+const auditMod = lazyMod("/js/deck/audit.js?v=20261028a");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261027c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
-import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
+import { frameworkMap } from "/js/core/framework-map.js?v=20261028a";
 import { cleanTitle, localDay } from "/js/core/queue-format.js";
-import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018d";
-import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018d";
-import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261025c";
+import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261028a";
+import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261028a";
+import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261028a";
 import { makeMessage as makeBridge, parseMessage as parseBridge, MSG as BMSG } from "/js/core/tool-bridge.js?v=20261018g";
 
 const LS_CONN = "dn_deck_connections_v1";
