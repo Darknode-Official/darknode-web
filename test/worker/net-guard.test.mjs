@@ -37,6 +37,16 @@ group("net-guard/hostAllowed", () => {
     assert.notOk(allowed("http://169.254.169.254/latest/meta-data/"));
     assert.notOk(allowed("http://[::1]/"));
   });
+  test("a private IPv4 address carried in IPv6 is blocked (URL() rewrites ::ffff:a.b.c.d to hex)", () => {
+    assert.notOk(allowed("http://[::ffff:169.254.169.254]/")); // becomes [::ffff:a9fe:a9fe]
+    assert.notOk(allowed("http://[::ffff:127.0.0.1]/"));
+    assert.notOk(allowed("http://[64:ff9b::a9fe:a9fe]/"));       // NAT64
+    assert.notOk(allowed("http://[::7f00:1]/"));                 // IPv4-compatible
+    assert.notOk(allowed("http://[2002:a9fe:a9fe::]/"));         // 6to4
+    assert.ok(allowed("http://[::ffff:8.8.8.8]/"));
+    assert.ok(allowed("http://[64:ff9b::808:808]/"));
+    assert.ok(allowed("http://[2606:4700::1111]/"));
+  });
   test("numeric-encoded private addresses do not bypass the guard", () => {
     assert.notOk(allowed("http://2130706433/"));          // 127.0.0.1
     assert.notOk(allowed("http://0x7f000001/"));           // 127.0.0.1
