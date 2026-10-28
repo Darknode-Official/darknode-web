@@ -1668,10 +1668,10 @@ export function renderDeck(host, opts) {
   if (opts.isOwner) { try { const p = localStorage.getItem(LS_PREVIEW); if (TIERS.includes(p)) planTier = p; } catch (_) {} }
   const PLAN_GROUP = { exposure: "pro", code: "pro", identity: "team", detect: "team", finsec: "team", risk: "enterprise", compliance: "enterprise" };
   const PLAN_ITEM = { enterprise: "team", findings: "pro", inventory: "pro", reports: "pro", activity: "pro", monitors: "pro", phishtriage: "pro", dlp: "pro", leakprobe: "pro", team: "team" };
-  const needTier = {};
+  const needTier = {}, navName = {}; // navName keeps the names of entries the plan hides
   for (const grp of NAV_DEF) {
-    if (grp.id) needTier["section:" + grp.id] = PLAN_GROUP[grp.id] || "free";
-    for (const [kind, id] of grp.items) if (id !== "admin") needTier[kind + ":" + id] = PLAN_ITEM[id] || PLAN_GROUP[grp.id] || "free";
+    if (grp.id) { needTier["section:" + grp.id] = PLAN_GROUP[grp.id] || "free"; navName["section:" + grp.id] = grp.g; }
+    for (const [kind, id, label] of grp.items) { navName[kind + ":" + id] = label; if (id !== "admin") needTier[kind + ":" + id] = PLAN_ITEM[id] || PLAN_GROUP[grp.id] || "free"; }
   }
   const isLocked = (key) => rank(planTier) < rank(needTier[key] || "free");
   for (let i = NAV_DEF.length - 1; i >= 0; i--) {
@@ -4746,9 +4746,20 @@ export function renderDeck(host, opts) {
   // a page link (/surface, /area/code) opens that page; / restores the last one
   const route0 = primary ? routeOf(location.pathname) : null;
   if (route0 && route0.scene !== "overview") initial = route0.scene;
+  // a link to a page or tool above the plan: open Plans and say why, instead of quietly
+  // landing somewhere else (the page itself stays hidden, as in the sidebar)
+  const lockedKey = route0 && route0.scene !== "overview" ? (route0.scene === "section" ? "section:" + route0.arg : "scene:" + route0.scene)
+    : opts.startSec && !route0 ? "tool:" + opts.startSec : null;
+  const lockedLink = lockedKey && isLocked(lockedKey) && !isLocked("scene:plans") ? lockedKey : null;
   rafId = requestAnimationFrame(() => {
-    go(initial, route0 && route0.arg);
-    if (opts.startSec && !route0) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec);
+    if (lockedLink) {
+      go("plans");
+      const name = navName[lockedLink] || lockedLink.split(":")[1];
+      toast(name + " is part of the " + planLabel(needTier[lockedLink]) + " plan");
+    } else {
+      go(initial, route0 && route0.arg);
+      if (opts.startSec && !route0) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec);
+    }
     routing = false;
   });
   // back / forward between Deck pages and tools
