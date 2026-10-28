@@ -48,9 +48,12 @@ const HMAX = 200;
 export function readRuns(space) {
   try { const v = JSON.parse(localStorage.getItem(HKEY(space)) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; }
 }
-// run = { tool, target, summary, level: "good"|"warn"|"bad", score?, counts? }
+// run = { tool, target, summary, level: "good"|"warn"|"bad", score?, counts?, key? }
+// A re-run replaces the earlier run of the same check: same tool and key (the target when
+// no key is given, so a tool whose target is shared by different checks passes a key).
 export function recordRun(space, run) {
-  const list = readRuns(space).filter((r) => !(r.tool === run.tool && r.target === run.target));
+  const k = (r) => r.key || r.target;
+  const list = readRuns(space).filter((r) => !(r.tool === run.tool && k(r) === k(run)));
   list.unshift({ ...run, at: Date.now() });
   try { localStorage.setItem(HKEY(space), JSON.stringify(list.slice(0, HMAX))); } catch (_) {}
   try { window.dispatchEvent(new CustomEvent("dn-space-run", { detail: { space } })); } catch (_) {}

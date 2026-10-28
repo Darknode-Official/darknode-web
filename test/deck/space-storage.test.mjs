@@ -30,3 +30,21 @@ group("deck: native space storage is per account", () => {
     assert.ok(mem.has("dn_space_personal_domain"));
   });
 });
+
+group("space runs: a re-run replaces the same check only", () => {
+  test("a clean email from the same sender domain does not replace a flagged one", () => {
+    mem.clear(); window.__dnUid = null;
+    recordRun("personal", { tool: "phish", target: "example.com", key: "email <a@example.com>", summary: "Likely phishing", level: "bad" });
+    recordRun("personal", { tool: "phish", target: "example.com", key: "email <b@example.com>", summary: "No warning signs", level: "good" });
+    assert.equal(readRuns("personal").filter((r) => r.level === "bad").length, 1);
+    recordRun("personal", { tool: "phish", target: "example.com", key: "email <a@example.com>", summary: "No warning signs", level: "good" });
+    assert.equal(readRuns("personal").length, 2);
+    assert.equal(readRuns("personal").filter((r) => r.level === "bad").length, 0);
+  });
+  test("without a key the target still decides", () => {
+    mem.clear(); window.__dnUid = null;
+    recordRun("personal", { tool: "domain", target: "example.com", summary: "Grade F", level: "bad" });
+    recordRun("personal", { tool: "domain", target: "example.com", summary: "Grade A", level: "good" });
+    assert.equal(readRuns("personal").length, 1);
+  });
+});
