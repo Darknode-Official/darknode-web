@@ -1776,7 +1776,20 @@ export function renderDeck(host, opts) {
   for (const g of groups) for (const it of g.items) index.push({ type: "tool", sec: it.sec, label: it.label, group: g.name, color: g.color, badge: it.badge, kw: TOOL_KW[it.sec] || "" });
   for (const it of INTEGRATIONS) index.push({ type: "conn", id: it.id, label: it.name, group: it.kind === "ai" ? "AI model" : "Security", it });
 
-  let conns = loadConns();
+  // Connection flags live per browser, keys per account: a key-based connection counts only
+  // when this account holds the key, so another account's (or an imported file's) flag does not
+  // show Connected, and a key this account stored shows as connected again.
+  const reconcileConns = (c) => {
+    const has = (id) => { try { return !!String((window.dnKeys && window.dnKeys.get("dn_key_" + id)) || "").trim(); } catch (_) { return false; } };
+    if (!window.dnKeys || !window.dnKeys.uid || !window.dnKeys.uid()) return c; // no account: nothing to check against
+    for (const it of INTEGRATIONS) {
+      const r = c[it.id], k = has(it.id);
+      if (r && r.method === "key" && r.hasKey && !k) delete c[it.id];
+      else if (!r && k) c[it.id] = { connected: true, method: "key", hasKey: true, at: Date.now() };
+    }
+    return c;
+  };
+  let conns = reconcileConns(loadConns());
   let pins = loadPins();
 
   if (!document.getElementById("dk-css")) { const st = document.createElement("style"); st.id = "dk-css"; st.textContent = CSS; document.head.appendChild(st); }
@@ -2703,7 +2716,7 @@ export function renderDeck(host, opts) {
       rd.onload = () => {
         try {
           const s = JSON.parse(rd.result);
-          if (s.connections && typeof s.connections === "object") { conns = s.connections; saveConns(conns); }
+          if (s.connections && typeof s.connections === "object" && !Array.isArray(s.connections)) { conns = reconcileConns(s.connections); saveConns(conns); }
           if (Array.isArray(s.pins)) { pins = s.pins.filter((x) => secLabel[x]).slice(0, 12); savePins(pins); }
           if (typeof s.notes === "string") saveNotes(s.notes);
           toast("Deck state imported");
