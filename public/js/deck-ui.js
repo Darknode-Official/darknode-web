@@ -1941,7 +1941,8 @@ export function renderDeck(host, opts) {
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
   const secLabel = {}; for (const g of groups) for (const it of g.items) secLabel[it.sec] = it.label;
-  pins = pins.filter((s) => secLabel[s]);   // drop pins whose tool no longer exists
+  const isSec = (x) => typeof x === "string" && Object.prototype.hasOwnProperty.call(secLabel, x); // own key: "constructor" is not a tool
+  pins = [...new Set(pins)].filter(isSec);   // drop pins whose tool no longer exists, and repeats
   // Toggle a tool's pinned state (shown on the overview). Returns the new state.
   function togglePin(sec){
     if (!sec) return false;
@@ -2734,7 +2735,7 @@ export function renderDeck(host, opts) {
         try {
           const s = JSON.parse(rd.result);
           if (s.connections && typeof s.connections === "object" && !Array.isArray(s.connections)) { conns = reconcileConns(s.connections); saveConns(conns); }
-          if (Array.isArray(s.pins)) { pins = s.pins.filter((x) => secLabel[x]).slice(0, 12); savePins(pins); }
+          if (Array.isArray(s.pins)) { pins = [...new Set(s.pins)].filter(isSec).slice(0, 12); savePins(pins); }
           if (typeof s.notes === "string") saveNotes(s.notes);
           toast("Deck state imported");
           go(curScene);
