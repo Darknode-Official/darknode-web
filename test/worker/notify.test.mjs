@@ -71,6 +71,15 @@ group("notify/signing + deliver", () => {
     assert.equal(sig, expected);
   });
 
+  test("a redirect is not followed (a public hook answering 307 could re-aim the POST at a private host)", async () => {
+    let seen = null;
+    const fakeFetch = async (url, opts) => { seen = opts; return { ok: false, status: 307 }; };
+    const r = await deliver({ type: "webhook", url: "https://ci.test/hook" }, ALERT, { fetch: fakeFetch });
+    assert.equal(seen.redirect, "manual");
+    assert.equal(r.ok, false);
+    assert.ok(/redirect \(307\)/.test(r.error));
+  });
+
   test("a fetch failure is reported, not thrown", async () => {
     const fakeFetch = async () => { throw new Error("network down"); };
     const r = await deliver({ type: "slack", url: "https://x" }, ALERT, { fetch: fakeFetch });
