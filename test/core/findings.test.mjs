@@ -64,6 +64,10 @@ group("core/findings", () => {
 });
 
 group("core/findings: severity sort is proto-safe", () => {
+  test("rows drop the finding's internal dedupe key", () => {
+    const r = collectFindings([{ id: "k", type: "FINDING", name: "TLS 1.0 enabled (vulnimport:1zx)", severity: "high", data: { tool: "vulnimport", findingKey: "1zx" } }]);
+    assert.equal(r[0].name, "TLS 1.0 enabled");
+  });
   test("a finding whose severity is a prototype-member name doesn't scramble the order", () => {
     const rows = collectFindings([
       { id: "x", type: "FINDING", severity: "constructor", status: "open", updatedAt: "2026-10-01" },

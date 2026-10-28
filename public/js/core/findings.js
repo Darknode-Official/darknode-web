@@ -5,6 +5,7 @@
 // ranked item traces back to a record or a feed entry.
 
 import { isSimulated } from "./posture.js";
+import { cleanTitle } from "./queue-format.js";
 
 export const FINDING_TYPES = ["FINDING", "VULNERABILITY"];
 export const SEV_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
@@ -21,7 +22,7 @@ export function collectFindings(entities, opts = {}) {
   return (entities || [])
     .filter((e) => e && FINDING_TYPES.includes(e.type) && (opts.includeSim || !isSimulated(e)))
     .map((e) => ({
-      id: e.id, name: e.name || "", type: e.type, severity: sevOf(e) || null, status: e.status || "new",
+      id: e.id, name: cleanTitle(e), type: e.type, severity: sevOf(e) || null, status: e.status || "new",
       source: e.source || "manual", tags: e.tags || [], createdAt: e.createdAt || "", updatedAt: e.updatedAt || e.createdAt || "",
       sim: isSimulated(e),
     }))

@@ -7,6 +7,10 @@ const day = (n) => new Date(NOW - n * 86400000).toISOString();
 const F = (id, severity, createdAt, data = {}, status = "open") => ({ id, type: "FINDING", name: id, severity, status, createdAt, data });
 
 group("exposure-score/score", () => {
+  test("top drivers drop the finding's internal dedupe key", () => {
+    const e = Object.assign(F("f", "high", day(1), { tool: "vulnimport", findingKey: "1zx" }), { name: "TLS 1.0 enabled (vulnimport:1zx)" });
+    assert.equal(exposureScore([e], { now: NOW }).top[0].name, "TLS 1.0 enabled");
+  });
   test("no open findings scores 0", () => {
     assert.equal(exposureScore([]).score, 0);
     assert.equal(exposureScore([F("f", "critical", day(1), {}, "closed")], { now: NOW }).score, 0);
