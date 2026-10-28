@@ -168,7 +168,7 @@ export function mountSpace(el, id, ctx = {}) {
       const g = e.target.closest("[data-go]"); if (g) { show(g.dataset.go); el.scrollIntoView({ block: "start" }); return; }
       const ot = e.target.closest("[data-sec]"); if (ot) { if (ctx.openTool) ctx.openTool(ot.dataset.sec, ot.dataset.label); return; }
       if (e.target.closest("[data-clear]")) {
-        const ok = ctx.confirm ? await ctx.confirm("Clear the check history for this space? Saved domain lists are kept.") : true;
+        const ok = ctx.confirm ? await ctx.confirm("Clear the check history for this space? Saved domain lists are kept.") : false;
         if (ok) { clearRuns(id); show("home"); }
       }
     });
