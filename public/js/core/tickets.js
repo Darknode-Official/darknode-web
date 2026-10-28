@@ -66,7 +66,10 @@ export function isoDate(v) {
   else if (typeof v.seconds === "number") ms = v.seconds * 1000;
   else if (v instanceof Date) ms = v.getTime();
   if (!Number.isFinite(ms)) return null;
-  return new Date(ms).toISOString().slice(0, 10);
+  // The local calendar day: a due date picked as Nov 5 is stored as 23:59:59 local time, which
+  // is already Nov 6 in UTC for anyone west of Greenwich.
+  const d = new Date(ms), p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
 /** Entities that may leave the platform: present and not sample/simulated data. */

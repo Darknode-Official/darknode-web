@@ -46,7 +46,7 @@ const auditMod = lazyMod("/js/deck/audit.js?v=20261018c");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261027c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
 import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
-import { cleanTitle } from "/js/core/queue-format.js";
+import { cleanTitle, localDay } from "/js/core/queue-format.js";
 import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018d";
 import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018d";
 import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261025c";
@@ -4332,7 +4332,7 @@ export function renderDeck(host, opts) {
     if (!r.owners.length) return head + `<p>No open findings to plan. Everything recorded is closed or excepted.</p><p class="foot">Built in your browser from your security graph; sample data excluded; nothing uploaded.</p>`;
     const body = r.owners.map((g) => `<h2>${esc(ownerName(g))} <span class="meta">(${g.open} open${g.overdue ? ", " + g.overdue + " overdue" : ""})</span></h2>`
       + `<table><tr><th>Severity</th><th>Finding</th><th>Source</th><th>Due</th><th>Status</th></tr>`
-      + g.items.map((it) => `<tr><td>${esc(it.severity)}</td><td>${esc(it.name)}${it.kev ? ' <b>KEV</b>' : ''}</td><td>${esc(it.source)}</td><td>${it.dueAt ? esc(new Date(it.dueAt).toISOString().slice(0, 10)) : "—"}</td><td>${esc(it.state === "overdue" ? (it.daysLeft != null ? Math.abs(it.daysLeft) + "d overdue" : "overdue") : it.state === "due_soon" ? (it.daysLeft + "d left") : it.state.replace("_", " "))}</td></tr>`).join("") + `</table>`).join("");
+      + g.items.map((it) => `<tr><td>${esc(it.severity)}</td><td>${esc(it.name)}${it.kev ? ' <b>KEV</b>' : ''}</td><td>${esc(it.source)}</td><td>${it.dueAt ? esc(localDay(it.dueAt)) : "—"}</td><td>${esc(it.state === "overdue" ? (it.daysLeft != null ? Math.abs(it.daysLeft) + "d overdue" : "overdue") : it.state === "due_soon" ? (it.daysLeft + "d left") : it.state.replace("_", " "))}</td></tr>`).join("") + `</table>`).join("");
     return head + body + `<p class="foot">Open findings grouped by their assigned owner, most urgent first (overdue, then severity). Due dates follow this workspace's SLA policy. Built in your browser from your security graph; sample data excluded; nothing uploaded.</p>`;
   }
   function remediationMd(d){
@@ -4340,7 +4340,7 @@ export function renderDeck(host, opts) {
     const head = `# ${m.org} — Remediation Plan\n\nGenerated ${m.date} · Darknode · ${r.totalOpen} open findings, ${r.overdue} overdue, ${r.unassignedOpen} unassigned\n\n`;
     if (!r.owners.length) return head + "No open findings to plan. Everything recorded is closed or excepted.\n";
     return head + r.owners.map((g) => `## ${ownerName(g)} (${g.open} open${g.overdue ? ", " + g.overdue + " overdue" : ""})\n\n| Severity | Finding | Source | Due | Status |\n|---|---|---|---|---|\n`
-      + g.items.map((it) => `| ${it.severity}${it.kev ? " (KEV)" : ""} | ${String(it.name).replace(/\|/g, "\\|")} | ${it.source} | ${it.dueAt ? new Date(it.dueAt).toISOString().slice(0, 10) : "—"} | ${it.state === "overdue" ? (it.daysLeft != null ? Math.abs(it.daysLeft) + "d overdue" : "overdue") : it.state.replace("_", " ")} |`).join("\n")).join("\n\n")
+      + g.items.map((it) => `| ${it.severity}${it.kev ? " (KEV)" : ""} | ${String(it.name).replace(/\|/g, "\\|")} | ${it.source} | ${it.dueAt ? localDay(it.dueAt) : "—"} | ${it.state === "overdue" ? (it.daysLeft != null ? Math.abs(it.daysLeft) + "d overdue" : "overdue") : it.state.replace("_", " ")} |`).join("\n")).join("\n\n")
       + `\n\n---\n\nOpen findings grouped by their assigned owner, most urgent first. Due dates follow this workspace's SLA policy. Built in your browser from your security graph; sample data excluded; nothing uploaded.\n`;
   }
   // ---- Vulnerability SLA report (D7) ----

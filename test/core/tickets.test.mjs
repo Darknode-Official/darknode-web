@@ -22,7 +22,7 @@ function parseCsv(text) {
 
 const F = (over = {}) => ({
   id: "ent1", type: "FINDING", name: "Public bucket (cloudposture:abc123)", severity: "high", status: "open",
-  createdAt: Date.UTC(2026, 9, 1, 12), updatedAt: Date.UTC(2026, 9, 2), tags: ["sink", "cloudposture"],
+  createdAt: new Date(2026, 9, 1, 12).getTime(), updatedAt: new Date(2026, 9, 2, 12).getTime(), tags: ["sink", "cloudposture"],
   ...over,
   data: {
     findingKey: "abc123", tool: "cloudposture", dataset: "run-1", assets: ["bucket-a", "bucket-b"],
@@ -50,7 +50,7 @@ group("core/tickets", () => {
   });
 
   test("body carries description, recommendation, assets, controls, evidence, dates and the reference line", () => {
-    const b = ticketFields(F({ data: { dueAt: "2026-11-15T00:00:00Z" } })).body;
+    const b = ticketFields(F({ data: { dueAt: new Date(2026, 10, 15, 12).toISOString() } })).body;
     for (const s of ["Bucket allows anonymous read.", "Block public access.", "bucket-b", "CIS 2.1.1", "NIST-CSF PR.DS-1", "acl: public-read", "First seen: 2026-10-01", "Due: 2026-11-15", "Darknode finding: abc123 (cloudposture)"])
       assert.ok(b.includes(s), "body has " + s);
     assert.ok(b.trim().endsWith("Darknode finding: abc123 (cloudposture)"));
@@ -71,12 +71,14 @@ group("core/tickets", () => {
   });
 
   test("isoDate handles ms, ISO, plain dates, Firestore timestamps and junk", () => {
-    assert.equal(isoDate(Date.UTC(2026, 0, 2)), "2026-01-02");
-    assert.equal(isoDate("2026-03-04T10:00:00Z"), "2026-03-04");
+    assert.equal(isoDate(new Date(2026, 0, 2, 12).getTime()), "2026-01-02");
+    assert.equal(isoDate(new Date(2026, 2, 4, 10).toISOString()), "2026-03-04");
     assert.equal(isoDate("2026-03-04"), "2026-03-04");
-    assert.equal(isoDate({ seconds: Date.UTC(2026, 4, 6) / 1000 }), "2026-05-06");
-    assert.equal(isoDate({ toMillis: () => Date.UTC(2026, 6, 8) }), "2026-07-08");
+    assert.equal(isoDate({ seconds: new Date(2026, 4, 6, 12).getTime() / 1000 }), "2026-05-06");
+    assert.equal(isoDate({ toMillis: () => new Date(2026, 6, 8, 12).getTime() }), "2026-07-08");
     assert.equal(isoDate("not a date"), null);
+    // a due date picked as Nov 5 is stored as 23:59:59 local; it must not export as Nov 6
+    assert.equal(isoDate(new Date(2026, 10, 5, 23, 59, 59).getTime()), "2026-11-05");
     assert.equal(isoDate(null), null);
   });
 
@@ -88,7 +90,7 @@ group("core/tickets", () => {
   });
 
   test("Jira CSV custom issue type, due date and wider label set pads shorter rows", () => {
-    const rows = parseCsv(toJiraCsv([F({ data: { dueAt: Date.UTC(2026, 10, 1) } }), F({ id: "e2", severity: "low" })], { issueType: "Bug", labels: ["team red"] }));
+    const rows = parseCsv(toJiraCsv([F({ data: { dueAt: new Date(2026, 10, 1, 12).getTime() } }), F({ id: "e2", severity: "low" })], { issueType: "Bug", labels: ["team red"] }));
     assert.equal(rows[0].filter((h) => h === "Labels").length, 4);
     assert.equal(rows[1][1], "Bug");
     assert.equal(rows[1][3], "2026-11-01");
