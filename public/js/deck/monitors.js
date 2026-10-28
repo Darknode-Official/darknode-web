@@ -152,7 +152,8 @@ function readForm(slot) {
   const channels = chUrl ? [{ type: chType, url: chUrl, ...(chType === "webhook" && chSecret ? { secret: chSecret } : {}) }] : [];
   const intervalMs = Math.max(15, Math.min(10080, Number($("#mfInt").value) || 1440)) * 60000;
   if (S.kind === "kev-epss") {
-    const floorEl = $("#mfEpss"), floorRaw = floorEl ? Number(floorEl.value) : NaN;
+    // an empty field is Number("") = 0, which would alert on every CVE with any EPSS score
+    const floorEl = $("#mfEpss"), floorTxt = floorEl ? floorEl.value.trim() : "", floorRaw = floorTxt ? Number(floorTxt) : NaN;
     const epssFloor = Number.isFinite(floorRaw) ? Math.max(0, Math.min(1, floorRaw)) : 0.5;
     return { name: ($("#mfName").value || "").trim() || "KEV / EPSS watch", type: "kev-epss", config: { epssFloor }, intervalMs, channels };
   }
