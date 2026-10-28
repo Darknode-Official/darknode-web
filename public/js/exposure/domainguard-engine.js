@@ -862,6 +862,8 @@ const SEV_RANK = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 const SEV_PENALTY = { critical: 40, high: 25, medium: 12, low: 5, info: 0 };
 
 /** Issue catalog: id -> finding template. */
+// check -> the issues it decides beyond its own prefix (the dmarc check decides dmarc_*)
+const HOLD_BY = { expiry: ["rdap_redemption"], lock: ["no_transfer_lock"], parked: ["parked_unlocked"], cert: ["cert_expiring"] };
 const ISSUES = {
   expiry_critical: { title: "Domain registration expires within days (or has expired)", severity: "critical", confidence: "confirmed", category: "registration", controls: [C.t1583, C.icannLock, C.iso59], recommendation: "Renew now and enable auto-renew with a valid payment method; an expired domain can be re-registered by anyone and inherits your mail and web traffic." },
   expiry_soon: { title: "Domain registration expires within the warning window", severity: "high", confidence: "confirmed", category: "registration", controls: [C.t1583, C.iso59], recommendation: "Renew for multiple years and turn on auto-renew; assign an owner for registrar notices." },
@@ -1221,6 +1223,16 @@ export function analyze(dataset, opts = {}, ctx) {
     domainRows.push(row);
     for (const i of issues) push(i.id, spec.domain, i.detail, i.extra);
   }
+  // Issues a lookup that errored (or a domain not checked at all) could not re-decide are held,
+  // so the sink does not offer the last run's finding for them as verified fixed.
+  const heldIds = new Set();
+  for (const r of domainRows) {
+    const all = unchecked.includes(r.domain);
+    for (const id of Object.keys(ISSUES)) {
+      const k = id.split("_")[0];
+      if (all || Object.entries(r.checks || {}).some(([c, v]) => v && v.status === "error" && (c === k || (HOLD_BY[c] || []).includes(id)))) heldIds.add("domainguard:" + id);
+    }
+  }
   if (unchecked.length) skipped.push({ check: "live DNS checks", reason: unchecked.length + " domain(s) have no live results yet: " + unchecked.slice(0, 8).join(", ") + (unchecked.length > 8 ? ", ..." : "") });
   // Hosts (takeover)
   const hostRows = [];
@@ -1313,6 +1325,7 @@ export function analyze(dataset, opts = {}, ctx) {
       findings: findings.length, bySeverity, errors: domainRows.reduce((s, r) => s + (r.errors || 0), 0),
     },
     findings,
+    held: [...heldIds].sort(),
     tables: { domains: domainRows, subdomains: hostRows, lookalikes: lookRows, changes: [] },
     skipped,
     meta: { tool: TOOL_ID, version: VERSION, now: nowMs == null ? null : new Date(nowMs).toISOString(), rows: domainRows.length, thresholds: { expiryCriticalDays: o.expiryCriticalDays, expiryWarnDays: o.expiryWarnDays, certWarnDays: o.certWarnDays, newlyRegisteredDays: o.newlyRegisteredDays, maxCandidates: o.maxCandidates, spfLookupLimit: o.spfLookupLimit } },

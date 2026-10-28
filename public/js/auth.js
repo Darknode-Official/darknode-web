@@ -2219,7 +2219,7 @@ function renderApp(user) {
     else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261027c").then(m => live() && m.renderVendorRisk(main)); }
     else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261017e").then(m => live() && m.renderBackupReady(main)); }
     else if (sec === "dmarcreports") { import("/js/exposure/dmarcreports.js?v=20261017c").then(m => live() && m.renderDmarcReports(main)); }
-    else if (sec === "domainguard") { import("/js/exposure/domainguard.js?v=20261026b").then(m => live() && m.renderDomainGuard(main)); }
+    else if (sec === "domainguard") { import("/js/exposure/domainguard.js?v=20261027c").then(m => live() && m.renderDomainGuard(main)); }
     else if (sec === "dnshunt") { import("/js/ops/dnshunt.js?v=20261026b").then(m => live() && m.renderDnsHunt(main)); }
     else if (sec === "proxyhunt") { import("/js/ops/proxyhunt.js?v=20261026b").then(m => live() && m.renderProxyHunt(main)); }
     else if (sec === "vpnaudit") { import("/js/identity/vpnaudit.js?v=20261026b").then(m => live() && m.renderVpnAudit(main)); }
