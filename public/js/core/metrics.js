@@ -98,6 +98,11 @@ export function snapshot(entities, opts = {}) {
 
 // Compare two snapshots for a board report's "quarter over quarter" deltas. Returns the
 // signed change in the headline numbers; nulls (unknown) pass through as null.
+// Open critical + high of a full snapshot (bySeverity) or a stored trend row (critical, high
+// at top level, deck/trend-store.js compact), or null when it carries neither.
+const critHigh = (s) => s.bySeverity ? (s.bySeverity.critical || 0) + (s.bySeverity.high || 0)
+  : s.critical != null || s.high != null ? (s.critical || 0) + (s.high || 0) : null;
+
 export function trendDelta(current, previous) {
   if (!current) return null;
   const d = (a, b) => (a == null || b == null ? null : a - b);
@@ -109,7 +114,7 @@ export function trendDelta(current, previous) {
     slaCompliancePct: d(current.slaCompliancePct, p.slaCompliancePct),
     mttrDays: d(current.mttrDays, p.mttrDays),
     kevOpen: d(current.kevOpen, p.kevOpen),
-    criticalHigh: d((current.bySeverity.critical + current.bySeverity.high), p.bySeverity ? (p.bySeverity.critical + p.bySeverity.high) : null),
+    criticalHigh: d(critHigh(current), critHigh(p)),
   };
 }
 
