@@ -6,6 +6,7 @@
 // a CVE already sitting in the graph surfaces here the day it becomes known-exploited, with no
 // re-import needed.
 import { cveIds } from "./workflow.js";
+import { cleanTitle } from "./queue-format.js";
 
 const low = (v) => String(v == null ? "" : v).toLowerCase();
 const SEV = ["critical", "high", "medium", "low", "info"];
@@ -13,7 +14,7 @@ const OPEN = new Set(["new", "open", "investigating"]);
 const sevRank = (s) => { const i = SEV.indexOf(s); return i < 0 ? SEV.length : i; };
 const isOpenFinding = (e) => low(e.type) === "finding" && OPEN.has(low(e.status) || "new");
 // A subject worth naming for a CVE: anything in the graph that references it.
-const subjectName = (e) => String(e.name || e.id || "").trim();
+const subjectName = (e) => cleanTitle(e) || String(e.id || "").trim();
 
 /**
  * affectsMe(entities, opts) -> prioritised CVEs from the graph that the live feeds flag.

@@ -28,7 +28,7 @@ import * as surface from "/js/deck-surface.js?v=20261026b";
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel, TIERS } from "/js/core/entitlements.js";
-import * as findings from "/js/core/findings.js?v=20261021a";
+import * as findings from "/js/core/findings.js?v=20261028a";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261027b";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
@@ -40,15 +40,16 @@ const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => {
 const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261027c");
 const corrMod = lazyMod("/js/deck/correlations.js?v=20261027c");
-const monMod = lazyMod("/js/deck/monitors.js?v=20261027c");
-const keysMod = lazyMod("/js/deck/apikeys.js?v=20261027c");
-const auditMod = lazyMod("/js/deck/audit.js?v=20261018c");
+const monMod = lazyMod("/js/deck/monitors.js?v=20261028a");
+const keysMod = lazyMod("/js/deck/apikeys.js?v=20261028a");
+const auditMod = lazyMod("/js/deck/audit.js?v=20261028a");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261027c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
-import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
-import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018d";
-import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018d";
-import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261025c";
+import { frameworkMap } from "/js/core/framework-map.js?v=20261028a";
+import { cleanTitle, localDay } from "/js/core/queue-format.js";
+import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261028a";
+import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261028a";
+import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261028a";
 import { makeMessage as makeBridge, parseMessage as parseBridge, MSG as BMSG } from "/js/core/tool-bridge.js?v=20261018g";
 
 const LS_CONN = "dn_deck_connections_v1";
@@ -205,10 +206,20 @@ function toolIcon(label, group){
 
 function loadConns(){ try { return JSON.parse(localStorage.getItem(LS_CONN) || "{}") || {}; } catch (_) { return {}; } }
 function saveConns(c){ try { localStorage.setItem(LS_CONN, JSON.stringify(c)); } catch (_) {} }
-function loadPins(){ try { const v = JSON.parse(localStorage.getItem(LS_PINS) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
-function savePins(p){ try { localStorage.setItem(LS_PINS, JSON.stringify(p)); } catch (_) {} }
-function loadNotes(){ try { return localStorage.getItem(LS_NOTES) || ""; } catch (_) { return ""; } }
-function saveNotes(t){ try { localStorage.setItem(LS_NOTES, t); } catch (_) {} }
+// Notes and pins are per account: localStorage is shared by every account on this browser.
+// Same rule as the native spaces (deck/native/ui.js): pre-existing data moves to the first
+// signed-in account once; guests and Test Mode (per-session uid) keep the plain key.
+function userKey(plain){
+  let u = null; try { u = window.__dnUid || null; } catch (_) {}
+  if (!u || /^(test|app-guest)-/.test(u)) return plain;
+  const k = plain + "_u_" + u;
+  try { if (localStorage.getItem(k) == null) { const old = localStorage.getItem(plain); if (old != null) { localStorage.setItem(k, old); localStorage.removeItem(plain); } } } catch (_) {}
+  return k;
+}
+function loadPins(){ try { const v = JSON.parse(localStorage.getItem(userKey(LS_PINS)) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
+function savePins(p){ try { localStorage.setItem(userKey(LS_PINS), JSON.stringify(p)); } catch (_) {} }
+function loadNotes(){ try { return localStorage.getItem(userKey(LS_NOTES)) || ""; } catch (_) { return ""; } }
+function saveNotes(t){ try { localStorage.setItem(userKey(LS_NOTES), t); } catch (_) {} }
 
 // ---- top-bar + workspace icons (kept tiny, stroked, on-theme) ----
 const IC = {
@@ -264,6 +275,8 @@ const SEV = { CRITICAL:{label:"Critical",color:"#f0484a"}, HIGH:{label:"High",co
 // Every tool is a pure function of (input, opts). Nothing leaves the browser — ideal for a
 // security console handling IOCs, tokens and samples. `run` returns a string or throws Error.
 const _te = (s) => new TextEncoder().encode(s);
+// Natural, case-insensitive line order: "apple" before "Zebra", "9" before "10".
+const natCmp = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }) || (a < b ? -1 : a > b ? 1 : 0);
 const _b64e = (s) => btoa(unescape(encodeURIComponent(s)));
 const _b64d = (s) => decodeURIComponent(escape(atob(s.replace(/\s+/g, ""))));
 const _b64urlToStd = (s) => s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4);
@@ -287,12 +300,14 @@ function _ipScope(ip){
 }
 function _refang(s){
   return s
-    .replace(/\[\.\]|\(\.\)|\{\.\}|\[dot\]|\s+dot\s+/gi, ".")
+    .replace(/\[\.\]|\(\.\)|\{\.\}|\s?[\[({]dot[\])}]\s?/gi, ".") // a bare " dot " is prose, not a defanged dot
     .replace(/\[:\/\/\]/g, "://")
     .replace(/\[@\]|\[at\]/gi, "@")
     .replace(/hxxp/gi, "http");
 }
-function _defang(s){ return s.replace(/:\/\//g, "[://]").replace(/\bhttp/gi, "hxxp").replace(/\./g, "[.]").replace(/@/g, "[@]"); }
+// Already-bracketed parts are left alone so defanging twice is a no-op; only a URL scheme
+// becomes hxxp, not every word starting with http.
+function _defang(s){ return s.replace(/\bhttp(s?)(?=:\/\/)/gi, "hxxp$1").replace(/(?<!\[):\/\/(?!\])/g, "[://]").replace(/(?<![[({])\.(?![\])}])/g, "[.]").replace(/(?<!\[)@(?!\])/g, "[@]"); }
 function _entropyBits(s){ if (!s) return 0; const f = {}; for (const c of s) f[c] = (f[c] || 0) + 1; let h = 0; for (const k in f){ const p = f[k] / s.length; h -= p * Math.log2(p); } return h * s.length; }
 
 const TK_CATS = [
@@ -325,7 +340,10 @@ const TOOLKIT = [
       const ipv4 = grab(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g).filter(_isIPv4);
       const urls = grab(/\bhttps?:\/\/[^\s"'<>]+/gi);
       const emails = grab(/\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/gi);
-      const domains = grab(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi).filter((d) => !emails.some((e) => e.endsWith(d)) && !_isIPv4(d));
+      // Domains from the text with emails cut out (a local part like john.smith is not a domain; an
+      // email's own domain is listed under Emails), and file names such as invoice.pdf left out.
+      const FILE_EXT = /\.(exe|dll|sys|scr|msi|bat|cmd|ps1|vbs|js|jar|pdf|docx?|xlsx?|pptx?|rtf|txt|log|csv|json|xml|ya?ml|ini|cfg|conf|html?|php|aspx?|jsp|png|jpe?g|gif|bmp|svg|tmp|dat|bin|iso|img|lnk|hta|eml|msg)$/i;
+      const domains = uniq((t.replace(/\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/gi, " ").match(/\b(?:[a-z0-9-]+\.)+[a-z]{2,}\b/gi) || [])).filter((d) => !_isIPv4(d) && !FILE_EXT.test(d));
       const md5 = grab(/\b[a-f0-9]{32}\b/gi), sha1 = grab(/\b[a-f0-9]{40}\b/gi), sha256 = grab(/\b[a-f0-9]{64}\b/gi);
       const cves = grab(/\bCVE-\d{4}-\d{4,7}\b/gi);
       const sec = (title, arr) => arr.length ? title + " (" + arr.length + "):\n" + arr.join("\n") + "\n\n" : "";
@@ -373,7 +391,7 @@ const TOOLKIT = [
     } },
   { id: "lines", cat: "text", name: "Line tools", desc: "Sort, de-duplicate, reverse or trim lines.", opts: [{ id: "op", label: "Operation", type: "select", options: [["unique", "Unique"], ["sort", "Sort A→Z"], ["sortd", "Sort Z→A"], ["reverse", "Reverse order"], ["trim", "Trim each"], ["nonblank", "Drop blank lines"]] }], run: (s, o) => {
       let L = s.replace(/\r/g, "").split("\n");
-      switch (o.op) { case "sort": L.sort(); break; case "sortd": L.sort().reverse(); break; case "reverse": L.reverse(); break; case "trim": L = L.map((x) => x.trim()); break; case "nonblank": L = L.filter((x) => x.trim()); break; default: L = [...new Set(L)]; }
+      switch (o.op) { case "sort": L.sort(natCmp); break; case "sortd": L.sort(natCmp).reverse(); break; case "reverse": L.reverse(); break; case "trim": L = L.map((x) => x.trim()); break; case "nonblank": L = L.filter((x) => x.trim()); break; default: L = [...new Set(L)]; }
       return L.join("\n");
     } },
   { id: "count", cat: "text", name: "Count & stats", desc: "Characters, words, lines and byte size.", run: (s) => {
@@ -545,7 +563,9 @@ function readRecentActivity(){
     } catch (_) {}
     items = items.map((i) => { if (i.sim !== undefined) return i; const m = /^Created (.+)$/.exec(i.text); return { ...i, sim: !!(m && sim.get(m[1])) }; });
   }
-  return items;
+  // for people: a finding's graph name ends in the sink's dedupe key "(vulnimport:14krnqbpv62)",
+  // and the entity type is the raw constant (FINDING, THREAT_ACTOR)
+  return items.map((i) => ({ ...i, text: String(i.text).replace(/ \([a-z0-9_-]+:[a-z0-9]+\)$/i, "").replace(/^Created ([A-Z_]+): /, (m, t) => "Created " + t.toLowerCase().replace(/_/g, " ") + ": ") }));
 }
 function readNavRecent(){ try { const v = JSON.parse(localStorage.getItem("sw_recent") || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
 const timeAgo = (ts) => { const d = Date.now() - ts; return d < 60000 ? "just now" : d < 3600000 ? Math.floor(d / 60000) + "m ago" : d < 86400000 ? Math.floor(d / 3600000) + "h ago" : Math.floor(d / 86400000) + "d ago"; };
@@ -1773,7 +1793,20 @@ export function renderDeck(host, opts) {
   for (const g of groups) for (const it of g.items) index.push({ type: "tool", sec: it.sec, label: it.label, group: g.name, color: g.color, badge: it.badge, kw: TOOL_KW[it.sec] || "" });
   for (const it of INTEGRATIONS) index.push({ type: "conn", id: it.id, label: it.name, group: it.kind === "ai" ? "AI model" : "Security", it });
 
-  let conns = loadConns();
+  // Connection flags live per browser, keys per account: a key-based connection counts only
+  // when this account holds the key, so another account's (or an imported file's) flag does not
+  // show Connected, and a key this account stored shows as connected again.
+  const reconcileConns = (c) => {
+    const has = (id) => { try { return !!String((window.dnKeys && window.dnKeys.get("dn_key_" + id)) || "").trim(); } catch (_) { return false; } };
+    if (!window.dnKeys || !window.dnKeys.uid || !window.dnKeys.uid()) return c; // no account: nothing to check against
+    for (const it of INTEGRATIONS) {
+      const r = c[it.id], k = has(it.id);
+      if (r && r.method === "key" && r.hasKey && !k) delete c[it.id];
+      else if (!r && k) c[it.id] = { connected: true, method: "key", hasKey: true, at: Date.now() };
+    }
+    return c;
+  };
+  let conns = reconcileConns(loadConns());
   let pins = loadPins();
 
   if (!document.getElementById("dk-css")) { const st = document.createElement("style"); st.id = "dk-css"; st.textContent = CSS; document.head.appendChild(st); }
@@ -1908,7 +1941,8 @@ export function renderDeck(host, opts) {
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
   const secLabel = {}; for (const g of groups) for (const it of g.items) secLabel[it.sec] = it.label;
-  pins = pins.filter((s) => secLabel[s]);   // drop pins whose tool no longer exists
+  const isSec = (x) => typeof x === "string" && Object.prototype.hasOwnProperty.call(secLabel, x); // own key: "constructor" is not a tool
+  pins = [...new Set(pins)].filter(isSec);   // drop pins whose tool no longer exists, and repeats
   // Toggle a tool's pinned state (shown on the overview). Returns the new state.
   function togglePin(sec){
     if (!sec) return false;
@@ -2239,11 +2273,11 @@ export function renderDeck(host, opts) {
         const dir = r.fromId === id ? "→" : "←";
         const osev = String(o.severity || "").toLowerCase();
         const olabel = m.getEntityTypeLabel ? m.getEntityTypeLabel(o.type) : o.type;
-        return `<button class="dk-relr" data-eid="${esc(otherId)}"><span class="pdot" style="--c:${SEV_C[osev] || "#8a93a6"}"></span><span class="rn">${esc(o.name || "—")}</span><span class="rt">${esc(_relLabel(r.type))} ${dir} ${esc(olabel)}</span></button>`;
+        return `<button class="dk-relr" data-eid="${esc(otherId)}"><span class="pdot" style="--c:${SEV_C[osev] || "#8a93a6"}"></span><span class="rn">${esc(cleanTitle(o) || "—")}</span><span class="rt">${esc(_relLabel(r.type))} ${dir} ${esc(olabel)}</span></button>`;
       }).filter(Boolean).join("");
       const statusOpts = ["new", "open", "investigating", "resolved", "closed"].map((s) => `<option value="${s}"${e.status === s ? " selected" : ""}>${capword(s)}</option>`).join("");
       drawerBody.innerHTML = `
-        <div class="dk-dhead"><div><h3>${esc(e.name || "—")}</h3><div class="k">${esc(typeLabel)}${sim ? ' · <span class="dk-simchip">Sample</span>' : ""}</div></div></div>
+        <div class="dk-dhead"><div><h3>${esc(cleanTitle(e) || "—")}</h3><div class="k">${esc(typeLabel)}${sim ? ' · <span class="dk-simchip">Sample</span>' : ""}</div></div></div>
         <div class="dk-drwpills">
           ${e.severity ? `<span class="pill" style="--c:${SEV_C[sev] || "#8a93a6"}">${capword(e.severity)}</span>` : ""}
           <span class="pill" style="--c:${ST_C[e.status] || "#8a93a6"}">${capword(e.status || "new")}</span>
@@ -2700,8 +2734,8 @@ export function renderDeck(host, opts) {
       rd.onload = () => {
         try {
           const s = JSON.parse(rd.result);
-          if (s.connections && typeof s.connections === "object") { conns = s.connections; saveConns(conns); }
-          if (Array.isArray(s.pins)) { pins = s.pins.filter((x) => secLabel[x]).slice(0, 12); savePins(pins); }
+          if (s.connections && typeof s.connections === "object" && !Array.isArray(s.connections)) { conns = reconcileConns(s.connections); saveConns(conns); }
+          if (Array.isArray(s.pins)) { pins = [...new Set(s.pins)].filter(isSec).slice(0, 12); savePins(pins); }
           if (typeof s.notes === "string") saveNotes(s.notes);
           toast("Deck state imported");
           go(curScene);
@@ -2776,7 +2810,7 @@ export function renderDeck(host, opts) {
   }
   { const _tt = setTimeout(recordTrend, 2500); busOffs.push(() => clearTimeout(_tt)); }
 
-  busOffs.push(bus.on(EVENTS.ENTITY_CREATED, (p) => pushNotif(`Entity added to the graph${p && (p.label || p.name) ? `: ${p.label || p.name}` : p && p.type ? `: ${p.type}` : ""}`)));
+  busOffs.push(bus.on(EVENTS.ENTITY_CREATED, (p) => pushNotif(`Entity added to the graph${p && (p.label || p.name) ? `: ${String(p.label || p.name).replace(/ \([a-z0-9_-]+:[a-z0-9]+\)$/i, "")}` : p && p.type ? `: ${p.type}` : ""}`)));
   busOffs.push(bus.on(EVENTS.RELATIONSHIP_CREATED, () => pushNotif("New relationship created in the security graph")));
   busOffs.push(bus.on(EVENTS.TOOL_RESULT, (p) => pushNotif(`Result captured${p && p.tool ? ` from ${p.tool}` : ""}`)));
   busOffs.push(bus.on(EVENTS.NOTIFY, (p) => pushNotif(typeof p === "string" ? p : (p && p.message) || "")));
@@ -3344,7 +3378,7 @@ export function renderDeck(host, opts) {
   }
 
   // ---------- Attack Surface workspace (real external recon via the proxy) ----------
-  let _surfLast = "";
+  let _surfLast = "", _surfRun = 0;
   const surfClean = (d) => { let s = String(d || "").trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/[/?#].*$/, "").replace(/^.*@/, "").replace(/:\d+$/, "").replace(/^\*\./, "").replace(/\.$/, ""); try { s = new URL("http://" + s).hostname; } catch (_) {} return s; }; // a pasted link, email, host:port, trailing dot or IDN all reduce to the bare (punycode) domain
   function renderSurface(dom){
     const el = sceneEls.surface;
@@ -3381,10 +3415,12 @@ export function renderDeck(host, opts) {
     ];
     grid.innerHTML = P.map((p) => `<div class="dk-surfp" id="surf-${p.id}"><div class="hd"><h2>${esc(p.title)}</h2><span class="hx" id="surfx-${p.id}"></span><span class="mo" role="button" tabindex="0" data-opensec="${p.tool}" data-openlabel="${esc(p.label)}">Open tool</span></div><div class="bd" id="surfb-${p.id}"><div class="dk-loading"><span class="sp"></span>Looking up ${esc(d)}…</div></div></div>`).join("");
     grid.querySelectorAll("[data-opensec]").forEach((s) => s.onclick = () => openTool(s.dataset.opensec, s.dataset.openlabel));
-    const bd = (id) => grid.querySelector("#surfb-" + id);
+    // A later search reuses these panel ids; results from an earlier run write to a detached box.
+    const run = ++_surfRun, stale = () => run !== _surfRun;
+    const bd = (id) => (!stale() && grid.querySelector("#surfb-" + id)) || document.createElement("div");
     const errHTML = (e) => `<div class="dk-errbox">${esc((e && e.message) || "Lookup failed.")}</div>`;
     const addGraphBtn = (id, items, linkName) => {
-      const hx = grid.querySelector("#surfx-" + id); if (!hx || !items.length) return;
+      const hx = !stale() && grid.querySelector("#surfx-" + id); if (!hx || !items.length) return;
       hx.innerHTML = `<button class="dk-graphadd">Add ${items.length} to graph</button>`;
       hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20261017d").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph", "error"));
     };
@@ -3590,7 +3626,7 @@ export function renderDeck(host, opts) {
         + kpiC(gaps.toLocaleString(), "Open gaps", gaps ? "#e0383a" : "#8a93a6", "comp.gaps");
       const roll = el.querySelector("#dkCompRoll");
       if (roll) roll.innerHTML = ents.length
-        ? ents.slice(0, 8).map((e) => `<div class="r"><span class="dot" style="--bg:${SEV_C[String(e.severity || "").toLowerCase()] || "#9aa4ba"}"></span><span class="tx">${esc(e.name || "—")}</span><span class="ct">${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</span><span class="ag">${agoISO(e.updatedAt)}</span></div>`).join("")
+        ? ents.slice(0, 8).map((e) => `<div class="r"><span class="dot" style="--bg:${SEV_C[String(e.severity || "").toLowerCase()] || "#9aa4ba"}"></span><span class="tx">${esc(cleanTitle(e) || "—")}</span><span class="ct">${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</span><span class="ag">${agoISO(e.updatedAt)}</span></div>`).join("")
         : `<div class="dk-onb"><p>No controls or reports recorded yet. Run a self-assessment or framework mapping below and its results show up here, feeding the counts above.</p></div>`;
     });
   }
@@ -3738,7 +3774,7 @@ export function renderDeck(host, opts) {
     box.innerHTML = `<div class="dk-itwrap"><table class="dk-itable"><thead><tr><th>Name</th><th>Type</th><th>Severity</th><th>Status</th><th>Links</th><th>Updated</th></tr></thead><tbody>${rows.map((e) => {
       const rel = m.getRelationships ? m.getRelationships(e.id).length : 0;
       const up = e.updatedAt ? timeAgo(new Date(e.updatedAt).getTime()) : "—";
-      return `<tr data-eid="${esc(e.id)}"><td class="nm">${esc(e.name || "—")}${isSim(e) ? ` <span class="pill" style="--c:#8a93a6">Sample</span>` : ""}</td><td>${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</td><td>${e.severity ? `<span class="pill" style="--c:${sevColor(e.severity)}">${capword(e.severity)}</span>` : "—"}</td><td>${e.status ? `<span class="pill" style="--c:${stColor(e.status)}">${capword(e.status)}</span>` : "—"}</td><td class="num">${rel || "—"}</td><td class="ag">${up}</td></tr>`;
+      return `<tr data-eid="${esc(e.id)}"><td class="nm">${esc(cleanTitle(e) || "—")}${isSim(e) ? ` <span class="pill" style="--c:#8a93a6">Sample</span>` : ""}</td><td>${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</td><td>${e.severity ? `<span class="pill" style="--c:${sevColor(e.severity)}">${capword(e.severity)}</span>` : "—"}</td><td>${e.status ? `<span class="pill" style="--c:${stColor(e.status)}">${capword(e.status)}</span>` : "—"}</td><td class="num">${rel || "—"}</td><td class="ag">${up}</td></tr>`;
     }).join("")}</tbody></table></div>`;
     box.querySelectorAll("tr[data-eid]").forEach((tr) => tr.onclick = (ev) => { if (ev.target.closest("input,button,a")) return; openEntityDrawer(tr.dataset.eid); });
   }
@@ -3822,7 +3858,7 @@ export function renderDeck(host, opts) {
       const lat = el.querySelector("#dkSectLatest");
       const first = grp.items[0];
       lat.innerHTML = ents.length
-        ? ents.slice(0, 8).map((e) => `<div class="r"><span class="dot" style="--bg:${SEV_C[String(e.severity || "").toLowerCase()] || "#9aa4ba"}"></span><span class="tx">${esc(e.name || "—")}</span><span class="ct">${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</span><span class="ag">${agoISO(e.updatedAt)}</span></div>`).join("")
+        ? ents.slice(0, 8).map((e) => `<div class="r"><span class="dot" style="--bg:${SEV_C[String(e.severity || "").toLowerCase()] || "#9aa4ba"}"></span><span class="tx">${esc(cleanTitle(e) || "—")}</span><span class="ct">${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</span><span class="ag">${agoISO(e.updatedAt)}</span></div>`).join("")
         : `<div class="dk-onb"><p>Nothing recorded in this section yet. Results appear here when its tools add them to the security graph.</p>${first ? `<button class="dk-tibtn on" data-${first[0]}="${esc(first[1])}">Start with ${esc(first[2])}</button>` : ""}</div>`;
       lat.querySelectorAll("button[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
     });
@@ -3948,7 +3984,7 @@ export function renderDeck(host, opts) {
     el.innerHTML = `<div class="dk-ti-head"><h1>Team</h1></div><div class="dk-ovp"><div class="dk-loading"><span class="sp"></span>Loading members…</div></div>`;
     const myUid = user && user.uid;
     listMembers(wid).then(({ members, log }) => {
-      if (curScene !== "team") return;
+      if (curScene !== "team" || activeWorkspace() !== wid) return; // switched workspace while loading
       const meRow = members.find((m) => m.uid === myUid);
       const myRole = meRow ? meRow.role : "viewer";
       const canManage = canDo(myRole, "manageMembers");
@@ -4019,7 +4055,7 @@ export function renderDeck(host, opts) {
         save(uid, el.querySelector("#dkTeamRole").value, (el.querySelector("#dkTeamLabel").value || "").trim());
       };
     }).catch((e) => {
-      if (curScene !== "team") return;
+      if (curScene !== "team" || activeWorkspace() !== wid) return;
       el.innerHTML = `<div class="dk-ti-head"><h1>Team</h1></div><div class="dk-ovp"><p class="dk-mut">Could not load members. ${esc(String((e && e.message) || e))}</p></div>`;
     });
   }
@@ -4297,7 +4333,7 @@ export function renderDeck(host, opts) {
     if (!r.owners.length) return head + `<p>No open findings to plan. Everything recorded is closed or excepted.</p><p class="foot">Built in your browser from your security graph; sample data excluded; nothing uploaded.</p>`;
     const body = r.owners.map((g) => `<h2>${esc(ownerName(g))} <span class="meta">(${g.open} open${g.overdue ? ", " + g.overdue + " overdue" : ""})</span></h2>`
       + `<table><tr><th>Severity</th><th>Finding</th><th>Source</th><th>Due</th><th>Status</th></tr>`
-      + g.items.map((it) => `<tr><td>${esc(it.severity)}</td><td>${esc(it.name)}${it.kev ? ' <b>KEV</b>' : ''}</td><td>${esc(it.source)}</td><td>${it.dueAt ? esc(new Date(it.dueAt).toISOString().slice(0, 10)) : "—"}</td><td>${esc(it.state === "overdue" ? (it.daysLeft != null ? Math.abs(it.daysLeft) + "d overdue" : "overdue") : it.state === "due_soon" ? (it.daysLeft + "d left") : it.state.replace("_", " "))}</td></tr>`).join("") + `</table>`).join("");
+      + g.items.map((it) => `<tr><td>${esc(it.severity)}</td><td>${esc(it.name)}${it.kev ? ' <b>KEV</b>' : ''}</td><td>${esc(it.source)}</td><td>${it.dueAt ? esc(localDay(it.dueAt)) : "—"}</td><td>${esc(it.state === "overdue" ? (it.daysLeft != null ? Math.abs(it.daysLeft) + "d overdue" : "overdue") : it.state === "due_soon" ? (it.daysLeft + "d left") : it.state.replace("_", " "))}</td></tr>`).join("") + `</table>`).join("");
     return head + body + `<p class="foot">Open findings grouped by their assigned owner, most urgent first (overdue, then severity). Due dates follow this workspace's SLA policy. Built in your browser from your security graph; sample data excluded; nothing uploaded.</p>`;
   }
   function remediationMd(d){
@@ -4305,7 +4341,7 @@ export function renderDeck(host, opts) {
     const head = `# ${m.org} — Remediation Plan\n\nGenerated ${m.date} · Darknode · ${r.totalOpen} open findings, ${r.overdue} overdue, ${r.unassignedOpen} unassigned\n\n`;
     if (!r.owners.length) return head + "No open findings to plan. Everything recorded is closed or excepted.\n";
     return head + r.owners.map((g) => `## ${ownerName(g)} (${g.open} open${g.overdue ? ", " + g.overdue + " overdue" : ""})\n\n| Severity | Finding | Source | Due | Status |\n|---|---|---|---|---|\n`
-      + g.items.map((it) => `| ${it.severity}${it.kev ? " (KEV)" : ""} | ${String(it.name).replace(/\|/g, "\\|")} | ${it.source} | ${it.dueAt ? new Date(it.dueAt).toISOString().slice(0, 10) : "—"} | ${it.state === "overdue" ? (it.daysLeft != null ? Math.abs(it.daysLeft) + "d overdue" : "overdue") : it.state.replace("_", " ")} |`).join("\n")).join("\n\n")
+      + g.items.map((it) => `| ${it.severity}${it.kev ? " (KEV)" : ""} | ${String(it.name).replace(/\|/g, "\\|")} | ${it.source} | ${it.dueAt ? localDay(it.dueAt) : "—"} | ${it.state === "overdue" ? (it.daysLeft != null ? Math.abs(it.daysLeft) + "d overdue" : "overdue") : it.state.replace("_", " ")} |`).join("\n")).join("\n\n")
       + `\n\n---\n\nOpen findings grouped by their assigned owner, most urgent first. Due dates follow this workspace's SLA policy. Built in your browser from your security graph; sample data excluded; nothing uploaded.\n`;
   }
   // ---- Vulnerability SLA report (D7) ----

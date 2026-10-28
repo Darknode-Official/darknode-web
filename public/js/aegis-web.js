@@ -2122,7 +2122,7 @@ export function renderAegis(main) {
               }
               allRecords.sort(function(a, b) {
                 var order = { A: 0, AAAA: 1, CNAME: 2, MX: 3, NS: 4, TXT: 5, SOA: 6 };
-                return (order[a.type] || 7) - (order[b.type] || 7);
+                return (order[a.type] ?? 7) - (order[b.type] ?? 7);
               });
               dnsResults.innerHTML =
                 '<div style="font-size:.68rem;color:var(--mut);margin-bottom:6px">' + allRecords.length + ' DNS records found via Google DNS over HTTPS</div>' +

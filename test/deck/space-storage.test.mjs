@@ -41,6 +41,16 @@ group("space runs: a re-run replaces the same check only", () => {
     assert.equal(readRuns("personal").length, 2);
     assert.equal(readRuns("personal").filter((r) => r.level === "bad").length, 0);
   });
+  test("a certificate or portfolio re-run replaces the last one even when the list size changed", () => {
+    mem.clear(); window.__dnUid = null;
+    recordRun("personal", { tool: "certs", target: "5 domains", summary: "1 expiring within 30 days or expired", level: "bad" });
+    recordRun("personal", { tool: "certs", target: "4 domains", summary: "All certificates healthy", level: "good" });
+    recordRun("org", { tool: "portfolio", target: "3 domains", summary: "Average 40", level: "bad" });
+    recordRun("org", { tool: "portfolio", target: "2 domains", summary: "Average 90", level: "good" });
+    assert.equal(readRuns("personal").length, 1);
+    assert.equal(readRuns("personal")[0].level, "good");
+    assert.equal(readRuns("org").length, 1);
+  });
   test("without a key the target still decides", () => {
     mem.clear(); window.__dnUid = null;
     recordRun("personal", { tool: "domain", target: "example.com", summary: "Grade F", level: "bad" });

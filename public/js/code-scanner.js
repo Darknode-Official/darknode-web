@@ -601,7 +601,7 @@ export function renderCodeScanner(main) {
 function toggle(set, v) { if (set.has(v) && set.size > 1) set.delete(v); else set.add(v); }
 
 function toCsv(findings) {
-  const q = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+  const q = (v) => '"' + String(v ?? "").replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'").replace(/"/g, '""') + '"';
   const rows = [["severity", "type", "title", "file", "line", "rule", "cwe", "package", "version", "advisory", "fixed_in", "data_flow"]];
   for (const f of findings) rows.push([f.sev, f.kind, f.title, f.path, f.line, f.ruleId, f.cwe || "", f.pkg || "", f.version || "", f.advisory || "", f.fixed || "", f.flow ? f.flow.map((t) => "L" + t.line + " " + t.label).join(" > ") : ""]);
   return rows.map((r) => r.map(q).join(",")).join("\n");

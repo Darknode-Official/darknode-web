@@ -5,6 +5,10 @@ import { affectsMe, graphCves } from "../../public/js/core/affects-me.js";
 const V = (id, cve, severity, type = "VULNERABILITY", status = "open") => ({ id, type, name: cve, severity, status, data: { cves: [cve] } });
 
 group("affects-me/affectsMe", () => {
+  test("a finding subject is named without its internal dedupe key", () => {
+    const f = { id: "f1", type: "FINDING", name: "Outdated OpenSSL (vulnimport:1zx)", severity: "high", status: "open", data: { cves: ["CVE-2026-0009"], tool: "vulnimport", findingKey: "1zx" } };
+    assert.equal(affectsMe([f], { kevSet: new Set(["CVE-2026-0009"]) }).matches[0].subjects[0].name, "Outdated OpenSSL");
+  });
   test("flags a graph CVE that is on the KEV set", () => {
     const r = affectsMe([V("v1", "CVE-2026-0001", "high")], { kevSet: new Set(["CVE-2026-0001"]) });
     assert.equal(r.matches.length, 1);

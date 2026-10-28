@@ -69,6 +69,11 @@ group("report-plans/remediationPlan", () => {
 });
 
 group("report-plans/slaReport", () => {
+  test("report names drop the finding's internal dedupe key", () => {
+    const e = Object.assign(F("a", "critical", "open", 60, { tool: "vulnimport", findingKey: "1zx" }), { name: "TLS 1.0 enabled (vulnimport:1zx)" });
+    assert.equal(slaReport([e], { now: NOW }).breaches[0].name, "TLS 1.0 enabled");
+    assert.equal(remediationPlan([e], { now: NOW }).owners[0].items[0].name, "TLS 1.0 enabled");
+  });
   test("per-severity open, overdue and compliance", () => {
     const r = slaReport([
       F("a", "critical", "open", 60, {}),  // crit 30d -> overdue

@@ -480,7 +480,7 @@ export function renderCloudTrail(main) {
       raw.hidden = false; raw.textContent = txt;
     }));
     d.querySelector("[data-ev]").addEventListener("click", () => {
-      const q = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+      const q = (v) => '"' + String(v == null ? "" : v).replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'").replace(/"/g, '""') + '"';
       download(TOOL_ID + "-evidence-" + fileStamp() + ".csv", [EV_COLS.join(","), ...f.evidence.map((e) => EV_COLS.map((k) => q(e[k])).join(","))].join("\n") + "\n", "text/csv");
     });
     d.scrollIntoView({ block: "nearest", behavior: "smooth" });

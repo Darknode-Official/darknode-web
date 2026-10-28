@@ -6,6 +6,7 @@
 // Deck. Everything is derived from real findings; nothing is invented.
 import { slaState, isKnownExploited, OPEN_STATES, SEVERITY_LEVELS } from "./workflow.js";
 import { snapshot } from "./metrics.js";
+import { cleanTitle } from "./queue-format.js";
 
 const low = (v) => String(v == null ? "" : v).toLowerCase();
 const OPEN = new Set(OPEN_STATES);
@@ -23,7 +24,7 @@ export const ROLES = [
 ];
 export const ROLE_IDS = ROLES.map((r) => r.id);
 
-const item = (e) => ({ id: e.id, name: String(e.name || e.id || ""), severity: SEVERITY_LEVELS.includes(low(e.severity)) ? low(e.severity) : "info", category: low((e.data || {}).category) });
+const item = (e) => ({ id: e.id, name: cleanTitle(e) || String(e.id || ""), severity: SEVERITY_LEVELS.includes(low(e.severity)) ? low(e.severity) : "info", category: low((e.data || {}).category) });
 const isVuln = (e) => low(e.type) === "vulnerability" || low((e.data || {}).category).includes("vuln");
 
 /**

@@ -8849,7 +8849,7 @@ function _seBuildExportObject(sel) {
 }
 
 function _seCsvCell(v) {
-  var s = String(v == null ? '' : v);
+  var s = String(v == null ? '' : v).replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'");
   if (s.indexOf('"') >= 0 || s.indexOf(',') >= 0 || s.indexOf('\n') >= 0) s = '"' + s.replace(/"/g, '""') + '"';
   return s;
 }

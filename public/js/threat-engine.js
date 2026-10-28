@@ -68,15 +68,15 @@ export function extractIOCs(text) {
 // ─── IOC Defanging / Refanging ──────────────────────────────────────────────
 export function defang(text) {
   return text
-    .replace(/https?:\/\//g, m => m.replace("http", "hxxp"))
-    .replace(/\./g, "[.]")
-    .replace(/@/g, "[@]");
+    .replace(/https?:\/\//gi, m => "hxxp" + m.slice(4))
+    .replace(/(?<![[({])\.(?![\])}])/g, "[.]") // already-bracketed dots stay: defanging twice is a no-op
+    .replace(/(?<!\[)@(?!\])/g, "[@]");
 }
 
 export function refang(text) {
   return text
-    .replace(/hxxps?:\/\//gi, m => m.replace("hxxp", "http"))
-    .replace(/\[\.\]/g, ".")
+    .replace(/hxxp(s?):\/\//gi, (m, t) => "http" + t.toLowerCase() + "://")
+    .replace(/\[\.\]|\(\.\)|\{\.\}|\s?[\[({]dot[\])}]\s?/gi, ".")
     .replace(/\[@\]/g, "@")
     .replace(/\[:\]/g, ":");
 }
@@ -626,7 +626,7 @@ export function detectNetworkAnomalies(connections) {
 
   anomalies.sort((a, b) => {
     const sevOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
-    return (sevOrder[a.severity] || 4) - (sevOrder[b.severity] || 4);
+    return (sevOrder[a.severity] ?? 4) - (sevOrder[b.severity] ?? 4);
   });
 
   return { anomalies, totalConnections: connections.length, uniqueSources: new Set(connections.map(c => c.src)).size, uniqueDestinations: new Set(connections.map(c => c.dst)).size };

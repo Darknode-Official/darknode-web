@@ -470,7 +470,7 @@ export function renderIocEnrichment(main) {
     var head = ['type', 'value', 'risk', 'reason', 'enrichment'];
     var out = [head.join(',')];
     rows.forEach(function (r) {
-      out.push(head.map(function (k) { return '"' + String(r[k] == null ? '' : r[k]).replace(/"/g, '""') + '"'; }).join(','));
+      out.push(head.map(function (k) { return '"' + String(r[k] == null ? '' : r[k]).replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'").replace(/"/g, '""') + '"'; }).join(','));
     });
     return out.join('\r\n');
   }

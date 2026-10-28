@@ -14,6 +14,7 @@
 // Reuses the identity normalisers that the access-review / jml / oauthgov engines
 // already share, rather than reinventing weaker lowercase-only variants.
 import { normalizeEmail, normalizeName } from "../identity/access-review-engine.js";
+import { isSimulated } from "./posture.js";
 
 const str = (v) => String(v == null ? "" : v).trim();
 const lc = (v) => str(v).toLowerCase();
@@ -145,7 +146,7 @@ function sourceOf(e) { return str(e.source || (e.data && e.data._toolSource) || 
 // entities: the raw graph entities. Returns deterministic clusters:
 //   { key, name, type, kind, members:[id], sources:[tool], bySource:{tool:[id]}, macs:[], ips:[] }
 export function resolveAssets(entities) {
-  const list = (entities || []).filter((e) => e && HOST_TYPES.includes(e.type) && str(e.name));
+  const list = (entities || []).filter((e) => e && HOST_TYPES.includes(e.type) && str(e.name) && !isSimulated(e)) // sample data (PHANTOM demo hosts) is not inventory;
   const parts = list.map((e) => ({ e, p: hostParts(e.name), mac: canonMac((e.data && (e.data.mac || e.data.macAddress)) || "") }));
   const uf = makeUF(parts.length);
 
@@ -183,7 +184,7 @@ export function resolveAssets(entities) {
 // Union only on strong keys (email, UPN, samAccountName). A name-only match never
 // auto-merges (two different people share a name); it is surfaced as a suggestion.
 export function resolveIdentities(entities) {
-  const list = (entities || []).filter((e) => e && e.type === "IDENTITY" && str(e.name));
+  const list = (entities || []).filter((e) => e && e.type === "IDENTITY" && str(e.name) && !isSimulated(e));
   const keyed = list.map((e) => ({ e, k: identityKeys(e.name, e.data || {}) }));
   const uf = makeUF(keyed.length);
   const idx = { email: new Map(), upn: new Map(), sam: new Map() };

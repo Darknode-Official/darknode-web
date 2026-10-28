@@ -465,7 +465,7 @@ export function renderFleetComply(main) {
     dr.querySelector("[data-close]").addEventListener("click", () => { dr.style.display = "none"; sel = null; if (tab === "findings") drawFindings(); });
     dr.querySelector("[data-ev]").addEventListener("click", () => {
       const keys = []; for (const r of f.evidence) for (const k of Object.keys(r)) if (!keys.includes(k)) keys.push(k);
-      const q = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+      const q = (v) => '"' + String(v == null ? "" : v).replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'").replace(/"/g, '""') + '"';
       download(TOOL_ID + "-" + f.check + "-evidence-" + fileStamp() + ".csv", [keys.join(","), ...f.evidence.map((r) => keys.map((k) => q(r[k])).join(","))].join("\n"), "text/csv");
     });
     dr.scrollIntoView({ block: "nearest", behavior: "smooth" });

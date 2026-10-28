@@ -153,6 +153,15 @@ group("resolve/assets", () => {
   });
 });
 
+group("resolve/sample data", () => {
+  test("simulated hosts and identities (PHANTOM demo capture) are not inventory", () => {
+    const sim = { id: "s1", type: "IP", name: "10.9.9.9", data: { simulated: true }, tags: ["phantom", "simulated"] };
+    const tagged = { id: "s2", type: "IDENTITY", name: "demo@example.com", data: {}, tags: ["sample"] };
+    assert.equal(resolveAssets([sim, E("r1", "IP", "10.0.0.1")]).length, 1);
+    assert.equal(resolveIdentities([tagged, E("r2", "IDENTITY", "real@example.com")]).clusters.length, 1);
+  });
+});
+
 group("resolve/identities", () => {
   const ents = [
     E("1", "IDENTITY", "jane@corp.com", {}, "signins"),

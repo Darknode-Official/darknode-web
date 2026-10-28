@@ -249,3 +249,12 @@ group("GraphDO/monitor writes keep analyst workflow", () => {
     assert.equal(again.json.applied.entities, 0);
   });
 });
+
+group("GraphDO/prototype-named ids", () => {
+  test("a push of __proto__ / constructor ids stores nothing", async () => {
+    const st = memState(); const g = new GraphDO(st);
+    const r = await push(g, { entities: [ent("__proto__", "a"), ent("constructor", "b"), ent("ok-1", "c")] });
+    assert.equal(r.json.applied.entities, 1);
+    assert.ok(!st._map.has("e:__proto__") && !st._map.has("e:constructor") && st._map.has("e:ok-1"));
+  });
+});

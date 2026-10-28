@@ -30,6 +30,7 @@
 // and is the one tunable; nothing else is hidden.
 
 import { computeDue } from "./workflow.js";
+import { cleanTitle } from "./queue-format.js";
 
 const BASE = { critical: 10, high: 6, medium: 3, low: 1, info: 0 };
 const K = 50;
@@ -103,7 +104,7 @@ export function exposureScore(findings, opts = {}) {
     const w = base * kev * exp * age * overdue * cf;
     raw += w; contributing++;
     components[sev] = (components[sev] || 0) + w;
-    scored.push({ id: e.id, name: e.name, severity: sev, weight: Math.round(w * 100) / 100, kev: kev > 1, exposed: exp > 1, overdue: overdue > 1 });
+    scored.push({ id: e.id, name: cleanTitle(e), severity: sev, weight: Math.round(w * 100) / 100, kev: kev > 1, exposed: exp > 1, overdue: overdue > 1 });
   }
   const score = Math.round(100 * (1 - Math.exp(-raw / K)));
   for (const k of Object.keys(components)) components[k] = Math.round(components[k] * 100) / 100;

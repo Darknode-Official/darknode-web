@@ -515,13 +515,18 @@ export function search(query, opts) {
   return scored.slice(0, limit).map(s => s.entity);
 }
 
+// An id that names an Object.prototype member (__proto__, constructor, toString...) would
+// read or rewrite the prototype of the plain-object stores, so remote/imported ids like that are refused.
+const _protoId = (id) => id in Object.prototype;
+const _has = (m, id) => typeof id === 'string' && Object.prototype.hasOwnProperty.call(m, id);
+
 export function importEntities(items) {
   _load();
   if (!Array.isArray(items)) return;
   for (const item of items) {
     if (!item.type || !ENTITY_TYPES.includes(item.type)) continue;
     const entity = {
-      id: item.id || _uid(),
+      id: item.id && !_protoId(item.id) ? item.id : _uid(),
       type: item.type,
       name: String(item.name || ''),
       data: item.data || {},
@@ -557,7 +562,7 @@ export function applyRemote(remote) {
   _load();
   let changed = 0;
   for (const rec of (remote && remote.entities) || []) {
-    if (!rec || typeof rec.id !== 'string' || !rec.id) continue;
+    if (!rec || typeof rec.id !== 'string' || !rec.id || _protoId(rec.id)) continue;
     const cur = _entities[rec.id];
     if (!wins(rec, cur, 'updatedAt')) continue;
     if (rec.deleted) {
@@ -578,13 +583,13 @@ export function applyRemote(remote) {
     changed++;
   }
   for (const rec of (remote && remote.relationships) || []) {
-    if (!rec || typeof rec.id !== 'string' || !rec.id) continue;
+    if (!rec || typeof rec.id !== 'string' || !rec.id || _protoId(rec.id)) continue;
     const cur = _relationships[rec.id];
     if (!wins(rec, cur, 'createdAt')) continue;
     if (rec.deleted) {
       if (!cur) continue;
       delete _relationships[rec.id];
-    } else if (_entities[rec.fromId] && _entities[rec.toId] && RELATIONSHIP_TYPES.includes(rec.type)) {
+    } else if (_has(_entities, rec.fromId) && _has(_entities, rec.toId) && RELATIONSHIP_TYPES.includes(rec.type)) {
       _relationships[rec.id] = { id: rec.id, fromId: rec.fromId, toId: rec.toId, type: rec.type, createdAt: rec.createdAt || _now() };
     } else {
       continue;

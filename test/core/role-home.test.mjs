@@ -6,6 +6,10 @@ const DAY = 86400000, NOW = Date.parse("2026-10-18T00:00:00Z");
 const F = (id, severity, ageDays, data = {}, type = "FINDING", status = "open") => ({ id, type, name: id, severity, status, createdAt: new Date(NOW - ageDays * DAY).toISOString(), data });
 
 group("role-home/roleFocus", () => {
+  test("item names drop the finding's internal dedupe key", () => {
+    const e = Object.assign(F("a", "critical", 60, { tool: "vulnimport", findingKey: "1zx" }), { name: "TLS 1.0 enabled (vulnimport:1zx)" });
+    assert.equal(roleFocus([e], { role: "ciso", now: NOW }).items[0].name, "TLS 1.0 enabled");
+  });
   test("unknown role returns null", () => {
     assert.equal(roleFocus([], { role: "nope" }), null);
   });

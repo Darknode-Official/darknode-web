@@ -5865,7 +5865,7 @@ export function renderPrometheus(main) {
     } catch (e) {}
   }
   function pmCSV(headers, rows) {
-    var q = function(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var q = function(v) { v = String(v == null ? '' : v).replace(/^(?=[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/, "'"); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
     var out = headers.map(q).join(',') + '\n';
     for (var i = 0; i < rows.length; i++) out += rows[i].map(q).join(',') + '\n';
     return out;

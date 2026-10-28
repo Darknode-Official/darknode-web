@@ -972,7 +972,7 @@ function _spRenderDashboard(c) {
       '<div class="sp-card-h">Top Critical Misconfigurations</div>' +
       (allResults.filter(function(r) { return r.status === 'FAIL'; }).length ?
         '<table class="sp-table"><thead><tr><th>Check ID</th><th>Service</th><th>Finding</th><th>Severity</th><th>CIS</th></tr></thead><tbody>' +
-        allResults.filter(function(r) { return r.status === 'FAIL'; }).sort(function(a, b) { var o = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }; return (o[a.severity] || 4) - (o[b.severity] || 4); }).slice(0, 10).map(function(r) {
+        allResults.filter(function(r) { return r.status === 'FAIL'; }).sort(function(a, b) { var o = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 }; return (o[a.severity] ?? 4) - (o[b.severity] ?? 4); }).slice(0, 10).map(function(r) {
           return '<tr><td class="sp-mono">' + esc(r.id) + '</td><td>' + esc(r.service) + '</td><td>' + esc(r.name) + '</td><td><span class="sp-sev-badge" style="color:' + _spSevColor(r.severity) + ';background:' + _spSevBg(r.severity) + '">' + r.severity + '</span></td><td class="sp-mono">' + esc(r.cis || '') + '</td></tr>';
         }).join('') +
         '</tbody></table>' : '<div class="sp-empty">No checks answered Fail. Answer checks in the AWS, Azure or GCP tabs.</div>') +
