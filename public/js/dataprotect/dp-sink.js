@@ -100,6 +100,26 @@ export function tlsFleetFindings(entries) {
   return out;
 }
 
+/**
+ * Finding ids a run could not re-check: the certificate logs did not answer, the HSTS
+ * fetch failed, or the domain was past the run's cap. Passed to the sink as held, so a
+ * failed lookup is never offered as "verified fixed".
+ * @param {object[]} entries tls-engine buildEntry() objects (plus .unreachable, .hsts)
+ * @param {string[]} [skipped] domains not checked at all
+ * @returns {string[]}
+ */
+export function tlsFleetHeld(entries, skipped) {
+  const out = [];
+  for (const e of entries || []) {
+    if (!e || !e.domain) continue;
+    const domain = str(e.domain).toLowerCase();
+    if (e.pending || e.unreachable || e.error) out.push(`tlsfleet|${domain}|cert-expiry`);
+    if (e.pending || e.hsts == null) out.push(`tlsfleet|${domain}|hsts`);
+  }
+  for (const x of skipped || []) { const domain = str(x).toLowerCase(); out.push(`tlsfleet|${domain}|cert-expiry`, `tlsfleet|${domain}|hsts`); }
+  return out;
+}
+
 // ---- Phishing & URL Triage (phishtriage) -------------------------------------
 
 const PUBLISH_SEV = new Set(["critical", "high", "medium"]);

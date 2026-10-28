@@ -4,7 +4,7 @@
 
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
 import { buildEntry, summarizeFleet, parseDomains, BANDS } from "/js/dataprotect/tls-engine.js?v=20261026a";
-import { tlsFleetFindings } from "/js/dataprotect/dp-sink.js";
+import { tlsFleetFindings, tlsFleetHeld } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, recordRun, readList, writeList, pool, download } from "./ui.js";
 
@@ -33,7 +33,7 @@ export function mount(el, { space, mode }) {
     // the portfolio tab may change while this one stays mounted
     new IntersectionObserver((e) => { if (e[0].isIntersecting) pfPaint(); }).observe(ta);
   }
-  let entries = [];
+  let entries = [], over = [];
 
   const render = (pending) => {
     const s = summarizeFleet(entries.filter(Boolean));
@@ -45,12 +45,13 @@ export function mount(el, { space, mode }) {
         ${s.list.map((e) => `<tr><td><span class="ns-pill" style="background:${e.band.c}">${esc(e.band.label)}</span></td><td><b>${esc(e.domain)}</b></td><td style="font-weight:800;color:${e.band.c}">${e.daysLeft == null ? "-" : e.daysLeft}</td><td>${esc(e.notAfter ? String(e.notAfter).slice(0, 10) : "-")}</td><td>${esc(e.issuer || (e.ok ? "" : e.unreachable ? "Lookup failed: the certificate logs did not answer. Check again in a minute." : "No certificate found in CT logs"))}</td></tr>`).join("")}
         ${pending ? `<tr><td colspan="5" style="color:var(--ns-mut)"><span class="ns-spin"></span>${pending} still checking...</td></tr>` : ""}
         </tbody></table></div></div>`;
-    if (!pending && s.total) attachSinkButton(out.querySelector("[data-act]"), () => ({ findings: tlsFleetFindings(s.list) }), "tlsfleet", { dataset: fleet ? "certificate fleet" : "certificate watch" });
+    if (!pending && s.total) attachSinkButton(out.querySelector("[data-act]"), () => ({ findings: tlsFleetFindings(s.list), held: tlsFleetHeld(s.list, over) }), "tlsfleet", { dataset: fleet ? "certificate fleet" : "certificate watch" });
     return s;
   };
 
   go.onclick = async () => {
     const all = parseDomains(ta.value), cap = fleet ? 200 : 20, list = all.slice(0, cap);
+    over = all.slice(cap);
     if (!list.length) { toast("Add at least one domain"); return; }
     // say which lines were not domain names instead of dropping them silently
     const bad = [...new Set(ta.value.split(/[\n,;]+/).map((t) => t.trim()).filter((t) => t && !parseDomains(t).length))];

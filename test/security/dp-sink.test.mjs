@@ -4,7 +4,7 @@
 // DLP never writes a matched value into the graph payload.
 
 import { test, assert, group } from "../harness.mjs";
-import { postureFindings, tlsFleetFindings, phishUrlFindings, phishEmailFindings, dlpFindings, dlpSample } from "../../public/js/dataprotect/dp-sink.js";
+import { postureFindings, tlsFleetFindings, tlsFleetHeld, phishUrlFindings, phishEmailFindings, dlpFindings, dlpSample } from "../../public/js/dataprotect/dp-sink.js";
 import { scorePosture } from "../../public/js/dataprotect/posture-engine.js";
 import { buildEntry } from "../../public/js/dataprotect/tls-engine.js";
 import { analyzeUrl, triageEmail } from "../../public/js/dataprotect/phish-engine.js";
@@ -93,6 +93,15 @@ group("dp-sink: tlsfleet", () => {
     assert.equal(findingKey("tlsfleet", a), findingKey("tlsfleet", b));
     assert.equal(a.title, b.title);
     assert.equal(a.severity, "medium"); assert.equal(b.severity, "high");
+  });
+  test("a failed lookup holds the keys the last run's findings had, so they are not offered as fixed", () => {
+    const was = tlsFleetFindings([entry("x.test", 5, false)]);
+    const failed = Object.assign(buildEntry("x.test", [], NOW), { unreachable: true, hsts: null });
+    assert.equal(tlsFleetFindings([failed]).length, 0);
+    const held = tlsFleetHeld([failed]).map((id) => findingKey("tlsfleet", { id }));
+    for (const f of was) assert.ok(held.includes(findingKey("tlsfleet", f)), f.title);
+    assert.deepEqual(tlsFleetHeld([entry("ok.test", 200, true)]), [], "a domain that answered holds nothing");
+    assert.equal(tlsFleetHeld([], ["Over.test"]).length, 2, "a domain past the cap holds both");
   });
 });
 

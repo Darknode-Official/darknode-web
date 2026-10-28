@@ -12,7 +12,7 @@ import { parseDomains, buildEntry, summarizeFleet, BANDS } from "/js/dataprotect
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
 import { dnFetch } from "/js/net.js";
 import { attachSinkButton } from "../core/sink.js";
-import { tlsFleetFindings } from "/js/dataprotect/dp-sink.js";
+import { tlsFleetFindings, tlsFleetHeld } from "/js/dataprotect/dp-sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -93,7 +93,7 @@ export function renderTlsFleet(main) {
   const sinkSlot = document.createElement("span");
   $("#tlsfCsv").after(sinkSlot);
   let sinkUpdate = () => {};
-  const mountSink = () => { sinkSlot.textContent = ""; sinkUpdate = attachSinkButton(sinkSlot, () => ({ findings: tlsFleetFindings(store.domains.map((d) => store.entries[d]).filter(Boolean)) }), "tlsfleet", { dataset: "certificate watchlist" }); };
+  const mountSink = () => { sinkSlot.textContent = ""; sinkUpdate = attachSinkButton(sinkSlot, () => { const es = store.domains.map((d) => store.entries[d]); return { findings: tlsFleetFindings(es.filter(Boolean)), held: tlsFleetHeld(es.filter(Boolean), store.domains.filter((d) => !store.entries[d])) }; }, "tlsfleet", { dataset: "certificate watchlist" }); };
 
   const render = () => {
     const entries = store.domains.map((d) => store.entries[d] || { domain: d, pending: true, band: BANDS.unknown });
@@ -164,9 +164,9 @@ export function renderTlsFleet(main) {
   async function checkOne(domain) {
     store.entries[domain] = { domain, pending: true, band: BANDS.unknown };
     try {
-      const [rows, hsts] = await Promise.all([fetchCrt(domain).catch(() => []), fetchHsts(domain)]);
+      const [rows, hsts] = await Promise.all([fetchCrt(domain).catch(() => Object.assign([], { unreachable: true })), fetchHsts(domain)]);
       const e = buildEntry(domain, rows);
-      e.hsts = hsts;
+      e.hsts = hsts; e.unreachable = !!rows.unreachable;
       store.entries[domain] = e;
     } catch (_) {
       store.entries[domain] = { domain, ok: false, band: BANDS.unknown, daysLeft: null, issuer: "", notAfter: "", hsts: null, checked: Date.now(), error: true };
