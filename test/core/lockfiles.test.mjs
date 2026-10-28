@@ -56,6 +56,14 @@ group("lockfiles: one parser per format", () => {
     assert.deepEqual(floorVersion("^4.18.2"), { version: "4.18.2", exact: false });
     assert.deepEqual(floorVersion(">=1.0 <2"), { version: "1.0", exact: false });
   });
+  test("floorVersion: an upper bound, exclusion, tag or source has no version to scan at; x-ranges floor to .0", () => {
+    for (const s of ["<2.0.0", "<=2", "!=1.4", "< 3", "*", "latest", "github:user/repo", "file:../lib", "npm:other@^1.2.0", ""]) assert.deepEqual(floorVersion(s), { version: "", exact: false }, s);
+    assert.deepEqual(floorVersion("1.x"), { version: "1.0.0", exact: false });
+    assert.deepEqual(floorVersion("~2.3.x"), { version: "2.3.0", exact: false });
+    assert.deepEqual(floorVersion("~> 1.2"), { version: "1.2", exact: false });
+    const r = parseLockfile("requirements", "requests<2.0\nflask!=2.1\ndjango>=4.2,<5\n");
+    assert.deepEqual(r.map((d) => [d.name, d.version]), [["requests", ""], ["flask", ""], ["django", "4.2"]]);
+  });
   test("package.json: direct, ranges flagged, optional/dev types, declaring lines", () => {
     const d = parse("npm-manifest");
     assert.deepEqual(d.map((x) => [x.name, x.version, x.exact, x.type, x.line]), [

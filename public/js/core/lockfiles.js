@@ -34,8 +34,13 @@ export function floorVersion(spec) {
   const s = String(spec == null ? "" : spec).trim();
   const pin = /^=?v?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.+-]*)?)$/.exec(s);
   if (pin) return { version: pin[1], exact: true };
-  const cleaned = s.replace(/^[\^~>=<\s]+/, "").split(/\s|\|\||,|-/)[0].trim();
-  const exact = cleaned !== "" && s === cleaned && /^\d+(\.\d+){0,3}/.test(cleaned);
+  // An upper bound or an exclusion (<2.0, <=2, !=1.4) has no floor: its number is a version
+  // the install is NOT, so scanning at it missed the installed 1.x and its advisories.
+  if (/^(<|!=)/.test(s)) return { version: "", exact: false };
+  let cleaned = s.replace(/^[\^~>=<\s]+/, "").split(/\s|\|\||,|-/)[0].trim().replace(/^v(?=\d)/, "");
+  if (/^\d+(\.(\d+|[xX*]))*$/.test(cleaned) && /[xX*]/.test(cleaned)) { const p = cleaned.split(".").map((x) => (/^\d+$/.test(x) ? x : "0")); while (p.length < 3) p.push("0"); cleaned = p.join("."); } // 1.x -> 1.0.0
+  if (!/^\d/.test(cleaned)) return { version: "", exact: false }; // *, latest, a git/file/url source: no version to scan at
+  const exact = s === cleaned && /^\d+(\.\d+){0,3}/.test(cleaned);
   return { version: cleaned, exact };
 }
 
@@ -176,7 +181,7 @@ export function parsePnpmLock(text) {
   return deps.length ? deps : null;
 }
 
-// requirements*.txt: `==` / `===` pins are exact, other operators give a lower bound.
+// requirements*.txt: `==` / `===` pins are exact, >= ~= > give a lower bound, and < <= != give no version (not the installed one).
 export function parseRequirementsTxt(text) {
   const deps = [];
   linesOf(text).forEach((raw, i) => {
@@ -185,7 +190,8 @@ export function parseRequirementsTxt(text) {
     const m = line.match(/^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]*\])?\s*(===|==|>=|<=|~=|!=|>|<)?\s*([0-9][^\s;,#]*)?/);
     if (!m) return;
     const spec = (m[2] || "") + (m[3] || "");
-    deps.push({ name: m[1].toLowerCase(), version: (m[3] || "").trim(), spec, exact: m[2] === "==" || m[2] === "===", type: "production", ecosystem: "pypi", direct: true, line: i + 1 });
+    const noFloor = m[2] === "<" || m[2] === "<=" || m[2] === "!="; // an upper bound or exclusion is not the installed version
+    deps.push({ name: m[1].toLowerCase(), version: noFloor ? "" : (m[3] || "").trim(), spec, exact: m[2] === "==" || m[2] === "===", type: "production", ecosystem: "pypi", direct: true, line: i + 1 });
   });
   return deps.length ? deps : null;
 }
