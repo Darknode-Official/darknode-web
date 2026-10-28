@@ -46,6 +46,7 @@ const auditMod = lazyMod("/js/deck/audit.js?v=20261018c");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261027c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
 import { frameworkMap } from "/js/core/framework-map.js?v=20261018c";
+import { cleanTitle } from "/js/core/queue-format.js";
 import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261018d";
 import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261018d";
 import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261025c";
@@ -545,7 +546,9 @@ function readRecentActivity(){
     } catch (_) {}
     items = items.map((i) => { if (i.sim !== undefined) return i; const m = /^Created (.+)$/.exec(i.text); return { ...i, sim: !!(m && sim.get(m[1])) }; });
   }
-  return items;
+  // for people: a finding's graph name ends in the sink's dedupe key "(vulnimport:14krnqbpv62)",
+  // and the entity type is the raw constant (FINDING, THREAT_ACTOR)
+  return items.map((i) => ({ ...i, text: String(i.text).replace(/ \([a-z0-9_-]+:[a-z0-9]+\)$/i, "").replace(/^Created ([A-Z_]+): /, (m, t) => "Created " + t.toLowerCase().replace(/_/g, " ") + ": ") }));
 }
 function readNavRecent(){ try { const v = JSON.parse(localStorage.getItem("sw_recent") || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } }
 const timeAgo = (ts) => { const d = Date.now() - ts; return d < 60000 ? "just now" : d < 3600000 ? Math.floor(d / 60000) + "m ago" : d < 86400000 ? Math.floor(d / 3600000) + "h ago" : Math.floor(d / 86400000) + "d ago"; };
@@ -3738,7 +3741,7 @@ export function renderDeck(host, opts) {
     box.innerHTML = `<div class="dk-itwrap"><table class="dk-itable"><thead><tr><th>Name</th><th>Type</th><th>Severity</th><th>Status</th><th>Links</th><th>Updated</th></tr></thead><tbody>${rows.map((e) => {
       const rel = m.getRelationships ? m.getRelationships(e.id).length : 0;
       const up = e.updatedAt ? timeAgo(new Date(e.updatedAt).getTime()) : "—";
-      return `<tr data-eid="${esc(e.id)}"><td class="nm">${esc(e.name || "—")}${isSim(e) ? ` <span class="pill" style="--c:#8a93a6">Sample</span>` : ""}</td><td>${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</td><td>${e.severity ? `<span class="pill" style="--c:${sevColor(e.severity)}">${capword(e.severity)}</span>` : "—"}</td><td>${e.status ? `<span class="pill" style="--c:${stColor(e.status)}">${capword(e.status)}</span>` : "—"}</td><td class="num">${rel || "—"}</td><td class="ag">${up}</td></tr>`;
+      return `<tr data-eid="${esc(e.id)}"><td class="nm">${esc(cleanTitle(e) || "—")}${isSim(e) ? ` <span class="pill" style="--c:#8a93a6">Sample</span>` : ""}</td><td>${esc(m.getEntityTypeLabel ? m.getEntityTypeLabel(e.type) : e.type)}</td><td>${e.severity ? `<span class="pill" style="--c:${sevColor(e.severity)}">${capword(e.severity)}</span>` : "—"}</td><td>${e.status ? `<span class="pill" style="--c:${stColor(e.status)}">${capword(e.status)}</span>` : "—"}</td><td class="num">${rel || "—"}</td><td class="ag">${up}</td></tr>`;
     }).join("")}</tbody></table></div>`;
     box.querySelectorAll("tr[data-eid]").forEach((tr) => tr.onclick = (ev) => { if (ev.target.closest("input,button,a")) return; openEntityDrawer(tr.dataset.eid); });
   }
