@@ -417,8 +417,8 @@ function _mapCVE(v){
   const first = (d.split(/(?<=\.)\s/)[0] || d);
   return { id: cve.id, cvss: score, severity: score == null ? "NONE" : sevOf(score), title: first.length > 150 ? first.slice(0, 147) + "…" : first, date: String(cve.published || "").slice(0, 10) };
 }
-async function fetchIntel(n){
-  n = n || 30;
+async function fetchIntel(){
+  const n = 40; // one sample for every view: the cache kept whichever size was asked first (30 or 40), so the overview and Threats page disagreed by visit order
   if (_cveCache && Date.now() - _cveAt < 600000) return _cveCache;  // 10-min cache
   if (_cvePromise) return _cvePromise;
   _cvePromise = (async () => {
@@ -3070,7 +3070,7 @@ export function renderDeck(host, opts) {
       sig.kevTotal = k.total || 0; recomputeExposure();
     }).catch(() => { const kn = el.querySelector('[data-k="kev"] .kn'); if (kn) kn.textContent = "—"; });
     // async: live threat level + CVE KPI
-    fetchIntel(30).then((d) => {
+    fetchIntel().then((d) => {
       setHealth(true, "Threat feed live");
       sysSet("feed", "", "Live");
       const kn = el.querySelector('[data-k="cve"] .kn'); if (kn) kn.textContent = (d.total || 0).toLocaleString();
@@ -3135,7 +3135,7 @@ export function renderDeck(host, opts) {
     el.innerHTML = `<div class="dk-ti-head"><h1>Threat &amp; Vulnerabilities</h1><span class="mo" role="button" tabindex="0" id="dkTiFull">Open CVE Search ${IC.ext}</span></div>
       <div id="dkTiBody"><div class="dk-loading"><span class="sp"></span>Fetching the latest CVEs from the NVD…</div></div>`;
     el.querySelector("#dkTiFull").onclick = () => openTool("cvesearch", "CVE Search");
-    fetchIntel(40).then((d) => {
+    fetchIntel().then((d) => {
       setHealth(true, "Threat feed live");
       _tiCves = d.cves || []; _tiSev = ""; _tiQ = ""; _tiKev = new Set(); _tiEpss = {}; _tiPrio = true;
       const c = d.counts || {};
@@ -3820,7 +3820,7 @@ export function renderDeck(host, opts) {
   // ---------- Overview "Top actions": ranked, real, each with a next step ----------
   function renderTopActions(){
     const box = sceneEls.overview.querySelector("#dkTopAct"); if (!box) return;
-    Promise.allSettled([new Promise((r) => withGraph(r)), fetchIntel(30), fetchKev()]).then(([g, iv, kv]) => {
+    Promise.allSettled([new Promise((r) => withGraph(r)), fetchIntel(), fetchKev()]).then(([g, iv, kv]) => {
       if (!box.isConnected) return;
       const m = g.value;
       const acts = findings.topActions({

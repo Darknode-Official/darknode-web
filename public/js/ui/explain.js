@@ -123,7 +123,7 @@ export const EXPLAIN = {
   "panel.integrations": { title: "Integrations", body: "How many of the available providers you have connected, and which ones." },
   "panel.activity": { title: "Recent activity", body: "The latest events in this workspace. Entries marked Sample came from simulations or demos and do not affect your metrics." },
   "panel.quick": { title: "Quick actions", body: "Common starting points. Each opens the real tool." },
-  "panel.threat": { title: "Threat level", body: "How many of the 30 most recent CVEs are critical or high, split by severity.", src: "NVD, fetched live." },
+  "panel.threat": { title: "Threat level", body: "How many of the 40 most recent CVEs are critical or high, split by severity. CVEs NVD has not scored yet are shown as Unscored, not counted as low.", src: "NVD, fetched live." },
   "panel.notes": { title: "Notes", body: "A scratchpad for IPs, hypotheses and to-dos. Saved in this browser only." },
 
   "panel.actions": { title: "Top actions", body: "The most important things to do next, ranked: open critical findings, known-exploited CVEs published this week, open high findings, critical CVEs, then gaps in your connected sources.", src: "Your security graph (sample data excluded), NVD and CISA KEV, fetched live." },
