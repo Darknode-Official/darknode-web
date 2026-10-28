@@ -9,7 +9,9 @@ const S = { ctx: null, el: null, data: null, adding: false, busy: false };
 const E = (s) => (S.ctx && S.ctx.esc ? S.ctx.esc(s) : String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])));
 const toast = (m, t) => { try { S.ctx && S.ctx.toast && S.ctx.toast(m, t); } catch (_) {} };
 const ago = (ts) => { if (!ts) return "never"; const s = Math.floor((Date.now() - ts) / 1000); if (s < 60) return s + "s ago"; if (s < 3600) return Math.floor(s / 60) + "m ago"; if (s < 86400) return Math.floor(s / 3600) + "h ago"; return Math.floor(s / 86400) + "d ago"; };
-const CHANNELS = [["slack", "Slack"], ["teams", "Microsoft Teams"], ["discord", "Discord"], ["webhook", "Signed webhook"]];
+// 1440 minutes reads as "1d", 90 as "90m"
+export const every = (ms) => { const m = Math.round((ms || 0) / 60000); return m && m % 1440 === 0 ? m / 1440 + "d" : m && m % 60 === 0 ? m / 60 + "h" : m + "m"; };
+const CHANNELS =[["slack", "Slack"], ["teams", "Microsoft Teams"], ["discord", "Discord"], ["webhook", "Signed webhook"]];
 
 function injectStyle() {
   if (document.getElementById("mon-css")) return;
@@ -78,7 +80,7 @@ function paint() {
         <span class="mon-name">${E(m.name)}</span>
         <span class="mon-pill">${E(m.type)}</span>
         ${m.paused ? '<span class="mon-pill paused">Paused</span>' : ""}
-        <span class="mon-meta">${dom.length ? E(dom.slice(0, 3).join(", ")) + (dom.length > 3 ? ` +${dom.length - 3}` : "") : ""} · every ${Math.round((m.intervalMs || 0) / 60000)}m · last run ${E(ago(m.lastRunAt))} · ${m.lastResultCount || 0} open · ${(m.channels || []).length} channel${(m.channels || []).length === 1 ? "" : "s"}</span>
+        <span class="mon-meta">${dom.length ? E(dom.slice(0, 3).join(", ")) + (dom.length > 3 ? ` +${dom.length - 3}` : "") + " · " : m.config && m.config.epssFloor != null ? "KEV or EPSS ≥ " + E(m.config.epssFloor) + " · " : ""}every ${every(m.intervalMs)} · last run ${E(ago(m.lastRunAt))} · ${m.lastResultCount || 0} open · ${(m.channels || []).length} channel${(m.channels || []).length === 1 ? "" : "s"}</span>
         <span class="mon-actions">
           <button class="mon-btn" data-act="run">Run now</button>
           <button class="mon-btn" data-act="pause">${m.paused ? "Resume" : "Pause"}</button>
