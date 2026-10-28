@@ -275,6 +275,8 @@ const SEV = { CRITICAL:{label:"Critical",color:"#f0484a"}, HIGH:{label:"High",co
 // Every tool is a pure function of (input, opts). Nothing leaves the browser — ideal for a
 // security console handling IOCs, tokens and samples. `run` returns a string or throws Error.
 const _te = (s) => new TextEncoder().encode(s);
+// Natural, case-insensitive line order: "apple" before "Zebra", "9" before "10".
+const natCmp = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }) || (a < b ? -1 : a > b ? 1 : 0);
 const _b64e = (s) => btoa(unescape(encodeURIComponent(s)));
 const _b64d = (s) => decodeURIComponent(escape(atob(s.replace(/\s+/g, ""))));
 const _b64urlToStd = (s) => s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4);
@@ -384,7 +386,7 @@ const TOOLKIT = [
     } },
   { id: "lines", cat: "text", name: "Line tools", desc: "Sort, de-duplicate, reverse or trim lines.", opts: [{ id: "op", label: "Operation", type: "select", options: [["unique", "Unique"], ["sort", "Sort A→Z"], ["sortd", "Sort Z→A"], ["reverse", "Reverse order"], ["trim", "Trim each"], ["nonblank", "Drop blank lines"]] }], run: (s, o) => {
       let L = s.replace(/\r/g, "").split("\n");
-      switch (o.op) { case "sort": L.sort(); break; case "sortd": L.sort().reverse(); break; case "reverse": L.reverse(); break; case "trim": L = L.map((x) => x.trim()); break; case "nonblank": L = L.filter((x) => x.trim()); break; default: L = [...new Set(L)]; }
+      switch (o.op) { case "sort": L.sort(natCmp); break; case "sortd": L.sort(natCmp).reverse(); break; case "reverse": L.reverse(); break; case "trim": L = L.map((x) => x.trim()); break; case "nonblank": L = L.filter((x) => x.trim()); break; default: L = [...new Set(L)]; }
       return L.join("\n");
     } },
   { id: "count", cat: "text", name: "Count & stats", desc: "Characters, words, lines and byte size.", run: (s) => {
