@@ -13,6 +13,22 @@ function cleanHex(h) { return S(h).replace(/0x/gi, "").replace(/[^0-9a-fA-F]/g, 
 // Strict: 0x prefixes and space / : , - separators are fine, anything else is an error. Dropping
 // non-hex characters turned text typed into a hex field (AAD "hdr", a passphrase as key) into other bytes.
 function hexToBytes(h) { h = S(h).replace(/0x/gi, "").replace(/[\s:,-]/g, ""); if (/[^0-9a-fA-F]/.test(h)) throw new Error("Not valid hex: use 0-9 and a-f only (spaces and colons are fine)."); if (h.length % 2) throw new Error("Hex has an odd number of digits; each byte is two digits."); const u = new Uint8Array(h.length / 2); for (let i = 0; i < u.length; i++) u[i] = parseInt(h.substr(i * 2, 2), 16); return u; }
+// A pasted signature: hex (what the sign tools also print) or base64/base64url.
+function sigBytes(x) { const t = S(x).trim(); const h = t.replace(/[\s:]/g, ""); return /^[0-9a-fA-F]+$/.test(h) && h.length % 2 === 0 ? hexToBytes(h) : b64ToBytes(t); }
+// ECDSA DER (SEQUENCE { INTEGER r, INTEGER s }, as OpenSSL and most libraries emit) -> raw r||s for WebCrypto.
+function ecdsaRaw(sig, size) {
+  if (sig.length === 2 * size || sig[0] !== 0x30) return sig;
+  let i = 2; if (sig[1] & 0x80) i += sig[1] & 0x7f;
+  const out = new Uint8Array(2 * size);
+  for (let n = 0; n < 2; n++) {
+    if (sig[i] !== 0x02) return sig;
+    const len = sig[i + 1]; let v = sig.slice(i + 2, i + 2 + len); i += 2 + len;
+    while (v.length > size && v[0] === 0) v = v.slice(1);
+    if (v.length > size) return sig;
+    out.set(v, n * size + size - v.length);
+  }
+  return out;
+}
 function bytesToHex(u) { return Array.from(u, (b) => b.toString(16).padStart(2, "0")).join(""); }
 function bytesToB64(u) { let s = ""; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s); }
 function b64urlOf(u) { return bytesToB64(u).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
@@ -317,8 +333,8 @@ export const TOOLS = [
         return `Signature (${v.scheme}, ${v.hash}):\nbase64 ${bytesToB64(sig)}\nhex    ${bytesToHex(sig)}`;
       } catch (e) { return { error: "Sign failed: " + e.message }; }
     } },
-  { id: "cr-rsa-verify", name: "RSA Verify", cat: "crypto", desc: "Verify an RSA signature (base64) against a message and an RSA public key (SPKI PEM).", tags: ["rsa", "verify", "signature"], live: false, button: "Verify",
-    inputs: [{ k: "pem", label: "Public key (SPKI PEM)", type: "textarea", rows: 5 }, { k: "msg", label: "Message", type: "textarea", rows: 2 }, { k: "sig", label: "Signature (base64)", type: "textarea", rows: 2 }, { k: "scheme", label: "Scheme", type: "select", opts: ["PKCS1v1.5", "PSS"], value: "PKCS1v1.5" }, { k: "hash", label: "Hash", type: "select", opts: ["SHA-256", "SHA-384", "SHA-512"], value: "SHA-256" }],
+  { id: "cr-rsa-verify", name: "RSA Verify", cat: "crypto", desc: "Verify an RSA signature (base64 or hex) against a message and an RSA public key (SPKI PEM).", tags: ["rsa", "verify", "signature"], live: false, button: "Verify",
+    inputs: [{ k: "pem", label: "Public key (SPKI PEM)", type: "textarea", rows: 5 }, { k: "msg", label: "Message", type: "textarea", rows: 2 }, { k: "sig", label: "Signature (base64 or hex)", type: "textarea", rows: 2 }, { k: "scheme", label: "Scheme", type: "select", opts: ["PKCS1v1.5", "PSS"], value: "PKCS1v1.5" }, { k: "hash", label: "Hash", type: "select", opts: ["SHA-256", "SHA-384", "SHA-512"], value: "SHA-256" }],
     async run(v) {
       if (!subtle) return { error: "WebCrypto unavailable." };
       if (!v.pem || !v.sig || v.msg == null) return "";
@@ -326,7 +342,7 @@ export const TOOLS = [
       try {
         const k = await subtle.importKey("spki", pemToDer(v.pem), { name: algName, hash: v.hash }, false, ["verify"]);
         const params = v.scheme === "PSS" ? { name: "RSA-PSS", saltLength: { "SHA-256": 32, "SHA-384": 48, "SHA-512": 64 }[v.hash] } : { name: algName };
-        const ok = await subtle.verify(params, k, b64ToBytes(v.sig), enc.encode(v.msg));
+        const ok = await subtle.verify(params, k, sigBytes(v.sig), enc.encode(v.msg));
         return ok ? "VALID — signature matches." : "INVALID — signature does not match.";
       } catch (e) { return { error: "Verify failed: " + e.message }; }
     } },
@@ -337,12 +353,12 @@ export const TOOLS = [
       if (!v.pem || v.msg == null) return "";
       try { const k = await subtle.importKey("pkcs8", pemToDer(v.pem), { name: "ECDSA", namedCurve: v.curve }, false, ["sign"]); const sig = new Uint8Array(await subtle.sign({ name: "ECDSA", hash: v.hash }, k, enc.encode(v.msg))); return `Signature (raw r||s):\nbase64 ${bytesToB64(sig)}\nhex    ${bytesToHex(sig)}`; } catch (e) { return { error: "Sign failed: " + e.message }; }
     } },
-  { id: "cr-ecdsa-verify", name: "ECDSA Verify", cat: "crypto", desc: "Verify an ECDSA raw (r||s) signature in base64 against a message and EC public key (SPKI PEM).", tags: ["ecdsa", "ec", "verify"], live: false, button: "Verify",
-    inputs: [{ k: "pem", label: "Public key (SPKI PEM)", type: "textarea", rows: 4 }, { k: "curve", label: "Curve", type: "select", opts: ["P-256", "P-384", "P-521"], value: "P-256" }, { k: "msg", label: "Message", type: "textarea", rows: 2 }, { k: "sig", label: "Signature (base64, raw r||s)", type: "textarea", rows: 2 }, { k: "hash", label: "Hash", type: "select", opts: ["SHA-256", "SHA-384", "SHA-512"], value: "SHA-256" }],
+  { id: "cr-ecdsa-verify", name: "ECDSA Verify", cat: "crypto", desc: "Verify an ECDSA signature (raw r||s or DER, base64 or hex) against a message and EC public key (SPKI PEM).", tags: ["ecdsa", "ec", "verify"], live: false, button: "Verify",
+    inputs: [{ k: "pem", label: "Public key (SPKI PEM)", type: "textarea", rows: 4 }, { k: "curve", label: "Curve", type: "select", opts: ["P-256", "P-384", "P-521"], value: "P-256" }, { k: "msg", label: "Message", type: "textarea", rows: 2 }, { k: "sig", label: "Signature (raw r||s or DER; base64 or hex)", type: "textarea", rows: 2 }, { k: "hash", label: "Hash", type: "select", opts: ["SHA-256", "SHA-384", "SHA-512"], value: "SHA-256" }],
     async run(v) {
       if (!subtle) return { error: "WebCrypto unavailable." };
       if (!v.pem || !v.sig || v.msg == null) return "";
-      try { const k = await subtle.importKey("spki", pemToDer(v.pem), { name: "ECDSA", namedCurve: v.curve }, false, ["verify"]); const ok = await subtle.verify({ name: "ECDSA", hash: v.hash }, k, b64ToBytes(v.sig), enc.encode(v.msg)); return ok ? "VALID — signature matches." : "INVALID — signature does not match."; } catch (e) { return { error: "Verify failed: " + e.message }; }
+      try { const k = await subtle.importKey("spki", pemToDer(v.pem), { name: "ECDSA", namedCurve: v.curve }, false, ["verify"]); const ok = await subtle.verify({ name: "ECDSA", hash: v.hash }, k, ecdsaRaw(sigBytes(v.sig), { "P-256": 32, "P-384": 48, "P-521": 66 }[v.curve]), enc.encode(v.msg)); return ok ? "VALID — signature matches." : "INVALID — signature does not match."; } catch (e) { return { error: "Verify failed: " + e.message }; }
     } },
 
   // ================= JWK / PEM =================

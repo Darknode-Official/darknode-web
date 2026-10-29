@@ -40,4 +40,18 @@ group("crypto quick tools", () => {
     let r; try { r = await FX.find((t) => t.id === "fx-magic-bytes").run({ hex: "not hex at all", fmt: "Hex" }, H); } catch (e) { r = { error: e.message }; }
     assert.ok(r && /not valid hex/i.test(r.error));
   });
+  test("RSA and ECDSA verify accept hex signatures and DER-encoded ECDSA (what OpenSSL emits)", async () => {
+    const rsa = crypto.generateKeyPairSync("rsa", { modulusLength: 2048 });
+    const rsig = crypto.sign("sha256", Buffer.from("hello"), rsa.privateKey);
+    const rpub = rsa.publicKey.export({ type: "spki", format: "pem" });
+    for (const sig of [rsig.toString("hex"), rsig.toString("base64")]) assert.ok(/^VALID/.test(await run("cr-rsa-verify", { pem: rpub, msg: "hello", sig, scheme: "PKCS1v1.5", hash: "SHA-256" })));
+    const ec = crypto.generateKeyPairSync("ec", { namedCurve: "secp384r1" });
+    const epub = ec.publicKey.export({ type: "spki", format: "pem" });
+    for (const dsaEncoding of ["der", "ieee-p1363"]) {
+      const sig = crypto.sign("sha384", Buffer.from("hello"), { key: ec.privateKey, dsaEncoding });
+      for (const enc of ["hex", "base64"]) assert.ok(/^VALID/.test(await run("cr-ecdsa-verify", { pem: epub, curve: "P-384", msg: "hello", sig: sig.toString(enc), hash: "SHA-384" })), dsaEncoding + " " + enc);
+    }
+    const bad = crypto.sign("sha384", Buffer.from("hello"), ec.privateKey); bad[bad.length - 1] ^= 1;
+    assert.ok(/^INVALID/.test(await run("cr-ecdsa-verify", { pem: epub, curve: "P-384", msg: "hello", sig: bad.toString("hex"), hash: "SHA-384" })));
+  });
 });
