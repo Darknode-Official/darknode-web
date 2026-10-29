@@ -51,14 +51,15 @@ function punyToUnicode(host) {
   return host.split(".").map((l) => /^xn--/i.test(l) ? punyDecode(l.slice(4)) : l).join(".");
 }
 
+
 export const TOOLS = [
   { id: "base64", name: "Base64 Encoder / Decoder", cat: "encoding", desc: "Encode or decode Base64, with URL-safe and MIME variants.", tags: ["b64"],
     inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "Hello, Darknode" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }, { k: "url", label: "URL-safe (base64url)", type: "checkbox" }],
-    run(v, H) { if (!v.text) return ""; try { return v.mode === "Encode" ? H.b64encode(v.text, { url: v.url }) : H.b64decode(v.text, { url: v.url || /[-_]/.test(v.text) }); } catch (e) { return { error: "Not valid Base64." }; } } }, // - or _ only occur in base64url
+    run(v, H) { if (!v.text) return ""; try { return v.mode === "Encode" ? H.b64encode(v.text, { url: v.url }) : H.textOrHex(H.b64bytes(v.text, { url: v.url || /[-_]/.test(v.text) })); } catch (e) { return { error: "Not valid Base64." }; } } }, // - or _ only occur in base64url
 
   { id: "base32", name: "Base32 Encoder / Decoder", cat: "encoding", desc: "RFC 4648 Base32 encode/decode.", tags: ["b32"],
     inputs: [{ k: "text", label: "Text", type: "textarea" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }],
-    run(v, H) { if (!v.text) return ""; try { return v.mode === "Encode" ? H.base32encode(v.text) : H.base32decode(v.text); } catch (e) { return { error: "Not valid Base32." }; } } },
+    run(v, H) { if (!v.text) return ""; try { return v.mode === "Encode" ? H.base32encode(v.text) : H.textOrHex(H.base32bytes(v.text)); } catch (e) { return { error: "Not valid Base32." }; } } },
 
   { id: "base58", name: "Base58 Encoder", cat: "encoding", desc: "Bitcoin-alphabet Base58 encode (no 0, O, I, l).", tags: ["b58", "bitcoin"],
     inputs: [{ k: "text", label: "Text", type: "textarea" }],
@@ -68,13 +69,13 @@ export const TOOLS = [
     inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "a b&c=d" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }, { k: "component", label: "Encode as component (encodeURIComponent)", type: "checkbox", value: true }, { k: "all", label: "Encode every character (filter testing)", type: "checkbox", value: false }],
     run(v) { if (!v.text) return ""; try { if (v.mode === "Encode" && v.all) return Array.from(String(v.text), (c) => { const cp = c.codePointAt(0); return cp < 128 ? "%" + cp.toString(16).toUpperCase().padStart(2, "0") : encodeURIComponent(c); }).join(""); if (v.mode === "Encode") return v.component ? encodeURIComponent(v.text) : encodeURI(v.text); return v.component ? decodeURIComponent(v.text) : decodeURI(v.text); } catch (e) { return { error: "Malformed URL sequence." }; } } },
 
-  { id: "html-entities", name: "HTML Entity Encoder / Decoder", cat: "encoding", desc: "Escape or unescape HTML entities (&lt; &amp; …).", tags: ["escape", "xss"],
+  { id: "html-entities", name: "HTML Entity Encoder / Decoder", cat: "encoding", desc: "Escape or unescape HTML entities (&lt; &amp; &eacute; &#8212; …) the way a browser decodes them.", tags: ["escape", "xss"],
     inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "<b>hi</b> & \"you\"" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }],
-    run(v) { if (!v.text) return ""; if (v.mode === "Encode") return v.text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); const map = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'", nbsp: " " }; return v.text.replace(/&(#[xX][0-9a-fA-F]+|#[0-9]+|[a-zA-Z]+);/g, (m, e) => { if (e[0] === "#") { const n = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return n > 0 && n <= 0x10ffff && !(n >= 0xd800 && n <= 0xdfff) ? String.fromCodePoint(n) : "\ufffd"; } return Object.hasOwn(map, e) ? map[e] : m; }); } }, // HTML decodes 0, surrogates and > U+10FFFF as U+FFFD
+    run(v, H) { if (!v.text) return ""; if (v.mode === "Encode") return v.text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); return H.decodeEntities(v.text);} },
 
   { id: "hex-text", name: "Hex Encoder / Decoder", cat: "encoding", desc: "Convert text to hex bytes and back.", tags: ["hex", "base16"],
     inputs: [{ k: "text", label: "Text or hex", type: "textarea" }, { k: "mode", label: "Mode", type: "select", opts: ["Text → Hex", "Hex → Text"], value: "Text → Hex" }, { k: "sep", label: "Separator (encode)", type: "select", opts: [["", "none"], [" ", "space"], [":", "colon"]], value: "" }],
-    run(v, H) { if (!v.text) return ""; if (v.mode === "Text → Hex") { const h = H.toHex(H.bytes(v.text)); return v.sep ? h.match(/.{2}/g).join(v.sep) : h; } try { return H.fromBytes(H.fromHex(v.text)); } catch (e) { return { error: "Not valid hex." }; } } },
+    run(v, H) { if (!v.text) return ""; if (v.mode === "Text → Hex") { const h = H.toHex(H.bytes(v.text)); return v.sep ? h.match(/.{2}/g).join(v.sep) : h; } try { return H.textOrHex(H.fromHex(v.text)); } catch (e) { return { error: "Not valid hex." }; } } },
 
   { id: "binary-text", name: "Binary Encoder / Decoder", cat: "encoding", desc: "Text to 8-bit binary and back.", tags: ["binary", "bits"],
     inputs: [{ k: "text", label: "Text or binary", type: "textarea" }, { k: "mode", label: "Mode", type: "select", opts: ["Text → Binary", "Binary → Text"], value: "Text → Binary" }],

@@ -520,14 +520,20 @@ const PURL_ECO = { npm: "npm", pypi: "pypi", maven: "maven", cargo: "cargo", gem
 
 /** Parse a package URL (purl) into { type, namespace, name, version, ecosystem, fullName }. */
 export function parsePurl(purl) {
-  const m = String(purl || "").trim().match(/^pkg:([A-Za-z0-9.+-]+)\/([^@?#]+)(?:@([^?#]+))?/);
+  // the version follows the LAST "@" after the last "/" (purl spec: split once from the right), so
+  // an unencoded npm scope (pkg:npm/@angular/core@16.0.0, as several SBOM tools write it) parses
+  const m = String(purl || "").trim().match(/^pkg:([A-Za-z0-9.+-]+)\/+([^?#]+)/);
   if (!m) return null;
   const dec = (s) => { try { return decodeURIComponent(s); } catch (_) { return s; } };
   const type = m[1].toLowerCase();
-  const segs = m[2].split("/").map(dec);
+  let rest = m[2].replace(/\/+$/, ""), ver = "";
+  const at = rest.lastIndexOf("@");
+  if (at > rest.lastIndexOf("/")) { ver = rest.slice(at + 1); rest = rest.slice(0, at); }
+  if (!rest || rest.endsWith("/")) return null;
+  const segs = rest.split("/").map(dec);
   const name = segs.pop();
   const namespace = segs.join("/");
-  const version = m[3] ? dec(m[3]) : "";
+  const version = ver ? dec(ver) : "";
   const fullName = type === "maven" ? (namespace ? namespace + ":" + name : name) : namespace ? namespace + "/" + name : name;
   return { type, namespace, name, version, ecosystem: PURL_ECO[type] || type, fullName };
 }

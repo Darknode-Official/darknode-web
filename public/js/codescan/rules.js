@@ -55,6 +55,8 @@ const SKIP_LINE = 2000; // ignore pathological minified lines (regex cost + nois
 // a rule names its detectors and adds the Code Scanner's own ids, severity, CWE and
 // advice. `pick` chooses the value to report (masked in the UI, never sent anywhere),
 // `accept` / `minLen` / `minEntropy` filter dictionary-looking matches.
+// Files whose unquoted `name = value` lines are literal values, not code.
+const CONFIG_FILE = /(?:^|\/)\.env(?:\.[^/]*)?$|\.(?:ya?ml|properties|ini|cfg|conf|env)$/i;
 export const SECRET_RULES = [
   { id: "secret.aws-access-key", title: "AWS access key ID", detectors: ["aws-key"], sev: "high", cwe: 798,
     why: "An AWS access key ID in source usually travels with its secret key and grants API access to the account.",
@@ -95,21 +97,49 @@ export const SECRET_RULES = [
   { id: "secret.npm-token", title: "npm access token", detectors: ["npm-token"], sev: "critical", cwe: 798,
     why: "An npm token can publish packages under your account, which is a supply-chain compromise.",
     fix: "Revoke it with `npm token revoke` and use granular, CI-scoped tokens from secrets." },
+  { id: "secret.gitlab-token", title: "GitLab personal access token", detectors: ["gitlab-pat"], sev: "critical", cwe: 798,
+    why: "A GitLab token authenticates as its user and can read or push to repositories and run pipelines.",
+    fix: "Revoke it under GitLab User Settings > Access Tokens and keep tokens in CI/CD variables." },
+  { id: "secret.stripe-test", title: "Stripe test secret key", detectors: ["stripe-test-key"], sev: "medium", cwe: 798,
+    why: "A test-mode key works against the account's test data and webhooks, and live keys are often stored beside it.",
+    fix: "Roll the key in the Stripe dashboard and load it from the server environment." },
+  { id: "secret.huggingface-token", title: "Hugging Face access token", detectors: ["huggingface-token"], sev: "high", cwe: 798,
+    why: "A Hugging Face token can read private models and datasets and, with write scope, replace them.",
+    fix: "Revoke it at huggingface.co/settings/tokens and load it from the environment." },
+  { id: "secret.pypi-token", title: "PyPI upload token", detectors: ["pypi-token"], sev: "critical", cwe: 798,
+    why: "A PyPI token can upload new releases of your packages, which is a supply-chain compromise.",
+    fix: "Delete the token on pypi.org and publish through trusted publishing or a CI secret." },
+  { id: "secret.digitalocean-token", title: "DigitalOcean token", detectors: ["digitalocean-token"], sev: "critical", cwe: 798,
+    why: "A DigitalOcean token can create, read and destroy droplets, databases and storage on the account.",
+    fix: "Revoke it in the DigitalOcean control panel under API and load a new one from the environment." },
+  { id: "secret.planetscale-token", title: "PlanetScale token or password", detectors: ["planetscale-token"], sev: "critical", cwe: 798,
+    why: "PlanetScale tokens and passwords give access to the database branches they are scoped to.",
+    fix: "Revoke it in PlanetScale and load credentials from the environment." },
+  { id: "secret.shopify-token", title: "Shopify access token", detectors: ["shopify-token"], sev: "high", cwe: 798,
+    why: "A Shopify access token acts on the store's orders, customers and products within its scopes.",
+    fix: "Rotate it in the Shopify admin (uninstall and reinstall a custom app) and keep it server-side." },
+  { id: "secret.google-oauth-secret", title: "Google OAuth client secret", detectors: ["google-oauth"], sev: "high", cwe: 798,
+    why: "With the client secret anyone can run the OAuth flow as your app and exchange codes for tokens.",
+    fix: "Reset the secret in Google Cloud Console > Credentials and keep it server-side." },
+  { id: "secret.azure-storage-key", title: "Azure Storage account key", detectors: ["azure-storage-key"], pick: (h) => h.m[1], sev: "critical", cwe: 798,
+    why: "An account key is full read, write and delete access to every container, queue and table in the storage account.",
+    fix: "Rotate the key in the Azure portal and use managed identities or short-lived SAS tokens." },
   { id: "secret.jwt", title: "Hardcoded JSON Web Token", detectors: ["jwt"], sev: "medium", cwe: 798,
     why: "A committed JWT may still be valid and grant the session or service access it encodes.",
     fix: "Remove the token; if it is long-lived, rotate the signing key so it stops verifying." },
   { id: "secret.db-url", title: "Database URL with password", detectors: ["conn-string"], pick: (h) => h.m[1], minLen: 4, sev: "high", cwe: 798,
     why: "Connection strings with an inline password give direct database access to anyone who reads the repo.",
     fix: "Move the connection string to an environment variable or secrets manager and rotate the password." },
-  { id: "secret.generic", title: "Hardcoded credential", detectors: ["pat-assignment"], accept: (h) => keyHoldsSecret(assignmentKey(h.whole), "._-"), minLen: 12, sev: "medium", cwe: 798, minEntropy: 3.5,
+  { id: "secret.generic", title: "Hardcoded credential", detectors: ["pat-assignment", "config-assignment"], only: { "config-assignment": CONFIG_FILE }, accept: (h) => keyHoldsSecret(h.m[1] || assignmentKey(h.whole), "._-"), minLen: 12, sev: "medium", cwe: 798, minEntropy: 3.5,
     why: "Credentials embedded in source are readable by everyone with repo access and persist in git history.",
     fix: "Load the value from the environment or a secrets manager, rotate it, and purge it from history." }
 ];
 
 // First hit of a secret rule in `text`: { val, index } (index = start of the match), or null.
-function secretHit(rule, text) {
+function secretHit(rule, text, path = "") {
   let sample = null; // a match the detector rejected as an example/placeholder value
   for (const id of rule.detectors) {
+    if (rule.only?.[id] && !rule.only[id].test(path)) continue;
     const d = detector(id);
     for (const h of findAll(d, text, { validate: false })) { // validated here so placeholder rejects can be reported
       if (d.validate && !d.validate(h.value, h.whole, { text, index: h.start })) { if (PLACEHOLDER.test(h.value)) sample = h.value; continue; }
@@ -360,7 +390,7 @@ export function scanFile(path, text) {
     if (raw.length > SKIP_LINE || IGNORE.test(raw) || (i > 0 && IGNORE.test(lines[i - 1]) && /darknode-ignore-next-line/.test(lines[i - 1]))) continue;
     // Secrets: scan raw line (secrets are often inside strings/comments too).
     for (const rule of SECRET_RULES) {
-      const m = secretHit(rule, raw);
+      const m = secretHit(rule, raw, path);
       if (!m) continue;
       if (m.placeholder) { samples.add(i + ":" + m.placeholder); continue; }
       const val = m.val;

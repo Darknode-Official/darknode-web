@@ -405,9 +405,21 @@ export const TOOLS = [
       const sameSite = parts.slice(1).find((p) => p.toLowerCase().startsWith("samesite="));
       if (sameSite) {
         const val = sameSite.split("=")[1];
-        findings.push(`INFO SameSite=${val}${/^none$/i.test(val) && !attrs.includes("secure") ? " — SameSite=None REQUIRES Secure." : ""}`);
+        findings.push(/^none$/i.test(val) && !attrs.includes("secure") ? `WARN SameSite=${val} without Secure — browsers reject this cookie outright.` : `INFO SameSite=${val}`);
       } else findings.push("WARN SameSite missing — defaults vary by browser; set explicitly (Strict/Lax/None) for CSRF protection.");
       if (!parts.slice(1).some((p) => /^path=/i.test(p))) findings.push("INFO Path not set — defaults to the request path, may over-scope or under-scope the cookie.");
+      // name prefixes (RFC 6265bis 4.1.3, matched case-insensitively): a cookie that breaks
+      // its prefix's rules is dropped by the browser, not just weakened
+      const cname = nameVal.split("=")[0].trim();
+      const path = (parts.slice(1).find((p) => /^path=/i.test(p)) || "").replace(/^path=\s*/i, "");
+      const broke = [];
+      if (/^__(secure|host)-/i.test(cname) && !attrs.includes("secure")) broke.push("Secure");
+      if (/^__host-/i.test(cname)) {
+        if (attrs.includes("domain")) broke.push("no Domain attribute");
+        if (path !== "/") broke.push("Path=/");
+      }
+      if (broke.length) findings.push(`FAIL ${cname.slice(0, cname.indexOf("-") + 1)} prefix requires ${broke.join(", ")} — browsers reject this cookie.`);
+      else if (/^__(secure|host)-/i.test(cname)) findings.push(`OK   ${cname.slice(0, cname.indexOf("-") + 1)} prefix rules met.`);
       return findings.join("\n");
     } },
 

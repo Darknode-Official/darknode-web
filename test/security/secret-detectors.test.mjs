@@ -68,6 +68,7 @@ export const FIXTURES = {
   "cloudflare-api-token": { pos: "CF_API_TOKEN=" + r(40), neg: r(40) },
   "bearer-auth": { pos: "Authorization: Bearer " + r(32), neg: "Bearer short" },
   "pat-assignment": { pos: 'db.password = "' + r(16) + '"', neg: 'password = "your-password-here"' },
+  "config-assignment": { pos: "DB_PASSWORD=" + r(16) + "9", neg: "max_tokens: 100000\npassword: ${DB_PASSWORD}\napi_key: changeme" },
 };
 
 // The former detector sets: scanner id -> core detector id.
@@ -86,10 +87,14 @@ export const CODESCAN_IDS = {
   "secret.slack-webhook": "slack-webhook", "secret.stripe-live": "stripe-key", "secret.google-api-key": "gcp-key", "secret.private-key": "private-key",
   "secret.openai-key": "openai-key", "secret.anthropic-key": "anthropic-key", "secret.sendgrid-key": "sendgrid-key", "secret.twilio-key": "twilio-api-key",
   "secret.npm-token": "npm-token", "secret.jwt": "jwt", "secret.db-url": "conn-string", "secret.generic": "pat-assignment",
+  "secret.gitlab-token": "gitlab-pat", "secret.stripe-test": "stripe-test-key", "secret.huggingface-token": "huggingface-token", "secret.pypi-token": "pypi-token",
+  "secret.digitalocean-token": "digitalocean-token", "secret.planetscale-token": "planetscale-token", "secret.shopify-token": "shopify-token",
+  "secret.google-oauth-secret": "google-oauth", "secret.azure-storage-key": "azure-storage-key",
 };
 export const IAC_IDS = {
   "SEC-001": "aws-key", "SEC-002": "private-key", "SEC-003": "github-token", "SEC-004": "slack-token", "SEC-005": "gcp-key",
   "SEC-006": "pat-assignment", "SEC-007": "aws-secret", "SEC-008": "stripe-key", "SEC-009": "slack-webhook", "SEC-010": "azure-storage-key",
+  "SEC-011": "openai-key", "SEC-012": "conn-string",
 };
 // Credential Auditor names; the ones a prefix narrows get a fixture of that kind.
 export const CRED_IDS = {
@@ -105,6 +110,11 @@ export const CRED_IDS = {
   "Azure Storage Key": "azure-storage-key", "Azure AD Client Secret": "azure-ad-secret", "GCP Service Account Key": "gcp-service-account",
   "JWT Token": "jwt", "Private Key (PEM)": "private-key", "SSH Private Key": ["private-key", PEM("OPENSSH ") + "\n" + r(64, B64) + "\n" + PEM_END("OPENSSH ")],
   "Datadog API Key": "datadog-key", "Shopify Access Token": "shopify-token", "Cloudflare API Key": "cloudflare-global-key", "Cloudflare API Token": "cloudflare-api-token",
+  "GitHub App Installation Token": ["github-token", "token ghs_" + r(36)], "GitHub Refresh Token": ["github-token", "token ghr_" + r(36)],
+  "Slack Workspace Token": ["slack-token", "xox" + "a-" + dig(11) + "-" + r(24)], "Slack Refresh Token": ["slack-token", "xox" + "r-" + dig(11) + "-" + r(24)],
+  "Slack Rotating Refresh Token": ["slack-token", "xox" + "e-1-" + r(40)], "Slack Session Token": ["slack-token", "xox" + "s-" + dig(11) + "-" + r(24)],
+  "Slack App-Level Token": "slack-app-token", "Google OAuth Client Secret": "google-oauth", "Twilio API Key": "twilio-api-key",
+  "Hugging Face Token": "huggingface-token", "PlanetScale Token": "planetscale-token", "Azure SAS Token": "azure-sas", "Database Connection String": "conn-string",
 };
 export const fixture = (v) => (Array.isArray(v) ? { core: v[0], pos: v[1], neg: FIXTURES[v[0]].neg } : { core: v, ...FIXTURES[v] });
 
@@ -162,7 +172,7 @@ group("secret-detectors: former DLP detectors (LEAKPROBE reuses these)", () => {
 });
 
 group("secret-detectors: former Code Scanner rules", () => {
-  test("the rule set is the same 16 ids as before", () => {
+  test("the rule set is the 25 ids listed here", () => {
     assert.deepEqual(SECRET_RULES.map((x) => x.id).sort(), Object.keys(CODESCAN_IDS).sort());
   });
   const ids = (text) => scanFile("src/settings.js", text + "\n").map((x) => x.ruleId);
@@ -182,13 +192,19 @@ group("secret-detectors: former Code Scanner rules", () => {
 });
 
 group("secret-detectors: former IaC scanner patterns", () => {
-  test("the pattern set is the same 10 ids as before", () => {
+  test("the pattern set is the 12 ids listed here", () => {
     assert.deepEqual(SECRET_PATTERNS.map((x) => x.id), Object.keys(IAC_IDS));
   });
   for (const [id, core] of Object.entries(IAC_IDS)) test(id, () => {
     const f = fixture(core);
     assert.ok(scanSecrets(f.pos).some((h) => h.ruleId === id), id + " missed its positive");
     assert.ok(!scanSecrets(f.neg).some((h) => h.ruleId === id), id + " fired on its negative");
+  });
+  test("every SEC-011 detector reports its positive and not its negative", () => {
+    for (const core of SECRET_PATTERNS.find((x) => x.id === "SEC-011").detectors) {
+      assert.ok(scanSecrets(fixture(core).pos).some((h) => h.ruleId === "SEC-011"), core + " missed its positive");
+      assert.ok(!scanSecrets(fixture(core).neg).some((h) => h.ruleId === "SEC-011"), core + " fired on its negative");
+    }
   });
   test("fine-grained GitHub tokens are SEC-003 too", () => {
     assert.ok(scanSecrets(FIXTURES["github-pat-fine"].pos).some((h) => h.ruleId === "SEC-003"));

@@ -4,7 +4,8 @@
 const S = (v) => (v == null ? "" : String(v));
 
 // ---- shared semver helpers ----
-const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/;
+// semver.org grammar: no leading zeros in numbers or numeric prerelease ids, no empty ids
+const SEMVER_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
 function parseSemver(str) {
   const m = SEMVER_RE.exec(String(str).trim().replace(/^v/, ""));
   if (!m) return null;
@@ -19,6 +20,65 @@ function cmpIds(a, b) {
   if (an) return -1;
   if (bn) return 1;
   return a < b ? -1 : a > b ? 1 : 0;
+}
+// npm range -> comparator sets [[{op, v}]] (|| = any set; all comparators in a set must hold).
+// Follows node-semver: X-ranges and partial versions (1, 1.x, 1.2.*), hyphen ranges (with a
+// partial upper bound meaning "below the next"), ^ and ~ on partials, ~> as ~. Null if invalid.
+const RNUM = "(0|[1-9]\\d*|[xX*])";
+const RPART = new RegExp("^v?" + RNUM + "(?:\\." + RNUM + "(?:\\." + RNUM + "(?:-([0-9A-Za-z.-]+))?(?:\\+[0-9A-Za-z.-]+)?)?)?$");
+function npmRange(range) {
+  const isX = (x) => x == null || /^[xX*]$/.test(x);
+  const part = (t) => { const m = RPART.exec(t); return m ? { M: m[1], m: m[2], p: m[3], pre: m[4] } : null; };
+  const full = (M, m, p, pre) => `${M}.${m}.${p}${pre ? "-" + pre : ""}`;
+  const one = (tok) => {
+    const om = /^(~>|~|\^|>=|<=|>|<|=)?(.*)$/.exec(tok);
+    let op = om[1] || "";
+    const x = part(om[2]);
+    if (!x) return null;
+    let { M, m, p, pre } = x;
+    const xM = isX(M), xm = xM || isX(m), xp = xm || isX(p);
+    M = xM ? 0 : +M; m = xm ? 0 : +m; p = xp ? 0 : +p;
+    if (op === "~>" || op === "~") {
+      if (xM) return [];
+      if (xm) return [{ op: ">=", v: full(M, 0, 0) }, { op: "<", v: full(M + 1, 0, 0, "0") }];
+      return [{ op: ">=", v: full(M, m, p, xp ? "" : pre) }, { op: "<", v: full(M, m + 1, 0, "0") }];
+    }
+    if (op === "^") {
+      if (xM) return [];
+      const lo = { op: ">=", v: full(M, m, p, xp ? "" : pre) };
+      if (xm || M > 0) return [lo, { op: "<", v: full(M + 1, 0, 0, "0") }];
+      if (xp || m > 0) return [lo, { op: "<", v: full(0, m + 1, 0, "0") }];
+      return [lo, { op: "<", v: full(0, 0, p + 1, "0") }];
+    }
+    if (op === "=") op = "";
+    if (xM) return op === ">" || op === "<" ? [{ op: "<", v: "0.0.0-0" }] : [];
+    if (op && xp) { // >1 = >=2.0.0, >1.2 = >=1.3.0, <=1 = <2.0.0-0, <1.2 = <1.2.0-0
+      if (op === ">") { op = ">="; if (xm) { M++; m = 0; } else m++; p = 0; }
+      else if (op === "<=") { op = "<"; if (xm) M++; else m++; }
+      return [{ op, v: full(M, m, p, op === "<" ? "0" : "") }];
+    }
+    if (xm) return [{ op: ">=", v: full(M, 0, 0) }, { op: "<", v: full(M + 1, 0, 0, "0") }];
+    if (xp) return [{ op: ">=", v: full(M, m, 0) }, { op: "<", v: full(M, m + 1, 0, "0") }];
+    return [{ op: op || "=", v: full(M, m, p, pre) }];
+  };
+  const sets = [];
+  for (let raw of String(range).split("||")) {
+    raw = raw.trim().replace(/(~>|~|\^|>=|<=|>|<|=)\s+/g, "$1");
+    let set = [];
+    const hy = /^(\S+)\s+-\s+(\S+)$/.exec(raw);
+    if (hy) {
+      const a = part(hy[1]), b = part(hy[2]);
+      if (!a || !b) return null;
+      if (!isX(a.M)) set.push({ op: ">=", v: full(+a.M, isX(a.m) ? 0 : +a.m, isX(a.m) || isX(a.p) ? 0 : +a.p, isX(a.m) || isX(a.p) ? "" : a.pre) });
+      if (isX(b.M)) {} else if (isX(b.m)) set.push({ op: "<", v: full(+b.M + 1, 0, 0, "0") });
+      else if (isX(b.p)) set.push({ op: "<", v: full(+b.M, +b.m + 1, 0, "0") });
+      else set.push({ op: "<=", v: full(+b.M, +b.m, +b.p, b.pre) });
+    } else if (raw) {
+      for (const tok of raw.split(/\s+/)) { const c = one(tok); if (!c) return null; set = set.concat(c); }
+    }
+    sets.push(set);
+  }
+  return sets;
 }
 function cmpSemver(a, b) {
   const pa = parseSemver(a), pb = parseSemver(b);
@@ -40,21 +100,24 @@ function cmpSemver(a, b) {
 }
 
 // ---- shared cron field parser ----
-function cronField(field, min, max) {
+// names = ["JAN", ...] for the field's values from min up (month and weekday names, any case)
+function cronField(field, min, max, names) {
   const set = new Set();
   const parts = String(field).split(",");
+  const val = (t) => { if (/^\d+$/.test(t)) return +t; const i = names ? names.indexOf(t.toUpperCase()) : -1; return i >= 0 ? min + i : NaN; };
   for (let raw of parts) {
     raw = raw.trim();
     if (raw === "") return null;
     let step = 1, range = raw;
     const si = raw.indexOf("/");
-    if (si >= 0) { step = parseInt(raw.slice(si + 1), 10); range = raw.slice(0, si); if (!(step > 0)) return null; }
+    if (si >= 0) { if (!/^\d+$/.test(raw.slice(si + 1))) return null; step = +raw.slice(si + 1); range = raw.slice(0, si); if (!(step > 0)) return null; }
     let lo, hi;
     if (range === "*") { lo = min; hi = max; }
     else if (range.indexOf("-") > 0) {
-      const [a, b] = range.split("-"); lo = parseInt(a, 10); hi = parseInt(b, 10);
+      const ab = range.split("-"); if (ab.length !== 2) return null;
+      lo = val(ab[0]); hi = val(ab[1]);
     } else {
-      lo = hi = parseInt(range, 10);
+      lo = val(range); hi = si >= 0 ? max : lo; // N/step runs from N to the end of the field (cronie)
     }
     if (isNaN(lo) || isNaN(hi) || lo < min || hi > max || lo > hi) return null;
     for (let i = lo; i <= hi; i += step) set.add(i);
@@ -64,30 +127,43 @@ function cronField(field, min, max) {
 
 const ULID_ALPHA = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
+// .env parsing with the same rules as the dotenv package (v16/17): inline # comments, quoted
+// values that span lines, \n and \r expanded only inside double quotes, last duplicate wins.
+function parseDotenv(t) {
+  const LINE = /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/mg;
+  const src = String(t).replace(/\r\n?/g, "\n");
+  const vals = new Map(), count = new Map();
+  let m;
+  while ((m = LINE.exec(src))) {
+    let val = (m[2] || "").trim();
+    const q = val[0];
+    val = val.replace(/^(['"`])([\s\S]*)\1$/mg, "$2");
+    if (q === '"') val = val.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+    vals.set(m[1], val); count.set(m[1], (count.get(m[1]) || 0) + 1);
+  }
+  return { vals, count };
+}
+
 export const TOOLS = [
   {
     id: "dv-uuid-v7", name: "UUID v7 (time-ordered)", cat: "devx",
-    desc: "Generate version-7 UUIDs whose leading bits encode the current Unix millisecond, so they sort chronologically.",
+    desc: "Generate version-7 UUIDs whose leading bits encode the current Unix millisecond, so they sort chronologically; IDs made in the same millisecond count up, so a batch stays in order.",
     tags: ["uuid", "v7", "sortable", "id", "time"],
     inputs: [{ k: "count", label: "How many", type: "range", min: 1, max: 100, step: 1, value: 5 }],
     run(v, H) {
       const n = H.clampInt(v.count, 1, 100, 5);
       const out = [];
+      // 74 random bits (rand_a 12 + rand_b 62). Within one millisecond the next ID is the
+      // previous one plus one, so a batch sorts in generation order (RFC 9562 section 6.2).
+      const rand74 = () => H.randBytes(10).reduce((acc, x) => (acc << 8n) | BigInt(x), 0n) & ((1n << 74n) - 1n);
+      let lastTs = -1, rnd = 0n;
       for (let i = 0; i < n; i++) {
-        const ts = Date.now();
-        const r = H.randBytes(10);
-        const b = new Uint8Array(16);
-        b[0] = Math.floor(ts / 2 ** 40) & 0xff;
-        b[1] = Math.floor(ts / 2 ** 32) & 0xff;
-        b[2] = Math.floor(ts / 2 ** 24) & 0xff;
-        b[3] = Math.floor(ts / 2 ** 16) & 0xff;
-        b[4] = Math.floor(ts / 2 ** 8) & 0xff;
-        b[5] = ts & 0xff;
-        b[6] = 0x70 | (r[0] & 0x0f);
-        b[7] = r[1];
-        b[8] = 0x80 | (r[2] & 0x3f);
-        for (let j = 9; j < 16; j++) b[j] = r[j - 6];
-        const h = H.toHex(b);
+        let ts = Date.now();
+        if (ts <= lastTs) { ts = lastTs; rnd++; if (rnd >> 74n) { ts++; rnd = rand74(); } }
+        else rnd = rand74();
+        lastTs = ts;
+        const ra = Number(rnd >> 62n), rb = rnd & ((1n << 62n) - 1n);
+        const h = ts.toString(16).padStart(12, "0") + (0x7000 | ra).toString(16) + ((2n << 62n) | rb).toString(16);
         out.push(`${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`);
       }
       return out.join("\n");
@@ -106,20 +182,26 @@ export const TOOLS = [
   },
   {
     id: "dv-ulid", name: "ULID Generator", cat: "devx",
-    desc: "Generate lexicographically sortable ULIDs: 48-bit millisecond timestamp plus 80 bits of randomness, Crockford base32.",
+    desc: "Generate lexicographically sortable ULIDs: 48-bit millisecond timestamp plus 80 bits of randomness, Crockford base32 (monotonic within a millisecond).",
     tags: ["ulid", "id", "sortable", "base32"],
     inputs: [{ k: "count", label: "How many", type: "range", min: 1, max: 100, step: 1, value: 5 }],
     run(v, H) {
       const n = H.clampInt(v.count, 1, 100, 5);
       const out = [];
+      let lastTs = -1, lastR = null;
       for (let i = 0; i < n; i++) {
         let ts = Date.now();
+        let r;
+        if (ts <= lastTs) {
+          // Monotonic ULID: same millisecond increments the previous random part by one.
+          ts = lastTs; r = lastR.slice();
+          let k = 15; while (k >= 0 && ++r[k] > 31) r[k--] = 0;
+          if (k < 0) { ts++; r = Array.from(H.randBytes(16), (x) => x % 32); }
+        } else r = Array.from(H.randBytes(16), (x) => x % 32);
+        lastTs = ts; lastR = r;
         let t = "";
         for (let j = 0; j < 10; j++) { t = ULID_ALPHA[ts % 32] + t; ts = Math.floor(ts / 32); }
-        const rb = H.randBytes(16);
-        let r = "";
-        for (let j = 0; j < 16; j++) r += ULID_ALPHA[rb[j] % 32];
-        out.push(t + r);
+        out.push(t + r.map((x) => ULID_ALPHA[x]).join(""));
       }
       return out.join("\n");
     },
@@ -221,21 +303,24 @@ export const TOOLS = [
       if (!S(v.version).trim()) return "";
       const p = parseSemver(v.version);
       if (!p) return { error: "Not a valid semantic version." };
-      if (v.type === "major") return `${p.major + 1}.0.0`;
-      if (v.type === "minor") return `${p.major}.${p.minor + 1}.0`;
-      if (v.type === "patch") return `${p.major}.${p.minor}.${p.patch + 1}`;
-      // prerelease
-      if (!p.prerelease) return `${p.major}.${p.minor}.${p.patch + 1}-0`;
+      // as npm semver.inc: a prerelease of the target is released, not skipped (2.0.0-rc.1 -> major is 2.0.0)
+      const pre = !!p.prerelease;
+      if (v.type === "major") return `${pre && !p.minor && !p.patch ? p.major : p.major + 1}.0.0`;
+      if (v.type === "minor") return `${p.major}.${pre && !p.patch ? p.minor : p.minor + 1}.0`;
+      if (v.type === "patch") return `${p.major}.${p.minor}.${pre ? p.patch : p.patch + 1}`;
+      // prerelease: bump the last numeric identifier (1.0.0-1.beta -> 1.0.0-2.beta), else append .0
+      if (!pre) return `${p.major}.${p.minor}.${p.patch + 1}-0`;
       const ids = p.prerelease.split(".");
-      const last = ids[ids.length - 1];
-      if (/^\d+$/.test(last)) ids[ids.length - 1] = String(Number(last) + 1);
+      let i = ids.length - 1;
+      while (i >= 0 && !/^\d+$/.test(ids[i])) i--;
+      if (i >= 0) ids[i] = String(Number(ids[i]) + 1);
       else ids.push("0");
       return `${p.major}.${p.minor}.${p.patch}-${ids.join(".")}`;
     },
   },
   {
     id: "dv-semver-satisfies", name: "Semver Satisfies", cat: "devx",
-    desc: "Test whether a version satisfies a basic range: caret (^), tilde (~), exact, or a single comparator (>=, >, <=, <, =).",
+    desc: "Test whether a version satisfies an npm semver range: ^, ~, comparators, x-ranges (1.x, 1.2.*), partial versions, hyphen ranges (1.0.0 - 2.0.0) and || alternatives.",
     tags: ["semver", "range", "caret", "tilde", "satisfies"],
     inputs: [
       { k: "version", label: "Version", type: "text", placeholder: "1.4.2" },
@@ -245,37 +330,21 @@ export const TOOLS = [
       if (!S(v.version).trim() || !S(v.range).trim()) return "";
       const p = parseSemver(v.version);
       if (!p) return { error: "Version is not valid semver." };
-      const r = S(v.range).trim();
-      const m = /^(\^|~|>=|<=|>|<|=)?\s*(.+)$/.exec(r);
-      const op = m[1] || "=";
-      const base = parseSemver(m[2]);
-      if (!base) return { error: "Range target is not valid semver." };
-      // npm rule: a prerelease version only matches a range whose comparator is a prerelease of
-      // the same major.minor.patch (so 2.0.0-0 is not in ^1.2.3, nor 1.2.4-beta.0 in >1.2.3)
-      const preOut = !!p.prerelease && !(base.prerelease && base.major === p.major && base.minor === p.minor && base.patch === p.patch);
-      const why = preOut ? " (prerelease versions only match a range that names a prerelease of " + p.major + "." + p.minor + "." + p.patch + ")" : "";
-      let lo, hi; // [lo, hi)
-      // Keep the prerelease tag — dropping it made "=1.0.0-alpha" and the
-      // caret/tilde lower bounds compare against the release, which sorts above
-      // any prerelease, so a matching prerelease version wrongly failed.
-      const bstr = `${base.major}.${base.minor}.${base.patch}${base.prerelease ? "-" + base.prerelease : ""}`;
-      if (op === "^") {
-        lo = bstr;
-        hi = base.major > 0 ? `${base.major + 1}.0.0` : base.minor > 0 ? `0.${base.minor + 1}.0` : `0.0.${base.patch + 1}`;
-      } else if (op === "~") {
-        lo = bstr; hi = `${base.major}.${base.minor + 1}.0`;
-      } else {
-        const c = cmpSemver(v.version, bstr);
-        let ok = false;
-        if (op === "=") ok = c === 0;
-        else if (op === ">") ok = c > 0;
-        else if (op === ">=") ok = c >= 0;
-        else if (op === "<") ok = c < 0;
-        else if (op === "<=") ok = c <= 0;
-        return `${ok && !preOut ? "SATISFIES" : "does NOT satisfy"}: ${v.version} ${op} ${bstr}${ok ? why : ""}`;
+      const sets = npmRange(S(v.range));
+      if (!sets) return { error: "Range is not a valid npm semver range." };
+      const ver = `${p.major}.${p.minor}.${p.patch}${p.prerelease ? "-" + p.prerelease : ""}`;
+      const show = (set) => set.map((c) => c.op + c.v).join(" ") || "*";
+      let hit = null, preBlocked = false;
+      for (const set of sets) {
+        if (!set.every((c) => { const k = cmpSemver(ver, c.v); return c.op === ">=" ? k >= 0 : c.op === ">" ? k > 0 : c.op === "<=" ? k <= 0 : c.op === "<" ? k < 0 : k === 0; })) continue;
+        // npm rule: a prerelease version only matches a set that has a prerelease comparator
+        // on the same major.minor.patch (so 2.0.0-0 is not in ^1.2.3, nor 1.2.4-beta.0 in >1.2.3)
+        if (p.prerelease && !set.some((c) => { const b = parseSemver(c.v); return b.prerelease && b.major === p.major && b.minor === p.minor && b.patch === p.patch; })) { preBlocked = true; continue; }
+        hit = set; break;
       }
-      const ok = cmpSemver(v.version, lo) >= 0 && cmpSemver(v.version, hi) < 0;
-      return `${ok && !preOut ? "SATISFIES" : "does NOT satisfy"}: ${v.version} in [${lo}, ${hi})${ok ? why : ""}`;
+      const means = sets.map(show).join("  ||  ");
+      if (hit) return `SATISFIES: ${v.version} matches ${show(hit)}\n\nRange ${S(v.range).trim()} means: ${means}`;
+      return `does NOT satisfy: ${v.version}\n\nRange ${S(v.range).trim()} means: ${means}` + (preBlocked ? `\n(prerelease versions only match a range that names a prerelease of ${p.major}.${p.minor}.${p.patch})` : "");
     },
   },
   {
@@ -431,14 +500,22 @@ export const TOOLS = [
       if (!S(v.expr).trim()) return "";
       if (parts.length !== 5) return { error: "Expected exactly 5 fields." };
       const names = ["minute", "hour", "day of month", "month", "day of week"];
-      const describe = (fld) => {
-        if (fld === "*") return "every value";
-        if (fld.startsWith("*/")) return `every ${fld.slice(2)}`;
-        if (fld.includes("-")) return `range ${fld}`;
-        if (fld.includes(",")) return `values ${fld}`;
-        return `at ${fld}`;
+      const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"], DOW = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+      const lim = [[0, 59], [0, 23], [1, 31], [1, 12, MON], [0, 7, DOW]];
+      // one comma part: */n, a-b/n, a/n (a to the end of the field, as cronie reads it), a-b, a
+      const one = (t, i) => {
+        const [r, st] = t.split("/"), end = lim[i][1];
+        if (r === "*") return st ? `every ${st}` : "every value";
+        if (st) return r.includes("-") ? `every ${st} from ${r.replace("-", " to ")}` : `every ${st} from ${r} to ${end}`;
+        return r.includes("-") ? r.replace("-", " to ") : r;
       };
-      return parts.map((p, i) => `${names[i].padEnd(13)}: ${p}  (${describe(p)})`).join("\n");
+      const describe = (fld, i) => cronField(fld, lim[i][0], lim[i][1], lim[i][2]) ? (fld === "*" ? "every value" : /^\w+$/.test(fld) ? `at ${fld}` : fld.split(",").map((t) => one(t, i)).join(", ")) : `INVALID: not a valid ${names[i]} field (${lim[i][0]}-${lim[i][1]})`;
+      const out = parts.map((p, i) => `${names[i].padEnd(13)}: ${p}  (${describe(p, i)})`);
+      // Vixie cron / cronie: when both day fields are restricted (neither starts with *), a day
+      // runs if EITHER matches; otherwise both must
+      if (parts[2][0] !== "*" && parts[4][0] !== "*") out.push("\nDays: runs when the day of month OR the day of week matches (both day fields are set).");
+      else if (parts[2] !== "*" && parts[4] !== "*") out.push("\nDays: runs only when the day of month AND the day of week both match (a day field starting with * counts as unrestricted).");
+      return out.join("\n");
     },
   },
   {
@@ -652,16 +729,20 @@ export const TOOLS = [
   },
   {
     id: "dv-unescape-backslash", name: "Unescape Backslash Sequences", cat: "devx",
-    desc: "Interpret C-style backslash escapes (\\n \\t \\r \\0 \\xHH \\uHHHH) into their literal characters.",
+    desc: "Interpret C-style backslash escapes (\\n \\t \\r \\a \\e, octal \\101, \\xHH, \\uHHHH, \\u{1F600}, \\UHHHHHHHH) into their literal characters.",
     tags: ["unescape", "backslash", "escape", "decode"],
     inputs: [{ k: "text", label: "Text", type: "textarea", rows: 4, placeholder: "line1\\nline2\\x41" }],
     run(v) {
       const t = S(v.text);
       if (!t) return "";
-      const map = { n: "\n", t: "\t", r: "\r", "0": "\0", b: "\b", f: "\f", v: "\v", "\\": "\\", "'": "'", '"': '"' };
-      return t.replace(/\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.)/g, (m, g) => {
-        if (g[0] === "u") return String.fromCharCode(parseInt(g.slice(1), 16));
-        if (g[0] === "x") return String.fromCharCode(parseInt(g.slice(1), 16));
+      const map = { n: "\n", t: "\t", r: "\r", b: "\b", f: "\f", v: "\v", a: "\x07", e: "\x1b", "\\": "\\", "'": "'", '"': '"' };
+      return t.replace(/\\(u\{[0-9a-fA-F]{1,6}\}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|x[0-9a-fA-F]{2}|[0-3][0-7]{0,2}|[4-7][0-7]?|[\s\S])/g, (m, g) => {
+        if (/^[0-7]/.test(g)) return String.fromCharCode(parseInt(g, 8));
+        if (g[0] === "x" && g.length === 3) return String.fromCharCode(parseInt(g.slice(1), 16));
+        if ((g[0] === "u" || g[0] === "U") && g.length > 1) {
+          const cp = parseInt(g.replace(/^[uU]\{?|\}$/g, ""), 16);
+          return cp <= 0x10ffff ? String.fromCodePoint(cp) : m;
+        }
         return map[g] !== undefined ? map[g] : g;
       });
     },
@@ -682,6 +763,13 @@ export const TOOLS = [
       const to = H.clampInt(v.to, 2, 36, 2);
       let neg = false;
       if (raw[0] === "-") { neg = true; raw = raw.slice(1); }
+      // A 0x / 0o / 0b prefix is dropped only when it names the source base (in base 16, 0b1 is a number);
+      // _ separators between digits (1_000_000) are allowed, as in code.
+      const pre = { 16: "0x", 8: "0o", 2: "0b" }[from];
+      if (pre && raw.startsWith(pre)) raw = raw.slice(2);
+      if (/^_|_$|__/.test(raw)) return { error: "An _ separator must sit between two digits." };
+      raw = raw.replace(/_/g, "");
+      if (!raw) return { error: "Enter at least one digit." };
       const digits = "0123456789abcdefghijklmnopqrstuvwxyz";
       let val = 0n;
       const B = BigInt(from);
@@ -694,7 +782,7 @@ export const TOOLS = [
       const T = BigInt(to);
       if (val === 0n) out = "0";
       else while (val > 0n) { out = digits[Number(val % T)] + out; val /= T; }
-      return (neg ? "-" : "") + out;
+      return (neg && out !== "0" ? "-" : "") + out;
     },
   },
   {
@@ -714,27 +802,32 @@ export const TOOLS = [
       const units = base === 1000 ? ["B", "KB", "MB", "GB", "TB", "PB"] : ["B", "KiB", "MiB", "GiB", "TiB", "PiB"];
       let x = Math.abs(n), i = 0;
       while (x >= base && i < units.length - 1) { x /= base; i++; }
+      if (i > 0 && i < units.length - 1 && +x.toFixed(2) >= base) { x /= base; i++; }
       const sign = n < 0 ? "-" : "";
       return `${sign}${i === 0 ? x : x.toFixed(2)} ${units[i]}`;
     },
   },
   {
     id: "dv-bytes-parse", name: "Byte Size Parser", cat: "devx",
-    desc: 'Parse a human size such as "5 MB" or "2.5GiB" back into an exact byte count.',
+    desc: 'Parse a human size such as "5 MB", "2.5GiB", "512k" or "10 Gb" (bits) back into an exact byte count.',
     tags: ["bytes", "size", "parse"],
     inputs: [{ k: "text", label: "Size", type: "text", placeholder: "5 MB" }],
     run(v) {
       const t = S(v.text).trim();
       if (!t) return "";
-      const m = /^([\d.]+)\s*([a-zA-Z]*)$/.exec(t);
+      const m = /^(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d*\.?\d+)\s*([a-zA-Z]*)$/.exec(t);
       if (!m) return { error: "Could not parse size." };
-      const num = parseFloat(m[1]);
-      const unit = m[2].toLowerCase();
-      const dec = { "": 1, b: 1, kb: 1e3, mb: 1e6, gb: 1e9, tb: 1e12, pb: 1e15 };
-      const bin = { kib: 1024, mib: 1024 ** 2, gib: 1024 ** 3, tib: 1024 ** 4, pib: 1024 ** 5 };
+      const num = parseFloat(m[1].replace(/,/g, ""));
+      const bits = /^[KMGTP]b$/.test(m[2]);
+      const unit = m[2].toLowerCase().replace(/^bytes?$/, "b");
+      const dec = { "": 1, b: 1, kb: 1e3, mb: 1e6, gb: 1e9, tb: 1e12, pb: 1e15, k: 1e3, m: 1e6, g: 1e9, t: 1e12, p: 1e15 };
+      const bin = { kib: 1024, mib: 1024 ** 2, gib: 1024 ** 3, tib: 1024 ** 4, pib: 1024 ** 5, ki: 1024, mi: 1024 ** 2, gi: 1024 ** 3, ti: 1024 ** 4, pi: 1024 ** 5 };
       const mult = dec[unit] !== undefined ? dec[unit] : bin[unit];
       if (mult === undefined) return { error: `Unknown unit '${m[2]}'.` };
-      return `${Math.round(num * mult)} bytes`;
+      if (bits) return `${Math.round(num * mult / 8)} bytes\n\n${m[2]} is bits (lowercase b); ${m[2][0]}B is bytes.`;
+      const out = `${Math.round(num * mult)} bytes`;
+      if (/^[kmgtp]$/.test(unit)) return `${out}\n\nA bare ${m[2]} is read as decimal (1000). Tools such as nginx, dd and Java -Xmx read it as 1024, which gives ${Math.round(num * bin[unit + "i"])} bytes.`;
+      return out;
     },
   },
   {
@@ -750,12 +843,13 @@ export const TOOLS = [
       const units = ["bps", "kbps", "Mbps", "Gbps", "Tbps"];
       let x = Math.abs(n), i = 0;
       while (x >= 1000 && i < units.length - 1) { x /= 1000; i++; }
+      if (i > 0 && i < units.length - 1 && +x.toFixed(2) >= 1000) { x /= 1000; i++; }
       return `${n < 0 ? "-" : ""}${i === 0 ? x : x.toFixed(2)} ${units[i]}`;
     },
   },
   {
     id: "dv-cron-next", name: "Cron Next Runs", cat: "devx",
-    desc: "Compute the next N run times for a standard five-field cron expression, starting from now (local time).",
+    desc: "Compute the next N run times for a standard five-field cron expression (numbers or JAN/MON names), starting from now (local time), with cronie day-of-month/day-of-week rules.",
     tags: ["cron", "schedule", "next", "crontab"],
     inputs: [
       { k: "expr", label: "Cron expression", type: "text", placeholder: "*/15 9-17 * * 1-5" },
@@ -768,53 +862,49 @@ export const TOOLS = [
       const mins = cronField(parts[0], 0, 59);
       const hrs = cronField(parts[1], 0, 23);
       const doms = cronField(parts[2], 1, 31);
-      const mons = cronField(parts[3], 1, 12);
-      let dows = cronField(parts[4], 0, 7);
+      const mons = cronField(parts[3], 1, 12, ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]);
+      let dows = cronField(parts[4], 0, 7, ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]);
       if (!mins || !hrs || !doms || !mons || !dows) return { error: "A field is out of range or malformed." };
       if (dows.has(7)) dows.add(0);
-      const domRestricted = parts[2] !== "*";
-      const dowRestricted = parts[4] !== "*";
+      // Vixie cron / cronie: a day field starting with * (also */2) counts as unrestricted, so
+      // day-of-month and day-of-week are ANDed; only when both are restricted is a day run if either matches
+      const domRestricted = parts[2][0] !== "*";
+      const dowRestricted = parts[4][0] !== "*";
       const count = H.clampInt(v.count, 1, 20, 5);
       const out = [];
       const d = new Date();
       d.setSeconds(0, 0);
       d.setMinutes(d.getMinutes() + 1);
-      let guard = 0;
-      while (out.length < count && guard < 366 * 24 * 60 * 2) {
-        guard++;
-        if (mins.has(d.getMinutes()) && hrs.has(d.getHours()) && mons.has(d.getMonth() + 1)) {
-          const domOk = doms.has(d.getDate());
-          const dowOk = dows.has(d.getDay());
-          const dayOk = domRestricted && dowRestricted ? (domOk || dowOk) : (domOk && dowOk);
-          if (dayOk) out.push(d.toString().replace(/ \(.*\)$/, ""));
-        }
+      // Skip a whole month, day or hour that cannot match, so yearly schedules (0 0 1 12 *)
+      // and leap days (29 2) get all their runs; 8 years covers every Feb 29 gap.
+      const end = new Date(d); end.setFullYear(end.getFullYear() + 8);
+      while (out.length < count && d < end) {
+        if (!mons.has(d.getMonth() + 1)) { d.setMonth(d.getMonth() + 1, 1); d.setHours(0, 0); continue; }
+        const domOk = doms.has(d.getDate());
+        const dowOk = dows.has(d.getDay());
+        const dayOk = domRestricted && dowRestricted ? (domOk || dowOk) : (domOk && dowOk);
+        if (!dayOk) { d.setDate(d.getDate() + 1); d.setHours(0, 0); continue; }
+        if (!hrs.has(d.getHours())) { d.setHours(d.getHours() + 1, 0); continue; }
+        if (mins.has(d.getMinutes())) out.push(d.toString().replace(/ \(.*\)$/, ""));
         d.setMinutes(d.getMinutes() + 1);
       }
-      return out.length ? out.join("\n") : "No matching times within one year.";
+      if (!out.length) return "No matching times within 8 years.";
+      return out.join("\n") + (out.length < count ? `\n(only ${out.length} run${out.length === 1 ? "" : "s"} in the next 8 years)` : "");
     },
   },
   {
     id: "dv-env-parse", name: ".env Parser", cat: "devx",
-    desc: "Parse a .env file into a clean key / value table, stripping comments and surrounding quotes.",
+    desc: "Parse a .env file into a key / value table with the same rules as the dotenv package: comments, quotes, multi-line values and duplicate keys.",
     tags: ["dotenv", "env", "parse", "config"],
     inputs: [{ k: "text", label: ".env contents", type: "textarea", rows: 6, placeholder: 'PORT=3000\nNAME="my app"' }],
     run(v) {
       const t = S(v.text);
       if (!t.trim()) return "";
-      const rows = [];
-      for (const line of t.split("\n")) {
-        const s = line.trim();
-        if (!s || s.startsWith("#")) continue;
-        const eq = s.indexOf("=");
-        if (eq < 0) continue;
-        let key = s.slice(0, eq).replace(/^export\s+/, "").trim();
-        let val = s.slice(eq + 1).trim();
-        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1);
-        rows.push([key, val]);
-      }
+      const { vals, count } = parseDotenv(t);
+      const rows = [...vals].map(([k, val]) => [k, /[\n\r]/.test(val) ? JSON.stringify(val) : val, count.get(k)]);
       if (!rows.length) return { error: "No KEY=VALUE pairs found." };
       const kw = Math.max(...rows.map((r) => r[0].length));
-      return rows.map((r) => `${r[0].padEnd(kw)} = ${r[1]}`).join("\n");
+      return rows.map((r) => `${r[0].padEnd(kw)} = ${r[1]}${r[2] > 1 ? `   (set ${r[2]} times; the last one wins)` : ""}`).join("\n");
     },
   },
   {
@@ -826,14 +916,8 @@ export const TOOLS = [
       const t = S(v.text);
       if (!t.trim()) return "";
       const out = [];
-      for (const line of t.split("\n")) {
-        const s = line.trim();
-        if (!s || s.startsWith("#")) continue;
-        const eq = s.indexOf("=");
-        if (eq < 0) continue;
-        const key = s.slice(0, eq).replace(/^export\s+/, "").trim();
-        let val = s.slice(eq + 1).trim();
-        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1);
+      for (const [key, val] of parseDotenv(t).vals) {
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) { out.push(`# skipped ${key}: not a valid shell variable name`); continue; }
         out.push(`export ${key}='${val.replace(/'/g, "'\\''")}'`);
       }
       return out.length ? out.join("\n") : { error: "No KEY=VALUE pairs found." };
@@ -857,9 +941,12 @@ export const TOOLS = [
           const val = o[k];
           if (val && typeof val === "object" && !Array.isArray(val)) walk(val, key);
           else {
-            let s = Array.isArray(val) ? JSON.stringify(val) : String(val);
-            if (/\s/.test(s)) s = `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-            out.push(`${key}=${s}`);
+            const s = Array.isArray(val) ? JSON.stringify(val) : String(val);
+            // dotenv keeps no escapes: a bare value ends at # and is trimmed, '...' and `...` are literal,
+            // "..." turns \n into a newline. Pick the form that reads back as exactly s.
+            const q = !/[#\r\n]/.test(s) && s === s.trim() && !/^['"`]/.test(s) ? s
+              : !s.includes("'") ? `'${s}'` : !s.includes("`") ? `\`${s}\`` : !/"|\\[nr]/.test(s) ? `"${s}"` : null;
+            out.push(q == null ? `# ${key} skipped: no .env quoting keeps this value as it is (it holds ', \` and " or a \\n)` : `${key}=${q}`);
           }
         }
       };
@@ -1011,24 +1098,31 @@ export const TOOLS = [
   },
   {
     id: "dv-npm-name-validate", name: "npm Package Name Validator", cat: "devx",
-    desc: "Check a package name against npm's naming rules and report any violations.",
+    desc: "Check a package name against the rules npm publish enforces (validate-npm-package-name), including scope, core-module names and rules that apply only to new packages.",
     tags: ["npm", "package", "validate", "name"],
     inputs: [{ k: "name", label: "Package name", type: "text", placeholder: "@scope/my-pkg" }],
     run(v) {
-      const name = S(v.name).trim();
-      if (!name) return "";
-      const errs = [];
-      if (name.length > 214) errs.push("longer than 214 characters");
-      if (name !== name.toLowerCase()) errs.push("contains uppercase letters");
-      if (/^[._]/.test(name)) errs.push("starts with a dot or underscore");
-      if (/^\s|\s$/.test(name)) errs.push("has leading or trailing spaces");
-      const scoped = /^@([^/]+)\/([^/]+)$/.exec(name);
-      const testable = scoped ? scoped[2] : name;
-      if (!scoped && name.startsWith("@")) errs.push("scoped name must be @scope/name");
-      if (!/^[a-z0-9._~-]+$/.test(testable)) errs.push("contains characters that are not URL-safe (a-z 0-9 . _ ~ -)");
-      const reserved = ["node_modules", "favicon.ico"];
-      if (reserved.includes(name)) errs.push("is a reserved name");
-      return errs.length ? `INVALID:\n- ${errs.join("\n- ")}` : "VALID npm package name.";
+      const name = S(v.name);
+      if (!name.trim()) return "";
+      // validate-npm-package-name 5 (what npm publish runs): errors block any package,
+      // warnings block new packages only (old packages may still carry them).
+      const errs = [], warns = [];
+      if (/^\./.test(name)) errs.push("starts with a period");
+      if (/^_/.test(name)) errs.push("starts with an underscore");
+      if (name.trim() !== name) errs.push("has leading or trailing spaces");
+      if (["node_modules", "favicon.ico"].includes(name.toLowerCase())) errs.push("is a blocked name");
+      const core = "assert async_hooks buffer child_process cluster console constants crypto dgram diagnostics_channel dns domain events fs http http2 https inspector module net os path perf_hooks process punycode querystring readline repl stream string_decoder sys timers tls trace_events tty url util v8 vm wasi worker_threads zlib".split(" ");
+      if (core.includes(name.toLowerCase())) warns.push("is a Node.js core module name");
+      if (name.length > 214) warns.push("is longer than 214 characters");
+      if (name !== name.toLowerCase()) warns.push("contains capital letters");
+      if (/[~'!()*]/.test(name.split("/").pop())) warns.push("contains one of the special characters ~ ' ! ( ) *");
+      if (encodeURIComponent(name) !== name) {
+        const m = /^(?:@([^/]+?)[/])?([^/]+?)$/.exec(name);
+        if (!(m && encodeURIComponent(m[1]) === m[1] && encodeURIComponent(m[2]) === m[2])) errs.push(name.startsWith("@") || name.includes("/") ? "must be name or @scope/name with URL-safe characters in each part" : "contains characters that are not URL-safe");
+      }
+      if (errs.length) return `INVALID:\n- ${errs.concat(warns).join("\n- ")}`;
+      if (warns.length) return `INVALID for new packages (some older packages still use such names):\n- ${warns.join("\n- ")}`;
+      return "VALID npm package name.";
     },
   },
   {
@@ -1199,10 +1293,14 @@ export const TOOLS = [
     run(v) {
       const raw = S(v.name).trim();
       if (!raw) return "";
-      const dot = raw.lastIndexOf(".");
-      let base = raw, ext = "";
-      if (dot > 0 && dot < raw.length - 1) { base = raw.slice(0, dot); ext = raw.slice(dot + 1).toLowerCase(); }
-      const slug = base.toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "");
+      // The extension is the last dot part when it is a short alphanumeric word (plus tar.gz-style
+      // double extensions); any other dot in the name becomes a separator like a space.
+      const em = /\.((?:tar\.)?[a-z0-9]{1,10})$/i.exec(raw);
+      const ext = em && em.index > 0 ? em[1].toLowerCase() : "";
+      const base = ext ? raw.slice(0, em.index) : raw;
+      let slug = base.toLowerCase().normalize("NFKD").replace(/[.\s]+/g, " ").replace(/[^\w\s-]/g, "").trim().replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "");
+      // Windows refuses these device names with any extension (con.txt, nul.tar.gz).
+      if (/^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/.test(slug)) slug += "-file";
       return ext ? `${slug || "file"}.${ext}` : (slug || "file");
     },
   },
@@ -1270,15 +1368,21 @@ export const TOOLS = [
       const t = S(v.text).trim();
       if (!t) return "";
       if (v.mode === "parse") {
-        const qs = t.replace(/^[?#]/, "");
+        let qs = t;
+        if (qs[0] === "#") qs = qs.slice(1);
+        else {
+          qs = qs.replace(/#.*$/s, "");
+          if (qs[0] === "?" || /^([a-z][\w+.-]*:)?\/\//i.test(qs) || qs[0] === "/") qs = qs.slice(qs.indexOf("?") + 1 || qs.length);
+        }
+        const dec = (x) => new URLSearchParams("a=" + x).get("a");
         const obj = {};
         for (const pair of qs.split("&")) {
           if (!pair) continue;
           const eq = pair.indexOf("=");
-          const k = decodeURIComponent((eq < 0 ? pair : pair.slice(0, eq)).replace(/\+/g, " "));
-          const val = eq < 0 ? "" : decodeURIComponent(pair.slice(eq + 1).replace(/\+/g, " "));
-          if (k in obj) { if (!Array.isArray(obj[k])) obj[k] = [obj[k]]; obj[k].push(val); }
-          else obj[k] = val;
+          const k = dec(eq < 0 ? pair : pair.slice(0, eq));
+          const val = eq < 0 ? "" : dec(pair.slice(eq + 1));
+          if (Object.hasOwn(obj, k)) { if (!Array.isArray(obj[k])) obj[k] = [obj[k]]; obj[k].push(val); }
+          else Object.defineProperty(obj, k, { value: val, enumerable: true, writable: true, configurable: true }); // __proto__ is an ordinary key
         }
         return JSON.stringify(obj, null, 2);
       }
@@ -1312,12 +1416,17 @@ export const TOOLS = [
         const ms = v.unit === "s" ? n * 1000 : n;
         const d = new Date(ms);
         if (isNaN(d.getTime())) return { error: "Out-of-range timestamp." };
-        return `ISO (UTC) : ${d.toISOString()}\nLocal     : ${d.toString().replace(/ \(.*\)$/, "")}`;
+        // A 13-digit value read as seconds lands tens of millennia out (and a 10-digit one read as ms
+        // in January 1970): say which unit the number most likely is.
+        const alt = v.unit === "s" && Math.abs(n) >= 1e11 ? new Date(n) : v.unit !== "s" && n !== 0 && Math.abs(n) < 1e11 ? new Date(n * 1000) : null;
+        const hint = alt && !isNaN(alt.getTime()) ? `\n\nThis looks like ${v.unit === "s" ? "milliseconds" : "seconds"}; read that way it is ${alt.toISOString()}.` : "";
+        return `ISO (UTC) : ${d.toISOString()}\nLocal     : ${d.toString().replace(/ \(.*\)$/, "")}${hint}`;
       }
       const d = new Date(raw);
       if (isNaN(d.getTime())) return { error: "Could not parse date." };
       const ms = d.getTime();
-      return `seconds      : ${Math.floor(ms / 1000)}\nmilliseconds : ${ms}`;
+      const how = /^\d{4}(-\d{2}){0,2}$/.test(raw) ? " (date only, so midnight UTC)" : /(?:Z|[+-]\d{2}:?\d{2}|GMT|UTC)\s*$/i.test(raw) ? "" : " (no zone given, so your local time zone)";
+      return `seconds      : ${Math.floor(ms / 1000)}\nmilliseconds : ${ms}\nread as      : ${d.toISOString()}${how}`;
     },
   },
 ];

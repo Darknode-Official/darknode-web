@@ -54,7 +54,7 @@ export function parseCSV(text, opts = {}) {
       }
       field += ch; i++; continue;
     }
-    if (ch === '"') { inQ = true; i++; continue; }
+    if (ch === '"' && field === "" && (i === 0 || s[i - 1] === delim || s[i - 1] === "\n" || s[i - 1] === "\r")) { inQ = true; i++; continue; } // only a field's first character opens quotes
     if (ch === delim) { row.push(field); field = ""; i++; continue; }
     if (ch === "\r") { i++; continue; }
     if (ch === "\n") { row.push(field); records.push(row); row = []; field = ""; i++; continue; }

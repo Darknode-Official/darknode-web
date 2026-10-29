@@ -37,16 +37,20 @@ function parsePath(path) {
   return parts;
 }
 
+// A key that would read as path syntax (a.b, x[0], "", a quote) is written ["a.b"], so
+// {"a":{"b":1}} and {"a.b":1} flatten to different paths. Keys are set as own properties,
+// so a "__proto__" key is kept; an empty root adds nothing.
 function flattenObj(obj, prefix, out) {
+  const put = (k, v) => Object.defineProperty(out, k, { value: v, writable: true, enumerable: true, configurable: true });
   if (obj !== null && typeof obj === "object") {
     const keys = Array.isArray(obj) ? obj.map((_, i) => i) : Object.keys(obj);
-    if (keys.length === 0) { out[prefix || "$"] = Array.isArray(obj) ? [] : {}; return out; }
+    if (keys.length === 0) { if (prefix) put(prefix, Array.isArray(obj) ? [] : {}); return out; }
     for (const k of keys) {
-      const nk = Array.isArray(obj) ? `${prefix}[${k}]` : (prefix ? `${prefix}.${k}` : String(k));
+      const nk = Array.isArray(obj) ? `${prefix}[${k}]` : /^$|[.[\]"]/.test(k) ? `${prefix}[${JSON.stringify(k)}]` : (prefix ? `${prefix}.${k}` : String(k));
       flattenObj(obj[k], nk, out);
     }
   } else {
-    out[prefix] = obj;
+    put(prefix, obj);
   }
   return out;
 }
@@ -124,40 +128,46 @@ function formatSQL(sql) {
 }
 
 function parseEnv(text) {
-  const lines = String(text).split(/\r?\n/);
+  // As the dotenv package reads it: optional export, KEY=value or KEY: value, a # comment after an
+  // unquoted value, quoted values (double quotes may span lines and expand \n), and the last value wins.
+  const LINE = /^\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?$/mg;
+  const src = String(text).replace(/\r\n?/g, "\n");
   const out = {};
   const dupes = [];
   const blanks = [];
-  lines.forEach((line, idx) => {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) return;
-    const m = t.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-    if (!m) return;
-    let [, k, val] = m;
-    if (val && ((val[0] === '"' && val[val.length - 1] === '"') || (val[0] === "'" && val[val.length - 1] === "'"))) {
-      val = val.slice(1, -1);
-    }
-    if (k in out) dupes.push({ key: k, line: idx + 1 });
-    if (val === "") blanks.push({ key: k, line: idx + 1 });
-    out[k] = val;
-  });
+  let m;
+  while ((m = LINE.exec(src))) {
+    const k = m[1], line = src.slice(0, m.index).split("\n").length + (/^\s*\n/.exec(m[0]) || [""])[0].split("\n").length - 1;
+    let val = (m[2] || "").trim();
+    const q = val[0];
+    val = val.replace(/^(['"`])([\s\S]*)\1$/mg, "$2");
+    if (q === '"') val = val.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+    if (Object.hasOwn(out, k)) dupes.push({ key: k, line });
+    if (val === "") blanks.push({ key: k, line });
+    Object.defineProperty(out, k, { value: val, enumerable: true, writable: true, configurable: true });
+  }
   return { out, dupes, blanks };
 }
 
 function parseINI(text) {
+  // As Python's configparser reads it: [section] (a trailing ; or # comment allowed), key = value
+  // or key: value split at the first = or :, an indented line continues the previous value,
+  // and a bare key has no value (null).
   const lines = String(text).split(/\r?\n/);
   const out = {};
-  let section = null;
+  let section = null, last = null;
+  const put = (o, k, v) => Object.defineProperty(o, k, { value: v, writable: true, enumerable: true, configurable: true });
   for (const raw of lines) {
     const line = raw.trim();
     if (!line || line.startsWith(";") || line.startsWith("#")) continue;
-    const sec = line.match(/^\[(.+)\]$/);
+    if (last && /^[ \t]/.test(raw)) { const o = section ? out[section] : out; o[last] = (o[last] == null ? "" : o[last] + "\n") + line; continue; }
+    const sec = line.match(/^\[([^\]]+)\]\s*(?:[;#].*)?$/);
     // own keys only: a [__proto__] or [constructor] section must not reach the prototype or Object itself
-    if (sec) { section = sec[1]; if (!Object.hasOwn(out, section)) Object.defineProperty(out, section, { value: {}, writable: true, enumerable: true, configurable: true }); continue; }
-    const kv = line.match(/^([^=]+)=(.*)$/);
-    if (!kv) continue;
-    const k = kv[1].trim(), val = kv[2].trim();
-    Object.defineProperty(section ? out[section] : out, k, { value: val, writable: true, enumerable: true, configurable: true });
+    if (sec) { section = sec[1].trim(); last = null; if (!Object.hasOwn(out, section)) put(out, section, {}); continue; }
+    const kv = line.match(/^([^=:]+)[=:](.*)$/);
+    const k = (kv ? kv[1] : line).trim();
+    put(section ? out[section] : out, k, kv ? kv[2].trim() : null);
+    last = k;
   }
   return out;
 }
@@ -184,23 +194,49 @@ function mdToHtml(md) {
   return html.trim();
 }
 
+// Line diff as a shortest edit script (Myers, "An O(ND) Difference Algorithm"): time and memory
+// grow with the number of changed lines, not with the file size. The n*m LCS table it replaces
+// took a second and 576 MB for two 12,000-line files with two edits. Past MAX_D changes (two
+// unrelated texts) the rest is shown as one block replaced. ops: [" "|"-"|"+", line].
+const MAX_D = 3000;
+function lineDiff(A, B) {
+  const n = A.length, m = B.length, max = Math.min(n + m, MAX_D), off = max + 1;
+  const V = new Int32Array(2 * max + 3), trace = [];
+  let found = -1;
+  for (let d = 0; d <= max && found < 0; d++) {
+    trace.push(V.slice(off - d, off + d + 1)); // V as it was before step d, indexed k + d
+    for (let k = -d; k <= d; k += 2) {
+      let x = k === -d || (k !== d && V[off + k - 1] < V[off + k + 1]) ? V[off + k + 1] : V[off + k - 1] + 1, y = x - k;
+      while (x < n && y < m && A[x] === B[y]) { x++; y++; }
+      V[off + k] = x;
+      if (x >= n && y >= m) { found = d; break; }
+    }
+  }
+  if (found < 0) { // too many changes: common head and tail, the middle as one block
+    let pre = 0; while (pre < n && pre < m && A[pre] === B[pre]) pre++;
+    let suf = 0; while (suf < n - pre && suf < m - pre && A[n - 1 - suf] === B[m - 1 - suf]) suf++;
+    return { capped: true, ops: [...A.slice(0, pre).map((l) => [" ", l]), ...A.slice(pre, n - suf).map((l) => ["-", l]), ...B.slice(pre, m - suf).map((l) => ["+", l]), ...A.slice(n - suf).map((l) => [" ", l])] };
+  }
+  const ops = []; let x = n, y = m;
+  for (let d = found; d > 0; d--) {
+    const v = trace[d], k = x - y;
+    const pk = k === -d || (k !== d && v[k - 1 + d] < v[k + 1 + d]) ? k + 1 : k - 1;
+    const px = v[pk + d], py = px - pk;
+    while (x > px && y > py) { ops.push([" ", A[--x]]); y--; }
+    if (x === px) ops.push(["+", B[--y]]); else ops.push(["-", A[--x]]);
+  }
+  while (x > 0) { ops.push([" ", A[--x]]); y--; }
+  return { capped: false, ops: ops.reverse() };
+}
+
 export const TOOLS = [
   { id: "d-diff", name: "Text Diff", cat: "dev", desc: "Line-by-line diff of two texts, showing +/- changed lines.", tags: ["diff", "compare", "text"],
     inputs: [{ k: "a", label: "Original", type: "textarea", rows: 6 }, { k: "b", label: "Changed", type: "textarea", rows: 6 }],
     run(v) {
       const A = S(v.a).split(/\r?\n/), B = S(v.b).split(/\r?\n/);
-      const n = A.length, m = B.length;
-      const dp = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
-      for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
-      let i = 0, j = 0; const out = [];
-      while (i < n && j < m) {
-        if (A[i] === B[j]) { out.push("  " + A[i]); i++; j++; }
-        else if (dp[i + 1][j] >= dp[i][j + 1]) { out.push("- " + A[i]); i++; }
-        else { out.push("+ " + B[j]); j++; }
-      }
-      while (i < n) { out.push("- " + A[i]); i++; }
-      while (j < m) { out.push("+ " + B[j]); j++; }
-      return out.join("\n") || "(identical)";
+      if (A.length === B.length && A.every((l, k) => l === B[k])) return "(identical)";
+      const { ops, capped } = lineDiff(A, B);
+      return (capped ? "(over " + MAX_D + " changed lines: the changed middle is shown as one block replaced)\n" : "") + ops.map((o) => (o[0] === " " ? "  " : o[0] + " ") + o[1]).join("\n");
     } },
 
   { id: "d-json-path", name: "JSON Path Extractor", cat: "dev", desc: "Extract a value from JSON using a dot/bracket path like a.b[0].c.", tags: ["json", "path", "jsonpath"],
@@ -209,7 +245,8 @@ export const TOOLS = [
       const p = tryParseJSON(v.json || ""); if (!p.ok) return { error: "Invalid JSON: " + p.err };
       const parts = parsePath(S(v.path));
       let cur = p.val;
-      for (const key of parts) { if (cur == null) return { error: "Path not found." }; cur = cur[key]; }
+      // the data's own keys only: a.constructor or s.length name no value in the JSON
+      for (const key of parts) { if (cur == null || typeof cur !== "object" || !Object.prototype.hasOwnProperty.call(cur, key)) return { error: "Path not found." }; cur = cur[key]; }
       if (cur === undefined) return { error: "Path not found." };
       return typeof cur === "string" ? cur : JSON.stringify(cur, null, 2);
     } },
@@ -369,7 +406,7 @@ export const TOOLS = [
       return v.template.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (m, key) => {
         const parts = key.split(".");
         let cur = p.val;
-        for (const k of parts) { if (cur == null) return m; cur = cur[k]; }
+        for (const k of parts) { if (cur == null || !Object.hasOwn(Object(cur), k)) return m; cur = cur[k]; } // own keys only: {{constructor}} is not Object's source
         return cur === undefined ? m : String(cur);
       });
     } },
@@ -380,11 +417,13 @@ export const TOOLS = [
       const pa = tryParseJSON(v.a || ""), pb = tryParseJSON(v.b || "");
       if (!pa.ok) return { error: "Invalid JSON A: " + pa.err };
       if (!pb.ok) return { error: "Invalid JSON B: " + pb.err };
+      const kind = (x) => Array.isArray(x) ? "array" : x === null ? "null" : typeof x;
+      if (kind(pa.val) !== kind(pb.val) || (typeof pa.val !== "object" && pa.val !== pb.val)) return `~ (root): ${JSON.stringify(pa.val)} -> ${JSON.stringify(pb.val)}`;
       const fa = flattenObj(pa.val, "", {}), fb = flattenObj(pb.val, "", {});
       const keys = new Set([...Object.keys(fa), ...Object.keys(fb)]);
       const added = [], removed = [], changed = [];
       for (const k of [...keys].sort()) {
-        const inA = k in fa, inB = k in fb;
+        const inA = Object.hasOwn(fa, k), inB = Object.hasOwn(fb, k); // "constructor" in {} is true
         if (inA && !inB) removed.push(`- ${k}: ${JSON.stringify(fa[k])}`);
         else if (!inA && inB) added.push(`+ ${k}: ${JSON.stringify(fb[k])}`);
         else if (JSON.stringify(fa[k]) !== JSON.stringify(fb[k])) changed.push(`~ ${k}: ${JSON.stringify(fa[k])} -> ${JSON.stringify(fb[k])}`);
@@ -529,18 +568,9 @@ export const TOOLS = [
   { id: "d-diff-stats", name: "Diff Summary Stats", cat: "dev", desc: "Count added/removed/unchanged lines between two texts without printing the full diff.", tags: ["diff", "stats", "summary"],
     inputs: [{ k: "a", label: "Original", type: "textarea", rows: 6 }, { k: "b", label: "Changed", type: "textarea", rows: 6 }],
     run(v) {
-      const A = S(v.a).split(/\r?\n/), B = S(v.b).split(/\r?\n/);
-      const n = A.length, m = B.length;
-      const dp = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
-      for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
-      let i = 0, j = 0, added = 0, removed = 0, same = 0;
-      while (i < n && j < m) {
-        if (A[i] === B[j]) { same++; i++; j++; }
-        else if (dp[i + 1][j] >= dp[i][j + 1]) { removed++; i++; }
-        else { added++; j++; }
-      }
-      removed += n - i; added += m - j;
-      return `Added: ${added}\nRemoved: ${removed}\nUnchanged: ${same}`;
+      const { ops, capped } = lineDiff(S(v.a).split(/\r?\n/), S(v.b).split(/\r?\n/));
+      const c = (t) => ops.filter((o) => o[0] === t).length;
+      return `Added: ${c("+")}\nRemoved: ${c("-")}\nUnchanged: ${c(" ")}` + (capped ? "\n(over " + MAX_D + " changed lines: counted as one block replaced, so these are upper bounds)" : "");
     } },
 
   
@@ -553,12 +583,26 @@ export const TOOLS = [
       const p = tryParseJSON(v.json || ""); if (!p.ok) return { error: "Invalid JSON: " + p.err };
       const infer = (val) => {
         if (val === null) return { type: "null" };
-        if (Array.isArray(val)) return { type: "array", items: val.length ? infer(val[0]) : {} };
+        if (Array.isArray(val)) return { type: "array", items: val.length ? val.map(infer).reduce(merge) : {} }; // every item, not just the first
         const t = typeof val;
-        if (t === "object") { const props = {}; for (const k of Object.keys(val)) props[k] = infer(val[k]); return { type: "object", properties: props, required: Object.keys(val) }; }
+        if (t === "object") { const props = {}; for (const k of Object.keys(val)) Object.defineProperty(props, k, { value: infer(val[k]), enumerable: true, writable: true, configurable: true }); return { type: "object", properties: props, required: Object.keys(val) }; }
         if (t === "number") return { type: Number.isInteger(val) ? "integer" : "number" };
         return { type: t };
       };
+      // Two schemas for values at the same place: objects merge their properties (required = keys
+      // every item has), integer widens to number, other differing types become a type list.
+      function merge(x, y) {
+        const tx = [].concat(x.type), ty = [].concat(y.type);
+        if (x.type === "object" && y.type === "object") {
+          const props = {};
+          for (const k of new Set([...Object.keys(x.properties), ...Object.keys(y.properties)])) Object.defineProperty(props, k, { value: Object.hasOwn(x.properties, k) && Object.hasOwn(y.properties, k) ? merge(x.properties[k], y.properties[k]) : (Object.hasOwn(x.properties, k) ? x.properties[k] : y.properties[k]), enumerable: true, writable: true, configurable: true });
+          return { type: "object", properties: props, required: x.required.filter((k) => y.required.includes(k)) };
+        }
+        if (x.type === "array" && y.type === "array") return { type: "array", items: !Object.keys(x.items).length ? y.items : !Object.keys(y.items).length ? x.items : merge(x.items, y.items) };
+        let types = [...new Set([...tx, ...ty])];
+        if (types.includes("number")) types = types.filter((u) => u !== "integer");
+        return { type: types.length === 1 ? types[0] : types };
+      }
       return JSON.stringify(infer(p.val), null, 2);
     } },
 

@@ -17,7 +17,7 @@ export function parseCSV(text) {
       if (c === '"') { if (s[i + 1] === '"') { field += '"'; i += 2; continue; } inQ = false; i++; continue; }
       field += c; i++; continue;
     }
-    if (c === '"') { inQ = true; i++; continue; }
+    if (c === '"' && field === "" && (i === 0 || s[i - 1] === "," || s[i - 1] === "\n")) { inQ = true; i++; continue; } // only a field's first character opens quotes (27" screen is text)
     if (c === ",") { row.push(field); field = ""; i++; continue; }
     if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
     field += c; i++;

@@ -508,17 +508,27 @@ export const TOOLS = [
       let s = S(v.h).trim();
       if (!s) return "";
       s = s.replace(/^strict-transport-security:\s*/i, "");
-      const parts = s.split(";").map((x) => x.trim()).filter(Boolean);
-      const maxAgeM = s.match(/max-age\s*=\s*(\d+)/i);
-      const maxAge = maxAgeM ? +maxAgeM[1] : null;
-      const sub = /includesubdomains/i.test(s);
-      const preload = /preload/i.test(s);
+      // RFC 6797 6.1: directive names are case-insensitive, a value may be a quoted-string
+      // (max-age="31536000" was read as missing), and a repeated directive makes the browser
+      // ignore the whole header
+      const dirs = {}, dup = [];
+      for (const part of s.split(";").map((x) => x.trim()).filter(Boolean)) {
+        const m = part.match(/^([^=\s]+)\s*(?:=\s*(.*))?$/);
+        if (!m) continue;
+        const k = m[1].toLowerCase();
+        if (Object.hasOwn(dirs, k)) dup.push(m[1]); else dirs[k] = m[2] == null ? "" : m[2].trim().replace(/^"(.*)"$/, "$1");
+      }
+      const maxAge = /^\d+$/.test(dirs["max-age"] ?? "") ? +dirs["max-age"] : null;
+      const sub = Object.hasOwn(dirs, "includesubdomains");
+      const preload = Object.hasOwn(dirs, "preload");
       const out = [];
-      out.push(`max-age: ${maxAge == null ? "MISSING (invalid)" : maxAge + " s (" + (maxAge / 86400).toFixed(0) + " days)"}`);
+      if (dup.length) out.push(`INVALID: ${dup.join(", ")} appears more than once, so browsers ignore this header entirely (RFC 6797 6.1).\n`);
+      out.push(`max-age: ${maxAge == null ? (Object.hasOwn(dirs, "max-age") ? `"${dirs["max-age"]}" (invalid)` : "MISSING (invalid)") : maxAge + " s (" + (maxAge / 86400).toFixed(0) + " days)"}`);
       out.push(`includeSubDomains: ${sub ? "yes" : "no"}`);
       out.push(`preload: ${preload ? "yes" : "no"}`);
       const warn = [];
-      if (maxAge == null) warn.push("No max-age — header is invalid.");
+      if (maxAge == null) warn.push(Object.hasOwn(dirs, "max-age") ? "max-age is not a whole number of seconds — header is invalid." : "No max-age — header is invalid.");
+      else if (maxAge === 0) warn.push("max-age=0 tells the browser to forget HSTS for this host (used to turn HSTS off).");
       else if (maxAge < 31536000) warn.push("max-age < 1 year; preload lists require >= 31536000.");
       if (!sub) warn.push("Without includeSubDomains, subdomains are unprotected.");
       if (preload && (!sub || (maxAge || 0) < 31536000)) warn.push("preload requires includeSubDomains + max-age >= 1 year.");

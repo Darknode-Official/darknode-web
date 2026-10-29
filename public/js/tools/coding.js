@@ -14,7 +14,9 @@ const tryJSON = (t) => { try { return { ok: true, val: JSON.parse(t) }; } catch 
 function parseCSV(text, delim) {
   delim = delim || ",";
   const s = String(text);
-  const rows = []; let row = [], field = "", inQ = false, i = 0, started = false;
+  // a quote opens a quoted field only as the field's first character; elsewhere (5" screen) it is text.
+  // A row ends at \n, \r\n or a lone \r, as Python's csv and Excel read it.
+  const rows = []; let row = [], field = "", inQ = false, i = 0, started = false, atStart = true;
   for (; i < s.length; i++) {
     const c = s[i];
     if (inQ) {
@@ -22,11 +24,10 @@ function parseCSV(text, delim) {
       else field += c;
       continue;
     }
-    if (c === '"') { inQ = true; started = true; }
-    else if (c === delim) { row.push(field); field = ""; started = true; }
-    else if (c === "\r") { /* skip */ }
-    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; started = false; }
-    else { field += c; started = true; }
+    if (c === '"' && atStart) { inQ = true; started = true; atStart = false; }
+    else if (c === delim) { row.push(field); field = ""; started = true; atStart = true; }
+    else if (c === "\r" || c === "\n") { if (c === "\r" && s[i + 1] === "\n") i++; row.push(field); rows.push(row); row = []; field = ""; started = false; atStart = true; }
+    else { field += c; started = true; atStart = false; }
   }
   if (started || field !== "" || row.length) { row.push(field); rows.push(row); }
   return rows;
@@ -39,6 +40,13 @@ function csvField(v, delim) {
 // a lone empty field is written "" - a blank line is skipped by CSV readers, dropping the row
 const csvRow = (arr, delim) => arr.length === 1 && String(arr[0] ?? "") === "" ? '""' : arr.map((c) => csvField(c, delim)).join(delim);
 const sqlIdent = (name) => { const s = String(name).trim(); return /^[A-Za-z_][A-Za-z0-9_]*$/.test(s) ? s : '"' + s.replace(/"/g, '""') + '"'; };
+// A table name, schema.table allowed; each part quoted when needed, so "my table" or a ; cannot break the statement.
+const sqlTable = (name) => (S(name).trim() || "my_table").split(".").map(sqlIdent).join(".");
+// A CSV cell that is a number SQL would store unchanged: no leading zero (02134 is a code, not 2134)
+// and an integer that fits 64 bits.
+const sqlNumeric = (s) => /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(s) && !/^[-+]?0\d/.test(s) && Number.isFinite(Number(s)) && (!/^[-+]?\d+$/.test(s) || intWidth(s) <= 64);
+// Bits needed for a signed integer string: 32 (INTEGER), 64 (BIGINT) or more.
+const intWidth = (s) => { const n = BigInt(s); return n >= -2147483648n && n <= 2147483647n ? 32 : n >= -9223372036854775808n && n <= 9223372036854775807n ? 64 : 65; };
 
 // ---------- flatten / unflatten ----------
 function flatten(obj, prefix, out) {
@@ -96,7 +104,7 @@ function yamlScalar(v) {
   const s = String(v);
   if (s === "") return '""';
   const needs = /^[\s]|[\s]$/.test(s) || /[:#\[\]{}&*!|>'"%@`,]/.test(s) || /^[-?@`]/.test(s) ||
-    /^(true|false|null|yes|no|on|off|~)$/i.test(s) || /^[-+]?(\d|\.\d|\.inf$|\.nan$)/i.test(s) || /[\x00-\x1f\x7f\x85\u2028\u2029\ufeff]/.test(s) || /:\s/.test(s);
+    /^(true|false|null|yes|no|on|off|~|<<|=)$/i.test(s) || /^[-+]?(\d|\.\d|\.inf$|\.nan$)/i.test(s) || /[\x00-\x1f\x7f\x85\u2028\u2029\ufeff]/.test(s) || /:\s/.test(s) || /^\.\.\.(\s|$)/.test(s); // "..." at a line start ends the YAML document
   if (needs) return '"' + ctlEsc(s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r")) + '"';
   return s;
 }
@@ -131,7 +139,7 @@ function yamlLines(val, indent) {
   }
   return [pad + yamlScalar(val)];
 }
-const toYAML = (v) => (hasEntries(v) || (!isPlainObj(v) && !Array.isArray(v))) ? yamlLines(v, 0).join("\n") + "\n" : yamlEmpty(v) + "\n";
+const toYAML = (v) => (v === null || hasEntries(v) || (!isPlainObj(v) && !Array.isArray(v))) ? yamlLines(v, 0).join("\n") + "\n" : yamlEmpty(v) + "\n";
 
 // ---------- YAML parse (common block subset + simple flow) ----------
 function parseYAML(text) {
@@ -235,7 +243,7 @@ function yNode(lines, i, indent) {
   const t = lines[i].slice(indent);
   if (t[0] === "[" || t[0] === "{") return [yScalar(t), i + 1];
   if (t === "-" || t.startsWith("- ")) return yArray(lines, i, indent);
-  if (yMatchKey(t)) return yMap(lines, i, indent);
+  if (yMatchKey(t) || t === "?" || t.startsWith("? ")) return yMap(lines, i, indent);
   return yPlain(lines, i, indent, t);
 }
 // a plain scalar may continue on more-indented lines: breaks fold to spaces, blank lines to \n
@@ -255,13 +263,19 @@ function yArray(lines, i, indent) {
     if (after === "") {
       if (j + 1 < lines.length && indentOf(lines[j + 1]) > indent) { const [v, nj] = yNode(lines, j + 1, indentOf(lines[j + 1])); arr.push(v); j = nj; }
       else { arr.push(null); j++; }
-    } else if (after === "-" || after.startsWith("- ") || (after[0] !== "[" && after[0] !== "{" && yMatchKey(after))) {
+    } else if (after === "-" || after.startsWith("- ") || (after[0] !== "[" && after[0] !== "{" && yMatchKey(after)) || after.startsWith("? ")) {
       // "- - a" (a nested list) and "- key: v" open a node at the item's column
       const ci = indent + 1 + sp; lines[j] = " ".repeat(ci) + after;
       const [v, nj] = yNode(lines, j, ci); arr.push(v); j = nj;
     } else { const [v, nj] = yPlain(lines, j, indent, after); arr.push(v); j = nj; }
   }
   return [arr, j];
+}
+// A mapping key, set once: YAML forbids a repeated key (the old value was silently replaced),
+// and defineProperty keeps a "__proto__" key as data instead of setting the prototype.
+function ySet(o, k, v, where) {
+  if (Object.prototype.hasOwnProperty.call(o, k)) throw new Error("duplicate key '" + k + "'" + where);
+  Object.defineProperty(o, k, { value: v, enumerable: true, writable: true, configurable: true });
 }
 function yMap(lines, i, indent) {
   const obj = {}; let j = i;
@@ -270,11 +284,25 @@ function yMap(lines, i, indent) {
     if (ind > indent) throw new Error("bad indentation at line " + (j + 1));
     const t = lines[j].slice(indent);
     if (t === "-" || t.startsWith("- ")) break;
-    const m = yMatchKey(t); if (!m) throw new Error("expected 'key:' at line " + (j + 1));
-    if (m.rest !== "") { const [v, nj] = yPlain(lines, j, indent, m.rest); obj[m.key] = v; j = nj; }
-    else if (j + 1 < lines.length && indentOf(lines[j + 1]) > indent) { const [v, nj] = yNode(lines, j + 1, indentOf(lines[j + 1])); obj[m.key] = v; j = nj; }
-    else if (j + 1 < lines.length && indentOf(lines[j + 1]) === indent && (lines[j + 1].slice(indent) === "-" || lines[j + 1].slice(indent).startsWith("- "))) { const [v, nj] = yArray(lines, j + 1, indent); obj[m.key] = v; j = nj; }
-    else { obj[m.key] = null; j++; }
+    let m = yMatchKey(t);
+    // an explicit key ("? key" then ": value" on the next line): PyYAML writes one for a key
+    // over 128 characters or holding a line break
+    if (t === "?" || t.startsWith("? ")) {
+      const ks = t.slice(1).trim(), key = /^["']/.test(ks) ? yScalar(ks) : ks;
+      if (ks === "") throw new Error("a complex (block) key is not supported at line " + (j + 1));
+      const nt = j + 1 < lines.length && indentOf(lines[j + 1]) === indent ? lines[j + 1].slice(indent) : "";
+      if (!(nt === ":" || nt.startsWith(": "))) { ySet(obj, key, null, " at line " + (j + 1)); j++; continue; }
+      const rest = nt.slice(1).replace(/^[ \t]+/, ""), ci = indent + nt.length - rest.length;
+      j++;
+      // ": - a", ": ? k" and ": k: v" open a node at the value's column, as a "- " item does
+      if (rest === "-" || rest.startsWith("- ") || rest.startsWith("? ") || (rest[0] !== "[" && rest[0] !== "{" && yMatchKey(rest))) { lines[j] = " ".repeat(ci) + rest; const [v, nj] = yNode(lines, j, ci); ySet(obj, key, v, " at line " + j); j = nj; continue; }
+      m = { key, rest };
+    }
+    if (!m) throw new Error("expected 'key:' at line " + (j + 1));
+    if (m.rest !== "") { const [v, nj] = yPlain(lines, j, indent, m.rest); ySet(obj, m.key, v, " at line " + (j + 1)); j = nj; }
+    else if (j + 1 < lines.length && indentOf(lines[j + 1]) > indent) { const [v, nj] = yNode(lines, j + 1, indentOf(lines[j + 1])); ySet(obj, m.key, v, " at line " + (j + 1)); j = nj; }
+    else if (j + 1 < lines.length && indentOf(lines[j + 1]) === indent && (lines[j + 1].slice(indent) === "-" || lines[j + 1].slice(indent).startsWith("- "))) { const [v, nj] = yArray(lines, j + 1, indent); ySet(obj, m.key, v, " at line " + (j + 1)); j = nj; }
+    else { ySet(obj, m.key, null, " at line " + (j + 1)); j++; }
   }
   return [obj, j];
 }
@@ -297,12 +325,13 @@ function yScalar(s) {
   if (/^[-+]?\d+$/.test(s)) return Number(s);
   if (/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(s)) return Number(s);
   if (/^0x[0-9a-fA-F]+$/.test(s)) return parseInt(s, 16);
+  if (/^0o[0-7]+$/.test(s)) return parseInt(s.slice(2), 8); // YAML 1.2 octal
   return s;
 }
 function yFlow(p) {
   skipWs(p); const c = p.s[p.i];
   if (c === "[") { p.i++; const a = []; skipWs(p); if (p.s[p.i] === "]") { p.i++; return a; } while (true) { a.push(yFlow(p)); skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "]") { p.i++; break; } continue; } if (p.s[p.i] === "]") { p.i++; break; } throw new Error("bad flow sequence"); } return a; }
-  if (c === "{") { p.i++; const o = {}; skipWs(p); if (p.s[p.i] === "}") { p.i++; return o; } while (true) { skipWs(p); const k = yFlowScalarRaw(p, true); skipWs(p); if (p.s[p.i] !== ":") throw new Error("expected ':' in flow map"); p.i++; const v = yFlow(p); o[typeof k === "string" ? k : String(k)] = v; skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "}") { p.i++; break; } continue; } if (p.s[p.i] === "}") { p.i++; break; } throw new Error("bad flow map"); } return o; }
+  if (c === "{") { p.i++; const o = {}; skipWs(p); if (p.s[p.i] === "}") { p.i++; return o; } while (true) { skipWs(p); if (p.s[p.i] === "?" && /[ \t]/.test(p.s[p.i + 1] ?? "")) { p.i++; skipWs(p); } const k = yFlowScalarRaw(p, true); skipWs(p); if (p.s[p.i] !== ":") throw new Error("expected ':' in flow map"); p.i++; const v = yFlow(p); ySet(o, typeof k === "string" ? k : String(k), v, " in a flow map"); skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "}") { p.i++; break; } continue; } if (p.s[p.i] === "}") { p.i++; break; } throw new Error("bad flow map"); } return o; }
   return yScalar(yFlowScalarRaw(p, false));
 }
 const skipWs = (p) => { while (/[ \t]/.test(p.s[p.i])) p.i++; };
@@ -324,7 +353,7 @@ function yFlowScalarRaw(p, isKey) {
 }
 
 // ---------- TOML emit ----------
-const tomlBareKey = (k) => /^[A-Za-z0-9_-]+$/.test(k) ? k : '"' + String(k).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+const tomlBareKey = (k) => /^[A-Za-z0-9_-]+$/.test(k) ? k : tomlString(k); // a quoted key escapes as a string does: a raw newline in one is invalid TOML
 const tomlString = (s) => '"' + ctlEsc(String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r")) + '"';
 function tomlValue(v) {
   if (v === null) return '""';
@@ -810,9 +839,23 @@ export const TOOLS = [
       if (!S(v.csv).trim()) return "";
       const rows = parseCSV(v.csv, v.delim || ",");
       if (!rows.length) return "[]";
-      const conv = (c) => { if (!v.numbers) return c; if (c !== "" && /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(c)) return Number(c); return c; };
+      // A cell stays text when a number would change it: a leading zero (zip codes, phone
+      // numbers), an integer past 2^53, or a value out of range (1e999).
+      const conv = (c) => {
+        if (!v.numbers || c === "" || !/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(c) || /^[-+]?0\d/.test(c)) return c;
+        const n = Number(c);
+        if (!Number.isFinite(n) || (/^[-+]?\d+$/.test(c) && !Number.isSafeInteger(n))) return c;
+        return n;
+      };
       let data;
-      if (v.header) { const keys = rows[0]; data = rows.slice(1).map((r) => { const o = {}; keys.forEach((k, i) => { o[k] = conv(r[i] == null ? "" : r[i]); }); return o; }); }
+      if (v.header) {
+        // a repeated header gets .1, .2 (as pandas does) instead of overwriting the earlier column;
+        // cells past the header go to _extra; defineProperty keeps a "__proto__" header as a key
+        const seen = new Map();
+        const keys = rows[0].map((k) => { const n = seen.get(k) || 0; seen.set(k, n + 1); return n ? k + "." + n : k; });
+        const put = (o, k, val) => Object.defineProperty(o, k, { value: val, enumerable: true, writable: true, configurable: true });
+        data = rows.slice(1).map((r) => { const o = {}; keys.forEach((k, i) => put(o, k, conv(r[i] == null ? "" : r[i]))); if (r.length > keys.length) put(o, "_extra", r.slice(keys.length).map(conv)); return o; });
+      }
       else data = rows.map((r) => r.map(conv));
       return JSON.stringify(data, null, 2);
     },
@@ -1221,8 +1264,8 @@ export const TOOLS = [
       const rows = parseCSV(v.csv, v.delim || ",").filter((r) => r.some((c) => c !== ""));
       if (rows.length < 2) return { error: "Need a header row and at least one data row." };
       const cols = rows[0];
-      const tbl = S(v.table).trim() || "my_table";
-      const lit = (c) => { const s = c == null ? "" : String(c); if (s === "") return "NULL"; if (/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(s)) return s; return "'" + s.replace(/'/g, "''") + "'"; };
+      const tbl = sqlTable(v.table);
+      const lit = (c) => { const s = c == null ? "" : String(c); if (s === "") return "NULL"; if (sqlNumeric(s)) return s; return "'" + s.replace(/'/g, "''") + "'"; };
       const colList = "(" + cols.map((c) => sqlIdent(c)).join(", ") + ")";
       const tuples = rows.slice(1).map((r) => "(" + cols.map((_, i) => lit(r[i])).join(", ") + ")");
       if (v.multi) return "INSERT INTO " + tbl + " " + colList + " VALUES\n  " + tuples.join(",\n  ") + ";\n";
@@ -1231,7 +1274,7 @@ export const TOOLS = [
   },
   {
     id: "cd-csv-create-table", name: "CSV to CREATE TABLE", cat: "coding",
-    desc: "Infer a SQL CREATE TABLE from CSV by sampling each column: all-integer becomes INTEGER, all-decimal REAL, true/false BOOLEAN, otherwise TEXT (VARCHAR with the max observed length).",
+    desc: "Infer a SQL CREATE TABLE from CSV by sampling each column: all-integer becomes INTEGER (BIGINT or NUMERIC when values need it), all-decimal DOUBLE PRECISION, codes with leading zeros text, true/false BOOLEAN, otherwise TEXT (VARCHAR with the max observed length).",
     tags: ["csv", "sql", "schema", "create table", "ddl"],
     inputs: [
       { k: "csv", label: "CSV (with header)", type: "textarea", rows: 7, placeholder: "id,name,active\n1,user1,true" },
@@ -1246,13 +1289,13 @@ export const TOOLS = [
       const defs = cols.map((name, i) => {
         const cells = data.map((r) => (r[i] == null ? "" : String(r[i]))).filter((x) => x !== "");
         let type = "TEXT";
-        if (cells.length && cells.every((x) => /^[-+]?\d+$/.test(x))) type = "INTEGER";
-        else if (cells.length && cells.every((x) => /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(x))) type = "REAL";
+        if (cells.length && cells.every((x) => /^[-+]?\d+$/.test(x) && !/^[-+]?0\d/.test(x))) { const w = Math.max(...cells.map(intWidth)); type = w <= 32 ? "INTEGER" : w <= 64 ? "BIGINT" : "NUMERIC"; }
+        else if (cells.length && cells.every((x) => sqlNumeric(x))) type = "DOUBLE PRECISION"; // REAL is 6 digits in PostgreSQL
         else if (cells.length && cells.every((x) => /^(true|false)$/i.test(x))) type = "BOOLEAN";
         else { const max = cells.reduce((m, x) => Math.max(m, x.length), 1); type = "VARCHAR(" + Math.max(max, 1) + ")"; }
         return "  " + sqlIdent(name) + " " + type;
       });
-      return "CREATE TABLE " + (S(v.table).trim() || "my_table") + " (\n" + defs.join(",\n") + "\n);\n";
+      return "CREATE TABLE " + sqlTable(v.table) + " (\n" + defs.join(",\n") + "\n);\n";
     },
   },
   {
@@ -1599,7 +1642,7 @@ export const TOOLS = [
     ],
     run(v) {
       const t = S(v.template); if (t === "") return "";
-      const env = {};
+      const env = Object.create(null); // only the listed names: $constructor stays unfilled, __proto__ is a name
       S(v.vars).replace(/\r\n?/g, "\n").split("\n").forEach((l) => { const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(l); if (m) env[m[1]] = m[2]; });
       const sub = (name, braced) => { if (name in env) return env[name]; return v.blank ? "" : (braced ? "${" + name + "}" : "$" + name); };
       return t.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, n) => sub(n, true)).replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, n) => sub(n, false));
@@ -1680,17 +1723,20 @@ export const TOOLS = [
     desc: "Convert an HTML fragment to plain text: drop script/style, turn block tags and <br> into line breaks, decode common entities, collapse extra whitespace. No DOM used.",
     tags: ["html", "plain text", "strip tags", "convert", "entities"],
     inputs: [{ k: "html", label: "HTML", type: "textarea", rows: 8, placeholder: "<h1>Hi</h1><p>Some <b>bold</b> text.</p>" }],
-    run(v) {
+    run(v, H) {
       let s = S(v.html); if (!s.trim()) return "";
       s = s.replace(/<!--[\s\S]*?-->/g, "");
       s = s.replace(/<(script|style)[\s\S]*?<\/\1>/gi, "");
+      // <pre> keeps its line breaks and indentation: set aside before whitespace is collapsed
+      const pres = [];
+      s = s.replace(/\u0000/g, "").replace(/<pre\b[^>]*>([\s\S]*?)<\/pre\s*>/gi, (m, inner) => { pres.push(H.decodeEntities(inner.replace(/<\s*br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")).replace(/^\n+|\s+$/g, "")); return "\n\u0000" + (pres.length - 1) + "\u0000\n"; });
+      s = s.replace(/<\/(td|th)\s*>\s*(?=<(td|th)\b)/gi, "\u0001"); // cells of a row stay apart (a tab, set after whitespace is collapsed)
+      s = s.replace(/<li\b[^>]*>/gi, "\n- "); // before the block tags below, which would take <li> first
       s = s.replace(/<\s*br\s*\/?>/gi, "\n");
       s = s.replace(/<\s*\/?\s*(p|div|h[1-6]|li|tr|table|ul|ol|section|article|header|footer|blockquote|pre)\b[^>]*>/gi, "\n");
-      s = s.replace(/<li\b[^>]*>/gi, "- ");
       s = s.replace(/<[^>]+>/g, "");
-      const ent = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", "#39": "'", "#34": '"' };
-      s = s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, e) => { if (e[0] === "#") { const code = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return isNaN(code) ? m : String.fromCodePoint(code); } return e in ent ? ent[e] : m; });
-      return s.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").replace(/[ \t]{2,}/g, " ").trim() + "\n";
+      s = H.decodeEntities(s); // the full HTML5 named set, as the HTML Entity tool reads them
+      return s.replace(/[ \t]+\n/g, "\n").replace(/\n[ \t]+/g, "\n").replace(/\n{3,}/g, "\n\n").replace(/[ \t]{2,}/g, " ").trim().replace(/ ?\u0001 ?/g, "\t").replace(/\u0000(\d+)\u0000/g, (m, n) => pres[+n]) + "\n";
     },
   },
   {
@@ -1943,7 +1989,7 @@ export const TOOLS = [
   },
   {
     id: "cd-duration", name: "Duration Parser / Formatter", cat: "coding",
-    desc: "Convert between a human duration (like 1h30m, 90s, 2d) and a total number of seconds or milliseconds. Understands w/d/h/m/s/ms units.",
+    desc: "Convert between a human duration (like 1h30m, 90s, 2d) and a total number of seconds or milliseconds. Understands w/d/h/m/s/ms units, words like 2 hours, a leading minus and ISO 8601 (PT1H30M).",
     tags: ["duration", "time", "seconds", "parse", "humanize"],
     inputs: [
       { k: "input", label: "Duration or number", type: "text", placeholder: "1h30m  or  5400" },
@@ -1954,9 +2000,24 @@ export const TOOLS = [
       const units = { w: 604800, d: 86400, h: 3600, m: 60, s: 1, ms: 0.001 };
       if (v.mode === "Parse to seconds") {
         if (/^-?\d+(\.\d+)?$/.test(s)) return s + " seconds";
-        const re = /(\d+(?:\.\d+)?)\s*(ms|w|d|h|m|s)/gi; let total = 0, matched = false, m;
-        while ((m = re.exec(s))) { matched = true; total += parseFloat(m[1]) * units[m[2].toLowerCase()]; }
-        if (!matched) return { error: "Could not parse. Use units like 1h30m, 2d, 500ms." };
+        const neg = s[0] === "-", body = s.replace(/^[-+]/, "");
+        let total = 0, m;
+        const iso = /^P(?:(\d+(?:[.,]\d+)?)Y)?(?:(\d+(?:[.,]\d+)?)M)?(?:(\d+(?:[.,]\d+)?)W)?(?:(\d+(?:[.,]\d+)?)D)?(?:T(?:(\d+(?:[.,]\d+)?)H)?(?:(\d+(?:[.,]\d+)?)M)?(?:(\d+(?:[.,]\d+)?)S)?)?$/i.exec(body);
+        if (iso && /\d/.test(body) && !/T$/i.test(body)) {
+          if (iso[1] || iso[2]) return { error: "ISO years and months have no fixed length in seconds. Use weeks, days or smaller." };
+          [[iso[3], 604800], [iso[4], 86400], [iso[5], 3600], [iso[6], 60], [iso[7], 1]].forEach(([n, u]) => { if (n) total += parseFloat(n.replace(",", ".")) * u; });
+        } else {
+          const re = /(\d+(?:\.\d+)?|\.\d+)\s*(ms|w|d|h|m|s)(?![a-z])/giy; let rest = body.replace(/\s+/g, " ").trim(), pos = 0, matched = false;
+          rest = rest.replace(/\b(weeks?|days?|hours?|hrs?|minutes?|mins?|seconds?|secs?|milliseconds?)\b/gi, (w) => ({ we: "w", da: "d", ho: "h", hr: "h", mi: /^mil/i.test(w) ? "ms" : "m", se: "s" })[w.slice(0, 2).toLowerCase()]);
+          while (pos < rest.length) {
+            const sep = /[ ,]+|and\s*/iy; sep.lastIndex = pos; if (matched && sep.exec(rest)) { pos = sep.lastIndex; continue; }
+            re.lastIndex = pos; m = re.exec(rest);
+            if (!m) return { error: `Could not parse "${rest.slice(pos)}". Use units like 1h30m, 2d, 500ms or ISO PT1H30M.` };
+            matched = true; total += parseFloat(m[1]) * units[m[2].toLowerCase()]; pos = re.lastIndex;
+          }
+          if (!matched) return { error: "Could not parse. Use units like 1h30m, 2d, 500ms." };
+        }
+        if (neg) total = -total;
         return "Total seconds : " + (total % 1 ? total : total) + "\nMilliseconds  : " + Math.round(total * 1000);
       }
       const num = parseFloat(s); if (isNaN(num)) return { error: "Enter a number." };

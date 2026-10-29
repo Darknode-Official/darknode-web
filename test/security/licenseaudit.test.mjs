@@ -788,6 +788,10 @@ group("licenseaudit: input formats", () => {
   test("purl parsing", () => {
     assert.equal(parsePurl("pkg:npm/%40babel/core@7.24.7").fullName, "@babel/core");
     assert.equal(parsePurl("pkg:maven/org.apache/commons@1.0?type=jar").fullName, "org.apache:commons");
+    // an unencoded npm scope, as several SBOM tools write it: the version follows the last @
+    const sc = parsePurl("pkg:npm/@angular/core@16.0.0");
+    assert.deepEqual(sc && [sc.fullName, sc.version, sc.ecosystem], ["@angular/core", "16.0.0", "npm"]);
+    assert.deepEqual([parsePurl("pkg:npm/@types/node").fullName, parsePurl("pkg:npm/@types/node").version], ["@types/node", ""]);
     assert.equal(parsePurl("pkg:golang/golang.org/x/text@v0.16.0").version, "v0.16.0");
     assert.equal(parsePurl("not a purl"), null);
   });
