@@ -57,6 +57,8 @@ function parseV6(str) {
 }
 
 // ---- internet checksum (RFC 1071) ----
+// strict dotted quad: "1.2.3." or "1e2.0.0.1" must not read as a real address
+function parseV4(str) { const s = String(str || "").trim(); if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(s)) return null; const p = s.split(".").map(Number); return p.every((x) => x <= 255) ? p : null; }
 function foldSum(bytes, start, end) {
   start = start || 0; end = end == null ? bytes.length : end;
   let sum = 0;
@@ -553,8 +555,8 @@ export const TOOLS = [
         const L = seg.length; ps.push((L >>> 24) & 0xff, (L >>> 16) & 0xff, (L >>> 8) & 0xff, L & 0xff);
         ps.push(0, 0, 0, protoNum);
       } else {
-        const pa = v.src.split(".").map(Number), pb = v.dst.split(".").map(Number);
-        if (pa.length !== 4 || pb.length !== 4 || [...pa, ...pb].some((x) => isNaN(x) || x < 0 || x > 255)) return { error: "Invalid IPv4 address." };
+        const pa = parseV4(v.src), pb = parseV4(v.dst);
+        if (!pa || !pb) return { error: "Invalid IPv4 address." };
         ps.push(...pa, ...pb, 0, protoNum, (seg.length >> 8) & 0xff, seg.length & 0xff);
       }
       const all = Uint8Array.from([...ps, ...seg]);
@@ -629,8 +631,8 @@ export const TOOLS = [
         const b = [0x33, 0x33, g[6] >> 8, g[6] & 0xff, g[7] >> 8, g[7] & 0xff];
         return `Ethernet MAC: ${b.map((x) => x.toString(16).padStart(2, "0")).join(":")}\n(33:33 prefix + low 32 bits of the IPv6 address.)`;
       }
-      const p = v.addr.split(".").map(Number);
-      if (p.length !== 4 || p.some((x) => isNaN(x) || x < 0 || x > 255)) return { error: "Enter a valid IPv4 address." };
+      const p = parseV4(v.addr);
+      if (!p) return { error: "Enter a valid IPv4 address." };
       if (p[0] < 224 || p[0] > 239) return { error: "Not an IPv4 multicast address (224.0.0.0/4)." };
       const low23 = (((p[1] & 0x7f) << 16) | (p[2] << 8) | p[3]);
       const b = [0x01, 0x00, 0x5e, (low23 >> 16) & 0xff, (low23 >> 8) & 0xff, low23 & 0xff];
@@ -642,6 +644,7 @@ export const TOOLS = [
     inputs: [{ k: "asn", label: "ASN (asplain or asdot)", type: "text", placeholder: "65536 or 1.0" }],
     run(v) {
       const s = String(v.asn || "").trim(); if (!s) return "";
+      if (!/^\d+(\.\d+)?$/.test(s)) return { error: "Enter an asplain number (65536) or asdot high.low (1.0)." };
       let plain;
       if (s.includes(".")) { const p = s.split("."); if (p.length !== 2) return { error: "asdot is high.low, e.g. 1.0" }; const hi = parseInt(p[0], 10), lo = parseInt(p[1], 10); if (isNaN(hi) || isNaN(lo) || hi < 0 || hi > 65535 || lo < 0 || lo > 65535) return { error: "Each half must be 0-65535." }; plain = hi * 65536 + lo; }
       else { plain = parseInt(s, 10); if (isNaN(plain) || plain < 0 || plain > 4294967295) return { error: "ASN must be 0-4294967295." }; }
@@ -655,6 +658,7 @@ export const TOOLS = [
     run(v) {
       const s = String(v.val || "").trim(); if (!s) return "";
       const WK = { 0xffffff01: "NO_EXPORT", 0xffffff02: "NO_ADVERTISE", 0xffffff03: "NO_EXPORT_SUBCONFED (LOCAL_AS)", 0xffffff04: "NO_PEER", 0xffff0000: "planned-shut (RFC 8326)", 0xffff029a: "BLACKHOLE" };
+      if (!/^\d+(:\d+){0,2}$/.test(s)) return { error: "Enter ASN:value, N:N:N, or a 32-bit integer." };
       const parts = s.split(":");
       if (parts.length === 3) { const n = parts.map((x) => parseInt(x, 10)); if (n.some((x) => isNaN(x) || x < 0 || x > 4294967295)) return { error: "Large community is three 32-bit numbers ASN:func:param." }; return `Large community: ${n[0]}:${n[1]}:${n[2]} (12 bytes)`; }
       if (parts.length === 2) { const hi = parseInt(parts[0], 10), lo = parseInt(parts[1], 10); if (isNaN(hi) || isNaN(lo) || hi < 0 || hi > 65535 || lo < 0 || lo > 65535) return { error: "Standard community is ASN:value with each 0-65535." }; const n = (hi * 65536 + lo) >>> 0; return `Standard community: ${hi}:${lo}\n32-bit value: ${n} (${hx(n, 8)})${WK[n] ? `\nWell-known: ${WK[n]}` : ""}`; }
