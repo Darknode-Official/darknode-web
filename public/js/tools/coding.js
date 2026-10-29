@@ -134,42 +134,112 @@ const toYAML = (v) => (hasEntries(v) || (!isPlainObj(v) && !Array.isArray(v))) ?
 function parseYAML(text) {
   try {
     const raw = String(text).replace(/\r\n?/g, "\n").split("\n");
-    const lines = [];
-    for (let ln of raw) {
-      let inS = false, inD = false, res = "";
-      for (let i = 0; i < ln.length; i++) {
+    if (raw.length > 1 && raw[raw.length - 1] === "") raw.pop();
+    const lines = []; lines.blank = []; let blank = 0;
+    for (let r = 0; r < raw.length; r++) {
+      // the line is built in an array: indexing a string grown with += copies it each time
+      let ln = raw[r], q = "", depth = 0, sig = "";
+      const o = [], put = (ch) => { o.push(ch); if (ch !== " " && ch !== "\t") sig = ch; };
+      // a quote or flow bracket opens a node only where a value starts, so the
+      // apostrophe in don't is plain text and does not hide a later # comment
+      const opens = (d) => sig === "" || sig === ":" || sig === "-" || sig === "?" || (d > 0 && (sig === "," || sig === "[" || sig === "{"));
+      for (let i = 0; ; i++) {
+        if (i >= ln.length) {
+          // a quoted scalar or flow collection left open continues on the next line
+          if ((!q && depth <= 0) || r + 1 >= raw.length) break;
+          let gap = 0; r++;
+          while (r < raw.length - 1 && raw[r].trim() === "") { gap++; r++; }
+          const next = raw[r].replace(/^[ \t]+/, "");
+          if (q) {
+            while (o.length && (o[o.length - 1] === " " || o[o.length - 1] === "\t")) o.pop();
+            let bs = 0; while (q === '"' && o[o.length - 1 - bs] === "\\") bs++;
+            const esc = bs % 2 === 1; // a line ending in an escaping \ joins without a space
+            if (esc) o.pop();
+            if (gap) for (let g = 0; g < gap; g++) o.push(q === '"' ? "\\n" : "\n"); else if (!esc) o.push(" ");
+          } else o.push(" ");
+          ln = next; i = -1; continue;
+        }
         const c = ln[i];
-        if (c === "'" && !inD) inS = !inS;
-        else if (c === '"' && !inS) inD = !inD;
-        else if (c === "#" && !inS && !inD && (i === 0 || ln[i - 1] === " " || ln[i - 1] === "\t")) break;
-        res += c;
+        if (q === "'") { put(c); if (c === "'") { if (ln[i + 1] === "'") { put("'"); i++; } else q = ""; } continue; }
+        if (q === '"') { put(c); if (c === "\\" && i + 1 < ln.length) put(ln[++i]); else if (c === '"') q = ""; continue; }
+        const before = o[o.length - 1];
+        const sep = before === undefined || before === " " || before === "\t";
+        if ((c === "'" || c === '"') && (sep || before === "[" || before === "{" || before === ",") && opens(depth)) { q = c; put(c); continue; }
+        if (c === "#" && sep) break;
+        if (c === "[" || c === "{") { if (depth > 0 || opens(0)) depth++; }
+        else if ((c === "]" || c === "}") && depth > 0) depth--;
+        put(c);
       }
+      const res = o.join("");
       ln = res.replace(/\s+$/, "");
       const t = ln.trim();
-      if (t === "" || t === "---" || t === "...") continue;
-      lines.push(ln);
+      if (t === "") { blank++; continue; }
+      if (t === "---" || t === "...") { if (t === "---" && lines.length) throw new Error("multiple documents are not supported; convert one at a time"); blank = 0; continue; }
+      // block scalar header: "key: |", "- >-", "|2" (scanned from the end; a regex over the line backtracks on long lines)
+      let bk = ln.length; while (bk > 0 && ln.length - bk < 2 && /[-+1-9]/.test(ln[bk - 1])) bk--;
+      const bm = (ln[bk - 1] === "|" || ln[bk - 1] === ">") && (bk === 1 || ln[bk - 2] === " " || ln[bk - 2] === "\t") && /^([1-9][-+]?|[-+][1-9]?)?$/.test(ln.slice(bk)) ? [null, ln.slice(0, Math.max(0, bk - 2)), ln[bk - 1], ln.slice(bk)] : null;
+      if (bm) {
+        const pre = bm[1].replace(/[ \t]+$/, "");
+        if (pre.trim() === "" || /:$/.test(pre) || /(^|[ \t])-$/.test(pre)) {
+          const head = indentOf(ln), ind = (bm[3] || "").replace(/[-+]/, ""), chomp = (bm[3] || "").replace(/\d/, "");
+          let ci = ind ? head + +ind : 0;
+          if (!ci) for (let x = r + 1; x < raw.length; x++) if (raw[x].trim() !== "") { ci = indentOf(raw[x]); break; }
+          const body = []; let k = r + 1;
+          if (ci > head) while (k < raw.length) { const L = raw[k]; if (L.trim() !== "" && indentOf(L) < ci) break; body.push(L.length > ci ? L.slice(ci) : L.trim() === "" ? "" : L.slice(ci)); k++; }
+          r = k - 1;
+          ln = (pre.trim() ? pre + " " : pre) + JSON.stringify(yBlock(body, bm[2], chomp));
+        }
+      }
+      lines.push(ln); lines.blank.push(blank); blank = 0;
     }
     if (!lines.length) return { ok: true, val: null };
-    const [val] = yNode(lines, 0, indentOf(lines[0]));
+    const [val, end] = yNode(lines, 0, indentOf(lines[0]));
+    if (end < lines.length) throw new Error("unexpected content: " + lines[end].trim().slice(0, 40));
     return { ok: true, val };
   } catch (e) { return { ok: false, err: e.message }; }
+}
+// | keeps line breaks, > folds them into spaces; chomp - strips the final
+// newline, + keeps every trailing one, default keeps one
+function yBlock(body, style, chomp) {
+  let end = body.length; while (end > 0 && body[end - 1] === "") end--;
+  const trail = body.length - end, ls = body.slice(0, end);
+  if (!ls.length) return chomp === "+" ? "\n".repeat(trail) : "";
+  let out = "";
+  if (style === "|") out = ls.join("\n");
+  else {
+    let prev = "", gap = 0, first = true;
+    for (const l of ls) {
+      if (l === "") { gap++; continue; }
+      const more = /^[ \t]/.test(l);
+      out += first ? "\n".repeat(gap) : !more && prev === "text" ? (gap ? "\n".repeat(gap) : " ") : "\n".repeat(gap + 1);
+      out += l; prev = more ? "more" : "text"; gap = 0; first = false;
+    }
+  }
+  return chomp === "-" ? out : chomp === "+" ? out + "\n" + "\n".repeat(trail) : out + "\n";
 }
 const indentOf = (l) => { let n = 0; while (l[n] === " ") n++; return n; };
 function yMatchKey(s) {
   if (s[0] === '"' || s[0] === "'") {
-    const q = s[0]; let i = 1, k = "";
-    while (i < s.length && s[i] !== q) { if (q === '"' && s[i] === "\\") { k += s[i + 1]; i += 2; } else { k += s[i]; i++; } }
+    const q = s[0]; let i = 1;
+    while (i < s.length) { if (q === '"' && s[i] === "\\") i += 2; else if (s[i] === q && q === "'" && s[i + 1] === "'") i += 2; else if (s[i] === q) break; else i++; }
     i++; if (s[i] !== ":") return null;
-    return { key: k, rest: s.slice(i + 1).replace(/^[ \t]+/, "") };
+    return { key: yScalar(s.slice(0, i)), rest: s.slice(i + 1).replace(/^[ \t]+/, "") };
   }
   for (let i = 0; i < s.length; i++) if (s[i] === ":" && (i + 1 >= s.length || s[i + 1] === " ")) return { key: s.slice(0, i).trim(), rest: s.slice(i + 1).replace(/^[ \t]+/, "") };
   return null;
 }
 function yNode(lines, i, indent) {
   const t = lines[i].slice(indent);
+  if (t[0] === "[" || t[0] === "{") return [yScalar(t), i + 1];
   if (t === "-" || t.startsWith("- ")) return yArray(lines, i, indent);
   if (yMatchKey(t)) return yMap(lines, i, indent);
-  return [yScalar(t), i + 1];
+  return yPlain(lines, i, indent, t);
+}
+// a plain scalar may continue on more-indented lines: breaks fold to spaces, blank lines to \n
+function yPlain(lines, j, indent, s) {
+  j++;
+  if (!/^["'[{]/.test(s)) while (j < lines.length && indentOf(lines[j]) > indent) { s += (lines.blank[j] ? "\n".repeat(lines.blank[j]) : " ") + lines[j].trim(); j++; }
+  return [yScalar(s), j];
 }
 function yArray(lines, i, indent) {
   const arr = []; let j = i;
@@ -178,14 +248,15 @@ function yArray(lines, i, indent) {
     if (ind > indent) throw new Error("bad indentation at line " + (j + 1));
     const t = lines[j].slice(indent);
     if (!(t === "-" || t.startsWith("- "))) break;
-    const after = t === "-" ? "" : t.slice(2);
-    if (after.trim() === "") {
+    const rest = t.slice(1), sp = rest.length - rest.replace(/^[ \t]+/, "").length, after = rest.slice(sp);
+    if (after === "") {
       if (j + 1 < lines.length && indentOf(lines[j + 1]) > indent) { const [v, nj] = yNode(lines, j + 1, indentOf(lines[j + 1])); arr.push(v); j = nj; }
       else { arr.push(null); j++; }
-    } else if (yMatchKey(after)) {
-      const ci = indent + 2; lines[j] = " ".repeat(ci) + after;
-      const [v, nj] = yMap(lines, j, ci); arr.push(v); j = nj;
-    } else { arr.push(yScalar(after)); j++; }
+    } else if (after === "-" || after.startsWith("- ") || (after[0] !== "[" && after[0] !== "{" && yMatchKey(after))) {
+      // "- - a" (a nested list) and "- key: v" open a node at the item's column
+      const ci = indent + 1 + sp; lines[j] = " ".repeat(ci) + after;
+      const [v, nj] = yNode(lines, j, ci); arr.push(v); j = nj;
+    } else { const [v, nj] = yPlain(lines, j, indent, after); arr.push(v); j = nj; }
   }
   return [arr, j];
 }
@@ -197,19 +268,27 @@ function yMap(lines, i, indent) {
     const t = lines[j].slice(indent);
     if (t === "-" || t.startsWith("- ")) break;
     const m = yMatchKey(t); if (!m) throw new Error("expected 'key:' at line " + (j + 1));
-    if (m.rest !== "") { obj[m.key] = yScalar(m.rest); j++; }
+    if (m.rest !== "") { const [v, nj] = yPlain(lines, j, indent, m.rest); obj[m.key] = v; j = nj; }
     else if (j + 1 < lines.length && indentOf(lines[j + 1]) > indent) { const [v, nj] = yNode(lines, j + 1, indentOf(lines[j + 1])); obj[m.key] = v; j = nj; }
     else if (j + 1 < lines.length && indentOf(lines[j + 1]) === indent && (lines[j + 1].slice(indent) === "-" || lines[j + 1].slice(indent).startsWith("- "))) { const [v, nj] = yArray(lines, j + 1, indent); obj[m.key] = v; j = nj; }
     else { obj[m.key] = null; j++; }
   }
   return [obj, j];
 }
+const Y_ESC = { 0: "\0", a: "\x07", b: "\b", t: "\t", "\t": "\t", n: "\n", v: "\v", f: "\f", r: "\r", e: "\x1b", " ": " ", '"': '"', "/": "/", "\\": "\\", N: "\x85", _: "\xa0", L: " ", P: " " };
 function yScalar(s) {
   s = s.trim();
-  if (s === "" || s === "~" || s === "null" || s === "Null" || s === "NULL") return s === "" ? null : null;
-  if (s[0] === "[" || s[0] === "{") return yFlow({ s, i: 0 });
-  if (s[0] === '"') { try { return JSON.parse(s); } catch (e) { return s.slice(1, -1); } }
+  if (s === "" || s === "~" || s === "null" || s === "Null" || s === "NULL") return null;
+  if (s[0] === "[" || s[0] === "{") { const p = { s, i: 0 }; const v = yFlow(p); skipWs(p); if (p.i < s.length) throw new Error("unexpected text after " + s.slice(0, p.i).slice(-20)); return v; }
+  if (s[0] === '"') {
+    if (s.length < 2 || s[s.length - 1] !== '"') throw new Error("unterminated string: " + s.slice(0, 30));
+    return s.slice(1, -1).replace(/\\(x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|[\s\S])/g, (m, e) => {
+      if (e.length > 1) return String.fromCodePoint(parseInt(e.slice(1), 16));
+      if (!(e in Y_ESC)) throw new Error("unknown escape \\" + e); return Y_ESC[e];
+    });
+  }
   if (s[0] === "'") return s.slice(1, -1).replace(/''/g, "'");
+  if (/^[&*!]/.test(s)) throw new Error("anchors, aliases and tags are not supported: " + s.slice(0, 30));
   if (/^(true|True|TRUE)$/.test(s)) return true;
   if (/^(false|False|FALSE)$/.test(s)) return false;
   if (/^[-+]?\d+$/.test(s)) return Number(s);
@@ -219,15 +298,25 @@ function yScalar(s) {
 }
 function yFlow(p) {
   skipWs(p); const c = p.s[p.i];
-  if (c === "[") { p.i++; const a = []; skipWs(p); if (p.s[p.i] === "]") { p.i++; return a; } while (true) { a.push(yFlow(p)); skipWs(p); if (p.s[p.i] === ",") { p.i++; continue; } if (p.s[p.i] === "]") { p.i++; break; } throw new Error("bad flow sequence"); } return a; }
-  if (c === "{") { p.i++; const o = {}; skipWs(p); if (p.s[p.i] === "}") { p.i++; return o; } while (true) { skipWs(p); const k = yFlowScalarRaw(p, true); skipWs(p); if (p.s[p.i] !== ":") throw new Error("expected ':' in flow map"); p.i++; const v = yFlow(p); o[typeof k === "string" ? k : String(k)] = v; skipWs(p); if (p.s[p.i] === ",") { p.i++; continue; } if (p.s[p.i] === "}") { p.i++; break; } throw new Error("bad flow map"); } return o; }
+  if (c === "[") { p.i++; const a = []; skipWs(p); if (p.s[p.i] === "]") { p.i++; return a; } while (true) { a.push(yFlow(p)); skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "]") { p.i++; break; } continue; } if (p.s[p.i] === "]") { p.i++; break; } throw new Error("bad flow sequence"); } return a; }
+  if (c === "{") { p.i++; const o = {}; skipWs(p); if (p.s[p.i] === "}") { p.i++; return o; } while (true) { skipWs(p); const k = yFlowScalarRaw(p, true); skipWs(p); if (p.s[p.i] !== ":") throw new Error("expected ':' in flow map"); p.i++; const v = yFlow(p); o[typeof k === "string" ? k : String(k)] = v; skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "}") { p.i++; break; } continue; } if (p.s[p.i] === "}") { p.i++; break; } throw new Error("bad flow map"); } return o; }
   return yScalar(yFlowScalarRaw(p, false));
 }
 const skipWs = (p) => { while (/[ \t]/.test(p.s[p.i])) p.i++; };
 function yFlowScalarRaw(p, isKey) {
   skipWs(p); let r = "";
-  if (p.s[p.i] === '"' || p.s[p.i] === "'") { const q = p.s[p.i]; r += q; p.i++; while (p.i < p.s.length && p.s[p.i] !== q) { r += p.s[p.i]; p.i++; } r += q; p.i++; return isKey ? r.slice(1, -1) : r; }
-  while (p.i < p.s.length && !",]}:".includes(p.s[p.i])) { r += p.s[p.i]; p.i++; }
+  if (p.s[p.i] === '"' || p.s[p.i] === "'") {
+    const q = p.s[p.i]; r += q; p.i++;
+    while (p.i < p.s.length) {
+      const ch = p.s[p.i];
+      if (q === '"' && ch === "\\") { r += ch + (p.s[p.i + 1] ?? ""); p.i += 2; continue; }
+      if (ch === q) { if (q === "'" && p.s[p.i + 1] === "'") { r += "''"; p.i += 2; continue; } break; }
+      r += ch; p.i++;
+    }
+    r += q; p.i++; return isKey ? yScalar(r) : r;
+  }
+  // in a value, ':' ends the scalar only as an indicator, so {url: http://x} keeps the URL
+  while (p.i < p.s.length) { const ch = p.s[p.i]; if (",]}".includes(ch) || (ch === ":" && (isKey || /^[ \t,\]}]?$/.test(p.s[p.i + 1] ?? "")))) break; r += ch; p.i++; }
   return r.trim();
 }
 
@@ -533,7 +622,7 @@ export const TOOLS = [
   },
   {
     id: "cd-yaml-to-json", name: "YAML to JSON", cat: "coding",
-    desc: "Parse the common block subset of YAML (mappings, sequences, scalars, # comments, simple flow [] and {}) into JSON.",
+    desc: "Parse YAML (mappings, sequences, scalars, # comments, flow [] and {}, | and > block text, multi-line strings) into JSON. Anchors, aliases and tags are reported as unsupported.",
     tags: ["yaml", "json", "convert", "config", "parse"],
     inputs: [
       { k: "yaml", label: "YAML", type: "textarea", rows: 8, placeholder: "name: api\nports:\n  - 80\n  - 443" },

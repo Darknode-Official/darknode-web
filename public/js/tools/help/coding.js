@@ -17,8 +17,8 @@ export const HELP = {
     example: { json: '{"name":"api","ports":[80,443],"debug":true}' },
   },
   "cd-yaml-to-json": {
-    what: "Parses common YAML (indented mappings and lists, scalars, # comments, simple [..] and {..} flow) and returns the same data as JSON.",
-    when: "You have a YAML config and need it as JSON for a tool or code. Advanced YAML (anchors, multi-document, multi-line block scalars) is not supported.",
+    what: "Parses YAML (indented mappings and lists, scalars, # comments, [..] and {..} flow, | and > block text, multi-line strings) and returns the same data as JSON.",
+    when: "You have a YAML config and need it as JSON for a tool or code. Anchors, aliases, tags and multi-document files are reported as unsupported rather than guessed.",
     example: { yaml: "name: api\ndebug: true\nports:\n  - 80\n  - 443", indent: "2" },
   },
   "cd-json-to-toml": {
