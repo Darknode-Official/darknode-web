@@ -593,3 +593,14 @@ group("log-hunter: RFC 5424 syslog", () => {
     assert.equal(b.action, "auth_ok"); assert.equal(b.user, "bob"); assert.equal(b.ip, "10.0.0.1");
   });
 });
+
+group("log hunter: malformed CIDR prefixes", () => {
+  test("a trailing slash is not /0 and does not make every address internal", () => {
+    assert.equal(parseCidr("10.0.0.0/"), null);
+    assert.equal(isInternalIp("8.8.8.8", ["10.0.0.0/"]), false);
+  });
+  test("a fractional prefix is rejected instead of throwing", () => {
+    assert.equal(parseCidr("10.0.0.0/8.5"), null);
+    assert.ok(parseCidr("10.0.0.0/8") && parseCidr("0.0.0.0/0"));
+  });
+});

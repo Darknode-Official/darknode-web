@@ -258,8 +258,10 @@ export function parseCidr(c) {
   const p = ipToInt(ip);
   if (!p) return null;
   const max = p.v === 4 ? 32 : 128;
+  // "10.0.0.0/" is not /0 (Number("") is 0, which would make every address internal) and /8.5 is not a prefix
+  if (bitsStr != null && !/^\s*\d{1,3}\s*$/.test(bitsStr)) return null;
   const bits = bitsStr == null ? max : Number(bitsStr);
-  if (!Number.isFinite(bits) || bits < 0 || bits > max) return null;
+  if (bits > max) return null;
   const full = (1n << BigInt(max)) - 1n;
   const mask = bits === 0 ? 0n : full ^ ((1n << BigInt(max - bits)) - 1n);
   return { v: p.v, net: p.n & mask, mask };
