@@ -126,6 +126,23 @@ function cronField(field, min, max, names) {
 
 const ULID_ALPHA = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
+// .env parsing with the same rules as the dotenv package (v16/17): inline # comments, quoted
+// values that span lines, \n and \r expanded only inside double quotes, last duplicate wins.
+function parseDotenv(t) {
+  const LINE = /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/mg;
+  const src = String(t).replace(/\r\n?/g, "\n");
+  const vals = new Map(), count = new Map();
+  let m;
+  while ((m = LINE.exec(src))) {
+    let val = (m[2] || "").trim();
+    const q = val[0];
+    val = val.replace(/^(['"`])([\s\S]*)\1$/mg, "$2");
+    if (q === '"') val = val.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+    vals.set(m[1], val); count.set(m[1], (count.get(m[1]) || 0) + 1);
+  }
+  return { vals, count };
+}
+
 export const TOOLS = [
   {
     id: "dv-uuid-v7", name: "UUID v7 (time-ordered)", cat: "devx",
@@ -862,26 +879,17 @@ export const TOOLS = [
   },
   {
     id: "dv-env-parse", name: ".env Parser", cat: "devx",
-    desc: "Parse a .env file into a clean key / value table, stripping comments and surrounding quotes.",
+    desc: "Parse a .env file into a key / value table with the same rules as the dotenv package: comments, quotes, multi-line values and duplicate keys.",
     tags: ["dotenv", "env", "parse", "config"],
     inputs: [{ k: "text", label: ".env contents", type: "textarea", rows: 6, placeholder: 'PORT=3000\nNAME="my app"' }],
     run(v) {
       const t = S(v.text);
       if (!t.trim()) return "";
-      const rows = [];
-      for (const line of t.split("\n")) {
-        const s = line.trim();
-        if (!s || s.startsWith("#")) continue;
-        const eq = s.indexOf("=");
-        if (eq < 0) continue;
-        let key = s.slice(0, eq).replace(/^export\s+/, "").trim();
-        let val = s.slice(eq + 1).trim();
-        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1);
-        rows.push([key, val]);
-      }
+      const { vals, count } = parseDotenv(t);
+      const rows = [...vals].map(([k, val]) => [k, /[\n\r]/.test(val) ? JSON.stringify(val) : val, count.get(k)]);
       if (!rows.length) return { error: "No KEY=VALUE pairs found." };
       const kw = Math.max(...rows.map((r) => r[0].length));
-      return rows.map((r) => `${r[0].padEnd(kw)} = ${r[1]}`).join("\n");
+      return rows.map((r) => `${r[0].padEnd(kw)} = ${r[1]}${r[2] > 1 ? `   (set ${r[2]} times; the last one wins)` : ""}`).join("\n");
     },
   },
   {
@@ -893,14 +901,8 @@ export const TOOLS = [
       const t = S(v.text);
       if (!t.trim()) return "";
       const out = [];
-      for (const line of t.split("\n")) {
-        const s = line.trim();
-        if (!s || s.startsWith("#")) continue;
-        const eq = s.indexOf("=");
-        if (eq < 0) continue;
-        const key = s.slice(0, eq).replace(/^export\s+/, "").trim();
-        let val = s.slice(eq + 1).trim();
-        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1);
+      for (const [key, val] of parseDotenv(t).vals) {
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) { out.push(`# skipped ${key}: not a valid shell variable name`); continue; }
         out.push(`export ${key}='${val.replace(/'/g, "'\\''")}'`);
       }
       return out.length ? out.join("\n") : { error: "No KEY=VALUE pairs found." };
