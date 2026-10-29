@@ -111,6 +111,11 @@ group("domainguard: SPF and DMARC", () => {
     const t = spfLookupTree("v=spf1 include:x.example -all", (d) => ({ status: "ok", txts: ["v=spf1 include:x.example -all"] }));
     assert.deepEqual(t.loops, ["x.example"]);
   });
+  test("a domain included from two places counts twice (RFC 7208 4.6.4)", () => {
+    const map = { "a.example": ["v=spf1 include:g.example -all"], "b.example": ["v=spf1 include:g.example -all"], "g.example": ["v=spf1 a mx exists:x.example ptr -all"] };
+    const t = spfLookupTree("v=spf1 include:a.example include:b.example -all", (d) => (map[d] ? { status: "ok", txts: map[d] } : { status: "missing" }));
+    assert.equal(t.count, 2 + 1 + 1 + 4 + 4); assert.deepEqual(t.loops, []);
+  });
   test("DMARC strict: multiple, missing p, bad rua", () => {
     assert.ok(parseDmarcStrict(["v=DMARC1; p=reject", "v=DMARC1; p=none"]).multiple);
     assert.ok(parseDmarcStrict(["v=DMARC1; rua=mailto:a@b.c"]).errors.some((e) => /p= tag/.test(e)));

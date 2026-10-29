@@ -606,6 +606,12 @@ group("dmarcreports: live checks (results passed in)", () => {
     assert.equal(t.total, 4);
     assert.deepEqual(t.unresolved, ["gone.test.darknode.ai"]);
   });
+  test("spfTotalLookups counts a shared include once per evaluation", () => {
+    const t = spfTotalLookups(D, { [D]: ["v=spf1 include:a.test.darknode.ai include:b.test.darknode.ai -all"], "a.test.darknode.ai": ["v=spf1 include:g.test.darknode.ai -all"], "b.test.darknode.ai": ["v=spf1 include:g.test.darknode.ai -all"], "g.test.darknode.ai": ["v=spf1 a mx exists:x.test.darknode.ai ptr -all"] });
+    assert.equal(t.total, 12);
+    const loop = spfTotalLookups(D, { [D]: ["v=spf1 include:a.test.darknode.ai -all"], "a.test.darknode.ai": ["v=spf1 include:" + D + " -all"] });
+    assert.equal(loop.total, 2);
+  });
   test("PTR names appear on sources only after a lookup", () => {
     assert.equal(analyze(base()).tables.sources[0].ptr, undefined);
     const r = analyze(base(), { live: { ptr: { "192.0.2.10": ["mail-a.test.darknode.ai"] }, domains: {} } });

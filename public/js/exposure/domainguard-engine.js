@@ -289,23 +289,25 @@ export function spfIncludeTargets(record) {
 export function spfLookupTree(record, lookup, { maxDepth = 10 } = {}) {
   const tree = [], missing = [], noSpf = [], loops = [];
   let count = 0;
-  const seen = new Set();
+  // RFC 7208 4.6.4 counts every evaluation: a domain included from two places counts twice.
+  // Only a domain already on the current include path is a loop.
+  const path = new Set();
+  let nodes = 0;
   const walk = (rec, domain, depth) => {
     const p = parseSpfRecords([rec]);
-    if (!p.present) return;
+    if (!p.present || ++nodes > 200) return;
     count += p.directLookups;
     tree.push({ domain, depth, lookups: p.directLookups, record: rec });
     if (depth >= maxDepth) return;
     for (const t of [...p.includes, ...(p.redirect ? [p.redirect] : [])]) {
       const d = normName(t);
       if (!d || d.indexOf("%{") >= 0) continue;
-      if (seen.has(d)) { loops.push(d); continue; }
-      seen.add(d);
+      if (path.has(d)) { loops.push(d); continue; }
       const r = lookup ? lookup(d) : { status: "missing" };
       if (!r || r.status === "missing") { missing.push(d); continue; }
       const sub = parseSpfRecords(r.txts || []);
       if (r.status === "none" || !sub.present) { noSpf.push(d); continue; }
-      walk(sub.record, d, depth + 1);
+      path.add(d); walk(sub.record, d, depth + 1); path.delete(d);
     }
   };
   walk(record, "(root)", 0);

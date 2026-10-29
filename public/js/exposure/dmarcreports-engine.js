@@ -573,11 +573,12 @@ function sourceDomains(rec) {
  * the records fetched live. `records` maps domain -> TXT strings (or {error}).
  */
 export function spfTotalLookups(domain, records = {}) {
-  const unresolved = [], seen = new Set(), chain = [];
+  // Each evaluation counts (RFC 7208 4.6.4); only a domain on the current include path is a loop.
+  const unresolved = [], path = new Set(), chain = [];
+  let nodes = 0;
   const walk = (d, depth) => {
     d = normDomain(d);
-    if (seen.has(d) || depth > 12) return 0;
-    seen.add(d);
+    if (path.has(d) || depth > 12 || ++nodes > 200) return 0;
     const txt = records[d];
     if (!Array.isArray(txt)) { unresolved.push(d); return 0; }
     const spf = parseSPF(txt);
@@ -586,13 +587,13 @@ export function spfTotalLookups(domain, records = {}) {
     chain.push({ domain: d, lookups: n, record: spf.record });
     for (const tok of String(spf.record).split(/\s+/)) {
       const m = tok.replace(/^[-~?+]/, "").match(/^(?:include:|redirect=)(.+)$/i);
-      if (m) n += walk(m[1], depth + 1);
+      if (m) { path.add(d); n += walk(m[1], depth + 1); path.delete(d); }
     }
     return n;
   };
   const total = walk(domain, 0);
   unresolved.sort();
-  return { domain: normDomain(domain), total, chain, unresolved: unresolved.filter((d) => d !== normDomain(domain) || !chain.length) };
+  return { domain: normDomain(domain), total, chain, unresolved: [...new Set(unresolved)].filter((d) => d !== normDomain(domain) || !chain.length) };
 }
 
 // ---------------------------------------------------------------------------
