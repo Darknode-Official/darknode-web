@@ -606,7 +606,7 @@ const CSS = `
 .dk-scene{position:absolute;inset:56px 0 0;z-index:10}
 .dk-scene[hidden]{display:none}
 /* ---------- detail drawer ---------- */
-.dk-drawer{position:absolute;top:0;right:0;bottom:0;width:360px;max-width:90vw;z-index:30;transform:translateX(104%);visibility:hidden;transition:transform .34s cubic-bezier(.2,.9,.3,1.1),visibility 0s linear .34s,box-shadow .34s;
+.dk-drawer{position:absolute;top:56px;right:0;bottom:0;width:360px;max-width:90vw;z-index:30;transform:translateX(104%);visibility:hidden;transition:transform .34s cubic-bezier(.2,.9,.3,1.1),visibility 0s linear .34s,box-shadow .34s;
   background:#ffffff;
   border-left:1px solid rgba(23,33,56,.12);box-shadow:none;padding:26px 24px;overflow:auto}
 .dk-drawer.on{transform:none;visibility:visible;transition:transform .34s cubic-bezier(.2,.9,.3,1.1),visibility 0s,box-shadow .34s;box-shadow:-12px 0 32px rgba(16,24,40,.12)}
