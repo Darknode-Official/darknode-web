@@ -32,7 +32,7 @@ export function parseCSV(text) {
       }
       field += c; i++; continue;
     }
-    if (c === '"') { inQ = true; i++; continue; }
+    if (c === '"' && field === "" && (i === 0 || text[i - 1] === "," || text[i - 1] === "\n" || text[i - 1] === "\r")) { inQ = true; i++; continue; } // only a field's first character opens quotes
     if (c === ",") { row.push(field); field = ""; i++; continue; }
     if (c === "\r") { i++; continue; }
     if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; i++; continue; }

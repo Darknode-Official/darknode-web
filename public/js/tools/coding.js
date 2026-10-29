@@ -14,7 +14,9 @@ const tryJSON = (t) => { try { return { ok: true, val: JSON.parse(t) }; } catch 
 function parseCSV(text, delim) {
   delim = delim || ",";
   const s = String(text);
-  const rows = []; let row = [], field = "", inQ = false, i = 0, started = false;
+  // a quote opens a quoted field only as the field's first character; elsewhere (5" screen) it is text.
+  // A row ends at \n, \r\n or a lone \r, as Python's csv and Excel read it.
+  const rows = []; let row = [], field = "", inQ = false, i = 0, started = false, atStart = true;
   for (; i < s.length; i++) {
     const c = s[i];
     if (inQ) {
@@ -22,11 +24,10 @@ function parseCSV(text, delim) {
       else field += c;
       continue;
     }
-    if (c === '"') { inQ = true; started = true; }
-    else if (c === delim) { row.push(field); field = ""; started = true; }
-    else if (c === "\r") { /* skip */ }
-    else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; started = false; }
-    else { field += c; started = true; }
+    if (c === '"' && atStart) { inQ = true; started = true; atStart = false; }
+    else if (c === delim) { row.push(field); field = ""; started = true; atStart = true; }
+    else if (c === "\r" || c === "\n") { if (c === "\r" && s[i + 1] === "\n") i++; row.push(field); rows.push(row); row = []; field = ""; started = false; atStart = true; }
+    else { field += c; started = true; atStart = false; }
   }
   if (started || field !== "" || row.length) { row.push(field); rows.push(row); }
   return rows;
