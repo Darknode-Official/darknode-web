@@ -232,7 +232,7 @@ export const TOOLS = [
         ["192.88.99.0/24", "6to4 relay anycast"], ["192.168.0.0/16", "Private (RFC 1918)"],
         ["198.18.0.0/15", "Benchmarking"], ["198.51.100.0/24", "Documentation (TEST-NET-2)"],
         ["203.0.113.0/24", "Documentation (TEST-NET-3)"], ["224.0.0.0/4", "Multicast"],
-        ["240.0.0.0/4", "Reserved for future use"], ["255.255.255.255/32", "Limited broadcast"],
+        ["255.255.255.255/32", "Limited broadcast"], ["240.0.0.0/4", "Reserved for future use"], // first match wins: the /32 sits inside 240/4
       ];
       for (const [cidr, label] of checks) { const [base, bitsStr] = cidr.split("/"); if (inCidrRange(ipInt, base, parseInt(bitsStr, 10))) return label; }
       return "Public / globally routable";

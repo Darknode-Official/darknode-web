@@ -566,7 +566,7 @@ export const TOOLS = [
     } },
 
   // ================= ADDRESS ANALYSIS =================
-  { id: "np-ipv6-classify", name: "IPv6 Address Classifier", cat: "netproto", desc: "Classify an IPv6 address: loopback, unspecified, link-local, unique-local (ULA), multicast (with scope), global unicast, IPv4-mapped, documentation, 6to4 or Teredo.", tags: ["ipv6", "classify", "ula", "link-local", "multicast"],
+  { id: "np-ipv6-classify", name: "IPv6 Address Classifier", cat: "netproto", desc: "Classify an IPv6 address: loopback, unspecified, link-local, unique-local (ULA), multicast (with scope), global unicast, IPv4-mapped, documentation, 6to4, Teredo, NAT64 or discard-only.", tags: ["ipv6", "classify", "ula", "link-local", "multicast"],
     inputs: [{ k: "addr", label: "IPv6 address", type: "text", placeholder: "fe80::1" }],
     run(v) {
       if (!v.addr) return "";
@@ -580,15 +580,19 @@ export const TOOLS = [
       else if ((b0 & 0xfe00) === 0xfc00) { type = "Unique local (ULA, fc00::/7)"; extra = (b0 & 0x0100) ? "  L bit set (locally assigned, fd00::/8)" : "  L bit clear (fc00::/8, reserved)"; }
       else if ((b0 & 0xff00) === 0xff00) {
         const scopeNib = g[0] & 0xf, flags = (g[0] >> 4) & 0xf;
-        const SCOPE = { 1: "interface-local", 2: "link-local", 4: "admin-local", 5: "site-local", 8: "organization-local", 14: "global" };
+        const SCOPE = { 1: "interface-local", 2: "link-local", 3: "realm-local", 4: "admin-local", 5: "site-local", 8: "organization-local", 14: "global" };
         type = `Multicast (ff00::/8)`; extra = `  flags=${flags.toString(2).padStart(4, "0")} scope=${scopeNib} (${SCOPE[scopeNib] || "?"})`;
         if (g[5] === 0x0001 && (g[6] >> 8) === 0xff) extra += "\nLooks like a solicited-node multicast (ff02::1:ffXX:XXXX).";
       }
       else if (g.slice(0, 5).every((x) => x === 0) && g[5] === 0xffff) type = "IPv4-mapped (::ffff:0:0/96) -> " + `${g[6] >> 8}.${g[6] & 0xff}.${g[7] >> 8}.${g[7] & 0xff}`;
       else if (b0 === 0x2001 && g[1] === 0x0db8) type = "Documentation (2001:db8::/32, RFC 3849)";
       else if (b0 === 0x2001 && g[1] === 0x0000) type = "Teredo (2001:0::/32)";
-      else if (b0 === 0x2002) type = "6to4 (2002::/16)";
+      else if (b0 === 0x2002) type = "6to4 (2002::/16) -> " + `${g[1] >> 8}.${g[1] & 0xff}.${g[2] >> 8}.${g[2] & 0xff}`;
+      else if (b0 === 0x3fff && g[1] < 0x1000) type = "Documentation (3fff::/20, RFC 9637)";
       else if ((b0 & 0xe000) === 0x2000) type = "Global unicast (2000::/3)";
+      else if (b0 === 0x64 && g[1] === 0xff9b && g.slice(2, 6).every((x) => x === 0)) type = "NAT64 well-known prefix (64:ff9b::/96, RFC 6052) -> " + `${g[6] >> 8}.${g[6] & 0xff}.${g[7] >> 8}.${g[7] & 0xff}`;
+      else if (b0 === 0x64 && g[1] === 0xff9b && g[2] === 1) type = "NAT64 local-use (64:ff9b:1::/48, RFC 8215)";
+      else if (b0 === 0x100 && g.slice(1, 4).every((x) => x === 0)) type = "Discard-only (100::/64, RFC 6666)";
       else type = "Other / reserved";
       return `${v6expand(g)}\n${v6compress(g)}\nType: ${type}${extra}`;
     } },
