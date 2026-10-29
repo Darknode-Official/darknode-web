@@ -32,6 +32,7 @@ import * as findings from "/js/core/findings.js?v=20261028a";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261027b";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor, activityKey } from "/js/security-graph.js"; // singleton: never version
+import { acctKey } from "/js/core/account.js";
 import { readRuns } from "/js/deck/native/ui.js"; // same URL the space tools import
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261018i";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
@@ -2762,7 +2763,15 @@ export function renderDeck(host, opts) {
   // live platform events -> notifications (and the Activity stream)
   // ---- cloud graph sync status (B1). Off by default; the user enables it in Settings.
   const SYNC_LABEL = { local: "Local only", syncing: "Syncing…", synced: "Synced", error: "Sync error" };
-  const syncEnabled = () => { try { return localStorage.getItem("dn_graph_sync_on") === "1"; } catch (_) { return false; } };
+  // The opt-in is per account: on a shared browser one account turning sync on must not upload
+  // another account's personal graph. The old browser-wide setting carries over only to the
+  // account auth.js recorded as this browser's (dn_ws_uid), once.
+  const SYNC_ON = () => acctKey("dn_graph_sync_on");
+  const syncEnabled = () => { try {
+    let v = localStorage.getItem(SYNC_ON());
+    if (v == null && localStorage.getItem("dn_graph_sync_on") === "1" && window.__dnUid && localStorage.getItem("dn_ws_uid") === window.__dnUid) { v = "1"; localStorage.setItem(SYNC_ON(), v); }
+    return v === "1";
+  } catch (_) { return false; } };
   let lastSyncState = (syncEnabled() || activeWorkspace()) ? "syncing" : "local";
   const onSyncStatus = (e) => { lastSyncState = (e.detail && e.detail.state) || "local"; const el = root.querySelector("#dkSyncStat"); if (el) { el.textContent = SYNC_LABEL[lastSyncState] || "Local only"; el.dataset.state = lastSyncState; } if (lastSyncState === "synced") { try { autoDrainIngest(); } catch (_) {} } };
   document.addEventListener("graph-sync:status", onSyncStatus);
@@ -4170,7 +4179,7 @@ export function renderDeck(host, opts) {
     const syncBtn = el.querySelector("#dkSetSync");
     if (syncBtn) syncBtn.onclick = async () => {
       const turningOn = !syncEnabled();
-      try { localStorage.setItem("dn_graph_sync_on", turningOn ? "1" : "0"); } catch (_) {}
+      try { localStorage.setItem(SYNC_ON(), turningOn ? "1" : "0"); } catch (_) {}
       syncBtn.classList.toggle("on", turningOn); syncBtn.textContent = turningOn ? "On" : "Off";
       // This toggle governs the PERSONAL workspace. If a team workspace is active it keeps
       // syncing regardless; the preference just takes effect when you switch back.
