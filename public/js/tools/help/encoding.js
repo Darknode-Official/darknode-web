@@ -82,7 +82,7 @@ export const HELP = {
     example: { text: "password is great", mode: "To leet" },
   },
   "a1z26": {
-    what: "Replaces each letter with its position in the alphabet (A=1 to Z=26), or turns a list of numbers back into letters.",
+    what: "Replaces each letter with its position in the alphabet (A=1 to Z=26), joining the letters of a word with dashes (hi there = 8-9 20-8-5-18-5), or turns the numbers back into letters.",
     when: "You are solving a puzzle or geocache clue where letters are written as numbers.",
     example: { text: "hello world", mode: "Text → Numbers" },
   },
