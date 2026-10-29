@@ -87,6 +87,9 @@ export const CODESCAN_IDS = {
   "secret.slack-webhook": "slack-webhook", "secret.stripe-live": "stripe-key", "secret.google-api-key": "gcp-key", "secret.private-key": "private-key",
   "secret.openai-key": "openai-key", "secret.anthropic-key": "anthropic-key", "secret.sendgrid-key": "sendgrid-key", "secret.twilio-key": "twilio-api-key",
   "secret.npm-token": "npm-token", "secret.jwt": "jwt", "secret.db-url": "conn-string", "secret.generic": "pat-assignment",
+  "secret.gitlab-token": "gitlab-pat", "secret.stripe-test": "stripe-test-key", "secret.huggingface-token": "huggingface-token", "secret.pypi-token": "pypi-token",
+  "secret.digitalocean-token": "digitalocean-token", "secret.planetscale-token": "planetscale-token", "secret.shopify-token": "shopify-token",
+  "secret.google-oauth-secret": "google-oauth", "secret.azure-storage-key": "azure-storage-key",
 };
 export const IAC_IDS = {
   "SEC-001": "aws-key", "SEC-002": "private-key", "SEC-003": "github-token", "SEC-004": "slack-token", "SEC-005": "gcp-key",
@@ -163,7 +166,7 @@ group("secret-detectors: former DLP detectors (LEAKPROBE reuses these)", () => {
 });
 
 group("secret-detectors: former Code Scanner rules", () => {
-  test("the rule set is the same 16 ids as before", () => {
+  test("the rule set is the 25 ids listed here", () => {
     assert.deepEqual(SECRET_RULES.map((x) => x.id).sort(), Object.keys(CODESCAN_IDS).sort());
   });
   const ids = (text) => scanFile("src/settings.js", text + "\n").map((x) => x.ruleId);
