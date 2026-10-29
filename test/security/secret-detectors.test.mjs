@@ -110,6 +110,11 @@ export const CRED_IDS = {
   "Azure Storage Key": "azure-storage-key", "Azure AD Client Secret": "azure-ad-secret", "GCP Service Account Key": "gcp-service-account",
   "JWT Token": "jwt", "Private Key (PEM)": "private-key", "SSH Private Key": ["private-key", PEM("OPENSSH ") + "\n" + r(64, B64) + "\n" + PEM_END("OPENSSH ")],
   "Datadog API Key": "datadog-key", "Shopify Access Token": "shopify-token", "Cloudflare API Key": "cloudflare-global-key", "Cloudflare API Token": "cloudflare-api-token",
+  "GitHub App Installation Token": ["github-token", "token ghs_" + r(36)], "GitHub Refresh Token": ["github-token", "token ghr_" + r(36)],
+  "Slack Workspace Token": ["slack-token", "xox" + "a-" + dig(11) + "-" + r(24)], "Slack Refresh Token": ["slack-token", "xox" + "r-" + dig(11) + "-" + r(24)],
+  "Slack Rotating Refresh Token": ["slack-token", "xox" + "e-1-" + r(40)], "Slack Session Token": ["slack-token", "xox" + "s-" + dig(11) + "-" + r(24)],
+  "Slack App-Level Token": "slack-app-token", "Google OAuth Client Secret": "google-oauth", "Twilio API Key": "twilio-api-key",
+  "Hugging Face Token": "huggingface-token", "PlanetScale Token": "planetscale-token", "Azure SAS Token": "azure-sas", "Database Connection String": "conn-string",
 };
 export const fixture = (v) => (Array.isArray(v) ? { core: v[0], pos: v[1], neg: FIXTURES[v[0]].neg } : { core: v, ...FIXTURES[v] });
 
