@@ -13,6 +13,8 @@ const STORAGE_KEY = 'dn_security_graph';
 export const ACTIVE_WS_KEY = 'dn_active_ws';
 const _acct = () => { try { return window.__dnUid || null; } catch (_) { return null; } };
 export function userScope(uid = _acct()) { return !uid ? 'nouser' : /^(test|app-guest)-/.test(uid) ? 'guest' : 'u_' + uid; }
+// The recent-activity feed (Overview, notification bell) holds entity names too: per account as well.
+export function activityKey() { return 'dn_recent_activity__' + userScope(); }
 export function storeKeyFor(wid) { return wid ? STORAGE_KEY + '__ws_' + wid : STORAGE_KEY + '__' + userScope(); }
 function _activeWid() { try { return localStorage.getItem(ACTIVE_WS_KEY) || null; } catch (_) { return null; } }
 let _key = storeKeyFor(_activeWid());

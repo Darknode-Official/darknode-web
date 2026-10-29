@@ -247,7 +247,7 @@ export function openAddToInvestigationModal(entity) {
 
 function _trackActivity(text, sim) {
   try {
-    const KEY = 'dn_recent_activity';
+    const KEY = SG.activityKey();
     let items = JSON.parse(localStorage.getItem(KEY) || '[]');
     items.unshift(sim ? { text, ts: Date.now(), sim: true } : { text, ts: Date.now() });
     items = items.slice(0, 20);

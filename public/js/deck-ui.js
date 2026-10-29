@@ -31,7 +31,7 @@ import { tierFrom, rank, planLabel, TIERS } from "/js/core/entitlements.js";
 import * as findings from "/js/core/findings.js?v=20261028a";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261027b";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
-import { storeKeyFor } from "/js/security-graph.js"; // singleton: never version
+import { storeKeyFor, activityKey } from "/js/security-graph.js"; // singleton: never version
 import { readRuns } from "/js/deck/native/ui.js"; // same URL the space tools import
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261018i";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
@@ -551,7 +551,7 @@ function readStats(){
 }
 function readRecentActivity(){
   const SEED = new Set(["Scanned 10.10.14.7", "Queried CVE-2024-1234", "Generated report"]);
-  let items = []; try { items = JSON.parse(localStorage.getItem("dn_recent_activity")) || []; } catch (_) {}
+  let items = []; try { items = JSON.parse(localStorage.getItem(activityKey())) || []; } catch (_) {}
   items = (Array.isArray(items) ? items : []).filter((i) => i && i.text && !SEED.has(i.text)).slice(0, 20);
   // Entries written before activity carried a sim flag: recover it from the graph. A name
   // counts as sample only when every entity with that name is simulated.
@@ -2834,10 +2834,10 @@ export function renderDeck(host, opts) {
   const onStorage = (e) => {
     if (e.key === "dn_cool_ui") { reloadToolsForCool(); return; }
     // graph keys are workspace-suffixed in team mode (dn_security_graph__ws_<wid>)
-    if (e.key !== "dn_recent_activity" && !(typeof e.key === "string" && e.key.startsWith("dn_security_graph"))) return;
+    if (e.key !== activityKey() && !(typeof e.key === "string" && e.key.startsWith("dn_security_graph"))) return;
     clearTimeout(syncT);
     syncT = setTimeout(() => {
-      if (e.key === "dn_recent_activity") {
+      if (e.key === activityKey()) {
         const newest = notifs.reduce((n, x) => Math.max(n, x.ts || 0), 0);
         const fresh = readRecentActivity().filter((a) => a.ts > newest).map((a) => ({ text: a.text, ts: a.ts, sim: !!a.sim }));
         if (fresh.length) { notifs = fresh.concat(notifs).slice(0, 40); updateBadge(); if (popBell.classList.contains("on")) buildBellMenu(); }

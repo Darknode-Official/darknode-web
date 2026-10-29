@@ -1065,7 +1065,9 @@ function _dashDateTime() {
 }
 
 function _dashRecentActivity() {
-  const KEY = "dn_recent_activity";
+  // per account, as activityKey() in security-graph.js (localStorage is shared by every account on the browser)
+  const u = window.__dnUid || null;
+  const KEY = "dn_recent_activity__" + (!u ? "nouser" : /^(test|app-guest)-/.test(u) ? "guest" : "u_" + u);
   // Older builds seeded three placeholder entries here; never show those as real activity.
   const SEED = new Set(["Scanned 10.10.14.7", "Queried CVE-2024-1234", "Generated report"]);
   let items = [];

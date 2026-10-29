@@ -46,6 +46,13 @@ group("personal graph is per account", () => {
     assert.equal(localStorage.getItem("dn_security_graph"), null, "nothing is written to the unscoped key");
   });
 
+  test("recent activity (Overview feed, bell) is per account", () => {
+    const k = (uid) => as(uid, () => SG.activityKey());
+    assert.equal(k("alpha1"), "dn_recent_activity__u_alpha1");
+    assert.notEqual(k("alpha1"), k("beta22"));
+    assert.equal(k("test-0a"), k("app-guest-1b"));
+  });
+
   test("trend history is per account for the personal workspace", () => {
     const st = (() => { const m = new Map(); return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, v) }; })();
     const snap = { day: "2026-10-28", ts: 1, open: 1, closed: 0, exposureScore: 1, slaCompliancePct: 1, mttrDays: 1, kevOpen: 0, bySeverity: {} };
