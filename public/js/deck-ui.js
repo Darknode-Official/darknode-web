@@ -4197,6 +4197,7 @@ export function renderDeck(host, opts) {
       const ok = window.dnConfirm ? await window.dnConfirm("Reset local Deck state?", "This clears connections, pinned tools, notes and layout in this browser. Your account and the security graph are not affected.", { submitText: "Reset", danger: true }) : false;
       if (!ok) return;
       ["dn_deck_connections_v1", "dn_deck_pins_v1", "dn_deck_notes", "dn_deck_scene", "dn_deck_sect", "dn_deck_toolcat", "dn_deck_kit", "dn_deck_density", "dn_deck_nav"].forEach((k) => { try { localStorage.removeItem(k); } catch (_) {} });
+      [LS_PINS, LS_NOTES].forEach((k) => { try { localStorage.removeItem(userKey(k)); } catch (_) {} }); // pins and notes are per account (userKey)
       toast("Local Deck state reset — reloading");
       setTimeout(() => { try { location.reload(); } catch (_) {} }, 600);
     };
