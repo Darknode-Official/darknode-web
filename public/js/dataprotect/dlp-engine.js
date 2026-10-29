@@ -97,10 +97,13 @@ export const DETECTORS = [
     // group-boundary EDGE trims only — dropping leading or trailing whitespace/dash groups
     // — never arbitrary digit windows, which would make random long digit runs pass Luhn.
     validate: (m) => {
-      if (luhnValid(m)) return true;
+      // an unseparated 13/16/19-digit run starting with 1 is an epoch time in ms/us/ns (no card
+      // network issues 1-prefixed numbers of those lengths; UATP's are 15) - 1 in 10 passed Luhn
+      const epoch = (raw) => { const d = raw.replace(/\D/g, ''); return !/[ -]/.test(raw.trim()) && d[0] === '1' && (d.length === 13 || d.length === 16 || d.length === 19); };
+      if (luhnValid(m) && !epoch(m)) return true;
       // returns the trimmed text so only the card is reported/redacted, not the neighbour
       const s = String(m), g = [...s.matchAll(/\d+/g)];
-      const ok = (raw) => { const d = raw.replace(/\D/g, ''); return d.length >= 13 && d.length <= 19 && luhnValid(d); };
+      const ok = (raw) => { const d = raw.replace(/\D/g, ''); return d.length >= 13 && d.length <= 19 && luhnValid(d) && !epoch(raw); };
       for (let k = 1; k < g.length; k++) {
         const tail = s.slice(g[k].index);                                   // drop k leading groups (a number before the card)
         const last = g[g.length - 1 - k], head = s.slice(0, last.index + last[0].length); // drop k trailing groups (a number after the card)

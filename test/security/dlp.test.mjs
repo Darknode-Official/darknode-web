@@ -269,3 +269,19 @@ group("dlp: redaction and summary", () => {
     assert.equal(redact(t, scan(t).findings), "card [REDACTED:credit-card] 999");
   });
 });
+
+group("dlp: epoch timestamps are not card numbers", () => {
+  const cards = (t) => scan(t).findings.filter((f) => f.id === "credit-card").map((f) => f.value);
+  test("Luhn-valid ms / us / ns timestamps in a JSON log are not flagged", () => {
+    // each of these passes Luhn
+    for (const ts of ["1700000000004", "1700000000000001", "1700000000000000004"]) {
+      assert.ok(luhnValid(ts), ts);
+      assert.deepEqual(cards('{"ts":' + ts + "}"), [], ts);
+    }
+  });
+  test("real cards next to timestamps are still found", () => {
+    assert.deepEqual(cards('{"ts":1700000000004,"pan":"4111 1111 1111 1111"}'), ["4111 1111 1111 1111"]);
+    assert.deepEqual(cards("pan 4111111111111111"), ["4111111111111111"]);
+    assert.deepEqual(cards("amex 378282246310005"), ["378282246310005"]);
+  });
+});
