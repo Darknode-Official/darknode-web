@@ -91,3 +91,17 @@ group("JSON to XML documents", () => {
     assert.ok(xml('{"a":"x\\u0001y"}').error);
   });
 });
+
+group("JSON Pointer (RFC 6901)", () => {
+  const ptr = (json, pointer) => run("cd-json-pointer", { json, pointer });
+  test("prototype names are not keys", () => {
+    assert.ok(ptr("{}", "/constructor").error);
+    assert.ok(ptr('{"a":1}', "/toString").error);
+  });
+  test("leading-zero indexes and bad ~ escapes are errors; RFC examples resolve", () => {
+    assert.ok(ptr('{"foo":["bar","baz"]}', "/foo/01").error);
+    assert.ok(ptr('{"m~n":8}', "/m~2n").error);
+    assert.equal(ptr('{"foo":["bar","baz"]}', "/foo/1"), "baz");
+    assert.equal(ptr('{"a/b":1,"m~n":8}', "/m~0n"), "8");
+  });
+});

@@ -497,11 +497,15 @@ const tomlJSON = (v, ind) => JSON.stringify(v, (k, x) => typeof x === "bigint" ?
 function jsonPointerGet(doc, pointer) {
   if (pointer === "") return { ok: true, val: doc };
   if (pointer[0] !== "/") return { ok: false, err: "A JSON Pointer must be empty or start with '/'." };
-  const tokens = pointer.split("/").slice(1).map((t) => t.replace(/~1/g, "/").replace(/~0/g, "~"));
+  const raw = pointer.split("/").slice(1);
+  const badEsc = raw.find((t) => /~(?![01])/.test(t));
+  if (badEsc != null) return { ok: false, err: "Invalid escape in '" + badEsc + "': ~ must be followed by 0 or 1." };
+  const tokens = raw.map((t) => t.replace(/~1/g, "/").replace(/~0/g, "~"));
   let cur = doc;
   for (const tk of tokens) {
-    if (Array.isArray(cur)) { if (!/^\d+$/.test(tk)) return { ok: false, err: "Array index expected at '" + tk + "'." }; cur = cur[Number(tk)]; }
-    else if (isPlainObj(cur)) { if (!(tk in cur)) return { ok: false, err: "No key '" + tk + "'." }; cur = cur[tk]; }
+    // RFC 6901: array indexes are 0 or digits without a leading zero; keys are own properties only
+    if (Array.isArray(cur)) { if (!/^(0|[1-9]\d*)$/.test(tk)) return { ok: false, err: "Array index expected at '" + tk + "'." }; cur = cur[Number(tk)]; }
+    else if (isPlainObj(cur)) { if (!Object.prototype.hasOwnProperty.call(cur, tk)) return { ok: false, err: "No key '" + tk + "'." }; cur = cur[tk]; }
     else return { ok: false, err: "Cannot descend into a primitive at '" + tk + "'." };
     if (cur === undefined) return { ok: false, err: "Path not found at '" + tk + "'." };
   }
