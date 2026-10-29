@@ -12,9 +12,15 @@ import { toCsv } from "./export.js";
 
 const ACTIVE_WS = "dn_active_ws";
 
-/** Workspace-scoped storage key: personal keeps `base`, a team gets `base__ws_<id>`. */
+/** Account of the signed-in user for personal keys (window.__dnUid, kept by auth.js); guests
+ *  and Test Mode share one "guest" scope. Same rule as userScope() in security-graph.js. */
+function acct() { let u = null; try { u = globalThis.__dnUid || null; } catch (_) {} return !u ? "nouser" : /^(test|app-guest)-/.test(u) ? "guest" : "u_" + u; }
+
+/** Workspace-scoped storage key: a team gets `base__ws_<id>`; the personal workspace gets
+ *  `base__<account>`, since localStorage is shared by every account that signs in on the
+ *  browser. Data under the old unscoped `base` key is left in place and no longer read. */
 export function wsKey(base, storage = globalThis.localStorage) {
-  try { const w = storage.getItem(ACTIVE_WS); return w ? base + "__ws_" + w : base; } catch (_) { return base; }
+  try { const w = storage.getItem(ACTIVE_WS); return w ? base + "__ws_" + w : base + "__" + acct(); } catch (_) { return base + "__" + acct(); }
 }
 
 /** True when a team workspace is active (dn_active_ws set). */

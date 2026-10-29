@@ -35,10 +35,21 @@ const open = (o = {}) => {
 };
 
 group("register: wsKey / isTeam", () => {
-  test("personal workspace keeps the base key", () => {
+  test("personal workspace key carries the signed-in account", () => {
     const s = fakeStorage();
-    assert.equal(wsKey("reg_x", s), "reg_x");
+    assert.equal(wsKey("reg_x", s), "reg_x__nouser");
     assert.notOk(isTeam(s));
+    const prev = globalThis.__dnUid;
+    try {
+      globalThis.__dnUid = "alpha1"; const a = wsKey("reg_x", s);
+      globalThis.__dnUid = "beta22"; const b = wsKey("reg_x", s);
+      globalThis.__dnUid = "test-0a"; const g = wsKey("reg_x", s);
+      assert.equal(a, "reg_x__u_alpha1");
+      assert.notEqual(a, b);
+      assert.equal(g, "reg_x__guest");
+      globalThis.__dnUid = "beta22";
+      assert.equal(wsKey("reg_x", fakeStorage({ dn_active_ws: "team-9" })), "reg_x__ws_team-9");
+    } finally { if (prev === undefined) delete globalThis.__dnUid; else globalThis.__dnUid = prev; }
   });
   test("team workspace suffixes __ws_<id>", () => {
     const s = fakeStorage({ dn_active_ws: "team-9" });
@@ -47,7 +58,7 @@ group("register: wsKey / isTeam", () => {
   });
   test("broken storage falls back to base / not team", () => {
     const bad = { getItem() { throw new Error("nope"); } };
-    assert.equal(wsKey("reg_x", bad), "reg_x");
+    assert.equal(wsKey("reg_x", bad), "reg_x__nouser");
     assert.notOk(isTeam(bad));
   });
 });
@@ -70,7 +81,7 @@ group("register: upsert / get / remove", () => {
     assert.equal(e.data.tier, "critical");
     assert.equal(e.data._full.id, r.id);
     assert.notOk("graphId" in e.data._full, "_full excludes graph pointer");
-    assert.equal(JSON.parse(storage.getItem("reg_vendors")).length, 1);
+    assert.equal(JSON.parse(storage.getItem("reg_vendors__nouser")).length, 1);
   });
   test("ids are deterministic given injected now()", () => {
     const a = open({ now: () => "2026-01-01T00:00:00.000Z" }).reg.upsert({ legalName: "Z" });
@@ -122,7 +133,7 @@ group("register: workspace scoping", () => {
     assert.equal(t.list().length, 0);
     t.upsert({ legalName: "Team" });
     assert.ok(storage.getItem("reg_vendors__ws_ws1"));
-    assert.equal(JSON.parse(storage.getItem("reg_vendors")).length, 1);
+    assert.equal(JSON.parse(storage.getItem("reg_vendors__nouser")).length, 1);
     storage.removeItem("dn_active_ws");
     assert.equal(p.list()[0].legalName, "Personal");
   });
@@ -150,12 +161,12 @@ group("register: workspace scoping", () => {
 
 group("register: backfill / subscribe", () => {
   test("backfill mirrors local records lacking graphId", async () => {
-    const storage = fakeStorage({ reg_vendors: JSON.stringify([{ id: "a", legalName: "A" }, { id: "b", legalName: "B", graphId: "g1" }]) });
+    const storage = fakeStorage({ reg_vendors__nouser: JSON.stringify([{ id: "a", legalName: "A" }, { id: "b", legalName: "B", graphId: "g1" }]) });
     const graph = fakeGraph({ g1: { id: "g1", type: "VENDOR", name: "B", data: {} } });
     const reg = openRegister("vendors", "VENDOR", { schema, storage, graph, now: clock() });
     const n = await reg.backfill();
     assert.equal(n, 1);
-    const saved = JSON.parse(storage.getItem("reg_vendors"));
+    const saved = JSON.parse(storage.getItem("reg_vendors__nouser"));
     assert.ok(saved[0].graphId);
     assert.equal(saved[1].graphId, "g1");
     assert.equal(graph.list("VENDOR").length, 2);
