@@ -562,3 +562,16 @@ group("ingest/cef+leef: real-world quirks", () => {
     assert.deepEqual(parseLeef("LEEF:2.0|V|P|1|E|^|src=192.0.2.1^msg=x").ext, { src: "192.0.2.1", msg: "x" });
   });
 });
+
+group("ingest: prototype-named keys are data", () => {
+  test("YAML, HCL, CEF, LEEF, XML attributes and flatten keep a __proto__ key", () => {
+    const y = parseYamlSubset("__proto__:\n  sev: hi\nk: {__proto__: 1}\n");
+    assert.deepEqual(Object.keys(y), ["__proto__", "k"]);
+    assert.equal(y.sev, undefined); // not inherited from a swapped prototype
+    assert.deepEqual(Object.keys(parseHcl("__proto__ = 2\n").attrs), ["__proto__"]);
+    assert.deepEqual(Object.keys(parseCef("CEF:0|a|b|1|2|n|5|__proto__=x").ext), ["__proto__"]);
+    assert.deepEqual(Object.keys(parseLeef("LEEF:2.0|a|b|1|2|\t__proto__=x").ext), ["__proto__"]);
+    assert.deepEqual(Object.keys(parseXml('<a __proto__="x"/>').attrs), ["__proto__"]);
+    assert.deepEqual(Object.keys(flatten(JSON.parse('{"__proto__":1}'))), ["__proto__"]);
+  });
+});

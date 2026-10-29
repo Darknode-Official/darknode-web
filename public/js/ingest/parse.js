@@ -12,6 +12,10 @@
 
 export const VERSION = "1.0.0";
 
+// Keys come from the parsed file: set them as own data so "__proto__" is a key,
+// not a prototype swap (which dropped the key and made its fields look inherited).
+const put = (o, k, v) => { Object.defineProperty(o, k, { value: v, writable: true, enumerable: true, configurable: true }); return v; };
+
 export const FORMATS = ["zip", "gzip", "json", "ndjson", "evtx-xml", "xml", "cef", "leef", "iis", "clf", "syslog", "hcl", "yaml", "csv", "tsv", "unknown"];
 
 const WRAP_KEYS = ["value", "events", "items", "data", "records", "results"];
@@ -378,7 +382,7 @@ function parseAttrs(s) {
   const attrs = {};
   const re = /([^\s=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g;
   let m;
-  while ((m = re.exec(s))) attrs[m[1]] = decodeEntities(m[2] !== undefined ? m[2] : m[3] !== undefined ? m[3] : m[4] !== undefined ? m[4] : "");
+  while ((m = re.exec(s))) put(attrs, m[1], decodeEntities(m[2] !== undefined ? m[2] : m[3] !== undefined ? m[3] : m[4] !== undefined ? m[4] : ""));
   return attrs;
 }
 
@@ -510,9 +514,9 @@ export function mapColumns(headers, spec) {
 // Flatten nested objects to dot-path keys. Arrays of primitives are joined
 // with ", "; arrays holding objects are indexed ("a.0.b").
 export function flatten(o, prefix = "", out = {}) {
-  if (o == null || typeof o !== "object") { out[prefix] = o; return out; }
+  if (o == null || typeof o !== "object") { put(out, prefix, o); return out; }
   if (Array.isArray(o)) {
-    if (o.every((v) => v == null || typeof v !== "object")) { out[prefix] = o.map((v) => (v == null ? "" : String(v))).join(", "); return out; }
+    if (o.every((v) => v == null || typeof v !== "object")) { put(out, prefix, o.map((v) => (v == null ? "" : String(v))).join(", ")); return out; }
     o.forEach((v, i) => flatten(v, prefix ? `${prefix}.${i}` : String(i), out));
     return out;
   }
@@ -555,7 +559,7 @@ function parseKvExtension(s) {
     const key = s.slice(ks, p);
     if (!key) continue;
     const end = e + 1 < eqs.length ? keyStart(eqs[e + 1]) : s.length;
-    ext[unescExt(key)] = unescExt(s.slice(p + 1, end).replace(/\s+$/, ""));
+    put(ext, unescExt(key), unescExt(s.slice(p + 1, end).replace(/\s+$/, "")));
   }
   return ext;
 }
@@ -608,7 +612,7 @@ export function parseLeef(line) {
     if (!tok.trim()) continue;
     const eq = tok.indexOf("=");
     if (eq < 0) continue;
-    ext[tok.slice(0, eq).trim()] = unescExt(tok.slice(eq + 1));
+    put(ext, tok.slice(0, eq).trim(), unescExt(tok.slice(eq + 1)));
   }
   return {
     prefix: m[1] || null, version, vendor: unescHeader(vendor), product: unescHeader(product),
@@ -720,7 +724,7 @@ function parseFlow(src, ln) {
         if (src[p] === '"' || src[p] === "'") { const e = closingQuote(src, p); key = yScalar(src.slice(p, e + 1)); p = e + 1; }
         else key = plainUntil(":,}").trim();
         ws();
-        if (src[p] === ":") { p++; out[key] = value(true); } else out[key] = null;
+        put(out, key, src[p] === ":" ? (p++, value(true)) : null);
         ws(); if (src[p] === ",") p++; else if (src[p] !== "}") throw yErr("expected , or } in flow mapping", ln);
       }
       return out;
@@ -836,7 +840,7 @@ function parseMap(L, i, indent) {
     if (!m) throw yErr(`expected "key:" but found "${c.slice(0, 40)}"`, i + 1);
     const ln = i + 1;
     const [v, ni] = parseValue(L, i + 1, indent, m.rest, ln, true);
-    out[m.key] = v;
+    put(out, m.key, v);
     i = ni;
   }
   return [out, i];
@@ -1035,7 +1039,7 @@ function parseExprRange(src, toks, a, b) {
     for (const [x, y] of splitItems(toks, a + 1, b - 1)) {
       const k = toks[x], sep = toks[x + 1];
       if (!(k.t === "id" || k.t === "str" || k.t === "num") || !sep || sep.t !== "p" || (sep.v !== "=" && sep.v !== ":")) return { raw };
-      obj[String(k.v)] = parseExprRange(src, toks, x + 2, y);
+      put(obj, String(k.v), parseExprRange(src, toks, x + 2, y));
     }
     return obj;
   }
@@ -1054,7 +1058,7 @@ function parseHclBody(src, toks, p, closed) {
     const nx = toks[p + 1];
     if (nx.t === "p" && nx.v === "=") {
       const end = exprEnd(toks, p + 2);
-      attrs[t.v] = parseExprRange(src, toks, p + 2, end);
+      put(attrs, t.v, parseExprRange(src, toks, p + 2, end));
       p = end;
       if (toks[p].t === "p" && toks[p].v === ",") p++;
       continue;
