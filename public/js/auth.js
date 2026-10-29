@@ -71,6 +71,20 @@ function _guestUid(prefix) {
   try { sessionStorage.setItem(ss, uid); } catch (_) {}
   return uid;
 }
+// The active team-workspace pointer (dn_active_ws) lives in localStorage, which every account
+// on this browser shares. Remember which account set it (dn_ws_uid; guests and Test Mode count
+// as one "guest" account) and fall back to the personal workspace when a different account
+// signs in, so it never opens the previous account's team store. A browser with no owner
+// recorded yet keeps its pointer and records the current account.
+function _claimWorkspacePointer(uid) {
+  if (!uid) return;
+  const who = /^(test|app-guest)-/.test(uid) ? "guest" : uid;
+  try {
+    const prev = localStorage.getItem("dn_ws_uid");
+    if (prev && prev !== who) localStorage.removeItem("dn_active_ws");
+    if (prev !== who) localStorage.setItem("dn_ws_uid", who);
+  } catch (_) {}
+}
 
 // Plain-language, newbie-friendly one-liners for every sidebar item + group.
 // Surfaced as a hover tooltip so the sidebar stays visually neat while every
@@ -775,7 +789,7 @@ function renderAuth(mode = "signin") {
 
   const err = (m) => { document.getElementById("err").textContent = m; };
   document.getElementById("testMode").onclick = () => {
-    const tuid = _guestUid("test"); try { window.__dnUid = tuid; } catch (_) {} // keys saved this session stay per session (user-keys.js)
+    const tuid = _guestUid("test"); try { window.__dnUid = tuid; } catch (_) {} _claimWorkspacePointer(tuid); // keys saved this session stay per session (user-keys.js)
     const fakeUser = { uid: tuid, email: "test@darknode.ai", displayName: "Test User", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") };
     renderApp(fakeUser);
   };
@@ -1737,7 +1751,7 @@ function renderDesktopHome(user) {
     return;
   }
   view.innerHTML = "";
-  import("/js/deck/launch.js?v=20261028a")
+  import("/js/deck/launch.js?v=20261028b")
     .then((m) => m.openDeck(user, { isOwner: true, onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
@@ -1767,7 +1781,7 @@ function renderDeckHome(user) {
   const raw = location.pathname.replace(/^\/(console(\/|$))?/, "").replace(/\/$/, "");
   let startSec = !raw ? null : raw.startsWith("tool-") ? raw : raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
   if (startSec === "home" || (startSec === "admin" && !_isAdmin)) startSec = null;
-  import("/js/deck/launch.js?v=20261028a")
+  import("/js/deck/launch.js?v=20261028b")
     .then((m) => m.openDeck(user, {
       isOwner: _isAdmin,
       startSec: startSec || undefined,
@@ -2095,7 +2109,7 @@ function renderApp(user) {
     else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20261028a").then(m => live() && m.renderThreatModeler(main)); }
     else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261015e").then(m => live() && m.renderOSINTDashboard(main, more)); }
     else if (sec === "addressintel") { import("/js/address-intel.js?v=20261018i").then(m => live() && m.renderAddressIntel(main)); }
-    else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261019a").then(m => live() && m.renderIncidentTracker(main)); }
+    else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261028b").then(m => live() && m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js?v=20261013b").then(m => live() && m.renderFirewallBuilder(main)); }
     else if (sec === "apitester") { import("/js/api-tester.js?v=20261017f").then(m => live() && m.renderAPITester(main)); }
     else if (sec === "compliance") { import("/js/compliance-checker.js?v=20260924a").then(m => live() && m.renderComplianceChecker(main)); }
@@ -2231,7 +2245,7 @@ function renderApp(user) {
     else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261017c").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261028a").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261028b").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261026a").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2848,7 +2862,7 @@ function tourSteps(isOwner) {
 async function accessAllowed(user) {
   if (_isAdmin) return true;
   try {
-    const { getWhitelist } = await import("/js/admin.js?v=20261028a");
+    const { getWhitelist } = await import("/js/admin.js?v=20261028b");
     const cfg = await getWhitelist();
     const banned = ((cfg && cfg.banned) || []).map((e) => String(e).toLowerCase());
     if (banned.includes((user.email || "").toLowerCase())) return false;
@@ -2897,6 +2911,7 @@ onAuthStateChanged(auth, async (user) => {
   // uid must be set before any key is read so one user never reads another's
   // keys on a shared browser. Scrub legacy un-namespaced keys once per load.
   try { window.__dnUid = user ? user.uid : null; } catch (_) {}
+  if (user && !document.documentElement.hasAttribute("data-embed")) _claimWorkspacePointer(user.uid);
   try { if (!window.__dnScrubbed && window.dnKeys) { window.dnKeys.scrubLegacy(); window.__dnScrubbed = true; } } catch (_) {}
   // license verification
   const _hn = [0x64,0x61,0x72,0x6b,0x6e,0x6f,0x64,0x65,0x2e,0x61,0x69].map(c=>String.fromCharCode(c)).join("");
@@ -2930,6 +2945,7 @@ onAuthStateChanged(auth, async (user) => {
       try { sessionStorage.setItem("dn_guest", "1"); } catch (_) {}
       const guestUid = _guestUid("app-guest");
       try { window.__dnUid = guestUid; } catch (_) {}
+      _claimWorkspacePointer(guestUid);
       renderApp({ uid: guestUid, email: "test@darknode.ai", displayName: "Guest", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") });
       return;
     }

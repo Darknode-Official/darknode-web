@@ -39,12 +39,12 @@ import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js
 const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => { p = null; throw e; })); };
 const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261027c");
-const corrMod = lazyMod("/js/deck/correlations.js?v=20261027c");
+const corrMod = lazyMod("/js/deck/correlations.js?v=20261028b");
 const monMod = lazyMod("/js/deck/monitors.js?v=20261028a");
 const keysMod = lazyMod("/js/deck/apikeys.js?v=20261028a");
 const auditMod = lazyMod("/js/deck/audit.js?v=20261028a");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261027c";
-import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261018c";
+import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261028b";
 import { frameworkMap } from "/js/core/framework-map.js?v=20261028a";
 import { cleanTitle, localDay } from "/js/core/queue-format.js";
 import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261028a";
