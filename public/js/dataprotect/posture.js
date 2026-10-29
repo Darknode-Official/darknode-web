@@ -79,7 +79,7 @@ export function renderPosture(main) {
   injectStyle();
   main.innerHTML = `
   <div class="ps">
-    <div class="ps-hd"><h1>External Posture Scorecard</h1><span class="ps-tag">POSTURE</span></div>
+    <div class="ps-hd"><h1>Scorecard</h1><span class="ps-tag">POSTURE</span></div>
     <p class="ps-sub">Enter a domain to run live transport, header, email-authentication, certificate and disclosure checks, rolled into one executive posture grade with prioritised fixes.</p>
     <div class="ps-card">
       <div class="ps-form">

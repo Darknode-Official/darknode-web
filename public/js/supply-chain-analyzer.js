@@ -114,7 +114,7 @@ export function renderSupplyChainAnalyzer(main) {
 
   function render() {
     main.innerHTML =
-      '<h1 class="pg-h1">Supply Chain Risk Analyzer</h1>' +
+      '<h1 class="pg-h1">Dependencies</h1>' +
       '<p class="muted pg-sub">Scan your dependencies against live OSV.dev advisories, detect typosquats, and generate an SBOM.</p>' +
       '<div class="tab-bar" style="overflow-x:auto;flex-wrap:nowrap">' +
         '<button class="tab' + (activeTab === "analyze" ? " active" : "") + '" data-tab="analyze">Analyze</button>' +

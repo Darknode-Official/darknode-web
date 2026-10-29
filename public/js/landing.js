@@ -1798,7 +1798,7 @@ testing methodology for 10.10.14.7:
 
   // Public tool pages: published open data that needs no account. The sitemap and the app
   // manifest link these, so a signed-out visitor must get the tool, not the home page.
-  const PUBLIC_TOOLS = { "/crosswalk": { title: "GenAI Security Crosswalk", load: () => import("/js/crosswalk.js?v=20261014f").then((m) => m.renderCrosswalk) } };
+  const PUBLIC_TOOLS = { "/crosswalk": { title: "GenAI Security Crosswalk", load: () => import("/js/crosswalk.js?v=20261029b").then((m) => m.renderCrosswalk) } };
   const pub = PUBLIC_TOOLS[location.pathname];
   if (pub) {
     view.querySelectorAll(".section, .hero, .cta-final").forEach((sec) => { sec.hidden = true; });

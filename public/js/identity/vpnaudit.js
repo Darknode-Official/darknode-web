@@ -71,6 +71,8 @@ const CSS = `
   .vpa-btn:disabled{opacity:.5;cursor:default}
   .vpa-ctl{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:14px 20px;align-items:start}
   .vpa-field{display:flex;flex-direction:column;gap:4px;min-width:0;max-width:100%}
+  /* a label that wraps to two lines must not push its input below its neighbours': each field's label, input and help share the row tracks */
+  .vpa-ctl>.vpa-field{display:grid;grid-row:span 3;grid-template-rows:subgrid;row-gap:4px;align-content:start}.vpa-ctl>.vpa-field>label{align-self:end}
   .vpa-field label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085)}
   .vpa-field input,.vpa-field select,.vpa-field textarea,.vpa-in{font:inherit;font-size:.84rem;color:var(--tx,#1a2230);background:var(--card,#fff);border:1px solid var(--line,#d7dbe3);border-radius:8px;padding:7px 10px;max-width:100%}
   .vpa-field input[type=number]{width:130px}

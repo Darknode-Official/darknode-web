@@ -69,7 +69,7 @@ export function renderTlsFleet(main) {
   injectStyle();
   main.innerHTML = `
   <div class="tlsf">
-    <div class="tlsf-hd"><h1>Certificate &amp; TLS Fleet Monitor</h1><span class="tlsf-tag">TLS</span></div>
+    <div class="tlsf-hd"><h1>Certificates</h1><span class="tlsf-tag">TLS</span></div>
     <p class="tlsf-sub">Track certificate expiry across every domain you own. Paste a list; each domain's newest certificate is read live from certificate transparency logs, and the watchlist is kept in this browser.</p>
     <div class="tlsf-card">
       <textarea id="tlsfIn" placeholder="One domain per line" spellcheck="false"></textarea>

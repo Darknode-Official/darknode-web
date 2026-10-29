@@ -209,11 +209,11 @@ function renderListView(main, show) {
   main.innerHTML = CSS + `
     <div class="inv-wrap">
       <div class="inv-header">
-        <h1>Investigations</h1>
-        <button class="inv-btn inv-btn-primary" id="inv-new">+ New Investigation</button>
+        <h1>Case Files</h1>
+        <button class="inv-btn inv-btn-primary" id="inv-new">+ New case</button>
       </div>
       <div class="inv-filters">
-        <input class="inv-search" id="inv-search-input" placeholder="Search investigations..." spellcheck="false">
+        <input class="inv-search" id="inv-search-input" placeholder="Search cases..." spellcheck="false">
         <select class="inv-select" id="inv-filter-status">
           <option value="">All statuses</option>
           ${STATUSES.filter(Boolean).map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('')}

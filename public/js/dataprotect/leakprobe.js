@@ -118,7 +118,7 @@ export function renderLeakprobe(main) {
 
   main.innerHTML = `
   <div class="lp">
-    <div class="lp-hd"><h1>Secret Exposure &amp; Backend Leak Scanner</h1><span class="lp-tag">LEAKPROBE</span></div>
+    <div class="lp-hd"><h1>Exposed Keys</h1><span class="lp-tag">LEAKPROBE</span></div>
     <p class="lp-sub">Prove whether a real secret — an API key, a token, your Gemini key — can be reached from the browser, or is kept server-side. It fetches everything the page downloads (scripts, module graph, source maps, config, service worker), scans each for secrets, then GET-probes your backend endpoints, their error pages and common debug routes. The exact key values it finds are shown here (this is your own property); use Hide for screenshots. Nothing is uploaded, downloaded reports keep only a masked value, and no key is ever spent to test it.</p>
 
     <div class="lp-card">

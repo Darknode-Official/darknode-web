@@ -36,6 +36,8 @@ const CSS = `
   .prv-btn:disabled{opacity:.5;cursor:default}
   .prv-ctl{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px 16px}
   .prv-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+  /* a label that wraps to two lines must not push its input below its neighbours': each field's label, input and help share the row tracks */
+  .prv-ctl>.prv-field{display:grid;grid-row:span 3;grid-template-rows:subgrid;row-gap:4px;align-content:start}.prv-ctl>.prv-field>label{align-self:end}
   .prv-field label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085)}
   .prv-field input,.prv-field select{font:inherit;font-size:.84rem;color:var(--tx,#1a2230);background:var(--card,#fff);border:1px solid var(--line,#d7dbe3);border-radius:8px;padding:7px 10px;width:100%;box-sizing:border-box;min-width:0}
   .prv-field small{font-size:.72rem;color:var(--mut,#667085);overflow-wrap:anywhere}
@@ -105,7 +107,7 @@ export function renderPrivAudit(main) {
 
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Privileged Access Audit</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Privileged Access</h1><span class="', P, '-tag">Deck</span></div>',
     '<p class="', P, '-sub">Standing, stale and over-broad administrator access across Microsoft Entra, AWS IAM, GCP, Okta and GitHub exports. Runs entirely in your browser. Nothing is uploaded and nothing is fetched live.</p>',
     '<div class="', P, '-card"><h2>Inputs</h2><div class="', P, '-drop" id="', P, '-drop"></div>',
     '<p class="', P, '-help">Accepted: Entra "Download assignments" CSV or Graph roleAssignments / roleEligibilityScheduleInstances JSON; AWS credential report CSV; aws iam get-account-authorization-details JSON; gcloud projects get-iam-policy JSON; Okta administrators CSV or role JSON; GitHub organization people CSV or members JSON. Drop any combination; each file is detected on its own.</p>',

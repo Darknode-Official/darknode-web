@@ -308,7 +308,7 @@ export function renderFirewallAudit(main) {
   injectStyle();
   main.innerHTML = `
   <div class="fwa">
-    <div class="fwa-hd"><h1>Firewall Rules</h1><span class="fwa-tag">Infrastructure</span></div>
+    <div class="fwa-hd"><h1>Firewall Audit</h1><span class="fwa-tag">Infrastructure</span></div>
     <p class="fwa-sub">Paste a firewall rule-base export and get a deterministic review: shadowed and redundant rules (by real
       address and port containment, not text matching), any-to-any permits, admin services open to any source, missing default deny,
       logging gaps and broad egress. Each finding names the rule, the fix, and the control it maps to.

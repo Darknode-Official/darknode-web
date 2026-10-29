@@ -180,7 +180,7 @@ export async function renderCrosswalk(main) {
     <div class="cw-wrap">
       <div class="cw-head">
         <div class="cw-htxt">
-          <h1>GenAI Security Crosswalk</h1>
+          <h1>AI Risk Mapping</h1>
           <p>Map OWASP GenAI risks to the security and compliance frameworks that govern them — and back again. Browse by risk to see coverage, or by framework to see what it addresses.</p>
         </div>
         <div class="cw-stats">

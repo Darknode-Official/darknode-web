@@ -203,7 +203,7 @@ export function renderVulnImport(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Vulnerability Import &amp; SLA</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Scan Imports</h1><span class="', P, '-tag">Deck</span></div>',
     '<p class="', P, '-sub">One vulnerability register from every scanner export: de-duplicated per asset and CVE, enriched with CISA KEV and FIRST EPSS, prioritised, measured against SLA policy and compared with last period. Runs entirely in your browser. Nothing is uploaded. KEV, EPSS and end-of-life data are mirrored, dated copies served by this site; the only live request is the optional Fetch live EPSS button, which queries api.first.org.</p>',
     '<div class="', P, '-card"><h2>1. Imports</h2><div id="', P, '-drop"></div>',
     '<p class="', P, '-note">Accepted: Nessus .nessus, Tenable / Nessus CSV, Tenable vulnerability export CSV, Qualys CSV and XML, Greenbone / OpenVAS XML and CSV, Rapid7 InsightVM CSV, Trivy, Grype, Snyk and SARIF JSON, Defender Vulnerability Management CSV (weaknesses, per device, advanced hunting), any CSV with an asset and CVE column, and this tool\'s own JSON export as the baseline. Zip and gzip archives are unpacked locally.</p>',

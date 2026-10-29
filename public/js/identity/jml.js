@@ -112,7 +112,7 @@ export function renderJml(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Lifecycle &amp; Offboarding Verifier</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Joiners &amp; Leavers</h1><span class="', P, '-tag">Deck</span></div>',
     '<p class="', P, '-sub">Drop your HR roster, the IdP user export and every SaaS user list together. Joiners, movers and leavers are verified across all of them: leavers still enabled or signed in, time-to-disable against your SLA, movers with old-department access, joiner gaps, orphan SaaS accounts and paid licences held by people who left. Runs entirely in your browser. Nothing is uploaded; nothing is fetched live.</p>',
     '<div class="', P, '-card"><div id="', P, '-drop"></div>',
     '<p class="', P, '-help">Accepted: Workday / BambooHR / Gusto / Rippling rosters and change reports; Entra (Get-MgUser CSV or JSON), Okta users JSON, Google Workspace users CSV; Slack, GitHub, Microsoft 365 active users, Zoom, Salesforce, Atlassian, Zendesk or any CSV with an email and a status column; Intune or Jamf device inventories. Zip archives are unpacked.</p>',

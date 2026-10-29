@@ -122,7 +122,7 @@ export function renderDataFlow(main) {
   const general = CATEGORIES.filter((c) => !c.special && !c.criminal);
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Data Inventory &amp; Processing Register</h1><span class="', P, '-tag">GDPR Art. 30</span></div>',
+    '<div class="', P, '-hd"><h1>Data Inventory</h1><span class="', P, '-tag">GDPR Art. 30</span></div>',
     '<p class="', P, '-sub">Record of processing activities, DPIA screening (WP248 rev.01), international transfers, retention and DSAR deadlines. Runs entirely in your browser. Nothing is uploaded. ',
     'The only fetch is this site\'s own adequacy reference file (/data/ref/eu-adequacy.json); there are no live lookups. Saved activities are mirrored into the Security Graph as CONTROL entities and DSARs as CASE entities, so a team workspace shares one register. ',
     'This tool helps you keep records and find gaps. It does not make you compliant and is not legal advice: verify with counsel.</p>',

@@ -127,7 +127,7 @@ export function renderAwareness(main) {
 
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Awareness &amp; Phishing-Test Analytics</h1><span class="', P, '-tag">Compliance</span></div>',
+    '<div class="', P, '-hd"><h1>Security Training</h1><span class="', P, '-tag">Compliance</span></div>',
     '<p class="', P, '-sub">Click, credential-entry and report rates per campaign with their denominators, privacy-safe breakdowns, people who need follow-up training, overdue and remedial training, and trends. Runs entirely in your browser. Nothing is uploaded and nothing is fetched.</p>',
     '<div class="', P, '-note"><b>People data is sensitive.</b> Use these results to target training, not to discipline anyone. Small groups are suppressed, and people who clicked in several campaigns are listed as needing follow-up training. Message bodies are never read or stored.</div>',
     '<div class="', P, '-card"><h3>1. Exports</h3>',

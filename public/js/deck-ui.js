@@ -40,7 +40,7 @@ import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js
 const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => { p = null; throw e; })); };
 const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261027c");
-const corrMod = lazyMod("/js/deck/correlations.js?v=20261028b");
+const corrMod = lazyMod("/js/deck/correlations.js?v=20261029b");
 const monMod = lazyMod("/js/deck/monitors.js?v=20261028a");
 const keysMod = lazyMod("/js/deck/apikeys.js?v=20261028a");
 const auditMod = lazyMod("/js/deck/audit.js?v=20261028a");
@@ -1676,7 +1676,7 @@ export function renderDeck(host, opts) {
   const NAV_DEF = [
     { g: "", items: [["scene", "overview", "Overview", IC.home]] },
     { id: "spaces", g: "Spaces", items: [["scene", "personal", "Personal", IC.shield], ["scene", "enterprise", "Organization", IC.brief]] },
-    { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Vulnerabilities", IC.alert], ["tool", "posture", "Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificates", IC.cert], ["tool", "fwaudit", "Firewall Rules", IC.shield], ["tool", "vulnimport", "Scan Imports", IC.alert], ["tool", "fleetcomply", "Devices", IC.gauge], ["tool", "dmarcreports", "DMARC Reports", IC.link], ["tool", "domainguard", "Domains", IC.radar], ["tool", "netexposure", "Network Scans", IC.nodes]] },
+    { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Vulnerabilities", IC.alert], ["tool", "posture", "Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificates", IC.cert], ["tool", "fwaudit", "Firewall Audit", IC.shield], ["tool", "vulnimport", "Scan Imports", IC.alert], ["tool", "fleetcomply", "Devices", IC.gauge], ["tool", "dmarcreports", "DMARC Reports", IC.link], ["tool", "domainguard", "Domains", IC.radar], ["tool", "netexposure", "Network Scans", IC.nodes]] },
     { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-ins", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access", IC.shield], ["tool", "privaudit", "Privileged Access", IC.key], ["tool", "nhi", "Service Accounts", IC.gear], ["tool", "jml", "Joiners & Leavers", IC.check], ["tool", "oauthgov", "OAuth Apps", IC.plug], ["tool", "vpnaudit", "VPN & Remote Access", IC.lock]] },
     { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Dependencies", IC.branch], ["tool", "threatforest", "Attack Trees", IC.tree], ["tool", "iacscan", "Infrastructure as Code", IC.code], ["tool", "k8saudit", "Kubernetes", IC.nodes], ["tool", "licenseaudit", "Licenses", IC.scale], ["tool", "apispec", "API Definitions", IC.plug]] },
     { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "inventory", "Asset Inventory", IC.grid], ["scene", "correlations", "Correlations", IC.nodes], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incidents", IC.shield], ["tool", "investigation", "Case Files", IC.brief], ["tool", "phishtriage", "Phishing", IC.hook], ["tool", "loghunt", "Log Search", IC.term], ["scene", "monitors", "Monitors", IC.bell], ["scene", "apikeys", "API & Ingest", IC.key], ["scene", "audit", "Audit Log", IC.lock], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Logs", IC.cloud], ["tool", "dnshunt", "DNS Logs", IC.search], ["tool", "proxyhunt", "Proxy Logs", IC.eye], ["tool", "pentestreg", "Pentest Findings", IC.wrench]] },
@@ -1695,10 +1695,10 @@ export function renderDeck(host, opts) {
   if (opts.isOwner) { try { const p = localStorage.getItem(LS_PREVIEW); if (TIERS.includes(p)) planTier = p; } catch (_) {} }
   const PLAN_GROUP = { exposure: "pro", code: "pro", identity: "team", detect: "team", finsec: "team", risk: "enterprise", compliance: "enterprise" };
   const PLAN_ITEM = { enterprise: "team", findings: "pro", inventory: "pro", reports: "pro", activity: "pro", monitors: "pro", phishtriage: "pro", dlp: "pro", leakprobe: "pro", team: "team" };
-  const needTier = {}, navName = {}; // navName keeps the names of entries the plan hides
+  const needTier = {}, navName = {}, navIcon = {}; // navName keeps the names of entries the plan hides
   for (const grp of NAV_DEF) {
     if (grp.id) { needTier["section:" + grp.id] = PLAN_GROUP[grp.id] || "free"; navName["section:" + grp.id] = grp.g; }
-    for (const [kind, id, label] of grp.items) { navName[kind + ":" + id] = label; if (id !== "admin") needTier[kind + ":" + id] = PLAN_ITEM[id] || PLAN_GROUP[grp.id] || "free"; }
+    for (const [kind, id, label, icon] of grp.items) { navName[kind + ":" + id] = label; navIcon[kind + ":" + id] = icon; if (id !== "admin") needTier[kind + ":" + id] = PLAN_ITEM[id] || PLAN_GROUP[grp.id] || "free"; }
   }
   const isLocked = (key) => rank(planTier) < rank(needTier[key] || "free");
   for (let i = NAV_DEF.length - 1; i >= 0; i--) {
@@ -2425,7 +2425,7 @@ export function renderDeck(host, opts) {
     live.forEach((x) => x.classList.toggle("off", x !== f));
     if (f.dataset.ready) wLoad.remove();
     else { wLoad.innerHTML = '<div><div class="sp"></div>Loading ' + esc(label) + '…</div>'; wFrame.appendChild(wLoad); }
-    wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + toolIcon(label) + '</span><span class="wt">' + esc(label) + '</span>';
+    wTitle.innerHTML = '<span class="wi"' + (accent ? ' style="--a:' + accent + '"' : "") + '>' + (navIcon["tool:" + sec] || toolIcon(label)) + '</span><span class="wt">' + esc(label) + '</span>';
     const pinBtn = $("#dkWPin"); if (pinBtn) { pinBtn.classList.toggle("pinned", pins.includes(sec)); pinBtn.setAttribute("aria-pressed", pins.includes(sec)); }
     drawer.classList.remove("on"); closeAllMenus();
     setNav("tool:" + sec, label);

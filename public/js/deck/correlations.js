@@ -123,7 +123,7 @@ export function repaintCorrelations(m) {
     const toast = S.ctx && S.ctx.toast;
     b.disabled = true;                                // guard against a double-click creating two incidents
     let res = null;
-    try { const m = await import("/js/incident-tracker.js?v=20261028b"); res = m.promoteCorrelation(chain); } catch (_) { res = null; }
+    try { const m = await import("/js/incident-tracker.js?v=20261029b"); res = m.promoteCorrelation(chain); } catch (_) { res = null; }
     b.disabled = false;
     if (!res) { if (toast) toast("Could not open an incident from this chain", "error"); return; }
     if (toast) toast(`Incident ${res.id} ${res.created ? "opened" : "updated"} in Incident Tracker`, "success");

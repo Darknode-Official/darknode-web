@@ -158,7 +158,7 @@ export function renderFleetComply(main) {
   const fmtOptions = Object.entries(FORMATS).map(([k, f]) => [k, f.label]);
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Endpoint Fleet Compliance</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Devices</h1><span class="', P, '-tag">Deck</span></div>',
     '<p class="', P, '-sub">Reconcile every endpoint inventory you have (Intune, Jamf, CrowdStrike, Defender, Google, Entra / Okta / Active Directory, software inventories and Darknode Workstation Audit fleet records) into one device register, then check each device for disk encryption, a healthy EDR sensor, end-of-life OS and browsers, patch level, check-in age, local admins, firewall and unauthorized software. Runs entirely in your browser. Nothing is uploaded. End-of-life dates come from the endoflife.date mirror on this site (<span id="', P, '-eolhdr">mirror not loaded yet</span>); nothing is fetched live.</p>',
     '<div class="', P, '-card"><h2>1. Inventories</h2><div id="', P, '-drop"></div>',
     '<p class="', P, '-note">Drop several exports at once, or a zip of them. Devices are matched by serial number, then hostname (domain stripped), then Intune / Entra device id, then MAC address.</p>',

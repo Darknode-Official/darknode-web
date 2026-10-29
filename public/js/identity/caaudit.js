@@ -63,6 +63,8 @@ const CSS = `
   .caa-conf.high{border-color:#1a7f4b;color:#1a7f4b}.caa-conf.medium{border-color:#b58100;color:#b58100}.caa-conf.low{border-color:#b00020;color:#b00020}
   .caa-ctl{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px 18px}
   .caa-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+  /* a label that wraps to two lines must not push its input below its neighbours': each field's label, input and help share the row tracks */
+  .caa-ctl>.caa-field{display:grid;grid-row:span 3;grid-template-rows:subgrid;row-gap:4px;align-content:start}.caa-ctl>.caa-field>label{align-self:end}
   .caa-field label{font-size:.74rem;font-weight:700;color:var(--tx,#1a2230)}
   .caa-field input,.caa-field select{font:inherit;font-size:.84rem;color:var(--tx,#1a2230);background:var(--card,#fff);border:1px solid var(--line,#d7dbe3);border-radius:8px;padding:7px 10px;width:100%;max-width:100%}
   .caa-field small{font-size:.72rem;color:var(--mut,#667085);line-height:1.35;overflow-wrap:anywhere}
@@ -119,7 +121,7 @@ export function renderCaAudit(main) {
 
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Conditional Access Audit</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Conditional Access</h1><span class="', P, '-tag">Deck</span></div>',
     '<p class="', P, '-sub">Audits Microsoft Entra Conditional Access policies and registration details, Okta sign-on and enrollment policies and Google Workspace 2-Step Verification reports for MFA gaps, legacy authentication, over-broad exclusions, weak sessions and administrators without phishing-resistant methods. Runs entirely in your browser. Nothing is uploaded and nothing is fetched live.</p>',
     '<div class="', P, '-card"><h2>Inputs<small>any subset; each file is detected automatically</small></h2><div class="', P, '-drop" id="', P, '-drop"></div>',
     '<div class="', P, '-files" id="', P, '-files"></div>',

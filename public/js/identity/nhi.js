@@ -43,6 +43,8 @@ const CSS = `
   .nhi-map{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:10px}
   .nhi-ctl{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px 20px;align-items:start}
   .nhi-field{display:flex;flex-direction:column;gap:4px;min-width:0}
+  /* a label that wraps to two lines must not push its input below its neighbours': each field's label, input and help share the row tracks */
+  .nhi-ctl>.nhi-field{display:grid;grid-row:span 3;grid-template-rows:subgrid;row-gap:4px;align-content:start}.nhi-ctl>.nhi-field>label{align-self:end}
   .nhi-field label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--mut,#667085)}
   .nhi-field input,.nhi-field select,.nhi-field textarea{font:inherit;font-size:.84rem;color:var(--tx,#1a2230);background:var(--card,#fff);border:1px solid var(--line,#d7dbe3);border-radius:8px;padding:7px 10px;width:100%;max-width:100%}
   .nhi-field textarea{min-height:58px;resize:vertical}
@@ -136,7 +138,7 @@ export function renderNhi(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Non-Human Identity Lifecycle</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Service Accounts</h1><span class="', P, '-tag">Deck</span></div>',
     '<p class="', P, '-sub">Inventory every machine credential (access keys, client secrets, certificates, API tokens, service-account keys and tokens) across AWS, Entra, GCP, Okta, Kubernetes and GitHub; score each by age, last use, expiry, ownership and scope; get a rotation calendar. Runs entirely in your browser. Nothing is uploaded and nothing is fetched.</p>',
     '<div class="', P, '-card"><div id="', P, '-drop"></div>',
     '<p class="', P, '-help" style="margin:8px 0 0">Accepted: AWS IAM credential report CSV; Entra <code>GET /applications</code> or <code>Get-MgApplication</code> JSON, portal App registrations CSV, <code>/servicePrincipals</code> JSON; <code>gcloud iam service-accounts keys list</code> and <code>service-accounts list</code> JSON; Okta API tokens CSV or <code>/api/v1/api-tokens</code> JSON; <code>kubectl get serviceaccounts | secrets | clusterrolebindings -o json</code>; <code>gh api orgs/{org}/installations</code> and deploy keys JSON. Any other CSV/JSON with principal and date columns can be mapped by hand.</p>',

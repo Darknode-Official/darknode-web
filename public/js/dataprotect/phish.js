@@ -78,7 +78,7 @@ export function renderPhish(main) {
   MODE = "auto"; // match the segmented control, which always renders with Auto-detect active
   main.innerHTML = `
   <div class="phx">
-    <div class="phx-hd"><h1>Phishing &amp; URL Triage</h1><span class="phx-tag">TRIAGE</span></div>
+    <div class="phx-hd"><h1>Phishing</h1><span class="phx-tag">TRIAGE</span></div>
     <p class="phx-sub">Paste a suspicious link or a full email (with headers). Links are unfurled live, domains checked for age and lookalikes, and email authentication is verified — with a plain-language risk read-out.</p>
     <div class="phx-card">
       <div class="phx-row" style="margin:0 0 10px">
