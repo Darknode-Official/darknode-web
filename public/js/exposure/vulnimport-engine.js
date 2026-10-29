@@ -740,7 +740,7 @@ function parseSarif(o, file) {
       records.push(...mkRecords({
         scanner: "SARIF", file, kind: "package", name: project, pluginId: r.ruleId, title: str(rule.shortDescription && rule.shortDescription.text) || msg.slice(0, 160) || r.ruleId,
         cves: cves.join(" "), severity: sec != null ? severityFromScore(sec) : normSeverity({ error: "high", warning: "medium", note: "low" }[r.level] || r.level), cvss3: sec,
-        output: (loc ? loc.uri + ": " : "") + msg.slice(0, 600), solution: str(rule.help && rule.help.text).slice(0, 600),
+        output: (loc ? (() => { try { return decodeURIComponent(loc.uri); } catch (_) { return loc.uri; } })() + ": " : "") + msg.slice(0, 600), solution: str(rule.help && rule.help.text).slice(0, 600),
       }));
     }
   }

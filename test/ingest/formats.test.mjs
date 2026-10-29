@@ -43,6 +43,10 @@ group("formats/sarif", () => {
       ],
     }],
   };
+  test("a percent-encoded location URI imports as the real file name", () => {
+    const { findings } = parseSarif({ version: "2.1.0", runs: [{ tool: { driver: { name: "x", rules: [] } }, results: [{ ruleId: "r", message: { text: "m" }, locations: [{ physicalLocation: { artifactLocation: { uri: "sub/my%20conf.py" } } }] }] }] });
+    assert.ok(JSON.stringify(findings).includes("sub/my conf.py"));
+  });
   test("maps results to findings with severity, category, assets", () => {
     const { findings } = parseSarif(sarif);
     assert.equal(findings.length, 2);

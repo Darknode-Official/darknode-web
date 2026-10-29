@@ -526,6 +526,10 @@ export function repoScore(findings) {
 }
 
 // SARIF 2.1.0 export (GitHub code scanning can ingest this).
+// SARIF artifactLocation.uri is a relative URI: percent-encode each path segment, so a file
+// named "my conf.py" or "a#b.js" still resolves to that file in GitHub code scanning.
+export const sarifUri = (p) => String(p).replace(/\\/g, "/").replace(/^\/+/, "").split("/").map(encodeURIComponent).join("/");
+
 export function toSarif(findings, meta = {}) {
   const rules = new Map();
   for (const f of findings) if (!rules.has(f.ruleId)) rules.set(f.ruleId, { id: f.ruleId, name: f.title, shortDescription: { text: f.title }, fullDescription: { text: f.why || f.title }, help: { text: f.fix || "" }, properties: { tags: f.cwe ? ["security", "external/cwe/cwe-" + f.cwe] : ["security"] } });
@@ -538,7 +542,7 @@ export function toSarif(findings, meta = {}) {
     runs: [{ tool: { driver: { name: "Darknode Code Scanner", informationUri: "https://darknode.ai", rules: [...rules.values()] } },
       versionControlProvenance: meta.repo ? [{ repositoryUri: "https://github.com/" + meta.repo, revisionId: meta.sha || undefined }] : undefined,
       results: findings.map((f) => ({ ruleId: f.ruleId, level: level(f.sev), message: { text: f.title + (f.secret ? " (" + f.secret + ")" : "") + (f.pkg ? ": " + f.pkg + "@" + f.version + " " + f.advisory : "") },
-        locations: [{ physicalLocation: { artifactLocation: { uri: f.path }, region: { startLine: f.line, startColumn: f.col || 1 } } }],
-        codeFlows: f.flow && f.flow.length ? [{ threadFlows: [{ locations: f.flow.map((s) => ({ location: { physicalLocation: { artifactLocation: { uri: f.path }, region: { startLine: s.line, startColumn: s.col || 1 } }, message: { text: s.label } } })) }] }] : undefined })) }]
+        locations: [{ physicalLocation: { artifactLocation: { uri: sarifUri(f.path) }, region: { startLine: f.line, startColumn: f.col || 1 } } }],
+        codeFlows: f.flow && f.flow.length ? [{ threadFlows: [{ locations: f.flow.map((s) => ({ location: { physicalLocation: { artifactLocation: { uri: sarifUri(f.path) }, region: { startLine: s.line, startColumn: s.col || 1 } }, message: { text: s.label } } })) }] }] : undefined })) }]
   };
 }

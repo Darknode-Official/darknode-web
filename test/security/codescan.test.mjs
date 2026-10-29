@@ -169,6 +169,12 @@ group("codescan: manifests + scoring", () => {
     assert.equal(s.version, "2.1.0");
     assert.equal(s.runs[0].results[0].locations[0].physicalLocation.region.startLine, 3);
   });
+  test("SARIF locations are relative URIs: a space or # in a path is percent-encoded per segment", () => {
+    const uri = (p) => toSarif([{ ruleId: "js.eval", title: "x", sev: "high", path: p, line: 1, col: 1 }]).runs[0].results[0].locations[0].physicalLocation.artifactLocation.uri;
+    assert.equal(uri("sub/my conf.py"), "sub/my%20conf.py");
+    assert.equal(uri("a#b/c?.js"), "a%23b/c%3F.js");
+    assert.equal(uri("src/app.js"), "src/app.js");
+  });
   test("data-flow findings replace a pattern hit on the same line and carry a SARIF code flow", () => {
     const src = `const { exec } = require("child_process");
 app.get("/p", (req, res) => {

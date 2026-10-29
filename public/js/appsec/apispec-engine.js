@@ -1296,7 +1296,7 @@ export function toSarif(result) {
     ruleId: f.ruleId, ruleIndex: index.has(f.ruleId) ? index.get(f.ruleId) : -1, level: SARIF_LEVEL[f.severity] || "warning",
     message: { text: f.description },
     locations: [{
-      physicalLocation: { artifactLocation: { uri: encodeURI(String(f.file).replace(/\\/g, "/").replace(/^\/+/, "")) }, region: { startLine: Math.max(1, f.line || 1) } },
+      physicalLocation: { artifactLocation: { uri: String(f.file).replace(/\\/g, "/").replace(/^\/+/, "").split("/").map(encodeURIComponent).join("/") }, region: { startLine: Math.max(1, f.line || 1) } },
       logicalLocations: [{ fullyQualifiedName: f.pointer || "#", kind: "member" }].concat(f.operation ? [{ name: f.operation, kind: "function" }] : []),
     }],
     partialFingerprints: { "apispec/v1": f.id },

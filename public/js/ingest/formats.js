@@ -15,6 +15,8 @@ import { detectFormat as vulnDetectFormat, analyze as vulnAnalyze, FORMATS as VU
 
 const SEV = ["critical", "high", "medium", "low", "info"];
 const str = (v) => String(v == null ? "" : v).trim();
+// a SARIF artifact URI is percent-encoded ("my%20conf.py"); show the file name
+const unUri = (u) => { try { return decodeURIComponent(u); } catch (_) { return u; } };
 const normSev = (v) => { const s = str(v).toLowerCase(); return SEV.includes(s) ? s : ({ error: "high", warning: "medium", note: "low", none: "info", moderate: "medium", informational: "info", unknown: "info" }[s] || null); };
 // CVSS-style 0–10 numeric severity (SARIF security-severity, CycloneDX ratings).
 const sevFromScore = (n) => { const x = Number(n); if (!Number.isFinite(x)) return null; if (x >= 9) return "critical"; if (x >= 7) return "high"; if (x >= 4) return "medium"; if (x > 0) return "low"; return "info"; };
@@ -72,7 +74,7 @@ export function parseSarif(obj) {
       for (const loc of (res.locations || [])) {
         const uri = loc && loc.physicalLocation && loc.physicalLocation.artifactLocation && loc.physicalLocation.artifactLocation.uri;
         const line = loc && loc.physicalLocation && loc.physicalLocation.region && loc.physicalLocation.region.startLine;
-        if (uri) assets.push({ type: "ASSET", name: str(uri), data: line ? { line } : {} });
+        if (uri) assets.push({ type: "ASSET", name: str(unUri(uri)), data: line ? { line } : {} });
       }
       const f = { title, severity, category: str(res.ruleId || rule.id) || (tool.name ? str(tool.name) : "sarif"), tags: ["sarif", ...(tool.name ? [str(tool.name).toLowerCase()] : [])] };
       const help = rule.help && (rule.help.text || rule.help.markdown);
