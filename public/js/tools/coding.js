@@ -5,6 +5,9 @@
 
 const S = (v) => (v == null ? "" : String(v));
 const isPlainObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+// keys come from pasted data: "__proto__" or "constructor" must be plain own keys, never the prototype
+const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+const setOwn = (o, k, v) => { Object.defineProperty(o, k, { value: v, writable: true, enumerable: true, configurable: true }); return v; };
 const tryJSON = (t) => { try { return { ok: true, val: JSON.parse(t) }; } catch (e) { return { ok: false, err: e.message }; } };
 
 // ---------- CSV (RFC 4180-ish) ----------
@@ -58,8 +61,8 @@ function unflatten(flat) {
     for (let i = 0; i < parts.length; i++) {
       const p = parts[i], last = i === parts.length - 1;
       const nextIsIdx = !last && /^\d+$/.test(parts[i + 1]);
-      if (last) { cur[p] = flat[key]; }
-      else { if (cur[p] == null || typeof cur[p] !== "object") cur[p] = nextIsIdx ? [] : {}; cur = cur[p]; }
+      if (last) { setOwn(cur, p, flat[key]); }
+      else { if (!hasOwn(cur, p) || cur[p] == null || typeof cur[p] !== "object") setOwn(cur, p, nextIsIdx ? [] : {}); cur = cur[p]; }
     }
   }
   return normalizeArrays(root);
@@ -70,14 +73,14 @@ function normalizeArrays(o) {
     const ks = Object.keys(o);
     const allIdx = ks.length && ks.every((k) => /^\d+$/.test(k));
     if (allIdx) { const arr = []; ks.sort((a, b) => a - b).forEach((k) => { arr[+k] = normalizeArrays(o[k]); }); return arr; }
-    const r = {}; for (const k of ks) r[k] = normalizeArrays(o[k]); return r;
+    const r = {}; for (const k of ks) setOwn(r, k, normalizeArrays(o[k])); return r;
   }
   return o;
 }
 function deepMerge(a, b) {
   if (isPlainObj(a) && isPlainObj(b)) {
-    const r = {}; for (const k of Object.keys(a)) r[k] = a[k];
-    for (const k of Object.keys(b)) r[k] = k in r ? deepMerge(r[k], b[k]) : b[k];
+    const r = {}; for (const k of Object.keys(a)) setOwn(r, k, a[k]);
+    for (const k of Object.keys(b)) setOwn(r, k, hasOwn(r, k) ? deepMerge(r[k], b[k]) : b[k]);
     return r;
   }
   return b;
@@ -789,7 +792,7 @@ export const TOOLS = [
       const cell = (x) => x == null ? "" : (typeof x === "object" ? JSON.stringify(x) : String(x));
       const lines = [];
       if (v.header) lines.push(csvRow(cols, d));
-      for (const row of arr) lines.push(csvRow(cols.map((c) => cell(row[c])), d));
+      for (const row of arr) lines.push(csvRow(cols.map((c) => cell(hasOwn(row, c) ? row[c] : null)), d));
       return lines.join("\n") + "\n";
     },
   },
@@ -1007,8 +1010,8 @@ export const TOOLS = [
       const out = {};
       for (const item of r.val) {
         if (!isPlainObj(item)) return { error: "Every item must be an object." };
-        const key = String(item[f]);
-        if (v.mode.startsWith("Group")) { (out[key] = out[key] || []).push(item); } else out[key] = item;
+        const key = String(hasOwn(item, f) ? item[f] : undefined);
+        if (v.mode.startsWith("Group")) (hasOwn(out, key) ? out[key] : setOwn(out, key, [])).push(item); else setOwn(out, key, item);
       }
       return JSON.stringify(out, null, 2);
     },

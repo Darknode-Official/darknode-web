@@ -152,11 +152,12 @@ function parseINI(text) {
     const line = raw.trim();
     if (!line || line.startsWith(";") || line.startsWith("#")) continue;
     const sec = line.match(/^\[(.+)\]$/);
-    if (sec) { section = sec[1]; if (!out[section]) out[section] = {}; continue; }
+    // own keys only: a [__proto__] or [constructor] section must not reach the prototype or Object itself
+    if (sec) { section = sec[1]; if (!Object.hasOwn(out, section)) Object.defineProperty(out, section, { value: {}, writable: true, enumerable: true, configurable: true }); continue; }
     const kv = line.match(/^([^=]+)=(.*)$/);
     if (!kv) continue;
     const k = kv[1].trim(), val = kv[2].trim();
-    if (section) out[section][k] = val; else out[k] = val;
+    Object.defineProperty(section ? out[section] : out, k, { value: val, writable: true, enumerable: true, configurable: true });
   }
   return out;
 }
@@ -476,7 +477,7 @@ export const TOOLS = [
       const p = tryParseJSON(v.json || ""); if (!p.ok) return { error: "Invalid JSON: " + p.err };
       if (!Array.isArray(p.val) || !p.val.length) return { error: "Provide a non-empty JSON array of objects." };
       const cols = [...new Set(p.val.flatMap((r) => Object.keys(r || {})))];
-      const cell = (r, c) => (r[c] === undefined ? "" : typeof r[c] === "object" ? JSON.stringify(r[c]) : String(r[c]));
+      const cell = (r, c) => (!r || !Object.hasOwn(r, c) || r[c] === undefined ? "" : typeof r[c] === "object" ? JSON.stringify(r[c]) : String(r[c]));
       const widths = cols.map((c) => Math.max(c.length, ...p.val.map((r) => cell(r, c).length)));
       const row = (vals) => "| " + vals.map((s, i) => s.padEnd(widths[i])).join(" | ") + " |";
       const sep = "|-" + widths.map((w) => "-".repeat(w)).join("-|-") + "-|";
