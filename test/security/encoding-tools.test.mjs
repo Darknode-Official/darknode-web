@@ -29,8 +29,8 @@ group("encoding tools", () => {
   test("html entities: built-in names are not entities", () => {
     assert.equal(run("html-entities", { text: "&constructor; &toString; &lt;", mode: "Decode" }), "&constructor; &toString; <");
   });
-  test("html entities: &#1a; is not decimal 1", () => {
-    assert.equal(run("html-entities", { text: "&#1a; &#65;", mode: "Decode" }), "&#1a; A");
+  test("html entities: &#1a; ends the reference at the a (HTML5: code point 1, then a;)", () => {
+    assert.equal(run("html-entities", { text: "&#1a; &#65;", mode: "Decode" }), "\u0001a; A");
   });
   test("morse: an unknown token decodes to nothing, not native source", () => {
     assert.equal(run("morse", { text: "... constructor ---", mode: "Morse → Text" }), "SO");

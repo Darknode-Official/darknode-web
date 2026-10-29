@@ -8,18 +8,23 @@ const td = new TextDecoder();
 // ---- bytes / text ----
 const bytes = (s) => te.encode(String(s));
 const fromBytes = (u8) => td.decode(u8 instanceof Uint8Array ? u8 : new Uint8Array(u8));
+// Decoded bytes as text when they are valid UTF-8, else as hex with a note (a lossy decode would
+// turn every non-text byte into U+FFFD and hide the data).
+const textOrHex = (u8) => { try { return new TextDecoder("utf-8", { fatal: true }).decode(u8); } catch (_) { return "(not UTF-8 text - " + u8.length + " bytes as hex)\n" + Array.from(u8, (b) => b.toString(16).padStart(2, "0")).join(" "); } };
 const toHex = (u8) => Array.from(u8, (b) => b.toString(16).padStart(2, "0")).join("");
 // strict like netproto's hexBytes: 0x / \x prefixes and separators are fine, other characters or an odd digit count throw
 const fromHex = (h) => { const s = String(h).replace(/0x|\\x/gi, "").replace(/[\s:.,_-]/g, ""); if (/[^0-9a-fA-F]/.test(s)) throw new Error("Not valid hex: use 0-9 and a-f only (spaces and colons are fine)."); if (s.length % 2) throw new Error("Hex has an odd number of digits; each byte is two digits."); const u = new Uint8Array(s.length >> 1); for (let i = 0; i < u.length; i++) u[i] = parseInt(s.substr(i * 2, 2), 16); return u; };
 
 // ---- base64 (unicode-safe) ----
 const b64encode = (s, { url = false } = {}) => { let bin = ""; const u = bytes(s); for (let i = 0; i < u.length; i++) bin += String.fromCharCode(u[i]); let o = btoa(bin); if (url) o = o.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); return o; };
-const b64decode = (s, { url = false } = {}) => { let t = String(s).trim(); if (url) t = t.replace(/-/g, "+").replace(/_/g, "/"); t = t.replace(/\s+/g, ""); while (t.length % 4) t += "="; const bin = atob(t); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return fromBytes(u); };
+const b64bytes = (s, { url = false } = {}) => { let t = String(s).trim(); if (url) t = t.replace(/-/g, "+").replace(/_/g, "/"); t = t.replace(/\s+/g, ""); while (t.length % 4) t += "="; const bin = atob(t); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+const b64decode = (s, opts) => fromBytes(b64bytes(s, opts));
 
 // ---- base32 (RFC 4648) ----
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const base32encode = (s) => { const u = bytes(s); let bits = 0, val = 0, out = ""; for (let i = 0; i < u.length; i++) { val = (val << 8) | u[i]; bits += 8; while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; } } if (bits > 0) out += B32[(val << (5 - bits)) & 31]; while (out.length % 8) out += "="; return out; };
-const base32decode = (s) => { const t = String(s).toUpperCase().replace(/=+$/, "").replace(/\s+/g, ""); let bits = 0, val = 0; const out = []; for (const c of t) { const idx = B32.indexOf(c); if (idx < 0) throw new Error("not Base32: " + c); val = (val << 5) | idx; bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } } return fromBytes(new Uint8Array(out)); };
+const base32bytes = (s) => { const t = String(s).toUpperCase().replace(/=+$/, "").replace(/\s+/g, ""); let bits = 0, val = 0; const out = []; for (const c of t) { const idx = B32.indexOf(c); if (idx < 0) throw new Error("not Base32: " + c); val = (val << 5) | idx; bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } } return new Uint8Array(out); };
+const base32decode = (s) => fromBytes(base32bytes(s));
 
 // ---- base58 (Bitcoin alphabet) ----
 const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -84,7 +89,7 @@ const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", 
 
 export const H = {
   te, td, bytes, fromBytes, toHex, fromHex,
-  b64encode, b64decode, base32encode, base32decode, base58encode,
+  b64encode, b64decode, b64bytes, base32encode, base32decode, base32bytes, base58encode, textOrHex,
   sha, sha1, sha256, sha384, sha512, hmac, md5, crc32,
   randBytes, uuid, clampInt, escapeHtml,
 };
