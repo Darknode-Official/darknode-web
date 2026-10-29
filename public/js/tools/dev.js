@@ -37,16 +37,20 @@ function parsePath(path) {
   return parts;
 }
 
+// A key that would read as path syntax (a.b, x[0], "", a quote) is written ["a.b"], so
+// {"a":{"b":1}} and {"a.b":1} flatten to different paths. Keys are set as own properties,
+// so a "__proto__" key is kept; an empty root adds nothing.
 function flattenObj(obj, prefix, out) {
+  const put = (k, v) => Object.defineProperty(out, k, { value: v, writable: true, enumerable: true, configurable: true });
   if (obj !== null && typeof obj === "object") {
     const keys = Array.isArray(obj) ? obj.map((_, i) => i) : Object.keys(obj);
-    if (keys.length === 0) { out[prefix || "$"] = Array.isArray(obj) ? [] : {}; return out; }
+    if (keys.length === 0) { if (prefix) put(prefix, Array.isArray(obj) ? [] : {}); return out; }
     for (const k of keys) {
-      const nk = Array.isArray(obj) ? `${prefix}[${k}]` : (prefix ? `${prefix}.${k}` : String(k));
+      const nk = Array.isArray(obj) ? `${prefix}[${k}]` : /^$|[.[\]"]/.test(k) ? `${prefix}[${JSON.stringify(k)}]` : (prefix ? `${prefix}.${k}` : String(k));
       flattenObj(obj[k], nk, out);
     }
   } else {
-    out[prefix] = obj;
+    put(prefix, obj);
   }
   return out;
 }
@@ -385,11 +389,13 @@ export const TOOLS = [
       const pa = tryParseJSON(v.a || ""), pb = tryParseJSON(v.b || "");
       if (!pa.ok) return { error: "Invalid JSON A: " + pa.err };
       if (!pb.ok) return { error: "Invalid JSON B: " + pb.err };
+      const kind = (x) => Array.isArray(x) ? "array" : x === null ? "null" : typeof x;
+      if (kind(pa.val) !== kind(pb.val) || (typeof pa.val !== "object" && pa.val !== pb.val)) return `~ (root): ${JSON.stringify(pa.val)} -> ${JSON.stringify(pb.val)}`;
       const fa = flattenObj(pa.val, "", {}), fb = flattenObj(pb.val, "", {});
       const keys = new Set([...Object.keys(fa), ...Object.keys(fb)]);
       const added = [], removed = [], changed = [];
       for (const k of [...keys].sort()) {
-        const inA = k in fa, inB = k in fb;
+        const inA = Object.hasOwn(fa, k), inB = Object.hasOwn(fb, k); // "constructor" in {} is true
         if (inA && !inB) removed.push(`- ${k}: ${JSON.stringify(fa[k])}`);
         else if (!inA && inB) added.push(`+ ${k}: ${JSON.stringify(fb[k])}`);
         else if (JSON.stringify(fa[k]) !== JSON.stringify(fb[k])) changed.push(`~ ${k}: ${JSON.stringify(fa[k])} -> ${JSON.stringify(fb[k])}`);
@@ -558,12 +564,26 @@ export const TOOLS = [
       const p = tryParseJSON(v.json || ""); if (!p.ok) return { error: "Invalid JSON: " + p.err };
       const infer = (val) => {
         if (val === null) return { type: "null" };
-        if (Array.isArray(val)) return { type: "array", items: val.length ? infer(val[0]) : {} };
+        if (Array.isArray(val)) return { type: "array", items: val.length ? val.map(infer).reduce(merge) : {} }; // every item, not just the first
         const t = typeof val;
-        if (t === "object") { const props = {}; for (const k of Object.keys(val)) props[k] = infer(val[k]); return { type: "object", properties: props, required: Object.keys(val) }; }
+        if (t === "object") { const props = {}; for (const k of Object.keys(val)) Object.defineProperty(props, k, { value: infer(val[k]), enumerable: true, writable: true, configurable: true }); return { type: "object", properties: props, required: Object.keys(val) }; }
         if (t === "number") return { type: Number.isInteger(val) ? "integer" : "number" };
         return { type: t };
       };
+      // Two schemas for values at the same place: objects merge their properties (required = keys
+      // every item has), integer widens to number, other differing types become a type list.
+      function merge(x, y) {
+        const tx = [].concat(x.type), ty = [].concat(y.type);
+        if (x.type === "object" && y.type === "object") {
+          const props = {};
+          for (const k of new Set([...Object.keys(x.properties), ...Object.keys(y.properties)])) Object.defineProperty(props, k, { value: Object.hasOwn(x.properties, k) && Object.hasOwn(y.properties, k) ? merge(x.properties[k], y.properties[k]) : (Object.hasOwn(x.properties, k) ? x.properties[k] : y.properties[k]), enumerable: true, writable: true, configurable: true });
+          return { type: "object", properties: props, required: x.required.filter((k) => y.required.includes(k)) };
+        }
+        if (x.type === "array" && y.type === "array") return { type: "array", items: !Object.keys(x.items).length ? y.items : !Object.keys(y.items).length ? x.items : merge(x.items, y.items) };
+        let types = [...new Set([...tx, ...ty])];
+        if (types.includes("number")) types = types.filter((u) => u !== "integer");
+        return { type: types.length === 1 ? types[0] : types };
+      }
       return JSON.stringify(infer(p.val), null, 2);
     } },
 
