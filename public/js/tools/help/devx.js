@@ -167,7 +167,7 @@ export const HELP = {
     example: { bps: "2500000" },
   },
   "dv-cron-next": {
-    what: "Takes a five-part cron schedule and lists the next times it will run, starting from now in your local time.",
+    what: "Takes a five-part cron schedule (numbers or names like MON-FRI and JAN) and lists the next times it will run, starting from now in your local time, following the rules Linux cron uses.",
     when: "You want to be sure a cron job will run when you expect before you deploy it.",
     example: { expr: "0 9 * * 1-5", count: "5" },
   },

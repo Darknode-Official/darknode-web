@@ -99,21 +99,24 @@ function cmpSemver(a, b) {
 }
 
 // ---- shared cron field parser ----
-function cronField(field, min, max) {
+// names = ["JAN", ...] for the field's values from min up (month and weekday names, any case)
+function cronField(field, min, max, names) {
   const set = new Set();
   const parts = String(field).split(",");
+  const val = (t) => { if (/^\d+$/.test(t)) return +t; const i = names ? names.indexOf(t.toUpperCase()) : -1; return i >= 0 ? min + i : NaN; };
   for (let raw of parts) {
     raw = raw.trim();
     if (raw === "") return null;
     let step = 1, range = raw;
     const si = raw.indexOf("/");
-    if (si >= 0) { step = parseInt(raw.slice(si + 1), 10); range = raw.slice(0, si); if (!(step > 0)) return null; }
+    if (si >= 0) { if (!/^\d+$/.test(raw.slice(si + 1))) return null; step = +raw.slice(si + 1); range = raw.slice(0, si); if (!(step > 0)) return null; }
     let lo, hi;
     if (range === "*") { lo = min; hi = max; }
     else if (range.indexOf("-") > 0) {
-      const [a, b] = range.split("-"); lo = parseInt(a, 10); hi = parseInt(b, 10);
+      const ab = range.split("-"); if (ab.length !== 2) return null;
+      lo = val(ab[0]); hi = val(ab[1]);
     } else {
-      lo = hi = parseInt(range, 10);
+      lo = val(range); hi = si >= 0 ? max : lo; // N/step runs from N to the end of the field (cronie)
     }
     if (isNaN(lo) || isNaN(hi) || lo < min || hi > max || lo > hi) return null;
     for (let i = lo; i <= hi; i += step) set.add(i);
@@ -474,14 +477,22 @@ export const TOOLS = [
       if (!S(v.expr).trim()) return "";
       if (parts.length !== 5) return { error: "Expected exactly 5 fields." };
       const names = ["minute", "hour", "day of month", "month", "day of week"];
-      const describe = (fld) => {
-        if (fld === "*") return "every value";
-        if (fld.startsWith("*/")) return `every ${fld.slice(2)}`;
-        if (fld.includes("-")) return `range ${fld}`;
-        if (fld.includes(",")) return `values ${fld}`;
-        return `at ${fld}`;
+      const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"], DOW = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+      const lim = [[0, 59], [0, 23], [1, 31], [1, 12, MON], [0, 7, DOW]];
+      // one comma part: */n, a-b/n, a/n (a to the end of the field, as cronie reads it), a-b, a
+      const one = (t, i) => {
+        const [r, st] = t.split("/"), end = lim[i][1];
+        if (r === "*") return st ? `every ${st}` : "every value";
+        if (st) return r.includes("-") ? `every ${st} from ${r.replace("-", " to ")}` : `every ${st} from ${r} to ${end}`;
+        return r.includes("-") ? r.replace("-", " to ") : r;
       };
-      return parts.map((p, i) => `${names[i].padEnd(13)}: ${p}  (${describe(p)})`).join("\n");
+      const describe = (fld, i) => cronField(fld, lim[i][0], lim[i][1], lim[i][2]) ? (fld === "*" ? "every value" : /^\w+$/.test(fld) ? `at ${fld}` : fld.split(",").map((t) => one(t, i)).join(", ")) : `INVALID: not a valid ${names[i]} field (${lim[i][0]}-${lim[i][1]})`;
+      const out = parts.map((p, i) => `${names[i].padEnd(13)}: ${p}  (${describe(p, i)})`);
+      // Vixie cron / cronie: when both day fields are restricted (neither starts with *), a day
+      // runs if EITHER matches; otherwise both must
+      if (parts[2][0] !== "*" && parts[4][0] !== "*") out.push("\nDays: runs when the day of month OR the day of week matches (both day fields are set).");
+      else if (parts[2] !== "*" && parts[4] !== "*") out.push("\nDays: runs only when the day of month AND the day of week both match (a day field starting with * counts as unrestricted).");
+      return out.join("\n");
     },
   },
   {
@@ -798,7 +809,7 @@ export const TOOLS = [
   },
   {
     id: "dv-cron-next", name: "Cron Next Runs", cat: "devx",
-    desc: "Compute the next N run times for a standard five-field cron expression, starting from now (local time).",
+    desc: "Compute the next N run times for a standard five-field cron expression (numbers or JAN/MON names), starting from now (local time), with cronie day-of-month/day-of-week rules.",
     tags: ["cron", "schedule", "next", "crontab"],
     inputs: [
       { k: "expr", label: "Cron expression", type: "text", placeholder: "*/15 9-17 * * 1-5" },
@@ -811,12 +822,14 @@ export const TOOLS = [
       const mins = cronField(parts[0], 0, 59);
       const hrs = cronField(parts[1], 0, 23);
       const doms = cronField(parts[2], 1, 31);
-      const mons = cronField(parts[3], 1, 12);
-      let dows = cronField(parts[4], 0, 7);
+      const mons = cronField(parts[3], 1, 12, ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]);
+      let dows = cronField(parts[4], 0, 7, ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]);
       if (!mins || !hrs || !doms || !mons || !dows) return { error: "A field is out of range or malformed." };
       if (dows.has(7)) dows.add(0);
-      const domRestricted = parts[2] !== "*";
-      const dowRestricted = parts[4] !== "*";
+      // Vixie cron / cronie: a day field starting with * (also */2) counts as unrestricted, so
+      // day-of-month and day-of-week are ANDed; only when both are restricted is a day run if either matches
+      const domRestricted = parts[2][0] !== "*";
+      const dowRestricted = parts[4][0] !== "*";
       const count = H.clampInt(v.count, 1, 20, 5);
       const out = [];
       const d = new Date();
