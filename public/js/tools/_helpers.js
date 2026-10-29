@@ -18,7 +18,7 @@ const b64decode = (s, { url = false } = {}) => { let t = String(s).trim(); if (u
 // ---- base32 (RFC 4648) ----
 const B32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const base32encode = (s) => { const u = bytes(s); let bits = 0, val = 0, out = ""; for (let i = 0; i < u.length; i++) { val = (val << 8) | u[i]; bits += 8; while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; } } if (bits > 0) out += B32[(val << (5 - bits)) & 31]; while (out.length % 8) out += "="; return out; };
-const base32decode = (s) => { const t = String(s).toUpperCase().replace(/=+$/, "").replace(/\s+/g, ""); let bits = 0, val = 0; const out = []; for (const c of t) { const idx = B32.indexOf(c); if (idx < 0) continue; val = (val << 5) | idx; bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } } return fromBytes(new Uint8Array(out)); };
+const base32decode = (s) => { const t = String(s).toUpperCase().replace(/=+$/, "").replace(/\s+/g, ""); let bits = 0, val = 0; const out = []; for (const c of t) { const idx = B32.indexOf(c); if (idx < 0) throw new Error("not Base32: " + c); val = (val << 5) | idx; bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } } return fromBytes(new Uint8Array(out)); };
 
 // ---- base58 (Bitcoin alphabet) ----
 const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";

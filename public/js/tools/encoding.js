@@ -54,7 +54,7 @@ function punyToUnicode(host) {
 export const TOOLS = [
   { id: "base64", name: "Base64 Encoder / Decoder", cat: "encoding", desc: "Encode or decode Base64, with URL-safe and MIME variants.", tags: ["b64"],
     inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "Hello, Darknode" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }, { k: "url", label: "URL-safe (base64url)", type: "checkbox" }],
-    run(v, H) { if (!v.text) return ""; try { return v.mode === "Encode" ? H.b64encode(v.text, { url: v.url }) : H.b64decode(v.text, { url: v.url }); } catch (e) { return { error: "Not valid Base64." }; } } },
+    run(v, H) { if (!v.text) return ""; try { return v.mode === "Encode" ? H.b64encode(v.text, { url: v.url }) : H.b64decode(v.text, { url: v.url || /[-_]/.test(v.text) }); } catch (e) { return { error: "Not valid Base64." }; } } }, // - or _ only occur in base64url
 
   { id: "base32", name: "Base32 Encoder / Decoder", cat: "encoding", desc: "RFC 4648 Base32 encode/decode.", tags: ["b32"],
     inputs: [{ k: "text", label: "Text", type: "textarea" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }],
