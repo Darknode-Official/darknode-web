@@ -136,7 +136,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>
             </div>
             <h3>MCP Server</h3>
-            <p>Plug Darknode into Claude, Cursor, and any MCP client. Give your team's assistants the full security toolset as native, callable functions.</p>
+            <p>Plug Darknode into Claude, Cursor, Codex and any MCP client. Your team's assistants get the Deck's 32 analysis tools as callable functions, run on your own machine, with the tools your plan includes.</p>
             <span class="bento-tag">Model Context Protocol</span>
           </div>
           <div class="bento-card">

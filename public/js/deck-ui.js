@@ -27,7 +27,7 @@ import * as surface from "/js/deck-surface.js?v=20261026b";
 // stream and the notifications bell.
 import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
-import { tierFrom, rank, planLabel, TIERS } from "/js/core/entitlements.js";
+import { tierFrom, rank, planLabel, TIERS, PLAN_GROUP, PLAN_ITEM } from "/js/core/entitlements.js?v=20261029c";
 import * as findings from "/js/core/findings.js?v=20261028a";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261027b";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
@@ -42,7 +42,7 @@ const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261027c");
 const corrMod = lazyMod("/js/deck/correlations.js?v=20261029b");
 const monMod = lazyMod("/js/deck/monitors.js?v=20261028a");
-const keysMod = lazyMod("/js/deck/apikeys.js?v=20261028a");
+const keysMod = lazyMod("/js/deck/apikeys.js?v=20261029c");
 const auditMod = lazyMod("/js/deck/audit.js?v=20261028a");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261027c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261028b";
@@ -1693,8 +1693,6 @@ export function renderDeck(host, opts) {
   const realTier = tierFrom(opts.tier, opts.isOwner);
   let planTier = realTier;
   if (opts.isOwner) { try { const p = localStorage.getItem(LS_PREVIEW); if (TIERS.includes(p)) planTier = p; } catch (_) {} }
-  const PLAN_GROUP = { exposure: "pro", code: "pro", identity: "team", detect: "team", finsec: "team", risk: "enterprise", compliance: "enterprise" };
-  const PLAN_ITEM = { enterprise: "team", findings: "pro", inventory: "pro", reports: "pro", activity: "pro", monitors: "pro", phishtriage: "pro", dlp: "pro", leakprobe: "pro", team: "team" };
   const needTier = {}, navName = {}, navIcon = {}; // navName keeps the names of entries the plan hides
   for (const grp of NAV_DEF) {
     if (grp.id) { needTier["section:" + grp.id] = PLAN_GROUP[grp.id] || "free"; navName["section:" + grp.id] = grp.g; }

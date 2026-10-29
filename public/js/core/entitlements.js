@@ -77,4 +77,11 @@ export function limit(tier, key) {
   return v === undefined ? -1 : v;
 }
 
+// Deck plan gating: every sidebar group needs a minimum plan; PLAN_ITEM overrides single
+// entries. Shared by the Deck sidebar and the AI tool catalog (js/api/catalog.js), so a
+// tool an AI can run through the MCP server needs the same plan it needs in the Deck.
+export const PLAN_GROUP = { exposure: "pro", code: "pro", identity: "team", detect: "team", finsec: "team", risk: "enterprise", compliance: "enterprise" };
+export const PLAN_ITEM = { enterprise: "team", findings: "pro", inventory: "pro", reports: "pro", activity: "pro", monitors: "pro", phishtriage: "pro", dlp: "pro", leakprobe: "pro", team: "team" };
+export const tierFor = (id, group) => PLAN_ITEM[id] || PLAN_GROUP[group] || "free";
+
 export const planLabel = (tier) => PLAN_LABEL[normTier(tier)] || "Free";

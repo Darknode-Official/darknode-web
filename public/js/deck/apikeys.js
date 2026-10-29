@@ -52,7 +52,7 @@ export function repaintApiKeys() {}
 async function load() {
   const box = S.el && S.el.querySelector("#apikBody"); if (!box) return;
   const my = ++S.seq;
-  if (!ingestAvailable()) { box.innerHTML = `<div class="apik-off">The ingest API is not available on this build — it needs the cloud proxy. Nothing to configure yet.</div>`; return; }
+  if (!ingestAvailable()) { box.innerHTML = `<div class="apik-off">The ingest API is not available on this build — it needs the cloud proxy. Nothing to configure yet.</div>` + aiPanel(""); wireAi(box, ""); return; }
   try {
     const wid = await ingestWorkspaceId();
     const data = await listKeys();
@@ -61,7 +61,7 @@ async function load() {
     S.wid = wid; S.data = data;
     S.pending = q.pending || 0;
     paint();
-  } catch (e) { if (my !== S.seq) return; box.innerHTML = `<div class="apik-off">${E(e.message || String(e))}</div>`; }
+  } catch (e) { if (my !== S.seq) return; box.innerHTML = `<div class="apik-off">${E(e.message || String(e))}</div>` + aiPanel(""); wireAi(box, ""); }
 }
 
 function paint() {
@@ -101,12 +101,51 @@ function paint() {
       <div class="apik-pre">${E(curl)}</div>
       <h2 style="font-size:13px;margin:14px 0 6px">GitHub Actions step</h2>
       <div class="apik-pre">${E(gha)}</div>
-    </div>`;
+    </div>
+    ${aiPanel(wid)}`;
 
   box.querySelector("#apikNew").onclick = () => renderForm(true);
+  wireAi(box, wid);
   box.querySelector("#apikDrain").onclick = drain;
   box.querySelectorAll(".apik-row").forEach((row) => { const b = row.querySelector('[data-act="revoke"]'); if (b) b.onclick = () => doRevoke(row.dataset.id, row); });
   if (S.created) { const inp = box.querySelector("#apikKeyVal"); if (inp) { const cp = box.querySelector("#apikCopy"); if (cp) cp.onclick = async () => { inp.select(); try { await navigator.clipboard.writeText(inp.value); toast("Key copied.", "ok"); } catch (_) { toast("Could not copy - the key is selected; press Ctrl+C (Cmd+C) to copy it.", "warn"); } }; } }
+}
+
+// ---- Connect an AI: the Deck's tools over MCP (darknode-cli `darknode mcp`) ----
+// The server runs on the user's machine with the Deck's own engines, so it needs the CLI
+// once (git clone; npm is unavailable). The key and workspace are only for sending
+// findings back here; the tools themselves follow the signed-in account's plan.
+const CLI_DIR = "~/darknode-cli";
+const AI_CLIENTS = [
+  ["claude-code", "Claude Code"], ["claude-desktop", "Claude Desktop"], ["cursor", "Cursor"], ["codex", "Codex CLI"], ["gemini", "Gemini CLI"], ["vscode", "VS Code (Copilot)"], ["other", "Any other MCP client"],
+];
+function aiConfig(client, wid) {
+  wid = wid || "<workspace-id>";
+  const env = { DARKNODE_API_KEY: "<your dk_ key>", DARKNODE_WORKSPACE: wid };
+  const cmd = "node " + CLI_DIR + "/darknode.js mcp";
+  const clone = "git clone https://github.com/Darknode-Official/darknode-cli " + CLI_DIR + "\n";
+  const jsonCfg = (wrap) => JSON.stringify({ [wrap]: { darknode: Object.assign(wrap === "servers" ? { type: "stdio" } : {}, { command: "node", args: ["/full/path/to/darknode-cli/darknode.js", "mcp"], env }) } }, null, 2);
+  switch (client) {
+    case "claude-code": return clone + "claude mcp add darknode -e DARKNODE_API_KEY=<your dk_ key> -e DARKNODE_WORKSPACE=" + wid + " -- " + cmd;
+    case "codex": return clone + "codex mcp add darknode --env DARKNODE_API_KEY=<your dk_ key> --env DARKNODE_WORKSPACE=" + wid + " -- " + cmd;
+    case "gemini": return clone + "gemini mcp add darknode -e DARKNODE_API_KEY=<your dk_ key> -e DARKNODE_WORKSPACE=" + wid + " node " + CLI_DIR + "/darknode.js mcp";
+    case "claude-desktop": return clone + "\n# claude_desktop_config.json (Settings > Developer > Edit Config)\n" + jsonCfg("mcpServers");
+    case "cursor": return clone + "\n# ~/.cursor/mcp.json\n" + jsonCfg("mcpServers");
+    case "vscode": return clone + "\n# .vscode/mcp.json\n" + jsonCfg("servers");
+    default: return clone + "\n# stdio server command:\n" + cmd + "\n\n# environment, to send findings to this Deck:\nDARKNODE_API_KEY=<your dk_ key>\nDARKNODE_WORKSPACE=" + wid;
+  }
+}
+function wireAi(box, wid) {
+  const sel = box.querySelector("#apikAiClient");
+  if (sel) sel.onchange = () => { S.aiClient = sel.value; const pre = box.querySelector("#apikAiCfg"); if (pre) pre.textContent = aiConfig(S.aiClient, wid); };
+}
+function aiPanel(wid) {
+  const cur = S.aiClient || "claude-code";
+  return `<div class="apik-panel"><h2>Connect an AI</h2>
+    <p class="apik-sub">Let Claude Code, Claude Desktop, Codex, Cursor, Gemini CLI or any other MCP client run the Deck's tools: Infrastructure as Code, Kubernetes, firewall configs, sign-ins, cloud audit logs and the rest. The Darknode MCP server runs on your computer with the same engines as this Deck, so the files your AI gives it stay on your machine. It offers the tools your plan includes; sign in once with <span class="apik-code">node darknode.js nexus</span> then <span class="apik-code">/login</span>. Add a key with the ingest:write scope to let the AI send findings here.</p>
+    <div class="apik-field"><label for="apikAiClient">Your AI</label><select id="apikAiClient" class="dk-setin" style="max-width:260px">${AI_CLIENTS.map(([v, l]) => `<option value="${v}"${v === cur ? " selected" : ""}>${E(l)}</option>`).join("")}</select></div>
+    <div class="apik-pre" id="apikAiCfg">${E(aiConfig(cur, wid))}</div>
+  </div>`;
 }
 
 function newKeyPanel(c) {

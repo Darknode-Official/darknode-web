@@ -198,10 +198,10 @@ export function renderMcpConnector(main) {
 
       '<div class="panel"><div class="panel-h"><h2 class="pg-h2">Generated configuration</h2></div>' +
         codeBlock("mcpc-mcp", "MCP server config (Claude Desktop)",
-          "Add to your MCP client config under mcpServers. Launches the darknode MCP server, which serves the selected tools as resources.",
+          "Add under mcpServers after git clone https://github.com/Darknode-Official/darknode-cli. Launches the Darknode MCP server on your computer with the Deck's analysis tools your plan includes (the tool selection here is for embeds). Setup for each AI client and keys for sending findings back: Deck > API & Ingest.",
           "darknode-mcp-config.json") +
         codeBlock("mcpc-cat", "Tool catalog (readable)",
-          "The selected tools with name, sec id, embed url and description — consumed by the darknode MCP server or any custom integration.",
+          "The selected tools with name, sec id, embed url and description, for your own integration.",
           "darknode-catalog.json") +
         codeBlock("mcpc-openapi", "Read-only API manifest (OpenAPI 3.1)",
           "Documents the embed surface as GET endpoints other apps can consume. Each path returns the tool's embeddable HTML UI.",
@@ -234,16 +234,14 @@ export function renderMcpConnector(main) {
     return tools.filter((t) => selected.has(t.sec));
   }
 
+  // The real server: `darknode mcp` from darknode-cli (git clone; npm is unavailable). It
+  // serves the Deck's analysis tools the signed-in plan includes, not the embed list below.
   function mcpConfig() {
     return {
       mcpServers: {
         darknode: {
-          command: "npx",
-          args: ["-y", "@darknode/mcp"],
-          env: {
-            DARKNODE_ORIGIN: origin,
-            DARKNODE_TOOLS: selectedTools().map((t) => t.sec).join(",")
-          }
+          command: "node",
+          args: ["/full/path/to/darknode-cli/darknode.js", "mcp"]
         }
       }
     };

@@ -59,7 +59,7 @@ import { startTour, tourDone } from "/js/tour.js";
 import { isDesktop, has as desktopHas, syncTitlebar } from "/js/core/desktop.js";
 if (isDesktop()) syncTitlebar();
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261029b"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261029c"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -1335,7 +1335,6 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
   // Per-account key (see user-keys.js): stored under the signed-in uid so two
   // users on one browser never share a key. No shared constant fallback — if
   // storage is unavailable we mint a fresh in-memory key, never a fixed one.
-  const _mintKey = () => { const b = new Uint8Array(24); (crypto || window.crypto).getRandomValues(b); return "dn_live_" + Array.from(b).map((x) => x.toString(16).padStart(2, "0")).join(""); };
   // --- Nexus CLI pairing: a one-time, short-lived code that the exchange endpoint
   // swaps for the user's revocable Darknode API key. The Firebase refresh token is
   // never shown or handed out. Crockford-ish alphabet (no I/O/0/1) for clean typing.
@@ -1366,14 +1365,6 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
     });
     return code;
   };
-  const dnKey = (() => {
-    try {
-      let k = window.dnKeys && window.dnKeys.get("dn_api_key");
-      if (!k) { k = _mintKey(); if (window.dnKeys) window.dnKeys.set("dn_api_key", k); }
-      return k;
-    } catch (_) { return _mintKey(); }
-  })();
-  const dnMask = dnKey.slice(0, 12) + "…" + dnKey.slice(-4);
   const curLogo = (() => { try { return localStorage.getItem("sw_logo") || "nested-accent"; } catch (_) { return "nested-accent"; } })();
   const panels = {
     account: `<h2 class="set-panel-h">Account</h2>
@@ -1444,62 +1435,13 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
         </div>
       </div>`,
     darknode: `<h2 class="set-panel-h">Darknode API</h2>
-      <p class="muted" style="font-size:.84rem;margin-bottom:14px">Your personal Darknode API key. It lets the CLI, the MCP server, and your own scripts authenticate to this workspace and drive every tool in the workspace. Generated and stored locally in your browser — never sent to our servers.</p>
-      <div class="dn-keycard">
-        <div class="dn-keycard-top"><span class="dn-keycard-label">Secret key</span><span class="dn-keycard-scope">full-access</span></div>
-        <div class="dn-key-row">
-          <input id="dn-key" class="mono" type="password" readonly value="${esc(dnKey)}" autocomplete="off" spellcheck="false">
-          <button class="btn ghost" id="dn-key-reveal" type="button">Reveal</button>
-          <button class="btn ghost" id="dn-key-copy" type="button">Copy</button>
-          <button class="btn ghost" id="dn-key-regen" type="button">Regenerate</button>
-        </div>
-        <div class="dn-key-fine muted">Preview: <span class="mono">${esc(dnMask)}</span> · treat this like a password. Regenerating immediately revokes the old key.</div>
-      </div>
-      <h3 class="set-sub-h">Quick start</h3>
-      <p class="muted" style="font-size:.8rem;margin:0 0 6px">Call any tool over HTTPS with your key as a Bearer token:</p>
-      <pre class="set-code"><button class="set-code-copy" data-code="dn-curl">copy</button><code id="dn-curl">curl https://api.darknode.ai/v1/scan \\
-  -H "Authorization: Bearer ${esc(dnKey)}" \\
-  -H "Content-Type: application/json" \\
-  -d '{"tool":"subdomain-enum","target":"example.com"}'</code></pre>
-      <h3 class="set-sub-h">Scopes &amp; limits</h3>
-      <div class="dn-scopes">
-        <div class="dn-scope"><b>recon:read</b><span>DNS, subdomains, ASN, WHOIS, favicon</span></div>
-        <div class="dn-scope"><b>intel:read</b><span>CVE, threat feeds, IOC, reputation</span></div>
-        <div class="dn-scope"><b>tools:run</b><span>Execute any of the 125 platform tools</span></div>
-        <div class="dn-scope"><b>ai:invoke</b><span>Darknode AI completions &amp; analysis</span></div>
-        <div class="dn-scope"><b>graph:write</b><span>Push findings to the Security Graph</span></div>
-        <div class="dn-scope"><b>rate</b><span>1000 requests / hour (local tier)</span></div>
-      </div>
-      <p class="muted" style="font-size:.72rem;margin-top:10px">Note: the hosted API endpoint is part of the Darknode CLI / self-host bundle. In the browser-only build this key authenticates the local CLI bridge and MCP server.</p>`,
+      <p class="muted" style="font-size:.84rem;margin-bottom:14px">Workspace API keys are issued by the server and shown once; only a hash is stored. Create one in the Deck under <b>API &amp; Ingest</b> to push findings in from CI (SARIF, CycloneDX, scanner exports) or to let an AI send its findings to your Deck.</p>`,
     mcp: `<h2 class="set-panel-h">MCP Server</h2>
-      <p class="muted" style="font-size:.84rem;margin-bottom:14px">Connect Darknode to any MCP-compatible AI client (Claude Desktop, Claude Code, Cursor, and others) so the model can run Darknode's tools directly. Paste the config below and restart your client.</p>
-      <h3 class="set-sub-h">Claude Desktop / Claude Code config</h3>
-      <pre class="set-code"><button class="set-code-copy" data-code="dn-mcp">copy</button><code id="dn-mcp">{
-  "mcpServers": {
-    "darknode": {
-      "command": "npx",
-      "args": ["-y", "@darknode/mcp"],
-      "env": {
-        "DARKNODE_API_KEY": "${esc(dnKey)}"
-      }
-    }
-  }
-}</code></pre>
-      <p class="muted" style="font-size:.75rem;margin:2px 0 0">Config path — macOS: <span class="mono">~/Library/Application Support/Claude/claude_desktop_config.json</span> · Windows: <span class="mono">%APPDATA%\\Claude\\claude_desktop_config.json</span></p>
-      <h3 class="set-sub-h">Tools exposed to the model</h3>
-      <div class="dn-scopes">
-        <div class="dn-scope"><b>darknode.recon</b><span>Subdomains, DNS, ASN, ports, favicon hash</span></div>
-        <div class="dn-scope"><b>darknode.intel</b><span>CVE lookup, threat feeds, IOC extraction</span></div>
-        <div class="dn-scope"><b>darknode.scan</b><span>SSL/TLS, headers, CSP, CORS, API security</span></div>
-        <div class="dn-scope"><b>darknode.analyze</b><span>Hashes, JWTs, emails, logs, packets</span></div>
-        <div class="dn-scope"><b>darknode.graph</b><span>Query &amp; write the Security Graph</span></div>
-        <div class="dn-scope"><b>darknode.ai</b><span>Delegate reasoning to Darknode AI</span></div>
-      </div>
-      <div class="set-btns" style="margin-top:14px">
-        <button class="btn" id="dn-mcp-copy2">Copy config</button>
-        <a class="btn ghost" data-foot="downloads">Get the CLI bundle</a>
-      </div>
-      <p class="muted" style="font-size:.72rem;margin-top:10px">The <span class="mono">@darknode/mcp</span> package ships with the Darknode CLI. It bridges to this workspace using the API key above, so the model acts with your access only.</p>`,
+      <p class="muted" style="font-size:.84rem;margin-bottom:14px">Let Claude Code, Claude Desktop, Codex, Cursor, Gemini CLI or any other MCP client run the Deck's analysis tools (Infrastructure as Code, Kubernetes, firewall configs, sign-ins, cloud audit logs and more). The server runs on your computer with the Deck's own engines, so the files your AI gives it stay local, and it offers the tools your plan includes.</p>
+      <h3 class="set-sub-h">Claude Code</h3>
+      <pre class="set-code"><button class="set-code-copy" data-code="dn-mcp">copy</button><code id="dn-mcp">git clone https://github.com/Darknode-Official/darknode-cli ~/darknode-cli
+claude mcp add darknode -- node ~/darknode-cli/darknode.js mcp</code></pre>
+      <p class="muted" style="font-size:.75rem;margin:2px 0 0">Setup for other AI clients, and keys for sending findings back to the Deck: Deck &gt; API &amp; Ingest &gt; Connect an AI. Sign in once with <span class="mono">node darknode.js nexus</span>, then <span class="mono">/login</span> with the code from the Nexus CLI tab.</p>`,
     nexus: `<h2 class="set-panel-h">Nexus CLI</h2>
       <p class="muted">Sign in to the Nexus terminal agent. Generate a one-time code below, then in Nexus run <span class="mono">/login</span> and paste it.</p>
       <div class="set-row"><span class="muted">Login code</span>
@@ -1635,20 +1577,6 @@ function renderSettingsPage(main, user, isOwner, initialTab) {
       try { await setDoc(doc(db, "deletionRequests", user.uid), { uid: user.uid, email: user.email || "", requestedAt: serverTimestamp() }, { merge: true }); showToast("Deletion request received. We'll confirm by email.", "success"); }
       catch (e) { showToast("Could not file the request: " + ((e && e.message) || "try emailing contact@darknode.ai"), "error"); }
     };
-    // Darknode API key controls
-    const dnKeyEl = main.querySelector("#dn-key");
-    if (dnKeyEl) {
-      const rev = main.querySelector("#dn-key-reveal"); if (rev) rev.onclick = () => { const h = dnKeyEl.type === "password"; dnKeyEl.type = h ? "text" : "password"; rev.textContent = h ? "Hide" : "Reveal"; };
-      const cp = main.querySelector("#dn-key-copy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(dnKeyEl.value); } catch (_) { showToast("Copy failed", "error"); return; } if (cp.dataset.o === undefined) cp.dataset.o = cp.textContent; cp.textContent = "Copied"; clearTimeout(cp._swapT); cp._swapT = setTimeout(() => { cp.textContent = cp.dataset.o; delete cp.dataset.o; }, 1200); };
-      const rg = main.querySelector("#dn-key-regen"); if (rg) rg.onclick = async () => {
-        const ok = window.dnConfirm
-          ? await window.dnConfirm("Regenerate Darknode API key?", "The current key stops working immediately.", { submitText: "Regenerate", danger: true })
-          : true;
-        if (!ok) return;
-        try { if (window.dnKeys) window.dnKeys.set("dn_api_key", _mintKey()); } catch (_) {}
-        showSetTab("darknode");
-      };
-    }
     // MCP + code-block copy buttons
     const mcpCopy = main.querySelector("#dn-mcp-copy2");
     if (mcpCopy) mcpCopy.onclick = async () => { const c = main.querySelector("#dn-mcp"); if (!c) return; try { await navigator.clipboard.writeText(c.textContent); } catch (_) { showToast("Copy failed", "error"); return; } if (mcpCopy.dataset.o === undefined) mcpCopy.dataset.o = mcpCopy.textContent; mcpCopy.textContent = "Copied"; clearTimeout(mcpCopy._swapT); mcpCopy._swapT = setTimeout(() => { mcpCopy.textContent = mcpCopy.dataset.o; delete mcpCopy.dataset.o; }, 1200); };
@@ -1755,7 +1683,7 @@ function renderDesktopHome(user) {
     return;
   }
   view.innerHTML = "";
-  import("/js/deck/launch.js?v=20261029b")
+  import("/js/deck/launch.js?v=20261029c")
     .then((m) => m.openDeck(user, { isOwner: true, onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
@@ -1785,7 +1713,7 @@ function renderDeckHome(user) {
   const raw = location.pathname.replace(/^\/(console(\/|$))?/, "").replace(/\/$/, "");
   let startSec = !raw ? null : raw.startsWith("tool-") ? raw : raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
   if (startSec === "home" || (startSec === "admin" && !_isAdmin)) startSec = null;
-  import("/js/deck/launch.js?v=20261029b")
+  import("/js/deck/launch.js?v=20261029c")
     .then((m) => m.openDeck(user, {
       isOwner: _isAdmin,
       startSec: startSec || undefined,
@@ -2165,7 +2093,7 @@ function renderApp(user) {
     else if (sec === "sigma") { import("/js/sigma-builder.js?v=20261028a").then(m => live() && m.renderSigmaBuilder(main)); }
     else if (sec === "iocenrich") { import("/js/ioc-enrichment.js?v=20261028a").then(m => live() && m.renderIocEnrichment(main)); }
     else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => live() && m.renderEmbedSDK(main)); }
-    else if (sec === "mcpconnect") { import("/js/mcp-connector.js").then(m => live() && m.renderMcpConnector(main)); }
+    else if (sec === "mcpconnect") { import("/js/mcp-connector.js?v=20261029c").then(m => live() && m.renderMcpConnector(main)); }
     else if (sec === "cvsscalc") { import("/js/cvss-calculator.js?v=20261028c").then(m => live() && m.renderCvssCalculator(main)); }
     else if (sec === "yarabuilder") { import("/js/yara-builder.js").then(m => live() && m.renderYaraBuilder(main)); }
     else if (sec === "emailauth") { import("/js/email-auth.js").then(m => live() && m.renderEmailAuth(main)); }
@@ -2248,7 +2176,7 @@ function renderApp(user) {
     else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261029b").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261029b").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261029c").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261029a").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2872,7 +2800,7 @@ function tourSteps(isOwner) {
 async function accessAllowed(user) {
   if (_isAdmin) return true;
   try {
-    const { getWhitelist } = await import("/js/admin.js?v=20261029b");
+    const { getWhitelist } = await import("/js/admin.js?v=20261029c");
     const cfg = await getWhitelist();
     const banned = ((cfg && cfg.banned) || []).map((e) => String(e).toLowerCase());
     if (banned.includes((user.email || "").toLowerCase())) return false;
