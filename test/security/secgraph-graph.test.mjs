@@ -127,10 +127,10 @@ group("secgraph: import normalization round-trip", () => {
 import { storeKeyFor } from "../../public/js/security-graph.js";
 
 group("secgraph: workspace store keys", () => {
-  test("a personal workspace uses the original unprefixed store (zero migration)", () => {
-    assert.equal(storeKeyFor(null), "dn_security_graph");
-    assert.equal(storeKeyFor(""), "dn_security_graph");
-    assert.equal(storeKeyFor(undefined), "dn_security_graph");
+  test("a personal workspace uses the per-account store (no account here: nouser)", () => {
+    assert.equal(storeKeyFor(null), "dn_security_graph__nouser");
+    assert.equal(storeKeyFor(""), "dn_security_graph__nouser");
+    assert.equal(storeKeyFor(undefined), "dn_security_graph__nouser");
   });
   test("a team workspace gets its own namespaced store", () => {
     assert.equal(storeKeyFor("teamABCD12"), "dn_security_graph__ws_teamABCD12");

@@ -8,7 +8,11 @@
 // localStorage) with getItem/setItem, so the logic is node-testable without a browser.
 
 const CAP = 180;                 // days of history kept
-const KEY = (wid) => (wid ? "dn_deck_trend__ws_" + wid : "dn_deck_trend");
+// Personal history is per signed-in account (window.__dnUid; guests and Test Mode share one
+// guest series), matching the personal security-graph store, since localStorage is shared by
+// every account on the browser. The old unscoped dn_deck_trend key is no longer used.
+const _scope = () => { let u = null; try { u = globalThis.__dnUid || null; } catch (_) {} return !u ? "nouser" : /^(test|app-guest)-/.test(u) ? "guest" : "u_" + u; };
+const KEY = (wid) => (wid ? "dn_deck_trend__ws_" + wid : "dn_deck_trend__" + _scope());
 
 // The small subset charted/reported. The full snapshot (with top contributors) is not
 // stored — history stays tiny and never holds finding detail.

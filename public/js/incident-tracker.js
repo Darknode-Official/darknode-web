@@ -1,5 +1,5 @@
 // Incident Tracker — security incident management dashboard with localStorage persistence
-import { createEntity as sgCreate, updateEntity as sgUpdate, deleteEntity as sgDelete, getEntity as sgGet, listEntities as sgList, createRelationship as sgRel } from "/js/security-graph.js";
+import { createEntity as sgCreate, updateEntity as sgUpdate, deleteEntity as sgDelete, getEntity as sgGet, listEntities as sgList, createRelationship as sgRel, userScope } from "/js/security-graph.js";
 import { IR_PLAYBOOKS, IR_SEVERITY, IR_COMM_TEMPLATES, IR_STAKEHOLDERS, TYPE_PLAYBOOK } from "/js/incident-playbooks.js";
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
@@ -33,10 +33,11 @@ const PLAYBOOK_MAP = {
 
 // ── Storage helpers ──
 // Incident data is scoped to the active workspace (shared pointer dn_active_ws, the same
-// one security-graph.js reads). Personal workspace keeps the legacy un-suffixed keys so
-// nothing migrates; a team workspace gets a per-workspace suffix so incidents never leak
-// across teams. The Deck evicts tool iframes on switch, so each mount reads the right key.
-function wsKey(base) { try { const w = localStorage.getItem("dn_active_ws"); return w ? base + "__ws_" + w : base; } catch (_) { return base; } }
+// one security-graph.js reads). A team workspace gets a per-workspace suffix so incidents
+// never leak across teams; the personal workspace is suffixed with the signed-in account
+// (userScope, as the personal graph store) so accounts sharing a browser never see each
+// other's incidents. The Deck evicts tool iframes on switch, so each mount reads the right key.
+function wsKey(base) { try { const w = localStorage.getItem("dn_active_ws"); return w ? base + "__ws_" + w : base + "__" + userScope(); } catch (_) { return base + "__" + userScope(); } }
 // A team workspace is active when dn_active_ws points somewhere (the personal workspace
 // leaves it unset). In a team, the shared security graph — synced to every member by
 // graph-sync.js — is the source of truth for incidents, so the whole team sees one list.

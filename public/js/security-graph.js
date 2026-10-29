@@ -2,16 +2,21 @@
 import { wins } from './core/graph-merge.js';
 import { ruleAllows } from './core/relationship-rules.js';
 
-// The graph is scoped to the active workspace (Phase B2). A user's PERSONAL workspace
-// keeps the original, unprefixed key so existing graphs are preserved with zero
-// migration; a team workspace gets its own namespaced store. Which workspace is active
-// is a single shared pointer in localStorage (dn_active_ws), so every tool iframe and the
-// Deck agree on the same store and switching propagates through storage events.
-const STORAGE_KEY = 'dn_security_graph';   // the personal / legacy store
+// The graph is scoped to the active workspace (Phase B2): a team workspace gets its own
+// namespaced store. Which workspace is active is a single shared pointer in localStorage
+// (dn_active_ws), so every tool iframe and the Deck agree on the same store and switching
+// propagates through storage events. localStorage is shared by every account that signs in
+// on this browser, so the PERSONAL store is keyed by the signed-in uid (window.__dnUid, kept
+// by auth.js); guests and Test Mode share one guest store. The old unscoped key
+// (dn_security_graph) is no longer read or written: whose data it holds cannot be known.
+const STORAGE_KEY = 'dn_security_graph';
 export const ACTIVE_WS_KEY = 'dn_active_ws';
-export function storeKeyFor(wid) { return wid ? STORAGE_KEY + '__ws_' + wid : STORAGE_KEY; }
+const _acct = () => { try { return window.__dnUid || null; } catch (_) { return null; } };
+export function userScope(uid = _acct()) { return !uid ? 'nouser' : /^(test|app-guest)-/.test(uid) ? 'guest' : 'u_' + uid; }
+export function storeKeyFor(wid) { return wid ? STORAGE_KEY + '__ws_' + wid : STORAGE_KEY + '__' + userScope(); }
 function _activeWid() { try { return localStorage.getItem(ACTIVE_WS_KEY) || null; } catch (_) { return null; } }
 let _key = storeKeyFor(_activeWid());
+let _keyUid = _acct(); // the account _key was computed for; a sign-in/out re-points the store on next use
 export function activeWorkspaceId() { return _activeWid(); }
 
 export const ENTITY_TYPES = [
@@ -140,6 +145,7 @@ function _idbHydrate() {
 }
 
 function _load() {
+  if (_acct() !== _keyUid) { _keyUid = _acct(); _refreshStore(); }
   if (_index !== null) return;
   _memSavedAt = 0;
   try {

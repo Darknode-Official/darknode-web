@@ -71,6 +71,20 @@ function _guestUid(prefix) {
   try { sessionStorage.setItem(ss, uid); } catch (_) {}
   return uid;
 }
+// The active team-workspace pointer (dn_active_ws) lives in localStorage, which every account
+// on this browser shares. Remember which account set it (dn_ws_uid; guests and Test Mode count
+// as one "guest" account) and fall back to the personal workspace when a different account
+// signs in, so it never opens the previous account's team store. A browser with no owner
+// recorded yet keeps its pointer and records the current account.
+function _claimWorkspacePointer(uid) {
+  if (!uid) return;
+  const who = /^(test|app-guest)-/.test(uid) ? "guest" : uid;
+  try {
+    const prev = localStorage.getItem("dn_ws_uid");
+    if (prev && prev !== who) localStorage.removeItem("dn_active_ws");
+    if (prev !== who) localStorage.setItem("dn_ws_uid", who);
+  } catch (_) {}
+}
 
 // Plain-language, newbie-friendly one-liners for every sidebar item + group.
 // Surfaced as a hover tooltip so the sidebar stays visually neat while every
@@ -775,7 +789,7 @@ function renderAuth(mode = "signin") {
 
   const err = (m) => { document.getElementById("err").textContent = m; };
   document.getElementById("testMode").onclick = () => {
-    const tuid = _guestUid("test"); try { window.__dnUid = tuid; } catch (_) {} // keys saved this session stay per session (user-keys.js)
+    const tuid = _guestUid("test"); try { window.__dnUid = tuid; } catch (_) {} _claimWorkspacePointer(tuid); // keys saved this session stay per session (user-keys.js)
     const fakeUser = { uid: tuid, email: "test@darknode.ai", displayName: "Test User", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") };
     renderApp(fakeUser);
   };
@@ -2897,6 +2911,7 @@ onAuthStateChanged(auth, async (user) => {
   // uid must be set before any key is read so one user never reads another's
   // keys on a shared browser. Scrub legacy un-namespaced keys once per load.
   try { window.__dnUid = user ? user.uid : null; } catch (_) {}
+  if (user && !document.documentElement.hasAttribute("data-embed")) _claimWorkspacePointer(user.uid);
   try { if (!window.__dnScrubbed && window.dnKeys) { window.dnKeys.scrubLegacy(); window.__dnScrubbed = true; } } catch (_) {}
   // license verification
   const _hn = [0x64,0x61,0x72,0x6b,0x6e,0x6f,0x64,0x65,0x2e,0x61,0x69].map(c=>String.fromCharCode(c)).join("");
@@ -2930,6 +2945,7 @@ onAuthStateChanged(auth, async (user) => {
       try { sessionStorage.setItem("dn_guest", "1"); } catch (_) {}
       const guestUid = _guestUid("app-guest");
       try { window.__dnUid = guestUid; } catch (_) {}
+      _claimWorkspacePointer(guestUid);
       renderApp({ uid: guestUid, email: "test@darknode.ai", displayName: "Guest", providerData: [{ providerId: "test" }], metadata: { creationTime: new Date().toISOString() }, refreshToken: "", getIdToken: () => Promise.resolve("") });
       return;
     }
