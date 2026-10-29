@@ -11,9 +11,9 @@ import { dnFetch, proxyConfigured } from "../net.js";
 import {
   DEFAULTS, TOOL_ID, CONTEXTS, CATEGORY_LABEL, SEVERITIES, COLUMNS, parseInput, findingsToCsv, inventoryToCsv, toNotice, toSpdx, toTxt,
   exampleDataset, resolutionPlan, extractResolvedLicense,
-} from "./licenseaudit-engine.js?v=20261017c";
+} from "./licenseaudit-engine.js?v=20261029a";
 
-const ENGINE = engineUrl("./licenseaudit-engine.js?v=20261017c", import.meta);
+const ENGINE = engineUrl("./licenseaudit-engine.js?v=20261029a", import.meta);
 const P = "lic";
 const MAX_FILES = 50, MAX_BYTES = 64 * 1024 * 1024, RESOLVE_LIMIT = 200, RESOLVE_GAP_MS = 350;
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };

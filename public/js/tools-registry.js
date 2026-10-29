@@ -9,21 +9,21 @@
 // Scope: the Toolbox holds only security- and coding-relevant utilities. General
 // consumer utilities (color/design, date & time, math, generic text, generators,
 // unit/format converters) were removed on 2026-10-02 to keep the platform coherent.
-import { TOOLS as encoding } from "/js/tools/encoding.js?v=20261028c";
+import { TOOLS as encoding } from "/js/tools/encoding.js?v=20261029a";
 import { TOOLS as hashing } from "/js/tools/hashing.js?v=20261028c";
-import { TOOLS as network } from "/js/tools/network.js?v=20261028c";
-import { TOOLS as websec } from "/js/tools/websec.js?v=20261028c";
-import { TOOLS as dev } from "/js/tools/dev.js?v=20261028c";
+import { TOOLS as network } from "/js/tools/network.js?v=20261029a";
+import { TOOLS as websec } from "/js/tools/websec.js?v=20261029a";
+import { TOOLS as dev } from "/js/tools/dev.js?v=20261029a";
 import { TOOLS as webhttp } from "/js/tools/webhttp.js?v=20261028c";
-import { TOOLS as appsec } from "/js/tools/appsec.js?v=20261028c";
-import { TOOLS as devx } from "/js/tools/devx.js?v=20261028c";
+import { TOOLS as appsec } from "/js/tools/appsec.js?v=20261029a";
+import { TOOLS as devx } from "/js/tools/devx.js?v=20261029a";
 import { TOOLS as crypto } from "/js/tools/crypto.js?v=20261028c";
 import { TOOLS as forensics } from "/js/tools/forensics.js?v=20261028c";
 import { TOOLS as bininspect } from "/js/tools/bininspect.js?v=20261003a";
-import { TOOLS as blueteam } from "/js/tools/blueteam.js?v=20261028c";
-import { TOOLS as cloud } from "/js/tools/cloud.js?v=20261028c";
+import { TOOLS as blueteam } from "/js/tools/blueteam.js?v=20261029a";
+import { TOOLS as cloud } from "/js/tools/cloud.js?v=20261029a";
 import { TOOLS as identity } from "/js/tools/identity.js?v=20261028c";
-import { TOOLS as coding } from "/js/tools/coding.js?v=20261028c";
+import { TOOLS as coding } from "/js/tools/coding.js?v=20261029a";
 import { TOOLS as netproto } from "/js/tools/netproto.js?v=20261028c";
 
 export const TOOL_CATS = {
