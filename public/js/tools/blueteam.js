@@ -632,7 +632,7 @@ export const TOOLS = [
         lvl = n >= 9 ? 4 : n >= 7 ? 3 : n >= 4 ? 2 : n >= 0.1 ? 1 : 0;
       } else if (v.scale.startsWith("Qualitative")) {
         const map = { none: 0, informational: 0, info: 0, low: 1, medium: 2, moderate: 2, high: 3, critical: 4, severe: 4 };
-        lvl = map[S(v.value).toLowerCase().trim()];
+        lvl = Object.hasOwn(map, S(v.value).toLowerCase().trim()) ? map[S(v.value).toLowerCase().trim()] : undefined;
         if (lvl === undefined) return { error: "Use none/low/medium/high/critical." };
       } else {
         const n = parseInt(v.value, 10);

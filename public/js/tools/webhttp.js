@@ -2,6 +2,7 @@
 // Web & HTTP mini-tools.
 
 const S = x => (x == null ? '' : String(x));
+const own = (o, k) => (Object.hasOwn(o, k) ? o[k] : undefined); // typed keys: constructor/toString are not entries
 
 const STATUS = {
   100: ['Continue', 'The client should continue with its request.'],
@@ -244,7 +245,7 @@ export const TOOLS = [
     run(v) {
       const q = S(v.name).trim().toLowerCase();
       if (!q) return { out: Object.keys(REQ_HEADERS).map(h => `${h}: ${REQ_HEADERS[h]}`).join('\n') };
-      const d = REQ_HEADERS[q];
+      const d = own(REQ_HEADERS, q);
       return d ? { out: `${q}\n${d}` } : { error: `No reference entry for request header "${v.name}".` };
     },
   },
@@ -256,7 +257,7 @@ export const TOOLS = [
     run(v) {
       const q = S(v.name).trim().toLowerCase();
       if (!q) return { out: Object.keys(RES_HEADERS).map(h => `${h}: ${RES_HEADERS[h]}`).join('\n') };
-      const d = RES_HEADERS[q];
+      const d = own(RES_HEADERS, q);
       return d ? { out: `${q}\n${d}` } : { error: `No reference entry for response header "${v.name}".` };
     },
   },
@@ -270,7 +271,7 @@ export const TOOLS = [
       if (!e) return '';
       if (e.includes('.')) e = e.split('.').pop();
       e = e.replace(/^\./, '');
-      const m = MIME_EXT[e];
+      const m = own(MIME_EXT, e);
       return m ? { out: m } : { error: `No known MIME type for ".${e}".` };
     },
   },
@@ -520,9 +521,10 @@ export const TOOLS = [
         'proxy-revalidate': 'shared caches must revalidate when stale',
       };
       const lines = s.split(',').map(d => d.trim()).filter(Boolean).map(d => {
-        const [k, val] = d.split('=');
-        if (/max-age|s-maxage|stale-while-revalidate|stale-if-error/.test(k)) return `${d}  (${val || '?'} seconds)`;
-        return notes[k] ? `${d}  (${notes[k]})` : d;
+        const [k, val] = d.split('=').map(x => x.trim());
+        if (/max-age|s-maxage|stale-while-revalidate|stale-if-error/i.test(k)) return `${d}  (${val || '?'} seconds)`;
+        const n = own(notes, k.toLowerCase()); // directives are case-insensitive (RFC 9111)
+        return n ? `${d}  (${n})` : d;
       });
       return { out: lines.join('\n') };
     },
@@ -850,7 +852,7 @@ export const TOOLS = [
       const href = S(v.href).trim();
       if (!href) return '';
       const ext = href.split('.').pop().toLowerCase();
-      const type = MIME_EXT[ext] || '';
+      const type = own(MIME_EXT, ext) || '';
       let out = `<link rel="icon"`;
       if (type) out += ` type="${type}"`;
       if (S(v.sizes).trim()) out += ` sizes="${H.escapeHtml(S(v.sizes).trim())}"`;
