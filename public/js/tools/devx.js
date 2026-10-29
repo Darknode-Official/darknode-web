@@ -941,9 +941,12 @@ export const TOOLS = [
           const val = o[k];
           if (val && typeof val === "object" && !Array.isArray(val)) walk(val, key);
           else {
-            let s = Array.isArray(val) ? JSON.stringify(val) : String(val);
-            if (/\s/.test(s)) s = `"${s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-            out.push(`${key}=${s}`);
+            const s = Array.isArray(val) ? JSON.stringify(val) : String(val);
+            // dotenv keeps no escapes: a bare value ends at # and is trimmed, '...' and `...` are literal,
+            // "..." turns \n into a newline. Pick the form that reads back as exactly s.
+            const q = !/[#\r\n]/.test(s) && s === s.trim() && !/^['"`]/.test(s) ? s
+              : !s.includes("'") ? `'${s}'` : !s.includes("`") ? `\`${s}\`` : !/"|\\[nr]/.test(s) ? `"${s}"` : null;
+            out.push(q == null ? `# ${key} skipped: no .env quoting keeps this value as it is (it holds ', \` and " or a \\n)` : `${key}=${q}`);
           }
         }
       };

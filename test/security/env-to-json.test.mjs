@@ -16,3 +16,15 @@ group(".env tools: dotenv rules", () => {
       "4 unique key(s) found.\nDuplicate keys: A (line 6)\nBlank values: B (line 5), D (line 9)");
   });
 });
+
+import { TOOLS as DEVX } from "../../public/js/tools/devx.js";
+
+group("JSON to .env: values read back the same", () => {
+  const out = (o) => DEVX.find((t) => t.id === "dv-json-to-env").run({ text: JSON.stringify(o) }, H);
+  test("a # or a quote is quoted the way dotenv reads it, and no escapes are added", () => {
+    assert.equal(out({ db: { pw: "ab#cd" }, msg: "it's ok", p: "C:\\dir \"x\"", n: "a\nb" }), "DB_PW='ab#cd'\nMSG=it's ok\nP=C:\\dir \"x\"\nN='a\nb'");
+  });
+  test("a value no .env quoting can hold is skipped with a note", () => {
+    assert.ok(/^# K skipped/.test(out({ k: "'`\"" })));
+  });
+});
