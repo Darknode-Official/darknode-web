@@ -285,3 +285,17 @@ group("dlp: epoch timestamps are not card numbers", () => {
     assert.deepEqual(cards("amex 378282246310005"), ["378282246310005"]);
   });
 });
+
+group("dlp: ISBN-13s are not card numbers", () => {
+  const cards = (t) => scan(t).findings.filter((f) => f.id === "credit-card").map((f) => f.value);
+  test("Luhn-valid ISBN-13s in any format are not flagged", () => {
+    for (const isbn of ["9780596006112", "978-0596006112", "978-9-380-87698-6", "979-2592201316"]) {
+      assert.ok(luhnValid(isbn), isbn);
+      assert.deepEqual(cards("ISBN " + isbn), [], isbn);
+    }
+  });
+  test("13-digit Visa and a 978 run with a bad ISBN check digit are still found", () => {
+    assert.deepEqual(cards("pan 4222222222222"), ["4222222222222"]);
+    assert.ok(luhnValid("9780000000008") && cards("n 9780000000008").length === 1);
+  });
+});

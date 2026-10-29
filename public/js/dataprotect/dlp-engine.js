@@ -100,10 +100,13 @@ export const DETECTORS = [
       // an unseparated 13/16/19-digit run starting with 1 is an epoch time in ms/us/ns (no card
       // network issues 1-prefixed numbers of those lengths; UATP's are 15) - 1 in 10 passed Luhn
       const epoch = (raw) => { const d = raw.replace(/\D/g, ''); return !/[ -]/.test(raw.trim()) && d[0] === '1' && (d.length === 13 || d.length === 16 || d.length === 19); };
-      if (luhnValid(m) && !epoch(m)) return true;
+      // a 978/979 13-digit run with a valid EAN-13 check digit is an ISBN (1 in 10 also pass Luhn)
+      const isbn = (raw) => { const d = raw.replace(/\D/g, ''); if (d.length !== 13 || !/^97[89]/.test(d)) return false; let t = 0; for (let i = 0; i < 13; i++) t += (d.charCodeAt(i) - 48) * (i % 2 ? 3 : 1); return t % 10 === 0; };
+      const notCard = (raw) => epoch(raw) || isbn(raw);
+      if (luhnValid(m) && !notCard(m)) return true;
       // returns the trimmed text so only the card is reported/redacted, not the neighbour
       const s = String(m), g = [...s.matchAll(/\d+/g)];
-      const ok = (raw) => { const d = raw.replace(/\D/g, ''); return d.length >= 13 && d.length <= 19 && luhnValid(d) && !epoch(raw); };
+      const ok = (raw) => { const d = raw.replace(/\D/g, ''); return d.length >= 13 && d.length <= 19 && luhnValid(d) && !notCard(raw); };
       for (let k = 1; k < g.length; k++) {
         const tail = s.slice(g[k].index);                                   // drop k leading groups (a number before the card)
         const last = g[g.length - 1 - k], head = s.slice(0, last.index + last[0].length); // drop k trailing groups (a number after the card)
