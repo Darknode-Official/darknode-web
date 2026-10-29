@@ -216,7 +216,7 @@ export const TOOLS = [
 
   { id: "n-ip-class", name: "IPv4 Address Class", cat: "network", desc: "Classify a legacy address class (A/B/C/D/E) from its first octet.", tags: ["classful", "ipv4"],
     inputs: [{ k: "ip", label: "IPv4 address", type: "text", placeholder: "172.16.5.1" }],
-    run(v) { if (!v.ip) return ""; const p = parseIPv4(v.ip); if (!p) return { error: "Enter a valid IPv4 address." }; const o = p[0]; if (o < 128) return "Class A (1.0.0.0 - 126.255.255.255)"; if (o < 192) return "Class B (128.0.0.0 - 191.255.255.255)"; if (o < 224) return "Class C (192.0.0.0 - 223.255.255.255)"; if (o < 240) return "Class D — Multicast (224.0.0.0 - 239.255.255.255)"; return "Class E — Reserved/experimental (240.0.0.0 - 255.255.255.255)"; } },
+    run(v) { if (!v.ip) return ""; const p = parseIPv4(v.ip); if (!p) return { error: "Enter a valid IPv4 address." }; const o = p[0]; if (o < 128) return "Class A (0.0.0.0 - 127.255.255.255)" + (o === 0 ? "\n0.0.0.0/8 is reserved: this host on this network." : o === 127 ? "\n127.0.0.0/8 is reserved for loopback." : ""); if (o < 192) return "Class B (128.0.0.0 - 191.255.255.255)"; if (o < 224) return "Class C (192.0.0.0 - 223.255.255.255)"; if (o < 240) return "Class D — Multicast (224.0.0.0 - 239.255.255.255)"; return "Class E — Reserved/experimental (240.0.0.0 - 255.255.255.255)"; } },
 
   { id: "n-ip-type", name: "IPv4 Private / Public / Reserved Checker", cat: "network", desc: "Identify whether an IPv4 address is private, loopback, link-local, documentation, multicast, or public.", tags: ["rfc1918", "private", "public"],
     inputs: [{ k: "ip", label: "IPv4 address", type: "text", placeholder: "10.1.2.3" }],
@@ -367,7 +367,7 @@ export const TOOLS = [
 
   { id: "n-query-parser", name: "Query String Parser", cat: "network", desc: "Parse a URL query string into key/value lines.", tags: ["url", "querystring"],
     inputs: [{ k: "qs", label: "Query string", type: "textarea", rows: 3, placeholder: "a=1&b=two&a=3" }],
-    run(v) { if (!v.qs) return ""; try { const s = v.qs.trim().replace(/^\?/, ""); const params = new URLSearchParams(s); const lines = []; params.forEach((val, key) => lines.push(`${key} = ${val}`)); return lines.length ? lines.join("\n") : "(no parameters)"; } catch (e) { return { error: "Could not parse query string." }; } } },
+    run(v) { if (!v.qs) return ""; try { let s = v.qs.trim(); if (s[0] === "#") s = s.slice(1); else { s = s.replace(/#.*$/s, ""); if (s[0] === "?" || s[0] === "/" || /^([a-z][\w+.-]*:)?\/\//i.test(s)) s = s.slice(s.indexOf("?") + 1 || s.length); } /* a full URL or a #fragment is not part of the query */ const params = new URLSearchParams(s); const lines = []; params.forEach((val, key) => lines.push(`${key} = ${val}`)); return lines.length ? lines.join("\n") : "(no parameters)"; } catch (e) { return { error: "Could not parse query string." }; } } },
 
   { id: "n-user-agent", name: "User-Agent Parser", cat: "network", desc: "Heuristically identify browser, engine, OS, device type (desktop/mobile/tablet) and bots from a User-Agent string.", tags: ["ua", "browser", "os", "user-agent", "bot", "device"],
     inputs: [{ k: "ua", label: "User-Agent string", type: "textarea", rows: 3, placeholder: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ... Chrome/120.0 Safari/537.36" }],
