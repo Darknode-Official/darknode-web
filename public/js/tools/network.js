@@ -506,7 +506,7 @@ export const TOOLS = [
 
   { id: "n-ipv4-mapped-ipv6", name: "IPv4 → IPv6 Mapped Address", cat: "network", desc: "Embed an IPv4 address into its IPv4-mapped and IPv4-compatible IPv6 forms.", tags: ["ipv6", "ipv4", "mapped"],
     inputs: [{ k: "ip", label: "IPv4 address", type: "text", placeholder: "203.0.113.5" }],
-    run(v) { if (!v.ip) return ""; const p = parseIPv4(v.ip); if (!p) return { error: "Enter a valid IPv4 address." }; const hex = p.map((b) => b.toString(16).padStart(2, "0")).join(""); const g1 = hex.slice(0, 4), g2 = hex.slice(4, 8); return `IPv4-mapped: ::ffff:${g1}:${g2}  (equivalently ::ffff:${v.ip.trim()})\nIPv4-compatible (deprecated): ::${v.ip.trim()}`; } },
+    run(v) { if (!v.ip) return ""; const p = parseIPv4(v.ip); if (!p) return { error: "Enter a valid IPv4 address." }; const hex = p.map((b) => b.toString(16).padStart(2, "0")).join(""); const g1 = hex.slice(0, 4).replace(/^0{1,3}/, ""), g2 = hex.slice(4, 8).replace(/^0{1,3}/, ""); /* RFC 5952: no leading zeros */ return `IPv4-mapped: ::ffff:${g1}:${g2}  (equivalently ::ffff:${v.ip.trim()})\nIPv4-compatible (deprecated): ::${v.ip.trim()}`; } },
 
   { id: "n-whois-builder", name: "whois Command Builder", cat: "network", desc: "Build a whois lookup command for a domain or IP, with an optional server.", tags: ["whois", "command"],
     inputs: [{ k: "target", label: "Domain or IP", type: "text", placeholder: "example.com" }, { k: "server", label: "Whois server (optional)", type: "text", placeholder: "whois.arin.net" }],
