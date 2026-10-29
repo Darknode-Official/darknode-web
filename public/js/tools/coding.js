@@ -1943,7 +1943,7 @@ export const TOOLS = [
   },
   {
     id: "cd-duration", name: "Duration Parser / Formatter", cat: "coding",
-    desc: "Convert between a human duration (like 1h30m, 90s, 2d) and a total number of seconds or milliseconds. Understands w/d/h/m/s/ms units.",
+    desc: "Convert between a human duration (like 1h30m, 90s, 2d) and a total number of seconds or milliseconds. Understands w/d/h/m/s/ms units, words like 2 hours, a leading minus and ISO 8601 (PT1H30M).",
     tags: ["duration", "time", "seconds", "parse", "humanize"],
     inputs: [
       { k: "input", label: "Duration or number", type: "text", placeholder: "1h30m  or  5400" },
@@ -1954,9 +1954,24 @@ export const TOOLS = [
       const units = { w: 604800, d: 86400, h: 3600, m: 60, s: 1, ms: 0.001 };
       if (v.mode === "Parse to seconds") {
         if (/^-?\d+(\.\d+)?$/.test(s)) return s + " seconds";
-        const re = /(\d+(?:\.\d+)?)\s*(ms|w|d|h|m|s)/gi; let total = 0, matched = false, m;
-        while ((m = re.exec(s))) { matched = true; total += parseFloat(m[1]) * units[m[2].toLowerCase()]; }
-        if (!matched) return { error: "Could not parse. Use units like 1h30m, 2d, 500ms." };
+        const neg = s[0] === "-", body = s.replace(/^[-+]/, "");
+        let total = 0, m;
+        const iso = /^P(?:(\d+(?:[.,]\d+)?)Y)?(?:(\d+(?:[.,]\d+)?)M)?(?:(\d+(?:[.,]\d+)?)W)?(?:(\d+(?:[.,]\d+)?)D)?(?:T(?:(\d+(?:[.,]\d+)?)H)?(?:(\d+(?:[.,]\d+)?)M)?(?:(\d+(?:[.,]\d+)?)S)?)?$/i.exec(body);
+        if (iso && /\d/.test(body) && !/T$/i.test(body)) {
+          if (iso[1] || iso[2]) return { error: "ISO years and months have no fixed length in seconds. Use weeks, days or smaller." };
+          [[iso[3], 604800], [iso[4], 86400], [iso[5], 3600], [iso[6], 60], [iso[7], 1]].forEach(([n, u]) => { if (n) total += parseFloat(n.replace(",", ".")) * u; });
+        } else {
+          const re = /(\d+(?:\.\d+)?|\.\d+)\s*(ms|w|d|h|m|s)(?![a-z])/giy; let rest = body.replace(/\s+/g, " ").trim(), pos = 0, matched = false;
+          rest = rest.replace(/\b(weeks?|days?|hours?|hrs?|minutes?|mins?|seconds?|secs?|milliseconds?)\b/gi, (w) => ({ we: "w", da: "d", ho: "h", hr: "h", mi: /^mil/i.test(w) ? "ms" : "m", se: "s" })[w.slice(0, 2).toLowerCase()]);
+          while (pos < rest.length) {
+            const sep = /[ ,]+|and\s*/iy; sep.lastIndex = pos; if (matched && sep.exec(rest)) { pos = sep.lastIndex; continue; }
+            re.lastIndex = pos; m = re.exec(rest);
+            if (!m) return { error: `Could not parse "${rest.slice(pos)}". Use units like 1h30m, 2d, 500ms or ISO PT1H30M.` };
+            matched = true; total += parseFloat(m[1]) * units[m[2].toLowerCase()]; pos = re.lastIndex;
+          }
+          if (!matched) return { error: "Could not parse. Use units like 1h30m, 2d, 500ms." };
+        }
+        if (neg) total = -total;
         return "Total seconds : " + (total % 1 ? total : total) + "\nMilliseconds  : " + Math.round(total * 1000);
       }
       const num = parseFloat(s); if (isNaN(num)) return { error: "Enter a number." };

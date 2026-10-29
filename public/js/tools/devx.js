@@ -768,27 +768,32 @@ export const TOOLS = [
       const units = base === 1000 ? ["B", "KB", "MB", "GB", "TB", "PB"] : ["B", "KiB", "MiB", "GiB", "TiB", "PiB"];
       let x = Math.abs(n), i = 0;
       while (x >= base && i < units.length - 1) { x /= base; i++; }
+      if (i > 0 && i < units.length - 1 && +x.toFixed(2) >= base) { x /= base; i++; }
       const sign = n < 0 ? "-" : "";
       return `${sign}${i === 0 ? x : x.toFixed(2)} ${units[i]}`;
     },
   },
   {
     id: "dv-bytes-parse", name: "Byte Size Parser", cat: "devx",
-    desc: 'Parse a human size such as "5 MB" or "2.5GiB" back into an exact byte count.',
+    desc: 'Parse a human size such as "5 MB", "2.5GiB", "512k" or "10 Gb" (bits) back into an exact byte count.',
     tags: ["bytes", "size", "parse"],
     inputs: [{ k: "text", label: "Size", type: "text", placeholder: "5 MB" }],
     run(v) {
       const t = S(v.text).trim();
       if (!t) return "";
-      const m = /^([\d.]+)\s*([a-zA-Z]*)$/.exec(t);
+      const m = /^(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d*\.?\d+)\s*([a-zA-Z]*)$/.exec(t);
       if (!m) return { error: "Could not parse size." };
-      const num = parseFloat(m[1]);
-      const unit = m[2].toLowerCase();
-      const dec = { "": 1, b: 1, kb: 1e3, mb: 1e6, gb: 1e9, tb: 1e12, pb: 1e15 };
-      const bin = { kib: 1024, mib: 1024 ** 2, gib: 1024 ** 3, tib: 1024 ** 4, pib: 1024 ** 5 };
+      const num = parseFloat(m[1].replace(/,/g, ""));
+      const bits = /^[KMGTP]b$/.test(m[2]);
+      const unit = m[2].toLowerCase().replace(/^bytes?$/, "b");
+      const dec = { "": 1, b: 1, kb: 1e3, mb: 1e6, gb: 1e9, tb: 1e12, pb: 1e15, k: 1e3, m: 1e6, g: 1e9, t: 1e12, p: 1e15 };
+      const bin = { kib: 1024, mib: 1024 ** 2, gib: 1024 ** 3, tib: 1024 ** 4, pib: 1024 ** 5, ki: 1024, mi: 1024 ** 2, gi: 1024 ** 3, ti: 1024 ** 4, pi: 1024 ** 5 };
       const mult = dec[unit] !== undefined ? dec[unit] : bin[unit];
       if (mult === undefined) return { error: `Unknown unit '${m[2]}'.` };
-      return `${Math.round(num * mult)} bytes`;
+      if (bits) return `${Math.round(num * mult / 8)} bytes\n\n${m[2]} is bits (lowercase b); ${m[2][0]}B is bytes.`;
+      const out = `${Math.round(num * mult)} bytes`;
+      if (/^[kmgtp]$/.test(unit)) return `${out}\n\nA bare ${m[2]} is read as decimal (1000). Tools such as nginx, dd and Java -Xmx read it as 1024, which gives ${Math.round(num * bin[unit + "i"])} bytes.`;
+      return out;
     },
   },
   {
@@ -1326,13 +1331,19 @@ export const TOOLS = [
       const t = S(v.text).trim();
       if (!t) return "";
       if (v.mode === "parse") {
-        const qs = t.replace(/^[?#]/, "");
+        let qs = t;
+        if (qs[0] === "#") qs = qs.slice(1);
+        else {
+          qs = qs.replace(/#.*$/s, "");
+          if (qs[0] === "?" || /^([a-z][\w+.-]*:)?\/\//i.test(qs) || qs[0] === "/") qs = qs.slice(qs.indexOf("?") + 1 || qs.length);
+        }
+        const dec = (x) => new URLSearchParams("a=" + x).get("a");
         const obj = {};
         for (const pair of qs.split("&")) {
           if (!pair) continue;
           const eq = pair.indexOf("=");
-          const k = decodeURIComponent((eq < 0 ? pair : pair.slice(0, eq)).replace(/\+/g, " "));
-          const val = eq < 0 ? "" : decodeURIComponent(pair.slice(eq + 1).replace(/\+/g, " "));
+          const k = dec(eq < 0 ? pair : pair.slice(0, eq));
+          const val = eq < 0 ? "" : dec(pair.slice(eq + 1));
           if (k in obj) { if (!Array.isArray(obj[k])) obj[k] = [obj[k]]; obj[k].push(val); }
           else obj[k] = val;
         }
