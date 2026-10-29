@@ -222,7 +222,7 @@ group("super-admin via custom claim (hardcoded owner email removed)", () => {
   test("auth.js resolves admin from the cached claim flag, not an email compare", () => {
     const s = read("js/auth.js");
     assert.ok(/isAdminUser/.test(s), "imports/uses the claim reader");
-    assert.ok(/_isAdmin = await isAdminUser\(user\)/.test(s), "caches the admin flag from the token");
+    assert.ok(/_isAdmin = \(?await isAdminUser\(user\)/.test(s), "caches the admin flag from the token");
     assert.ok(!/user\.email === OWNER_EMAIL/.test(s), "no email-based owner check remains");
   });
 
