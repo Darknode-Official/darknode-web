@@ -1126,7 +1126,7 @@ export const TOOLS = [
     inputs: [
       { k: "lang", label: "Language", type: "select", opts: [["c", "C / JS / Java (/* */)"], ["hash", "Python / Shell (#)"], ["html", "HTML (<!-- -->)"], ["lua", "Lua / SQL (--)"]], value: "c" },
       { k: "license", label: "License", type: "select", opts: ["MIT", "Apache-2.0", "GPL-3.0", "Proprietary"], value: "MIT" },
-      { k: "author", label: "Author / Owner", type: "text", placeholder: "Acme Inc." },
+      { k: "author", label: "Author / Owner", type: "text", placeholder: "Company name" },
       { k: "year", label: "Year", type: "text", placeholder: "2026" },
     ],
     run(v) {

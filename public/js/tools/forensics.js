@@ -905,7 +905,7 @@ export const TOOLS = [
     } },
 
   { id: "fx-email-headers", name: "Email Header Overview", cat: "forensics", desc: "Extract the key fields from a raw email header block (From, To, Subject, Date, Message-ID, Return-Path, Reply-To, X-Originating-IP) and flag common mismatches.", tags: ["email", "headers", "message-id", "return-path", "phishing"],
-    inputs: [{ k: "headers", label: "Raw headers", type: "textarea", rows: 10, placeholder: "From: Alice <alice@example.com>\nReturn-Path: <bounce@evil.example>\nSubject: Hi" }],
+    inputs: [{ k: "headers", label: "Raw headers", type: "textarea", rows: 10, placeholder: "From: Sender <test@darknode.ai>\nReturn-Path: <bounce@evil.example>\nSubject: Hi" }],
     run(v) {
       const text = String(v.headers || "").replace(/\r?\n[ \t]+/g, " "); if (!text.trim()) return "";
       const get = (name) => { const m = text.match(new RegExp("^" + name + ":\\s*(.+)$", "im")); return m ? m[1].trim() : ""; };
@@ -1060,7 +1060,7 @@ export const TOOLS = [
     } },
 
   { id: "fx-cloudtrail", name: "AWS CloudTrail Record Reader", cat: "forensics", desc: "Parse a single AWS CloudTrail event record (JSON) and surface the key investigative fields: time, event name/source, region, source IP, user identity and any error code.", tags: ["cloudtrail", "aws", "cloud", "json", "iam"],
-    inputs: [{ k: "json", label: "CloudTrail record (JSON)", type: "textarea", rows: 8, placeholder: '{"eventTime":"2024-01-01T10:00:00Z","eventName":"ConsoleLogin","eventSource":"signin.amazonaws.com","sourceIPAddress":"198.51.100.7","userIdentity":{"type":"IAMUser","userName":"alice","accountId":"123456789012"}}' }],
+    inputs: [{ k: "json", label: "CloudTrail record (JSON)", type: "textarea", rows: 8, placeholder: '{"eventTime":"2024-01-01T10:00:00Z","eventName":"ConsoleLogin","eventSource":"signin.amazonaws.com","sourceIPAddress":"198.51.100.7","userIdentity":{"type":"IAMUser","userName":"user1","accountId":"123456789012"}}' }],
     run(v) {
       const t = String(v.json || "").trim(); if (!t) return "";
       let o; try { o = JSON.parse(t); } catch (e) { return { error: "Not valid JSON." }; }

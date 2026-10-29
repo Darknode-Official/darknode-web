@@ -279,7 +279,7 @@ export const TOOLS = [
       { k: "arn", label: "Role ARN", type: "text", placeholder: "arn:aws:iam::123456789012:role/Deploy" },
       { k: "session", label: "Session name", type: "text", value: "cli-session" },
       { k: "external", label: "External ID (optional)", type: "text", placeholder: "unique-id" },
-      { k: "mfa", label: "MFA serial (optional)", type: "text", placeholder: "arn:aws:iam::123456789012:mfa/alice" },
+      { k: "mfa", label: "MFA serial (optional)", type: "text", placeholder: "arn:aws:iam::123456789012:mfa/user1" },
       { k: "token", label: "MFA token code (optional)", type: "text", placeholder: "123456" },
       { k: "duration", label: "Duration (seconds)", type: "text", value: "3600" },
     ],

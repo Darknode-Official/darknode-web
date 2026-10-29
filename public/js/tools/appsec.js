@@ -671,7 +671,7 @@ export const TOOLS = [
   { id: "sx-otpauth-uri", name: "otpauth:// URI Builder", cat: "appsec", desc: "Build a Google-Authenticator-compatible otpauth:// URI for a TOTP secret.", tags: ["otpauth", "totp", "qr", "2fa"],
     inputs: [
       { k: "issuer", label: "Issuer", type: "text", placeholder: "ACME Corp" },
-      { k: "account", label: "Account", type: "text", placeholder: "alice@example.com" },
+      { k: "account", label: "Account", type: "text", placeholder: "test@darknode.ai" },
       { k: "secret", label: "Base32 secret", type: "text", inputType: "password" },
       { k: "digits", label: "Digits", type: "select", opts: ["6", "8"], value: "6" },
       { k: "period", label: "Period", type: "select", opts: ["30", "60"], value: "30" },

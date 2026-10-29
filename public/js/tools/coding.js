@@ -617,7 +617,7 @@ export const TOOLS = [
     desc: "Parse CSV (quoted fields, embedded commas/newlines, \"\" escapes) into JSON. Uses the first row as keys, or emits arrays of cells when there is no header.",
     tags: ["csv", "json", "convert", "parse", "import"],
     inputs: [
-      { k: "csv", label: "CSV", type: "textarea", rows: 7, placeholder: "id,name\n1,Jane\n2,John" },
+      { k: "csv", label: "CSV", type: "textarea", rows: 7, placeholder: "id,name\n1,user1\n2,user2" },
       { k: "delim", label: "Delimiter", type: "select", opts: [[",", "Comma"], ["\t", "Tab"], [";", "Semicolon"], ["|", "Pipe"]], value: "," },
       { k: "header", label: "First row is header", type: "checkbox", value: true },
       { k: "numbers", label: "Convert numeric cells to numbers", type: "checkbox", value: true },
@@ -705,7 +705,7 @@ export const TOOLS = [
     desc: "Resolve an RFC 6901 JSON Pointer such as /users/0/name against a JSON document. Handles ~0 (for ~) and ~1 (for /) token escapes.",
     tags: ["json pointer", "rfc6901", "json", "extract", "path"],
     inputs: [
-      { k: "json", label: "JSON", type: "textarea", rows: 6, placeholder: '{"users":[{"name":"Jane"}]}' },
+      { k: "json", label: "JSON", type: "textarea", rows: 6, placeholder: '{"users":[{"name":"user1"}]}' },
       { k: "pointer", label: "Pointer", type: "text", placeholder: "/users/0/name" },
     ],
     run(v) {
@@ -735,7 +735,7 @@ export const TOOLS = [
     id: "cd-json-unflatten", name: "JSON Unflatten (dotted keys to nested)", cat: "coding",
     desc: "Rebuild nested JSON from a flat object whose keys use dot paths like user.address.city or tags.0. Numeric segments become array indexes.",
     tags: ["json", "unflatten", "nest", "dot path", "expand"],
-    inputs: [{ k: "json", label: "Flat JSON", type: "textarea", rows: 7, placeholder: '{"user.name":"Jane","tags.0":"a","tags.1":"b"}' }],
+    inputs: [{ k: "json", label: "Flat JSON", type: "textarea", rows: 7, placeholder: '{"user.name":"user1","tags.0":"a","tags.1":"b"}' }],
     run(v) {
       if (!S(v.json).trim()) return "";
       const r = tryJSON(v.json); if (!r.ok) return { error: "Invalid JSON: " + r.err };
@@ -865,7 +865,7 @@ export const TOOLS = [
     desc: "Tidy CSV: trim whitespace in every cell, drop fully-empty rows, optionally collapse internal whitespace and remove duplicate rows. Re-quotes fields correctly.",
     tags: ["csv", "clean", "trim", "dedupe", "normalize"],
     inputs: [
-      { k: "csv", label: "CSV", type: "textarea", rows: 7, placeholder: " id , name \n1, Jane \n\n1, Jane " },
+      { k: "csv", label: "CSV", type: "textarea", rows: 7, placeholder: " id , name \n1, user1 \n\n1, user1 " },
       { k: "delim", label: "Delimiter", type: "select", opts: [[",", "Comma"], ["\t", "Tab"], [";", "Semicolon"], ["|", "Pipe"]], value: "," },
       { k: "collapse", label: "Collapse internal whitespace", type: "checkbox", value: false },
       { k: "dedupe", label: "Remove duplicate rows", type: "checkbox", value: true },
@@ -925,7 +925,7 @@ export const TOOLS = [
     desc: "Re-delimit tabular text, for example CSV to TSV or pipe-separated. Parses with the source delimiter (quote-aware) and re-quotes for the target.",
     tags: ["csv", "tsv", "delimiter", "convert", "psv"],
     inputs: [
-      { k: "text", label: "Input", type: "textarea", rows: 7, placeholder: "id,name\n1,Jane" },
+      { k: "text", label: "Input", type: "textarea", rows: 7, placeholder: "id,name\n1,user1" },
       { k: "from", label: "From", type: "select", opts: [[",", "Comma"], ["\t", "Tab"], [";", "Semicolon"], ["|", "Pipe"]], value: "," },
       { k: "to", label: "To", type: "select", opts: [["\t", "Tab"], [",", "Comma"], [";", "Semicolon"], ["|", "Pipe"]], value: "\t" },
     ],
@@ -1009,7 +1009,7 @@ export const TOOLS = [
     desc: "Pull out and reorder specific columns from delimited text by 1-based index (for example 1,3,2), quote-aware, with a chosen output delimiter.",
     tags: ["csv", "cut", "columns", "extract", "select"],
     inputs: [
-      { k: "text", label: "Input", type: "textarea", rows: 7, placeholder: "id,name,email\n1,Jane,jane@example.com" },
+      { k: "text", label: "Input", type: "textarea", rows: 7, placeholder: "id,name,email\n1,user1,test@darknode.ai" },
       { k: "cols", label: "Columns (1-based, comma separated)", type: "text", placeholder: "1,2" },
       { k: "delim", label: "Input delimiter", type: "select", opts: [[",", "Comma"], ["\t", "Tab"], [";", "Semicolon"], ["|", "Pipe"]], value: "," },
       { k: "out", label: "Output delimiter", type: "select", opts: [[",", "Comma"], ["\t", "Tab"], [";", "Semicolon"], ["|", "Pipe"]], value: "," },
@@ -1027,7 +1027,7 @@ export const TOOLS = [
     desc: "Generate INSERT statements from CSV using the header row as column names. Numeric cells stay unquoted, empty cells become NULL, strings are single-quoted with '' escaping.",
     tags: ["csv", "sql", "insert", "import", "convert"],
     inputs: [
-      { k: "csv", label: "CSV (with header)", type: "textarea", rows: 7, placeholder: "id,name\n1,Jane\n2,John" },
+      { k: "csv", label: "CSV (with header)", type: "textarea", rows: 7, placeholder: "id,name\n1,user1\n2,user2" },
       { k: "table", label: "Table name", type: "text", value: "my_table" },
       { k: "delim", label: "Delimiter", type: "select", opts: [[",", "Comma"], ["\t", "Tab"], [";", "Semicolon"], ["|", "Pipe"]], value: "," },
       { k: "multi", label: "Single multi-row INSERT", type: "checkbox", value: false },
@@ -1050,7 +1050,7 @@ export const TOOLS = [
     desc: "Infer a SQL CREATE TABLE from CSV by sampling each column: all-integer becomes INTEGER, all-decimal REAL, true/false BOOLEAN, otherwise TEXT (VARCHAR with the max observed length).",
     tags: ["csv", "sql", "schema", "create table", "ddl"],
     inputs: [
-      { k: "csv", label: "CSV (with header)", type: "textarea", rows: 7, placeholder: "id,name,active\n1,Jane,true" },
+      { k: "csv", label: "CSV (with header)", type: "textarea", rows: 7, placeholder: "id,name,active\n1,user1,true" },
       { k: "table", label: "Table name", type: "text", value: "my_table" },
       { k: "delim", label: "Delimiter", type: "select", opts: [[",", "Comma"], ["\t", "Tab"], [";", "Semicolon"], ["|", "Pipe"]], value: "," },
     ],
@@ -1076,7 +1076,7 @@ export const TOOLS = [
     desc: "Turn a list (lines, commas or spaces) into a SQL IN (...) clause. Auto mode quotes non-numeric values and leaves numbers bare; strings are escaped with ''.",
     tags: ["sql", "in", "clause", "query", "list"],
     inputs: [
-      { k: "list", label: "Values (one per line or comma separated)", type: "textarea", rows: 6, placeholder: "alice\nbob\n42" },
+      { k: "list", label: "Values (one per line or comma separated)", type: "textarea", rows: 6, placeholder: "admin\nguest\n42" },
       { k: "col", label: "Column (optional)", type: "text", placeholder: "username" },
       { k: "quote", label: "Quoting", type: "select", opts: ["Auto", "Always quote", "Never quote"], value: "Auto" },
     ],
@@ -1304,7 +1304,7 @@ export const TOOLS = [
     desc: "Add a prefix and/or suffix to every non-empty line - for example to quote and comma-join a list, comment out code, or build HTML/SQL fragments.",
     tags: ["prefix", "suffix", "wrap", "lines", "quote"],
     inputs: [
-      { k: "text", label: "Lines", type: "textarea", rows: 6, placeholder: "alice\nbob" },
+      { k: "text", label: "Lines", type: "textarea", rows: 6, placeholder: "admin\nguest" },
       { k: "prefix", label: "Prefix", type: "text", placeholder: "'" },
       { k: "suffix", label: "Suffix", type: "text", placeholder: "'," },
       { k: "skipEmpty", label: "Skip empty lines", type: "checkbox", value: true },

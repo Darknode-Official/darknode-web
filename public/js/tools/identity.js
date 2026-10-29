@@ -474,7 +474,7 @@ export const TOOLS = [
     } },
 
   { id: "id-otpauth-parse", name: "otpauth:// URI Parser", cat: "identity", desc: "Parse an otpauth:// provisioning URI (the QR payload) into its label, secret and parameters.", tags: ["otpauth", "totp", "hotp", "qr", "2fa"],
-    inputs: [{ k: "uri", label: "otpauth:// URI", type: "textarea", rows: 2, placeholder: "otpauth://totp/Example:alice@example.com?secret=..." }],
+    inputs: [{ k: "uri", label: "otpauth:// URI", type: "textarea", rows: 2, placeholder: "otpauth://totp/Example:test@darknode.ai?secret=..." }],
     run(v) {
       const uri = S(v.uri).trim();
       if (!uri) return "";
@@ -647,7 +647,7 @@ export const TOOLS = [
     } },
 
   { id: "id-shadow-parse", name: "/etc/shadow Line Parser", cat: "identity", desc: "Break an /etc/shadow entry into its fields and interpret the password-aging columns and lock state.", tags: ["shadow", "linux", "password", "aging"],
-    inputs: [{ k: "line", label: "shadow line", type: "textarea", rows: 2, placeholder: "alice:$6$...:19000:0:99999:7:::" }],
+    inputs: [{ k: "line", label: "shadow line", type: "textarea", rows: 2, placeholder: "user1:$6$...:19000:0:99999:7:::" }],
     run(v) {
       const line = S(v.line).trim();
       if (!line) return "";
@@ -668,7 +668,7 @@ export const TOOLS = [
     } },
 
   { id: "id-passwd-parse", name: "/etc/passwd Line Parser", cat: "identity", desc: "Break an /etc/passwd entry into fields and flag login shell and account type from the UID.", tags: ["passwd", "linux", "uid", "account"],
-    inputs: [{ k: "line", label: "passwd line", type: "text", placeholder: "alice:x:1000:1000:Alice,,,:/home/alice:/bin/bash" }],
+    inputs: [{ k: "line", label: "passwd line", type: "text", placeholder: "user1:x:1000:1000:User One,,,:/home/user1:/bin/bash" }],
     run(v) {
       const line = S(v.line).trim();
       if (!line) return "";
@@ -851,7 +851,7 @@ export const TOOLS = [
 
   // ---------------- LDAP / Active Directory ----------------
   { id: "id-ldap-dn-parse", name: "LDAP Distinguished Name Parser", cat: "identity", desc: "Split an LDAP/X.500 Distinguished Name into its RDN components, honouring escaping and multi-valued RDNs (RFC 4514).", tags: ["ldap", "dn", "rdn", "rfc4514", "ad"],
-    inputs: [{ k: "dn", label: "Distinguished Name", type: "text", placeholder: "CN=John Doe,OU=Users,DC=example,DC=com" }],
+    inputs: [{ k: "dn", label: "Distinguished Name", type: "text", placeholder: "CN=User One,OU=Users,DC=example,DC=com" }],
     run(v) {
       const dn = S(v.dn).trim();
       if (!dn) return "";
@@ -871,7 +871,7 @@ export const TOOLS = [
     } },
 
   { id: "id-ldap-dn-escape", name: "LDAP DN Value Escaper", cat: "identity", desc: "Escape a value for safe use inside an LDAP Distinguished Name (RFC 4514 special characters and leading/trailing space/#).", tags: ["ldap", "dn", "escape", "rfc4514"],
-    inputs: [{ k: "value", label: "Raw attribute value", type: "text", placeholder: "Doe, John" }],
+    inputs: [{ k: "value", label: "Raw attribute value", type: "text", placeholder: "Last, First" }],
     run(v) {
       const raw = S(v.value);
       if (!raw) return "";
@@ -939,7 +939,7 @@ export const TOOLS = [
     } },
 
   { id: "id-upn-parse", name: "UPN / Logon Name Parser", cat: "identity", desc: "Parse a Windows UPN (user@domain) or down-level logon name (DOMAIN\\user) into its parts.", tags: ["ad", "upn", "logon", "netbios", "windows"],
-    inputs: [{ k: "name", label: "Account name", type: "text", placeholder: "alice@example.com or EXAMPLE\\alice" }],
+    inputs: [{ k: "name", label: "Account name", type: "text", placeholder: "test@darknode.ai or EXAMPLE\\user1" }],
     run(v) {
       const name = S(v.name).trim();
       if (!name) return "";
@@ -1184,7 +1184,7 @@ export const TOOLS = [
   // ---------------- Email identity / token formats ----------------
   { id: "id-email-normalize", name: "Email Address Normalizer", cat: "identity", desc: "Produce a canonical form of an email for account matching/dedup - lowercases, strips +tags, and applies Gmail dot rules. Heuristic, not for delivery.", tags: ["email", "normalize", "canonical", "gmail", "identity"],
     inputs: [
-      { k: "email", label: "Email address", type: "text", placeholder: "John.Doe+news@Gmail.com" },
+      { k: "email", label: "Email address", type: "text", placeholder: "First.Last+news@Gmail.com" },
       { k: "stripplus", label: "Strip +tag", type: "checkbox", value: true },
     ],
     run(v) {
