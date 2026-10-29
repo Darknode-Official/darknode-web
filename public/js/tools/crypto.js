@@ -907,14 +907,22 @@ export const TOOLS = [
 ];
 
 // ---- X.509 / CSR parsers (shared) ----
+// 16 address bytes -> RFC 5952 text (longest run of 2+ zero groups becomes ::)
+function ipv6Text(b) {
+  const g = []; for (let i = 0; i < 16; i += 2) g.push((b[i] << 8) | b[i + 1]);
+  let bs = -1, bl = 0; for (let i = 0; i < 8; ) { if (g[i]) { i++; continue; } let j = i; while (j < 8 && !g[j]) j++; if (j - i > bl && j - i > 1) { bs = i; bl = j - i; } i = j; }
+  const hx = (a) => a.map((x) => x.toString(16)).join(":");
+  return bs < 0 ? hx(g) : hx(g.slice(0, bs)) + "::" + hx(g.slice(bs + bl));
+}
 function readName(bytes, node) {
   const parts = [];
   for (const rdn of node.children || []) for (const atv of rdn.children || []) {
     const oidNode = atv.children[0], valNode = atv.children[1];
     const oid = decodeOID(bytes, oidNode.contentStart, oidNode.contentEnd);
     const name = DN_SHORT[oid] || oid;
-    let val; try { val = dec.decode(bytes.slice(valNode.contentStart, valNode.contentEnd)); } catch (e) { val = bytesToHex(bytes.slice(valNode.contentStart, valNode.contentEnd)); }
-    parts.push(`${name}=${val}`);
+    const raw = bytes.slice(valNode.contentStart, valNode.contentEnd);
+    let val; try { val = valNode.tagNum === 30 ? new TextDecoder("utf-16be").decode(raw) : dec.decode(raw); } catch (e) { val = bytesToHex(raw); } // 30 = BMPString (UTF-16BE)
+    parts.push(`${name}=${val.replace(/[,+\\"<>;]/g, "\\$&")}`); // RFC 4514 escaping, so O=A\, B is one field
   }
   return parts.join(", ");
 }
@@ -943,7 +951,7 @@ function parseExtensions(bytes, extSeq) {
     try {
       if (oid === "2.5.29.17" || oid === "2.5.29.18") {
         const seq = parseASN1(bytes, valNode.contentStart, valNode.contentEnd)[0]; const names = [];
-        for (const gn of seq.children || []) { const c = bytes.slice(gn.contentStart, gn.contentEnd); if (gn.tagNum === 2) names.push("DNS:" + dec.decode(c)); else if (gn.tagNum === 1) names.push("email:" + dec.decode(c)); else if (gn.tagNum === 6) names.push("URI:" + dec.decode(c)); else if (gn.tagNum === 7) names.push("IP:" + (c.length === 4 ? Array.from(c).join(".") : bytesToHex(c))); else names.push("[" + gn.tagNum + "]"); }
+        for (const gn of seq.children || []) { const c = bytes.slice(gn.contentStart, gn.contentEnd); if (gn.tagNum === 2) names.push("DNS:" + dec.decode(c)); else if (gn.tagNum === 1) names.push("email:" + dec.decode(c)); else if (gn.tagNum === 6) names.push("URI:" + dec.decode(c)); else if (gn.tagNum === 7) names.push("IP:" + (c.length === 4 ? Array.from(c).join(".") : c.length === 16 ? ipv6Text(c) : bytesToHex(c))); else names.push("[" + gn.tagNum + "]"); }
         out.push(`${label}: ${names.join(", ")}`);
       } else if (oid === "2.5.29.19") {
         const seq = parseASN1(bytes, valNode.contentStart, valNode.contentEnd)[0]; let ca = false, pl = null;
