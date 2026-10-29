@@ -128,23 +128,24 @@ function formatSQL(sql) {
 }
 
 function parseEnv(text) {
-  const lines = String(text).split(/\r?\n/);
+  // As the dotenv package reads it: optional export, KEY=value or KEY: value, a # comment after an
+  // unquoted value, quoted values (double quotes may span lines and expand \n), and the last value wins.
+  const LINE = /^\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?$/mg;
+  const src = String(text).replace(/\r\n?/g, "\n");
   const out = {};
   const dupes = [];
   const blanks = [];
-  lines.forEach((line, idx) => {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) return;
-    const m = t.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
-    if (!m) return;
-    let [, k, val] = m;
-    if (val && ((val[0] === '"' && val[val.length - 1] === '"') || (val[0] === "'" && val[val.length - 1] === "'"))) {
-      val = val.slice(1, -1);
-    }
-    if (k in out) dupes.push({ key: k, line: idx + 1 });
-    if (val === "") blanks.push({ key: k, line: idx + 1 });
-    out[k] = val;
-  });
+  let m;
+  while ((m = LINE.exec(src))) {
+    const k = m[1], line = src.slice(0, m.index).split("\n").length + (/^\s*\n/.exec(m[0]) || [""])[0].split("\n").length - 1;
+    let val = (m[2] || "").trim();
+    const q = val[0];
+    val = val.replace(/^(['"`])([\s\S]*)\1$/mg, "$2");
+    if (q === '"') val = val.replace(/\\n/g, "\n").replace(/\\r/g, "\r");
+    if (Object.hasOwn(out, k)) dupes.push({ key: k, line });
+    if (val === "") blanks.push({ key: k, line });
+    Object.defineProperty(out, k, { value: val, enumerable: true, writable: true, configurable: true });
+  }
   return { out, dupes, blanks };
 }
 
