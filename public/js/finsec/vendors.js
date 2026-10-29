@@ -99,7 +99,7 @@ export function renderVendors(main) {
 
   main.innerHTML = `
   <div class="vn">
-    <div class="vn-hd"><h1>Payee Control</h1><span class="vn-tag">Financial Security</span></div>
+    <div class="vn-hd"><h1>Payee Changes</h1><span class="vn-tag">Financial Security</span></div>
     <div class="vn-sub">A vendor/payee register with real bank-detail validation and <b>bank-change control</b> — the
       preventive control against vendor-bank-change (business email compromise) wire fraud. A change to a payee's
       bank details needs a second approver and a recorded call-back, then the new account is held before its first

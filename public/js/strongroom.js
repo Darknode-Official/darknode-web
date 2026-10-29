@@ -120,7 +120,7 @@ export function renderStrongroom(main) {
   main.innerHTML = `
   <div class="sr">
     <div class="sr-hd">
-      <h1>STRONGROOM</h1><span class="sr-tag">Fund Protection</span>
+      <h1>STRONGROOM</h1><span class="sr-tag">Payment Fraud</span>
     </div>
     <div class="sr-sub">Load your own ledger or payments export and the engine screens it for fraud schemes.
       Add a feed of access &amp; identity events to correlate the two and surface the <b>intrusion&nbsp;&rarr;&nbsp;fund-theft</b>

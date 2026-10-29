@@ -205,7 +205,7 @@ export function renderLogHunter(main) {
   const detCount = Object.keys(DETECTIONS).length;
   main.innerHTML = `
   <div class="lgh">
-    <div class="lgh-hd"><h1>Log Threat Hunter</h1><span class="lgh-tag">Operations</span></div>
+    <div class="lgh-hd"><h1>Log Search</h1><span class="lgh-tag">Operations</span></div>
     <div class="lgh-sub">Paste or load web access logs, Linux auth logs and Windows Security exports. ${detCount} deterministic rules
       map what they find to MITRE ATT&amp;CK, with the exact log lines as evidence. Everything runs in this browser tab; the log
       lines are never uploaded.</div>

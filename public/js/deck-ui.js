@@ -1674,16 +1674,16 @@ export function renderDeck(host, opts) {
   // Sidebar definition (groups of [kind, id, label, icon]; kind = "scene" | "tool"). Declared here,
   // before the catalog is consumed, so tools that exist only in the Deck can be merged into it.
   const NAV_DEF = [
-    { g: "", items: [["scene", "overview", "Security Overview", IC.home]] },
+    { g: "", items: [["scene", "overview", "Overview", IC.home]] },
     { id: "spaces", g: "Spaces", items: [["scene", "personal", "Personal", IC.shield], ["scene", "enterprise", "Organization", IC.brief]] },
-    { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Threats & Vulnerabilities", IC.alert], ["tool", "posture", "Posture Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificate Monitor", IC.cert], ["tool", "fwaudit", "Firewall Rule Audit", IC.shield], ["tool", "vulnimport", "Vulnerability Import", IC.alert], ["tool", "fleetcomply", "Fleet Compliance", IC.gauge], ["tool", "dmarcreports", "DMARC Reports", IC.link], ["tool", "domainguard", "Domain Guard", IC.radar], ["tool", "netexposure", "Network Scan Diff", IC.nodes]] },
-    { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-in Forensics", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access", IC.shield], ["tool", "privaudit", "Privileged Access", IC.key], ["tool", "nhi", "Non-Human Identities", IC.gear], ["tool", "jml", "Offboarding Verifier", IC.check], ["tool", "oauthgov", "OAuth App Governance", IC.plug], ["tool", "vpnaudit", "Remote Access Audit", IC.lock]] },
-    { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Supply Chain", IC.branch], ["tool", "threatforest", "Attack Tree Builder", IC.tree], ["tool", "iacscan", "IaC Scanner", IC.code], ["tool", "k8saudit", "Kubernetes Audit", IC.nodes], ["tool", "licenseaudit", "License Compliance", IC.scale], ["tool", "apispec", "API Security Review", IC.plug]] },
-    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "inventory", "Asset Inventory", IC.grid], ["scene", "correlations", "Correlations", IC.nodes], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incident Tracker", IC.shield], ["tool", "investigation", "Investigation Workspace", IC.brief], ["tool", "phishtriage", "Phishing & URL Triage", IC.hook], ["tool", "loghunt", "Log Threat Hunter", IC.term], ["scene", "monitors", "Monitors", IC.bell], ["scene", "apikeys", "API & Ingest", IC.key], ["scene", "audit", "Audit Log", IC.lock], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Log Hunter", IC.cloud], ["tool", "dnshunt", "DNS Hunt", IC.search], ["tool", "proxyhunt", "Web Gateway Hunt", IC.eye], ["tool", "pentestreg", "Finding Tracker", IC.wrench]] },
-    { id: "finsec", g: "Fraud & Abuse", items: [["tool", "strongroom", "Fund Protection", IC.coins], ["tool", "payees", "Payee Control", IC.shield], ["tool", "cloudspend", "Cloud Spend Anomaly", IC.gauge]] },
-    { id: "risk", g: "Risk & Resilience", items: [["tool", "breachclock", "Breach Clock", IC.bell], ["tool", "riskreg", "Risk Register", IC.scale], ["tool", "vendorrisk", "Third-Party Risk", IC.nodes], ["tool", "backupready", "Backup Readiness", IC.folder]] },
-    { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "GenAI Crosswalk", IC.map], ["tool", "dlp", "Data Protection Scanner", IC.eye], ["tool", "leakprobe", "Secret Exposure", IC.key], ["tool", "evidence", "Control Evidence", IC.book], ["tool", "dataflow", "Processing Register", IC.folder], ["tool", "awareness", "Awareness Analytics", IC.pulse]] },
-    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "AI Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
+    { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Vulnerabilities", IC.alert], ["tool", "posture", "Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificates", IC.cert], ["tool", "fwaudit", "Firewall Rules", IC.shield], ["tool", "vulnimport", "Scan Imports", IC.alert], ["tool", "fleetcomply", "Devices", IC.gauge], ["tool", "dmarcreports", "DMARC Reports", IC.link], ["tool", "domainguard", "Domains", IC.radar], ["tool", "netexposure", "Network Scans", IC.nodes]] },
+    { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-ins", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access", IC.shield], ["tool", "privaudit", "Privileged Access", IC.key], ["tool", "nhi", "Service Accounts", IC.gear], ["tool", "jml", "Joiners & Leavers", IC.check], ["tool", "oauthgov", "OAuth Apps", IC.plug], ["tool", "vpnaudit", "VPN & Remote Access", IC.lock]] },
+    { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Dependencies", IC.branch], ["tool", "threatforest", "Attack Trees", IC.tree], ["tool", "iacscan", "Infrastructure as Code", IC.code], ["tool", "k8saudit", "Kubernetes", IC.nodes], ["tool", "licenseaudit", "Licenses", IC.scale], ["tool", "apispec", "API Definitions", IC.plug]] },
+    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "inventory", "Asset Inventory", IC.grid], ["scene", "correlations", "Correlations", IC.nodes], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incidents", IC.shield], ["tool", "investigation", "Case Files", IC.brief], ["tool", "phishtriage", "Phishing", IC.hook], ["tool", "loghunt", "Log Search", IC.term], ["scene", "monitors", "Monitors", IC.bell], ["scene", "apikeys", "API & Ingest", IC.key], ["scene", "audit", "Audit Log", IC.lock], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Logs", IC.cloud], ["tool", "dnshunt", "DNS Logs", IC.search], ["tool", "proxyhunt", "Proxy Logs", IC.eye], ["tool", "pentestreg", "Pentest Findings", IC.wrench]] },
+    { id: "finsec", g: "Fraud & Abuse", items: [["tool", "strongroom", "Payment Fraud", IC.coins], ["tool", "payees", "Payee Changes", IC.shield], ["tool", "cloudspend", "Cloud Spend", IC.gauge]] },
+    { id: "risk", g: "Risk & Resilience", items: [["tool", "breachclock", "Breach Deadlines", IC.bell], ["tool", "riskreg", "Risk Register", IC.scale], ["tool", "vendorrisk", "Vendors", IC.nodes], ["tool", "backupready", "Backups", IC.folder]] },
+    { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "AI Risk Mapping", IC.map], ["tool", "dlp", "Sensitive Data", IC.eye], ["tool", "leakprobe", "Exposed Keys", IC.key], ["tool", "evidence", "Audit Evidence", IC.book], ["tool", "dataflow", "Data Inventory", IC.folder], ["tool", "awareness", "Security Training", IC.pulse]] },
+    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
   ];
   // Plan gating: every sidebar entry needs a minimum plan (group default, item override).
   // Entries above the plan are simply not shown: removed from the sidebar, the Tool
@@ -1712,6 +1712,9 @@ export function renderDeck(host, opts) {
   { const known = new Set(groups.flatMap((g) => g.items.map((it) => it.sec))), deckOnly = [];
     for (const grp of NAV_DEF) for (const [kind, id, label] of grp.items) if (kind === "tool" && id !== "admin" && !known.has(id)) { known.add(id); deckOnly.push({ sec: id, label, badge: "Deck" }); }
     if (deckOnly.length) groups.push({ id: "deck", name: "Deck tools", color: "slate", items: deckOnly }); }
+  // a tool shows under its sidebar name (window title, pins, search), not its older console name;
+  // the old name stays searchable. Copies: the catalog objects are shared with the console.
+  for (const g of groups) g.items = g.items.map((it) => navName["tool:" + it.sec] && navName["tool:" + it.sec] !== it.label ? { ...it, label: navName["tool:" + it.sec], alias: it.label } : it);
   const onOpen = typeof opts.onOpen === "function" ? opts.onOpen : () => {};
   const onExit = typeof opts.onExit === "function" ? opts.onExit : () => {};
   // Primary mode: the Deck IS the signed-in UI (no older console to fall back to),
@@ -1791,7 +1794,7 @@ export function renderDeck(host, opts) {
   };
   // flat index for spotlight: tools + integrations
   const index = [];
-  for (const g of groups) for (const it of g.items) index.push({ type: "tool", sec: it.sec, label: it.label, group: g.name, color: g.color, badge: it.badge, kw: TOOL_KW[it.sec] || "" });
+  for (const g of groups) for (const it of g.items) index.push({ type: "tool", sec: it.sec, label: it.label, group: g.name, color: g.color, badge: it.badge, kw: (TOOL_KW[it.sec] || "") + (it.alias ? " " + it.alias : "") });
   for (const it of INTEGRATIONS) index.push({ type: "conn", id: it.id, label: it.name, group: it.kind === "ai" ? "AI model" : "Security", it });
 
   // Connection flags live per browser, keys per account: a key-based connection counts only
@@ -2479,7 +2482,7 @@ export function renderDeck(host, opts) {
   const ACTIONS = [
     { type: "action", label: "Ask Darknode AI", group: "Action", icon: IC.spark, run: () => askAI("") },
     { type: "action", label: "Scan a codebase", group: "Action", icon: IC.term, run: () => openTool("codescan", secLabel["codescan"] || "Code Scanner"), k: "tool:codescan" },
-    { type: "action", label: "Trace an intrusion to fund theft", group: "Action", icon: IC.bolt, run: () => openTool("strongroom", secLabel["strongroom"] || "Fund Protection"), k: "tool:strongroom" },
+    { type: "action", label: "Trace an intrusion to fund theft", group: "Action", icon: IC.bolt, run: () => openTool("strongroom", secLabel["strongroom"] || "Payment Fraud"), k: "tool:strongroom" },
     { type: "action", label: "Map an attack surface", group: "Action", icon: IC.radar, run: () => go("surface"), k: "scene:surface" },
     { type: "action", label: "Connect a provider", group: "Action", icon: IC.link, run: () => go("con"), k: "scene:con" },
     { type: "action", label: "New investigation", group: "Action", icon: IC.folder, run: () => openTool("investigation", secLabel["investigation"] || "Investigation"), k: "tool:investigation" },
@@ -2496,9 +2499,9 @@ export function renderDeck(host, opts) {
     { type: "action", label: "Phishing triage", group: "Organization", icon: IC.link, run: () => openSpaceTool("enterprise", "phish"), k: "scene:enterprise", kw: "email url link reported suspicious scam lookalike iocs" },
     { type: "action", label: "Repository sweep", group: "Organization", icon: IC.key, run: () => openSpaceTool("enterprise", "secrets"), k: "scene:enterprise", kw: "secrets keys api passwords credentials tokens leaked code git" },
     { type: "action", label: "Data-loss review", group: "Organization", icon: IC.eye, run: () => openSpaceTool("enterprise", "data"), k: "scene:enterprise", kw: "redact personal data pii credit card leaked dlp documents" },
-    { type: "action", label: "Go to Security Overview", group: "Navigate", icon: IC.home, run: () => go("overview"), k: "scene:overview" },
+    { type: "action", label: "Go to Overview", group: "Navigate", icon: IC.home, run: () => go("overview"), k: "scene:overview" },
     { type: "action", label: "Go to Attack Surface", group: "Navigate", icon: IC.radar, run: () => go("surface"), k: "scene:surface" },
-    { type: "action", label: "Go to Threats & Vulnerabilities", group: "Navigate", icon: IC.alert, run: () => go("threat"), k: "scene:threat" },
+    { type: "action", label: "Go to Vulnerabilities", group: "Navigate", icon: IC.alert, run: () => go("threat"), k: "scene:threat" },
     { type: "action", label: "Go to Cloud Posture", group: "Navigate", icon: IC.cloud, run: () => go("cloud"), k: "scene:cloud" },
     { type: "action", label: "Go to Compliance", group: "Navigate", icon: IC.shield, run: () => go("compliance"), k: "scene:compliance" },
     { type: "action", label: "Go to Findings", group: "Navigate", icon: IC.alert, run: () => go("findings"), k: "scene:findings" },
@@ -3393,7 +3396,7 @@ export function renderDeck(host, opts) {
     const el = sceneEls.surface;
     const d0 = (typeof dom === "string" && dom) ? dom : _surfLast;
     el.innerHTML = `
-      <div class="dk-ti-head"><h1>Attack Surface</h1><span class="mo" role="button" tabindex="0" id="dkSurfFull">Open Posture Scorecard ${IC.ext}</span></div>
+      <div class="dk-ti-head"><h1>Attack Surface</h1><span class="mo" role="button" tabindex="0" id="dkSurfFull">Open Scorecard ${IC.ext}</span></div>
       <p class="dk-sublede">Enter a domain to map its real external footprint — certificate-transparency subdomains, DNS, registration, owning network, HTTP security headers, email authentication and security.txt. Everything is fetched live through the Darknode proxy; nothing is simulated.</p>
       <form class="dk-surfbar" id="dkSurfForm">
         <input id="dkSurfIn" aria-label="Domain to map" placeholder="Your domain" autocomplete="off" spellcheck="false" value="${esc(d0)}">
@@ -3401,7 +3404,7 @@ export function renderDeck(host, opts) {
       </form>
       <div class="dk-surfhint">Use a domain you own or are authorised to assess. Lookups use authoritative public records (certificate transparency, DNS, RDAP registries, BGP origin data) and a single read-only HTTP GET.</div>
       <div class="dk-surfgrid" id="dkSurfGrid" hidden></div>`;
-    el.querySelector("#dkSurfFull").onclick = () => openTool("posture", "Posture Scorecard");
+    el.querySelector("#dkSurfFull").onclick = () => openTool("posture", secLabel.posture || "Scorecard");
     const form = el.querySelector("#dkSurfForm"), input = el.querySelector("#dkSurfIn");
     form.onsubmit = (e) => { e.preventDefault(); runSurface(input.value); };
     if (d0) runSurface(d0);
@@ -3706,9 +3709,9 @@ export function renderDeck(host, opts) {
         <div id="dkInvTable"></div>
       </div>
       <div class="dk-qa" style="max-width:760px;margin-top:4px">
-        <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>Open Investigation Workspace</b><span>Build and track a full investigation.</span></button>
+        <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>Open Case Files</b><span>Build and track a full investigation.</span></button>
         <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Open Security Graph</b><span>Visualise entities and their links.</span></button>
-        <button class="dk-qacard" data-tool="incidents"><span class="qi" style="--a:#f5920b">${IC.folder}</span><b>Incident Tracker</b><span>Log incidents and track them to closure.</span></button>
+        <button class="dk-qacard" data-tool="incidents"><span class="qi" style="--a:#f5920b">${IC.folder}</span><b>Incidents</b><span>Log incidents and track them to closure.</span></button>
       </div>`;
     pruneLocked(el);
     el.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
@@ -3822,7 +3825,7 @@ export function renderDeck(host, opts) {
   // What each section covers in the graph, and which integrations feed it. Coverage is
   // shown honestly: unconnected sources are listed greyed out with a Connect action.
   const SECTIONS = {
-    exposure: { title: "Exposure", blurb: "What attackers can see and reach: your external footprint, cloud configuration and the vulnerabilities that matter this week.", types: ["ASSET", "DOMAIN", "IP", "PORT", "SERVICE", "CERTIFICATE", "ENDPOINT"], match: /attack surface|vanguard|subdomain|dns|ssl|http|exposure|posture|scorecard|certificate monitor|tls/i, ints: ["shodan", "censys", "securitytrails", "zoomeye", "binaryedge", "netlas", "fullhunt", "ipinfo", "hibp"], pub: "Certificate transparency (crt.sh), public DNS, RDAP registries and BGP routing data for Attack Surface; NVD, CISA KEV and FIRST EPSS for Threats & Vulnerabilities." },
+    exposure: { title: "Exposure", blurb: "What attackers can see and reach: your external footprint, cloud configuration and the vulnerabilities that matter this week.", types: ["ASSET", "DOMAIN", "IP", "PORT", "SERVICE", "CERTIFICATE", "ENDPOINT"], match: /attack surface|vanguard|subdomain|dns|ssl|http|exposure|posture|scorecard|certificate monitor|tls/i, ints: ["shodan", "censys", "securitytrails", "zoomeye", "binaryedge", "netlas", "fullhunt", "ipinfo", "hibp"], pub: "Certificate transparency (crt.sh), public DNS, RDAP registries and BGP routing data for Attack Surface; NVD, CISA KEV and FIRST EPSS for Vulnerabilities." },
     code: { title: "Application Security", blurb: "Secrets, risky code and vulnerable dependencies in the software you build, and the attack paths they open.", types: ["SOFTWARE"], match: /code scanner|supply|threatforest|attack tree|\bcode\b/i, ints: [], pub: "The GitHub API for repository contents and OSV.dev for dependency advisories, both used by the Code Scanner." },
     detect: { title: "Security Operations", blurb: "Alerts, indicators, incidents and cases: everything your tools have recorded, and the work to run it down.", types: ["ALERT", "INCIDENT", "CASE", "INVESTIGATION", "INDICATOR", "EVIDENCE", "THREAT_ACTOR", "MALWARE", "CAMPAIGN", "DETECTION", "EVENT", "FINDING", "VULNERABILITY"], ints: ["virustotal", "greynoise", "abuseipdb", "otx", "abusech", "urlscan", "pulsedive", "misp", "mitre", "hybrid", "anyrun", "intelx"] },
     finsec: { title: "Fraud & Abuse", blurb: "Attacks that end in stolen money: intrusion-to-fund-theft detection, payee bank-change control against invoice fraud, and cloud spend anomalies.", types: [], match: /strongroom|fund protection|vault|treasury|sanction|payee|vendor/i, ints: [] },
@@ -4645,7 +4648,7 @@ export function renderDeck(host, opts) {
   // ---------- keyboard & shortcuts ----------
   // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
   const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant", f: "findings", r: "reports", w: "team", p: "plans", ",": "settings", v: "inventory", x: "correlations", b: "monitors", y: "apikeys", u: "audit" };
-  const SCENE_TITLE = { overview: "Security Overview", surface: "Attack Surface", threat: "Threats & Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "AI Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings", inventory: "Asset Inventory", correlations: "Correlations", monitors: "Monitors", apikeys: "API & Ingest", audit: "Audit Log" };
+  const SCENE_TITLE = { overview: "Overview", surface: "Attack Surface", threat: "Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings", inventory: "Asset Inventory", correlations: "Correlations", monitors: "Monitors", apikeys: "API & Ingest", audit: "Audit Log" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
     const nav = Object.entries(GOTO).filter(([, sc]) => !isLocked("scene:" + sc)).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");

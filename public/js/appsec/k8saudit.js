@@ -155,7 +155,7 @@ export function renderK8sAudit(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Kubernetes Audit</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Kubernetes</h1><span class="', P, '-tag">Deck</span></div>',
     '<p class="', P, '-sub">Audit a live cluster from a kubectl dump: RBAC effective permissions (incl. aggregated ClusterRoles), pod security, namespace isolation, exposure chains, secrets hygiene, kube-bench results and version end-of-life. Runs entirely in your browser. Nothing is uploaded. End-of-life dates come from the same-origin endoflife.date mirror (<span id="', P, '-eol">mirrored, date shown after the first run</span>); Secret values are dropped as each file is parsed.</p>',
     '<div class="', P, '-card"><h2>1. Cluster dump</h2><div id="', P, '-drop"></div>',
     '<p class="', P, '-note">kubectl JSON or YAML (List or multi-document), kube-bench JSON, /version JSON and auth can-i --list text. Several files or one .zip.</p>',

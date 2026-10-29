@@ -139,7 +139,7 @@ export function renderSigninForensics(main) {
   injectStyle();
   main.innerHTML = `
   <div class="sif">
-    <div class="sif-hd"><h1>Sign-in Forensics</h1><span class="sif-tag">Identity</span></div>
+    <div class="sif-hd"><h1>Sign-ins</h1><span class="sif-tag">Identity</span></div>
     <div class="sif-sub">Load a sign-in log export from Microsoft Entra ID, Google Workspace or Okta and find account-compromise
       patterns: password spraying, brute force, failures followed by a success, impossible travel, legacy authentication,
       administrators without MFA and more. The file is parsed and analysed in your browser; no row is uploaded.</div>

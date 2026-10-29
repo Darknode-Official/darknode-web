@@ -102,7 +102,7 @@ export function renderIacScan(main) {
     const st = document.createElement("style"); st.id = P + "-css"; st.textContent = CSS; document.head.appendChild(st);
   }
   main.innerHTML = `<div class="${P}-root">
-    <div class="${P}-hd"><h1>IaC Scanner</h1><span class="${P}-tag">Deck</span></div>
+    <div class="${P}-hd"><h1>Infrastructure as Code</h1><span class="${P}-tag">Deck</span></div>
     <p class="${P}-sub">Checks Terraform (HCL, plan JSON, state), CloudFormation, Kubernetes and Helm-rendered manifests, Dockerfiles, Docker Compose, Azure ARM and GitHub Actions workflows against ${RULES.length} rules mapped to CIS benchmarks, NIST 800-53 and MITRE ATT&amp;CK, and sweeps every file for hard-coded secrets. Runs entirely in your browser. Nothing is uploaded and nothing is fetched live.</p>
     <div class="${P}-card">
       <div id="${P}-drop"></div>

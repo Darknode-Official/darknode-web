@@ -105,7 +105,7 @@ export function renderLicenseAudit(main) {
     const st = document.createElement("style"); st.id = P + "-css"; st.textContent = CSS; document.head.appendChild(st);
   }
   main.innerHTML = `<div class="${P}-root">
-    <div class="${P}-hd"><h1>License Compliance</h1><span class="${P}-tag">Deck</span></div>
+    <div class="${P}-hd"><h1>Licenses</h1><span class="${P}-tag">Deck</span></div>
     <p class="${P}-sub">Builds a license inventory from lockfiles and CycloneDX or SPDX SBOMs, parses every SPDX expression, and checks copyleft obligations for how you distribute, known incompatibilities and your own allow, review and deny lists. Runs entirely in your browser. Nothing is uploaded. The optional Resolve unknown licenses step sends only package names and versions, through the Darknode fetch proxy, to registry.npmjs.org, pypi.org, crates.io and api.clearlydefined.io.</p>
     <div class="${P}-card">
       <div id="${P}-drop"></div>

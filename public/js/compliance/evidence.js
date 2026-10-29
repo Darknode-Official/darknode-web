@@ -146,7 +146,7 @@ export function renderEvidence(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Control Evidence</h1><span class="', P, '-tag">Evidence calendar</span></div>',
+    '<div class="', P, '-hd"><h1>Audit Evidence</h1><span class="', P, '-tag">Evidence calendar</span></div>',
     '<p class="', P, '-sub">Which control needs which evidence, who owns it, when it is due, what was collected, readiness per framework and an auditor package, for SOC 2, ISO 27001, PCI DSS, CIS v8 and NIST CSF 2.0.</p>',
     '<div class="', P, '-honest">Runs entirely in your browser. Nothing is uploaded. Evidence files are hashed in your browser and never uploaded; only name, size and SHA-256 are kept. Control catalogs are read from this site (/data/controls).</div>',
     '<div class="', P, '-exbar" id="', P, '-exbar"></div>',

@@ -97,7 +97,7 @@ export function renderApiSpec(main) {
     const st = document.createElement("style"); st.id = P + "-css"; st.textContent = CSS; document.head.appendChild(st);
   }
   main.innerHTML = `<div class="${P}-root">
-    <div class="${P}-hd"><h1>API Security Review</h1><span class="${P}-tag">Deck</span></div>
+    <div class="${P}-hd"><h1>API Definitions</h1><span class="${P}-tag">Deck</span></div>
     <p class="${P}-sub">Reviews OpenAPI 3.0 / 3.1 and Swagger 2.0 (JSON or YAML), Postman collections (v2.1) and GraphQL schemas (SDL or introspection JSON) against the OWASP API Security Top 10 2023. Runs entirely in your browser. Nothing is uploaded and nothing is fetched live; external $ref files are listed, not downloaded.</p>
     <div class="${P}-card">
       <div id="${P}-drop"></div>

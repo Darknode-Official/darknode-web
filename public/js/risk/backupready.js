@@ -199,7 +199,7 @@ export function renderBackupReady(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Backup Readiness</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Backups</h1><span class="', P, '-tag">Deck</span></div>',
     '<p class="', P, '-sub">Prove whether each system can be recovered from ransomware: backed up, inside its RPO, healthy jobs, an immutable copy, a copy in another account or region (or offline), a tested restore inside RTO, and 3-2-1-1-0, with a readiness score you can see the weights of. Mapped to CISA #StopRansomware, NIST CSF 2.0 PR.DS-11, NIST SP 800-53 CP-9 / CP-10, CIS Controls v8 11 and ISO 27001 A.8.13. Runs entirely in your browser. Nothing is uploaded and nothing is fetched; the Security Graph is read from this browser.</p>',
     '<div class="', P, '-two">',
     '<div class="', P, '-card"><h2>1. Backup, restore-test and asset exports</h2><div id="', P, '-drop"></div>',

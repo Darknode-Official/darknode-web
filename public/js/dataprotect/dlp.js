@@ -135,7 +135,7 @@ export function renderDlp(main) {
   injectStyle();
   main.innerHTML = `
   <div class="dlp">
-    <div class="dlp-hd"><h1>Data Protection Scanner</h1><span class="dlp-tag">DLP</span></div>
+    <div class="dlp-hd"><h1>Sensitive Data</h1><span class="dlp-tag">DLP</span></div>
     <p class="dlp-sub">Find exposed secrets and personal data in documents, logs, config and exports before they leak. Paste text or drop files below.</p>
     <div class="dlp-warn"><b>Private by design.</b> Scanning runs entirely in your browser. Nothing you paste or drop is uploaded, logged or sent anywhere.</div>
 

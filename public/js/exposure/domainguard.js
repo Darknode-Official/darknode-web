@@ -173,7 +173,7 @@ export function renderDomainGuard(main) {
   ];
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Domain Guard</h1><span class="', P, '-tag">Domain Portfolio Guard</span></div>',
+    '<div class="', P, '-hd"><h1>Domains</h1><span class="', P, '-tag">Domain Portfolio Guard</span></div>',
     '<p class="', P, '-sub">Checks every domain you own - main, regional, marketing, parked, acquired - for what lets attackers spoof your mail, take over subdomains, hijack an expiring registration or register a lookalike.</p>',
     '<div class="', P, '-honest">Runs in your browser. Files you drop are parsed locally and never uploaded. Live checks send the domain and host names you enter to: dns.google and cloudflare-dns.com (DNS-over-HTTPS, direct); rdap.org, crt.sh and api.certspotter.com (certificate transparency), mta-sts.&lt;your domain&gt; and the hostnames you supply (HTTP takeover fingerprints) - all through the Darknode fetch proxy. Load example makes no network calls.</div>',
     '<div class="', P, '-grid">',

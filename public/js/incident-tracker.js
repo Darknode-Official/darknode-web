@@ -172,7 +172,7 @@ export function renderIncidentTracker(main) {
   }).join("");
 
   main.innerHTML =
-    '<h1 class="pg-h1">Incident Tracker</h1>' +
+    '<h1 class="pg-h1">Incidents</h1>' +
     '<p class="muted pg-sub">Security incident management — track incidents, IOCs, map to MITRE ATT&CK, and run playbooks. ' + (isTeam() ? 'Incidents are shared with your workspace team.' : 'All data stays in your browser.') + '</p>' +
     '<div class="cs-filter" id="ir-tabs">' + tabBtns + '</div>' +
     '<div id="ir-content" style="margin-top:16px"></div>';

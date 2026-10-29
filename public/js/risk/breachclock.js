@@ -128,7 +128,7 @@ export function renderBreachClock(main) {
 
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Breach Clock</h1><span class="', P, '-tag">Breach notification</span></div>',
+    '<div class="', P, '-hd"><h1>Breach Deadlines</h1><span class="', P, '-tag">Breach notification</span></div>',
     '<p class="', P, '-sub">Works out which breach notification obligations may apply to an incident, each deadline to the hour, and who must be told. Runs entirely in your browser. Nothing is uploaded. Reference data is read from this site only (/data/ref): <span id="', P, '-refv">loading</span>.</p>',
     '<div class="', P, '-legal">', esc(VERIFY_LINE), "</div>",
 

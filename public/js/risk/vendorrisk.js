@@ -131,7 +131,7 @@ export function renderVendorRisk(main) {
   const thresholdKeys = Object.keys(THRESHOLD_LABELS);
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Third-Party Risk</h1><span class="', P, '-tag">Vendor register</span></div>',
+    '<div class="', P, '-hd"><h1>Vendors</h1><span class="', P, '-tag">Vendor register</span></div>',
     '<p class="', P, '-sub">Vendor register with inherent and residual risk, assurance-document expiry and live external posture checks of each vendor\'s domains. Runs entirely in your browser. Nothing is uploaded. ',
     'Live checks run only when you press Check now or Check all, and read: DNS over HTTPS from dns.google and cloudflare-dns.com (direct); certificate transparency from crt.sh and api.certspotter.com; ',
     'the vendor\'s own https://, http://, /.well-known/security.txt and mta-sts. hosts; and registration data from rdap.org (which redirects to the registry), all through the Darknode proxy. ',

@@ -166,7 +166,7 @@ export function renderNetExposure(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Network Scan Diff</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Network Scans</h1><span class="', P, '-tag">Deck</span></div>',
     '<p class="', P, '-sub">Turns port-scan exports into an exposure inventory: risky services reachable from the internet or inside, end-of-life software, certificate, TLS, SSH, SMB and RDP weaknesses, and what changed between scans. Runs entirely in your browser. Nothing is uploaded and nothing is fetched live; end-of-life dates come from a mirrored, dated copy of endoflife.date served by this site.</p>',
     '<div class="', P, '-card"><h2>1. Scan exports</h2><div id="', P, '-drop"></div>',
     '<p class="', P, '-note">Accepted: nmap XML (-oX, including NSE script output) and grepable (-oG), masscan JSON (-oJ) and XML (-oX), naabu JSON lines (-json), Nessus .nessus v2 (ports and services only; use Vulnerability Import for its vulnerabilities), Shodan NDJSON (shodan download / parse) or host JSON, any CSV with an IP and a port column, and optionally a Firewall Rule Audit JSON export for the segmentation check. Zip and gzip archives are unpacked locally. Up to 100 files, 512 MB each; very large files are parsed in the worker.</p>',

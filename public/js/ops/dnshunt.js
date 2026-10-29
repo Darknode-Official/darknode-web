@@ -180,7 +180,7 @@ export function renderDnsHunt(main) {
   const area = (id, label, ph, help) => '<div class="' + P + '-field wide"><label for="' + P + "-" + id + '">' + esc(label) + '</label><textarea id="' + P + "-" + id + '" placeholder="' + esc(ph) + '" spellcheck="false"></textarea><small>' + esc(help) + "</small></div>";
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>DNS Hunt</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>DNS Logs</h1><span class="', P, '-tag">Deck</span></div>',
     '<p class="', P, '-sub">Hunt through resolver query logs for algorithmically generated names, DNS tunnelling, periodic beaconing, NXDOMAIN storms, lookalikes of your own domains, newly observed domains, and clients that send DNS around the company resolver. Runs entirely in your browser. Nothing is uploaded. The only request is the optional malicious-IP list at ', FEED_URL, ', a same-origin copy that is mirrored and dated, not live.</p>',
     '<div class="', P, '-card"><h2>1. DNS logs</h2><div id="', P, '-drop"></div>',
     '<p class="', P, '-note">Accepted: Zeek dns.log (TSV or JSON), BIND query log, Windows DNS Server debug log (dns.log), dnsmasq / Pi-hole log, Unbound with log-queries or log-replies, Route 53 Resolver query logs (JSON lines), Cisco Umbrella DNS logs (CSV, with or without header), or any CSV with a query-name column. Many files or a zip at once; up to 512 MB per file. Logs are streamed and folded into per-domain and per-client summaries, so memory stays close to the size of the text.</p>',
