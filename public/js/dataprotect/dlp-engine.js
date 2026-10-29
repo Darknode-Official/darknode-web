@@ -27,7 +27,7 @@ export function luhnValid(digits) {
 export function cardBrand(pan) {
   const s = String(pan).replace(/\D/g, '');
   if (/^4\d{12}(\d{3})?(\d{3})?$/.test(s)) return 'Visa';
-  if (/^(5[1-5]\d{14}|2(2[2-9]\d{12}|[3-6]\d{13}|7[01]\d{12}|720\d{12}))$/.test(s)) return 'Mastercard';
+  if (/^(5[1-5]\d{14}|2(22[1-9]\d{12}|2[3-9]\d{13}|[3-6]\d{14}|7[01]\d{13}|720\d{12}))$/.test(s)) return 'Mastercard';
   if (/^3[47]\d{13}$/.test(s)) return 'American Express';
   if (/^(6011\d{12}|65\d{14}|64[4-9]\d{13})$/.test(s)) return 'Discover';
   if (/^3(0[0-5]\d{11}|[68]\d{12})$/.test(s)) return 'Diners Club';
