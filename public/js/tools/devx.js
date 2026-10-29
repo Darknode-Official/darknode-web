@@ -759,6 +759,13 @@ export const TOOLS = [
       const to = H.clampInt(v.to, 2, 36, 2);
       let neg = false;
       if (raw[0] === "-") { neg = true; raw = raw.slice(1); }
+      // A 0x / 0o / 0b prefix is dropped only when it names the source base (in base 16, 0b1 is a number);
+      // _ separators between digits (1_000_000) are allowed, as in code.
+      const pre = { 16: "0x", 8: "0o", 2: "0b" }[from];
+      if (pre && raw.startsWith(pre)) raw = raw.slice(2);
+      if (/^_|_$|__/.test(raw)) return { error: "An _ separator must sit between two digits." };
+      raw = raw.replace(/_/g, "");
+      if (!raw) return { error: "Enter at least one digit." };
       const digits = "0123456789abcdefghijklmnopqrstuvwxyz";
       let val = 0n;
       const B = BigInt(from);
@@ -771,7 +778,7 @@ export const TOOLS = [
       const T = BigInt(to);
       if (val === 0n) out = "0";
       else while (val > 0n) { out = digits[Number(val % T)] + out; val /= T; }
-      return (neg ? "-" : "") + out;
+      return (neg && out !== "0" ? "-" : "") + out;
     },
   },
   {
@@ -832,6 +839,7 @@ export const TOOLS = [
       const units = ["bps", "kbps", "Mbps", "Gbps", "Tbps"];
       let x = Math.abs(n), i = 0;
       while (x >= 1000 && i < units.length - 1) { x /= 1000; i++; }
+      if (i > 0 && i < units.length - 1 && +x.toFixed(2) >= 1000) { x /= 1000; i++; }
       return `${n < 0 ? "-" : ""}${i === 0 ? x : x.toFixed(2)} ${units[i]}`;
     },
   },
@@ -1275,10 +1283,14 @@ export const TOOLS = [
     run(v) {
       const raw = S(v.name).trim();
       if (!raw) return "";
-      const dot = raw.lastIndexOf(".");
-      let base = raw, ext = "";
-      if (dot > 0 && dot < raw.length - 1) { base = raw.slice(0, dot); ext = raw.slice(dot + 1).toLowerCase(); }
-      const slug = base.toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "");
+      // The extension is the last dot part when it is a short alphanumeric word (plus tar.gz-style
+      // double extensions); any other dot in the name becomes a separator like a space.
+      const em = /\.((?:tar\.)?[a-z0-9]{1,10})$/i.exec(raw);
+      const ext = em && em.index > 0 ? em[1].toLowerCase() : "";
+      const base = ext ? raw.slice(0, em.index) : raw;
+      let slug = base.toLowerCase().normalize("NFKD").replace(/[.\s]+/g, " ").replace(/[^\w\s-]/g, "").trim().replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "");
+      // Windows refuses these device names with any extension (con.txt, nul.tar.gz).
+      if (/^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/.test(slug)) slug += "-file";
       return ext ? `${slug || "file"}.${ext}` : (slug || "file");
     },
   },
