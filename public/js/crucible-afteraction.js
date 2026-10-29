@@ -461,7 +461,7 @@ export function renderAfterAction(container, ctx) {
   async function exportToGraph(run, s, camp, btn) {
     if (btn) btn.disabled = true;
     try {
-      const gb = await import('/js/graph-bridge.js?v=20261017d');
+      const gb = await import('/js/graph-bridge.js?v=20261028c');
       if (!container.isConnected) return;
       if (typeof gb.sendToGraph !== 'function') {
         ctx.toast('Security Graph export is unavailable', 'bad');

@@ -656,7 +656,7 @@ export function renderIocEnrichment(main) {
     if (gr) gr.onclick = function () {
       var l = selected(); if (!l.length) return toast('Select at least one indicator', 'info');
       gr.disabled = true;
-      import('/js/graph-bridge.js?v=20261017d').then(function (gb) {
+      import('/js/graph-bridge.js?v=20261028c').then(function (gb) {
         var r = gb.sendToGraph('IOC Enrichment', graphItems(l));
         gr.textContent = 'Sent: ' + r.created + ' new, ' + r.updated + ' merged';
       }).catch(function () { gr.textContent = 'Security Graph unavailable'; gr.disabled = false; });

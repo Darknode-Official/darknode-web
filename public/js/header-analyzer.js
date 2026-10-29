@@ -155,7 +155,7 @@ function _haToGraph(btn) {
     return { type: 'FINDING', name: d.name + ' header discloses software (' + label + ')', data: { header: d.name, value: d.value, domain: host }, opts: { tags: tags.concat('info-disclosure'), severity: 'low' } };
   }));
   btn.disabled = true;
-  import('/js/graph-bridge.js?v=20261017d').then(function(gb) {
+  import('/js/graph-bridge.js?v=20261028c').then(function(gb) {
     var root = host ? gb.sendToGraph('Header Analyzer', [{ type: 'DOMAIN', name: host, data: { headerGrade: g.grade, headerScore: g.score }, opts: { tags: tags } }], undefined, true).entities[0] : null;
     var r = gb.sendToGraph('Header Analyzer', items, undefined, true);
     if (root) r.entities.forEach(function(e) { gb.linkEntities(e.id, root.id, 'affects'); });

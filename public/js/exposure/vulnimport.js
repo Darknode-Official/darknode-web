@@ -16,9 +16,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, FORMATS, DETECTIONS, SEV_RANK, parseInput, findingsToCsv, registerToCsv, assetsToCsv, remediationToCsv,
   cveListText, summaryText, graphItems, exampleDataset, csvCell, SSVC_OPTIONS, SSVC_GUIDANCE, ssvcDecide, ssvcInputs,
-} from "./vulnimport-engine.js?v=20261026b";
+} from "./vulnimport-engine.js?v=20261028c";
 
-const ENGINE = engineUrl("./vulnimport-engine.js?v=20261026b", import.meta);
+const ENGINE = engineUrl("./vulnimport-engine.js?v=20261028c", import.meta);
 const P = "vim";
 const EPSS_API = "https://api.first.org/data/v1/epss";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };

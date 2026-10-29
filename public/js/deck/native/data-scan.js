@@ -2,7 +2,7 @@
 // Native Sensitive Data Check: dlp-engine over pasted text or files, with one-click
 // redaction. Personal = "is it safe to share?"; Enterprise = data-loss review.
 
-import { scan, redact } from "/js/dataprotect/dlp-engine.js?v=20261026b";
+import { scan, redact } from "/js/dataprotect/dlp-engine.js?v=20261028c";
 import { dlpFindings } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, sevPill, recordRun, readFiles, download } from "./ui.js";

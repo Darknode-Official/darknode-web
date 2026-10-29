@@ -3,7 +3,7 @@
 // checks graded by posture-engine. Personal = one domain; Enterprise = a saved
 // portfolio graded side by side (mode "portfolio").
 
-import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261027c";
+import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261028c";
 import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261027c";
 import { postureFindings, postureHeld } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";

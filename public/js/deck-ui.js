@@ -14,7 +14,7 @@
 //     onExit : () => void      // leave the deck
 // ============================================================================
 
-import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261026a";
+import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261028c";
 // Live-data layer: the SSRF-guarded worker proxy. dnFetchJSON routes keyless public
 // feeds (CISA KEV, FIRST EPSS, ransomware.live, crt.sh, DoH, RDAP, BGPView) through
 // /api/fetch; it throws on failure and never fabricates. net.js is stateless.
@@ -3431,7 +3431,7 @@ export function renderDeck(host, opts) {
     const addGraphBtn = (id, items, linkName) => {
       const hx = !stale() && grid.querySelector("#surfx-" + id); if (!hx || !items.length) return;
       hx.innerHTML = `<button class="dk-graphadd">Add ${items.length} to graph</button>`;
-      hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20261017d").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph", "error"));
+      hx.querySelector("button").onclick = () => import("/js/graph-bridge.js?v=20261028c").then((gb) => { const r = gb.sendToGraph("Attack Surface — " + linkName, items); toast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); }).catch(() => toast("Couldn't reach the Security Graph", "error"));
     };
     // Subdomains (certificate transparency: crt.sh, Cert Spotter when crt.sh is down)
     surface.subdomains(d).then((subs) => {

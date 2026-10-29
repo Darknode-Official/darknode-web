@@ -6,7 +6,7 @@ import { auth, db, googleProvider, githubProvider, isAdminUser, GOOGLE_CLIENT_ID
 // Finish an OpenRouter account-link if we've just returned from its consent page
 // (?code in the URL). Runs once on load, independent of auth; stores the user's
 // minted key before anything renders. The promise lets the deck re-open cleanly.
-window.__orConnect = import("/js/openrouter-connect.js?v=20261026a")
+window.__orConnect = import("/js/openrouter-connect.js?v=20261028c")
   .then((m) => m.completeOpenRouterConnect()).catch(() => ({ done: false }));
 
 // Cached super-admin flag for the current session, read from the signed ID token
@@ -2086,18 +2086,18 @@ function renderApp(user) {
     requestAnimationFrame(() => { main.style.minHeight = ""; });
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261026a").then(m => live() && m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261028c").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
-    else if (sec === "payloads") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderPayloads(main)); }
-    else if (sec === "targets") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderTargets(main)); }
+    else if (sec === "payloads") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderPayloads(main)); }
+    else if (sec === "targets") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderTargets(main)); }
     else if (sec === "ghdb") { import("/js/ghdb.js?v=20261013b").then(m => live() && m.renderGHDB(main)); }
     else if (sec === "exploitdb") { import("/js/exploitdb.js?v=20261013b").then(m => live() && m.renderExploitDB(main)); }
     else if (sec === "vmlab") { import("/js/vmlab.js").then(m => live() && m.renderVMLab(main)); }
     else if (sec === "privatecloud") { import("/js/privatecloud.js").then(m => live() && m.renderPrivateCloud(main)); }
     else if (sec === "saved") { import("/js/saved.js").then(m => live() && m.renderSaved(main, show)); }
-    else if (sec === "report") { import("/js/report.js?v=20261013b").then(m => live() && m.renderReport(main)); }
-    else if (sec === "snippets") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderSnippets(main)); }
-    else if (sec === "refs") { import("/js/labs.js?v=20261003a").then(m => live() && m.renderRefs(main)); }
+    else if (sec === "report") { import("/js/report.js?v=20261028c").then(m => live() && m.renderReport(main)); }
+    else if (sec === "snippets") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderSnippets(main)); }
+    else if (sec === "refs") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderRefs(main)); }
     else if (sec === "engines") { import("/js/arsenal.js?v=20260927b").then(m => live() && m.renderEngines(main)); }
     else if (sec === "packetcraft") { import("/js/packet-crafter.js").then(m => live() && m.renderPacketCrafter(main)); }
     else if (sec === "binanalyze") { import("/js/binary-analyzer.js?v=20260927b").then(m => live() && m.renderBinaryAnalyzer(main)); }
@@ -2108,13 +2108,13 @@ function renderApp(user) {
     else if (sec === "stego") { import("/js/steganography.js").then(m => live() && m.renderSteganography(main)); }
     else if (sec === "regexlab") { import("/js/regex-lab.js").then(m => live() && m.renderRegexLab(main)); }
     else if (sec === "encoding") { import("/js/encoding-suite.js?v=20261021a").then(m => live() && m.renderEncodingSuite(main)); }
-    else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20261028a").then(m => live() && m.renderThreatModeler(main)); }
-    else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261015e").then(m => live() && m.renderOSINTDashboard(main, more)); }
+    else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20261028c").then(m => live() && m.renderThreatModeler(main)); }
+    else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261028c").then(m => live() && m.renderOSINTDashboard(main, more)); }
     else if (sec === "addressintel") { import("/js/address-intel.js?v=20261018i").then(m => live() && m.renderAddressIntel(main)); }
     else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261028b").then(m => live() && m.renderIncidentTracker(main)); }
-    else if (sec === "firewall") { import("/js/firewall-builder.js?v=20261013b").then(m => live() && m.renderFirewallBuilder(main)); }
-    else if (sec === "apitester") { import("/js/api-tester.js?v=20261017f").then(m => live() && m.renderAPITester(main)); }
-    else if (sec === "compliance") { import("/js/compliance-checker.js?v=20260924a").then(m => live() && m.renderComplianceChecker(main)); }
+    else if (sec === "firewall") { import("/js/firewall-builder.js?v=20261028c").then(m => live() && m.renderFirewallBuilder(main)); }
+    else if (sec === "apitester") { import("/js/api-tester.js?v=20261028c").then(m => live() && m.renderAPITester(main)); }
+    else if (sec === "compliance") { import("/js/compliance-checker.js?v=20261028c").then(m => live() && m.renderComplianceChecker(main)); }
     else if (sec === "attacksim") { import("/js/attack-simulator.js").then(m => live() && m.renderAttackSimulator(main)); }
     else if (sec === "dns") { import("/js/dns-enum.js?v=20261028a").then(m => live() && m.renderDNSEnum(main)); }
     else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20261017d").then(m => live() && m.renderSubdomainFinder(main)); }
@@ -2122,13 +2122,13 @@ function renderApp(user) {
     else if (sec === "wirelesslab") { import("/js/wireless-lab.js?v=20261013m").then(m => live() && m.renderWirelessLab(main)); }
     else if (sec === "pentestconsole") { import("/js/pentest-console.js?v=20261013b").then(m => live() && m.renderPentestConsole(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => live() && m.renderCyberRange(main)); }
-    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/prometheus-web.js?v=20261028a").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
-    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; if(!document.querySelector('script[src^="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js?v=20261007a";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20261028a").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
+    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/prometheus-web.js?v=20261028c").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
+    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; if(!document.querySelector('script[src^="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js?v=20261007a";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20261028c").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => live() && m.renderExploitWriter(main)); }
-    else if (sec === "secdash") { import("/js/security-dashboard.js?v=20260924a").then(m => live() && m.renderSecurityDashboard(main)); }
+    else if (sec === "secdash") { import("/js/security-dashboard.js?v=20261028c").then(m => live() && m.renderSecurityDashboard(main)); }
     else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => live() && m.renderPasswordCrackingLab(main)); }
-    else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/hydra-engine.js?v=20261008b").then(m => live() && m.renderHydra(main)); }
-    else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/aegis-web.js?v=20261028a").then(m => live() && m.renderAegis(main)); }
+    else if (sec === "hydra") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/hydra-engine.js?v=20261028c").then(m => live() && m.renderHydra(main)); }
+    else if (sec === "aegis") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/aegis-web.js?v=20261028c").then(m => live() && m.renderAegis(main)); }
     else if (sec === "vanguard") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; import("/js/vanguard.js?v=20261028a").then(m => live() && m.renderVanguard(main)); }
     else if (sec === "phantom") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/phantom.js?v=20261017d").then(m => { if(curSec!==_s)return; m.renderPhantom(main); _prevCleanup = m.cleanupPhantom; }); }
     else if (sec === "citadel") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/citadel.js?v=20261017d").then(m => { if(curSec!==_s)return; m.renderCitadel(main); _prevCleanup = m.cleanupCitadel; }); }
@@ -2147,9 +2147,9 @@ function renderApp(user) {
     else if (sec === "huntlab") { import("/js/threat-hunt-lab.js").then(m => live() && m.renderThreatHuntLab(main)); }
     else if (sec === "deception") { import("/js/deception-architect.js").then(m => live() && m.renderDeceptionArchitect(main)); }
     else if (sec === "malclass") { import("/js/malware-classifier.js").then(m => live() && m.renderMalwareClassifier(main)); }
-    else if (sec === "zerotrust") { import("/js/zero-trust-designer.js?v=20260924b").then(m => live() && m.renderZeroTrustDesigner(main)); }
+    else if (sec === "zerotrust") { import("/js/zero-trust-designer.js?v=20261028c").then(m => live() && m.renderZeroTrustDesigner(main)); }
     else if (sec === "secquiz") { import("/js/security-awareness-quiz.js?v=20260924b").then(m => live() && m.renderSecurityQuiz(main)); }
-    else if (sec === "supplychain") { import("/js/supply-chain-analyzer.js?v=20261014d").then(m => live() && m.renderSupplyChainAnalyzer(main)); }
+    else if (sec === "supplychain") { import("/js/supply-chain-analyzer.js?v=20261028c").then(m => live() && m.renderSupplyChainAnalyzer(main)); }
     else if (sec === "cryptotools") { import("/js/crypto-tools.js").then(m => live() && m.renderCryptoTools(main)); }
     else if (sec === "ftimeline") { import("/js/forensic-timeline.js").then(m => live() && m.renderForensicTimeline(main)); }
     else if (sec === "socialeng") { import("/js/social-engineering-sim.js").then(m => live() && m.renderSocialEngSim(main)); }
@@ -2157,7 +2157,7 @@ function renderApp(user) {
     else if (sec === "cyberbriefing") { import("/js/cyber-briefing.js?v=20261007a").then(m => live() && m.renderCyberBriefing(main)); }
     else if (sec === "incidentcost") { import("/js/incident-cost.js?v=20260924b").then(m => live() && m.renderIncidentCost(main)); }
     else if (sec === "fedcompliance") { import("/js/fed-compliance.js").then(m => live() && m.renderFedCompliance(main)); }
-    else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js?v=20261017e").then(m => live() && m.renderAdversaryPlaybook(main)); }
+    else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js?v=20261028c").then(m => live() && m.renderAdversaryPlaybook(main)); }
     else if (sec === "emailheader") { import("/js/email-header.js?v=20260924b").then(m => live() && m.renderEmailHeader(main)); }
     else if (sec === "dossier") { import("/js/target-dossier.js").then(m => live() && m.renderDossier(main)); }
     else if (sec === "payloadstudio") { import("/js/payload-studio.js?v=20261013m").then(m => live() && m.renderPayloadStudio(main)); }
@@ -2165,12 +2165,12 @@ function renderApp(user) {
     else if (sec === "iocenrich") { import("/js/ioc-enrichment.js?v=20261028a").then(m => live() && m.renderIocEnrichment(main)); }
     else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => live() && m.renderEmbedSDK(main)); }
     else if (sec === "mcpconnect") { import("/js/mcp-connector.js").then(m => live() && m.renderMcpConnector(main)); }
-    else if (sec === "cvsscalc") { import("/js/cvss-calculator.js?v=20261013b").then(m => live() && m.renderCvssCalculator(main)); }
+    else if (sec === "cvsscalc") { import("/js/cvss-calculator.js?v=20261028c").then(m => live() && m.renderCvssCalculator(main)); }
     else if (sec === "yarabuilder") { import("/js/yara-builder.js").then(m => live() && m.renderYaraBuilder(main)); }
     else if (sec === "emailauth") { import("/js/email-auth.js").then(m => live() && m.renderEmailAuth(main)); }
     else if (sec === "cookieinspect") { import("/js/cookie-inspector.js").then(m => live() && m.renderCookieInspector(main)); }
     else if (sec === "securitytxt") { import("/js/security-txt.js?v=20261021a").then(m => live() && m.renderSecurityTxt(main)); }
-    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261028a").then(m => live() && m.renderCodeScanner(main)); }
+    else if (sec === "codescan") { import("/js/code-scanner.js?v=20261028c").then(m => live() && m.renderCodeScanner(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js?v=20261013b").then(m => live() && m.renderReconPlanner(main)); }
     else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20261028a").then(m => live() && m.renderAPIFuzzer(main)); }
     else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260928m").then(m => live() && m.renderPrivescToolkit(main)); }

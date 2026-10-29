@@ -8,7 +8,7 @@
 // come from OSV.dev. Code is fetched straight from GitHub into this tab and scanned
 // here: nothing is uploaded to Darknode, and no AI is involved.
 
-import { scanFile, parseManifest, isManifest, depFinding, dedupeDeps, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261025g";
+import { scanFile, parseManifest, isManifest, depFinding, dedupeDeps, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261028c";
 import * as gh from "/js/codescan/github.js?v=20261018i";
 import { findingKey, serializeBaseline, diffFindings, baselineKeySet } from "/js/codescan/baseline.js?v=20261014a";
 import { createWatch } from "/js/codescan/watch-ui.js?v=20261017f";
@@ -460,7 +460,7 @@ export function renderCodeScanner(main) {
         data: { repo: s.full, sha: s.sha || "", path: f.path, line: f.line, rule: f.ruleId || "", cwe: f.cwe || "", advisory: f.advisory || "", cve: f.cve || "", fixedIn: f.fixed || "", kind: f.kind },
         opts: { severity: f.sev, status: "open", tags: ["code", f.kind] },
       }));
-      import("/js/graph-bridge.js?v=20261017d").then((m) => {
+      import("/js/graph-bridge.js?v=20261028c").then((m) => {
         const r = m.sendToGraph("Code Scanner", items);
         gb.textContent = "Added to graph"; gb.disabled = true;
         try { window.showToast && window.showToast("Security Graph: " + (r.created || 0) + " added, " + (r.updated || 0) + " updated"); } catch (_) {}

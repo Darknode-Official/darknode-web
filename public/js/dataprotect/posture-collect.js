@@ -3,7 +3,7 @@
 // input object scorePosture() grades; throws (with the reason, e.g. the name does not
 // resolve) when the host answers neither HTTP nor HTTPS.
 
-import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261027c";
+import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261028c";
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
 import { dnFetch } from "/js/net.js";
 import { registrableDomain } from "/js/dataprotect/phish-engine.js?v=20261026b";

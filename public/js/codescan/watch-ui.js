@@ -262,7 +262,7 @@ export function createWatch(ctx) {
     if (!hot.length) return 0;
     const crit = hot.filter((f) => f.sev === "critical").length;
     toast(`${state.full} @ ${short(c.sha)}: ${hot.length} new ${crit ? crit + " critical, " + (hot.length - crit) + " high" : "high"} finding${hot.length === 1 ? "" : "s"}`, "error");
-    import("/js/graph-bridge.js?v=20261017d").then((m) => m.sendToGraph("Code Scanner", hot.slice(0, 500).map((f) => graphItem(f, { full: state.full, sha: c.sha })))).catch(() => {});
+    import("/js/graph-bridge.js?v=20261028c").then((m) => m.sendToGraph("Code Scanner", hot.slice(0, 500).map((f) => graphItem(f, { full: state.full, sha: c.sha })))).catch(() => {});
     return hot.length;
   }
 
