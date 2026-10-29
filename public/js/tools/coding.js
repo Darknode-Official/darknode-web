@@ -104,7 +104,7 @@ function yamlScalar(v) {
   const s = String(v);
   if (s === "") return '""';
   const needs = /^[\s]|[\s]$/.test(s) || /[:#\[\]{}&*!|>'"%@`,]/.test(s) || /^[-?@`]/.test(s) ||
-    /^(true|false|null|yes|no|on|off|~)$/i.test(s) || /^[-+]?(\d|\.\d|\.inf$|\.nan$)/i.test(s) || /[\x00-\x1f\x7f\x85\u2028\u2029\ufeff]/.test(s) || /:\s/.test(s) || /^\.\.\.(\s|$)/.test(s); // "..." at a line start ends the YAML document
+    /^(true|false|null|yes|no|on|off|~|<<|=)$/i.test(s) || /^[-+]?(\d|\.\d|\.inf$|\.nan$)/i.test(s) || /[\x00-\x1f\x7f\x85\u2028\u2029\ufeff]/.test(s) || /:\s/.test(s) || /^\.\.\.(\s|$)/.test(s); // "..." at a line start ends the YAML document
   if (needs) return '"' + ctlEsc(s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r")) + '"';
   return s;
 }
@@ -243,7 +243,7 @@ function yNode(lines, i, indent) {
   const t = lines[i].slice(indent);
   if (t[0] === "[" || t[0] === "{") return [yScalar(t), i + 1];
   if (t === "-" || t.startsWith("- ")) return yArray(lines, i, indent);
-  if (yMatchKey(t)) return yMap(lines, i, indent);
+  if (yMatchKey(t) || t === "?" || t.startsWith("? ")) return yMap(lines, i, indent);
   return yPlain(lines, i, indent, t);
 }
 // a plain scalar may continue on more-indented lines: breaks fold to spaces, blank lines to \n
@@ -263,7 +263,7 @@ function yArray(lines, i, indent) {
     if (after === "") {
       if (j + 1 < lines.length && indentOf(lines[j + 1]) > indent) { const [v, nj] = yNode(lines, j + 1, indentOf(lines[j + 1])); arr.push(v); j = nj; }
       else { arr.push(null); j++; }
-    } else if (after === "-" || after.startsWith("- ") || (after[0] !== "[" && after[0] !== "{" && yMatchKey(after))) {
+    } else if (after === "-" || after.startsWith("- ") || (after[0] !== "[" && after[0] !== "{" && yMatchKey(after)) || after.startsWith("? ")) {
       // "- - a" (a nested list) and "- key: v" open a node at the item's column
       const ci = indent + 1 + sp; lines[j] = " ".repeat(ci) + after;
       const [v, nj] = yNode(lines, j, ci); arr.push(v); j = nj;
@@ -284,7 +284,21 @@ function yMap(lines, i, indent) {
     if (ind > indent) throw new Error("bad indentation at line " + (j + 1));
     const t = lines[j].slice(indent);
     if (t === "-" || t.startsWith("- ")) break;
-    const m = yMatchKey(t); if (!m) throw new Error("expected 'key:' at line " + (j + 1));
+    let m = yMatchKey(t);
+    // an explicit key ("? key" then ": value" on the next line): PyYAML writes one for a key
+    // over 128 characters or holding a line break
+    if (t === "?" || t.startsWith("? ")) {
+      const ks = t.slice(1).trim(), key = /^["']/.test(ks) ? yScalar(ks) : ks;
+      if (ks === "") throw new Error("a complex (block) key is not supported at line " + (j + 1));
+      const nt = j + 1 < lines.length && indentOf(lines[j + 1]) === indent ? lines[j + 1].slice(indent) : "";
+      if (!(nt === ":" || nt.startsWith(": "))) { ySet(obj, key, null, " at line " + (j + 1)); j++; continue; }
+      const rest = nt.slice(1).replace(/^[ \t]+/, ""), ci = indent + nt.length - rest.length;
+      j++;
+      // ": - a", ": ? k" and ": k: v" open a node at the value's column, as a "- " item does
+      if (rest === "-" || rest.startsWith("- ") || rest.startsWith("? ") || (rest[0] !== "[" && rest[0] !== "{" && yMatchKey(rest))) { lines[j] = " ".repeat(ci) + rest; const [v, nj] = yNode(lines, j, ci); ySet(obj, key, v, " at line " + j); j = nj; continue; }
+      m = { key, rest };
+    }
+    if (!m) throw new Error("expected 'key:' at line " + (j + 1));
     if (m.rest !== "") { const [v, nj] = yPlain(lines, j, indent, m.rest); ySet(obj, m.key, v, " at line " + (j + 1)); j = nj; }
     else if (j + 1 < lines.length && indentOf(lines[j + 1]) > indent) { const [v, nj] = yNode(lines, j + 1, indentOf(lines[j + 1])); ySet(obj, m.key, v, " at line " + (j + 1)); j = nj; }
     else if (j + 1 < lines.length && indentOf(lines[j + 1]) === indent && (lines[j + 1].slice(indent) === "-" || lines[j + 1].slice(indent).startsWith("- "))) { const [v, nj] = yArray(lines, j + 1, indent); ySet(obj, m.key, v, " at line " + (j + 1)); j = nj; }
@@ -317,7 +331,7 @@ function yScalar(s) {
 function yFlow(p) {
   skipWs(p); const c = p.s[p.i];
   if (c === "[") { p.i++; const a = []; skipWs(p); if (p.s[p.i] === "]") { p.i++; return a; } while (true) { a.push(yFlow(p)); skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "]") { p.i++; break; } continue; } if (p.s[p.i] === "]") { p.i++; break; } throw new Error("bad flow sequence"); } return a; }
-  if (c === "{") { p.i++; const o = {}; skipWs(p); if (p.s[p.i] === "}") { p.i++; return o; } while (true) { skipWs(p); const k = yFlowScalarRaw(p, true); skipWs(p); if (p.s[p.i] !== ":") throw new Error("expected ':' in flow map"); p.i++; const v = yFlow(p); ySet(o, typeof k === "string" ? k : String(k), v, " in a flow map"); skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "}") { p.i++; break; } continue; } if (p.s[p.i] === "}") { p.i++; break; } throw new Error("bad flow map"); } return o; }
+  if (c === "{") { p.i++; const o = {}; skipWs(p); if (p.s[p.i] === "}") { p.i++; return o; } while (true) { skipWs(p); if (p.s[p.i] === "?" && /[ \t]/.test(p.s[p.i + 1] ?? "")) { p.i++; skipWs(p); } const k = yFlowScalarRaw(p, true); skipWs(p); if (p.s[p.i] !== ":") throw new Error("expected ':' in flow map"); p.i++; const v = yFlow(p); ySet(o, typeof k === "string" ? k : String(k), v, " in a flow map"); skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "}") { p.i++; break; } continue; } if (p.s[p.i] === "}") { p.i++; break; } throw new Error("bad flow map"); } return o; }
   return yScalar(yFlowScalarRaw(p, false));
 }
 const skipWs = (p) => { while (/[ \t]/.test(p.s[p.i])) p.i++; };
@@ -339,7 +353,7 @@ function yFlowScalarRaw(p, isKey) {
 }
 
 // ---------- TOML emit ----------
-const tomlBareKey = (k) => /^[A-Za-z0-9_-]+$/.test(k) ? k : '"' + String(k).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+const tomlBareKey = (k) => /^[A-Za-z0-9_-]+$/.test(k) ? k : tomlString(k); // a quoted key escapes as a string does: a raw newline in one is invalid TOML
 const tomlString = (s) => '"' + ctlEsc(String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r")) + '"';
 function tomlValue(v) {
   if (v === null) return '""';
