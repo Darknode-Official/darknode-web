@@ -708,16 +708,20 @@ export const TOOLS = [
   },
   {
     id: "dv-unescape-backslash", name: "Unescape Backslash Sequences", cat: "devx",
-    desc: "Interpret C-style backslash escapes (\\n \\t \\r \\0 \\xHH \\uHHHH) into their literal characters.",
+    desc: "Interpret C-style backslash escapes (\\n \\t \\r \\a \\e, octal \\101, \\xHH, \\uHHHH, \\u{1F600}, \\UHHHHHHHH) into their literal characters.",
     tags: ["unescape", "backslash", "escape", "decode"],
     inputs: [{ k: "text", label: "Text", type: "textarea", rows: 4, placeholder: "line1\\nline2\\x41" }],
     run(v) {
       const t = S(v.text);
       if (!t) return "";
-      const map = { n: "\n", t: "\t", r: "\r", "0": "\0", b: "\b", f: "\f", v: "\v", "\\": "\\", "'": "'", '"': '"' };
-      return t.replace(/\\(u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.)/g, (m, g) => {
-        if (g[0] === "u") return String.fromCharCode(parseInt(g.slice(1), 16));
-        if (g[0] === "x") return String.fromCharCode(parseInt(g.slice(1), 16));
+      const map = { n: "\n", t: "\t", r: "\r", b: "\b", f: "\f", v: "\v", a: "\x07", e: "\x1b", "\\": "\\", "'": "'", '"': '"' };
+      return t.replace(/\\(u\{[0-9a-fA-F]{1,6}\}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|x[0-9a-fA-F]{2}|[0-3][0-7]{0,2}|[4-7][0-7]?|[\s\S])/g, (m, g) => {
+        if (/^[0-7]/.test(g)) return String.fromCharCode(parseInt(g, 8));
+        if (g[0] === "x" && g.length === 3) return String.fromCharCode(parseInt(g.slice(1), 16));
+        if ((g[0] === "u" || g[0] === "U") && g.length > 1) {
+          const cp = parseInt(g.replace(/^[uU]\{?|\}$/g, ""), 16);
+          return cp <= 0x10ffff ? String.fromCodePoint(cp) : m;
+        }
         return map[g] !== undefined ? map[g] : g;
       });
     },
@@ -1388,12 +1392,17 @@ export const TOOLS = [
         const ms = v.unit === "s" ? n * 1000 : n;
         const d = new Date(ms);
         if (isNaN(d.getTime())) return { error: "Out-of-range timestamp." };
-        return `ISO (UTC) : ${d.toISOString()}\nLocal     : ${d.toString().replace(/ \(.*\)$/, "")}`;
+        // A 13-digit value read as seconds lands tens of millennia out (and a 10-digit one read as ms
+        // in January 1970): say which unit the number most likely is.
+        const alt = v.unit === "s" && Math.abs(n) >= 1e11 ? new Date(n) : v.unit !== "s" && n !== 0 && Math.abs(n) < 1e11 ? new Date(n * 1000) : null;
+        const hint = alt && !isNaN(alt.getTime()) ? `\n\nThis looks like ${v.unit === "s" ? "milliseconds" : "seconds"}; read that way it is ${alt.toISOString()}.` : "";
+        return `ISO (UTC) : ${d.toISOString()}\nLocal     : ${d.toString().replace(/ \(.*\)$/, "")}${hint}`;
       }
       const d = new Date(raw);
       if (isNaN(d.getTime())) return { error: "Could not parse date." };
       const ms = d.getTime();
-      return `seconds      : ${Math.floor(ms / 1000)}\nmilliseconds : ${ms}`;
+      const how = /^\d{4}(-\d{2}){0,2}$/.test(raw) ? " (date only, so midnight UTC)" : /(?:Z|[+-]\d{2}:?\d{2}|GMT|UTC)\s*$/i.test(raw) ? "" : " (no zone given, so your local time zone)";
+      return `seconds      : ${Math.floor(ms / 1000)}\nmilliseconds : ${ms}\nread as      : ${d.toISOString()}${how}`;
     },
   },
 ];
