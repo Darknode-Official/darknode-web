@@ -455,9 +455,10 @@ export const TOOLS = [
     inputs: [{ k: "mode", label: "Mode", type: "select", opts: ["Decode", "Encode"], value: "Decode" }, { k: "val", label: "OLE days / Date", type: "text", placeholder: "45292.5 or 2024-01-01T12:00:00Z" }],
     run(v) {
       if (!v.val) return "";
-      if (v.mode === "Encode") { const ms = parseDate(v.val); if (ms == null) return { error: "Enter an ISO date." }; return `OLE Automation date: ${(ms - OLE_EPOCH_MS) / 86400000}`; }
+      // before 1899-12-30 the whole days count back but the fraction still counts forward: -1.25 is 1899-12-29 06:00
+      if (v.mode === "Encode") { const ms = parseDate(v.val); if (ms == null) return { error: "Enter an ISO date." }; const d = (ms - OLE_EPOCH_MS) / 86400000, day = Math.floor(d); return `OLE Automation date: ${d >= 0 ? d : day - (d - day)}`; }
       const n = Number(String(v.val).trim()); if (!isFinite(n)) return { error: "Enter a number." };
-      return showTime(n * 86400000 + OLE_EPOCH_MS);
+      return showTime((Math.trunc(n) + Math.abs(n % 1)) * 86400000 + OLE_EPOCH_MS);
     } },
 
   { id: "fx-dos-time", name: "DOS / FAT Date-Time Decoder", cat: "forensics", desc: "Decode a 16-bit DOS/FAT date word and time word (as used in ZIP local headers and FAT filesystems) into a date. 2-second resolution, local time.", tags: ["dos", "fat", "zip", "msdos"],
@@ -466,8 +467,8 @@ export const TOOLS = [
       const d = v.date ? Number(parseBig(v.date)) : NaN, t = v.time ? Number(parseBig(v.time)) : NaN;
       if (!isFinite(d) && !isFinite(t)) return { error: "Enter a date and/or time word." };
       let out = [];
-      if (isFinite(d)) { const y = 1980 + ((d >> 9) & 0x7f), mo = (d >> 5) & 0xf, day = d & 0x1f; out.push(`Date: ${y}-${String(mo).padStart(2, "0")}-${String(day).padStart(2, "0")}`); }
-      if (isFinite(t)) { const h = (t >> 11) & 0x1f, mi = (t >> 5) & 0x3f, s = (t & 0x1f) * 2; out.push(`Time: ${String(h).padStart(2, "0")}:${String(mi).padStart(2, "0")}:${String(s).padStart(2, "0")} (local, 2s resolution)`); }
+      if (isFinite(d)) { const y = 1980 + ((d >> 9) & 0x7f), mo = (d >> 5) & 0xf, day = d & 0x1f; out.push(`Date: ${y}-${String(mo).padStart(2, "0")}-${String(day).padStart(2, "0")}` + (mo < 1 || mo > 12 || day < 1 || day > new Date(Date.UTC(y, mo, 0)).getUTCDate() ? " (not a real date" + (d === 0 ? ": an all-zero word means no date was stored)" : ")") : "")); }
+      if (isFinite(t)) { const h = (t >> 11) & 0x1f, mi = (t >> 5) & 0x3f, s = (t & 0x1f) * 2; out.push(`Time: ${String(h).padStart(2, "0")}:${String(mi).padStart(2, "0")}:${String(s).padStart(2, "0")} (local, 2s resolution)` + (h > 23 || mi > 59 || s > 59 ? " (not a real time)" : "")); }
       return out.join("\n");
     } },
 
@@ -510,15 +511,27 @@ export const TOOLS = [
     inputs: [{ k: "val", label: "GeneralizedTime / UTCTime", type: "text", placeholder: "20240131235959.0Z" }],
     run(v) {
       const t = String(v.val || "").trim(); if (!t) return "";
-      let m = t.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})?(?:[.,](\d+))?(Z|[+-]\d{2}\d{2})?$/);
-      let kind = "GeneralizedTime";
-      if (!m) { m = t.match(/^(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})?(Z|[+-]\d{2}\d{2})?$/); if (m) { kind = "UTCTime"; const yy = parseInt(m[1], 10); m[1] = String(yy >= 50 ? 1900 + yy : 2000 + yy); } }
-      if (!m) return { error: "Not a valid GeneralizedTime/UTCTime string." };
-      const [, Y, Mo, D, h, mi, s = "00", frac, tz = "Z"] = m;
-      let iso = `${Y}-${Mo}-${D}T${h}:${mi}:${s}${frac ? "." + frac : ""}`;
-      iso += tz === "Z" ? "Z" : `${tz.slice(0, 3)}:${tz.slice(3)}`;
-      const ms = Date.parse(iso); if (isNaN(ms)) return { error: "Could not parse the components." };
-      return `Type: ${kind}\n` + showTime(ms);
+      // 12 digits fit both UTCTime (YYMMDDhhmmss) and GeneralizedTime without seconds
+      // (YYYYMMDDhhmm), so every reading is tried and impossible dates are dropped.
+      const toMs = (Y, Mo, D, h, mi, s, frac, tz) => {
+        if (Mo < 1 || Mo > 12 || D < 1 || D > new Date(Date.UTC(Y, Mo, 0)).getUTCDate() || h > 23 || (mi != null && mi > 59) || (s != null && s > 59)) return null;
+        let ms = Date.UTC(Y, Mo - 1, D, h, mi || 0, s || 0);
+        if (frac) ms += Math.round(Number("0." + frac) * (s != null ? 1000 : mi != null ? 60000 : 3600000)); // a fraction is of the last unit given
+        if (tz && tz !== "Z") { const o = +tz.slice(1, 3) * 60 + +tz.slice(3); if (+tz.slice(1, 3) > 23 || +tz.slice(3) > 59) return null; ms -= (tz[0] === "-" ? -o : o) * 60000; }
+        return ms;
+      };
+      const n = (x) => (x == null ? null : parseInt(x, 10));
+      const reads = [];
+      let m = t.match(/^(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})?(Z|[+-]\d{4})?$/);
+      if (m) { const yy = n(m[1]); const ms = toMs(yy >= 50 ? 1900 + yy : 2000 + yy, n(m[2]), n(m[3]), n(m[4]), n(m[5]), n(m[6]), null, m[7]); if (ms != null) reads.push(["UTCTime", ms, m[7]]); }
+      m = t.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(?:(\d{2})(\d{2})?)?(?:[.,](\d+))?(Z|[+-]\d{4})?$/);
+      if (m) { const ms = toMs(n(m[1]), n(m[2]), n(m[3]), n(m[4]), n(m[5]), n(m[6]), m[7], m[8]); if (ms != null) reads.push(["GeneralizedTime", ms, m[8]]); }
+      if (!reads.length) return { error: /^\d{10,}/.test(t) ? "Not a real date and time (check month, day, hour, minute and second)." : "Not a valid GeneralizedTime/UTCTime string." };
+      const [kind, ms, tz] = reads[0];
+      let out = `Type: ${kind}\n` + showTime(ms);
+      if (!tz) out += "\n(no time zone given: read as UTC)";
+      if (reads[1] && reads[1][1] !== ms) out += `\nAlso valid as ${reads[1][0]} (no seconds): ${new Date(reads[1][1]).toISOString()}`;
+      return out;
     } },
 
   { id: "fx-timeline", name: "Timeline Builder (Sort Mixed Timestamps)", cat: "forensics", desc: "Paste one event per line starting with a timestamp (Unix s/ms, ISO 8601, or 'YYYY-MM-DD HH:MM:SS'), optionally followed by a label. Normalizes to UTC and sorts chronologically.", tags: ["timeline", "sort", "events", "super-timeline"],
