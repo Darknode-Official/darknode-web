@@ -51,33 +51,6 @@ function punyToUnicode(host) {
   return host.split(".").map((l) => /^xn--/i.test(l) ? punyDecode(l.slice(4)) : l).join(".");
 }
 
-// HTML character references as an HTML5 parser decodes them in text: the HTML 4 named set
-// (plus apos), the legacy names browsers accept without a semicolon (&copy, &amp), numeric
-// references with or without ";", 128-159 read as Windows-1252 (&#150; is an en dash), and
-// 0 / surrogates / > U+10FFFF as U+FFFD.
-const ENT4 = "quot:22 amp:26 lt:3c gt:3e nbsp:a0 iexcl:a1 cent:a2 pound:a3 curren:a4 yen:a5 brvbar:a6 sect:a7 uml:a8 copy:a9 ordf:aa laquo:ab not:ac shy:ad reg:ae macr:af deg:b0 plusmn:b1 sup2:b2 sup3:b3 acute:b4 micro:b5 para:b6 middot:b7 cedil:b8 sup1:b9 ordm:ba raquo:bb frac14:bc frac12:bd frac34:be iquest:bf Agrave:c0 Aacute:c1 Acirc:c2 Atilde:c3 Auml:c4 Aring:c5 AElig:c6 Ccedil:c7 Egrave:c8 Eacute:c9 Ecirc:ca Euml:cb Igrave:cc Iacute:cd Icirc:ce Iuml:cf ETH:d0 Ntilde:d1 Ograve:d2 Oacute:d3 Ocirc:d4 Otilde:d5 Ouml:d6 times:d7 Oslash:d8 Ugrave:d9 Uacute:da Ucirc:db Uuml:dc Yacute:dd THORN:de szlig:df agrave:e0 aacute:e1 acirc:e2 atilde:e3 auml:e4 aring:e5 aelig:e6 ccedil:e7 egrave:e8 eacute:e9 ecirc:ea euml:eb igrave:ec iacute:ed icirc:ee iuml:ef eth:f0 ntilde:f1 ograve:f2 oacute:f3 ocirc:f4 otilde:f5 ouml:f6 divide:f7 oslash:f8 ugrave:f9 uacute:fa ucirc:fb uuml:fc yacute:fd thorn:fe yuml:ff OElig:152 oelig:153 Scaron:160 scaron:161 Yuml:178 fnof:192 circ:2c6 tilde:2dc Alpha:391 Beta:392 Gamma:393 Delta:394 Epsilon:395 Zeta:396 Eta:397 Theta:398 Iota:399 Kappa:39a Lambda:39b Mu:39c Nu:39d Xi:39e Omicron:39f Pi:3a0 Rho:3a1 Sigma:3a3 Tau:3a4 Upsilon:3a5 Phi:3a6 Chi:3a7 Psi:3a8 Omega:3a9 alpha:3b1 beta:3b2 gamma:3b3 delta:3b4 epsilon:3b5 zeta:3b6 eta:3b7 theta:3b8 iota:3b9 kappa:3ba lambda:3bb mu:3bc nu:3bd xi:3be omicron:3bf pi:3c0 rho:3c1 sigmaf:3c2 sigma:3c3 tau:3c4 upsilon:3c5 phi:3c6 chi:3c7 psi:3c8 omega:3c9 thetasym:3d1 upsih:3d2 piv:3d6 ensp:2002 emsp:2003 thinsp:2009 zwnj:200c zwj:200d lrm:200e rlm:200f ndash:2013 mdash:2014 lsquo:2018 rsquo:2019 sbquo:201a ldquo:201c rdquo:201d bdquo:201e dagger:2020 Dagger:2021 bull:2022 hellip:2026 permil:2030 prime:2032 Prime:2033 lsaquo:2039 rsaquo:203a oline:203e frasl:2044 euro:20ac image:2111 weierp:2118 real:211c trade:2122 alefsym:2135 larr:2190 uarr:2191 rarr:2192 darr:2193 harr:2194 crarr:21b5 lArr:21d0 uArr:21d1 rArr:21d2 dArr:21d3 hArr:21d4 forall:2200 part:2202 exist:2203 empty:2205 nabla:2207 isin:2208 notin:2209 ni:220b prod:220f sum:2211 minus:2212 lowast:2217 radic:221a prop:221d infin:221e ang:2220 and:2227 or:2228 cap:2229 cup:222a int:222b there4:2234 sim:223c cong:2245 asymp:2248 ne:2260 equiv:2261 le:2264 ge:2265 sub:2282 sup:2283 nsub:2284 sube:2286 supe:2287 oplus:2295 otimes:2297 perp:22a5 sdot:22c5 lceil:2308 rceil:2309 lfloor:230a rfloor:230b lang:2329 rang:232a loz:25ca spades:2660 clubs:2663 hearts:2665 diams:2666";
-const ENT_LEGACY = new Set("AElig AMP Aacute Acirc Agrave Aring Atilde Auml COPY Ccedil ETH Eacute Ecirc Egrave Euml GT Iacute Icirc Igrave Iuml LT Ntilde Oacute Ocirc Ograve Oslash Otilde Ouml QUOT REG THORN Uacute Ucirc Ugrave Uuml Yacute aacute acirc acute aelig agrave amp aring atilde auml brvbar ccedil cedil cent copy curren deg divide eacute ecirc egrave eth euml frac12 frac14 frac34 gt iacute icirc iexcl igrave iquest iuml laquo lt macr micro middot nbsp not ntilde oacute ocirc ograve ordf ordm oslash otilde ouml para plusmn pound quot raquo reg sect shy sup1 sup2 sup3 szlig thorn times uacute ucirc ugrave uml uuml yacute yen yuml".split(" "));
-let ENT_MAP = null;
-const W1252 = { 128: 0x20ac, 130: 0x201a, 131: 0x192, 132: 0x201e, 133: 0x2026, 134: 0x2020, 135: 0x2021, 136: 0x2c6, 137: 0x2030, 138: 0x160, 139: 0x2039, 140: 0x152, 142: 0x17d, 145: 0x2018, 146: 0x2019, 147: 0x201c, 148: 0x201d, 149: 0x2022, 150: 0x2013, 151: 0x2014, 152: 0x2dc, 153: 0x2122, 154: 0x161, 155: 0x203a, 156: 0x153, 158: 0x17e, 159: 0x178 };
-function decodeEntities(text) {
-  if (!ENT_MAP) {
-    ENT_MAP = new Map(ENT4.split(" ").map((x) => { const [k, cp] = x.split(":"); return [k, String.fromCodePoint(parseInt(cp, 16))]; }));
-    ENT_MAP.set("apos", "'").set("lang", "\u27e8").set("rang", "\u27e9"); // HTML5 moved these two
-    for (const k of ["AMP", "LT", "GT", "QUOT", "COPY", "REG"]) ENT_MAP.set(k, ENT_MAP.get(k.toLowerCase()));
-  }
-  return String(text).replace(/&(#[0-9]+;?|#[xX][0-9a-fA-F]+;?|[^\t\n\f <&#;]{1,32};?)/g, (m, e) => {
-    if (e[0] === "#") {
-      const hex = e[1] === "x" || e[1] === "X";
-      const n = parseInt(e.slice(hex ? 2 : 1).replace(/;$/, ""), hex ? 16 : 10);
-      if (W1252[n]) return String.fromCodePoint(W1252[n]);
-      return n > 0 && n <= 0x10ffff && !(n >= 0xd800 && n <= 0xdfff) ? String.fromCodePoint(n) : "\ufffd";
-    }
-    if (e.endsWith(";") && ENT_MAP.has(e.slice(0, -1))) return ENT_MAP.get(e.slice(0, -1));
-    // no exact match: the longest legacy name at the start (&copyright -> (c)right, &notit; -> not-sign + it;)
-    for (let x = Math.min(e.length, 6); x >= 2; x--) if (ENT_LEGACY.has(e.slice(0, x))) return ENT_MAP.get(e.slice(0, x)) + e.slice(x);
-    return m;
-  });
-}
 
 export const TOOLS = [
   { id: "base64", name: "Base64 Encoder / Decoder", cat: "encoding", desc: "Encode or decode Base64, with URL-safe and MIME variants.", tags: ["b64"],
@@ -98,7 +71,7 @@ export const TOOLS = [
 
   { id: "html-entities", name: "HTML Entity Encoder / Decoder", cat: "encoding", desc: "Escape or unescape HTML entities (&lt; &amp; &eacute; &#8212; …) the way a browser decodes them.", tags: ["escape", "xss"],
     inputs: [{ k: "text", label: "Text", type: "textarea", placeholder: "<b>hi</b> & \"you\"" }, { k: "mode", label: "Mode", type: "select", opts: ["Encode", "Decode"], value: "Encode" }],
-    run(v) { if (!v.text) return ""; if (v.mode === "Encode") return v.text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); return decodeEntities(v.text);} },
+    run(v, H) { if (!v.text) return ""; if (v.mode === "Encode") return v.text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); return H.decodeEntities(v.text);} },
 
   { id: "hex-text", name: "Hex Encoder / Decoder", cat: "encoding", desc: "Convert text to hex bytes and back.", tags: ["hex", "base16"],
     inputs: [{ k: "text", label: "Text or hex", type: "textarea" }, { k: "mode", label: "Mode", type: "select", opts: ["Text → Hex", "Hex → Text"], value: "Text → Hex" }, { k: "sep", label: "Separator (encode)", type: "select", opts: [["", "none"], [" ", "space"], [":", "colon"]], value: "" }],

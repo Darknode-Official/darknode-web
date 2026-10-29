@@ -1708,17 +1708,20 @@ export const TOOLS = [
     desc: "Convert an HTML fragment to plain text: drop script/style, turn block tags and <br> into line breaks, decode common entities, collapse extra whitespace. No DOM used.",
     tags: ["html", "plain text", "strip tags", "convert", "entities"],
     inputs: [{ k: "html", label: "HTML", type: "textarea", rows: 8, placeholder: "<h1>Hi</h1><p>Some <b>bold</b> text.</p>" }],
-    run(v) {
+    run(v, H) {
       let s = S(v.html); if (!s.trim()) return "";
       s = s.replace(/<!--[\s\S]*?-->/g, "");
       s = s.replace(/<(script|style)[\s\S]*?<\/\1>/gi, "");
+      // <pre> keeps its line breaks and indentation: set aside before whitespace is collapsed
+      const pres = [];
+      s = s.replace(/\u0000/g, "").replace(/<pre\b[^>]*>([\s\S]*?)<\/pre\s*>/gi, (m, inner) => { pres.push(H.decodeEntities(inner.replace(/<\s*br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")).replace(/^\n+|\s+$/g, "")); return "\n\u0000" + (pres.length - 1) + "\u0000\n"; });
+      s = s.replace(/<\/(td|th)\s*>\s*(?=<(td|th)\b)/gi, "\u0001"); // cells of a row stay apart (a tab, set after whitespace is collapsed)
+      s = s.replace(/<li\b[^>]*>/gi, "\n- "); // before the block tags below, which would take <li> first
       s = s.replace(/<\s*br\s*\/?>/gi, "\n");
       s = s.replace(/<\s*\/?\s*(p|div|h[1-6]|li|tr|table|ul|ol|section|article|header|footer|blockquote|pre)\b[^>]*>/gi, "\n");
-      s = s.replace(/<li\b[^>]*>/gi, "- ");
       s = s.replace(/<[^>]+>/g, "");
-      const ent = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", "#39": "'", "#34": '"' };
-      s = s.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (m, e) => { if (e[0] === "#") { const code = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return isNaN(code) ? m : String.fromCodePoint(code); } return e in ent ? ent[e] : m; });
-      return s.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").replace(/[ \t]{2,}/g, " ").trim() + "\n";
+      s = H.decodeEntities(s); // the full HTML5 named set, as the HTML Entity tool reads them
+      return s.replace(/[ \t]+\n/g, "\n").replace(/\n[ \t]+/g, "\n").replace(/\n{3,}/g, "\n\n").replace(/[ \t]{2,}/g, " ").trim().replace(/ ?\u0001 ?/g, "\t").replace(/\u0000(\d+)\u0000/g, (m, n) => pres[+n]) + "\n";
     },
   },
   {
