@@ -105,3 +105,17 @@ group("JSON Pointer (RFC 6901)", () => {
     assert.equal(ptr('{"a/b":1,"m~n":8}', "/m~0n"), "8");
   });
 });
+
+group("JSON to YAML / YAML to JSON edge cases", () => {
+  test("a top-level null converts, and ... at a line start is quoted (it ends a YAML document)", () => {
+    assert.equal(run("cd-json-to-yaml", { json: "null" }), "null\n");
+    assert.equal(run("cd-json-to-yaml", { json: '"..."' }), '"..."\n');
+    assert.equal(run("cd-json-to-yaml", { json: '{"... k":"... v"}' }), '"... k": "... v"\n');
+  });
+  test("a repeated key is an error, not a silent overwrite; __proto__ stays a key; 0o17 is octal", () => {
+    assert.ok(/duplicate key 'a' at line 2/.test(run("cd-yaml-to-json", { yaml: "a: 1\na: 2" }).error));
+    assert.ok(/duplicate key 'b'/.test(run("cd-yaml-to-json", { yaml: "a: {b: 1, b: 2}" }).error));
+    assert.equal(run("cd-yaml-to-json", { yaml: "__proto__:\n  x: 1\ny: 2", indent: "Minify" }), '{"__proto__":{"x":1},"y":2}');
+    assert.equal(run("cd-yaml-to-json", { yaml: "v: 0o17", indent: "Minify" }), '{"v":15}');
+  });
+});

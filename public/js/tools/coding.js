@@ -96,7 +96,7 @@ function yamlScalar(v) {
   const s = String(v);
   if (s === "") return '""';
   const needs = /^[\s]|[\s]$/.test(s) || /[:#\[\]{}&*!|>'"%@`,]/.test(s) || /^[-?@`]/.test(s) ||
-    /^(true|false|null|yes|no|on|off|~)$/i.test(s) || /^[-+]?(\d|\.\d|\.inf$|\.nan$)/i.test(s) || /[\x00-\x1f\x7f\x85\u2028\u2029\ufeff]/.test(s) || /:\s/.test(s);
+    /^(true|false|null|yes|no|on|off|~)$/i.test(s) || /^[-+]?(\d|\.\d|\.inf$|\.nan$)/i.test(s) || /[\x00-\x1f\x7f\x85\u2028\u2029\ufeff]/.test(s) || /:\s/.test(s) || /^\.\.\.(\s|$)/.test(s); // "..." at a line start ends the YAML document
   if (needs) return '"' + ctlEsc(s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r")) + '"';
   return s;
 }
@@ -131,7 +131,7 @@ function yamlLines(val, indent) {
   }
   return [pad + yamlScalar(val)];
 }
-const toYAML = (v) => (hasEntries(v) || (!isPlainObj(v) && !Array.isArray(v))) ? yamlLines(v, 0).join("\n") + "\n" : yamlEmpty(v) + "\n";
+const toYAML = (v) => (v === null || hasEntries(v) || (!isPlainObj(v) && !Array.isArray(v))) ? yamlLines(v, 0).join("\n") + "\n" : yamlEmpty(v) + "\n";
 
 // ---------- YAML parse (common block subset + simple flow) ----------
 function parseYAML(text) {
@@ -263,6 +263,12 @@ function yArray(lines, i, indent) {
   }
   return [arr, j];
 }
+// A mapping key, set once: YAML forbids a repeated key (the old value was silently replaced),
+// and defineProperty keeps a "__proto__" key as data instead of setting the prototype.
+function ySet(o, k, v, where) {
+  if (Object.prototype.hasOwnProperty.call(o, k)) throw new Error("duplicate key '" + k + "'" + where);
+  Object.defineProperty(o, k, { value: v, enumerable: true, writable: true, configurable: true });
+}
 function yMap(lines, i, indent) {
   const obj = {}; let j = i;
   while (j < lines.length) {
@@ -271,10 +277,10 @@ function yMap(lines, i, indent) {
     const t = lines[j].slice(indent);
     if (t === "-" || t.startsWith("- ")) break;
     const m = yMatchKey(t); if (!m) throw new Error("expected 'key:' at line " + (j + 1));
-    if (m.rest !== "") { const [v, nj] = yPlain(lines, j, indent, m.rest); obj[m.key] = v; j = nj; }
-    else if (j + 1 < lines.length && indentOf(lines[j + 1]) > indent) { const [v, nj] = yNode(lines, j + 1, indentOf(lines[j + 1])); obj[m.key] = v; j = nj; }
-    else if (j + 1 < lines.length && indentOf(lines[j + 1]) === indent && (lines[j + 1].slice(indent) === "-" || lines[j + 1].slice(indent).startsWith("- "))) { const [v, nj] = yArray(lines, j + 1, indent); obj[m.key] = v; j = nj; }
-    else { obj[m.key] = null; j++; }
+    if (m.rest !== "") { const [v, nj] = yPlain(lines, j, indent, m.rest); ySet(obj, m.key, v, " at line " + (j + 1)); j = nj; }
+    else if (j + 1 < lines.length && indentOf(lines[j + 1]) > indent) { const [v, nj] = yNode(lines, j + 1, indentOf(lines[j + 1])); ySet(obj, m.key, v, " at line " + (j + 1)); j = nj; }
+    else if (j + 1 < lines.length && indentOf(lines[j + 1]) === indent && (lines[j + 1].slice(indent) === "-" || lines[j + 1].slice(indent).startsWith("- "))) { const [v, nj] = yArray(lines, j + 1, indent); ySet(obj, m.key, v, " at line " + (j + 1)); j = nj; }
+    else { ySet(obj, m.key, null, " at line " + (j + 1)); j++; }
   }
   return [obj, j];
 }
@@ -297,12 +303,13 @@ function yScalar(s) {
   if (/^[-+]?\d+$/.test(s)) return Number(s);
   if (/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(s)) return Number(s);
   if (/^0x[0-9a-fA-F]+$/.test(s)) return parseInt(s, 16);
+  if (/^0o[0-7]+$/.test(s)) return parseInt(s.slice(2), 8); // YAML 1.2 octal
   return s;
 }
 function yFlow(p) {
   skipWs(p); const c = p.s[p.i];
   if (c === "[") { p.i++; const a = []; skipWs(p); if (p.s[p.i] === "]") { p.i++; return a; } while (true) { a.push(yFlow(p)); skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "]") { p.i++; break; } continue; } if (p.s[p.i] === "]") { p.i++; break; } throw new Error("bad flow sequence"); } return a; }
-  if (c === "{") { p.i++; const o = {}; skipWs(p); if (p.s[p.i] === "}") { p.i++; return o; } while (true) { skipWs(p); const k = yFlowScalarRaw(p, true); skipWs(p); if (p.s[p.i] !== ":") throw new Error("expected ':' in flow map"); p.i++; const v = yFlow(p); o[typeof k === "string" ? k : String(k)] = v; skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "}") { p.i++; break; } continue; } if (p.s[p.i] === "}") { p.i++; break; } throw new Error("bad flow map"); } return o; }
+  if (c === "{") { p.i++; const o = {}; skipWs(p); if (p.s[p.i] === "}") { p.i++; return o; } while (true) { skipWs(p); const k = yFlowScalarRaw(p, true); skipWs(p); if (p.s[p.i] !== ":") throw new Error("expected ':' in flow map"); p.i++; const v = yFlow(p); ySet(o, typeof k === "string" ? k : String(k), v, " in a flow map"); skipWs(p); if (p.s[p.i] === ",") { p.i++; skipWs(p); if (p.s[p.i] === "}") { p.i++; break; } continue; } if (p.s[p.i] === "}") { p.i++; break; } throw new Error("bad flow map"); } return o; }
   return yScalar(yFlowScalarRaw(p, false));
 }
 const skipWs = (p) => { while (/[ \t]/.test(p.s[p.i])) p.i++; };
