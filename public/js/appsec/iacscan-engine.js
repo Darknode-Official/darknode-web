@@ -1985,7 +1985,7 @@ export const SECRET_PATTERNS = [
   { id: "SEC-003", severity: "critical", title: "GitHub token in file", detectors: ["github-token", "github-pat-fine"] },
   { id: "SEC-004", severity: "high", title: "Slack token in file", detectors: ["slack-token"] },
   { id: "SEC-005", severity: "high", title: "Google API key in file", detectors: ["gcp-key"] },
-  { id: "SEC-006", severity: "medium", title: "Hard-coded password or secret assignment", detectors: ["pat-assignment"], generic: true },
+  { id: "SEC-006", severity: "medium", title: "Hard-coded password or secret assignment", detectors: ["pat-assignment", "config-assignment"], generic: true },
   { id: "SEC-007", severity: "critical", title: "AWS secret access key in file", detectors: ["aws-secret"] },
   { id: "SEC-008", severity: "critical", title: "Stripe live secret key in file", detectors: ["stripe-key"] },
   { id: "SEC-009", severity: "medium", title: "Slack incoming webhook URL in file", detectors: ["slack-webhook"] },
@@ -1999,14 +1999,16 @@ for (const sp of SECRET_PATTERNS) {
 }
 
 /** Scan raw text for secret patterns -> [{ruleId, line, value, masked, snippet}] */
-export function scanSecrets(text) {
+// YAML file kinds, where an unquoted `password: value` is a literal string.
+const UNQUOTED_KINDS = new Set(["yaml", "helm-values", "kubernetes", "compose", "github-actions", "cloudformation"]);
+export function scanSecrets(text, kind = "") {
   const out = [];
   const lines = splitLines(text);
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
     if (l.length > 4000) continue;
     for (const sp of SECRET_PATTERNS) {
-      for (const h of sp.detectors.flatMap((id) => findAll(detector(id), l))) {
+      for (const h of sp.detectors.flatMap((id) => id === "config-assignment" && !UNQUOTED_KINDS.has(kind) ? [] : findAll(detector(id), l))) {
         const m = h.m, val = h.value;
         if (sp.generic) {
           if (NOT_SECRET_KEY_RE.test(m[1]) || !isLiteralSecret(val) || AKIA_RE.test(val) || /^(?:sha256|sha1|md5):|^[a-z]+(\.[a-z]+)+$/i.test(val)) continue;
@@ -2113,7 +2115,7 @@ export function analyze(dataset, opts = {}, ctx) {
     files.forEach((f, fi) => {
       ctx?.progress?.(n + fi, n + files.length, "secrets");
       if (f.kind === "binary" || !f.text) return;
-      const hits = scanSecrets(f.text).filter((h) => !ignore.has(h.ruleId) && !(h.ruleId === "SEC-006" && cited.has(f.name + ":" + h.line)));
+      const hits = scanSecrets(f.text, f.kind).filter((h) => !ignore.has(h.ruleId) && !(h.ruleId === "SEC-006" && cited.has(f.name + ":" + h.line)));
       const by = new Map();
       for (const h of hits) { if (!by.has(h.ruleId)) by.set(h.ruleId, []); by.get(h.ruleId).push(h); }
       for (const [rid, hs] of [...by].sort((a, b) => cmp(a[0], b[0]))) {

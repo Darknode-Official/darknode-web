@@ -2,6 +2,7 @@
 // .properties), Django-style SECRET_KEY assignments, and Slack xoxe- refresh tokens.
 import { test, assert, group } from "../harness.mjs";
 import { scanFile } from "../../public/js/codescan/rules.js";
+import { analyze } from "../../public/js/appsec/iacscan-engine.js";
 
 const ids = (path, text) => scanFile(path, text).map((f) => f.ruleId);
 const V = "Xk9mP2vLq7wZ4";
@@ -31,5 +32,17 @@ group("codescan: key names and token prefixes", () => {
   });
   test("Slack xoxe- tokens are Slack tokens", () => {
     assert.deepEqual(ids("src/a.js", 'const t = "xox' + 'e-1-Q7rT2kLm9xWv4bNp8sZc"'), ["secret.slack-token"]);
+  });
+});
+
+group("iacscan: unquoted secrets in YAML", () => {
+  const iac = (name, text) => analyze([{ name, text }]).findings.map((f) => f.ruleId);
+  test("Helm values and plain YAML report an unquoted password", () => {
+    assert.ok(iac("values.yaml", "db:\n  host: db\n  password: " + V + "\n").includes("SEC-006"));
+    assert.ok(iac("app.yaml", "auth:\n  client_secret: " + V + "\n").includes("SEC-006"));
+  });
+  test("references, numbers and HCL stay silent", () => {
+    assert.ok(!iac("app.yaml", "auth:\n  token: ${TOKEN}\n  max_tokens: 100000\n  password: {{ .Values.pw }}\n").includes("SEC-006"));
+    assert.ok(!iac("main.tf", "locals {\n  password = var.pw\n}\n").includes("SEC-006"));
   });
 });
