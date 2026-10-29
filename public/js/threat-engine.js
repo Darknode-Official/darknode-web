@@ -462,7 +462,8 @@ export function matchYaraRule(rule, data) {
 
 export function parseSigmaRule(yamlText) {
   const lines = yamlText.split("\n");
-  const rule = { title: "", status: "", level: "", description: "", detection: {}, logsource: {} };
+  // no prototype: a selection named __proto__ in a pasted rule is a key, not a prototype swap
+  const rule = { title: "", status: "", level: "", description: "", detection: Object.create(null), logsource: Object.create(null) };
   let currentSection = "";
   let currentKey = "";
   let indent = 0;

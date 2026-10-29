@@ -621,7 +621,8 @@ export class CorrelationEngine {
 // Parse a basic Sigma rule (YAML-like) and convert to query languages
 export function parseSigmaRule(yaml) {
   const lines = yaml.split("\n");
-  const rule = { title: "", status: "", level: "", logsource: {}, detection: {} };
+  // no prototype: a selection named __proto__ in a pasted rule is a key, not a write into Object.prototype
+  const rule = { title: "", status: "", level: "", logsource: Object.create(null), detection: Object.create(null) };
   let currentSection = "";
   let currentKey = "";
   let indent = 0;
@@ -635,8 +636,7 @@ export function parseSigmaRule(yaml) {
       const [key, ...valueParts] = trimmed.split(":");
       const value = valueParts.join(":").trim();
       currentSection = key.trim();
-      if (value) rule[currentSection] = value;
-      else rule[currentSection] = {};
+      Object.defineProperty(rule, currentSection, { value: value || Object.create(null), writable: true, enumerable: true, configurable: true });
       indent = 0;
       continue;
     }
