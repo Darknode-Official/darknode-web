@@ -250,6 +250,10 @@ export const TOOLS = [
       const op = m[1] || "=";
       const base = parseSemver(m[2]);
       if (!base) return { error: "Range target is not valid semver." };
+      // npm rule: a prerelease version only matches a range whose comparator is a prerelease of
+      // the same major.minor.patch (so 2.0.0-0 is not in ^1.2.3, nor 1.2.4-beta.0 in >1.2.3)
+      const preOut = !!p.prerelease && !(base.prerelease && base.major === p.major && base.minor === p.minor && base.patch === p.patch);
+      const why = preOut ? " (prerelease versions only match a range that names a prerelease of " + p.major + "." + p.minor + "." + p.patch + ")" : "";
       let lo, hi; // [lo, hi)
       // Keep the prerelease tag — dropping it made "=1.0.0-alpha" and the
       // caret/tilde lower bounds compare against the release, which sorts above
@@ -268,10 +272,10 @@ export const TOOLS = [
         else if (op === ">=") ok = c >= 0;
         else if (op === "<") ok = c < 0;
         else if (op === "<=") ok = c <= 0;
-        return `${ok ? "SATISFIES" : "does NOT satisfy"}: ${v.version} ${op} ${bstr}`;
+        return `${ok && !preOut ? "SATISFIES" : "does NOT satisfy"}: ${v.version} ${op} ${bstr}${ok ? why : ""}`;
       }
       const ok = cmpSemver(v.version, lo) >= 0 && cmpSemver(v.version, hi) < 0;
-      return `${ok ? "SATISFIES" : "does NOT satisfy"}: ${v.version} in [${lo}, ${hi})`;
+      return `${ok && !preOut ? "SATISFIES" : "does NOT satisfy"}: ${v.version} in [${lo}, ${hi})${ok ? why : ""}`;
     },
   },
   {
