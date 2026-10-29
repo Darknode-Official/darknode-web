@@ -33,7 +33,8 @@ function csvField(v, delim) {
   if (s.includes(delim) || s.includes('"') || s.includes("\n") || s.includes("\r")) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }
-const csvRow = (arr, delim) => arr.map((c) => csvField(c, delim)).join(delim);
+// a lone empty field is written "" - a blank line is skipped by CSV readers, dropping the row
+const csvRow = (arr, delim) => arr.length === 1 && String(arr[0] ?? "") === "" ? '""' : arr.map((c) => csvField(c, delim)).join(delim);
 const sqlIdent = (name) => { const s = String(name).trim(); return /^[A-Za-z_][A-Za-z0-9_]*$/.test(s) ? s : '"' + s.replace(/"/g, '""') + '"'; };
 
 // ---------- flatten / unflatten ----------
