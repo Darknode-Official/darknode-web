@@ -817,9 +817,23 @@ export const TOOLS = [
       if (!S(v.csv).trim()) return "";
       const rows = parseCSV(v.csv, v.delim || ",");
       if (!rows.length) return "[]";
-      const conv = (c) => { if (!v.numbers) return c; if (c !== "" && /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(c)) return Number(c); return c; };
+      // A cell stays text when a number would change it: a leading zero (zip codes, phone
+      // numbers), an integer past 2^53, or a value out of range (1e999).
+      const conv = (c) => {
+        if (!v.numbers || c === "" || !/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(c) || /^[-+]?0\d/.test(c)) return c;
+        const n = Number(c);
+        if (!Number.isFinite(n) || (/^[-+]?\d+$/.test(c) && !Number.isSafeInteger(n))) return c;
+        return n;
+      };
       let data;
-      if (v.header) { const keys = rows[0]; data = rows.slice(1).map((r) => { const o = {}; keys.forEach((k, i) => { o[k] = conv(r[i] == null ? "" : r[i]); }); return o; }); }
+      if (v.header) {
+        // a repeated header gets .1, .2 (as pandas does) instead of overwriting the earlier column;
+        // cells past the header go to _extra; defineProperty keeps a "__proto__" header as a key
+        const seen = new Map();
+        const keys = rows[0].map((k) => { const n = seen.get(k) || 0; seen.set(k, n + 1); return n ? k + "." + n : k; });
+        const put = (o, k, val) => Object.defineProperty(o, k, { value: val, enumerable: true, writable: true, configurable: true });
+        data = rows.slice(1).map((r) => { const o = {}; keys.forEach((k, i) => put(o, k, conv(r[i] == null ? "" : r[i]))); if (r.length > keys.length) put(o, "_extra", r.slice(keys.length).map(conv)); return o; });
+      }
       else data = rows.map((r) => r.map(conv));
       return JSON.stringify(data, null, 2);
     },
