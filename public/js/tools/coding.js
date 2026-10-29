@@ -736,7 +736,7 @@ export const TOOLS = [
   },
   {
     id: "cd-json-to-xml", name: "JSON to XML", cat: "coding",
-    desc: "Emit a simple XML document from JSON. Objects become nested elements, arrays repeat the element, primitives become text. Names are sanitised to valid XML element names.",
+    desc: "Emit a simple XML document from JSON. Objects become nested elements, arrays repeat the element (a top-level array becomes <item> elements under the root), primitives become text. Names are sanitised to valid XML element names.",
     tags: ["json", "xml", "convert", "serialize"],
     inputs: [
       { k: "json", label: "JSON", type: "textarea", rows: 7, placeholder: '{"book":{"title":"X","tags":["a","b"]}}' },
@@ -746,7 +746,10 @@ export const TOOLS = [
     run(v) {
       if (!S(v.json).trim()) return "";
       const r = tryJSON(v.json); if (!r.ok) return { error: "Invalid JSON: " + r.err };
-      const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      // XML 1.0 cannot carry these at all (not even as &#n;); a raw CR would be read back as LF
+      const BAD = /[\x00-\x08\x0B\x0C\x0E-\x1F\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+      let bad = null;
+      const esc = (s) => { s = String(s); if (!bad && BAD.test(s)) bad = s; return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\r/g, "&#13;"); };
       const name = (n) => { let x = String(n).replace(/[^A-Za-z0-9_.-]/g, "_"); if (!/^[A-Za-z_]/.test(x)) x = "_" + x; return x; };
       function emit(val, tag, depth) {
         const pad = "  ".repeat(depth);
@@ -756,7 +759,9 @@ export const TOOLS = [
         return pad + "<" + tag + ">" + esc(val) + "</" + tag + ">";
       }
       const root = name(v.root || "root");
-      const body = emit(r.val, root, 0);
+      // a top-level array needs one root element to be a well-formed document
+      const body = Array.isArray(r.val) ? "<" + root + ">" + (r.val.length ? "\n" + emit(r.val, "item", 1) + "\n" : "") + "</" + root + ">" : emit(r.val, root, 0);
+      if (bad) return { error: "A value contains a control character XML 1.0 cannot represent: " + JSON.stringify(bad).slice(0, 60) };
       return (v.decl ? '<?xml version="1.0" encoding="UTF-8"?>\n' : "") + body + "\n";
     },
   },

@@ -79,3 +79,15 @@ group("TOML to JSON parser", () => {
     assert.ok(parse("k = 01\n").error);
   });
 });
+
+group("JSON to XML documents", () => {
+  const xml = (json) => run("cd-json-to-xml", { json, root: "root", decl: false });
+  test("a top-level array becomes item elements under one root", () => {
+    assert.equal(xml('[{"a":1},{"a":2}]'), "<root>\n  <item>\n    <a>1</a>\n  </item>\n  <item>\n    <a>2</a>\n  </item>\n</root>\n");
+    assert.equal(xml("[]"), "<root></root>\n");
+  });
+  test("CR survives as &#13; and characters XML cannot carry are reported", () => {
+    assert.equal(xml('{"a":"x\\ry"}'), "<root>\n  <a>x&#13;y</a>\n</root>\n");
+    assert.ok(xml('{"a":"x\\u0001y"}').error);
+  });
+});
