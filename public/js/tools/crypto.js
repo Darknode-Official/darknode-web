@@ -10,7 +10,9 @@ const subtle = (typeof crypto !== "undefined" && crypto.subtle) ? crypto.subtle 
 
 // ---- bytes / hex / base64 ----
 function cleanHex(h) { return S(h).replace(/0x/gi, "").replace(/[^0-9a-fA-F]/g, ""); }
-function hexToBytes(h) { h = cleanHex(h); if (h.length % 2) h = "0" + h; const u = new Uint8Array(h.length / 2); for (let i = 0; i < u.length; i++) u[i] = parseInt(h.substr(i * 2, 2), 16); return u; }
+// Strict: 0x prefixes and space / : , - separators are fine, anything else is an error. Dropping
+// non-hex characters turned text typed into a hex field (AAD "hdr", a passphrase as key) into other bytes.
+function hexToBytes(h) { h = S(h).replace(/0x/gi, "").replace(/[\s:,-]/g, ""); if (/[^0-9a-fA-F]/.test(h)) throw new Error("Not valid hex: use 0-9 and a-f only (spaces and colons are fine)."); if (h.length % 2) throw new Error("Hex has an odd number of digits; each byte is two digits."); const u = new Uint8Array(h.length / 2); for (let i = 0; i < u.length; i++) u[i] = parseInt(h.substr(i * 2, 2), 16); return u; }
 function bytesToHex(u) { return Array.from(u, (b) => b.toString(16).padStart(2, "0")).join(""); }
 function bytesToB64(u) { let s = ""; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s); }
 function b64urlOf(u) { return bytesToB64(u).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
