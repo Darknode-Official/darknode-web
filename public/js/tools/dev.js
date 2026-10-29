@@ -194,23 +194,49 @@ function mdToHtml(md) {
   return html.trim();
 }
 
+// Line diff as a shortest edit script (Myers, "An O(ND) Difference Algorithm"): time and memory
+// grow with the number of changed lines, not with the file size. The n*m LCS table it replaces
+// took a second and 576 MB for two 12,000-line files with two edits. Past MAX_D changes (two
+// unrelated texts) the rest is shown as one block replaced. ops: [" "|"-"|"+", line].
+const MAX_D = 3000;
+function lineDiff(A, B) {
+  const n = A.length, m = B.length, max = Math.min(n + m, MAX_D), off = max + 1;
+  const V = new Int32Array(2 * max + 3), trace = [];
+  let found = -1;
+  for (let d = 0; d <= max && found < 0; d++) {
+    trace.push(V.slice(off - d, off + d + 1)); // V as it was before step d, indexed k + d
+    for (let k = -d; k <= d; k += 2) {
+      let x = k === -d || (k !== d && V[off + k - 1] < V[off + k + 1]) ? V[off + k + 1] : V[off + k - 1] + 1, y = x - k;
+      while (x < n && y < m && A[x] === B[y]) { x++; y++; }
+      V[off + k] = x;
+      if (x >= n && y >= m) { found = d; break; }
+    }
+  }
+  if (found < 0) { // too many changes: common head and tail, the middle as one block
+    let pre = 0; while (pre < n && pre < m && A[pre] === B[pre]) pre++;
+    let suf = 0; while (suf < n - pre && suf < m - pre && A[n - 1 - suf] === B[m - 1 - suf]) suf++;
+    return { capped: true, ops: [...A.slice(0, pre).map((l) => [" ", l]), ...A.slice(pre, n - suf).map((l) => ["-", l]), ...B.slice(pre, m - suf).map((l) => ["+", l]), ...A.slice(n - suf).map((l) => [" ", l])] };
+  }
+  const ops = []; let x = n, y = m;
+  for (let d = found; d > 0; d--) {
+    const v = trace[d], k = x - y;
+    const pk = k === -d || (k !== d && v[k - 1 + d] < v[k + 1 + d]) ? k + 1 : k - 1;
+    const px = v[pk + d], py = px - pk;
+    while (x > px && y > py) { ops.push([" ", A[--x]]); y--; }
+    if (x === px) ops.push(["+", B[--y]]); else ops.push(["-", A[--x]]);
+  }
+  while (x > 0) { ops.push([" ", A[--x]]); y--; }
+  return { capped: false, ops: ops.reverse() };
+}
+
 export const TOOLS = [
   { id: "d-diff", name: "Text Diff", cat: "dev", desc: "Line-by-line diff of two texts, showing +/- changed lines.", tags: ["diff", "compare", "text"],
     inputs: [{ k: "a", label: "Original", type: "textarea", rows: 6 }, { k: "b", label: "Changed", type: "textarea", rows: 6 }],
     run(v) {
       const A = S(v.a).split(/\r?\n/), B = S(v.b).split(/\r?\n/);
-      const n = A.length, m = B.length;
-      const dp = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
-      for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
-      let i = 0, j = 0; const out = [];
-      while (i < n && j < m) {
-        if (A[i] === B[j]) { out.push("  " + A[i]); i++; j++; }
-        else if (dp[i + 1][j] >= dp[i][j + 1]) { out.push("- " + A[i]); i++; }
-        else { out.push("+ " + B[j]); j++; }
-      }
-      while (i < n) { out.push("- " + A[i]); i++; }
-      while (j < m) { out.push("+ " + B[j]); j++; }
-      return out.join("\n") || "(identical)";
+      if (A.length === B.length && A.every((l, k) => l === B[k])) return "(identical)";
+      const { ops, capped } = lineDiff(A, B);
+      return (capped ? "(over " + MAX_D + " changed lines: the changed middle is shown as one block replaced)\n" : "") + ops.map((o) => (o[0] === " " ? "  " : o[0] + " ") + o[1]).join("\n");
     } },
 
   { id: "d-json-path", name: "JSON Path Extractor", cat: "dev", desc: "Extract a value from JSON using a dot/bracket path like a.b[0].c.", tags: ["json", "path", "jsonpath"],
@@ -219,7 +245,8 @@ export const TOOLS = [
       const p = tryParseJSON(v.json || ""); if (!p.ok) return { error: "Invalid JSON: " + p.err };
       const parts = parsePath(S(v.path));
       let cur = p.val;
-      for (const key of parts) { if (cur == null) return { error: "Path not found." }; cur = cur[key]; }
+      // the data's own keys only: a.constructor or s.length name no value in the JSON
+      for (const key of parts) { if (cur == null || typeof cur !== "object" || !Object.prototype.hasOwnProperty.call(cur, key)) return { error: "Path not found." }; cur = cur[key]; }
       if (cur === undefined) return { error: "Path not found." };
       return typeof cur === "string" ? cur : JSON.stringify(cur, null, 2);
     } },
@@ -541,18 +568,9 @@ export const TOOLS = [
   { id: "d-diff-stats", name: "Diff Summary Stats", cat: "dev", desc: "Count added/removed/unchanged lines between two texts without printing the full diff.", tags: ["diff", "stats", "summary"],
     inputs: [{ k: "a", label: "Original", type: "textarea", rows: 6 }, { k: "b", label: "Changed", type: "textarea", rows: 6 }],
     run(v) {
-      const A = S(v.a).split(/\r?\n/), B = S(v.b).split(/\r?\n/);
-      const n = A.length, m = B.length;
-      const dp = Array.from({ length: n + 1 }, () => new Int32Array(m + 1));
-      for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
-      let i = 0, j = 0, added = 0, removed = 0, same = 0;
-      while (i < n && j < m) {
-        if (A[i] === B[j]) { same++; i++; j++; }
-        else if (dp[i + 1][j] >= dp[i][j + 1]) { removed++; i++; }
-        else { added++; j++; }
-      }
-      removed += n - i; added += m - j;
-      return `Added: ${added}\nRemoved: ${removed}\nUnchanged: ${same}`;
+      const { ops, capped } = lineDiff(S(v.a).split(/\r?\n/), S(v.b).split(/\r?\n/));
+      const c = (t) => ops.filter((o) => o[0] === t).length;
+      return `Added: ${c("+")}\nRemoved: ${c("-")}\nUnchanged: ${c(" ")}` + (capped ? "\n(over " + MAX_D + " changed lines: counted as one block replaced, so these are upper bounds)" : "");
     } },
 
   
