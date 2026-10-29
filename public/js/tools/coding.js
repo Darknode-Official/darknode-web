@@ -39,6 +39,13 @@ function csvField(v, delim) {
 // a lone empty field is written "" - a blank line is skipped by CSV readers, dropping the row
 const csvRow = (arr, delim) => arr.length === 1 && String(arr[0] ?? "") === "" ? '""' : arr.map((c) => csvField(c, delim)).join(delim);
 const sqlIdent = (name) => { const s = String(name).trim(); return /^[A-Za-z_][A-Za-z0-9_]*$/.test(s) ? s : '"' + s.replace(/"/g, '""') + '"'; };
+// A table name, schema.table allowed; each part quoted when needed, so "my table" or a ; cannot break the statement.
+const sqlTable = (name) => (S(name).trim() || "my_table").split(".").map(sqlIdent).join(".");
+// A CSV cell that is a number SQL would store unchanged: no leading zero (02134 is a code, not 2134)
+// and an integer that fits 64 bits.
+const sqlNumeric = (s) => /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(s) && !/^[-+]?0\d/.test(s) && Number.isFinite(Number(s)) && (!/^[-+]?\d+$/.test(s) || intWidth(s) <= 64);
+// Bits needed for a signed integer string: 32 (INTEGER), 64 (BIGINT) or more.
+const intWidth = (s) => { const n = BigInt(s); return n >= -2147483648n && n <= 2147483647n ? 32 : n >= -9223372036854775808n && n <= 9223372036854775807n ? 64 : 65; };
 
 // ---------- flatten / unflatten ----------
 function flatten(obj, prefix, out) {
@@ -1242,8 +1249,8 @@ export const TOOLS = [
       const rows = parseCSV(v.csv, v.delim || ",").filter((r) => r.some((c) => c !== ""));
       if (rows.length < 2) return { error: "Need a header row and at least one data row." };
       const cols = rows[0];
-      const tbl = S(v.table).trim() || "my_table";
-      const lit = (c) => { const s = c == null ? "" : String(c); if (s === "") return "NULL"; if (/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(s)) return s; return "'" + s.replace(/'/g, "''") + "'"; };
+      const tbl = sqlTable(v.table);
+      const lit = (c) => { const s = c == null ? "" : String(c); if (s === "") return "NULL"; if (sqlNumeric(s)) return s; return "'" + s.replace(/'/g, "''") + "'"; };
       const colList = "(" + cols.map((c) => sqlIdent(c)).join(", ") + ")";
       const tuples = rows.slice(1).map((r) => "(" + cols.map((_, i) => lit(r[i])).join(", ") + ")");
       if (v.multi) return "INSERT INTO " + tbl + " " + colList + " VALUES\n  " + tuples.join(",\n  ") + ";\n";
@@ -1252,7 +1259,7 @@ export const TOOLS = [
   },
   {
     id: "cd-csv-create-table", name: "CSV to CREATE TABLE", cat: "coding",
-    desc: "Infer a SQL CREATE TABLE from CSV by sampling each column: all-integer becomes INTEGER, all-decimal REAL, true/false BOOLEAN, otherwise TEXT (VARCHAR with the max observed length).",
+    desc: "Infer a SQL CREATE TABLE from CSV by sampling each column: all-integer becomes INTEGER (BIGINT or NUMERIC when values need it), all-decimal DOUBLE PRECISION, codes with leading zeros text, true/false BOOLEAN, otherwise TEXT (VARCHAR with the max observed length).",
     tags: ["csv", "sql", "schema", "create table", "ddl"],
     inputs: [
       { k: "csv", label: "CSV (with header)", type: "textarea", rows: 7, placeholder: "id,name,active\n1,user1,true" },
@@ -1267,13 +1274,13 @@ export const TOOLS = [
       const defs = cols.map((name, i) => {
         const cells = data.map((r) => (r[i] == null ? "" : String(r[i]))).filter((x) => x !== "");
         let type = "TEXT";
-        if (cells.length && cells.every((x) => /^[-+]?\d+$/.test(x))) type = "INTEGER";
-        else if (cells.length && cells.every((x) => /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(x))) type = "REAL";
+        if (cells.length && cells.every((x) => /^[-+]?\d+$/.test(x) && !/^[-+]?0\d/.test(x))) { const w = Math.max(...cells.map(intWidth)); type = w <= 32 ? "INTEGER" : w <= 64 ? "BIGINT" : "NUMERIC"; }
+        else if (cells.length && cells.every((x) => sqlNumeric(x))) type = "DOUBLE PRECISION"; // REAL is 6 digits in PostgreSQL
         else if (cells.length && cells.every((x) => /^(true|false)$/i.test(x))) type = "BOOLEAN";
         else { const max = cells.reduce((m, x) => Math.max(m, x.length), 1); type = "VARCHAR(" + Math.max(max, 1) + ")"; }
         return "  " + sqlIdent(name) + " " + type;
       });
-      return "CREATE TABLE " + (S(v.table).trim() || "my_table") + " (\n" + defs.join(",\n") + "\n);\n";
+      return "CREATE TABLE " + sqlTable(v.table) + " (\n" + defs.join(",\n") + "\n);\n";
     },
   },
   {
