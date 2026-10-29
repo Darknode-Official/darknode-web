@@ -13,6 +13,8 @@ window.__orConnect = import("/js/openrouter-connect.js?v=20261028c")
 // custom claim (set during the auth-state handler below). A guest/Test-Mode user
 // has no token, so this stays false. Never derived from a client-visible email.
 let _isAdmin = false;
+// A Deck tool frame: the same-origin top window's resolved admin flag (UI only; rules enforce access).
+const _parentAdmin = () => { try { return document.documentElement.hasAttribute("data-embed") && window.parent !== window && window.parent.__dnAdmin === true; } catch (_) { return false; } };
 
 // Universal log-out. Real Firebase sessions sign out and onAuthStateChanged
 // re-renders the login page. Test-Mode / app-guest sessions are fake user
@@ -2738,7 +2740,10 @@ function renderApp(user) {
   const okSec = startSec && startSec !== "setup" && validToolSec && (startSec !== "admin" || isOwner) && (pathSec === startSec || !HEAVY.has(startSec));
   // The console is the signed-in UI; the Deck is an owner-only command center launched
   // from Admin (admin.js).
-  show(okSec ? startSec : "home");
+  // Inside the Deck a frame is one tool: falling back to the console home there shows the old
+  // console dashboard under that tool's title, so say the page is unavailable instead.
+  if (!okSec && document.documentElement.hasAttribute("data-embed") && startSec !== "home") main.innerHTML = '<div class="panel" style="margin:24px"><h2 class="pg-h2">Not available here</h2><p class="muted">This page could not be opened for this account. Reload the Deck and try again.</p></div>';
+  else show(okSec ? startSec : "home");
   if (frame && frame.fields && frame.sec === startSec) {
     setTimeout(() => { Object.entries(frame.fields).forEach(([id, v]) => { const el = main.querySelector("#" + (window.CSS && CSS.escape ? CSS.escape(id) : id)); if (el && v != null) { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); } }); }, 120);
   }
@@ -2964,7 +2969,9 @@ onAuthStateChanged(auth, async (user) => {
   // the top window, which already passed every gate below for this uid. Re-running them
   // cost several Firestore round trips before each tool could paint.
   let gated = false; try { gated = document.documentElement.hasAttribute("data-embed") && sessionStorage.getItem("dn_gate") === user.uid; } catch (_) {}
-  if (gated) { _isAdmin = await isAdminUser(user); try { window.__dnAdmin = _isAdmin; } catch (_) {} renderApp(user); return; }
+  // the Deck (top window) already resolved the claim: a frame whose own token check comes back
+  // false or late must not drop the owner to the console home inside the Deck's Admin window
+  if (gated) { _isAdmin = (await isAdminUser(user)) || _parentAdmin(); try { window.__dnAdmin = _isAdmin; } catch (_) {} renderApp(user); return; }
   // Email/password users must verify — a 6-digit code when EmailJS is configured, else the Firebase link.
   const providerEmailPw = user.providerData.some((p) => p.providerId === "password");
   if (providerEmailPw) {
@@ -2974,7 +2981,7 @@ onAuthStateChanged(auth, async (user) => {
     } else if (!user.emailVerified) { renderVerify(user); return; }
   }
   // Resolve the super-admin claim once per session from the signed ID token.
-  _isAdmin = await isAdminUser(user);
+  _isAdmin = (await isAdminUser(user)) || _parentAdmin();
   try { window.__dnAdmin = _isAdmin; } catch (_) {}
   if (!(await accessAllowed(user))) {
     showToast("Your account has been suspended. Contact the owner for access.", "error", 6000);

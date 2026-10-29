@@ -280,6 +280,8 @@ export async function renderAdmin(main, user) {
   (function wireDeck() {
     const btn = main.querySelector("#deckLaunch");
     if (!btn) return;
+    // framed inside the Deck already: opening a second Deck inside its Admin window is no use
+    if (document.documentElement.hasAttribute("data-embed")) { btn.remove(); return; }
     async function launchDeck() {
       btn.disabled = true; const label = btn.textContent; btn.textContent = "Loading…";
       try {
