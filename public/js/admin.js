@@ -74,16 +74,6 @@ export async function renderAdmin(main, user) {
       </div>
     </div>
 
-    <div class="panel" id="consolePromo" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-      <div style="flex:1;min-width:240px">
-        <span class="muted" style="font-size:11px;font-weight:700;letter-spacing:.06em">ADMIN ONLY</span>
-        <h2 class="pg-h2" style="margin:6px 0 4px">AWS-style console</h2>
-        <p class="muted" style="margin:0;max-width:70ch">The classic console with the full tool sidebar. Users only ever see the Deck; this switch exists for admins. Come back with Switch to the Deck in the console's profile menu.</p>
-      </div>
-      <div style="display:flex;gap:10px;flex:none;flex-wrap:wrap">
-        <button class="btn" id="consoleLaunch">Open AWS console</button>
-      </div>
-    </div>
 
     <div class="adm-cols">
       <div class="adm-main">
@@ -298,9 +288,6 @@ export async function renderAdmin(main, user) {
     }).catch(() => {});
   })();
 
-  // ---- AWS console: admin-only, at /console (auth.js gives that path the console only for admins) ----
-  // The page may be framed inside the Deck, so it opens in the top window.
-  { const b = main.querySelector("#consoleLaunch"); if (b) b.onclick = () => { try { window.top.location.assign("/console"); } catch (_) { location.assign("/console"); } }; }
 
   // ---- Preview UI launcher (sits beside the Deck button) ----
   (function wirePreview() {

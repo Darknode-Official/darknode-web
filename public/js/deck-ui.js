@@ -4869,7 +4869,8 @@ export function renderDeck(host, opts) {
       toast(name + " is part of the " + planLabel(needTier[lockedLink]) + " plan");
     } else {
       go(initial, route0 && route0.arg);
-      if (opts.startSec && !route0) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec);
+      // an unknown /<page> (an old or mistyped link) stays on the home page instead of an empty tool window
+      if (opts.startSec && !route0) { if (isSec(opts.startSec) || /^tool-[\w-]+$/.test(opts.startSec)) openTool(opts.startSec, secLabel[opts.startSec] || opts.startSec); else toast("That page was not found."); }
     }
     routing = false;
   });

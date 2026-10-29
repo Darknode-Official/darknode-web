@@ -1760,20 +1760,20 @@ function renderDesktopHome(user) {
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
 // Web home: the Deck is the only signed-in UI and owns every darknode.ai/<page> link.
-// The AWS-style console is the owner's alone and lives under /console/<page>, opened
-// from the Admin page; anyone else on a /console link gets that page in the Deck. The
-// console still renders the Deck's embedded tool frames (/<sec>?embed=1).
+// The console is not offered to anyone, admins included: an old /console/<page> link opens
+// that page in the Deck. Its code still renders the Deck's embedded tool frames (/<sec>?embed=1).
 const CONSOLE_BASE = "/console";
 const isConsolePath = (p) => p === CONSOLE_BASE || p.startsWith(CONSOLE_BASE + "/");
 try { localStorage.removeItem("dn_ui"); } catch (_) {} // the old sticky console switch; the path decides now
-let _deckFailed = false;
+// The Deck is the only signed-in UI on the website, for admins too. The console renders only
+// inside a Deck tool frame (?embed=1), where it draws that one tool.
 function deckIsHome() {
-  if (_deckFailed) return false;
   try {
     const q = new URLSearchParams(location.search);
     if (q.get("embed") === "1" || document.documentElement.hasAttribute("data-embed")) return false;
-    // ?app=1 / desktop guests get the Deck too: the console is the owner's alone
-    return !(_isAdmin && isConsolePath(location.pathname));
+    // an old /console/<page> link opens that page in the Deck
+    if (isConsolePath(location.pathname)) history.replaceState(history.state, "", (location.pathname.slice(CONSOLE_BASE.length) || "/") + location.search + location.hash);
+    return true;
   } catch (_) { return true; }
 }
 function setUiPref() { location.assign("/"); }
@@ -1792,8 +1792,7 @@ function renderDeckHome(user) {
       onSignOut: () => { m.closeDeck(); doLogout(); },
     }))
     .catch(() => {
-      // admins can fall back to the console; for everyone else the Deck is the only UI, so say what failed
-      if (_isAdmin) { _deckFailed = true; renderApp(user); return; }
+      // the Deck is the only UI, so say what failed (no console fallback, admins included)
       view.innerHTML = `<div role="status" style="max-width:560px;margin:18vh auto 0;padding:28px 32px;border:1px solid var(--line,rgba(23,33,56,.14));border-radius:8px"><h1 style="font-size:22px;margin:0 0 8px">Your workspace did not load</h1><p style="margin:0 0 20px;overflow-wrap:anywhere">A network or browser error stopped it. Check your connection and try again.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="dkRetry">Try again</button><button class="btn ghost" id="dkOut">Sign out</button></div></div>`;
       view.querySelector("#dkRetry").onclick = () => location.reload(); // a failed import stays failed for this page, so reload
       view.querySelector("#dkOut").onclick = doLogout;
@@ -1811,11 +1810,11 @@ function renderApp(user) {
   document.body.classList.add("app");
   // Desktop app (top frame only; tool iframes never see the bridge): the Deck is the home screen.
   if (isDesktop()) { renderDesktopHome(user); return; }
-  // ?embed=1 is only for tool frames inside the Deck. Opened directly in a tab by anyone but the
-  // owner it would be the console, so drop it: the same /<sec> path then opens that tool in the Deck.
+  // ?embed=1 is only for tool frames inside the Deck. Opened directly in a tab (by anyone, admins
+  // included) it would be the console, so drop it: the same /<sec> path then opens that tool in the Deck.
   try {
     const q = new URLSearchParams(location.search);
-    if (q.get("embed") === "1" && !_isAdmin && window.parent === window) { q.delete("embed"); q.delete("ink"); const qs = q.toString(); location.replace(location.pathname + (qs ? "?" + qs : "") + location.hash); return; }
+    if (q.get("embed") === "1" && window.parent === window) { q.delete("embed"); q.delete("ink"); const qs = q.toString(); location.replace(location.pathname + (qs ? "?" + qs : "") + location.hash); return; }
   } catch (_) {}
   if (deckIsHome()) { renderDeckHome(user); return; }
   // Embed mode: when loaded as /<sec>?embed=1 (e.g. inside Darknode Command's

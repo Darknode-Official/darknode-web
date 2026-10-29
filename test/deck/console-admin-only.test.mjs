@@ -9,8 +9,10 @@ const src = (f) => readFileSync(new URL("../../public/js/" + f, import.meta.url)
 const auth = src("auth.js"), admin = src("admin.js");
 
 group("deck: console is admin-only", () => {
-  test("the console lives under /console and only admins get it there", () => {
-    assert.ok(/return !\(_isAdmin && isConsolePath\(location\.pathname\)\);/.test(auth));
+  test("nobody gets the console at the top level, admins included; a /console link opens the Deck", () => {
+    const fn = auth.slice(auth.indexOf("function deckIsHome()"), auth.indexOf("function setUiPref()"));
+    assert.ok(/return true;\s*\} catch/.test(fn) && !/_isAdmin/.test(fn) && !/_deckFailed/.test(auth));
+    assert.ok(/if \(isConsolePath\(location\.pathname\)\) history\.replaceState/.test(fn));
     assert.notOk(/localStorage\.getItem\(UI_PREF\)/.test(auth));
   });
   test("the console's own links are /console/<page>; embedded tool frames keep the bare path", () => {
@@ -23,20 +25,19 @@ group("deck: console is admin-only", () => {
   test("the Deck no longer offers users a switch to the console", () => {
     assert.ok(!/onClassic:/.test(auth));
   });
-  test("a Deck that fails to load falls back to the console only for admins; users get a retry", () => {
-    assert.ok(/if \(_isAdmin\) \{ _deckFailed = true; renderApp\(user\); return; \}/.test(auth));
+  test("a Deck that fails to load offers a retry to everyone, never the console", () => {
+    assert.notOk(/_deckFailed = true; renderApp\(user\)/.test(auth));
     assert.ok(/Your workspace did not load/.test(auth) && /id="dkRetry"/.test(auth));
   });
-  test("the Admin page carries the console button, and it opens /console in the top window", () => {
-    assert.ok(/id="consoleLaunch">Open AWS console</.test(admin));
-    assert.ok(/window\.top\.location\.assign\("\/console"\)/.test(admin));
+  test("the Admin page has no console button", () => {
+    assert.notOk(/consoleLaunch|Open AWS console|location\.assign\("\/console"\)/.test(admin));
     assert.notOk(/dn_ui/.test(admin.replace(/\/\/.*$/gm, "")));
   });
   test("desktop / ?app=1 guests get the Deck, not the console", () => {
     assert.notOk(/q\.get\("app"\) === "1" \|\| document\.documentElement/.test(auth));
     assert.notOk(/if \(sessionStorage\.getItem\("dn_guest"\) === "1"\) return false;/.test(auth));
   });
-  test("?embed=1 opened directly in a tab by a non-admin drops to the Deck; the Deck's own tool frames keep it", () => {
-    assert.ok(/if \(q\.get\("embed"\) === "1" && !_isAdmin && window\.parent === window\) \{ q\.delete\("embed"\);/.test(auth));
+  test("?embed=1 opened directly in a tab drops to the Deck for everyone; the Deck's own tool frames keep it", () => {
+    assert.ok(/if \(q\.get\("embed"\) === "1" && window\.parent === window\) \{ q\.delete\("embed"\);/.test(auth));
   });
 });
