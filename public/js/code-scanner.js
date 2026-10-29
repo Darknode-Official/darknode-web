@@ -12,6 +12,7 @@ import { scanFile, parseManifest, isManifest, depFinding, dedupeDeps, repoScore,
 import * as gh from "/js/codescan/github.js?v=20261018i";
 import { findingKey, serializeBaseline, diffFindings, baselineKeySet } from "/js/codescan/baseline.js?v=20261014a";
 import { createWatch } from "/js/codescan/watch-ui.js?v=20261017f";
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (n) => Number(n || 0).toLocaleString();
@@ -153,9 +154,9 @@ const CSS = `<style id="cs-css">
 
 const sevVar = (s) => `--sev:var(--sev-${s in SEV_LABEL ? s : "low"})`;
 
-function loadRecent() { try { return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); } catch (_) { return []; } }
+function loadRecent() { try { return JSON.parse(localStorage.getItem(acctKey(HIST_KEY)) || "[]"); } catch (_) { return []; } }
 function saveRecent(entry) {
-  try { const list = loadRecent().filter((x) => x.full !== entry.full); list.unshift(entry); localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 8))); } catch (_) {}
+  try { const list = loadRecent().filter((x) => x.full !== entry.full); list.unshift(entry); localStorage.setItem(acctKey(HIST_KEY), JSON.stringify(list.slice(0, 8))); } catch (_) {}
 }
 
 export function renderCodeScanner(main) {

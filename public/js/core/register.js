@@ -9,12 +9,9 @@
 import { cyrb53 } from "./hash.js";
 import { fitUnder } from "./sink-map.js";
 import { toCsv } from "./export.js";
+import { accountScope as acct } from "./account.js";
 
 const ACTIVE_WS = "dn_active_ws";
-
-/** Account of the signed-in user for personal keys (window.__dnUid, kept by auth.js); guests
- *  and Test Mode share one "guest" scope. Same rule as userScope() in security-graph.js. */
-function acct() { let u = null; try { u = globalThis.__dnUid || null; } catch (_) {} return !u ? "nouser" : /^(test|app-guest)-/.test(u) ? "guest" : "u_" + u; }
 
 /** Workspace-scoped storage key: a team gets `base__ws_<id>`; the personal workspace gets
  *  `base__<account>`, since localStorage is shared by every account that signs in on the

@@ -1,3 +1,4 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -362,14 +363,14 @@ export function renderAdversaryPlaybook(container) {
   const COVERAGE_KEY = 'dn_ap_detected_v1';
   function loadCoverage() {
     try {
-      const raw = localStorage.getItem(COVERAGE_KEY);
+      const raw = localStorage.getItem(acctKey(COVERAGE_KEY));
       const arr = raw ? JSON.parse(raw) : [];
       const valid = new Set(TECHNIQUES.map(t => t.id));
       return new Set(Array.isArray(arr) ? arr.filter(id => valid.has(id)) : []);
     } catch (e) { return new Set(); }
   }
   function saveCoverage() {
-    try { localStorage.setItem(COVERAGE_KEY, JSON.stringify(Array.from(detectedTechniques))); } catch (e) { /* storage unavailable: keep in memory only */ }
+    try { localStorage.setItem(acctKey(COVERAGE_KEY), JSON.stringify(Array.from(detectedTechniques))); } catch (e) { /* storage unavailable: keep in memory only */ }
   }
   function toggleDetected(tid) {
     if (detectedTechniques.has(tid)) detectedTechniques.delete(tid); else detectedTechniques.add(tid);
@@ -384,12 +385,12 @@ export function renderAdversaryPlaybook(container) {
   function parentTid(id) { const base = String(id || '').split('.')[0]; return getTechById(base) ? base : null; }
   function loadResults() {
     try {
-      const arr = JSON.parse(localStorage.getItem(RESULTS_KEY) || '[]');
+      const arr = JSON.parse(localStorage.getItem(acctKey(RESULTS_KEY)) || '[]');
       return Array.isArray(arr) ? arr.filter(r => r && r.tid && (r.status === 'detected' || r.status === 'missed')) : [];
     } catch (e) { return []; }
   }
   function saveResults() {
-    try { localStorage.setItem(RESULTS_KEY, JSON.stringify(testResults)); } catch (e) { /* storage unavailable: keep in memory only */ }
+    try { localStorage.setItem(acctKey(RESULTS_KEY), JSON.stringify(testResults)); } catch (e) { /* storage unavailable: keep in memory only */ }
   }
   let testResults = loadResults();
   let slaMin = 15;
@@ -398,7 +399,7 @@ export function renderAdversaryPlaybook(container) {
   // its 'purple_results' key is left in place, and imports only ever ADD coverage.
   (function migratePurpleResults() {
     try {
-      if (localStorage.getItem(PURPLE_MIGRATED_KEY)) return;
+      if (localStorage.getItem(acctKey(PURPLE_MIGRATED_KEY))) return;
       const old = JSON.parse(localStorage.getItem('purple_results') || '[]');
       if (Array.isArray(old) && old.length) {
         old.forEach(r => {
@@ -419,7 +420,7 @@ export function renderAdversaryPlaybook(container) {
         saveResults();
         saveCoverage();
       }
-      localStorage.setItem(PURPLE_MIGRATED_KEY, new Date().toISOString());
+      localStorage.setItem(acctKey(PURPLE_MIGRATED_KEY), new Date().toISOString());
     } catch (e) { /* storage unavailable or corrupt: skip import */ }
   })();
   function recordResult(tid, status, mttd) {

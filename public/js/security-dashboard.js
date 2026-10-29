@@ -1,8 +1,9 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 const esc = (s) => String(s != null ? s : '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const STORE_KEY = 'dn_secdash';
-function loadData() { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || defaultData(); } catch (_) { return defaultData(); } }
-function saveData(d) { try { localStorage.setItem(STORE_KEY, JSON.stringify(d)); } catch (_) {} }
+function loadData() { try { return JSON.parse(localStorage.getItem(acctKey(STORE_KEY))) || defaultData(); } catch (_) { return defaultData(); } }
+function saveData(d) { try { localStorage.setItem(acctKey(STORE_KEY), JSON.stringify(d)); } catch (_) {} }
 function defaultData() { return { assets: [], vulns: [], risks: [], patches: [], slaConfig: { critical: 24, high: 168, medium: 720, low: 2160 } }; }
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 

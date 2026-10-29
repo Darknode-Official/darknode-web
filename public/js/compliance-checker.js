@@ -1,3 +1,4 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Compliance Checker -- security compliance assessment, gap analysis, and audit readiness.
 
@@ -7,10 +8,10 @@ const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
 const STORAGE_KEY = "dn_compliance_data";
 
 function loadData() {
-  try { const d = localStorage.getItem(STORAGE_KEY); return d ? JSON.parse(d) : {}; } catch (_) { return {}; }
+  try { const d = localStorage.getItem(acctKey(STORAGE_KEY)); return d ? JSON.parse(d) : {}; } catch (_) { return {}; }
 }
 function saveData(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (_) {}
+  try { localStorage.setItem(acctKey(STORAGE_KEY), JSON.stringify(data)); } catch (_) {}
 }
 
 const STATUSES = ["Not Started", "In Progress", "Implemented", "Not Applicable"];

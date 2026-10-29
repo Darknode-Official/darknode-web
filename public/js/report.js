@@ -1,3 +1,4 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 // Report generator — collect findings and export a Markdown report. Client-side,
 // persisted per-browser (localStorage). For authorized engagements only.
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -5,8 +6,8 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
 const KEY = "sw_report";
 const SEV = ["Critical", "High", "Medium", "Low", "Info"];
 
-const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || { title: "", findings: [] }; } catch (_) { return { title: "", findings: [] }; } };
-const save = (d) => { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (_) {} };
+const load = () => { try { return JSON.parse(localStorage.getItem(acctKey(KEY))) || { title: "", findings: [] }; } catch (_) { return { title: "", findings: [] }; } };
+const save = (d) => { try { localStorage.setItem(acctKey(KEY), JSON.stringify(d)); } catch (_) {} };
 const rank = (s) => SEV.indexOf(s) === -1 ? 99 : SEV.indexOf(s);
 
 function toMarkdown(d) {

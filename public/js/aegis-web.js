@@ -1,3 +1,4 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 // AEGIS Web — Autonomous Electronic Governance & Intelligence System
 // Browser-based cyber operations command center for Darknode
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
@@ -1569,8 +1570,8 @@ const SECURITY_TOOLS_CATEGORIES = [
 // MISSION DATA MANAGER (localStorage)
 // ============================================================================
 const STORE_KEY = 'aegis_missions';
-function loadMissions() { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch (_) { return []; } }
-function saveMissions(missions) { try { localStorage.setItem(STORE_KEY, JSON.stringify(missions)); } catch (_) {} }
+function loadMissions() { try { return JSON.parse(localStorage.getItem(acctKey(STORE_KEY))) || []; } catch (_) { return []; } }
+function saveMissions(missions) { try { localStorage.setItem(acctKey(STORE_KEY), JSON.stringify(missions)); } catch (_) {} }
 function getActiveMission() {
   var missions = loadMissions();
   var activeId = localStorage.getItem('aegis_active');
@@ -4211,7 +4212,7 @@ export function renderAegis(main) {
     };
     c.querySelector('#ag-sclear').onclick = async function() {
       if (await window.dnConfirm('Delete all mission data', 'Delete ALL mission data? This cannot be undone.', { danger: true })) {
-        localStorage.removeItem(STORE_KEY);
+        localStorage.removeItem(acctKey(STORE_KEY));
         localStorage.removeItem('aegis_active');
         localStorage.removeItem('aegis_evidence');
         localStorage.removeItem('aegis_incidents');
