@@ -1378,8 +1378,8 @@ export const TOOLS = [
           const eq = pair.indexOf("=");
           const k = dec(eq < 0 ? pair : pair.slice(0, eq));
           const val = eq < 0 ? "" : dec(pair.slice(eq + 1));
-          if (k in obj) { if (!Array.isArray(obj[k])) obj[k] = [obj[k]]; obj[k].push(val); }
-          else obj[k] = val;
+          if (Object.hasOwn(obj, k)) { if (!Array.isArray(obj[k])) obj[k] = [obj[k]]; obj[k].push(val); }
+          else Object.defineProperty(obj, k, { value: val, enumerable: true, writable: true, configurable: true }); // __proto__ is an ordinary key
         }
         return JSON.stringify(obj, null, 2);
       }

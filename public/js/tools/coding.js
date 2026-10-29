@@ -1627,7 +1627,7 @@ export const TOOLS = [
     ],
     run(v) {
       const t = S(v.template); if (t === "") return "";
-      const env = {};
+      const env = Object.create(null); // only the listed names: $constructor stays unfilled, __proto__ is a name
       S(v.vars).replace(/\r\n?/g, "\n").split("\n").forEach((l) => { const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(l); if (m) env[m[1]] = m[2]; });
       const sub = (name, braced) => { if (name in env) return env[name]; return v.blank ? "" : (braced ? "${" + name + "}" : "$" + name); };
       return t.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, n) => sub(n, true)).replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, n) => sub(n, false));

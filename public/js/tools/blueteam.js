@@ -47,7 +47,7 @@ const GROK = {
 };
 function resolveGrok(name, stack) {
   stack = stack || [];
-  if (!(name in GROK)) return null;
+  if (!Object.hasOwn(GROK, name)) return null;
   if (stack.includes(name)) return "";
   let bad = false;
   const res = GROK[name].replace(/%\{(\w+)\}/g, (m, p) => { const r = resolveGrok(p, stack.concat(name)); if (r == null) { bad = true; return m; } return r; });
@@ -353,7 +353,7 @@ export const TOOLS = [
       for (const l of lines(v.tokens)) {
         if (/^lit:/i.test(l)) { out.push(l.slice(4)); continue; }
         const [pat, field] = l.split(/\s+/);
-        if (!(pat in GROK)) return { error: `Unknown grok pattern: ${pat} (see Grok Pattern Reference).` };
+        if (!Object.hasOwn(GROK, pat)) return { error: `Unknown grok pattern: ${pat} (see Grok Pattern Reference).` };
         out.push(field ? `%{${pat}:${field}}` : `%{${pat}}`);
       }
       if (!out.length) return "";
