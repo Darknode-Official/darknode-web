@@ -313,8 +313,10 @@ service cloud.firestore {
 
     match /workspaces/{wid} {
       allow read: if wMember(wid);
+      // exactly the 20-char id createWorkspace generates: never a uid (28 chars), so nobody can
+      // squat another user's personal workspace id (the worker grants nothing for other shapes)
       allow create: if signedIn()
-                    && wid.matches('^[A-Za-z0-9_-]{8,40}$')
+                    && wid.matches('^[A-Za-z0-9]{20}$')
                     && request.resource.data.keys().hasOnly(['name', 'createdBy', 'createdAt'])
                     && request.resource.data.name is string
                     && request.resource.data.name.size() > 0

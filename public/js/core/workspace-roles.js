@@ -39,3 +39,9 @@ export const ROLE_LABEL = { owner: "Owner", admin: "Admin", analyst: "Analyst", 
 // Is this id a user's personal workspace? A personal workspace id is the user's own uid:
 // they are its implicit owner and it needs no member doc (this is the Phase B1 graph).
 export const isPersonalWorkspace = (wid, uid) => !!wid && wid === uid;
+
+// A team workspace id is exactly what createWorkspace generates: 20 letters and digits. A
+// Firebase uid (28 chars) can never pass, so nobody can create a "team" whose id is another
+// user's uid, add themselves as its owner, and so be let into that user's personal workspace
+// (whose server-side graph, keys, ingest queue and audit log are all keyed by the uid).
+export const isTeamWorkspaceId = (wid) => typeof wid === "string" && /^[A-Za-z0-9]{20}$/.test(wid);

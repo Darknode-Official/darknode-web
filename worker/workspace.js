@@ -11,9 +11,9 @@
 // graph, so personal cloud sync keeps working with zero migration. Every other workspace
 // id is a team workspace and requires a real member doc.
 
-import { ROLES, canDo, isPersonalWorkspace } from "../public/js/core/workspace-roles.js";
+import { ROLES, canDo, isPersonalWorkspace, isTeamWorkspaceId } from "../public/js/core/workspace-roles.js";
 
-export { ROLES, canDo, isPersonalWorkspace };
+export { ROLES, canDo, isPersonalWorkspace, isTeamWorkspaceId };
 
 // A workspace id is a Firebase uid (personal) or a generated team id (same shape as a
 // vault id so the two id spaces never collide with a uid by accident).
@@ -40,5 +40,6 @@ export async function workspaceMemberRole(projectId, wid, uid, token, fetchImpl 
 // `token` is the caller's verified ID token (for the Firestore read on team workspaces).
 export async function resolveWorkspaceRole(projectId, wid, uid, token, fetchImpl = fetch) {
   if (isPersonalWorkspace(wid, uid)) return "owner"; // your own private workspace
+  if (!isTeamWorkspaceId(wid)) return null; // not a team id (e.g. someone else's uid): a member doc there must not count
   return workspaceMemberRole(projectId, wid, uid, token, fetchImpl);
 }

@@ -34,11 +34,13 @@ const setRole = (db, by, wid, uid, role, log, { skipLog = false } = {}) => {
 };
 
 const A = as("alice"), B = as("bob"), C = as("carol"), D = as("dave");
-const W = "teamABCD12";
+const W = "teamABCD1234567890XY";
 
 await t("founding without a log entry is refused", assertFails(found(A, W, "alice", { skipLog: true })));
 await t("founding in someone else's name is refused", assertFails(found(B, W, "bob", { createdBy: "alice" })));
 await t("founding as a non-owner role is refused", assertFails(found(A, W, "alice", { role: "admin" })));
+await t("a workspace id shaped like a uid (another user's personal workspace) is refused", assertFails(found(A, "Vq3xY8kLm2NpR7sT4uWz9aBcD1e2", "alice", { log: "logSQUAT01" })));
+await t("a short workspace id is refused", assertFails(found(A, "teamABCD12", "alice", { log: "logSHORT01" })));
 await t("alice founds the workspace", assertSucceeds(found(A, W, "alice")));
 await t("carol cannot re-found an existing workspace", assertFails(found(C, W, "carol", { log: "logCCCCCCC" })));
 await t("bob cannot add himself", assertFails(setRole(B, "bob", W, "bob", "owner", "logBBBBBB1")));

@@ -1,5 +1,5 @@
 import { test, group, assert } from "../harness.mjs";
-import { ROLES, ACTIVE_ROLES, canDo, isPersonalWorkspace, ROLE_HELP } from "../../public/js/core/workspace-roles.js";
+import { ROLES, ACTIVE_ROLES, canDo, isPersonalWorkspace, isTeamWorkspaceId, ROLE_HELP } from "../../public/js/core/workspace-roles.js";
 import { resolveWorkspaceRole, workspaceMemberRole } from "../../worker/workspace.js";
 
 // A fake Firestore REST endpoint: maps member-doc URLs to a canned response.
@@ -57,7 +57,7 @@ group("workspace roles", () => {
 
   test("a personal workspace is the caller's own uid", () => {
     assert.ok(isPersonalWorkspace("u123", "u123"));
-    assert.ok(!isPersonalWorkspace("teamABCDEFGH", "u123"));
+    assert.ok(!isPersonalWorkspace("teamABCDEFGH12345678", "u123"));
     assert.ok(!isPersonalWorkspace("", ""));
     assert.ok(!isPersonalWorkspace(null, null));
   });
@@ -73,33 +73,43 @@ group("workspace membership resolution (worker)", () => {
     assert.ok(!called, "no membership lookup for a personal workspace");
   });
 
+  test("a member doc under another user's uid is never honoured (personal workspace squatting)", async () => {
+    const victim = "Vq3xY8kLm2NpR7sT4uWz9aBcD1e2"; // a Firebase uid: 28 chars
+    const fs = makeFirestore({ [victim + "/attacker"]: field("attacker", "owner") });
+    assert.equal(await resolveWorkspaceRole(P, victim, "attacker", "tok", fs), null);
+    assert.equal(await resolveWorkspaceRole(P, victim, victim, "tok", fs), "owner"); // the real owner still is
+    assert.ok(isTeamWorkspaceId("teamABCDEFGH12345678"));
+    assert.ok(!isTeamWorkspaceId(victim));
+    assert.ok(!isTeamWorkspaceId("short-id"));
+  });
+
   test("a team member's role comes from their member doc", async () => {
-    const fs = makeFirestore({ "teamABCDEFGH/u2": field("u2", "analyst") });
-    const role = await resolveWorkspaceRole(P, "teamABCDEFGH", "u2", "tok", fs);
+    const fs = makeFirestore({ "teamABCDEFGH12345678/u2": field("u2", "analyst") });
+    const role = await resolveWorkspaceRole(P, "teamABCDEFGH12345678", "u2", "tok", fs);
     assert.equal(role, "analyst");
   });
 
   test("a non-member of a team workspace resolves to null (404 or 403)", async () => {
-    const fs = makeFirestore({ "teamABCDEFGH/u2": field("u2", "owner") });
-    assert.equal(await resolveWorkspaceRole(P, "teamABCDEFGH", "stranger", "tok", fs), null);
-    const forbidden = makeFirestore({ "teamABCDEFGH/stranger": "forbidden" });
-    assert.equal(await resolveWorkspaceRole(P, "teamABCDEFGH", "stranger", "tok", forbidden), null);
+    const fs = makeFirestore({ "teamABCDEFGH12345678/u2": field("u2", "owner") });
+    assert.equal(await resolveWorkspaceRole(P, "teamABCDEFGH12345678", "stranger", "tok", fs), null);
+    const forbidden = makeFirestore({ "teamABCDEFGH12345678/stranger": "forbidden" });
+    assert.equal(await resolveWorkspaceRole(P, "teamABCDEFGH12345678", "stranger", "tok", forbidden), null);
   });
 
   test("a removed member is treated as not a member", async () => {
-    const fs = makeFirestore({ "teamABCDEFGH/u3": field("u3", "removed") });
-    assert.equal(await resolveWorkspaceRole(P, "teamABCDEFGH", "u3", "tok", fs), null);
+    const fs = makeFirestore({ "teamABCDEFGH12345678/u3": field("u3", "removed") });
+    assert.equal(await resolveWorkspaceRole(P, "teamABCDEFGH12345678", "u3", "tok", fs), null);
   });
 
   test("a member doc whose uid field does not match is rejected", async () => {
-    const fs = makeFirestore({ "teamABCDEFGH/u4": field("someoneElse", "owner") });
-    assert.equal(await resolveWorkspaceRole(P, "teamABCDEFGH", "u4", "tok", fs), null);
+    const fs = makeFirestore({ "teamABCDEFGH12345678/u4": field("someoneElse", "owner") });
+    assert.equal(await resolveWorkspaceRole(P, "teamABCDEFGH12345678", "u4", "tok", fs), null);
   });
 
   test("a Firestore error (not 403/404) throws rather than silently denying", async () => {
-    const fs = makeFirestore({ "teamABCDEFGH/u5": "error" });
+    const fs = makeFirestore({ "teamABCDEFGH12345678/u5": "error" });
     let threw = false;
-    try { await workspaceMemberRole(P, "teamABCDEFGH", "u5", "tok", fs); } catch (_) { threw = true; }
+    try { await workspaceMemberRole(P, "teamABCDEFGH12345678", "u5", "tok", fs); } catch (_) { threw = true; }
     assert.ok(threw, "a 500 from Firestore is surfaced, not swallowed");
   });
 });
