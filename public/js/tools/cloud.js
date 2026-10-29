@@ -404,8 +404,13 @@ export const TOOLS = [
       if (/^\d+\.\d+\.\d+\.\d+$/.test(n)) errs.push("must not be formatted as an IP address");
       if (/^xn--/.test(n)) errs.push("must not start with the prefix xn--");
       if (/^sthree-/.test(n)) errs.push("must not start with the reserved prefix sthree-");
-      if (/-s3alias$/.test(n) || /--ol-s3$/.test(n)) errs.push("must not end with -s3alias or --ol-s3 (reserved)");
-      return errs.length ? `INVALID: ${n}\n- ` + errs.join("\n- ") : `VALID: ${n} satisfies the S3 general-purpose bucket naming rules.`;
+      if (/^amzn-s3-demo-/.test(n)) errs.push("must not start with the reserved prefix amzn-s3-demo- (used in AWS documentation examples)");
+      const suf = /(-s3alias|--ol-s3|\.mrap|--x-s3|--table-s3)$/.exec(n);
+      if (suf) errs.push(`must not end with ${suf[1]} (reserved for ${{ "-s3alias": "access point aliases", "--ol-s3": "Object Lambda access point aliases", ".mrap": "Multi-Region Access Points", "--x-s3": "directory buckets", "--table-s3": "S3 table buckets" }[suf[1]]})`);
+      // -an is reserved for the account regional namespace: name-<12-digit account id>-<region>-an
+      const regional = /-\d{12}-[a-z]{2,4}(?:-[a-z]+)+-\d+-an$/.test(n);
+      if (/-an$/.test(n) && !regional) errs.push("must not end with -an unless it is an account regional namespace name (name-<12-digit account id>-<region>-an)");
+      return errs.length ? `INVALID: ${n}\n- ` + errs.join("\n- ") : `VALID: ${n} satisfies the S3 general-purpose bucket naming rules.` + (regional ? "\nNote: the -<account id>-<region>-an suffix means it can only be created in that account's regional namespace (x-amz-bucket-namespace: account-regional)." : "");
     } },
 
   { id: "cl-s3-presigned-explain", name: "S3 Presigned URL Explainer", cat: "cloud", desc: "Decode the SigV4 query parameters of a presigned S3 URL: key ID, scope, signed headers, and when it expires.", tags: ["aws", "s3", "presigned", "sigv4", "expiry"],
