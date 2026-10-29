@@ -1,8 +1,30 @@
 {
- "updated": "2026-10-28T11:26:14.180Z",
+ "updated": "2026-10-29T11:36:50.269Z",
  "source": "CISA KEV",
  "count": 500,
  "data": [
+  {
+   "cve": "CVE-2026-41709",
+   "vendor": "Broadcom",
+   "product": "VMware ESX",
+   "name": "Broadcom VMWare ESX Insufficient Logging Vulnerability",
+   "description": "Broadcom VMWare ESX contains an insufficient logging vulnerability that could allow a malicious actor with admin access to perform certain operations without being logged.",
+   "dateAdded": "2026-10-28",
+   "dueDate": "2026-11-11",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-46300",
+   "vendor": "Linux",
+   "product": "Kernel",
+   "name": "Linux Kernel Missing Initialization of a Variable Vulnerability",
+   "description": "Linux Kernel contains a missing initialization of a variable vulnerability that could allow for unintended modification of page-cache-backed data via failure to preserve the shared-fragment marker during socket buffer coalescing, causing ESP input processing to decrypt shared fragments in place. This vulnerability can be chained with CVE-2026-109618 and CVE-2026-109619 to implant PHP webshells and run commands as root.",
+   "dateAdded": "2026-10-28",
+   "dueDate": "2026-10-31",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
   {
    "cve": "CVE-2026-48356",
    "vendor": "Adobe",
@@ -5476,28 +5498,6 @@
    "product": "XG Firewall",
    "name": "Sophos XG Firewall Buffer Overflow Vulnerability",
    "description": "Sophos XG Firewall contains a buffer overflow vulnerability that allows for remote code execution via the \"HTTP/S bookmark\" feature.",
-   "dateAdded": "2025-02-06",
-   "dueDate": "2025-02-27",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2020-29574",
-   "vendor": "Sophos",
-   "product": "CyberoamOS",
-   "name": "CyberoamOS (CROS) SQL Injection Vulnerability",
-   "description": "CyberoamOS (CROS) contains a SQL injection vulnerability in the WebAdmin that allows an unauthenticated attacker to execute arbitrary SQL statements remotely.",
-   "dateAdded": "2025-02-06",
-   "dueDate": "2025-02-27",
-   "action": "The impacted product is end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue utilization of the product.",
-   "ransomware": "Known"
-  },
-  {
-   "cve": "CVE-2024-21413",
-   "vendor": "Microsoft",
-   "product": "Office Outlook",
-   "name": "Microsoft Outlook Improper Input Validation Vulnerability",
-   "description": "Microsoft Outlook contains an improper input validation vulnerability that allows for remote code execution. Successful exploitation of this vulnerability would allow an attacker to bypass the Office Protected View and open in editing mode rather than protected mode.",
    "dateAdded": "2025-02-06",
    "dueDate": "2025-02-27",
    "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",

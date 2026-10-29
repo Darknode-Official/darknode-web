@@ -1,8 +1,8 @@
 {
- "updated": "2026-10-28T11:26:14.249Z",
+ "updated": "2026-10-29T11:36:50.335Z",
  "source": "CISA KEV (full catalog index)",
- "catalogVersion": "2026.10.27",
- "count": 1760,
+ "catalogVersion": "2026.10.28",
+ "count": 1762,
  "data": [
   {
    "cve": "CVE-2002-0367",
@@ -8679,6 +8679,11 @@
    "dueDate": "2026-06-03"
   },
   {
+   "cve": "CVE-2026-41709",
+   "dateAdded": "2026-10-28",
+   "dueDate": "2026-11-11"
+  },
+  {
    "cve": "CVE-2026-41940",
    "dateAdded": "2026-04-30",
    "dueDate": "2026-05-03",
@@ -8730,6 +8735,11 @@
    "dateAdded": "2026-07-01",
    "dueDate": "2026-07-04",
    "ransomware": "Known"
+  },
+  {
+   "cve": "CVE-2026-46300",
+   "dateAdded": "2026-10-28",
+   "dueDate": "2026-10-31"
   },
   {
    "cve": "CVE-2026-46817",
