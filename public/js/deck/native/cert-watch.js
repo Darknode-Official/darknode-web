@@ -16,13 +16,17 @@ export function mount(el, { space, mode }) {
         ? "Track expiry across every public hostname. Reads the newest certificate each host has in the public certificate-transparency logs, so it also catches hosts nobody remembers."
         : "Know before your site's certificate expires and visitors see a security warning. Add the domains you run; the list is saved in this browser."}</p>
       <textarea class="ns-ta" id="nsCwIn" aria-label="Domains to watch" style="min-height:${fleet ? 110 : 70}px" placeholder="One domain per line" spellcheck="false"></textarea>
-      <div class="ns-row"><button class="ns-btn" id="nsCwGo">Check certificates</button><button class="ns-btn ghost" id="nsCwCsv" disabled>Export CSV</button>${fleet ? `<button class="ns-btn ghost" id="nsCwPf" hidden>Add portfolio domains</button>` : ""}<span class="ns-help" id="nsCwSt" style="margin:0"></span></div>
+      <div class="ns-row"><button class="ns-btn" id="nsCwGo">Check certificates</button><button class="ns-btn ghost" id="nsCwCsv" disabled>Export CSV</button><button class="ns-btn ghost" id="nsCwLoad" hidden></button>${fleet ? `<button class="ns-btn ghost" id="nsCwPf" hidden>Add portfolio domains</button>` : ""}<span class="ns-help" id="nsCwSt" style="margin:0"></span></div>
       <p class="ns-help">Certificate-transparency lookups are public. Up to ${fleet ? 200 : 20} domains.</p></div>
     <div id="nsCwOut"></div>`;
   const ta = el.querySelector("#nsCwIn"), go = el.querySelector("#nsCwGo"), csv = el.querySelector("#nsCwCsv"), st = el.querySelector("#nsCwSt"), out = el.querySelector("#nsCwOut");
-  ta.value = readList(space, "certs").join("\n");
   const cnt = () => { const n = parseDomains(ta.value).length; el.querySelector("#nsCwCount").textContent = n ? n + " domain" + (n === 1 ? "" : "s") : ""; };
   ta.oninput = cnt; cnt();
+  // the box starts empty on every load; the saved list comes back only on request
+  const load = el.querySelector("#nsCwLoad");
+  const loadPaint = () => { const n = readList(space, "certs").length; load.hidden = !n || !!ta.value.trim(); load.textContent = "Load saved list (" + n + ")"; };
+  load.onclick = () => { ta.value = readList(space, "certs").join("\n"); cnt(); loadPaint(); if (pf) pfPaint(); };
+  ta.addEventListener("input", loadPaint); loadPaint();
   // the fleet usually is the domain portfolio: pull its domains in on request (never automatically)
   const pf = el.querySelector("#nsCwPf");
   const missing = () => { const have = new Set(parseDomains(ta.value)); return readList(space, "domains").filter((d) => !have.has(d)); };

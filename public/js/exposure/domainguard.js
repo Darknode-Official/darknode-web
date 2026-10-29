@@ -221,10 +221,9 @@ export function renderDomainGuard(main) {
   // ---- draft persistence (per viewer, per workspace)
   const draft = store.get(DRAFT_KEY, null);
   if (draft) {
-    $("domains").value = draft.domains || ""; $("hosts").value = draft.hosts || ""; $("kw").value = draft.kw || "";
-    for (const [d, f] of Object.entries(draft.flags || {})) flags.set(d, f);
+    for (const [d, f] of Object.entries(draft.flags || {})) flags.set(d, f); // per-domain role choices only; the boxes start empty
   }
-  const saveDraft = () => { if (!isExample) store.set(DRAFT_KEY, { domains: $("domains").value, hosts: $("hosts").value, kw: $("kw").value, flags: Object.fromEntries(flags) }); };
+  const saveDraft = () => { if (!isExample) store.set(DRAFT_KEY, { flags: Object.fromEntries(flags) }); };
 
   // ---- inputs -> dataset
   function domainSpecs() {

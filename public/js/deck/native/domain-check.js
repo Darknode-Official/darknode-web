@@ -63,12 +63,9 @@ export function mount(el, { space, mode }) {
         <p class="ns-help">Only public signals are read. Nothing intrusive is sent to the site.</p></div>
       <div id="nsDcOut"></div>`;
     const inp = el.querySelector("#nsDcIn"), btn = el.querySelector("#nsDcGo"), out = el.querySelector("#nsDcOut");
-    const last = readList(space, "domain")[0];
-    if (last) inp.value = last;
     const run = async () => {
       const d = cleanDomain(inp.value);
       if (!validDomain(d)) { toast("Enter a domain like yourdomain.com"); return; }
-      writeList(space, "domain", [d]);
       btn.disabled = true; out.innerHTML = `<div class="ns-card"><span class="ns-spin"></span>Running live checks against <b>${esc(d)}</b>...</div>`;
       let why = "";
       const res = await grade(d).catch((e) => { why = (e && e.message) || ""; return null; });
@@ -85,13 +82,17 @@ export function mount(el, { space, mode }) {
     <div class="ns-card"><h2>Domain portfolio<span class="r" id="nsPfCount"></span></h2>
       <p class="ns-sub">Grade every public domain the organization owns in one pass and rank them by risk. The list is saved in this browser so you can re-run it.</p>
       <textarea class="ns-ta" id="nsPfIn" aria-label="Domains to grade" style="min-height:96px" placeholder="One domain per line" spellcheck="false"></textarea>
-      <div class="ns-row"><button class="ns-btn" id="nsPfGo">Grade portfolio</button><button class="ns-btn ghost" id="nsPfCsv" disabled>Export CSV</button><span class="ns-help" id="nsPfSt" style="margin:0"></span></div>
+      <div class="ns-row"><button class="ns-btn" id="nsPfGo">Grade portfolio</button><button class="ns-btn ghost" id="nsPfCsv" disabled>Export CSV</button><button class="ns-btn ghost" id="nsPfLoad" hidden></button><span class="ns-help" id="nsPfSt" style="margin:0"></span></div>
       <p class="ns-help">Up to 50 domains, 3 at a time. Only public signals are read.</p></div>
     <div id="nsPfOut"></div><div id="nsPfDet"></div>`;
   const ta = el.querySelector("#nsPfIn"), go = el.querySelector("#nsPfGo"), csv = el.querySelector("#nsPfCsv"), st = el.querySelector("#nsPfSt"), out = el.querySelector("#nsPfOut"), det = el.querySelector("#nsPfDet");
-  ta.value = readList(space, "domains").join("\n");
   const cnt = () => { const n = parseDomains(ta.value).length; el.querySelector("#nsPfCount").textContent = n ? n + " domain" + (n === 1 ? "" : "s") : ""; };
   ta.oninput = cnt; cnt();
+  // the box starts empty on every load; the saved portfolio comes back only on request
+  const load = el.querySelector("#nsPfLoad");
+  const loadPaint = () => { const n = readList(space, "domains").length; load.hidden = !n || !!ta.value.trim(); load.textContent = "Load saved list (" + n + ")"; };
+  load.onclick = () => { ta.value = readList(space, "domains").join("\n"); cnt(); loadPaint(); };
+  ta.addEventListener("input", loadPaint); loadPaint();
   let results = [];
   const table = () => {
     const rows = results.filter(Boolean).slice().sort((a, b) => (a.res ? a.res.score ?? 101 : -1) - (b.res ? b.res.score ?? 101 : -1));

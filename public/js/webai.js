@@ -1,4 +1,5 @@
 // Darknode AI — unified multi-provider assistant.
+import { availableTools, runTool } from "/js/integrations/connect.js?v=20261029c";
 // Built-in keys power the free tier. Users can override in Settings → API Keys.
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -691,12 +692,19 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     let html = "";
     for (let i = 1; i < history.length; i++) {
       const m = history[i]; if (m.role === "system") continue;
+      if (m.toolResult) {
+        const r = m.toolResult, state = r.denied ? "Declined" : r.ok ? "Result" : "Failed: " + r.error;
+        const data = r.ok ? String(m.content || "").replace(/^[^\n]*\n/, "") : "";
+        let pretty = data; try { pretty = JSON.stringify(JSON.parse(data), null, 2); } catch (_) {}
+        html += `<div class="msg ai ai-toolres" data-i="${i}"><div class="msg-body"><div class="ai-toolcard${r.ok ? "" : " bad"}">${data ? `<details><summary>${esc(r.providerName + " " + r.title + " (" + argText(r.args) + "): " + state)}</summary><pre>${esc(pretty)}</pre></details>` : esc(r.providerName + " " + r.title + " (" + argText(r.args) + "): " + state)}</div></div></div>`;
+        continue;
+      }
       const you = m.role === "user";
       const imgs = (m.images || []).map((b) => `<img class="msg-img" alt="attached image" src="data:image/png;base64,${b}">`).join("");
       const files = (m.files || []).map((f) => `<span class="msg-file">${esc(f.name)}</span>`).join("");
       const body = you
         ? imgs + (files ? `<div class="msg-files">${files}</div>` : "") + `<span class="msg-txt">${esc(m.content || "")}</span>`
-        : mdToHtml(m.content || "") + (m.stopped ? `<div class="msg-stopped">stopped</div>` : "");
+        : (m.toolCall ? mdToHtml(stripCall(m.content)) + `<div class="ai-toolcard"><b>${esc(m.toolCall.providerName)} ${esc(m.toolCall.title)}</b><div class="ai-toolarg">${esc(argText(m.toolCall.args))}</div></div>` : mdToHtml(m.content || "")) + (m.stopped ? `<div class="msg-stopped">stopped</div>` : "");
       const tools = [`<button class="mt" data-act="copy" data-i="${i}" title="Copy">Copy</button>`];
       if (you) tools.push(`<button class="mt" data-act="edit" data-i="${i}" title="Edit &amp; resend">Edit</button>`);
       else {
@@ -823,6 +831,52 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     chatEl.scrollTop = chatEl.scrollHeight;
   }
 
+  // ---- live integrations as tools (Deck > Integrations) ----
+  // Works with every model: the tool list goes in the system prompt and a call is
+  // one <tool>{json}</tool> block, so the free model and any BYOK provider can use
+  // it. The user approves each provider before anything is sent to it.
+  const MAX_TOOL_STEPS = 6, ALLOW_KEY = "dn_ai_tool_allow";
+  const CALL_RE = /<tool>\s*(\{[\s\S]*?\})\s*<\/tool>/;
+  function stripCall(t) { return String(t || "").replace(/<tool>[\s\S]*?(<\/tool>|$)/g, "").trim(); } // declarations: renderMessages may run before this line on load
+  const toolPrompt = (tools) => "\n\n## Live integrations\nThe user connected these services in the Deck. You can run a lookup on them when the question needs live data about a specific IP, domain, URL, hash, email or CVE. To run one, reply with only this block and nothing after it:\n<tool>{\"name\": \"tool_name\", \"args\": {\"arg\": \"value\"}}</tool>\nThe result comes back in the next message; then answer, or run another lookup. One tool per reply. Never invent a result, and if a lookup fails or is declined, say so and continue without it. Do not use tools for general questions.\nTools:\n" + tools.map((t) => "- " + t.name + "(" + Object.keys(t.args).join(", ") + "): " + t.providerName + " - " + t.desc).join("\n");
+  const withTools = (msgs, tools) => {
+    if (!tools.length) return msgs;
+    const out = msgs.slice();
+    if (out[0] && out[0].role === "system") out[0] = Object.assign({}, out[0], { content: (out[0].content || "") + toolPrompt(tools) });
+    else out.unshift({ role: "system", content: toolPrompt(tools).trim() });
+    return out;
+  };
+  const parseCall = (text, tools) => {
+    const m = CALL_RE.exec(text || ""); if (!m) return null;
+    let j; try { j = JSON.parse(m[1]); } catch (_) { return null; }
+    const t = tools.find((x) => x.name === (j && j.name)); if (!t) return null;
+    return { name: t.name, args: j.args && typeof j.args === "object" ? j.args : {}, title: t.title, provider: t.provider, providerName: t.providerName, keyless: !!t.keyless };
+  };
+  const allowed = () => { try { return new Set(JSON.parse(localStorage.getItem(acct(ALLOW_KEY)) || "[]")); } catch (_) { return new Set(); } };
+  function argText(a) { return Object.values(a || {}).map((v) => String(v)).join(", "); }
+  // Ask before sending anything to a provider: Allow once / Always allow <provider> / Decline.
+  function askPermission(call, signal) {
+    if (allowed().has(call.provider)) return Promise.resolve("always");
+    return new Promise((resolve, reject) => {
+      const d = document.createElement("div"); d.className = "msg ai ai-perm";
+      d.innerHTML = `<div class="msg-body"><div class="ai-toolcard"><b>Run ${esc(call.providerName)} ${esc(call.title)}?</b><div class="ai-toolarg">${esc(argText(call.args))}</div><p>This sends the value above to ${esc(call.providerName)} through Darknode's relay${call.keyless ? "" : ", using your connected key"}.</p><div class="ai-permrow"><button type="button" class="btn sm" data-perm="once">Allow once</button><button type="button" class="btn ghost sm" data-perm="always">Always allow ${esc(call.providerName)}</button><button type="button" class="btn ghost sm" data-perm="deny">Decline</button></div></div></div>`;
+      chatEl.appendChild(d); chatEl.scrollTop = chatEl.scrollHeight;
+      const done = (v) => { signal.removeEventListener("abort", onAbort); d.remove(); resolve(v); };
+      const onAbort = () => { d.remove(); const e = new Error("aborted"); e.name = "AbortError"; reject(e); };
+      signal.addEventListener("abort", onAbort);
+      d.querySelectorAll("[data-perm]").forEach((b) => b.onclick = (ev) => {
+        ev.stopPropagation(); const v = b.dataset.perm;
+        if (v === "always") { const s = allowed(); s.add(call.provider); try { localStorage.setItem(acct(ALLOW_KEY), JSON.stringify([...s])); } catch (_) {} }
+        done(v);
+      });
+      const first = d.querySelector("[data-perm]"); if (first) first.focus();
+    });
+  }
+  const resultText = (call, res) => res.denied
+    ? "The user declined the " + call.name + " lookup. Answer without it."
+    : res.ok ? "Result of " + call.name + "(" + argText(call.args) + ") from " + call.providerName + ":\n" + JSON.stringify(res.data == null ? {} : res.data).slice(0, 8000)
+    : "The " + call.name + " lookup failed: " + (res.error || "unknown error") + ".";
+
   let busy = false, ctrl = null;
   // Produce a fresh assistant reply from the current history (which must end
   // with a user turn). Shared by send / edit / regenerate.
@@ -832,18 +886,37 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     const lastUser = [...history].reverse().find((m) => m.role === "user");
     busy = true; ctrl = new AbortController(); setSend(true);
     const myCtrl = ctrl;
-    const out = appendStreaming(); let acc = "";
+    let out = null, acc = "";
     try {
-      await streamFor(provider, modelId, wire(history), (t) => { acc += t; out.innerHTML = mdToHtml(acc); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal);
-      history.push({ role: "assistant", content: acc || "" });
-      persist(); renderMessages();
-      if (looksLikeRefusal(acc)) { const last = chatEl.querySelector(".msg.ai:last-child .msg-body"); if (last) offerReframe(last, lastUser && lastUser.content); }
+      for (let step = 0; ; step++) {
+        out = appendStreaming(); acc = "";
+        const tools = step < MAX_TOOL_STEPS ? availableTools() : [];
+        await streamFor(provider, modelId, withTools(wire(history), tools), (t) => { acc += t; const shown = stripCall(acc); out.innerHTML = shown ? mdToHtml(shown) : (acc.includes("<tool") ? '<span class="ai-dots"><i></i><i></i><i></i></span>' : ""); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal);
+        const call = tools.length ? parseCall(acc, tools) : null;
+        if (!call) {
+          history.push({ role: "assistant", content: acc || "" });
+          persist(); renderMessages();
+          if (looksLikeRefusal(acc)) { const last = chatEl.querySelector(".msg.ai:last-child .msg-body"); if (last) offerReframe(last, lastUser && lastUser.content); }
+          break;
+        }
+        history.push({ role: "assistant", content: acc, toolCall: call }); persist(); renderMessages(); acc = "";
+        const verdict = await askPermission(call, ctrl.signal);
+        let res;
+        if (verdict === "deny") res = { ok: false, denied: true, error: "declined" };
+        else {
+          const run = document.createElement("div"); run.className = "msg ai"; run.innerHTML = `<div class="msg-body"><div class="ai-toolcard"><span class="ai-dots"><i></i><i></i><i></i></span> Running ${esc(call.providerName)} ${esc(call.title)}...</div></div>`;
+          chatEl.appendChild(run); chatEl.scrollTop = chatEl.scrollHeight;
+          res = await runTool(call.name, call.args, ctrl.signal);
+        }
+        history.push({ role: "user", content: resultText(call, res), toolResult: { name: call.name, title: call.title, providerName: call.providerName, args: call.args, ok: !!res.ok, denied: !!res.denied, error: res.ok ? "" : res.error || "" } });
+        persist(); renderMessages();
+      }
     } catch (e) {
       // Discarded = we navigated to another chat; the history is no longer this
       // run's, so don't push the partial reply onto (or persist) the wrong chat.
       if (e.name === "AbortError" && myCtrl.discarded) { /* dropped on purpose */ }
       else if (e.name === "AbortError") { history.push({ role: "assistant", content: acc || "", stopped: true }); persist(); renderMessages(); }
-      else { out.innerHTML = `<span class="err">Error: ${esc(e.message)}</span>`; status.textContent = "Error — " + e.message; }
+      else { if (!out || !out.isConnected) out = appendStreaming(); out.innerHTML = `<span class="err">Error: ${esc(e.message)}</span>`; status.textContent = "Error — " + e.message; }
     } finally { busy = false; ctrl = null; setSend(false); const b = $("#aiMsg"); if (b) b.focus(); }
   }
   async function send(overrideText) {

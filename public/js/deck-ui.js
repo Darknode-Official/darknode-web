@@ -15,6 +15,8 @@
 // ============================================================================
 
 import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261028c";
+import { testKey, canTest } from "/js/integrations/connect.js?v=20261029c";
+import { toolsFor } from "/js/integrations/intel-core.js?v=20261029c";
 // Live-data layer: the SSRF-guarded worker proxy. dnFetchJSON routes keyless public
 // feeds (CISA KEV, FIRST EPSS, ransomware.live, crt.sh, DoH, RDAP, BGPView) through
 // /api/fetch; it throws on failure and never fabricates. net.js is stateless.
@@ -110,13 +112,15 @@ const INTEGRATIONS = [
 ];
 // Integrations Darknode actually consumes today, verified against the code:
 //  - AI providers wired into webai.js (BYOK keys) + the Gemini proxy default;
-//  - the three intel enrichers ioc-enrichment.js reads keys for.
+//  - the three intel enrichers ioc-enrichment.js reads keys for;
+//  - the intel providers in integrations/intel-core.js, whose tools the Assistant can call.
 // Everything else that stores a key does nothing with it yet, so the UI must not
 // imply otherwise. This set drives the honest "Live" badge and drawer copy.
 const LIVE_INTEGRATIONS = new Set([
   "claude", "openai", "gemini", "perplexity", "mistral", "groq", "openrouter",
   "xai", "deepseek", "cohere", "together", "fireworks", "cerebras",
   "abuseipdb", "greynoise", "abusech",
+  "virustotal", "shodan", "otx", "urlscan", "securitytrails", "ipinfo", "hibp", "hunter", "pulsedive", "hybrid", "nvd", "circl",
 ]);
 const isLiveInt = (it) => !!it && LIVE_INTEGRATIONS.has(it.id);
 
@@ -647,6 +651,11 @@ const CSS = `
 .dk-keyform input{width:100%;padding:11px 13px;border-radius:11px;border:1px solid rgba(23,33,56,.16);background:rgba(23,33,56,.06);color:#1a2233;font:inherit;font-size:13.5px;outline:none}
 .dk-keyform input:focus{border-color:#3f78ff;background:rgba(63,120,255,.1)}
 .dk-formrow{display:flex;gap:9px}.dk-formrow .dk-b{flex:1}
+.dk-keyerr{margin:0;font-size:12px;color:#c0282a;line-height:1.45}
+.dk-itools{margin:4px 0 14px;border:1px solid rgba(23,33,56,.1);border-radius:10px;overflow:hidden}
+.dk-itools .h{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#687388;padding:8px 12px;background:rgba(23,33,56,.04)}
+.dk-itools .r{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-top:1px solid rgba(23,33,56,.07);font-size:12.5px}
+.dk-itools .r span{color:#6a7488;font-size:11.5px;line-height:1.4}
 .dk-b.dis{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.4);color:#c0282a}
 .dk-note{font-size:11.5px;color:#6a7488;margin-top:16px;line-height:1.5}
 /* models sub-tree inside the drawer */
@@ -1800,6 +1809,8 @@ export function renderDeck(host, opts) {
   // show Connected, and a key this account stored shows as connected again.
   const reconcileConns = (c) => {
     const has = (id) => { try { return !!String((window.dnKeys && window.dnKeys.get("dn_key_" + id)) || "").trim(); } catch (_) { return false; } };
+    // "Open to sign in" used to mark a provider connected though nothing was linked: not a connection
+    for (const id of Object.keys(c)) if (c[id] && c[id].method === "account") delete c[id];
     if (!window.dnKeys || !window.dnKeys.uid || !window.dnKeys.uid()) return c; // no account: nothing to check against
     for (const it of INTEGRATIONS) {
       const r = c[it.id], k = has(it.id);
@@ -2030,7 +2041,7 @@ export function renderDeck(host, opts) {
   }
   // Native spaces; `open` = { tab, target } jumps straight to a tool (and runs it on target).
   function mountSpaceScene(id, open){
-    import("/js/deck/spaces.js?v=20261027c").then((m) => m.mountSpace(sceneEls[id], id, { open: open && open.tab ? open : null, openTool: (sec, label) => openTool(sec, label),
+    import("/js/deck/spaces.js?v=20261029c").then((m) => m.mountSpace(sceneEls[id], id, { open: open && open.tab ? open : null, openTool: (sec, label) => openTool(sec, label),
       // a tab change replaces the page's link (/personal/<tab>); only while this space is what's showing
       onTab: (tab) => { if (curScene === id && sceneWork.hidden) syncUrl(scenePath(id) + (tab && tab !== "home" ? "/" + tab : ""), true); }, confirm: (msg) => (window.dnConfirm ? window.dnConfirm(msg) : Promise.resolve(false)) })).catch(() => toast("Could not load this space"));
   }
@@ -2084,7 +2095,9 @@ export function renderDeck(host, opts) {
     const connected = !!rec.connected;
     const method = rec.method;
     const kindTxt = it.kind === "ai" ? "AI Model" : "Cyber Intelligence";
-    const methodTxt = method === "account" ? "Signed in — add an API key to run" : method === "key" ? "Connected via API key" : "Connected";
+    const ago = (t) => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? "just now" : m < 60 ? m + " min ago" : m < 1440 ? Math.round(m / 60) + " h ago" : Math.round(m / 1440) + " d ago"; };
+    const methodTxt = method === "key" ? (rec.verified ? "Connected, key verified " + ago(rec.verified) : rec.unverified ? "Key saved, not verified" : "Connected via API key") : method === "link" ? "Linked" : "Connected";
+    const tools = toolsFor(it.id);
     const keyForm = mode === "key" && !connected && it.connect === "key";
     // OpenRouter is the one AI provider with a real browser account-link (PKCE):
     // one login mints the user's own key, billed to their OpenRouter credits
@@ -2096,12 +2109,13 @@ export function renderDeck(host, opts) {
     // billing); the API key is demoted to an advanced alternative. The key is entered
     // inline here (no overlay popup) so it never sits over the drawer's own buttons.
     const actArea = connected
-      ? `<button class="dk-b dis" data-act="disc">Disconnect</button>`
+      ? `${method === "key" && canTest(it.id) ? `<button class="dk-b" data-act="retest">Test key</button>` : ""}<button class="dk-b dis" data-act="disc">Disconnect</button>`
       : keyForm
         ? `<form class="dk-keyform" data-form="key">
              <label>${esc(it.name)} API key</label>
              <input type="password" id="dkKeyIn" placeholder="Paste your ${esc(it.name)} API key" autocomplete="off" spellcheck="false">
-             <div class="dk-formrow"><button type="submit" class="dk-b pri">Save &amp; connect</button><button type="button" class="dk-b" data-act="cancel">Cancel</button></div>
+             <div class="dk-formrow"><button type="submit" class="dk-b pri">${canTest(it.id) ? "Test &amp; connect" : "Save &amp; connect"}</button><button type="button" class="dk-b" data-act="cancel">Cancel</button></div>
+             <p class="dk-keyerr" id="dkKeyErr" role="alert" hidden></p>
            </form>`
         : [
             // OpenRouter is the one real browser account-link (PKCE) and reaches
@@ -2116,7 +2130,9 @@ export function renderDeck(host, opts) {
           ].join("");
     // Honest per-provider note. Sec providers split into those Darknode actually
     // consumes (the IOC enrichers) and those where a stored key does nothing yet.
-    const secKeyNote = isLiveInt(it)
+    const secKeyNote = tools.length
+      ? "Your key is stored only in this browser, under your account, and is tested with a live " + it.name + " call before it counts as connected. Once connected, the Assistant can run the lookups listed here; it asks before sending anything to " + it.name + ". Each call goes through Darknode's relay because " + it.name + " does not accept calls straight from a browser; the relay uses the key for that one request and never stores it."
+      : isLiveInt(it)
       ? "Your key is stored only in this browser (localStorage). Darknode's IOC enrichment uses it directly when you analyze indicators."
       : "Your key is stored only in this browser (localStorage). No Darknode feature consumes this provider yet — connecting keeps it ready for when a tool supports it.";
     // AI keys: the assistant calls these providers straight from the browser (webai.js OAI_COMPAT +
@@ -2133,7 +2149,7 @@ export function renderDeck(host, opts) {
         ? `Darknode runs ${esc(it.name)} with your own API key — add one above. No provider lets another site bill your existing ${esc(it.name)} subscription, so the "Open to sign in" button only opens ${esc(it.name)}; it can't grant API access on its own. Tip: connect OpenRouter once to reach ${esc(it.name)}, GPT, Gemini and more through a single login.`
         : it.connect === "key"
           ? (it.kind === "sec" ? secKeyNote : aiKeyNote)
-          : "Linking records this service as available to Darknode. No credentials are stored.";
+          : tools.length ? "No key needed. Linking lets the Assistant run the lookups below against " + it.name + "'s public API; it asks before each new kind of lookup." : "Linking records this service as available to Darknode. No credentials are stored.";
     const mlist = it.kind === "ai" && MODELS[it.id] ? MODELS[it.id] : null;
     let curModel = "";
     if (mlist) { try { curModel = localStorage.getItem("dn_model_" + it.id) || ""; } catch (_) {} }
@@ -2157,6 +2173,7 @@ export function renderDeck(host, opts) {
       <span class="dk-stat ${connected ? "on" : "off"}"><span class="d"></span>${connected ? methodTxt : "Not connected"}</span>
       <p class="blurb">${esc(it.blurb)}</p>
       ${modelsHTML}
+      ${tools.length ? `<div class="dk-itools"><div class="h">Assistant tools${connected ? "" : " once connected"}</div>${tools.map((t) => `<div class="r"><b>${esc(t.title)}</b><span>${esc(t.desc)}</span></div>`).join("")}</div>` : ""}
       <div class="act">
         ${actArea}
         <button class="dk-b" data-act="open">Open ${esc(it.domain)}</button>
@@ -2177,8 +2194,7 @@ export function renderDeck(host, opts) {
     if (accBtn) accBtn.onclick = () => {
       // Open the provider sign-in so Darknode can link the existing account.
       try { window.open("https://" + it.domain, "_blank", "noopener"); } catch (_) {}
-      conns[it.id] = { connected: true, method: "account", at: Date.now() };
-      saveConns(conns); toast(`${it.name} sign-in opened — add an API key to run it here`); refreshConnState(it); openDrawer(it);
+      toast(`${it.name} opened in a new tab. Darknode needs an API key from your ${it.name} account to run it here`);
     };
     const keyFormBtn = drawerBody.querySelector('[data-act="keyform"]');
     if (keyFormBtn) keyFormBtn.onclick = () => openDrawer(it, "key");
@@ -2188,18 +2204,41 @@ export function renderDeck(host, opts) {
     if (form) {
       const inp = form.querySelector("#dkKeyIn");
       setTimeout(() => { try { inp.focus(); } catch (_) {} }, 40);
-      form.onsubmit = (e) => {
+      const err = form.querySelector("#dkKeyErr"), sub = form.querySelector('button[type="submit"]');
+      form.onsubmit = async (e) => {
         e.preventDefault();
         const key = String(inp.value || "").trim();
-        conns[it.id] = { connected: true, method: "key", hasKey: !!key, at: Date.now() };
-        if (key) { try { window.dnKeys.set("dn_key_" + it.id, key); } catch (_) {} } // per account (user-keys.js)
-        saveConns(conns); toast(`${it.name} connected`); refreshConnState(it); openDrawer(it);
+        if (!key) { err.textContent = "Paste a key first."; err.hidden = false; return; }
+        let res = { ok: null };
+        if (canTest(it.id)) {
+          sub.disabled = true; sub.textContent = "Testing..."; err.hidden = true;
+          res = await testKey(it.id, key);
+          sub.disabled = false; sub.innerHTML = "Test &amp; connect";
+          if (res.ok === false) { err.textContent = "Not connected: " + res.error + ". Check the key and try again."; err.hidden = false; return; }
+          // a relay-tested source connects only on a passing test; "could not check" is not a pass
+          if (!res.ok && toolsFor(it.id).length) { err.textContent = "Not connected: could not check the key (" + (res.error || "no answer") + "). Try again in a moment."; err.hidden = false; return; }
+        }
+        conns[it.id] = res.ok ? { connected: true, method: "key", hasKey: true, at: Date.now(), verified: Date.now() } : { connected: true, method: "key", hasKey: true, at: Date.now(), unverified: true };
+        try { window.dnKeys.set("dn_key_" + it.id, key); } catch (_) {} // per account (user-keys.js)
+        saveConns(conns);
+        toast(res.ok ? `${it.name} connected, key verified${res.note ? " (" + res.note + ")" : ""}` : `${it.name} key saved but not verified: ${res.error || "no live test for this provider"}`, res.ok ? undefined : "warn");
+        refreshConnState(it); openDrawer(it);
       };
     }
     const connBtn = drawerBody.querySelector('[data-act="conn"]');     // link-type only
     if (connBtn) connBtn.onclick = () => {
       conns[it.id] = { connected: true, method: "link", at: Date.now() };
       saveConns(conns); toast(`${it.name} connected`); refreshConnState(it); openDrawer(it);
+    };
+    const retestBtn = drawerBody.querySelector('[data-act="retest"]');
+    if (retestBtn) retestBtn.onclick = async () => {
+      retestBtn.disabled = true; retestBtn.textContent = "Testing...";
+      const res = await testKey(it.id, (window.dnKeys && window.dnKeys.get("dn_key_" + it.id)) || "");
+      const r = conns[it.id] || {};
+      if (res.ok) { r.verified = Date.now(); delete r.unverified; toast(`${it.name} key works`); }
+      else if (res.ok === false) { delete r.verified; r.unverified = true; toast(`${it.name} key failed: ${res.error}`, "error"); }
+      else toast(`Could not test ${it.name}: ${res.error}`, "warn");
+      conns[it.id] = r; saveConns(conns); refreshConnState(it); openDrawer(it);
     };
     const discBtn = drawerBody.querySelector('[data-act="disc"]');
     if (discBtn) discBtn.onclick = () => { delete conns[it.id]; saveConns(conns); try { window.dnKeys.del("dn_key_" + it.id); } catch (_) {} toast(`${it.name} disconnected`); refreshConnState(it); openDrawer(it); };
@@ -3670,7 +3709,7 @@ export function renderDeck(host, opts) {
     const groups = INT_GROUPS.map((g) => { const items = g.ids.map((id) => byId[id]).filter(Boolean); return items.length ? `<div class="dk-intgrp"><h2>${esc(g.title)} <span>${items.length}</span></h2><div class="dk-intcards">${items.map(card).join("")}</div></div>` : ""; }).join("");
     el.innerHTML = `
       <div class="dk-ti-head"><h1>Integrations</h1><span class="dk-intmeta">${countConnected()} connected of ${INTEGRATIONS.length}</span></div>
-      <p class="dk-sublede">Providers marked <b>Live</b> are used by Darknode now — AI model keys power the assistant, and AbuseIPDB, GreyNoise and abuse.ch enrich indicators. Others are directory references you open and sign in to directly, or store a key for when a tool supports them; Darknode does not stream their data on your behalf.</p>
+      <p class="dk-sublede">Providers marked <b>Live</b> are used by Darknode now — AI model keys power the assistant, and a connected security source (VirusTotal, Shodan, AbuseIPDB, NVD and more) becomes a lookup the Assistant can run, asking you first. A key counts as connected only after a live test. Others are directory references you open and sign in to directly, or store a key for when a tool supports them; Darknode does not stream their data on your behalf.</p>
       ${groups}`;
     el.querySelectorAll(".dk-intcard").forEach((b) => b.onclick = () => openDrawer(INTEGRATIONS.find((i) => i.id === b.dataset.id)));
   }

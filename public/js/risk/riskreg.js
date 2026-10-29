@@ -235,7 +235,7 @@ export function renderRiskRegister(main) {
     field("reviewDate", "Next review", '<input type="date" id="' + P + '-f-reviewDate">'),
     field("lastReviewed", "Last reviewed", '<input type="date" id="' + P + '-f-lastReviewed">'),
     field("notes", "Notes", '<textarea id="' + P + '-f-notes" placeholder="Context, sources for the ranges"></textarea>', "", true),
-    field("by", "Changed by", txt("by", "you@company"), "Recorded in this risk's history. Remembered in this browser only."),
+    field("by", "Changed by", txt("by", "you@company"), "Recorded in this risk's history."),
     "</div>",
     '<div class="', P, '-row"><button class="', P, '-btn pri" id="', P, '-save">Save risk</button><button class="', P, '-btn" id="', P, '-analyze">Analyze</button><button class="', P, '-btn" id="', P, '-hist">History</button><button class="', P, '-btn dang" id="', P, '-del" disabled>Delete</button><span class="', P, '-mut" id="', P, '-savedmsg"></span></div>',
     '<div class="', P, '-drawer" id="', P, '-histdrawer" style="margin-top:12px"></div>',
@@ -365,7 +365,6 @@ export function renderRiskRegister(main) {
     F("residualInEffect").checked = !!form.residualInEffect;
     setMode(form.freqMode);
     for (const k of ["lef", "tef", "vuln", "plm", "slm"]) { setRange(k, form[k]); setRange("res_" + k, form.residual[k]); }
-    F("by").value = lsGet("rsk_by") || "";
     $("formtitle").textContent = form.id ? "Risk: " + (form.title || "Untitled") : "New risk";
     $("del").disabled = !form.id || !!example;
     $("savedmsg").textContent = form.updatedAt ? "Saved " + String(form.updatedAt).slice(0, 16).replace("T", " ") + " UTC" : "";
@@ -424,7 +423,7 @@ export function renderRiskRegister(main) {
   }
   let vt = 0;
   $("form").addEventListener("input", (ev) => {
-    if (ev.target === F("by")) { lsSet("rsk_by", F("by").value.trim()); return; }
+    if (ev.target === F("by")) return;
     if (ev.target === F("ctlq")) return;
     clearTimeout(vt); vt = setTimeout(validateLive, 250);
   });

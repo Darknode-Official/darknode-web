@@ -155,9 +155,7 @@ function wireGamegen(root) {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
-  // first paint
-  promptEl.value = EXAMPLES[0];
-  build();
+  // first paint: the box starts empty; the example chips fill it on request
 }
 
 // --------------------------------------------------------------------------
@@ -217,12 +215,11 @@ function subscribeRequests(mount) {
 export function mountRequestForm(container, opts = {}) {
   injectStyles();
   const user = opts.user || null;
-  const presetName = user ? (user.displayName || (user.email ? user.email.split("@")[0] : "")) : "";
   container.innerHTML = `
     <form class="beta-ask" novalidate>
       <h4 class="beta-ask-title">Request a tool for the Beta Lab</h4>
       <p class="beta-ask-sub">Suggest a tool you want prototyped. Your name and idea appear on the public request board.</p>
-      <input class="beta-input" id="askName" maxlength="60" autocomplete="name" placeholder="Your name" value="${esc(presetName)}" />
+      <input class="beta-input" id="askName" maxlength="60" autocomplete="name" placeholder="Your name" />
       <textarea class="beta-input" id="askIdea" maxlength="280" rows="3" placeholder="The tool you'd like to see demoed..."></textarea>
       <div class="beta-ask-row"><span class="beta-ask-count" id="askCount">0 / 280</span>
       <button class="btn" type="submit" id="askSend">Send request</button></div>

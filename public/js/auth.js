@@ -868,7 +868,7 @@ function renderAuth(mode = "signin") {
     if (!panel) return;
     if (!panel.hidden) { panel.hidden = true; return; }
     panel.hidden = false;
-    try { const m = await import("/js/beta-lab.js?v=20261027c"); m.mountRequestForm(panel, { user: null }); }
+    try { const m = await import("/js/beta-lab.js?v=20261029c"); m.mountRequestForm(panel, { user: null }); }
     catch (_) { panel.textContent = "Beta Lab is unavailable right now."; }
   });
   on("toSignup", () => renderAuth("signup"));
@@ -2015,7 +2015,7 @@ function renderApp(user) {
     requestAnimationFrame(() => { main.style.minHeight = ""; });
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261028c").then(m => live() && m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261029c").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderTargets(main)); }
@@ -2066,7 +2066,7 @@ function renderApp(user) {
     else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
     else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/navarch.js?v=20261014g").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
     else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261017d").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
-    else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261027c").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
+    else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261029c").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
     else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261029b").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js?v=20261013b").then(m => live() && m.renderCspEvaluator(main)); }
     else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => live() && m.renderWaybackRecon(main)); }
@@ -2134,7 +2134,7 @@ function renderApp(user) {
     else if (sec === "downloads") { import("/js/getapp.js?v=20261025h").then(m => live() && m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20261025h").then(m => live() && m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261017d").then(m => live() && m.renderAPI(main, user)); }
-    else if (sec === "docs") { import("/js/docs.js?v=20261026a").then(m => live() && m.renderDocs(main)); }
+    else if (sec === "docs") { import("/js/docs.js?v=20261029c").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261029b").then(m => live() && m.renderStrongroom(main)); }
     else if (sec === "signins") { import("/js/identity/signin-forensics.js?v=20261029b").then(m => live() && m.renderSigninForensics(main)); }
@@ -2159,12 +2159,12 @@ function renderApp(user) {
     else if (sec === "k8saudit") { import("/js/appsec/k8saudit.js?v=20261029b").then(m => live() && m.renderK8sAudit(main)); }
     else if (sec === "cloudspend") { import("/js/finsec/cloudspend.js?v=20261029b").then(m => live() && m.renderCloudSpend(main)); }
     else if (sec === "breachclock") { import("/js/risk/breachclock.js?v=20261029b").then(m => live() && m.renderBreachClock(main)); }
-    else if (sec === "riskreg") { import("/js/risk/riskreg.js?v=20261028a").then(m => live() && m.renderRiskRegister(main)); }
+    else if (sec === "riskreg") { import("/js/risk/riskreg.js?v=20261029c").then(m => live() && m.renderRiskRegister(main)); }
     else if (sec === "evidence") { import("/js/compliance/evidence.js?v=20261029b").then(m => live() && m.renderEvidence(main)); }
     else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261029b").then(m => live() && m.renderVendorRisk(main)); }
     else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261029b").then(m => live() && m.renderBackupReady(main)); }
     else if (sec === "dmarcreports") { import("/js/exposure/dmarcreports.js?v=20261017c").then(m => live() && m.renderDmarcReports(main)); }
-    else if (sec === "domainguard") { import("/js/exposure/domainguard.js?v=20261029b").then(m => live() && m.renderDomainGuard(main)); }
+    else if (sec === "domainguard") { import("/js/exposure/domainguard.js?v=20261029c").then(m => live() && m.renderDomainGuard(main)); }
     else if (sec === "dnshunt") { import("/js/ops/dnshunt.js?v=20261029b").then(m => live() && m.renderDnsHunt(main)); }
     else if (sec === "proxyhunt") { import("/js/ops/proxyhunt.js?v=20261029b").then(m => live() && m.renderProxyHunt(main)); }
     else if (sec === "vpnaudit") { import("/js/identity/vpnaudit.js?v=20261029b").then(m => live() && m.renderVpnAudit(main)); }
@@ -2179,8 +2179,8 @@ function renderApp(user) {
     else if (sec === "admin") { import("/js/admin.js?v=20261029c").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
-    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261029a").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
-    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20261029a").then(m => live() && m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
+    else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261029c").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
+    else if (sec.indexOf("tool-") === 0) { const _tid = sec.slice(5); import("/js/mini-tools.js?v=20261029c").then(m => live() && m.renderMiniTool(main, _tid, { onBack: () => show("toolbox") })); }
     else renderHome(main, user, isOwner, show);
     if (more === undefined) { try { localStorage.setItem("sw_last_sec", sec); } catch (_) {} }
     // Jump back to the top on every navigation. The page scrolls on the window
@@ -2457,7 +2457,7 @@ function renderApp(user) {
       ov.onclick = (ev) => { if (ev.target === ov) close(); };
       document.body.appendChild(ov);
       document.getElementById("betaAskClose").onclick = close;
-      import("/js/beta-lab.js?v=20261027c").then((m) => m.mountRequestForm(ov.querySelector(".beta-ask-mount"), { user })).catch(() => { ov.querySelector(".beta-ask-mount").textContent = "Beta Lab is unavailable right now."; });
+      import("/js/beta-lab.js?v=20261029c").then((m) => m.mountRequestForm(ov.querySelector(".beta-ask-mount"), { user })).catch(() => { ov.querySelector(".beta-ask-mount").textContent = "Beta Lab is unavailable right now."; });
     }
   };
   if (moreMenu) moreMenu.onclick = (e) => { const b = e.target.closest("[data-more]"); if (!b) return; closeMenus(); show("setup", b.dataset.more); };
@@ -2921,7 +2921,7 @@ onAuthStateChanged(auth, async (user) => {
   const udoc = await getDoc(doc(db, "users", user.uid)).catch(() => null);
   // Terms are versioned: bumping TOS_VERSION asks every account to accept the new text,
   // including accounts that accepted an earlier version (they also see what changed).
-  const TOS_VERSION = "2026-10-25";
+  const TOS_VERSION = "2026-10-29";
   const ud = udoc && udoc.exists() ? udoc.data() : {};
   const tosAccepted = !!ud.tosAccepted && ud.tosVersion === TOS_VERSION;
   const tosReturning = !!ud.tosAccepted && !tosAccepted;
@@ -2931,17 +2931,14 @@ onAuthStateChanged(auth, async (user) => {
         <h1 style="font-size:1.6rem;margin-bottom:8px">${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
         <p style="color:var(--mut,#888);margin-bottom:20px">${tosReturning ? "Please review the changes and accept to keep using Darknode." : "Please read and accept before continuing."}</p>
         ${tosReturning ? `<div style="border:1px solid var(--line,#333);border-left:4px solid var(--acc,#2552c6);padding:14px 18px;margin-bottom:16px;border-radius:4px;font-size:.88rem;line-height:1.6">
-          <strong>What changed (October 25, 2026)</strong>
+          <strong>What changed (October 29, 2026)</strong>
           <ul style="margin:8px 0 0;padding-left:20px">
-            <li>The Darknode Deck is now the main signed-in workspace, with Personal and Organization spaces.</li>
-            <li>New section on AI features: the built-in assistant sends messages through our edge proxy to a model provider (currently Google Gemini); we do not log or store them.</li>
-            <li>New section on plans: which tools you can use depends on your plan.</li>
-            <li>Financial-analysis terms removed, since those tools were retired.</li>
-            <li>Prohibited use now names the web-security toolkit explicitly; sections renumbered.</li>
+            <li>Deck Integrations: a security integration counts as connected only after a live test of your key. Lookups for those providers go through Darknode's relay, which uses your key for that one request and does not store it or the result.</li>
+            <li>The built-in assistant can run lookups on your connected integrations; it asks before each call unless you choose Always allow.</li>
           </ul></div>` : ""}
         <div style="background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:20px;max-height:400px;overflow-y:auto;font-size:.85rem;line-height:1.7;margin-bottom:20px;border-radius:4px" id="tosBox">
           <h3>Darknode Terms of Service</h3>
-          <p><strong>Last updated:</strong> October 25, 2026</p>
+          <p><strong>Last updated:</strong> October 29, 2026</p>
           <p>By using Darknode ("the Platform"), including darknode.ai, the Darknode command center, the Darknode Deck and its Personal and Organization spaces, the code, cloud, dependency and web-exposure analysis engines, the Darknode CLI, the Nexus agent, Darknode OS, the API and MCP server, and all associated tools, you (and, where you act for an organization, that organization) agree to these terms. If you do not agree, do not use the Platform.</p>
 
           <h4>1. Authorized Use Only</h4>
@@ -2970,7 +2967,7 @@ onAuthStateChanged(auth, async (user) => {
           <p>Darknode provides real-world security intelligence including CVE databases, exploit references, MITRE ATT&amp;CK mappings, APT group profiles, vulnerability data, and penetration testing methodologies. This information is sourced from publicly available databases and is provided for <strong>defensive security, education, and authorized testing purposes only</strong>. Darknode does not create exploits — it references publicly known vulnerabilities to help defenders understand and mitigate threats.</p>
 
           <h4>8. AI Features</h4>
-          <p>The built-in web assistant sends your messages through Darknode's edge proxy to a third-party model provider (currently Google Gemini) and returns the answer. Darknode does not log or store those prompts or responses; the provider processes them under its own terms. In Nexus, the CLI, and the desktop app you choose the engine: local models (such as Ollama) keep everything on your machine, and cloud engines use your own account or API key with that provider. AI output can be wrong; review it before acting on it. You are responsible for your own API usage and costs and for any actions taken by AI agents you run.</p>
+          <p>The built-in web assistant sends your messages through Darknode's edge proxy to a third-party model provider (currently Google Gemini) and returns the answer. Darknode does not log or store those prompts or responses; the provider processes them under its own terms. In Nexus, the CLI, and the desktop app you choose the engine: local models (such as Ollama) keep everything on your machine, and cloud engines use your own account or API key with that provider. When you connect a security integration in the Deck, the assistant can run lookups on it (for example an IP, domain, hash or CVE); it shows each call and asks before sending it, unless you choose Always allow for that lookup. AI output can be wrong; review it before acting on it. You are responsible for your own API usage and costs and for any actions taken by AI agents you run.</p>
 
           <h4>9. Plans and Feature Availability</h4>
           <p>Which tools and spaces you can use depends on your plan. Features outside your plan are not shown. We may move features between plans, and features marked as coming soon may change before release.</p>
@@ -3012,6 +3009,7 @@ onAuthStateChanged(auth, async (user) => {
             <li><strong>What we collect:</strong> email address, display name, profile photo URL, login timestamps, and ToS acceptance records.</li>
             <li><strong>Legal basis:</strong> legitimate interest (providing the service) and your consent (accepting these terms).</li>
             <li><strong>Data retention:</strong> your data is retained while your account is active. After deletion, data is purged within 30 days, except where retention is required by law.</li>
+            <li><strong>Integration relay:</strong> Deck integrations with providers that do not accept calls from a browser (such as VirusTotal, Shodan or AbuseIPDB) send your API key and the value you look up through Darknode's edge relay to that provider only. The relay uses the key for that one request and does not log or store the key, the value or the result; the provider processes them under its own terms. Keys stay in your browser, under your account.</li>
             <li><strong>No selling or sharing:</strong> we do not sell, rent, or share your personal data with third parties for marketing purposes.</li>
             <li><strong>Cookies:</strong> we use only essential cookies and localStorage for session management and user preferences. We do not use tracking cookies or third-party analytics.</li>
             <li><strong>International transfers:</strong> data is processed and stored in Google Cloud data centers. By using the Platform, you consent to transfer of data to servers that may be outside your country of residence.</li>

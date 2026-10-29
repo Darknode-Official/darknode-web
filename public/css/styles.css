@@ -8783,6 +8783,14 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .msg-txt { white-space: pre-wrap; }
 .msg-files { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .msg-file { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--acc) 10%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 25%, var(--line)); color: var(--txt); font-family: var(--font-mono, ui-monospace, monospace); }
+.ai-toolcard { margin-top: 8px; padding: 9px 12px; border: 1px solid var(--line); border-left: 3px solid var(--acc); border-radius: 6px; background: color-mix(in srgb, var(--acc) 6%, transparent); font-size: .82rem; line-height: 1.45; }
+.ai-toolcard.bad { border-left-color: #dc2626; }
+.ai-toolcard p { margin: 6px 0 8px; color: var(--muted, #6b7280); }
+.ai-toolarg { font-family: var(--font-mono, ui-monospace, monospace); font-size: .78rem; overflow-wrap: anywhere; margin-top: 3px; }
+.ai-toolcard summary { cursor: pointer; overflow-wrap: anywhere; }
+.ai-toolcard pre { max-height: 280px; overflow: auto; margin: 8px 0 0; font-size: .74rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-permrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.msg.ai-toolres .msg-body > .ai-toolcard { margin-top: 0; }
 .msg-stopped { font-size: .7rem; color: var(--mut); margin-top: 6px; font-style: italic; }
 /* inline edit */
 .msg-edit { width: 100%; box-sizing: border-box; border: 1px solid var(--acc); border-radius: 10px; background: var(--bg); color: var(--txt); font: inherit; font-size: .9rem; line-height: 1.5; padding: 10px 12px; resize: none; outline: none; }

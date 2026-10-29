@@ -22,6 +22,7 @@ import { handleGraph } from "./graph.js";
 import { handleMonitor } from "./monitor.js";
 import { handleKeys, handleIngest } from "./ingest.js";
 import { hostAllowed } from "./net-guard.js";
+import { handleIntel } from "./intel.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
 export { MonitorDO } from "./monitor.js";
@@ -359,7 +360,14 @@ async function callUpstream(cfg, env, model, messages, key, opts = {}) {
   const build = () => JSON.stringify(isGemini ? toGeminiBody(messages, search, budget) : toOpenAiBody(model, messages));
   let upstream;
   for (let attempt = 0; attempt < 3; attempt++) {
-    upstream = await fetch(url, { method: "POST", headers, body: build() });
+    // A model that never answers (seen with gemini-flash-latest: no headers for 100s+, so
+    // Cloudflare cut the chat at 524) must not hang the chat: give up on headers after 30s
+    // and report 504, which the caller treats like an overloaded model and falls back.
+    const ac = new AbortController(), to = setTimeout(() => ac.abort(), 30000);
+    try { upstream = await fetch(url, { method: "POST", headers, body: build(), signal: ac.signal }); }
+    catch (e) { if (!ac.signal.aborted) throw e; upstream = new Response(JSON.stringify({ error: { message: "the model did not answer in time" } }), { status: 504 }); }
+    finally { clearTimeout(to); }
+    if (upstream.status === 504) break;
     // Google Search grounding is a paid-tier feature: free keys reject it with
     // 400/403 or 429 (RESOURCE_EXHAUSTED). Drop the tool and retry plain so the
     // answer still comes back; it activates automatically on a grounding-capable key.
@@ -534,6 +542,7 @@ export default {
     const { pathname } = new URL(request.url);
     if (pathname === "/api/fetch" && (request.method === "GET" || request.method === "POST")) return handleFetch(request);
     if (pathname === "/api/smart" && request.method === "POST") return handleSmart(request, env);
+    if (pathname === "/api/intel") return handleIntel(request, json);
     if (pathname.startsWith("/api/vault/")) return handleVault(request, env, pathname.slice(11), json);
     if (pathname.startsWith("/api/graph/")) return handleGraph(request, env, pathname.slice(11), json);
     if (pathname.startsWith("/api/monitor/")) return handleMonitor(request, env, pathname.slice(13), json);
@@ -588,7 +597,7 @@ export default {
       // (503). Rather than fail the chat, transparently retry on the fast lite alias
       // — the most available tier — so "Darknode Core" never dead-ends while
       // "Darknode Swift" would have answered.
-      if (provider === "gemini" && !upstream.ok && (upstream.status === 404 || upstream.status === 429 || upstream.status === 503)) {
+      if (provider === "gemini" && !upstream.ok && (upstream.status === 404 || upstream.status === 429 || upstream.status === 503 || upstream.status === 504)) {
         const fb = "gemini-flash-lite-latest";
         if (fb !== model) { try { ({ upstream, isGemini } = await callUpstream(cfg, env, fb, msgs, key, { search })); } catch (_) {} }
       }

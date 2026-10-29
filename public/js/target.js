@@ -1,11 +1,13 @@
 import { acctKey } from "/js/core/account.js"; // per-account storage key
-// Shared recon target — one domain/IP remembered across the console (localStorage),
-// so dorks, exploit-DB pivots, and recon tools pre-fill without retyping.
+// Shared recon target: one domain/IP shared by the dorks, exploit-DB and recon tools on this
+// page, so they pre-fill without retyping. Kept in memory only: a reload starts every box empty.
 const KEY = "sw_target";
-export function getTarget() { try { return localStorage.getItem(acctKey(KEY)) || ""; } catch (_) { return ""; } }
+try { localStorage.removeItem(acctKey(KEY)); } catch (_) {} // drop the value older builds saved
+let cur = "";
+export function getTarget() { return cur; }
 export function setTarget(v) {
   v = (v || "").trim();
-  try { localStorage.setItem(acctKey(KEY), v); } catch (_) {}
+  cur = v;
   try { document.dispatchEvent(new CustomEvent("darknode:target", { detail: v })); } catch (_) {}
   return v;
 }

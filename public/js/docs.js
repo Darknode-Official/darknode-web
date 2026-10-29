@@ -50,6 +50,7 @@ const CMD_GROUPS = [
 ];
 
 const CHANGELOG = [
+  ["3.3.x", "Live integrations: Deck security integrations are connected only after a live key test, through a relay to fixed provider endpoints (VirusTotal, Shodan, AbuseIPDB, GreyNoise, OTX, urlscan, SecurityTrails, ipinfo, Have I Been Pwned, Hunter, Pulsedive, Hybrid Analysis, plus keyless NVD and CIRCL CVE). The Deck Assistant can run lookups on connected integrations, asking first each time unless you choose Always allow. Text boxes no longer refill from saved lists on reload; a Load saved list button brings them back on request."],
   ["3.2.x", "Business security platform: the Darknode Deck with native Personal and Organization spaces (domain posture grading, certificate watch, link and email phishing checks, code-secret scanning, sensitive-data checks with redaction, domain portfolios and fleet views), a Web toolkit tab linking the hands-on web-security tools, plan-based tool availability, team workspaces, and removal of the off-topic financial tools."],
   ["3.1.x", "Web console line: flagship platforms (PHANTOM packet/network ops, CITADEL SOC console, ORACLE threat-intel engine, SPECTRE cloud posture, CRUCIBLE defensive wargaming, NAVARCH maritime defense), a platform-wide Security Graph that cross-links findings, the Sentinel Eye 3D threat globe, 125 security tools plus 780 quick utilities, the Professional theme, the Darknode assistant (Help button in the top bar), and Nexus AI integration."],
   ["2.29.x", "Nexus multi-engine agent: /cowork model tiering, /lean /effort /cheap /estimate, local RAG (/index), /race /ensemble /bench, /plan /watch /agents (worktree-isolated), /guard /secrets /scan /redact /offline, git checkpoints (/undo /redo /rewind), MCP + hooks, ~56 commands. NEXUS.md now reaches the Claude engine; plan mode is truly read-only."],
@@ -146,6 +147,7 @@ node darknode.js nexus init                 # optional: scaffold .nexus/ project
         <li><strong>Limitation of liability.</strong> To the maximum extent permitted by law, the authors are not liable for any indirect, incidental, special, consequential, or punitive damages, or for lost profits, data, or business, arising from use of the Software or Services — even if advised of the possibility — and total aggregate liability will not exceed the greater of fees you paid in the prior 12 months or US$100.</li>
         <li><strong>Self-hosted use.</strong> Where you run Darknode in your own environment, you alone control and are responsible for that deployment and all data processed within it; we have no access to it. We do not receive the source code, systems, or data you analyze client-side or on-premises.</li>
         <li><strong>AI features.</strong> The built-in web assistant sends messages through Darknode's edge proxy to a third-party model provider (currently Google Gemini); Darknode does not log or store them. Cloud AI providers, model usage and billing are governed by those providers' own terms.</li>
+        <li><strong>Assistant lookups.</strong> With a security integration connected in the Deck, the assistant can run lookups on it; it shows each call and asks first unless you choose Always allow.</li>
         <li><strong>Plans.</strong> Which tools and spaces you can use depends on your plan; features outside your plan are not shown.</li>
         <li><strong>Changes.</strong> These terms may be updated; continued use constitutes acceptance.</li>
       </ol>
@@ -161,6 +163,7 @@ node darknode.js nexus init                 # optional: scaffold .nexus/ project
         <li><strong>Retention &amp; deletion.</strong> You may request deletion of your account data at any time via Settings or by contacting the maintainers.</li>
         <li><strong>In-browser tools.</strong> Most analysis runs in your browser. Check history and saved domain lists in the Deck spaces are kept in your browser's local storage. Live checks against a domain you enter are fetched through our edge proxy and are not stored.</li>
         <li><strong>AI assistant.</strong> Questions to the built-in assistant pass through our edge proxy to the model provider and are not logged or stored by us.</li>
+        <li><strong>Integrations.</strong> A Deck integration is connected only after a live test of your key, which stays in your browser. Lookups to providers that block browser calls (such as VirusTotal or Shodan) pass your key and the looked-up value through our edge relay to that provider only; we do not log or store the key, the value or the result. The assistant asks before each lookup unless you choose Always allow.</li>
         <li><strong>Cookies.</strong> Only functional cookies/localStorage for auth and preferences.</li>
       </ul>`;
 

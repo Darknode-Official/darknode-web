@@ -67,18 +67,21 @@ function shownValue(f, val) {
   return String(val);
 }
 
+// free-text boxes start empty: a text/textarea default shows as the placeholder and is used
+// when the box is left empty (number inputs keep their real default value)
+const typed = (f) => (f.type === "textarea" || !f.type || f.type === "text") && (!f.inputType || f.inputType === "text");
 function inputHTML(f, i) {
   const id = `mt_f_${i}`;
   const lab = `<label class="mt-lbl" for="${id}">${esc(f.label || f.k)}</label>`;
   if (f.type === "textarea")
-    return `<div class="mt-field">${lab}<textarea id="${id}" class="mt-in mt-ta" data-k="${esc(f.k)}" rows="${f.rows || 6}" spellcheck="false" placeholder="${esc(f.placeholder || "")}">${esc(f.value || "")}</textarea></div>`;
+    return `<div class="mt-field">${lab}<textarea id="${id}" class="mt-in mt-ta" data-k="${esc(f.k)}" rows="${f.rows || 6}" spellcheck="false" placeholder="${esc(f.placeholder || f.value || "")}"></textarea></div>`;
   if (f.type === "select")
     return `<div class="mt-field mt-field-row">${lab}<select id="${id}" class="mt-in mt-sel" data-k="${esc(f.k)}">${(f.opts || []).map((o) => { const val = Array.isArray(o) ? o[0] : o; const txt = Array.isArray(o) ? o[1] : o; return `<option value="${esc(val)}"${String(f.value) === String(val) ? " selected" : ""}>${esc(txt)}</option>`; }).join("")}</select></div>`;
   if (f.type === "checkbox")
     return `<div class="mt-field mt-field-check"><label class="mt-check"><input id="${id}" type="checkbox" data-k="${esc(f.k)}"${f.value ? " checked" : ""}><span>${esc(f.label || f.k)}</span></label></div>`;
   if (f.type === "range")
     return `<div class="mt-field mt-field-row">${lab}<input id="${id}" class="mt-in mt-range" type="range" data-k="${esc(f.k)}" min="${f.min ?? 0}" max="${f.max ?? 100}" step="${f.step ?? 1}" value="${f.value ?? f.min ?? 0}"><output class="mt-rangev">${f.value ?? f.min ?? 0}</output></div>`;
-  return `<div class="mt-field mt-field-row">${lab}<input id="${id}" class="mt-in" type="${esc(f.inputType || "text")}" data-k="${esc(f.k)}" spellcheck="false" placeholder="${esc(f.placeholder || "")}" value="${esc(f.value || "")}"></div>`;
+  return `<div class="mt-field mt-field-row">${lab}<input id="${id}" class="mt-in" type="${esc(f.inputType || "text")}" data-k="${esc(f.k)}" spellcheck="false" placeholder="${esc(f.placeholder || (typed(f) ? f.value || "" : ""))}" value="${esc(typed(f) ? "" : f.value || "")}"></div>`;
 }
 
 export function renderMiniTool(main, id, opts = {}) {
@@ -137,6 +140,7 @@ export function renderMiniTool(main, id, opts = {}) {
     form.querySelectorAll("[data-k]").forEach((el) => {
       v[el.dataset.k] = el.type === "checkbox" ? el.checked : el.value;
     });
+    for (const f of t.inputs || []) if (typed(f) && f.value != null && v[f.k] === "") v[f.k] = String(f.value);
     return v;
   };
   let seq = 0;
