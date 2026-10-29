@@ -24,7 +24,12 @@ const DIFF_FILTERS = [["all", "All"], ["new", "New"], ["fixed", "Fixed"], ["unch
 const toast = (m, t) => { try { (window.dnToast || window.showToast || (() => {}))(m, t); } catch (_) {} };
 const fmtWhen = (ms) => { try { return new Date(ms).toLocaleString(); } catch (_) { return ""; } };
 const PAT_KEY = "dn_codescan_pat"; // only written when the user ticks "Remember token on this device"
-const savedPat = () => { try { return localStorage.getItem(PAT_KEY) || ""; } catch (_) { return ""; } };
+// The remembered token belongs to the signed-in account, not the browser: it lives in the
+// per-account key store (user-keys.js), so another account signing in on this browser never
+// reconnects with it. A token remembered under the old browser-wide key is dropped, not migrated.
+const savedPat = () => { try { return (window.dnKeys && window.dnKeys.get(PAT_KEY)) || ""; } catch (_) { return ""; } };
+const keepPat = (v) => { try { if (window.dnKeys) v ? window.dnKeys.set(PAT_KEY, v) : window.dnKeys.del(PAT_KEY); } catch (_) {} };
+try { localStorage.removeItem(PAT_KEY); } catch (_) {}
 function loadBaseline(ref) { try { const j = JSON.parse(localStorage.getItem(BASE_KEY + ref) || "null"); return j && Array.isArray(j.items) ? j : null; } catch (_) { return null; } }
 
 const CSS = `<style id="cs-css">
@@ -226,7 +231,7 @@ export function renderCodeScanner(main) {
       src.querySelector("#csPatBtn").onclick = () => { src.querySelector("#csPat").hidden = false; src.querySelector("#csPatIn").focus(); };
       src.querySelector("#csPatGo").onclick = async () => {
         const pat = src.querySelector("#csPatIn").value, keep = src.querySelector("#csPatKeep").checked;
-        try { await gh.useToken(pat); if (keep) { try { localStorage.setItem(PAT_KEY, pat.trim()); } catch (_) {} } st.repos = null; renderStart(); }
+        try { await gh.useToken(pat); if (keep) keepPat(pat.trim()); st.repos = null; renderStart(); }
         catch (x) { renderStart(x.message); }
       };
       return;
@@ -238,7 +243,7 @@ export function renderCodeScanner(main) {
       <p class="cs-help">Repository missing? An organization may need to approve the Darknode app in its GitHub settings first.</p>`;
     src.querySelector("#csOut").onclick = () => { gh.disconnect(); st.repos = null; renderStart(); };
     const fg = src.querySelector("#csForget");
-    if (fg) fg.onclick = () => { try { localStorage.removeItem(PAT_KEY); } catch (_) {} gh.disconnect(); st.repos = null; toast("Saved token deleted from this device", "ok"); renderStart(); };
+    if (fg) fg.onclick = () => { keepPat(""); gh.disconnect(); st.repos = null; toast("Saved token deleted from this device", "ok"); renderStart(); };
     const list = src.querySelector("#csRepos");
     const draw = () => {
       const q = st.filter.toLowerCase();
@@ -593,7 +598,7 @@ export function renderCodeScanner(main) {
   const pat = savedPat();
   if (pat && !gh.connected()) {
     gh.useToken(pat).then(() => { st.repos = null; if (body.querySelector(".cs-start")) renderStart(); })
-      .catch((e) => { if (!/Could not reach/.test(e.message)) { try { localStorage.removeItem(PAT_KEY); } catch (_) {} toast("The saved GitHub token was rejected and has been removed from this device", "error"); } })
+      .catch((e) => { if (!/Could not reach/.test(e.message)) { keepPat(""); toast("The saved GitHub token was rejected and has been removed from this device", "error"); } })
       .finally(() => watch.autoStart());
   } else watch.autoStart();
 }
