@@ -68,7 +68,8 @@ function humanDuration(sec) {
 // RFC 1951 raw DEFLATE inflate (for SAML HTTP-Redirect binding). Pure JS.
 function inflateRaw(input) {
   const out = []; let pos = 0, bitBuf = 0, bitCnt = 0;
-  const getBit = () => { if (bitCnt === 0) { bitBuf = input[pos++]; bitCnt = 8; } const b = bitBuf & 1; bitBuf >>= 1; bitCnt--; return b; };
+  // truncated or corrupt input throws: reading past the end used to yield zero bits forever (an endless loop)
+  const getBit = () => { if (bitCnt === 0) { if (pos >= input.length) throw new Error("unexpected end of data"); bitBuf = input[pos++]; bitCnt = 8; } const b = bitBuf & 1; bitBuf >>= 1; bitCnt--; return b; };
   const getBits = (n) => { let v = 0; for (let i = 0; i < n; i++) v |= getBit() << i; return v; };
   function build(lengths) {
     const MB = 15, blc = new Array(MB + 1).fill(0);
@@ -96,7 +97,9 @@ function inflateRaw(input) {
     bfinal = getBit(); const btype = getBits(2);
     if (btype === 0) {
       bitBuf = 0; bitCnt = 0;
-      const len = input[pos] | (input[pos + 1] << 8); pos += 4;
+      const len = input[pos] | (input[pos + 1] << 8);
+      if (pos + 4 > input.length || (len ^ (input[pos + 2] | (input[pos + 3] << 8))) !== 0xffff || pos + 4 + len > input.length) throw new Error("bad stored block");
+      pos += 4;
       for (let i = 0; i < len; i++) out.push(input[pos++]);
     } else {
       let lit, dist;
@@ -116,7 +119,7 @@ function inflateRaw(input) {
         while (lens.length < hlit + hdist) {
           const s = decode(ct);
           if (s < 16) lens.push(s);
-          else if (s === 16) { const r = getBits(2) + 3, p = lens[lens.length - 1]; for (let i = 0; i < r; i++) lens.push(p); }
+          else if (s === 16) { if (!lens.length) throw new Error("bad code lengths"); const r = getBits(2) + 3, p = lens[lens.length - 1]; for (let i = 0; i < r; i++) lens.push(p); }
           else if (s === 17) { const r = getBits(3) + 3; for (let i = 0; i < r; i++) lens.push(0); }
           else { const r = getBits(7) + 11; for (let i = 0; i < r; i++) lens.push(0); }
         }
@@ -126,7 +129,7 @@ function inflateRaw(input) {
         const s = decode(lit);
         if (s === 256) break;
         if (s < 256) out.push(s);
-        else { const li = s - 257; const length = lb[li] + getBits(le[li]); const ds = decode(dist); const d = db[ds] + getBits(de[ds]); const start = out.length - d; for (let i = 0; i < length; i++) out.push(out[start + i]); }
+        else { const li = s - 257; if (li > 28) throw new Error("bad length code"); const length = lb[li] + getBits(le[li]); const ds = decode(dist); if (ds > 29) throw new Error("bad distance code"); const d = db[ds] + getBits(de[ds]); const start = out.length - d; if (start < 0) throw new Error("distance too far back"); if (out.length + length > 64 * 1024 * 1024) throw new Error("output too large"); for (let i = 0; i < length; i++) out.push(out[start + i]); }
       }
     }
   } while (!bfinal);
