@@ -27,8 +27,8 @@ export const HELP = {
     example: { json: '{"title":"demo","server":{"host":"localhost","port":8080}}' },
   },
   "cd-toml-to-json": {
-    what: "Parses common TOML (key = value, [tables], [[arrays of tables]], strings, numbers, booleans, single-line arrays and inline tables) into JSON.",
-    when: "You have a TOML config and need it as JSON. Dates are kept as strings; multi-line values are not supported.",
+    what: "Parses TOML 1.0 (dotted keys, [tables], [[arrays of tables]], basic, literal and multi-line strings, numbers, booleans, multi-line arrays, inline tables) into JSON.",
+    when: "You have a TOML config (Cargo.toml, pyproject.toml) and need it as JSON. Dates, inf and nan are kept as strings because JSON has no such types; a duplicate key or table is reported as an error.",
     example: { toml: 'title = "demo"\n[server]\nhost = "localhost"\nport = 8080', indent: "2" },
   },
   "cd-json-to-xml": {

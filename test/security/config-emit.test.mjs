@@ -57,3 +57,25 @@ group("YAML to JSON parser", () => {
     assert.ok(parse("a: 1\n---\nb: 2\n").error);
   });
 });
+
+group("TOML to JSON parser", () => {
+  const parse = (toml) => { const r = run("cd-toml-to-json", { toml, indent: "Minify" }); return typeof r === "string" ? JSON.parse(r) : r; };
+  // expected values are what Python's tomllib returns for the same text
+  test("multi-line strings and arrays with comments, as in pyproject.toml", () => {
+    assert.deepEqual(parse('d = """\nline1\nline2"""\nj = """a \\\n   b"""\nr = \'\'\'\nraw\\n\'\'\'\ndeps = [\n  "requests>=2",  # http\n  "rich",\n]\n'), { d: "line1\nline2", j: "a b", r: "raw\\n", deps: ["requests>=2", "rich"] });
+  });
+  test("a duplicate key or a table defined twice is an error, not last-wins", () => {
+    assert.ok(parse("a = 1\na = 2\n").error);
+    assert.ok(parse("[a]\nx = 1\n[a]\ny = 2\n").error);
+    assert.ok(parse("[fruit]\napple.color = 'red'\n[fruit.apple]\n").error);
+  });
+  test("dotted keys and array-of-tables nesting follow the spec", () => {
+    assert.deepEqual(parse("[[f]]\nn = 'a'\n[f.p]\nc = 'r'\n[[f.v]]\nn = 'x'\n[[f]]\nn = 'b'\n"), { f: [{ n: "a", p: { c: "r" }, v: [{ n: "x" }] }, { n: "b" }] });
+    assert.deepEqual(parse("[a.b.c]\n[a]\nb.d = 1\n"), { a: { b: { c: {}, d: 1 } } });
+  });
+  test("integers past 2^53 keep every digit and an invalid token is an error", () => {
+    assert.equal(run("cd-toml-to-json", { toml: "big = 9007199254740993\n", indent: "Minify" }), '{"big":9007199254740993}');
+    assert.ok(parse("k = 1 x\n").error);
+    assert.ok(parse("k = 01\n").error);
+  });
+});

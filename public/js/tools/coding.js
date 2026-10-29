@@ -350,66 +350,148 @@ function toTOML(obj) {
   return out.join("\n").replace(/^\n+/, "").replace(/\n{3,}/g, "\n\n") + "\n";
 }
 
-// ---------- TOML parse (common single-line-value subset) ----------
+// ---------- TOML parse (TOML 1.0; dates and inf/nan become text, as JSON has no such types) ----------
 function parseTOML(text) {
+  const s = String(text).replace(/\r\n/g, "\n"); let i = 0;
+  const err = (m) => { throw new Error(m + " (line " + (s.slice(0, i).split("\n").length) + ")"); };
+  const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+  // defineProperty, so a key named __proto__ is data and not the prototype
+  const put = (o, k, v) => { Object.defineProperty(o, k, { value: v, writable: true, enumerable: true, configurable: true }); return v; };
+  const frozen = new WeakSet(), headed = new WeakSet(), dotted = new WeakSet(), arrTables = new WeakSet();
+  const ws = () => { while (s[i] === " " || s[i] === "\t") i++; };
+  const wsnl = () => { for (;;) { ws(); if (s[i] === "#") while (i < s.length && s[i] !== "\n") i++; if (s[i] === "\n") { i++; continue; } return; } };
+  const eol = () => { ws(); if (s[i] === "#") while (i < s.length && s[i] !== "\n") i++; if (i < s.length && s[i] !== "\n") err("unexpected text after value"); i++; };
+  const ESC = { b: "\b", t: "\t", n: "\n", f: "\f", r: "\r", e: "\x1b", '"': '"', "\\": "\\" };
+  const HEX = { u: 4, U: 8, x: 2 };
+  function basic(multi) {
+    let o = "";
+    for (;;) {
+      if (i >= s.length) err("unterminated string");
+      const c = s[i];
+      if (c === '"' && (!multi || s.startsWith('"""', i))) {
+        if (!multi) { i++; return o; }
+        let n = 3; while (s[i + n] === '"' && n < 5) n++; // """a""""" ends with up to two quotes of content
+        i += n; return o + '"'.repeat(n - 3);
+      }
+      if (c === "\n" && !multi) err("newline in a single-line string");
+      if (c !== "\\") { o += c; i++; continue; }
+      const e = s[i + 1];
+      if (multi && (e === " " || e === "\t" || e === "\n")) { // line-ending backslash: skip the break and following indentation
+        let j = i + 1; while (s[j] === " " || s[j] === "\t") j++;
+        if (s[j] !== "\n") err("bad escape \\ followed by space");
+        while (s[j] === " " || s[j] === "\t" || s[j] === "\n") j++; i = j; continue;
+      }
+      if (e in HEX) {
+        const h = s.substr(i + 2, HEX[e]); if (h.length !== HEX[e] || !/^[0-9a-fA-F]+$/.test(h)) err("bad \\" + e + " escape");
+        const cp = parseInt(h, 16); if (cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff)) err("escape is not a Unicode scalar value");
+        o += String.fromCodePoint(cp); i += 2 + HEX[e]; continue;
+      }
+      if (!(e in ESC)) err("bad escape \\" + (e || ""));
+      o += ESC[e]; i += 2;
+    }
+  }
+  function literal(multi) {
+    const j = s.indexOf(multi ? "'''" : "'", i); if (j < 0) err("unterminated string");
+    if (multi) { let n = 3; while (s[j + n] === "'" && n < 5) n++; const o = s.slice(i, j + n - 3); i = j + n; return o; }
+    const o = s.slice(i, j); if (o.includes("\n")) err("newline in a single-line string"); i = j + 1; return o;
+  }
+  function str() {
+    for (const q of ['"""', "'''"]) if (s.startsWith(q, i)) { i += 3; if (s[i] === "\n") i++; return q[0] === '"' ? basic(true) : literal(true); }
+    const q = s[i++]; return q === '"' ? basic(false) : literal(false);
+  }
+  const BARE = /[A-Za-z0-9_-]+/y;
+  function key() {
+    const parts = [];
+    for (;;) {
+      ws();
+      if (s[i] === '"' || s[i] === "'") { if (s.startsWith('"""', i) || s.startsWith("'''", i)) err("a key cannot be a multi-line string"); parts.push(str()); }
+      else { BARE.lastIndex = i; const m = BARE.exec(s); if (!m) err("expected a key"); parts.push(m[0]); i += m[0].length; }
+      ws(); if (s[i] !== ".") return parts; i++;
+    }
+  }
+  const TOK = /[^\s,\]}#]+/y;
+  const int = (b) => { if (b < -(2n ** 63n) || b > 2n ** 63n - 1n) err("integer outside the 64-bit range"); return Number.isSafeInteger(Number(b)) ? Number(b) : b; };
+  function value() {
+    const c = s[i];
+    if (c === '"' || c === "'") return str();
+    if (c === "[") {
+      i++; const a = [];
+      for (;;) { wsnl(); if (s[i] === "]") { i++; break; } a.push(value()); wsnl(); if (s[i] === ",") { i++; continue; } if (s[i] === "]") { i++; break; } err("expected , or ] in array"); }
+      frozen.add(a); return a;
+    }
+    if (c === "{") {
+      i++; const o = {}; ws();
+      if (s[i] === "}") i++;
+      else for (;;) { const k = key(); if (s[i] !== "=") err("expected = in inline table"); i++; ws(); setPath(o, k, value()); ws(); if (s[i] === ",") { i++; continue; } if (s[i] === "}") { i++; break; } err("expected , or } in inline table"); }
+      frozen.add(o); return o;
+    }
+    TOK.lastIndex = i; const m = TOK.exec(s); if (!m || m.index !== i) err("expected a value");
+    let tok = m[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(tok) && s[i + tok.length] === " " && /^\d{2}:\d{2}/.test(s.substr(i + tok.length + 1, 5))) { TOK.lastIndex = i + tok.length + 1; tok += " " + TOK.exec(s)[0]; }
+    i += tok.length;
+    if (tok === "true" || tok === "false") return tok === "true";
+    if (/^[+-]?(inf|nan)$/.test(tok)) return tok;
+    if (/^\d{4}-\d{2}-\d{2}([Tt ]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})?)?$|^\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(tok)) return tok;
+    if (/(^|[^0-9a-fA-F])_|_($|[^0-9a-fA-F])/.test(tok)) err("misplaced _ in number " + tok);
+    const n = tok.replace(/_/g, "");
+    if (/^[+-]?(0|[1-9]\d*)$/.test(n)) return int(BigInt(n));
+    if (/^0x[0-9a-fA-F]+$|^0o[0-7]+$|^0b[01]+$/.test(n)) return int(BigInt(n));
+    if (/^[+-]?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?$/.test(n)) return Number(n);
+    err("invalid value " + tok.slice(0, 40));
+  }
+  // dotted keys may extend tables they or a deeper [header] created, never a [header] table, an inline table or a value
+  function setPath(obj, keys, val) {
+    let c = obj;
+    for (let k = 0; k < keys.length - 1; k++) {
+      const p = keys[k];
+      if (!has(c, p)) { c = put(c, p, {}); dotted.add(c); continue; }
+      const n = c[p];
+      if (!isPlainObj(n) || frozen.has(n) || headed.has(n)) err("cannot add keys to " + keys.slice(0, k + 1).join("."));
+      dotted.add(n); c = n;
+    }
+    const last = keys[keys.length - 1];
+    if (has(c, last)) err("duplicate key " + keys.join("."));
+    put(c, last, val);
+  }
+  function header(keys, isArr) {
+    let c = root;
+    for (let k = 0; k < keys.length - 1; k++) {
+      const p = keys[k];
+      if (!has(c, p)) { c = put(c, p, {}); continue; }
+      const n = c[p];
+      if (Array.isArray(n) && arrTables.has(n)) c = n[n.length - 1];
+      else if (isPlainObj(n) && !frozen.has(n)) c = n;
+      else err("cannot define a table under " + keys.slice(0, k + 1).join("."));
+    }
+    const last = keys[keys.length - 1];
+    if (isArr) {
+      if (!has(c, last)) arrTables.add(put(c, last, []));
+      else if (!arrTables.has(c[last])) err(keys.join(".") + " is already defined and is not an array of tables");
+      const item = {}; headed.add(item); c[last].push(item); return item;
+    }
+    if (!has(c, last)) { const t = put(c, last, {}); headed.add(t); return t; }
+    const t = c[last];
+    if (!isPlainObj(t) || headed.has(t) || dotted.has(t) || frozen.has(t)) err("table " + keys.join(".") + " is defined twice");
+    headed.add(t); return t;
+  }
+  const root = {}; let cur = root;
   try {
-    const root = {}, arrTableSet = new Set(); let cur = root;
-    const lines = String(text).replace(/\r\n?/g, "\n").split("\n");
-    for (let raw of lines) {
-      const line = stripTomlComment(raw).trim();
-      if (!line) continue;
-      if (line.startsWith("[[") && line.endsWith("]]")) { cur = tomlAddArrayTable(root, tomlKeyPath(line.slice(2, -2)), arrTableSet); }
-      else if (line[0] === "[" && line.endsWith("]")) { cur = tomlAddTable(root, tomlKeyPath(line.slice(1, -1))); }
-      else { const eq = tomlFindEq(line); if (eq < 0) throw new Error("expected key = value: " + line); tomlSetPath(cur, tomlKeyPath(line.slice(0, eq).trim()), tomlValueParse(line.slice(eq + 1).trim())); }
+    for (;;) {
+      wsnl(); if (i >= s.length) break;
+      if (s[i] === "[") {
+        const arr = s[i + 1] === "["; i += arr ? 2 : 1;
+        const keys = key(); if (arr ? !s.startsWith("]]", i) : s[i] !== "]") err("expected " + (arr ? "]]" : "]")); i += arr ? 2 : 1;
+        eol(); cur = header(keys, arr);
+      } else {
+        const keys = key(); if (s[i] !== "=") err("expected = after key"); i++; ws();
+        setPath(cur, keys, value()); eol();
+      }
     }
     return { ok: true, val: root };
   } catch (e) { return { ok: false, err: e.message }; }
 }
-function stripTomlComment(s) { let inB = false, inL = false, o = ""; for (let i = 0; i < s.length; i++) { const c = s[i]; if (inB) { o += c; if (c === '"' && s[i - 1] !== "\\") inB = false; continue; } if (inL) { o += c; if (c === "'") inL = false; continue; } if (c === '"') inB = true; else if (c === "'") inL = true; else if (c === "#") break; o += c; } return o; }
-function tomlFindEq(s) { let inB = false, inL = false; for (let i = 0; i < s.length; i++) { const c = s[i]; if (inB) { if (c === '"' && s[i - 1] !== "\\") inB = false; continue; } if (inL) { if (c === "'") inL = false; continue; } if (c === '"') inB = true; else if (c === "'") inL = true; else if (c === "=") return i; } return -1; }
-function tomlKeyPath(s) {
-  const parts = []; let i = 0;
-  while (i < s.length) {
-    while (/[ \t]/.test(s[i])) i++;
-    if (s[i] === '"' || s[i] === "'") { const q = s[i]; i++; let k = ""; while (i < s.length && s[i] !== q) { if (q === '"' && s[i] === "\\") { k += s[i + 1]; i += 2; } else { k += s[i]; i++; } } i++; parts.push(k); }
-    else { let k = ""; while (i < s.length && s[i] !== "." && !/[ \t]/.test(s[i])) { k += s[i]; i++; } if (k === "") throw new Error("empty key segment"); parts.push(k); }
-    while (/[ \t]/.test(s[i])) i++;
-    if (s[i] === ".") i++;
-  }
-  return parts;
-}
-function tomlAddTable(root, path) { let cur = root; for (const p of path) { if (cur[p] == null) cur[p] = {}; else if (Array.isArray(cur[p])) cur = cur[p][cur[p].length - 1]; if (isPlainObj(cur[p])) cur = cur[p]; } return cur; }
-function tomlAddArrayTable(root, path, set) { let cur = root; for (let i = 0; i < path.length - 1; i++) { const p = path[i]; if (cur[p] == null) cur[p] = {}; if (Array.isArray(cur[p])) cur = cur[p][cur[p].length - 1]; else cur = cur[p]; } const last = path[path.length - 1]; if (!Array.isArray(cur[last])) cur[last] = []; const item = {}; cur[last].push(item); return item; }
-function tomlSetPath(obj, path, val) { let cur = obj; for (let i = 0; i < path.length - 1; i++) { const p = path[i]; if (!isPlainObj(cur[p])) cur[p] = {}; cur = cur[p]; } cur[path[path.length - 1]] = val; }
-function tomlValueParse(s) {
-  s = s.trim();
-  if (s === "") throw new Error("missing value");
-  if (s[0] === '"') { return JSON.parse(s.replace(/\n/g, "\\n")); }
-  if (s[0] === "'") { const e = s.indexOf("'", 1); return s.slice(1, e); }
-  if (s[0] === "[") return tomlArrayParse(s);
-  if (s[0] === "{") return tomlInlineParse(s);
-  if (/^(true|false)$/.test(s)) return s === "true";
-  const num = s.replace(/_/g, "");
-  if (/^[+-]?\d+$/.test(num)) return Number(num);
-  if (/^[+-]?(\d+\.\d+([eE][+-]?\d+)?|\d+[eE][+-]?\d+|\.\d+)$/.test(num)) return Number(num);
-  if (/^0x[0-9a-fA-F]+$/.test(num)) return parseInt(num, 16);
-  if (/^0o[0-7]+$/.test(num)) return parseInt(num.slice(2), 8);
-  if (/^0b[01]+$/.test(num)) return parseInt(num.slice(2), 2);
-  return s; // datetimes, inf/nan, bare -> keep as string (safe for JSON)
-}
-function tomlArrayParse(s) { const p = { s, i: 0 }; return tomlFlow(p); }
-function tomlInlineParse(s) { const p = { s, i: 0 }; return tomlFlow(p); }
-function tomlFlow(p) {
-  while (/[ \t]/.test(p.s[p.i])) p.i++;
-  const c = p.s[p.i];
-  if (c === "[") { p.i++; const a = []; tws(p); if (p.s[p.i] === "]") { p.i++; return a; } while (true) { a.push(tomlFlow(p)); tws(p); if (p.s[p.i] === ",") { p.i++; tws(p); if (p.s[p.i] === "]") { p.i++; break; } continue; } if (p.s[p.i] === "]") { p.i++; break; } throw new Error("bad TOML array"); } return a; }
-  if (c === "{") { p.i++; const o = {}; tws(p); if (p.s[p.i] === "}") { p.i++; return o; } while (true) { tws(p); const k = tomlFlowKey(p); tws(p); if (p.s[p.i] !== "=") throw new Error("expected = in inline table"); p.i++; o[k] = tomlFlow(p); tws(p); if (p.s[p.i] === ",") { p.i++; continue; } if (p.s[p.i] === "}") { p.i++; break; } throw new Error("bad inline table"); } return o; }
-  let r = ""; if (c === '"' || c === "'") { const q = c; r += q; p.i++; while (p.i < p.s.length && p.s[p.i] !== q) { if (q === '"' && p.s[p.i] === "\\") { r += p.s[p.i] + p.s[p.i + 1]; p.i += 2; } else { r += p.s[p.i]; p.i++; } } r += q; p.i++; return tomlValueParse(r); }
-  while (p.i < p.s.length && !",]}".includes(p.s[p.i])) { r += p.s[p.i]; p.i++; }
-  return tomlValueParse(r.trim());
-}
-const tws = (p) => { while (/[ \t\n\r]/.test(p.s[p.i])) p.i++; };
-function tomlFlowKey(p) { if (p.s[p.i] === '"' || p.s[p.i] === "'") { const q = p.s[p.i]; p.i++; let k = ""; while (p.i < p.s.length && p.s[p.i] !== q) { k += p.s[p.i]; p.i++; } p.i++; return k; } let k = ""; while (p.i < p.s.length && !/[ \t=]/.test(p.s[p.i])) { k += p.s[p.i]; p.i++; } return k; }
+// integers past 2^53 stay exact in the JSON text
+const tomlJSON = (v, ind) => JSON.stringify(v, (k, x) => typeof x === "bigint" ? "\u0000big:" + x : x, ind).replace(/"\\u0000big:(-?\d+)"/g, "$1");
 
 // ---------- JSON Pointer (RFC 6901) ----------
 function jsonPointerGet(doc, pointer) {
@@ -644,13 +726,13 @@ export const TOOLS = [
   },
   {
     id: "cd-toml-to-json", name: "TOML to JSON", cat: "coding",
-    desc: "Parse the common TOML subset (key = value, [tables], [[arrays of tables]], strings, numbers, booleans, single-line arrays and inline tables) into JSON. Datetimes are kept as strings.",
+    desc: "Parse TOML 1.0 (dotted keys, [tables], [[arrays of tables]], all string forms incl. multi-line, numbers, booleans, multi-line arrays, inline tables) into JSON. Datetimes, inf and nan are kept as strings; duplicate keys and tables are errors.",
     tags: ["toml", "json", "convert", "config", "parse"],
     inputs: [
       { k: "toml", label: "TOML", type: "textarea", rows: 8, placeholder: 'title = "demo"\n[server]\nport = 8080' },
       { k: "indent", label: "Indent", type: "select", opts: ["2", "4", "Minify"], value: "2" },
     ],
-    run(v) { if (!S(v.toml).trim()) return ""; const r = parseTOML(v.toml); if (!r.ok) return { error: "TOML parse error: " + r.err }; const ind = v.indent === "Minify" ? undefined : Number(v.indent || 2); return JSON.stringify(r.val, null, ind); },
+    run(v) { if (!S(v.toml).trim()) return ""; const r = parseTOML(v.toml); if (!r.ok) return { error: "TOML parse error: " + r.err }; const ind = v.indent === "Minify" ? undefined : Number(v.indent || 2); return tomlJSON(r.val, ind); },
   },
   {
     id: "cd-json-to-xml", name: "JSON to XML", cat: "coding",
