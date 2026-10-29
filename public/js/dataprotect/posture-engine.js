@@ -31,7 +31,7 @@ export function parseSPF(txts) {
   // a host/include like `mail-all.example.com` must not be mistaken for the policy.
   // A bare `all` means `+all` per RFC 7208 (default qualifier is pass).
   const allTok = String(rec).trim().split(/\s+/).find((t) => /^[-~?+]?all$/i.test(t));
-  return { present: true, record: rec, qualifier: allTok ? (/^[-~?+]/.test(allTok) ? allTok[0] : "+") : null };
+  return { present: true, record: rec, multiple: (txts || []).filter((t) => /^v=spf1\b/i.test(String(t).trim())).length > 1, qualifier: allTok ? (/^[-~?+]/.test(allTok) ? allTok[0] : "+") : null };
 }
 
 export function parseDMARC(txts) {
@@ -46,7 +46,7 @@ export function parseDMARC(txts) {
   const adkim = s.match(/\badkim\s*=\s*([rs])\b/i);
   const aspf = s.match(/\baspf\s*=\s*([rs])\b/i);
   return {
-    present: true, record: rec,
+    present: true, record: rec, multiple: (txts || []).filter((t) => /^v=dmarc1\b/i.test(String(t).trim())).length > 1,
     policy: m ? m[1].toLowerCase() : "none",
     sp: spM ? spM[1].toLowerCase() : null,
     pct: pct ? parseInt(pct[1], 10) : 100,
@@ -345,6 +345,8 @@ export function gradeEmail(input) {
     checks.push({ name: "SPF", status: "na", detail: "The DNS lookup for SPF failed, so it could not be checked.", holds: ["SPF lookup budget"] });
   } else if (!spf.present) {
     checks.push({ name: "SPF", status: "fail", detail: "No SPF record.", advice: "Publish an SPF TXT record ending in -all." });
+  } else if (spf.multiple) {
+    checks.push({ name: "SPF", status: "fail", detail: "More than one SPF record is published: a permerror (RFC 7208 4.5), so SPF fails for all mail.", advice: "Merge them into a single v=spf1 record." });
   } else if (spf.qualifier === "-") {
     checks.push({ name: "SPF", status: "pass", detail: "SPF present with a hard fail (-all)." });
   } else {
@@ -368,6 +370,8 @@ export function gradeEmail(input) {
     checks.push({ name: "DMARC", status: "na", detail: "The DNS lookup for DMARC failed, so it could not be checked.", holds: ["DMARC coverage (pct)", "DMARC subdomain policy", "DMARC reporting (rua)"] });
   } else if (!dmarc.present) {
     checks.push({ name: "DMARC", status: "fail", detail: "No DMARC record.", advice: "Publish _dmarc with p=quarantine or p=reject." });
+  } else if (dmarc.multiple) {
+    checks.push({ name: "DMARC", status: "fail", detail: "More than one DMARC record is published, so receivers apply no DMARC policy (RFC 7489 6.6.3).", advice: "Keep exactly one v=DMARC1 record at _dmarc." });
   } else {
     // A subdomain with no record of its own is covered by its organizational domain's
     // record (RFC 7489 6.6.3), whose sp= (else p=) is the policy that applies to it.

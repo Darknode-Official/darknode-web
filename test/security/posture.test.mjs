@@ -237,6 +237,14 @@ group("posture: email auth depth", () => {
     const r = gradeEmail({ spfTxts: ["v=spf1 " + Array(12).fill("include:x.com").join(" ") + " -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"] });
     assert.equal(r.checks.find((c) => c.name === "SPF lookup budget").status, "fail");
   });
+  test("two SPF or two DMARC records fail (RFC 7208 4.5, RFC 7489 6.6.3)", () => {
+    const r = gradeEmail({ spfTxts: ["v=spf1 -all", "v=spf1 ip4:192.0.2.1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:test@darknode.ai", "v=DMARC1; p=none"] });
+    assert.equal(r.checks.find((c) => c.name === "SPF").status, "fail");
+    assert.equal(r.checks.find((c) => c.name === "DMARC").status, "fail");
+    const one = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:test@darknode.ai"] });
+    assert.equal(one.checks.find((c) => c.name === "SPF").status, "pass");
+    assert.equal(one.checks.find((c) => c.name === "DMARC").status, "pass");
+  });
   test("a subdomain inherits its organizational domain's DMARC, graded on sp= when set", () => {
     const dm = (r) => r.checks.find((c) => c.name === "DMARC");
     const own = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; sp=none; rua=mailto:a@b.com"] });
