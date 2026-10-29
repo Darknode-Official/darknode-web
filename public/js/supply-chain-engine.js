@@ -149,7 +149,6 @@ export function cvssV3BaseScore(vector) {
   const m = {};
   String(vector).split("/").forEach((p) => { const [k, v] = p.split(":"); if (k && v) m[k.toUpperCase()] = v.toUpperCase(); });
   const scopeChanged = m.S === "C";
-  const is31 = /CVSS:3\.1/i.test(vector); // v3.1 changed the scope-changed impact sub-formula
   const AV = { N: 0.85, A: 0.62, L: 0.55, P: 0.2 }[m.AV];
   const AC = { L: 0.77, H: 0.44 }[m.AC];
   const PR = (scopeChanged ? { N: 0.85, L: 0.68, H: 0.5 } : { N: 0.85, L: 0.62, H: 0.27 })[m.PR];
@@ -159,8 +158,7 @@ export function cvssV3BaseScore(vector) {
   if ([AV, AC, PR, UI, C, I, A].some((x) => x == null)) return null;
   const iss = 1 - (1 - C) * (1 - I) * (1 - A);
   const impact = scopeChanged
-    ? (is31 ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss * 0.9731 - 0.02, 13)   // CVSS v3.1
-            : 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15))            // CVSS v3.0
+    ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15) // v3.0 and v3.1 base alike (3.1 spec 7.1); the 0.9731/^13 form is the ENVIRONMENTAL modified impact (7.3)
     : 6.42 * iss;
   const exploit = 8.22 * AV * AC * PR * UI;
   // CVSS 3.1 integer Roundup: Math.ceil(x*10)/10 over-rounds when IEEE-754 leaves a value a hair

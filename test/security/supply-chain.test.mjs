@@ -43,10 +43,10 @@ group("sca: CVSS v3 base score", () => {
   test("no-impact vector is 0", () => {
     assert.equal(cvssV3BaseScore("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N"), 0);
   });
-  test("scope-changed vector uses the v3.1 impact sub-formula, not v3.0", () => {
-    // AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H -> 9.7 under official v3.1 (v3.0 gives 9.6)
-    assert.equal(cvssV3BaseScore("CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H"), 9.7);
-    // the same vector tagged 3.0 keeps the v3.0 score
+  test("scope-changed vectors use the base formula of the spec (3.1 section 7.1, same as 3.0), not the environmental one", () => {
+    // NVD scores: 9.6 and 9.9; the environmental 0.9731/^13 form gave 9.7 and 10.0
+    assert.equal(cvssV3BaseScore("CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H"), 9.6);
+    assert.equal(cvssV3BaseScore("CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H"), 9.9);
     assert.equal(cvssV3BaseScore("CVSS:3.0/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H"), 9.6);
   });
   test("garbage returns null", () => assert.equal(cvssV3BaseScore("not a vector"), null));

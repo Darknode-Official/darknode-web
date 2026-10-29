@@ -222,14 +222,12 @@ export function computeCvss31(vector) {
   if (!["AV", "AC", "PR", "UI", "S", "C", "I", "A"].every((k) => m[k])) return null;
   const changed = m.S === "C";
   if (!(m.S === "U" || changed)) return null;
-  const is31 = /CVSS:3\.1/i.test(String(vector)); // v3.1 changed the scope-changed impact sub-formula (untagged defaults to v3.0)
   const av = V3.AV[m.AV], ac = V3.AC[m.AC], ui = V3.UI[m.UI], c = V3.CIA[m.C], i = V3.CIA[m.I], a = V3.CIA[m.A];
   const pr = m.PR === "N" ? 0.85 : m.PR === "L" ? (changed ? 0.68 : 0.62) : m.PR === "H" ? (changed ? 0.5 : 0.27) : undefined;
   if ([av, ac, ui, c, i, a, pr].some((x) => x === undefined)) return null;
   const iss = 1 - (1 - c) * (1 - i) * (1 - a);
   const impact = changed
-    ? (is31 ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss * 0.9731 - 0.02, 13)   // CVSS v3.1
-            : 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15))            // CVSS v3.0
+    ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15) // v3.0 and v3.1 base alike (3.1 spec 7.1); the 0.9731/^13 form is the ENVIRONMENTAL modified impact (7.3)
     : 6.42 * iss;
   const expl = 8.22 * av * ac * pr * ui;
   if (impact <= 0) return 0;
