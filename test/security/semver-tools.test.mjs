@@ -35,3 +35,22 @@ group("dv-semver-satisfies: full npm range syntax", () => {
     for (const r of ["01.2.3", "1.2.3.4", "a.b", ">="]) assert.ok(sat("1.2.3", r).error, r);
   });
 });
+
+const run = (id, v) => TOOLS.find((t) => t.id === id).run(v);
+group("devx: semver parse and bump follow semver.org and npm semver.inc", () => {
+  test("leading zeros, empty identifiers and an empty prerelease are invalid", () => {
+    for (const v of ["1.01.0", "01.2.3", "1.2.3-rc.01", "1.2.3-", "1.2.3-a..b", "1.2.3+", "1.2.3+a..b"]) assert.ok(run("dv-semver-parse", { version: v }).error, v);
+    for (const v of ["v1.2.3", "1.2.3-0", "1.2.3-0a.1", "1.2.3-rc.1+001"]) assert.ok(!run("dv-semver-parse", { version: v }).error, v);
+  });
+  test("bumping a prerelease releases it", () => {
+    const bump = (version, type) => run("dv-semver-bump", { version, type });
+    assert.equal(bump("2.0.0-rc.1", "major"), "2.0.0");
+    assert.equal(bump("2.1.0-rc.1", "major"), "3.0.0");
+    assert.equal(bump("1.3.0-rc.1", "minor"), "1.3.0");
+    assert.equal(bump("1.3.1-rc.1", "minor"), "1.4.0");
+    assert.equal(bump("1.2.1-rc.1", "patch"), "1.2.1");
+    assert.equal(bump("1.2.1", "patch"), "1.2.2");
+    assert.equal(bump("1.0.0-1.beta", "prerelease"), "1.0.0-2.beta");
+    assert.equal(bump("1.0.0-beta", "prerelease"), "1.0.0-beta.0");
+  });
+});

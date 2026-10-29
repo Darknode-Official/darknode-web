@@ -4,7 +4,8 @@
 const S = (v) => (v == null ? "" : String(v));
 
 // ---- shared semver helpers ----
-const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/;
+// semver.org grammar: no leading zeros in numbers or numeric prerelease ids, no empty ids
+const SEMVER_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
 function parseSemver(str) {
   const m = SEMVER_RE.exec(String(str).trim().replace(/^v/, ""));
   if (!m) return null;
@@ -302,14 +303,17 @@ export const TOOLS = [
       if (!S(v.version).trim()) return "";
       const p = parseSemver(v.version);
       if (!p) return { error: "Not a valid semantic version." };
-      if (v.type === "major") return `${p.major + 1}.0.0`;
-      if (v.type === "minor") return `${p.major}.${p.minor + 1}.0`;
-      if (v.type === "patch") return `${p.major}.${p.minor}.${p.patch + 1}`;
-      // prerelease
-      if (!p.prerelease) return `${p.major}.${p.minor}.${p.patch + 1}-0`;
+      // as npm semver.inc: a prerelease of the target is released, not skipped (2.0.0-rc.1 -> major is 2.0.0)
+      const pre = !!p.prerelease;
+      if (v.type === "major") return `${pre && !p.minor && !p.patch ? p.major : p.major + 1}.0.0`;
+      if (v.type === "minor") return `${p.major}.${pre && !p.patch ? p.minor : p.minor + 1}.0`;
+      if (v.type === "patch") return `${p.major}.${p.minor}.${pre ? p.patch : p.patch + 1}`;
+      // prerelease: bump the last numeric identifier (1.0.0-1.beta -> 1.0.0-2.beta), else append .0
+      if (!pre) return `${p.major}.${p.minor}.${p.patch + 1}-0`;
       const ids = p.prerelease.split(".");
-      const last = ids[ids.length - 1];
-      if (/^\d+$/.test(last)) ids[ids.length - 1] = String(Number(last) + 1);
+      let i = ids.length - 1;
+      while (i >= 0 && !/^\d+$/.test(ids[i])) i--;
+      if (i >= 0) ids[i] = String(Number(ids[i]) + 1);
       else ids.push("0");
       return `${p.major}.${p.minor}.${p.patch}-${ids.join(".")}`;
     },
