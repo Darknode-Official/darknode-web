@@ -164,7 +164,7 @@ export const DETECTORS = [
     advice: 'Phone numbers are personal data; mask where not needed.',
   },
   secret('conn-string'), secret('azure-storage-key'), secret('azure-sas'), secret('azure-ad-secret'), secret('gitlab-pat'),
-  secret('npm-token'), secret('gcp-service-account'), secret('heroku-key'), secret('digitalocean-token'), secret('bearer-auth'),
+  secret('npm-token'), secret('huggingface-token'), secret('gcp-service-account'), secret('heroku-key'), secret('digitalocean-token'), secret('bearer-auth'),
   secret('mailgun-key'), secret('planetscale-token'), secret('slack-app-token'),
 ];
 

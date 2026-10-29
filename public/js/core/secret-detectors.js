@@ -202,6 +202,11 @@ export const SECRET_DETECTORS = [
     advice: 'Revoke the npm token with `npm token revoke` or in your npm account.',
   },
   {
+    id: 'huggingface-token', name: 'Hugging Face access token', severity: 'high',
+    re: /\bhf_[A-Za-z0-9]{34,}\b/g,
+    advice: 'Revoke the token in your Hugging Face settings (Access Tokens) and create a new one.',
+  },
+  {
     // Real PyPI tokens are macaroons whose base64 always starts "AgE".
     id: 'pypi-token', name: 'PyPI API token', severity: 'high',
     re: /\bpypi-AgE[A-Za-z0-9_-]{50,}/g,

@@ -51,6 +51,7 @@ export const FIXTURES = {
   "sendgrid-key": { pos: "SG." + r(22) + "." + r(43), neg: "SG." + r(22) + "." + r(20) },
   "mailgun-key": { pos: "key-" + r(32, HEX), neg: "key-" + r(20, HEX) },
   "npm-token": { pos: "npm_" + r(36), neg: "npm_" + r(20) },
+  "huggingface-token": { pos: "hf_" + r(34), neg: "hf_" + r(12) },
   "pypi-token": { pos: "pypi-" + "AgEIcHlwaS5vcmc" + r(60), neg: "pypi-" + r(20) },
   "conn-string": { pos: "postgres://app:" + r(16) + "@db.internal:5432/app", neg: "postgres://db.internal:5432/app" },
   "azure-storage-key": { pos: "DefaultEndpointsProtocol=https;AccountName=acct;AccountKey=" + r(86, B64) + "==;", neg: "AccountKey=" + r(20, B64) + "==" },
@@ -78,6 +79,7 @@ export const DLP_IDS = {
   "azure-storage-key": "azure-storage-key", "azure-sas": "azure-sas", "azure-ad-secret": "azure-ad-secret", "gitlab-pat": "gitlab-pat",
   "npm-token": "npm-token", "gcp-service-account": "gcp-service-account", "heroku-key": "heroku-key", "digitalocean-token": "digitalocean-token",
   "bearer-auth": "bearer-auth", "mailgun-key": "mailgun-key", "planetscale-token": "planetscale-token", "slack-app-token": "slack-app-token",
+  "huggingface-token": "huggingface-token",
 };
 export const CODESCAN_IDS = {
   "secret.aws-access-key": "aws-key", "secret.aws-secret-key": "aws-secret", "secret.github-token": "github-token", "secret.slack-token": "slack-token",

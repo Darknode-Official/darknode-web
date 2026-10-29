@@ -146,6 +146,10 @@ group("dlp: new secret detectors", () => {
     assert.ok(has("//registry.npmjs.org/:_authToken=npm_" + "a".repeat(36), "npm-token"));
     assert.notOk(has("npm_tooshort", "npm-token"));
   });
+  test("Hugging Face token — positive and negative", () => {
+    assert.ok(has("HF_TOKEN=hf_" + "aB3dE6gH9j".repeat(4), "huggingface-token"));
+    assert.notOk(has("hf_short_name", "huggingface-token"));
+  });
   test("GCP service-account key — positive and negative", () => {
     const json = '{"type":"service_account","private_key":"-----BEGIN PRIVATE KEY-----\\nMIIBVAIBADANBgkq\\n-----END PRIVATE KEY-----\\n","client_email":"svc@proj.iam.gserviceaccount.com"}';
     assert.ok(has(json, "gcp-service-account"));
