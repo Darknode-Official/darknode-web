@@ -3,6 +3,11 @@
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const SYS_KEY = "sw_ai_sys", MODEL_KEY = "sw_ai_model";
+// Conversations, the open chat, saved prompts and the system prompt belong to the signed-in
+// account, not the browser (localStorage is shared by every account that signs in here), so
+// their keys carry the account (guests and Test Mode share one guest set). Data saved under the
+// old browser-wide keys is left in place and no longer read.
+const acct = (k) => { let u = null; try { u = window.__dnUid || null; } catch (_) {} return k + "__" + (!u ? "nouser" : /^(test|app-guest)-/.test(u) ? "guest" : "u_" + u); };
 // The free tier is served by the server-side proxy (/api/chat): the keys for
 // these providers live ONLY in the Cloud Function environment — never in this
 // file, never shipped to the browser. (A static site cannot hide a key it holds,
@@ -387,16 +392,16 @@ const PRESETS = [
   ["One-liner", "Give me a shell one-liner to: "],
 ];
 const PROMPTS_KEY = "sw_ai_prompts";
-const loadPrompts = () => { try { return JSON.parse(localStorage.getItem(PROMPTS_KEY)) || []; } catch (_) { return []; } };
-const savePrompts = (a) => { try { localStorage.setItem(PROMPTS_KEY, JSON.stringify(a)); } catch (_) {} };
+const loadPrompts = () => { try { return JSON.parse(localStorage.getItem(acct(PROMPTS_KEY))) || []; } catch (_) { return []; } };
+const savePrompts = (a) => { try { localStorage.setItem(acct(PROMPTS_KEY), JSON.stringify(a)); } catch (_) {} };
 
 // --- conversation history (persisted list of past chats) ---
 const CONVOS_KEY = "sw_ai_convos", CUR_KEY = "sw_ai_cur";
-const loadConvos = () => { try { return JSON.parse(localStorage.getItem(CONVOS_KEY)) || []; } catch (_) { return []; } };
+const loadConvos = () => { try { return JSON.parse(localStorage.getItem(acct(CONVOS_KEY))) || []; } catch (_) { return []; } };
 const saveConvos = (a) => {
-  try { localStorage.setItem(CONVOS_KEY, JSON.stringify(a)); }
+  try { localStorage.setItem(acct(CONVOS_KEY), JSON.stringify(a)); }
   catch (_) { // localStorage quota — drop the oldest chats and retry once
-    try { localStorage.setItem(CONVOS_KEY, JSON.stringify(a.slice(0, 25))); } catch (__) {}
+    try { localStorage.setItem(acct(CONVOS_KEY), JSON.stringify(a.slice(0, 25))); } catch (__) {}
   }
 };
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -593,7 +598,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
   const SEND_ICON = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 16V4M5 9l5-5 5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const STOP_ICON = '<svg viewBox="0 0 20 20" width="13" height="13"><rect x="4" y="4" width="12" height="12" rx="2.5" fill="currentColor"/></svg>';
   const setSend = (b) => { const el = $("#aiSend"); if (!el) return; el.innerHTML = b ? STOP_ICON : SEND_ICON; el.classList.toggle("is-stop", !!b); el.setAttribute("aria-label", b ? "Stop" : "Send"); el.title = b ? "Stop" : "Send"; };
-  let _sysBase = localStorage.getItem(SYS_KEY) || DEFAULT_SYS;
+  let _sysBase = localStorage.getItem(acct(SYS_KEY)) || DEFAULT_SYS;
   function _buildSys() {
     let ctx = '';
     try {
@@ -644,17 +649,17 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
   updateByokHint();
   sel.onchange = () => { try { localStorage.setItem(MODEL_KEY, sel.value); } catch (_) {} const m = availableModels().find((x) => sel.value === x.provider + ":" + x.id); if (m) status.textContent = "Switched to " + m.name; updateByokHint(); };
   $("#aiSys").onclick = () => {
-    aiModal({ title: "System prompt", desc: "Controls how Darknode AI behaves for the whole conversation.", fields: [{ type: "textarea", value: localStorage.getItem(SYS_KEY) || DEFAULT_SYS, rows: 12 }], submitText: "Save", extra: [{ label: "Reset to default", value: "__reset__" }] }).then((v) => {
+    aiModal({ title: "System prompt", desc: "Controls how Darknode AI behaves for the whole conversation.", fields: [{ type: "textarea", value: localStorage.getItem(acct(SYS_KEY)) || DEFAULT_SYS, rows: 12 }], submitText: "Save", extra: [{ label: "Reset to default", value: "__reset__" }] }).then((v) => {
       if (!v) return;
       const val = v[0] === "__reset__" ? DEFAULT_SYS : v[0];
-      try { localStorage.setItem(SYS_KEY, val); } catch (_) {} _sysBase = val; history[0] = { role: "system", content: _buildSys() }; status.textContent = "System prompt updated.";
+      try { localStorage.setItem(acct(SYS_KEY), val); } catch (_) {} _sysBase = val; history[0] = { role: "system", content: _buildSys() }; status.textContent = "System prompt updated.";
     });
   };
   const shell = main.querySelector(".ai2-shell");
 
   // ---- conversation state (curId ties this session to a saved chat) ----
   let curId = null;
-  try { curId = localStorage.getItem(CUR_KEY) || null; } catch (_) {}
+  try { curId = localStorage.getItem(acct(CUR_KEY)) || null; } catch (_) {}
   if (curId) {
     const c = loadConvos().find((x) => x.id === curId);
     if (c && c.msgs) c.msgs.forEach((m) => history.push({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped }));
@@ -716,7 +721,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
   function persist() {
     const msgs = history.slice(1).map((m) => ({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped }));
     if (!msgs.length) return;
-    if (!curId) { curId = uid(); try { localStorage.setItem(CUR_KEY, curId); } catch (_) {} }
+    if (!curId) { curId = uid(); try { localStorage.setItem(acct(CUR_KEY), curId); } catch (_) {} }
     const convos = loadConvos();
     const rec = { id: curId, title: deriveTitle(msgs), ts: Date.now(), msgs };
     const at = convos.findIndex((c) => c.id === curId);
@@ -736,14 +741,14 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     // doesn't push the old reply onto (and persist it into) the chat we switch to.
     if (busy && ctrl) { ctrl.discarded = true; ctrl.abort(); }
     const c = loadConvos().find((x) => x.id === id); if (!c) return;
-    curId = id; try { localStorage.setItem(CUR_KEY, id); } catch (_) {}
+    curId = id; try { localStorage.setItem(acct(CUR_KEY), id); } catch (_) {}
     history.length = 1;
     (c.msgs || []).forEach((m) => history.push({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped }));
     renderMessages(); drawHistory(); status.textContent = "";
   }
   function newChat() {
     if (busy && ctrl) { ctrl.discarded = true; ctrl.abort(); }
-    curId = null; try { localStorage.removeItem(CUR_KEY); } catch (_) {}
+    curId = null; try { localStorage.removeItem(acct(CUR_KEY)); } catch (_) {}
     history.length = 1; renderMessages(); drawHistory();
     const b = $("#aiMsg"); if (b) b.focus();
   }
