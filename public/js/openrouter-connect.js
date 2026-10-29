@@ -18,6 +18,8 @@
 //   shouldReopenDeck()            -> one-shot: should DarkDeck re-open after return
 // ============================================================================
 
+import { acctKey } from "/js/core/account.js"; // per-account storage key
+
 const PKCE_LS = "dn_or_pkce";        // {verifier, state, ts} pending exchange
 const REOPEN_LS = "dn_or_reopen";    // "1" -> re-open DarkDeck after returning
 const CONN_LS = "dn_deck_connections_v1";
@@ -35,6 +37,14 @@ function randToken(bytes) { const a = new Uint8Array(bytes); crypto.getRandomVal
 async function challengeOf(verifier) {
   const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
   return b64url(d);
+}
+// This runs at page load, before sign-in has resolved, but the key store keeps keys per
+// account and drops a write made with no account. Wait (briefly) for the account first.
+function accountReady(ms = 20000) {
+  return new Promise((res) => {
+    const t0 = Date.now();
+    (function poll() { const u = window.__dnUid || null; if (u || Date.now() - t0 > ms) res(u); else setTimeout(poll, 100); })();
+  });
 }
 function toastErr(m) { try { window.showToast && window.showToast(m, "error"); } catch (_) {} }
 
@@ -87,11 +97,14 @@ export async function completeOpenRouterConnect() {
       toastErr("OpenRouter connect failed" + (msg ? ": " + msg : "."));
       return { done: true, ok: false };
     }
-    try {
-      window.dnKeys.set("dn_key_openrouter", String(key).trim()); // per account (user-keys.js)
-      const conns = JSON.parse(localStorage.getItem(CONN_LS) || "{}") || {};
+    if (!(await accountReady()) || !window.dnKeys || !window.dnKeys.set("dn_key_openrouter", String(key).trim())) {
+      toastErr("OpenRouter connect failed: sign in first, then connect again.");
+      return { done: true, ok: false };
+    }
+    try { // the key is stored above, per account (user-keys.js)
+      const conns = JSON.parse(localStorage.getItem(acctKey(CONN_LS)) || "{}") || {};
       conns.openrouter = { connected: true, method: "account", hasKey: true, at: Date.now() };
-      localStorage.setItem(CONN_LS, JSON.stringify(conns));
+      localStorage.setItem(acctKey(CONN_LS), JSON.stringify(conns));
       // Default to a free model so a fresh connect costs nothing until they choose otherwise.
       if (!(localStorage.getItem("dn_model_openrouter") || "").trim()) localStorage.setItem("dn_model_openrouter", FREE_MODEL);
     } catch (_) {}

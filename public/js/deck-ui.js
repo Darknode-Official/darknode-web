@@ -205,8 +205,8 @@ function toolIcon(label, group){
   return ICONS.terminal;
 }
 
-function loadConns(){ try { return JSON.parse(localStorage.getItem(LS_CONN) || "{}") || {}; } catch (_) { return {}; } }
-function saveConns(c){ try { localStorage.setItem(LS_CONN, JSON.stringify(c)); } catch (_) {} }
+function loadConns(){ try { return JSON.parse(localStorage.getItem(acctKey(LS_CONN)) || "{}") || {}; } catch (_) { return {}; } }
+function saveConns(c){ try { localStorage.setItem(acctKey(LS_CONN), JSON.stringify(c)); } catch (_) {} }
 // Notes and pins are per account: localStorage is shared by every account on this browser.
 // Same rule as the native spaces (deck/native/ui.js): pre-existing data moves to the first
 // signed-in account once; guests and Test Mode (per-session uid) keep the plain key.
@@ -1722,7 +1722,7 @@ export function renderDeck(host, opts) {
   // Workspace identity (A1): editable name/logo/accent. The host (admin.js) supplies
   // it from Firestore and persists changes via opts.onWorkspace; a localStorage cache
   // paints instantly on the next open. Falls back to the signed-in name, then "Workspace".
-  function loadWsCache() { try { return JSON.parse(localStorage.getItem("dn_ws_profile") || "null"); } catch (_) { return null; } }
+  function loadWsCache() { try { return JSON.parse(localStorage.getItem(acctKey("dn_ws_profile")) || "null"); } catch (_) { return null; } }
   // Last-known name of the active TEAM workspace, cached for instant chip paint (the
   // authoritative name lives in Firestore and is loaded when the switcher opens).
   function loadActiveWsName() { try { return localStorage.getItem("dn_active_ws_name") || ""; } catch (_) { return ""; } }
@@ -1756,7 +1756,7 @@ export function renderDeck(host, opts) {
   }
   async function saveWorkspace(partial) {
     wsProfile = Object.assign({}, wsProfile, partial || {});
-    try { localStorage.setItem("dn_ws_profile", JSON.stringify(wsProfile)); } catch (_) {}
+    try { localStorage.setItem(acctKey("dn_ws_profile"), JSON.stringify(wsProfile)); } catch (_) {}
     const el = root && root.querySelector(".dk-wsname"); if (el) el.textContent = wsLabelText();
     if (typeof opts.onWorkspace === "function") { try { await opts.onWorkspace(partial || {}); } catch (_) {} }
     return wsProfile;
@@ -1802,7 +1802,7 @@ export function renderDeck(host, opts) {
     if (!window.dnKeys || !window.dnKeys.uid || !window.dnKeys.uid()) return c; // no account: nothing to check against
     for (const it of INTEGRATIONS) {
       const r = c[it.id], k = has(it.id);
-      if (r && r.method === "key" && r.hasKey && !k) delete c[it.id];
+      if (r && r.hasKey && !k) delete c[it.id]; // its key is gone (any method), so it is not connected
       else if (!r && k) c[it.id] = { connected: true, method: "key", hasKey: true, at: Date.now() };
     }
     return c;
@@ -4207,6 +4207,7 @@ export function renderDeck(host, opts) {
       if (!ok) return;
       ["dn_deck_connections_v1", "dn_deck_pins_v1", "dn_deck_notes", "dn_deck_scene", "dn_deck_sect", "dn_deck_toolcat", "dn_deck_kit", "dn_deck_density", "dn_deck_nav"].forEach((k) => { try { localStorage.removeItem(k); } catch (_) {} });
       [LS_PINS, LS_NOTES].forEach((k) => { try { localStorage.removeItem(userKey(k)); } catch (_) {} }); // pins and notes are per account (userKey)
+      try { localStorage.removeItem(acctKey(LS_CONN)); } catch (_) {} // connections are per account (acctKey)
       toast("Local Deck state reset — reloading");
       setTimeout(() => { try { location.reload(); } catch (_) {} }, 600);
     };

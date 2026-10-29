@@ -36,7 +36,7 @@ function _key(provider) {
 // dn_key_<id>, dn_model_<id> (chosen API model id). These let a connected provider
 // be used as a real model without any static BYOK list.
 const DECK_CONN_KEY = "dn_deck_connections_v1";
-function deckConns() { try { return JSON.parse(localStorage.getItem(DECK_CONN_KEY) || "{}") || {}; } catch (_) { return {}; } }
+function deckConns() { try { return JSON.parse(localStorage.getItem(acct(DECK_CONN_KEY)) || "{}") || {}; } catch (_) { return {}; } }
 // Provider display names + a safe default API model id for each connectable provider.
 const CONN_PROVIDERS = {
   claude:     { name: "Claude",       def: "claude-sonnet-4-5" },
@@ -638,9 +638,9 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
       if (!key) return;
       try {
         window.dnKeys.set("dn_key_" + prov, key); // per account (user-keys.js)
-        const conns = JSON.parse(localStorage.getItem("dn_deck_connections_v1") || "{}") || {};
+        const conns = JSON.parse(localStorage.getItem(acct(DECK_CONN_KEY)) || "{}") || {};
         conns[prov] = Object.assign({}, conns[prov], { connected: true, method: "key", hasKey: true, at: Date.now() });
-        localStorage.setItem("dn_deck_connections_v1", JSON.stringify(conns));
+        localStorage.setItem(acct(DECK_CONN_KEY), JSON.stringify(conns));
       } catch (_) {}
       updateByokHint();
       status.textContent = nm + " key saved — ready.";
