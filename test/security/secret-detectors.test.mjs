@@ -94,6 +94,7 @@ export const CODESCAN_IDS = {
 export const IAC_IDS = {
   "SEC-001": "aws-key", "SEC-002": "private-key", "SEC-003": "github-token", "SEC-004": "slack-token", "SEC-005": "gcp-key",
   "SEC-006": "pat-assignment", "SEC-007": "aws-secret", "SEC-008": "stripe-key", "SEC-009": "slack-webhook", "SEC-010": "azure-storage-key",
+  "SEC-011": "openai-key", "SEC-012": "conn-string",
 };
 // Credential Auditor names; the ones a prefix narrows get a fixture of that kind.
 export const CRED_IDS = {
@@ -186,13 +187,19 @@ group("secret-detectors: former Code Scanner rules", () => {
 });
 
 group("secret-detectors: former IaC scanner patterns", () => {
-  test("the pattern set is the same 10 ids as before", () => {
+  test("the pattern set is the 12 ids listed here", () => {
     assert.deepEqual(SECRET_PATTERNS.map((x) => x.id), Object.keys(IAC_IDS));
   });
   for (const [id, core] of Object.entries(IAC_IDS)) test(id, () => {
     const f = fixture(core);
     assert.ok(scanSecrets(f.pos).some((h) => h.ruleId === id), id + " missed its positive");
     assert.ok(!scanSecrets(f.neg).some((h) => h.ruleId === id), id + " fired on its negative");
+  });
+  test("every SEC-011 detector reports its positive and not its negative", () => {
+    for (const core of SECRET_PATTERNS.find((x) => x.id === "SEC-011").detectors) {
+      assert.ok(scanSecrets(fixture(core).pos).some((h) => h.ruleId === "SEC-011"), core + " missed its positive");
+      assert.ok(!scanSecrets(fixture(core).neg).some((h) => h.ruleId === "SEC-011"), core + " fired on its negative");
+    }
   });
   test("fine-grained GitHub tokens are SEC-003 too", () => {
     assert.ok(scanSecrets(FIXTURES["github-pat-fine"].pos).some((h) => h.ruleId === "SEC-003"));

@@ -1990,6 +1990,8 @@ export const SECRET_PATTERNS = [
   { id: "SEC-008", severity: "critical", title: "Stripe live secret key in file", detectors: ["stripe-key"] },
   { id: "SEC-009", severity: "medium", title: "Slack incoming webhook URL in file", detectors: ["slack-webhook"] },
   { id: "SEC-010", severity: "critical", title: "Azure storage account key in file", detectors: ["azure-storage-key"] },
+  { id: "SEC-011", severity: "critical", title: "API token or key in file", detectors: ["openai-key", "anthropic-key", "gitlab-pat", "npm-token", "pypi-token", "huggingface-token", "sendgrid-key", "twilio-api-key", "digitalocean-token", "planetscale-token", "shopify-token", "google-oauth"] },
+  { id: "SEC-012", severity: "high", title: "Database URL with an inline password", detectors: ["conn-string"] },
 ];
 for (const sp of SECRET_PATTERNS) {
   RULE_LIST.push({ id: sp.id, title: sp.title, severity: sp.severity, kind: "secrets",
