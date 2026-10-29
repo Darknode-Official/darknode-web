@@ -14,6 +14,7 @@
 // Nothing is fabricated; failures are reported as "unavailable".
 
 import { dnFetch, proxyConfigured } from "/js/net.js";
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -168,13 +169,12 @@ function reverseLookup(ip) {
 var HIST_KEY = "dn_dossier_history", HIST_MAX = 20;
 function loadHistory() {
   try {
-    var h = JSON.parse(localStorage.getItem(HIST_KEY) || "null");
-    // One-time carry-over from the retired WHOIS Recon tool's history.
-    if (!Array.isArray(h)) h = (JSON.parse(localStorage.getItem("dn_whois_history") || "[]") || []).map(function (x) { return x && x.query; });
+    var h = JSON.parse(localStorage.getItem(acctKey(HIST_KEY)) || "null");
+    if (!Array.isArray(h)) h = [];
     return h.filter(function (x) { return typeof x === "string" && x; }).slice(0, HIST_MAX);
   } catch (_) { return []; }
 }
-function saveHistory(list) { try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, HIST_MAX))); } catch (_) {} }
+function saveHistory(list) { try { localStorage.setItem(acctKey(HIST_KEY), JSON.stringify(list.slice(0, HIST_MAX))); } catch (_) {} }
 
 function vcardName(entity) {
   var v = entity && entity.vcardArray && entity.vcardArray[1];

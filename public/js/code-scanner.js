@@ -20,7 +20,7 @@ const SEVS = ["critical", "high", "medium", "low"];
 const SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Review" };
 const KIND_LABEL = { secret: "Secrets", code: "Code", dep: "Dependencies" };
 const HIST_KEY = "dn_codescan_recent";
-const BASE_KEY = "dn_codescan_baseline:"; // + target ref; one saved baseline per target, this browser only
+const BASE_KEY = "dn_codescan_baseline:"; // + target ref; one saved baseline per target, per account on this browser
 const DIFF_FILTERS = [["all", "All"], ["new", "New"], ["fixed", "Fixed"], ["unchanged", "Unchanged"]];
 const toast = (m, t) => { try { (window.dnToast || window.showToast || (() => {}))(m, t); } catch (_) {} };
 const fmtWhen = (ms) => { try { return new Date(ms).toLocaleString(); } catch (_) { return ""; } };
@@ -31,7 +31,7 @@ const PAT_KEY = "dn_codescan_pat"; // only written when the user ticks "Remember
 const savedPat = () => { try { return (window.dnKeys && window.dnKeys.get(PAT_KEY)) || ""; } catch (_) { return ""; } };
 const keepPat = (v) => { try { if (window.dnKeys) v ? window.dnKeys.set(PAT_KEY, v) : window.dnKeys.del(PAT_KEY); } catch (_) {} };
 try { localStorage.removeItem(PAT_KEY); } catch (_) {}
-function loadBaseline(ref) { try { const j = JSON.parse(localStorage.getItem(BASE_KEY + ref) || "null"); return j && Array.isArray(j.items) ? j : null; } catch (_) { return null; } }
+function loadBaseline(ref) { try { const j = JSON.parse(localStorage.getItem(acctKey(BASE_KEY + ref)) || "null"); return j && Array.isArray(j.items) ? j : null; } catch (_) { return null; } }
 
 const CSS = `<style id="cs-css">
 .cs{--cs-line:var(--line,#e4e7ec);--cs-card:var(--card,#fff);--cs-txt:var(--txt,#101828);--cs-mut:var(--mut,#5f6b7a);--cs-acc:var(--acc,#0972d3);
@@ -383,7 +383,7 @@ export function renderCodeScanner(main) {
     if (!s) return;
     if (replace && st.baseline && !(window.dnConfirm ? await window.dnConfirm("Replace baseline?", "Overwrite the saved baseline for " + s.full + " with this scan. The diff resets, so nothing counts as new or fixed until the next scan of the same target.") : true)) return;
     const b = serializeBaseline(s.findings, { ref: s.ref, full: s.full, sha: s.sha, branch: s.branch, at: Date.now() });
-    try { localStorage.setItem(BASE_KEY + s.ref, JSON.stringify(b)); }
+    try { localStorage.setItem(acctKey(BASE_KEY + s.ref), JSON.stringify(b)); }
     catch (_) { toast("Couldn't save the baseline in this browser", "error"); return; }
     st.baseline = b; st.diffOn = "all"; st.idx = 0; recomputeDiff();
     toast("Baseline saved for " + s.full, "ok");
@@ -393,7 +393,7 @@ export function renderCodeScanner(main) {
     const s = st.scan;
     if (!s || !st.baseline) return;
     if (!(window.dnConfirm ? await window.dnConfirm("Clear baseline?", "Remove the saved baseline for " + s.full + " from this browser. The scan results are not affected.") : true)) return;
-    try { localStorage.removeItem(BASE_KEY + s.ref); } catch (_) {}
+    try { localStorage.removeItem(acctKey(BASE_KEY + s.ref)); } catch (_) {}
     st.baseline = null; st.diffOn = "all"; st.idx = 0; recomputeDiff();
     toast("Baseline cleared", "ok");
     renderWorkspace();

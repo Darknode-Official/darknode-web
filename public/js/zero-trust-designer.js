@@ -1,3 +1,4 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 // Zero Trust Architecture Designer — design and assess zero trust implementations.
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 
@@ -113,10 +114,10 @@ const ZT_ROADMAP = [
 ];
 
 function getStoredAssessment() {
-  try { return JSON.parse(localStorage.getItem('zt_assessment') || 'null'); } catch (e) { return null; }
+  try { return JSON.parse(localStorage.getItem(acctKey('zt_assessment')) || 'null'); } catch (e) { return null; }
 }
 function saveAssessment(data) {
-  try { localStorage.setItem('zt_assessment', JSON.stringify(data)); } catch (e) {}
+  try { localStorage.setItem(acctKey('zt_assessment'), JSON.stringify(data)); } catch (e) {}
 }
 
 export function renderZeroTrustDesigner(main) {

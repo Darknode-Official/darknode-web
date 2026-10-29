@@ -1,3 +1,4 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 // PROMETHEUS Web — Predictive Real-time Omniscient Monitoring, Emulation,
 // Threat Hunting & Engagement Unified System
 // Browser-based military-grade cyber operations platform for Darknode
@@ -1033,7 +1034,7 @@ export function renderPrometheus(main) {
 
   function loadState() {
     try {
-      var saved = localStorage.getItem('dn_prometheus_v1');
+      var saved = localStorage.getItem(acctKey('dn_prometheus_v1'));
       if (saved) {
         var parsed = JSON.parse(saved);
         if (parsed.activeTab) state.activeTab = parsed.activeTab;
@@ -1044,7 +1045,7 @@ export function renderPrometheus(main) {
 
   function saveState() {
     try {
-      localStorage.setItem('dn_prometheus_v1', JSON.stringify({
+      localStorage.setItem(acctKey('dn_prometheus_v1'), JSON.stringify({
         activeTab: state.activeTab,
         defcon: state.defcon
       }));

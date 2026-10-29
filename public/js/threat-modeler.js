@@ -1,5 +1,6 @@
 // Threat Modeler — interactive threat modeling, STRIDE/DREAD, PASTA, LINDDUN, CVSS calculators, attack trees, DFDs
 import { THREAT_LIBRARY, STRIDE_KEY, PASTA_STAGES, LINDDUN_CATEGORIES, DFD_TRUST_BOUNDARY_PATTERNS, STRIDE_COMPLIANCE_MAP, SECURITY_REQUIREMENTS_TEMPLATES } from "/js/threat-library-data.js";
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -177,7 +178,7 @@ function renderSTRIDE(el) {
     '</div>';
 
   var items = [];
-  try { items = JSON.parse(localStorage.getItem("tm_stride_items") || "[]"); } catch (_) {}
+  try { items = JSON.parse(localStorage.getItem(acctKey("tm_stride_items")) || "[]"); } catch (_) {}
 
   function renderTable() {
     if (!items.length) {
@@ -206,14 +207,14 @@ function renderSTRIDE(el) {
     var type = el.querySelector("#stride-type").value;
     if (!name) return;
     items.push({ name: name, type: type, threats: [] });
-    try { localStorage.setItem("tm_stride_items", JSON.stringify(items)); } catch (_) {}
+    try { localStorage.setItem(acctKey("tm_stride_items"), JSON.stringify(items)); } catch (_) {}
     el.querySelector("#stride-elem").value = "";
     renderTable();
   };
   el.querySelector("#stride-table").onclick = function(e) {
     if (e.target.dataset.del !== undefined) {
       items.splice(parseInt(e.target.dataset.del), 1);
-      try { localStorage.setItem("tm_stride_items", JSON.stringify(items)); } catch (_) {}
+      try { localStorage.setItem(acctKey("tm_stride_items"), JSON.stringify(items)); } catch (_) {}
       renderTable();
     }
   };
@@ -224,7 +225,7 @@ function renderSTRIDE(el) {
       if (!items[idx].threats) items[idx].threats = [];
       if (e.target.checked) { if (items[idx].threats.indexOf(sid) < 0) items[idx].threats.push(sid); }
       else { items[idx].threats = items[idx].threats.filter(function(t) { return t !== sid; }); }
-      try { localStorage.setItem("tm_stride_items", JSON.stringify(items)); } catch (_) {}
+      try { localStorage.setItem(acctKey("tm_stride_items"), JSON.stringify(items)); } catch (_) {}
     }
   };
 }
@@ -430,7 +431,7 @@ function renderAssets(el) {
     '<div id="asset-list"></div>';
 
   var assets = [];
-  try { assets = JSON.parse(localStorage.getItem("tm_assets") || "[]"); } catch (_) {}
+  try { assets = JSON.parse(localStorage.getItem(acctKey("tm_assets")) || "[]"); } catch (_) {}
   var classColors = { Public: "#4caf50", Internal: "#2196f3", Confidential: "#ff9800", Restricted: "#f44336" };
 
   function renderAssetList() {
@@ -454,7 +455,7 @@ function renderAssets(el) {
     var name = el.querySelector("#asset-name").value.trim();
     if (!name) return;
     assets.push({ name: name, type: el.querySelector("#asset-type").value, classification: el.querySelector("#asset-class").value, desc: el.querySelector("#asset-desc").value.trim() });
-    try { localStorage.setItem("tm_assets", JSON.stringify(assets)); } catch (_) {}
+    try { localStorage.setItem(acctKey("tm_assets"), JSON.stringify(assets)); } catch (_) {}
     el.querySelector("#asset-name").value = "";
     el.querySelector("#asset-desc").value = "";
     renderAssetList();
@@ -462,7 +463,7 @@ function renderAssets(el) {
   el.querySelector("#asset-list").onclick = function(e) {
     if (e.target.dataset.del !== undefined) {
       assets.splice(parseInt(e.target.dataset.del), 1);
-      try { localStorage.setItem("tm_assets", JSON.stringify(assets)); } catch (_) {}
+      try { localStorage.setItem(acctKey("tm_assets"), JSON.stringify(assets)); } catch (_) {}
       renderAssetList();
     }
   };
@@ -505,7 +506,7 @@ function renderRisk(el) {
     '</div>';
 
   var riskItems = [];
-  try { riskItems = JSON.parse(localStorage.getItem("tm_risk_items") || "[]"); } catch (_) {}
+  try { riskItems = JSON.parse(localStorage.getItem(acctKey("tm_risk_items")) || "[]"); } catch (_) {}
 
   function renderRiskItems() {
     if (!riskItems.length) { el.querySelector("#risk-items").innerHTML = '<p class="muted" style="font-size:.82rem">Click a matrix cell to place a risk. Enter a name first.</p>'; return; }
@@ -529,14 +530,14 @@ function renderRisk(el) {
     var name = el.querySelector("#risk-name").value.trim();
     if (!name) { el.querySelector("#risk-name").focus(); return; }
     riskItems.push({ name: name, likelihood: parseInt(td.dataset.l), impact: parseInt(td.dataset.i) });
-    try { localStorage.setItem("tm_risk_items", JSON.stringify(riskItems)); } catch (_) {}
+    try { localStorage.setItem(acctKey("tm_risk_items"), JSON.stringify(riskItems)); } catch (_) {}
     el.querySelector("#risk-name").value = "";
     renderRiskItems();
   };
   el.querySelector("#risk-items").onclick = function(e) {
     if (e.target.dataset.rdel !== undefined) {
       riskItems.splice(parseInt(e.target.dataset.rdel), 1);
-      try { localStorage.setItem("tm_risk_items", JSON.stringify(riskItems)); } catch (_) {}
+      try { localStorage.setItem(acctKey("tm_risk_items"), JSON.stringify(riskItems)); } catch (_) {}
       renderRiskItems();
     }
   };
@@ -560,7 +561,7 @@ function renderAttackTree(el) {
     '<p class="muted" style="font-size:.75rem;margin-top:8px">Click a node to select it, then add children. OR = any child suffices. AND = all children required.</p>';
 
   var tree = { id: "root", name: "Attacker Goal", gate: "OR", children: [], expanded: true };
-  try { var saved = JSON.parse(localStorage.getItem("tm_attack_tree")); if (saved) tree = saved; } catch (_) {}
+  try { var saved = JSON.parse(localStorage.getItem(acctKey("tm_attack_tree"))); if (saved) tree = saved; } catch (_) {}
   var selectedId = "root";
 
   function renderNode(node, depth) {
@@ -601,7 +602,7 @@ function renderAttackTree(el) {
 
   el.querySelector("#at-tree").onclick = function(e) {
     var del = e.target.closest("[data-did]");
-    if (del) { removeNode(tree, del.dataset.did); if (selectedId === del.dataset.did) selectedId = "root"; try { localStorage.setItem("tm_attack_tree", JSON.stringify(tree)); } catch (_) {} paint(); return; }
+    if (del) { removeNode(tree, del.dataset.did); if (selectedId === del.dataset.did) selectedId = "root"; try { localStorage.setItem(acctKey("tm_attack_tree"), JSON.stringify(tree)); } catch (_) {} paint(); return; }
     var nd = e.target.closest("[data-nid]");
     if (nd) { selectedId = nd.dataset.nid; paint(); }
   };
@@ -613,20 +614,20 @@ function renderAttackTree(el) {
     if (!parent.children) parent.children = [];
     parent.gate = el.querySelector("#at-gate").value;
     parent.children.push({ id: "n" + (++idCounter), name: name, gate: "OR", children: [] });
-    try { localStorage.setItem("tm_attack_tree", JSON.stringify(tree)); } catch (_) {}
+    try { localStorage.setItem(acctKey("tm_attack_tree"), JSON.stringify(tree)); } catch (_) {}
     el.querySelector("#at-child").value = "";
     paint();
   };
   el.querySelector("#at-root").onchange = function() {
     tree.name = el.querySelector("#at-root").value.trim() || "Attacker Goal";
-    try { localStorage.setItem("tm_attack_tree", JSON.stringify(tree)); } catch (_) {}
+    try { localStorage.setItem(acctKey("tm_attack_tree"), JSON.stringify(tree)); } catch (_) {}
     paint();
   };
   el.querySelector("#at-root").value = tree.name;
   el.querySelector("#at-reset").onclick = function() {
     tree = { id: "root", name: "Attacker Goal", gate: "OR", children: [], expanded: true };
     selectedId = "root";
-    try { localStorage.setItem("tm_attack_tree", JSON.stringify(tree)); } catch (_) {}
+    try { localStorage.setItem(acctKey("tm_attack_tree"), JSON.stringify(tree)); } catch (_) {}
     el.querySelector("#at-root").value = tree.name;
     paint();
   };
@@ -663,8 +664,8 @@ function renderDFD(el) {
 
   var elements = [];
   var flows = [];
-  try { elements = JSON.parse(localStorage.getItem("tm_dfd_elements") || "[]"); } catch (_) {}
-  try { flows = JSON.parse(localStorage.getItem("tm_dfd_flows") || "[]"); } catch (_) {}
+  try { elements = JSON.parse(localStorage.getItem(acctKey("tm_dfd_elements")) || "[]"); } catch (_) {}
+  try { flows = JSON.parse(localStorage.getItem(acctKey("tm_dfd_flows")) || "[]"); } catch (_) {}
 
   function typeStyle(type) {
     if (type === "external") return "border:2px solid #2196f3;border-radius:50%;padding:8px 16px;background:#2196f310";
@@ -707,7 +708,7 @@ function renderDFD(el) {
     var name = el.querySelector("#dfd-name").value.trim();
     if (!name) return;
     elements.push({ name: name, type: el.querySelector("#dfd-type").value });
-    try { localStorage.setItem("tm_dfd_elements", JSON.stringify(elements)); } catch (_) {}
+    try { localStorage.setItem(acctKey("tm_dfd_elements"), JSON.stringify(elements)); } catch (_) {}
     el.querySelector("#dfd-name").value = "";
     paintDFD();
   };
@@ -717,15 +718,15 @@ function renderDFD(el) {
     var label = el.querySelector("#dfd-flowname").value.trim() || "data";
     if (!from || !to) return;
     flows.push({ from: from, to: to, label: label });
-    try { localStorage.setItem("tm_dfd_flows", JSON.stringify(flows)); } catch (_) {}
+    try { localStorage.setItem(acctKey("tm_dfd_flows"), JSON.stringify(flows)); } catch (_) {}
     el.querySelector("#dfd-flowname").value = "";
     paintDFD();
   };
   el.querySelector("#dfd-canvas").onclick = function(e) {
     var eidx = e.target.closest("[data-eidx]");
-    if (eidx) { elements.splice(parseInt(eidx.dataset.eidx), 1); try { localStorage.setItem("tm_dfd_elements", JSON.stringify(elements)); } catch (_) {} paintDFD(); return; }
+    if (eidx) { elements.splice(parseInt(eidx.dataset.eidx), 1); try { localStorage.setItem(acctKey("tm_dfd_elements"), JSON.stringify(elements)); } catch (_) {} paintDFD(); return; }
     var fidx = e.target.closest("[data-fidx]");
-    if (fidx) { flows.splice(parseInt(fidx.dataset.fidx), 1); try { localStorage.setItem("tm_dfd_flows", JSON.stringify(flows)); } catch (_) {} paintDFD(); }
+    if (fidx) { flows.splice(parseInt(fidx.dataset.fidx), 1); try { localStorage.setItem(acctKey("tm_dfd_flows"), JSON.stringify(flows)); } catch (_) {} paintDFD(); }
   };
 }
 
@@ -919,10 +920,10 @@ function renderRequirements(el, showTab) {
 
 // ── Report Tab ──
 function renderReportTab(el) {
-  var items = []; try { items = JSON.parse(localStorage.getItem("tm_stride_items") || "[]"); } catch (_) {}
-  var assets = []; try { assets = JSON.parse(localStorage.getItem("tm_assets") || "[]"); } catch (_) {}
-  var risks = []; try { risks = JSON.parse(localStorage.getItem("tm_risk_items") || "[]"); } catch (_) {}
-  var tree = null; try { tree = JSON.parse(localStorage.getItem("tm_attack_tree")); } catch (_) {}
+  var items = []; try { items = JSON.parse(localStorage.getItem(acctKey("tm_stride_items")) || "[]"); } catch (_) {}
+  var assets = []; try { assets = JSON.parse(localStorage.getItem(acctKey("tm_assets")) || "[]"); } catch (_) {}
+  var risks = []; try { risks = JSON.parse(localStorage.getItem(acctKey("tm_risk_items")) || "[]"); } catch (_) {}
+  var tree = null; try { tree = JSON.parse(localStorage.getItem(acctKey("tm_attack_tree"))); } catch (_) {}
 
   var now = new Date().toISOString().split("T")[0];
   var report = "# Threat Model Report\n";

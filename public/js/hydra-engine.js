@@ -1,3 +1,4 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 // HYDRA — Heuristic Yielding Dynamic Recon & Attack Engine
 // Autonomous multi-agent pentest orchestrator running entirely in the browser.
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
@@ -1998,7 +1999,7 @@ export function renderHydra(main) {
   // ========================================================================
   function renderEditorTab(container) {
     var saved = [];
-    try { saved = JSON.parse(localStorage.getItem('hydra_custom_envs') || '[]'); } catch(_){}
+    try { saved = JSON.parse(localStorage.getItem(acctKey('hydra_custom_envs')) || '[]'); } catch(_){}
     var html = '<h2 class="pg-h2">Network Editor</h2>' +
       '<p class="muted" style="margin-bottom:16px">Build your own network topology to test with HYDRA. Add hosts, define connections, save and load custom environments.</p>';
     // Saved environments
@@ -2126,7 +2127,7 @@ export function renderHydra(main) {
       }
       if (e.target.dataset.del !== undefined) {
         saved.splice(parseInt(e.target.dataset.del), 1);
-        try { localStorage.setItem('hydra_custom_envs', JSON.stringify(saved)); } catch(_){}
+        try { localStorage.setItem(acctKey('hydra_custom_envs'), JSON.stringify(saved)); } catch(_){}
         renderEditorTab(container);
       }
     };
@@ -2144,7 +2145,7 @@ export function renderHydra(main) {
     if (saveBtn) saveBtn.onclick = function() {
       var ename = container.querySelector('#ne-envname').value.trim() || ('Custom-' + Date.now().toString(36));
       saved.push({ name: ename, hosts: JSON.parse(JSON.stringify(engine.hosts)), connections: JSON.parse(JSON.stringify(engine.connections)) });
-      try { localStorage.setItem('hydra_custom_envs', JSON.stringify(saved)); } catch(_){}
+      try { localStorage.setItem(acctKey('hydra_custom_envs'), JSON.stringify(saved)); } catch(_){}
       renderEditorTab(container);
     };
   }
@@ -2324,7 +2325,7 @@ export function renderHydra(main) {
 
     // Campaign History
     var campaigns = [];
-    try { campaigns = JSON.parse(localStorage.getItem('hydra_campaigns') || '[]'); } catch(e) {}
+    try { campaigns = JSON.parse(localStorage.getItem(acctKey('hydra_campaigns')) || '[]'); } catch(e) {}
     if (campaigns.length > 0) {
       html += '<h3 style="font-size:.9rem;margin-top:24px;margin-bottom:10px">Campaign History</h3>' +
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
@@ -2376,7 +2377,7 @@ export function renderHydra(main) {
     var clearBtn = container.querySelector('#hy-clear-history');
     if (clearBtn) {
       clearBtn.onclick = function() {
-        try { localStorage.removeItem('hydra_campaigns'); } catch(e) {}
+        try { localStorage.removeItem(acctKey('hydra_campaigns')); } catch(e) {}
         renderScoringTab(container);
       };
     }
@@ -2769,7 +2770,7 @@ export function renderHydra(main) {
   function saveCampaign() {
     if (engine.tick < 5) return;
     var campaigns = [];
-    try { campaigns = JSON.parse(localStorage.getItem('hydra_campaigns') || '[]'); } catch(e) {}
+    try { campaigns = JSON.parse(localStorage.getItem(acctKey('hydra_campaigns')) || '[]'); } catch(e) {}
     campaigns.push({
       ts: new Date().toISOString(),
       env: engine.hosts.length > 0 ? (engine.hosts[0].segment || 'custom') : 'unknown',
@@ -2782,7 +2783,7 @@ export function renderHydra(main) {
       controls: engine.hosts.reduce(function(acc, h) { return acc + h.controls.length; }, 0),
     });
     if (campaigns.length > 20) campaigns = campaigns.slice(-20);
-    try { localStorage.setItem('hydra_campaigns', JSON.stringify(campaigns)); } catch(e) {}
+    try { localStorage.setItem(acctKey('hydra_campaigns'), JSON.stringify(campaigns)); } catch(e) {}
   }
 
   renderUI();

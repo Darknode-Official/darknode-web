@@ -1,6 +1,7 @@
 // Cybersecurity content for the Darknode console: notable CVEs, cheat sheets,
 // a common-ports reference, learning resources, and a security-posture checklist.
 import { setTarget } from "/js/target.js";
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -137,8 +138,8 @@ function wireCopy(root) {
     navigator.clipboard?.writeText(code.textContent).then(() => { b.textContent = "copied"; setTimeout(() => (b.textContent = "copy"), 1100); });
   });
 }
-function posLoad() { try { return JSON.parse(localStorage.getItem("sw_posture")) || []; } catch (_) { return []; } }
-function posSave(a) { try { localStorage.setItem("sw_posture", JSON.stringify(a)); } catch (_) {} }
+function posLoad() { try { return JSON.parse(localStorage.getItem(acctKey("sw_posture"))) || []; } catch (_) { return []; } }
+function posSave(a) { try { localStorage.setItem(acctKey("sw_posture"), JSON.stringify(a)); } catch (_) {} }
 
 // ---------- full sections ----------
 export function renderCheats(main) {

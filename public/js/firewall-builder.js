@@ -1,3 +1,4 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 // Firewall Rule Builder & Analyzer — interactive firewall rule management tool
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -795,13 +796,13 @@ export function renderFirewallBuilder(main) {
         '</div>';
 
       try {
-        var saved = JSON.parse(localStorage.getItem("fw_checklist") || "[]");
+        var saved = JSON.parse(localStorage.getItem(acctKey("fw_checklist")) || "[]");
         content.querySelectorAll(".fw-check").forEach(function(cb) {
           if (saved.indexOf(parseInt(cb.dataset.idx, 10)) !== -1) cb.checked = true;
           cb.onchange = function() {
             var checks = [];
             content.querySelectorAll(".fw-check:checked").forEach(function(c2) { checks.push(parseInt(c2.dataset.idx, 10)); });
-            try { localStorage.setItem("fw_checklist", JSON.stringify(checks)); } catch (_) {}
+            try { localStorage.setItem(acctKey("fw_checklist"), JSON.stringify(checks)); } catch (_) {}
           };
         });
       } catch (_) {}

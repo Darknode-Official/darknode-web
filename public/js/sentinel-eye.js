@@ -1,3 +1,4 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 // ============================================================================
 // SENTINEL EYE — Global Cyber Threat Detection & Counter-Operations Platform
 // Global cyber threat detection and prediction platform
@@ -10302,7 +10303,7 @@ function renderGlobalWatch() {
   ];
 
   // Clear any stale saved state so defaults apply cleanly
-  try { localStorage.removeItem('dn_global_watch'); } catch (e) { /* ignore */ }
+  try { localStorage.removeItem(acctKey('dn_global_watch')); } catch (e) { /* ignore */ }
   var savedLayers = null;
 
   for (var i = 0; i < layerDefs.length; i++) {
@@ -10482,7 +10483,7 @@ function _gwWireEvents() {
 // ---------------------------------------------------------------------------
 function _gwSaveLayers() {
   try {
-    localStorage.setItem('dn_global_watch', JSON.stringify(_gwLayers));
+    localStorage.setItem(acctKey('dn_global_watch'), JSON.stringify(_gwLayers));
   } catch (e) { /* quota exceeded or unavailable */ }
 }
 

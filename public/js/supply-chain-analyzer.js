@@ -11,6 +11,7 @@ import {
   kevCveSet, parseEpss,
 } from "./supply-chain-engine.js";
 import { osvQuery, osvVuln, pool } from "./codescan/github.js";
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 
 // Live exploitation probability from FIRST EPSS. CORS-enabled; batched (the API
 // caps the cve= list, so we chunk). Returns a merged CVE -> {epss,percentile} Map
@@ -327,7 +328,7 @@ export function renderSupplyChainAnalyzer(main) {
 
   function renderChecklistTab(container) {
     var saved = {};
-    try { saved = JSON.parse(localStorage.getItem('sca_checklist') || '{}'); } catch (_) {}
+    try { saved = JSON.parse(localStorage.getItem(acctKey('sca_checklist')) || '{}'); } catch (_) {}
     var categories = [];
     PIPELINE_CHECKLIST.forEach(function (item) { if (categories.indexOf(item.category) === -1) categories.push(item.category); });
     var completed = Object.keys(saved).filter(function (k) { return saved[k]; }).length;
@@ -363,7 +364,7 @@ export function renderSupplyChainAnalyzer(main) {
     container.querySelector('#sca-checklist-items').addEventListener('change', function (e) {
       if (e.target.type === 'checkbox' && e.target.dataset.key) {
         saved[e.target.dataset.key] = e.target.checked;
-        try { localStorage.setItem('sca_checklist', JSON.stringify(saved)); } catch (_) {}
+        try { localStorage.setItem(acctKey('sca_checklist'), JSON.stringify(saved)); } catch (_) {}
         render();
       }
     });

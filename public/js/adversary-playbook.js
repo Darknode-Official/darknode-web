@@ -400,7 +400,7 @@ export function renderAdversaryPlaybook(container) {
   (function migratePurpleResults() {
     try {
       if (localStorage.getItem(acctKey(PURPLE_MIGRATED_KEY))) return;
-      const old = JSON.parse(localStorage.getItem('purple_results') || '[]');
+      const old = JSON.parse(localStorage.getItem(acctKey('purple_results')) || '[]');
       if (Array.isArray(old) && old.length) {
         old.forEach(r => {
           if (!r || !r.mitre || (r.status !== 'detected' && r.status !== 'missed')) return;

@@ -1,5 +1,6 @@
 // OSINT Dashboard — research organizer, username checker, Google dork builder, tool directory
 import { dnFetch, dnFetchJSON, proxyConfigured } from "/js/net.js";
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 function osToast(msg, type) { try { (window.showToast || function () {})(msg, type || "info"); } catch (_) {} }
@@ -445,7 +446,7 @@ export function renderOSINTDashboard(main, more) {
 // ── Target Profile Tab ──
 function renderProfile(el) {
   var profiles = [];
-  try { profiles = JSON.parse(localStorage.getItem("osint_profiles") || "[]"); } catch (_) {}
+  try { profiles = JSON.parse(localStorage.getItem(acctKey("osint_profiles")) || "[]"); } catch (_) {}
 
   el.innerHTML =
     '<h2 class="pg-h2">Target Profile Builder</h2>' +
@@ -496,14 +497,14 @@ function renderProfile(el) {
     };
     if (!p.name && !p.email && !p.username) return;
     profiles.push(p);
-    try { localStorage.setItem("osint_profiles", JSON.stringify(profiles)); } catch (_) {}
+    try { localStorage.setItem(acctKey("osint_profiles"), JSON.stringify(profiles)); } catch (_) {}
     ["#tp-name", "#tp-email", "#tp-username", "#tp-domain", "#tp-phone", "#tp-ip", "#tp-notes"].forEach(function(s) { el.querySelector(s).value = ""; });
     renderList();
   };
   el.querySelector("#tp-list").onclick = function(e) {
     if (e.target.dataset.pdel !== undefined) {
       profiles.splice(parseInt(e.target.dataset.pdel), 1);
-      try { localStorage.setItem("osint_profiles", JSON.stringify(profiles)); } catch (_) {}
+      try { localStorage.setItem(acctKey("osint_profiles"), JSON.stringify(profiles)); } catch (_) {}
       renderList();
     }
   };
@@ -927,7 +928,7 @@ function renderToolDir(el) {
 // ── Timeline Tab ──
 function renderTimeline(el) {
   var events = [];
-  try { events = JSON.parse(localStorage.getItem("osint_timeline") || "[]"); } catch (_) {}
+  try { events = JSON.parse(localStorage.getItem(acctKey("osint_timeline")) || "[]"); } catch (_) {}
 
   el.innerHTML =
     '<h2 class="pg-h2">Investigation Timeline</h2>' +
@@ -966,14 +967,14 @@ function renderTimeline(el) {
     if (!event) return;
     if (!date) date = new Date().toISOString();
     events.push({ date: date, event: event, type: el.querySelector("#tl-type").value });
-    try { localStorage.setItem("osint_timeline", JSON.stringify(events)); } catch (_) {}
+    try { localStorage.setItem(acctKey("osint_timeline"), JSON.stringify(events)); } catch (_) {}
     el.querySelector("#tl-event").value = "";
     renderEvents();
   };
   el.querySelector("#tl-list").onclick = function(e) {
     if (e.target.dataset.tdel !== undefined) {
       events.splice(parseInt(e.target.dataset.tdel), 1);
-      try { localStorage.setItem("osint_timeline", JSON.stringify(events)); } catch (_) {}
+      try { localStorage.setItem(acctKey("osint_timeline"), JSON.stringify(events)); } catch (_) {}
       renderEvents();
     }
   };

@@ -1,3 +1,4 @@
+import { acctKey } from "/js/core/account.js"; // per-account storage key
 // API Tester — HTTP API security testing tool (client-side fetch)
 // Decode a base64url JWT segment to its parsed JSON, handling padding and
 // UTF-8 claims (atob yields a Latin-1 byte string; decode it as UTF-8 so
@@ -162,15 +163,15 @@ function formatBody(body, contentType) {
 
 export function renderAPITester(main) {
   var history = [];
-  try { history = JSON.parse(localStorage.getItem("api_history") || "[]"); } catch (_) {}
+  try { history = JSON.parse(localStorage.getItem(acctKey("api_history")) || "[]"); } catch (_) {}
   var envVars = {};
-  try { envVars = JSON.parse(localStorage.getItem("api_env") || "{}"); } catch (_) {}
+  try { envVars = JSON.parse(localStorage.getItem(acctKey("api_env")) || "{}"); } catch (_) {}
   var collections = [];
-  try { collections = JSON.parse(localStorage.getItem("api_collections") || "[]"); } catch (_) {}
+  try { collections = JSON.parse(localStorage.getItem(acctKey("api_collections")) || "[]"); } catch (_) {}
 
-  function saveHistory() { try { localStorage.setItem("api_history", JSON.stringify(history.slice(0, 50))); } catch (_) {} }
-  function saveEnv() { try { localStorage.setItem("api_env", JSON.stringify(envVars)); } catch (_) {} }
-  function saveCollections() { try { localStorage.setItem("api_collections", JSON.stringify(collections)); } catch (_) {} }
+  function saveHistory() { try { localStorage.setItem(acctKey("api_history"), JSON.stringify(history.slice(0, 50))); } catch (_) {} }
+  function saveEnv() { try { localStorage.setItem(acctKey("api_env"), JSON.stringify(envVars)); } catch (_) {} }
+  function saveCollections() { try { localStorage.setItem(acctKey("api_collections"), JSON.stringify(collections)); } catch (_) {} }
 
   main.innerHTML =
     '<h1 class="pg-h1">API Tester</h1>' +

@@ -1574,10 +1574,10 @@ function loadMissions() { try { return JSON.parse(localStorage.getItem(acctKey(S
 function saveMissions(missions) { try { localStorage.setItem(acctKey(STORE_KEY), JSON.stringify(missions)); } catch (_) {} }
 function getActiveMission() {
   var missions = loadMissions();
-  var activeId = localStorage.getItem('aegis_active');
+  var activeId = localStorage.getItem(acctKey('aegis_active'));
   return missions.find(function(m) { return m.id === activeId; }) || null;
 }
-function setActiveMission(id) { try { localStorage.setItem('aegis_active', id); } catch (_) {} }
+function setActiveMission(id) { try { localStorage.setItem(acctKey('aegis_active'), id); } catch (_) {} }
 function updateMission(mission) {
   var missions = loadMissions();
   var idx = missions.findIndex(function(m) { return m.id === mission.id; });
@@ -1590,18 +1590,18 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 // SETTINGS
 // ============================================================================
 function loadSettings() {
-  try { return JSON.parse(localStorage.getItem('aegis_settings')) || { operator: '', callsign: '', classification: 'UNCLASSIFIED', theme: 'cyan' }; }
+  try { return JSON.parse(localStorage.getItem(acctKey('aegis_settings'))) || { operator: '', callsign: '', classification: 'UNCLASSIFIED', theme: 'cyan' }; }
   catch (_) { return { operator: '', callsign: '', classification: 'UNCLASSIFIED', theme: 'cyan' }; }
 }
-function saveSettings(s) { try { localStorage.setItem('aegis_settings', JSON.stringify(s)); } catch (_) {} }
+function saveSettings(s) { try { localStorage.setItem(acctKey('aegis_settings'), JSON.stringify(s)); } catch (_) {} }
 
 // Cloud asset inventory is user-entered; it starts empty.
 function loadCloudAssets() {
   var empty = { aws: [], azure: [], gcp: [] };
-  try { var v = JSON.parse(localStorage.getItem('aegis_cloud_assets')); return v && typeof v === 'object' ? Object.assign(empty, v) : empty; }
+  try { var v = JSON.parse(localStorage.getItem(acctKey('aegis_cloud_assets'))); return v && typeof v === 'object' ? Object.assign(empty, v) : empty; }
   catch (_) { return empty; }
 }
-function saveCloudAssets(a) { try { localStorage.setItem('aegis_cloud_assets', JSON.stringify(a)); } catch (_) {} }
+function saveCloudAssets(a) { try { localStorage.setItem(acctKey('aegis_cloud_assets'), JSON.stringify(a)); } catch (_) {} }
 
 // ============================================================================
 // MAIN RENDER
@@ -3788,7 +3788,7 @@ export function renderAegis(main) {
           '</div>';
 
         var evidenceLog = [];
-        try { evidenceLog = JSON.parse(localStorage.getItem('aegis_evidence') || '[]'); } catch(_) {}
+        try { evidenceLog = JSON.parse(localStorage.getItem(acctKey('aegis_evidence')) || '[]'); } catch(_) {}
         function renderEvidLog() {
           var el = hc.querySelector('#ag-evidlog');
           if (evidenceLog.length === 0) {
@@ -3810,7 +3810,7 @@ export function renderAegis(main) {
           if (!source || !desc) return;
           var hash = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
           evidenceLog.push({ time: new Date().toISOString(), type: type, source: source, desc: desc, hash: hash });
-          try { localStorage.setItem('aegis_evidence', JSON.stringify(evidenceLog)); } catch(_) {}
+          try { localStorage.setItem(acctKey('aegis_evidence'), JSON.stringify(evidenceLog)); } catch(_) {}
           if (mission) {
             mission.actions.push({ time: new Date().toLocaleTimeString(), text: 'Evidence collected: ' + type + ' from ' + source });
             updateMission(mission);
@@ -3847,7 +3847,7 @@ export function renderAegis(main) {
       var wc = c.querySelector('#ag-wrcontent');
       if (tab === 'timeline') {
         var incidents = [];
-        try { incidents = JSON.parse(localStorage.getItem('aegis_incidents') || '[]'); } catch(_) {}
+        try { incidents = JSON.parse(localStorage.getItem(acctKey('aegis_incidents')) || '[]'); } catch(_) {}
         wc.innerHTML =
           '<div class="ag-panel">' +
             '<div class="ag-panel-h"><span style="color:#ff1744">INCIDENT TIMELINE</span><span style="flex:1"></span><span style="color:var(--mut)">' + incidents.length + ' events</span></div>' +
@@ -3898,7 +3898,7 @@ export function renderAegis(main) {
             type: wc.querySelector('#ag-inctype').value,
             desc: desc
           });
-          try { localStorage.setItem('aegis_incidents', JSON.stringify(incidents)); } catch(_) {}
+          try { localStorage.setItem(acctKey('aegis_incidents'), JSON.stringify(incidents)); } catch(_) {}
           if (mission) {
             mission.actions.push({ time: new Date().toLocaleTimeString(), text: 'Incident: ' + wc.querySelector('#ag-inctype').value + ' - ' + desc.substring(0, 50) });
             updateMission(mission);
@@ -3955,7 +3955,7 @@ export function renderAegis(main) {
           '</div>';
 
         var cocLog = [];
-        try { cocLog = JSON.parse(localStorage.getItem('aegis_coc') || '[]'); } catch(_) {}
+        try { cocLog = JSON.parse(localStorage.getItem(acctKey('aegis_coc')) || '[]'); } catch(_) {}
         function renderCOC() {
           var el = wc.querySelector('#ag-coclist');
           if (cocLog.length === 0) {
@@ -3981,7 +3981,7 @@ export function renderAegis(main) {
             handler: handler,
             notes: wc.querySelector('#ag-cocnotes').value.trim()
           });
-          try { localStorage.setItem('aegis_coc', JSON.stringify(cocLog)); } catch(_) {}
+          try { localStorage.setItem(acctKey('aegis_coc'), JSON.stringify(cocLog)); } catch(_) {}
           renderCOC();
         };
       } else if (tab === 'review') {
@@ -4213,10 +4213,10 @@ export function renderAegis(main) {
     c.querySelector('#ag-sclear').onclick = async function() {
       if (await window.dnConfirm('Delete all mission data', 'Delete ALL mission data? This cannot be undone.', { danger: true })) {
         localStorage.removeItem(acctKey(STORE_KEY));
-        localStorage.removeItem('aegis_active');
-        localStorage.removeItem('aegis_evidence');
-        localStorage.removeItem('aegis_incidents');
-        localStorage.removeItem('aegis_coc');
+        localStorage.removeItem(acctKey('aegis_active'));
+        localStorage.removeItem(acctKey('aegis_evidence'));
+        localStorage.removeItem(acctKey('aegis_incidents'));
+        localStorage.removeItem(acctKey('aegis_coc'));
         render();
       }
     };
