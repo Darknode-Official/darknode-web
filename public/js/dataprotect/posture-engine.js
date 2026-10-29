@@ -117,7 +117,7 @@ export function certCoversDomain(names, domain) {
       const base = n.slice(2);
       // A wildcard covers exactly one label: a.base matches *.base, a.b.base does not.
       if (d.endsWith("." + base) && d.slice(0, d.length - base.length - 1).indexOf(".") === -1) return true;
-      if (d === base) return true; // many issuers also list the apex alongside *.
+      // not the apex itself (RFC 6125 6.4.3): a cert covers example.com only if it names it
     }
   }
   return false;

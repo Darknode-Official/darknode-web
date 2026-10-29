@@ -305,6 +305,8 @@ group("posture: certificate SAN coverage", () => {
     assert.equal(certCoversDomain("example.com\nwww.example.com", "example.com"), true);
     assert.equal(certCoversDomain("*.example.com", "api.example.com"), true);
     assert.equal(certCoversDomain("*.example.com", "a.b.example.com"), false);
+    assert.equal(certCoversDomain("*.example.com", "example.com"), false);
+    assert.equal(certCoversDomain("*.example.com example.com", "example.com"), true);
     assert.equal(certCoversDomain("other.com", "example.com"), false);
     assert.equal(certCoversDomain(null, "example.com"), null);
   });
