@@ -35,3 +35,13 @@ group("regex lab library: Mastercard pattern", () => {
     for (const n of ["2220 0000 0000 0000", "2721 0000 0000 0000"]) assert.ok(!re.test(n), n);
   });
 });
+
+group("labs snippet: credit card pattern", () => {
+  test("Amex 4-6-5, Mastercard 2-series and Discover 65 match", async () => {
+    const fs = await import("node:fs");
+    const src = fs.readFileSync(new URL("../../public/js/labs.js", import.meta.url), "utf8");
+    const re = new RegExp(JSON.parse(src.match(/\["Credit card", ("(?:[^"\\]|\\.)*")\]/)[1]));
+    for (const n of ["3782 822463 10005", "378282246310005", "2221 0000 0000 0009", "6500 0000 0000 0002", "4111 1111 1111 1111", "5555555555554444"]) assert.ok(re.test(n), n);
+    assert.ok(!re.test("3782 8224 6310 0051"));
+  });
+});
