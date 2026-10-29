@@ -2015,6 +2015,7 @@ export function renderDeck(host, opts) {
     sceneWork.hidden = true; hideTools();
     setNav(scene === "section" ? "section:" + curSect : "scene:" + scene);
     for (const k in sceneEls) sceneEls[k].hidden = k !== scene;
+    try { closeDrawer(); } catch (_) {} // an Integrations details panel does not follow you to another page
     if (scene === "overview") renderOverview();
     else if (scene === "surface") renderSurface();
     else if (scene === "threat") renderThreat();
@@ -2457,6 +2458,7 @@ export function renderDeck(host, opts) {
     if (!sec) return;
     if (isLocked("tool:" + sec)) return;
     label = label || sec; curSec = sec;
+    try { closeDrawer(); } catch (_) {}
     syncUrl("/" + sec);
     const f = toolFrame(sec, label);
     live.forEach((x) => x.classList.toggle("off", x !== f));
