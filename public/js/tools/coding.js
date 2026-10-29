@@ -83,6 +83,8 @@ function deepMerge(a, b) {
 }
 
 // ---------- YAML emit ----------
+// other control/separator chars are invalid raw in YAML and TOML strings; both read \uXXXX
+const ctlEsc = (s) => s.replace(/[\x00-\x1f\x7f\x85\u2028\u2029\ufeff]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
 function yamlScalar(v) {
   if (v === null) return "null";
   if (typeof v === "boolean") return v ? "true" : "false";
@@ -90,8 +92,8 @@ function yamlScalar(v) {
   const s = String(v);
   if (s === "") return '""';
   const needs = /^[\s]|[\s]$/.test(s) || /[:#\[\]{}&*!|>'"%@`,]/.test(s) || /^[-?@`]/.test(s) ||
-    /^(true|false|null|yes|no|on|off|~)$/i.test(s) || /^[-+]?(\d|\.\d)/.test(s) || /\n/.test(s) || /:\s/.test(s);
-  if (needs) return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r") + '"';
+    /^(true|false|null|yes|no|on|off|~)$/i.test(s) || /^[-+]?(\d|\.\d|\.inf$|\.nan$)/i.test(s) || /[\x00-\x1f\x7f\x85\u2028\u2029\ufeff]/.test(s) || /:\s/.test(s);
+  if (needs) return '"' + ctlEsc(s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r")) + '"';
   return s;
 }
 const yamlKey = (k) => yamlScalar(String(k));
@@ -230,7 +232,7 @@ function yFlowScalarRaw(p, isKey) {
 
 // ---------- TOML emit ----------
 const tomlBareKey = (k) => /^[A-Za-z0-9_-]+$/.test(k) ? k : '"' + String(k).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
-const tomlString = (s) => '"' + String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r") + '"';
+const tomlString = (s) => '"' + ctlEsc(String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r")) + '"';
 function tomlValue(v) {
   if (v === null) return '""';
   if (typeof v === "boolean") return v ? "true" : "false";
