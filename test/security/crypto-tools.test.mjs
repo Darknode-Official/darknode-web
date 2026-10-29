@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import { test, assert, group } from "../harness.mjs";
 import { H } from "../../public/js/tools/_helpers.js";
 import { TOOLS } from "../../public/js/tools/crypto.js";
+import { TOOLS as FX } from "../../public/js/tools/forensics.js";
 
 const run = async (id, v) => { try { const r = await TOOLS.find((t) => t.id === id).run(v, H); return typeof r === "string" ? r : JSON.stringify(r); } catch (e) { return "THROW " + e.message; } };
 const hx = (b) => Buffer.from(b).toString("hex");
@@ -30,5 +31,13 @@ group("crypto quick tools", () => {
     const key = "11".repeat(32), nonce = "22".repeat(12), iv = Buffer.alloc(16); iv.writeUInt32LE(1, 0); Buffer.from(nonce, "hex").copy(iv, 4);
     const c = crypto.createCipheriv("chacha20", Buffer.from(key, "hex"), iv), msg = "a message longer than one 64-byte ChaCha20 block, to cross a block edge";
     assert.ok((await run("cr-chacha20", { key, nonce, counter: "1", data: msg, mode: "Encrypt (text -> hex)" })).includes(hx(Buffer.concat([c.update(msg), c.final()]))));
+  });
+  test("shared H.fromHex and the forensics hex parser are strict too", async () => {
+    assert.equal(hx(H.fromHex("de:ad be-ef")), "deadbeef");
+    assert.equal(hx(H.fromHex("\\x41\\x42")), "4142");
+    assert.throws(() => H.fromHex("hello"));
+    assert.throws(() => H.fromHex("abc"));
+    let r; try { r = await FX.find((t) => t.id === "fx-magic-bytes").run({ hex: "not hex at all", fmt: "Hex" }, H); } catch (e) { r = { error: e.message }; }
+    assert.ok(r && /not valid hex/i.test(r.error));
   });
 });

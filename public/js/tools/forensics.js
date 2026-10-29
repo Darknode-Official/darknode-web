@@ -8,7 +8,9 @@ const S = (v) => (v == null ? "" : String(v));
 
 // ---- byte / int helpers (for hex-driven parsers) ----
 function hexBytes(s) {
-  const h = String(s || "").replace(/0x/gi, "").replace(/[^0-9a-fA-F]/g, "");
+  const h = String(s || "").replace(/0x|\\x/gi, "").replace(/[\s:.,_-]/g, "");
+  if (/[^0-9a-fA-F]/.test(h)) throw new Error("Not valid hex: use 0-9 and a-f only (spaces and colons are fine).");
+  if (h.length % 2) throw new Error("Hex has an odd number of digits; each byte is two digits.");
   const u = new Uint8Array(h.length >> 1);
   for (let i = 0; i < u.length; i++) u[i] = parseInt(h.substr(i * 2, 2), 16);
   return u;
@@ -547,7 +549,7 @@ export const TOOLS = [
     inputs: [{ k: "hex", label: "First bytes (hex or base64)", type: "textarea", rows: 3, placeholder: "89 50 4E 47 0D 0A 1A 0A" }, { k: "fmt", label: "Input format", type: "select", opts: ["Auto", "Hex", "Base64"], value: "Auto" }],
     run(v, H) {
       let raw;
-      try { raw = bytesFrom(v.hex, v.fmt || "Auto", H); } catch (e) { return { error: "Not valid base64." }; }
+      try { raw = bytesFrom(v.hex, v.fmt || "Auto", H); } catch (e) { return { error: /hex/i.test(e.message) ? e.message : "Not valid base64." }; }
       const h = H.toHex(raw).toUpperCase();
       if (!h) return "";
       const hits = [];
@@ -563,7 +565,7 @@ export const TOOLS = [
     run(v, H) {
       if (!v.data) return "";
       let u;
-      try { u = bytesFrom(v.data, v.src || "Text", H); } catch (e) { return { error: "Not valid base64." }; }
+      try { u = bytesFrom(v.data, v.src || "Text", H); } catch (e) { return { error: /hex/i.test(e.message) ? e.message : "Not valid base64." }; }
       if (!u.length) return { error: "No bytes to dump." };
       const w = [8, 16, 32].includes(Number(v.width)) ? Number(v.width) : 16;
       const lines = [];
