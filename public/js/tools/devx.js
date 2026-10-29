@@ -875,18 +875,21 @@ export const TOOLS = [
       const d = new Date();
       d.setSeconds(0, 0);
       d.setMinutes(d.getMinutes() + 1);
-      let guard = 0;
-      while (out.length < count && guard < 366 * 24 * 60 * 2) {
-        guard++;
-        if (mins.has(d.getMinutes()) && hrs.has(d.getHours()) && mons.has(d.getMonth() + 1)) {
-          const domOk = doms.has(d.getDate());
-          const dowOk = dows.has(d.getDay());
-          const dayOk = domRestricted && dowRestricted ? (domOk || dowOk) : (domOk && dowOk);
-          if (dayOk) out.push(d.toString().replace(/ \(.*\)$/, ""));
-        }
+      // Skip a whole month, day or hour that cannot match, so yearly schedules (0 0 1 12 *)
+      // and leap days (29 2) get all their runs; 8 years covers every Feb 29 gap.
+      const end = new Date(d); end.setFullYear(end.getFullYear() + 8);
+      while (out.length < count && d < end) {
+        if (!mons.has(d.getMonth() + 1)) { d.setMonth(d.getMonth() + 1, 1); d.setHours(0, 0); continue; }
+        const domOk = doms.has(d.getDate());
+        const dowOk = dows.has(d.getDay());
+        const dayOk = domRestricted && dowRestricted ? (domOk || dowOk) : (domOk && dowOk);
+        if (!dayOk) { d.setDate(d.getDate() + 1); d.setHours(0, 0); continue; }
+        if (!hrs.has(d.getHours())) { d.setHours(d.getHours() + 1, 0); continue; }
+        if (mins.has(d.getMinutes())) out.push(d.toString().replace(/ \(.*\)$/, ""));
         d.setMinutes(d.getMinutes() + 1);
       }
-      return out.length ? out.join("\n") : "No matching times within one year.";
+      if (!out.length) return "No matching times within 8 years.";
+      return out.join("\n") + (out.length < count ? `\n(only ${out.length} run${out.length === 1 ? "" : "s"} in the next 8 years)` : "");
     },
   },
   {

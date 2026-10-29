@@ -25,6 +25,18 @@ group("dv-cron-next: names, N/step, star day fields", () => {
     const mins = new Set(next("50/5 * * * *", 6).map((d) => d.getMinutes()));
     assert.deepEqual([...mins].sort((a, b) => a - b), [50, 55]);
   });
+  test("a yearly schedule gets every run asked for, not the two found in a two-year minute scan", () => {
+    const r = next("0 0 1 12 *", 5);
+    assert.equal(r.length, 5);
+    r.forEach((d, i) => assert.ok(d.getMonth() === 11 && d.getDate() === 1 && d.getHours() === 0 && (i === 0 || d.getFullYear() === r[i - 1].getFullYear() + 1), String(d)));
+  });
+  test("leap days are found, and a short list says why", () => {
+    const raw = TOOLS.find((t) => t.id === "dv-cron-next").run({ expr: "0 0 29 2 *", count: 5 }, H);
+    const lines = raw.split("\n");
+    assert.ok(lines.length >= 2 && /only \d runs? in the next 8 years/.test(lines[lines.length - 1]), raw);
+    for (const l of lines.slice(0, -1)) { const d = new Date(l); assert.ok(d.getMonth() === 1 && d.getDate() === 29, l); }
+    assert.equal(TOOLS.find((t) => t.id === "dv-cron-next").run({ expr: "0 0 31 2 *", count: 5 }, H), "No matching times within 8 years.");
+  });
   test("*/2 in day-of-month is ANDed with a weekday", () => {
     for (const d of next("0 0 */2 * MON", 6)) assert.ok(d.getDay() === 1 && d.getDate() % 2 === 1, String(d));
   });
