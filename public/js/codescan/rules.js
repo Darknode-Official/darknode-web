@@ -55,6 +55,8 @@ const SKIP_LINE = 2000; // ignore pathological minified lines (regex cost + nois
 // a rule names its detectors and adds the Code Scanner's own ids, severity, CWE and
 // advice. `pick` chooses the value to report (masked in the UI, never sent anywhere),
 // `accept` / `minLen` / `minEntropy` filter dictionary-looking matches.
+// Files whose unquoted `name = value` lines are literal values, not code.
+const CONFIG_FILE = /(?:^|\/)\.env(?:\.[^/]*)?$|\.(?:ya?ml|properties|ini|cfg|conf|env)$/i;
 export const SECRET_RULES = [
   { id: "secret.aws-access-key", title: "AWS access key ID", detectors: ["aws-key"], sev: "high", cwe: 798,
     why: "An AWS access key ID in source usually travels with its secret key and grants API access to the account.",
@@ -101,15 +103,16 @@ export const SECRET_RULES = [
   { id: "secret.db-url", title: "Database URL with password", detectors: ["conn-string"], pick: (h) => h.m[1], minLen: 4, sev: "high", cwe: 798,
     why: "Connection strings with an inline password give direct database access to anyone who reads the repo.",
     fix: "Move the connection string to an environment variable or secrets manager and rotate the password." },
-  { id: "secret.generic", title: "Hardcoded credential", detectors: ["pat-assignment"], accept: (h) => keyHoldsSecret(assignmentKey(h.whole), "._-"), minLen: 12, sev: "medium", cwe: 798, minEntropy: 3.5,
+  { id: "secret.generic", title: "Hardcoded credential", detectors: ["pat-assignment", "config-assignment"], only: { "config-assignment": CONFIG_FILE }, accept: (h) => keyHoldsSecret(h.m[1] || assignmentKey(h.whole), "._-"), minLen: 12, sev: "medium", cwe: 798, minEntropy: 3.5,
     why: "Credentials embedded in source are readable by everyone with repo access and persist in git history.",
     fix: "Load the value from the environment or a secrets manager, rotate it, and purge it from history." }
 ];
 
 // First hit of a secret rule in `text`: { val, index } (index = start of the match), or null.
-function secretHit(rule, text) {
+function secretHit(rule, text, path = "") {
   let sample = null; // a match the detector rejected as an example/placeholder value
   for (const id of rule.detectors) {
+    if (rule.only?.[id] && !rule.only[id].test(path)) continue;
     const d = detector(id);
     for (const h of findAll(d, text, { validate: false })) { // validated here so placeholder rejects can be reported
       if (d.validate && !d.validate(h.value, h.whole, { text, index: h.start })) { if (PLACEHOLDER.test(h.value)) sample = h.value; continue; }
@@ -360,7 +363,7 @@ export function scanFile(path, text) {
     if (raw.length > SKIP_LINE || IGNORE.test(raw) || (i > 0 && IGNORE.test(lines[i - 1]) && /darknode-ignore-next-line/.test(lines[i - 1]))) continue;
     // Secrets: scan raw line (secrets are often inside strings/comments too).
     for (const rule of SECRET_RULES) {
-      const m = secretHit(rule, raw);
+      const m = secretHit(rule, raw, path);
       if (!m) continue;
       if (m.placeholder) { samples.add(i + ":" + m.placeholder); continue; }
       const val = m.val;

@@ -68,6 +68,7 @@ export const FIXTURES = {
   "cloudflare-api-token": { pos: "CF_API_TOKEN=" + r(40), neg: r(40) },
   "bearer-auth": { pos: "Authorization: Bearer " + r(32), neg: "Bearer short" },
   "pat-assignment": { pos: 'db.password = "' + r(16) + '"', neg: 'password = "your-password-here"' },
+  "config-assignment": { pos: "DB_PASSWORD=" + r(16) + "9", neg: "max_tokens: 100000\npassword: ${DB_PASSWORD}\napi_key: changeme" },
 };
 
 // The former detector sets: scanner id -> core detector id.

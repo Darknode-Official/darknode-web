@@ -44,7 +44,7 @@ const NOT_A_VALUE = /^(?:<[^>]+>|\$\{?[a-z_]+\}?|%[a-z_]+%|null|none|true|false)
 const realValue = (m) => !(PLACEHOLDER_VALUE.test(m) || NOT_A_VALUE.test(m) || /^(.)\1+$/.test(m));
 
 // Key names that hold a credential in `name = "value"` assignments.
-export const SECRET_KEY_WORDS = /^(?:passwd|password|pwd|secret|token|api[_-]?key|apikey|access[_-]?(?:key|token)|auth[_-]?key|client[_-]?secret)$/i;
+export const SECRET_KEY_WORDS = /^(?:passwd|password|pwd|secret|secret[_-]?key|token|api[_-]?key|apikey|access[_-]?(?:key|token)|auth[_-]?key|client[_-]?secret)$/i;
 
 /**
  * True when assignment key `key` ends in a credential word (SECRET_KEY_WORDS) that starts
@@ -125,7 +125,7 @@ export const SECRET_DETECTORS = [
   },
   {
     id: 'slack-token', name: 'Slack token', severity: 'high',
-    re: /\bxox[baprs]-[A-Za-z0-9-]{10,}/g,
+    re: /\bxox[baprse]-[A-Za-z0-9-]{10,}/g,
     advice: 'Revoke the Slack token in the app management console.',
   },
   {
@@ -303,6 +303,18 @@ export const SECRET_DETECTORS = [
     re: /(?<![A-Za-z0-9])([A-Za-z0-9_.-]*?(?:passw(?:or)?d|pwd|secret|token|api[_-]?key|apikey|access[_-]?(?:key|token)|auth[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*)["']?[\t ]*[:=][\t ]*["']([^"'\s]{6,})["']/gi,
     g: 2,
     validate: realValue,
+    advice: 'Move the secret to a secrets manager or environment variable.',
+  },
+  {
+    // An unquoted `NAME=value` / `name: value` line, as written in .env, YAML and
+    // .properties files. Line-anchored; the value must start like a literal (not $VAR,
+    // ${...}, <...>, a YAML tag, anchor, alias, block or flow marker) and contain a digit
+    // or symbol, so a word or a plain number is not reported. Meant for config files:
+    // in source code the same shape is usually a variable read, not a secret.
+    id: 'config-assignment', name: 'Password or secret in a config file', severity: 'high',
+    re: /^[\t ]*(?:export[\t ]+)?([A-Za-z0-9_.-]*?(?:passw(?:or)?d|pwd|secret|token|api[_-]?key|apikey|access[_-]?(?:key|token)|auth[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*)[\t ]*[:=][\t ]*([^\s"'#$<{\[|>&*!%@`]\S{5,})(?:[\t ]+#.*)?[\t ]*$/gim,
+    g: 2,
+    validate: (m) => realValue(m) && /[^A-Za-z]/.test(m) && !/^[\d.,_-]+$/.test(m),
     advice: 'Move the secret to a secrets manager or environment variable.',
   },
 ];
