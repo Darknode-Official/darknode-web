@@ -145,19 +145,24 @@ function parseEnv(text) {
 }
 
 function parseINI(text) {
+  // As Python's configparser reads it: [section] (a trailing ; or # comment allowed), key = value
+  // or key: value split at the first = or :, an indented line continues the previous value,
+  // and a bare key has no value (null).
   const lines = String(text).split(/\r?\n/);
   const out = {};
-  let section = null;
+  let section = null, last = null;
+  const put = (o, k, v) => Object.defineProperty(o, k, { value: v, writable: true, enumerable: true, configurable: true });
   for (const raw of lines) {
     const line = raw.trim();
     if (!line || line.startsWith(";") || line.startsWith("#")) continue;
-    const sec = line.match(/^\[(.+)\]$/);
+    if (last && /^[ \t]/.test(raw)) { const o = section ? out[section] : out; o[last] = (o[last] == null ? "" : o[last] + "\n") + line; continue; }
+    const sec = line.match(/^\[([^\]]+)\]\s*(?:[;#].*)?$/);
     // own keys only: a [__proto__] or [constructor] section must not reach the prototype or Object itself
-    if (sec) { section = sec[1]; if (!Object.hasOwn(out, section)) Object.defineProperty(out, section, { value: {}, writable: true, enumerable: true, configurable: true }); continue; }
-    const kv = line.match(/^([^=]+)=(.*)$/);
-    if (!kv) continue;
-    const k = kv[1].trim(), val = kv[2].trim();
-    Object.defineProperty(section ? out[section] : out, k, { value: val, writable: true, enumerable: true, configurable: true });
+    if (sec) { section = sec[1].trim(); last = null; if (!Object.hasOwn(out, section)) put(out, section, {}); continue; }
+    const kv = line.match(/^([^=:]+)[=:](.*)$/);
+    const k = (kv ? kv[1] : line).trim();
+    put(section ? out[section] : out, k, kv ? kv[2].trim() : null);
+    last = k;
   }
   return out;
 }
