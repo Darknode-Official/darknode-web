@@ -187,7 +187,7 @@ export const TOOLS = [
       const tnum = (k) => typeof payload[k] === "number";
       L.push(`Status    : ${tnum("exp") && payload.exp < now ? `EXPIRED ${jwtRel(payload.exp, now)}`
         : tnum("nbf") && payload.nbf > now ? `NOT YET VALID (nbf ${jwtRel(payload.nbf, now)})`
-          : tnum("exp") ? `valid, expires ${jwtRel(payload.exp, now)}` : "no exp claim (never expires)"}  [now ${now} = ${jwtHumanTime(now)}]`);
+          : tnum("exp") ? `valid, expires ${jwtRel(payload.exp, now)}` : "exp" in payload ? `exp is not a number (${JSON.stringify(payload.exp)})` : "no exp claim (never expires)"}  [now ${now} = ${jwtHumanTime(now)}]`);
       L.push("");
       L.push("-- HEADER --");
       L.push(jsonPretty(header));
@@ -254,6 +254,7 @@ export const TOOLS = [
 
       // Expiry / temporal hygiene
       if (!("exp" in payload)) add("HIGH", "No \"exp\" claim — this token never expires. A leaked token is valid forever.");
+      else if (typeof payload.exp !== "number") add("MEDIUM", `"exp" is ${JSON.stringify(payload.exp)}, not a NumericDate (seconds since 1970). RFC 7519 requires a number; libraries that skip a non-numeric exp treat the token as never expiring, others reject it.`);
       else if (typeof payload.exp === "number" && payload.exp < now) add("MEDIUM", `Token is EXPIRED (exp ${jwtRel(payload.exp, now)}). Valid only against servers that skip expiry checks.`);
       if ("nbf" in payload && typeof payload.nbf === "number" && payload.nbf > now) add("INFO", `"nbf" is in the future (${jwtRel(payload.nbf, now)}) — not yet valid.`);
       if ("iat" in payload && typeof payload.iat === "number" && payload.iat > now + 60) add("MEDIUM", `"iat" is in the future (${jwtRel(payload.iat, now)}) — clock skew or a forged/re-dated token.`);
