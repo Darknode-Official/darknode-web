@@ -20,6 +20,65 @@ function cmpIds(a, b) {
   if (bn) return 1;
   return a < b ? -1 : a > b ? 1 : 0;
 }
+// npm range -> comparator sets [[{op, v}]] (|| = any set; all comparators in a set must hold).
+// Follows node-semver: X-ranges and partial versions (1, 1.x, 1.2.*), hyphen ranges (with a
+// partial upper bound meaning "below the next"), ^ and ~ on partials, ~> as ~. Null if invalid.
+const RNUM = "(0|[1-9]\\d*|[xX*])";
+const RPART = new RegExp("^v?" + RNUM + "(?:\\." + RNUM + "(?:\\." + RNUM + "(?:-([0-9A-Za-z.-]+))?(?:\\+[0-9A-Za-z.-]+)?)?)?$");
+function npmRange(range) {
+  const isX = (x) => x == null || /^[xX*]$/.test(x);
+  const part = (t) => { const m = RPART.exec(t); return m ? { M: m[1], m: m[2], p: m[3], pre: m[4] } : null; };
+  const full = (M, m, p, pre) => `${M}.${m}.${p}${pre ? "-" + pre : ""}`;
+  const one = (tok) => {
+    const om = /^(~>|~|\^|>=|<=|>|<|=)?(.*)$/.exec(tok);
+    let op = om[1] || "";
+    const x = part(om[2]);
+    if (!x) return null;
+    let { M, m, p, pre } = x;
+    const xM = isX(M), xm = xM || isX(m), xp = xm || isX(p);
+    M = xM ? 0 : +M; m = xm ? 0 : +m; p = xp ? 0 : +p;
+    if (op === "~>" || op === "~") {
+      if (xM) return [];
+      if (xm) return [{ op: ">=", v: full(M, 0, 0) }, { op: "<", v: full(M + 1, 0, 0, "0") }];
+      return [{ op: ">=", v: full(M, m, p, xp ? "" : pre) }, { op: "<", v: full(M, m + 1, 0, "0") }];
+    }
+    if (op === "^") {
+      if (xM) return [];
+      const lo = { op: ">=", v: full(M, m, p, xp ? "" : pre) };
+      if (xm || M > 0) return [lo, { op: "<", v: full(M + 1, 0, 0, "0") }];
+      if (xp || m > 0) return [lo, { op: "<", v: full(0, m + 1, 0, "0") }];
+      return [lo, { op: "<", v: full(0, 0, p + 1, "0") }];
+    }
+    if (op === "=") op = "";
+    if (xM) return op === ">" || op === "<" ? [{ op: "<", v: "0.0.0-0" }] : [];
+    if (op && xp) { // >1 = >=2.0.0, >1.2 = >=1.3.0, <=1 = <2.0.0-0, <1.2 = <1.2.0-0
+      if (op === ">") { op = ">="; if (xm) { M++; m = 0; } else m++; p = 0; }
+      else if (op === "<=") { op = "<"; if (xm) M++; else m++; }
+      return [{ op, v: full(M, m, p, op === "<" ? "0" : "") }];
+    }
+    if (xm) return [{ op: ">=", v: full(M, 0, 0) }, { op: "<", v: full(M + 1, 0, 0, "0") }];
+    if (xp) return [{ op: ">=", v: full(M, m, 0) }, { op: "<", v: full(M, m + 1, 0, "0") }];
+    return [{ op: op || "=", v: full(M, m, p, pre) }];
+  };
+  const sets = [];
+  for (let raw of String(range).split("||")) {
+    raw = raw.trim().replace(/(~>|~|\^|>=|<=|>|<|=)\s+/g, "$1");
+    let set = [];
+    const hy = /^(\S+)\s+-\s+(\S+)$/.exec(raw);
+    if (hy) {
+      const a = part(hy[1]), b = part(hy[2]);
+      if (!a || !b) return null;
+      if (!isX(a.M)) set.push({ op: ">=", v: full(+a.M, isX(a.m) ? 0 : +a.m, isX(a.m) || isX(a.p) ? 0 : +a.p, isX(a.m) || isX(a.p) ? "" : a.pre) });
+      if (isX(b.M)) {} else if (isX(b.m)) set.push({ op: "<", v: full(+b.M + 1, 0, 0, "0") });
+      else if (isX(b.p)) set.push({ op: "<", v: full(+b.M, +b.m + 1, 0, "0") });
+      else set.push({ op: "<=", v: full(+b.M, +b.m, +b.p, b.pre) });
+    } else if (raw) {
+      for (const tok of raw.split(/\s+/)) { const c = one(tok); if (!c) return null; set = set.concat(c); }
+    }
+    sets.push(set);
+  }
+  return sets;
+}
 function cmpSemver(a, b) {
   const pa = parseSemver(a), pb = parseSemver(b);
   if (!pa || !pb) return NaN;
@@ -235,7 +294,7 @@ export const TOOLS = [
   },
   {
     id: "dv-semver-satisfies", name: "Semver Satisfies", cat: "devx",
-    desc: "Test whether a version satisfies a basic range: caret (^), tilde (~), exact, or a single comparator (>=, >, <=, <, =).",
+    desc: "Test whether a version satisfies an npm semver range: ^, ~, comparators, x-ranges (1.x, 1.2.*), partial versions, hyphen ranges (1.0.0 - 2.0.0) and || alternatives.",
     tags: ["semver", "range", "caret", "tilde", "satisfies"],
     inputs: [
       { k: "version", label: "Version", type: "text", placeholder: "1.4.2" },
@@ -245,37 +304,21 @@ export const TOOLS = [
       if (!S(v.version).trim() || !S(v.range).trim()) return "";
       const p = parseSemver(v.version);
       if (!p) return { error: "Version is not valid semver." };
-      const r = S(v.range).trim();
-      const m = /^(\^|~|>=|<=|>|<|=)?\s*(.+)$/.exec(r);
-      const op = m[1] || "=";
-      const base = parseSemver(m[2]);
-      if (!base) return { error: "Range target is not valid semver." };
-      // npm rule: a prerelease version only matches a range whose comparator is a prerelease of
-      // the same major.minor.patch (so 2.0.0-0 is not in ^1.2.3, nor 1.2.4-beta.0 in >1.2.3)
-      const preOut = !!p.prerelease && !(base.prerelease && base.major === p.major && base.minor === p.minor && base.patch === p.patch);
-      const why = preOut ? " (prerelease versions only match a range that names a prerelease of " + p.major + "." + p.minor + "." + p.patch + ")" : "";
-      let lo, hi; // [lo, hi)
-      // Keep the prerelease tag — dropping it made "=1.0.0-alpha" and the
-      // caret/tilde lower bounds compare against the release, which sorts above
-      // any prerelease, so a matching prerelease version wrongly failed.
-      const bstr = `${base.major}.${base.minor}.${base.patch}${base.prerelease ? "-" + base.prerelease : ""}`;
-      if (op === "^") {
-        lo = bstr;
-        hi = base.major > 0 ? `${base.major + 1}.0.0` : base.minor > 0 ? `0.${base.minor + 1}.0` : `0.0.${base.patch + 1}`;
-      } else if (op === "~") {
-        lo = bstr; hi = `${base.major}.${base.minor + 1}.0`;
-      } else {
-        const c = cmpSemver(v.version, bstr);
-        let ok = false;
-        if (op === "=") ok = c === 0;
-        else if (op === ">") ok = c > 0;
-        else if (op === ">=") ok = c >= 0;
-        else if (op === "<") ok = c < 0;
-        else if (op === "<=") ok = c <= 0;
-        return `${ok && !preOut ? "SATISFIES" : "does NOT satisfy"}: ${v.version} ${op} ${bstr}${ok ? why : ""}`;
+      const sets = npmRange(S(v.range));
+      if (!sets) return { error: "Range is not a valid npm semver range." };
+      const ver = `${p.major}.${p.minor}.${p.patch}${p.prerelease ? "-" + p.prerelease : ""}`;
+      const show = (set) => set.map((c) => c.op + c.v).join(" ") || "*";
+      let hit = null, preBlocked = false;
+      for (const set of sets) {
+        if (!set.every((c) => { const k = cmpSemver(ver, c.v); return c.op === ">=" ? k >= 0 : c.op === ">" ? k > 0 : c.op === "<=" ? k <= 0 : c.op === "<" ? k < 0 : k === 0; })) continue;
+        // npm rule: a prerelease version only matches a set that has a prerelease comparator
+        // on the same major.minor.patch (so 2.0.0-0 is not in ^1.2.3, nor 1.2.4-beta.0 in >1.2.3)
+        if (p.prerelease && !set.some((c) => { const b = parseSemver(c.v); return b.prerelease && b.major === p.major && b.minor === p.minor && b.patch === p.patch; })) { preBlocked = true; continue; }
+        hit = set; break;
       }
-      const ok = cmpSemver(v.version, lo) >= 0 && cmpSemver(v.version, hi) < 0;
-      return `${ok && !preOut ? "SATISFIES" : "does NOT satisfy"}: ${v.version} in [${lo}, ${hi})${ok ? why : ""}`;
+      const means = sets.map(show).join("  ||  ");
+      if (hit) return `SATISFIES: ${v.version} matches ${show(hit)}\n\nRange ${S(v.range).trim()} means: ${means}`;
+      return `does NOT satisfy: ${v.version}\n\nRange ${S(v.range).trim()} means: ${means}` + (preBlocked ? `\n(prerelease versions only match a range that names a prerelease of ${p.major}.${p.minor}.${p.patch})` : "");
     },
   },
   {

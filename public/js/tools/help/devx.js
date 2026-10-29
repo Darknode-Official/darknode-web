@@ -42,8 +42,8 @@ export const HELP = {
     example: { version: "1.4.2", type: "minor" },
   },
   "dv-semver-satisfies": {
-    what: "Checks whether a version matches a version rule like ^1.2.0, ~1.2.0 or >=2.0.0, and answers yes or no.",
-    when: "You want to know if a package.json range will accept a certain version. Only single rules are supported, not combined ranges like \">=1 <2\" or \"||\".",
+    what: "Checks whether a version matches an npm version range, the same way npm does, and shows what the range expands to.",
+    when: "You want to know if a package.json range like ^1.2, ~1.4.0, 1.x, >=1 <2, 1.0.0 - 2.3 or \"^1 || ^2\" will accept a certain version.",
     example: { version: "1.8.3", range: "^1.2.0" },
   },
   "dv-chmod-sym-to-oct": {
