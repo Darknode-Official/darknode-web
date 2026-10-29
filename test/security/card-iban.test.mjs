@@ -25,3 +25,13 @@ group("card brand and IBAN", () => {
     assert.ok(/Valid: YES/.test(run("h-iban-validate", { iban: "GB29 NWBK 6016 1331 9268 19" })));
   });
 });
+
+group("regex lab library: Mastercard pattern", () => {
+  test("matches 2-series cards, not neighbours", async () => {
+    const fs = await import("node:fs");
+    const src = fs.readFileSync(new URL("../../public/js/regex-lab.js", import.meta.url), "utf8");
+    const re = new RegExp(JSON.parse(src.match(/name: "Credit Card \(Mastercard\)", pattern: ("(?:[^"\\]|\\.)*")/)[1]));
+    for (const n of ["5555 5555 5555 4444", "2221 0000 0000 0009", "2720-9999-9999-9996"]) assert.ok(re.test(n), n);
+    for (const n of ["2220 0000 0000 0000", "2721 0000 0000 0000"]) assert.ok(!re.test(n), n);
+  });
+});

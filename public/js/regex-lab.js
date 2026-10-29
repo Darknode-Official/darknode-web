@@ -21,7 +21,7 @@ var REGEX_LIBRARY = [
   { cat: "Identity", name: "Date (ISO 8601)", pattern: "\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])", desc: "Date in YYYY-MM-DD format" },
 
   { cat: "Financial", name: "Credit Card (Visa)", pattern: "\\b4\\d{3}[\\-\\s]?\\d{4}[\\-\\s]?\\d{4}[\\-\\s]?\\d{4}\\b", desc: "Visa card numbers (starts with 4)" },
-  { cat: "Financial", name: "Credit Card (Mastercard)", pattern: "\\b5[1-5]\\d{2}[\\-\\s]?\\d{4}[\\-\\s]?\\d{4}[\\-\\s]?\\d{4}\\b", desc: "Mastercard (starts with 51-55)" },
+  { cat: "Financial", name: "Credit Card (Mastercard)", pattern: "\\b(?:5[1-5]\\d{2}|222[1-9]|22[3-9]\\d|2[3-6]\\d{2}|27[01]\\d|2720)[\\-\\s]?\\d{4}[\\-\\s]?\\d{4}[\\-\\s]?\\d{4}\\b", desc: "Mastercard (starts with 51-55 or 2221-2720)" },
   { cat: "Financial", name: "Credit Card (Amex)", pattern: "\\b3[47]\\d{2}[\\-\\s]?\\d{6}[\\-\\s]?\\d{5}\\b", desc: "American Express (starts with 34/37)" },
   { cat: "Financial", name: "Bitcoin Address", pattern: "\\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\\b", desc: "Bitcoin P2PKH or P2SH address" },
 
