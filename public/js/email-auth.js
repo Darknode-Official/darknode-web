@@ -147,6 +147,7 @@ function analyzeSPF(txts) {
     ] };
   }
   var findings = [];
+  var nSpf = (txts || []).filter(function (t) { return /^v=spf1(\s|$)/i.test(String(t).trim()); }).length;
   var tokens = rec.split(/\s+/).slice(1).filter(Boolean);
   var allPolicy = null, includes = 0, lookups = 0, worst = "PASS";
 
@@ -193,6 +194,10 @@ function analyzeSPF(txts) {
     findings.push({ kind: "warn", text: "Close to the SPF 10 DNS-lookup limit (about " + lookups + "). Watch for growth." });
     if (worst === "PASS") worst = "WARN";
   }
+  if (nSpf > 1) {
+    findings.unshift({ kind: "bad", text: nSpf + " SPF records (v=spf1) are published. RFC 7208 4.5 makes that a permerror: SPF fails for all mail. Merge them into one record." });
+    worst = "FAIL";
+  }
 
   return { status: worst, record: rec, findings: findings };
 }
@@ -218,6 +223,7 @@ function analyzeDMARC(txts) {
   });
 
   var findings = [];
+  var nDmarc = (txts || []).filter(function (t) { return /^v=DMARC1\s*;?/i.test(String(t).trim()); }).length;
   var p = (tags.p || "").toLowerCase();
   var status;
   if (p === "reject") {
@@ -249,6 +255,10 @@ function analyzeDMARC(txts) {
   if (tags.adkim) findings.push({ kind: "info", text: "DKIM alignment adkim=" + tags.adkim + (tags.adkim.toLowerCase() === "s" ? " (strict)" : " (relaxed)") });
   if (tags.aspf) findings.push({ kind: "info", text: "SPF alignment aspf=" + tags.aspf + (tags.aspf.toLowerCase() === "s" ? " (strict)" : " (relaxed)") });
   if (tags.fo) findings.push({ kind: "info", text: "Failure reporting options fo=" + tags.fo });
+  if (nDmarc > 1) {
+    findings.unshift({ kind: "bad", text: nDmarc + " DMARC records are published at _dmarc. RFC 7489 6.6.3: receivers then apply no DMARC policy at all. Keep exactly one." });
+    status = "FAIL";
+  }
 
   return { status: status, record: rec, findings: findings };
 }
@@ -421,6 +431,8 @@ function scoreFor(status) {
 }
 
 // ── render ──
+export { analyzeSPF, analyzeDMARC };
+
 export function renderEmailAuth(main) {
   main.innerHTML = EA_CSS +
     '<div class="ea-wrap">' +
