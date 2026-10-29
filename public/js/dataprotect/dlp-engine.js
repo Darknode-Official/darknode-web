@@ -184,7 +184,8 @@ const DIGEST_LABEL = /\b(?:commit|sha-?(?:1|224|256|384|512)?|md5|hash|checksum|
 
 function looksLikeWords(tok) {
   // Reject tokens that are really joined English (low digit/mixed-case mix).
-  return /^[A-Za-z]+$/.test(tok) || /^[A-Za-z]+(?:[._-][A-Za-z]+)+$/.test(tok);
+  // ("/" too: Microsoft-Windows-Sysmon/Operational, email-auth/SPF-DKIM-DMARC are paths, not keys)
+  return /^[A-Za-z]+$/.test(tok) || /^[A-Za-z]+(?:[._/-][A-Za-z]+)+$/.test(tok);
 }
 
 export function scanEntropy(text, alreadyFound, opts = {}) {

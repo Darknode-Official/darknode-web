@@ -299,3 +299,14 @@ group("dlp: ISBN-13s are not card numbers", () => {
     assert.ok(luhnValid("9780000000008") && cards("n 9780000000008").length === 1);
   });
 });
+
+group("dlp: slash-joined words are not secrets", () => {
+  const ent = (t) => scan(t).findings.filter((f) => f.id === "high-entropy").map((f) => f.value);
+  test("event-log channels and word paths are not flagged", () => {
+    assert.deepEqual(ent("channel Microsoft-Windows-PowerShell/Operational"), []);
+    assert.deepEqual(ent("see email-auth/SPF-DKIM-DMARC notes"), []);
+  });
+  test("a base64 blob with slashes is still flagged", () => {
+    assert.equal(ent("k=Zm9vYmFy/Qk1xZ3J0eVhUa2/9wQW1zN2Rk").length, 1);
+  });
+});
