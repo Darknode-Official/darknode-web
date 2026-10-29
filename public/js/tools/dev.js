@@ -374,7 +374,7 @@ export const TOOLS = [
       return v.template.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (m, key) => {
         const parts = key.split(".");
         let cur = p.val;
-        for (const k of parts) { if (cur == null) return m; cur = cur[k]; }
+        for (const k of parts) { if (cur == null || !Object.hasOwn(Object(cur), k)) return m; cur = cur[k]; } // own keys only: {{constructor}} is not Object's source
         return cur === undefined ? m : String(cur);
       });
     } },

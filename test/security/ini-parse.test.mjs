@@ -19,3 +19,10 @@ group("d-ini-to-json: configparser rules", () => {
     assert.deepEqual(ini("[s]\nk2\nb = x ; c"), { s: { k2: null, b: "x ; c" } });
   });
 });
+
+group("d-text-templater: own keys only", () => {
+  test("{{constructor}} and {{toString}} stay unfilled instead of printing native code", () => {
+    const out = TOOLS.find((t) => t.id === "d-text-templater").run({ template: "{{constructor}} {{toString}} {{name}} {{name.length}} {{items.0}}", data: '{"name":"Al","items":["x"]}' }, H);
+    assert.equal(out, "{{constructor}} {{toString}} Al 2 x");
+  });
+});
