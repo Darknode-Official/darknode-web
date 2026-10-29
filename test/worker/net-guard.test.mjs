@@ -54,6 +54,12 @@ group("net-guard/hostAllowed", () => {
     assert.notOk(allowed("http://127.1/"));                // 127.0.0.1
     assert.notOk(allowed("http://2852039166/"));           // 169.254.169.254
   });
+  test("all of fe80::/10 link-local and fec0::/10 site-local are blocked", () => {
+    assert.notOk(allowed("http://[fe90::1]/"));
+    assert.notOk(allowed("http://[febf::1]/"));
+    assert.notOk(allowed("http://[fec0::1]/"));
+    assert.ok(allowed("http://[2606:4700::1]/"));
+  });
   test("non-http(s) schemes are blocked", () => {
     assert.notOk(allowed("file:///etc/passwd"));
     assert.notOk(allowed("ftp://example.com/"));

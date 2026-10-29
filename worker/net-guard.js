@@ -56,7 +56,7 @@ export function hostAllowed(u) {
   if (ipv4Private(dotted)) return false;
   if (h.includes(":")) { // IPv6 literal
     if (h === "::1" || h === "::") return false;
-    if (h.startsWith("fe80") || h.startsWith("fc") || h.startsWith("fd")) return false;
+    if (/^fe[89a-f]/.test(h) || h.startsWith("fc") || h.startsWith("fd")) return false;
     if (h.startsWith("::ffff:") && ipv4Private(h.slice(7))) return false;
     // An IPv4 address carried in IPv6 reaches that IPv4 host. URL() rewrites ::ffff:169.254.169.254
     // to ::ffff:a9fe:a9fe, which the dotted check above never saw; also NAT64 (64:ff9b::),
