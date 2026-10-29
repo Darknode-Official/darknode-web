@@ -129,27 +129,23 @@ const ULID_ALPHA = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 export const TOOLS = [
   {
     id: "dv-uuid-v7", name: "UUID v7 (time-ordered)", cat: "devx",
-    desc: "Generate version-7 UUIDs whose leading bits encode the current Unix millisecond, so they sort chronologically.",
+    desc: "Generate version-7 UUIDs whose leading bits encode the current Unix millisecond, so they sort chronologically; IDs made in the same millisecond count up, so a batch stays in order.",
     tags: ["uuid", "v7", "sortable", "id", "time"],
     inputs: [{ k: "count", label: "How many", type: "range", min: 1, max: 100, step: 1, value: 5 }],
     run(v, H) {
       const n = H.clampInt(v.count, 1, 100, 5);
       const out = [];
+      // 74 random bits (rand_a 12 + rand_b 62). Within one millisecond the next ID is the
+      // previous one plus one, so a batch sorts in generation order (RFC 9562 section 6.2).
+      const rand74 = () => H.randBytes(10).reduce((acc, x) => (acc << 8n) | BigInt(x), 0n) & ((1n << 74n) - 1n);
+      let lastTs = -1, rnd = 0n;
       for (let i = 0; i < n; i++) {
-        const ts = Date.now();
-        const r = H.randBytes(10);
-        const b = new Uint8Array(16);
-        b[0] = Math.floor(ts / 2 ** 40) & 0xff;
-        b[1] = Math.floor(ts / 2 ** 32) & 0xff;
-        b[2] = Math.floor(ts / 2 ** 24) & 0xff;
-        b[3] = Math.floor(ts / 2 ** 16) & 0xff;
-        b[4] = Math.floor(ts / 2 ** 8) & 0xff;
-        b[5] = ts & 0xff;
-        b[6] = 0x70 | (r[0] & 0x0f);
-        b[7] = r[1];
-        b[8] = 0x80 | (r[2] & 0x3f);
-        for (let j = 9; j < 16; j++) b[j] = r[j - 6];
-        const h = H.toHex(b);
+        let ts = Date.now();
+        if (ts <= lastTs) { ts = lastTs; rnd++; if (rnd >> 74n) { ts++; rnd = rand74(); } }
+        else rnd = rand74();
+        lastTs = ts;
+        const ra = Number(rnd >> 62n), rb = rnd & ((1n << 62n) - 1n);
+        const h = ts.toString(16).padStart(12, "0") + (0x7000 | ra).toString(16) + ((2n << 62n) | rb).toString(16);
         out.push(`${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`);
       }
       return out.join("\n");
@@ -168,20 +164,26 @@ export const TOOLS = [
   },
   {
     id: "dv-ulid", name: "ULID Generator", cat: "devx",
-    desc: "Generate lexicographically sortable ULIDs: 48-bit millisecond timestamp plus 80 bits of randomness, Crockford base32.",
+    desc: "Generate lexicographically sortable ULIDs: 48-bit millisecond timestamp plus 80 bits of randomness, Crockford base32 (monotonic within a millisecond).",
     tags: ["ulid", "id", "sortable", "base32"],
     inputs: [{ k: "count", label: "How many", type: "range", min: 1, max: 100, step: 1, value: 5 }],
     run(v, H) {
       const n = H.clampInt(v.count, 1, 100, 5);
       const out = [];
+      let lastTs = -1, lastR = null;
       for (let i = 0; i < n; i++) {
         let ts = Date.now();
+        let r;
+        if (ts <= lastTs) {
+          // Monotonic ULID: same millisecond increments the previous random part by one.
+          ts = lastTs; r = lastR.slice();
+          let k = 15; while (k >= 0 && ++r[k] > 31) r[k--] = 0;
+          if (k < 0) { ts++; r = Array.from(H.randBytes(16), (x) => x % 32); }
+        } else r = Array.from(H.randBytes(16), (x) => x % 32);
+        lastTs = ts; lastR = r;
         let t = "";
         for (let j = 0; j < 10; j++) { t = ULID_ALPHA[ts % 32] + t; ts = Math.floor(ts / 32); }
-        const rb = H.randBytes(16);
-        let r = "";
-        for (let j = 0; j < 16; j++) r += ULID_ALPHA[rb[j] % 32];
-        out.push(t + r);
+        out.push(t + r.map((x) => ULID_ALPHA[x]).join(""));
       }
       return out.join("\n");
     },
@@ -1072,24 +1074,31 @@ export const TOOLS = [
   },
   {
     id: "dv-npm-name-validate", name: "npm Package Name Validator", cat: "devx",
-    desc: "Check a package name against npm's naming rules and report any violations.",
+    desc: "Check a package name against the rules npm publish enforces (validate-npm-package-name), including scope, core-module names and rules that apply only to new packages.",
     tags: ["npm", "package", "validate", "name"],
     inputs: [{ k: "name", label: "Package name", type: "text", placeholder: "@scope/my-pkg" }],
     run(v) {
-      const name = S(v.name).trim();
-      if (!name) return "";
-      const errs = [];
-      if (name.length > 214) errs.push("longer than 214 characters");
-      if (name !== name.toLowerCase()) errs.push("contains uppercase letters");
-      if (/^[._]/.test(name)) errs.push("starts with a dot or underscore");
-      if (/^\s|\s$/.test(name)) errs.push("has leading or trailing spaces");
-      const scoped = /^@([^/]+)\/([^/]+)$/.exec(name);
-      const testable = scoped ? scoped[2] : name;
-      if (!scoped && name.startsWith("@")) errs.push("scoped name must be @scope/name");
-      if (!/^[a-z0-9._~-]+$/.test(testable)) errs.push("contains characters that are not URL-safe (a-z 0-9 . _ ~ -)");
-      const reserved = ["node_modules", "favicon.ico"];
-      if (reserved.includes(name)) errs.push("is a reserved name");
-      return errs.length ? `INVALID:\n- ${errs.join("\n- ")}` : "VALID npm package name.";
+      const name = S(v.name);
+      if (!name.trim()) return "";
+      // validate-npm-package-name 5 (what npm publish runs): errors block any package,
+      // warnings block new packages only (old packages may still carry them).
+      const errs = [], warns = [];
+      if (/^\./.test(name)) errs.push("starts with a period");
+      if (/^_/.test(name)) errs.push("starts with an underscore");
+      if (name.trim() !== name) errs.push("has leading or trailing spaces");
+      if (["node_modules", "favicon.ico"].includes(name.toLowerCase())) errs.push("is a blocked name");
+      const core = "assert async_hooks buffer child_process cluster console constants crypto dgram diagnostics_channel dns domain events fs http http2 https inspector module net os path perf_hooks process punycode querystring readline repl stream string_decoder sys timers tls trace_events tty url util v8 vm wasi worker_threads zlib".split(" ");
+      if (core.includes(name.toLowerCase())) warns.push("is a Node.js core module name");
+      if (name.length > 214) warns.push("is longer than 214 characters");
+      if (name !== name.toLowerCase()) warns.push("contains capital letters");
+      if (/[~'!()*]/.test(name.split("/").pop())) warns.push("contains one of the special characters ~ ' ! ( ) *");
+      if (encodeURIComponent(name) !== name) {
+        const m = /^(?:@([^/]+?)[/])?([^/]+?)$/.exec(name);
+        if (!(m && encodeURIComponent(m[1]) === m[1] && encodeURIComponent(m[2]) === m[2])) errs.push(name.startsWith("@") || name.includes("/") ? "must be name or @scope/name with URL-safe characters in each part" : "contains characters that are not URL-safe");
+      }
+      if (errs.length) return `INVALID:\n- ${errs.concat(warns).join("\n- ")}`;
+      if (warns.length) return `INVALID for new packages (some older packages still use such names):\n- ${warns.join("\n- ")}`;
+      return "VALID npm package name.";
     },
   },
   {
