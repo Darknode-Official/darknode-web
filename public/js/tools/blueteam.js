@@ -587,8 +587,9 @@ export const TOOLS = [
       const seen = {}; const outRows = []; const errs = [];
       for (const p of pairs) {
         const [k, val] = p.split(":");
-        if (!M[k]) { errs.push(`unknown metric ${k}`); continue; }
-        if (!(val in M[k][1])) { errs.push(`invalid value ${val} for ${k}`); continue; }
+        if (!Object.hasOwn(M, k)) { errs.push(`unknown metric ${k}`); continue; }
+        if (!Object.hasOwn(M[k][1], val ?? "")) { errs.push(`invalid value ${val} for ${k}`); continue; }
+        if (Object.hasOwn(seen, k)) { errs.push(`metric ${k} appears more than once`); continue; }
         seen[k] = val; outRows.push(`${k} (${M[k][0]}): ${M[k][1][val]}`);
       }
       const baseReq = ["AV", "AC", "AT", "PR", "UI", "VC", "VI", "VA", "SC", "SI", "SA"];
