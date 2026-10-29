@@ -452,7 +452,7 @@ export const TOOLS = [
         const m = line.match(/^([^:]+):\s*(.*)$/);
         if (!m) return `${line} -- (not a valid "Name: value" header)`;
         const name = m[1].trim();
-        const desc = DESC[name.toLowerCase()] || "No description available for this header.";
+        const desc = (Object.hasOwn(DESC, name.toLowerCase()) && DESC[name.toLowerCase()]) || "No description available for this header.";
         return `${name}: ${desc}`;
       }).join("\n");
     } },

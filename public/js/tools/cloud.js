@@ -667,7 +667,7 @@ export const TOOLS = [
         "allUsers": "ANYONE on the internet, authenticated or not. PUBLIC — almost never appropriate.",
         "allAuthenticatedUsers": "Any user with a Google account (incl. other organisations). Effectively PUBLIC.",
       };
-      if (T[m]) return `${m}\n  ${T[m]}`;
+      if (Object.hasOwn(T, m)) return `${m}\n  ${T[m]}`;
       const i = m.indexOf(":");
       if (i < 0) return { error: "Expected type:identifier, e.g. user:alice@example.com." };
       const type = m.slice(0, i), id = m.slice(i + 1);
@@ -680,7 +680,7 @@ export const TOOLS = [
         principalSet: "A set of federated principals (e.g. a whole pool or attribute).",
         deleted: "A deleted principal still present in a binding (should be cleaned up).",
       };
-      return `type  ${type} — ${D[type] || "unknown member type"}\nid    ${id}`;
+      return `type  ${type} — ${(Object.hasOwn(D, type) && D[type]) || "unknown member type"}\nid    ${id}`;
     } },
 
   { id: "cl-gcr-parse", name: "GCP Image Registry Parser", cat: "cloud", desc: "Parse a Google Artifact Registry or Container Registry image reference into host, project, repo and image.", tags: ["gcp", "artifact registry", "gcr", "image", "parse"],

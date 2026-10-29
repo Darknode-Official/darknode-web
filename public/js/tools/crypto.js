@@ -476,7 +476,7 @@ export const TOOLS = [
     run(v) {
       if (!v.q) return "";
       const q = v.q.trim().toLowerCase();
-      if (OID_NAMES[v.q.trim()]) return `${v.q.trim()}  =  ${OID_NAMES[v.q.trim()]}`;
+      if (Object.hasOwn(OID_NAMES, v.q.trim())) return `${v.q.trim()}  =  ${OID_NAMES[v.q.trim()]}`;
       const hits = Object.entries(OID_NAMES).filter(([oid, name]) => oid.includes(q) || name.toLowerCase().includes(q));
       if (!hits.length) return { error: "No match in the built-in table." };
       return hits.slice(0, 20).map(([oid, name]) => `${oid.padEnd(32)} ${name}`).join("\n") + (hits.length > 20 ? `\n... (${hits.length - 20} more)` : "");
