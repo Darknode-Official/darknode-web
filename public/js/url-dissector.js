@@ -57,7 +57,7 @@ export function renderUrlDissector(container) {
 
   // ── ANALYZE ──
   function renderAnalyze() {
-    var h = '<div style="margin-bottom:12px;">' + inp('ud-url', 'https://example.com/path?key=value#frag') + '</div>';
+    var h = '<div style="margin-bottom:12px;" onkeydown="if(event.key===\'Enter\'&&event.target.id===\'ud-url\'){event.preventDefault();window._udAnalyze();}">' + inp('ud-url', 'https://example.com/path?key=value#frag') + '</div>';
     h += '<div style="margin-bottom:16px;">' + btn('DISSECT', 'window._udAnalyze()') + '</div>';
     h += '<div id="ud-result"></div>';
     return h;
