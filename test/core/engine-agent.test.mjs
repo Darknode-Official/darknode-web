@@ -63,7 +63,7 @@ group("engine: texting shorthand and everyday phrasing", () => {
   test("everyday words map onto the skills", () => {
     const cases = [["flip hello world backwards", /dlrow olleh/], ["make hello world all caps", /HELLO WORLD/], ["make HELLO small letters", /hello/],
       ["half of 90", /45/], ["double 21", /42/], ["what is a third of 99", /33/], ["is 17 a prime number", /17 is prime/], ["lowest common multiple of 4 and 6", /12/],
-      ["biggest of 4 9 2", /9/], ["smallest number in 8 3 5", /3/], ["what day of the week is christmas 2026", /Friday/], ["how long until halloween", /days/],
+      ["biggest of 4 9 2", /9/], ["smallest number in 8 3 5", /3/], ["what day of the week is christmas 2026", /Friday/], ["how long until halloween", /\bdays?\b|today/i],
       ["symbol for sodium", /Na/], ["how fast is light", /2\.99792458/], ["value of pi", /3\.14159/], ["whats g on earth", /9\.80665/], ["meaning of api", /interface/i],
       ["what number is XIV", /14/], ["x squared minus 9 equals 0", /3/], ["what is x if 3x = 12", /4/], ["5 factorial", /120/], ["how many ways to arrange 4 books", /24/], ["what comes after 2 4 8 16", /32/]];
     for (const [q, re] of cases) assert.ok(re.test(ans(q)), q + " -> " + ans(q).slice(0, 80));
