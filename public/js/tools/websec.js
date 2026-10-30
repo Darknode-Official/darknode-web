@@ -150,7 +150,7 @@ export const TOOLS = [
         if (pt) { try { patch = JSON.parse(pt); } catch (e) { return { error: "Claim changes are not valid JSON." }; } }
         if (patch === null || typeof patch !== "object" || Array.isArray(patch)) return { error: "Claim changes must be a JSON object, e.g. {\"role\":\"admin\"}." };
         const newPayload = Object.assign({}, payload, patch);
-        const changed = Object.keys(patch).map((k) => `  ${k}: ${JSON.stringify(payload[k])} -> ${JSON.stringify(newPayload[k])}`);
+        const changed = Object.keys(patch).map((k) => `  ${k}: ${payload[k] === undefined ? "(not set)" : JSON.stringify(payload[k])} -> ${JSON.stringify(newPayload[k])}`);
         const newHeader = Object.assign({}, header);
         let out, how;
         if (v.forgeAlg === "none") {

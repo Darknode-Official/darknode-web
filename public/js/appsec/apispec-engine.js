@@ -1262,7 +1262,7 @@ export function analyze(dataset, opts = {}, ctx) {
 // ---------------------------------------------------------------------------
 // exports
 // ---------------------------------------------------------------------------
-const csvQ = (v) => { const s = String(v == null ? "" : v); return /[",\n\r]|^[=+\-@\t]/.test(s) ? '"' + (/^[=+\-@\t]/.test(s) ? "'" : "") + s.replace(/"/g, '""') + '"' : s; };
+const csvQ = (v) => { const s = String(v == null ? "" : v); return /[",\n\r]|^[=+\-@\t\r]/.test(s) ? '"' + (/^[=+\-@\t\r]/.test(s) ? "'" : "") + s.replace(/"/g, '""') + '"' : s; };
 export const FINDING_COLS = ["severity", "confidence", "ruleId", "owasp", "title", "file", "operation", "pointer", "line", "controls", "description", "recommendation", "evidenceCount"];
 
 /** Findings as CSV with fixed columns. */

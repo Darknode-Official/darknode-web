@@ -3,8 +3,8 @@
 // checks graded by posture-engine. Personal = one domain; Enterprise = a saved
 // portfolio graded side by side (mode "portfolio").
 
-import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261028c";
-import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261027c";
+import { scorePosture } from "/js/dataprotect/posture-engine.js?v=20261029c";
+import { collectPosture, cleanDomain, validDomain } from "/js/dataprotect/posture-collect.js?v=20261029c";
 import { postureFindings, postureHeld } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, GRADE_C, recordRun, readList, writeList, pool, download } from "./ui.js";
@@ -64,6 +64,7 @@ export function mount(el, { space, mode }) {
       <div id="nsDcOut"></div>`;
     const inp = el.querySelector("#nsDcIn"), btn = el.querySelector("#nsDcGo"), out = el.querySelector("#nsDcOut");
     const run = async () => {
+      if (btn.disabled) return; // a check is running: Enter or a deep link must not start a second one that races it
       const d = cleanDomain(inp.value);
       if (!validDomain(d)) { toast("Enter a domain like yourdomain.com"); return; }
       btn.disabled = true; out.innerHTML = `<div class="ns-card"><span class="ns-spin"></span>Running live checks against <b>${esc(d)}</b>...</div>`;

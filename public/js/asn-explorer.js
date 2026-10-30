@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
-// ASN Explorer — Autonomous System Number intelligence via BGPView API
+// ASN Explorer — Autonomous System Number intelligence via RIPEstat (BGPView shut down)
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) {
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
@@ -74,7 +74,7 @@ export function renderAsnExplorer(container) {
   h += '<button onclick="_asnLookup()" class="asn-btn">Lookup</button>';
   h += '<button onclick="_asnSearch()" class="asn-btn warn">Search</button>';
   h += '</div>';
-  h += '<div class="asn-note">Data from BGPView API (api.bgpview.io) — free, no API key required</div>';
+  h += '<div class="asn-note">Data from RIPEstat (stat.ripe.net) — free, no API key required</div>';
   h += '</div>';
 
   h += '<div id="asn-results"></div>';
@@ -125,13 +125,30 @@ window._asnLookup = function() {
     _asnRenderResults(results, input, asnData, prefixData, peerData);
   }
 
-  fetch('https://api.bgpview.io/asn/' + encodeURIComponent(input))
-    .then(function(r) { return r.json(); }).then(function(d) { asnData = d; }).catch(function() { asnData = null; }).finally(function() { done++; render(); });
-  fetch('https://api.bgpview.io/asn/' + encodeURIComponent(input) + '/prefixes')
-    .then(function(r) { return r.json(); }).then(function(d) { prefixData = d; }).catch(function() { prefixData = null; }).finally(function() { done++; render(); });
-  fetch('https://api.bgpview.io/asn/' + encodeURIComponent(input) + '/peers')
-    .then(function(r) { return r.json(); }).then(function(d) { peerData = d; }).catch(function() { peerData = null; }).finally(function() { done++; render(); });
+  // RIPEstat responses are mapped into the shape the renderer expects.
+  var res = 'AS' + input;
+  Promise.all([_asnRipe('as-overview', res), _asnRipe('rir-stats-country', res).catch(function() { return null; })])
+    .then(function(r) {
+      var ov = r[0], loc = r[1] && (r[1].located_resources || [])[0];
+      if (!ov || !ov.holder) { asnData = null; return; }
+      asnData = { data: { name: String(ov.holder).split(' - ')[0], description_full: ov.holder,
+        rir_allocation: { country_code: loc ? loc.location : '', rir_name: ov.block && ov.block.desc ? String(ov.block.desc).replace(/^Assigned by /, '') : '' } } };
+    }).catch(function() { asnData = null; }).finally(function() { done++; render(); });
+  _asnRipe('announced-prefixes', res)
+    .then(function(d) { var pf = (d && d.prefixes) || []; prefixData = { data: {
+      ipv4_prefixes: pf.filter(function(x) { return String(x.prefix).indexOf(':') < 0; }),
+      ipv6_prefixes: pf.filter(function(x) { return String(x.prefix).indexOf(':') >= 0; }) } }; })
+    .catch(function() { prefixData = null; }).finally(function() { done++; render(); });
+  _asnRipe('asn-neighbours', res)
+    .then(function(d) { peerData = { data: { ipv4_peers: ((d && d.neighbours) || []).map(function(n) { return { asn: Number(n.asn) || 0, name: n.type ? n.type + ' neighbour' : '' }; }) } }; })
+    .catch(function() { peerData = null; }).finally(function() { done++; render(); });
 };
+
+function _asnRipe(call, resource) {
+  return fetch('https://stat.ripe.net/data/' + call + '/data.json?resource=' + encodeURIComponent(resource))
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function(j) { if (!j || j.status !== 'ok') throw new Error('RIPEstat ' + call + ' failed'); return j.data; });
+}
 
 window._asnSearch = function() {
   var input = (document.getElementById('asn-input') || {}).value;
@@ -140,11 +157,13 @@ window._asnSearch = function() {
 
   results.innerHTML = '<div class="asn-busy">Searching for "' + esc(input) + '"...</div>';
 
-  fetch('https://api.bgpview.io/search?query_term=' + encodeURIComponent(input.trim()))
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (!data || !data.data) { results.innerHTML = '<div class="asn-err">Search failed.</div>'; return; }
-      var asns = (data.data.asns || []).slice(0, 20);
+  _asnRipe('searchcomplete', input.trim())
+    .then(function(d) {
+      if (!d || !d.categories) { results.innerHTML = '<div class="asn-err">Search failed.</div>'; return; }
+      var cat = d.categories.filter(function(c) { return c.category === 'ASNs'; })[0];
+      var asns = ((cat && cat.suggestions) || []).map(function(sg) {
+        return { asn: Number(String(sg.value).replace(/^AS/i, '')) || 0, name: sg.description || '' };
+      }).filter(function(a) { return a.asn > 0; }).slice(0, 20);
       if (asns.length === 0) { results.innerHTML = '<div class="asn-empty">No results found.</div>'; return; }
 
       var h = '<div class="asn-panel">';
@@ -160,7 +179,7 @@ window._asnSearch = function() {
         var a = asns[i];
         var isBP = _asnBulletproof[a.asn];
         var repColor = isBP ? '#dc2626' : '#16a34a';
-        var repText = isBP ? 'SUSPICIOUS' : 'NORMAL';
+        var repText = isBP ? 'SUSPICIOUS' : 'NOT LISTED';
         h += '<tr style="border-bottom:1px solid var(--line,#283a5a);cursor:pointer;" onclick="_asnLookupDirect(' + a.asn + ')">';
         h += '<td class="asn-td-asn">AS' + a.asn + '</td>';
         h += '<td class="asn-td">' + esc(a.name || a.description || '') + '</td>';
@@ -185,7 +204,7 @@ function _asnRenderResults(el, asn, asnData, prefixData, peerData) {
   var isBP = _asnBulletproof[asn];
 
   if (!info) {
-    el.innerHTML = '<div class="asn-err">ASN data unavailable. BGPView API may be rate-limited.</div>';
+    el.innerHTML = '<div class="asn-err">ASN data unavailable. RIPEstat may be unreachable or the ASN is not registered.</div>';
     return;
   }
 
@@ -199,7 +218,7 @@ function _asnRenderResults(el, asn, asnData, prefixData, peerData) {
   h += '<div class="asn-as-desc">' + esc(info.description_full || info.description_short || '') + '</div>';
   h += '</div>';
   h += '<div style="text-align:right;">';
-  h += '<div style="color:' + repColor + ';font-size:14px;font-weight:bold;">' + (isBP ? 'SUSPICIOUS' : 'CLEAN') + '</div>';
+  h += '<div style="color:' + repColor + ';font-size:14px;font-weight:bold;">' + (isBP ? 'SUSPICIOUS' : 'NOT LISTED') + '</div>';
   if (isBP) h += '<div style="color:#e08a76;font-size:9px;max-width:200px;">' + esc(isBP) + '</div>';
   h += '</div>';
   h += '</div>';
@@ -209,7 +228,7 @@ function _asnRenderResults(el, asn, asnData, prefixData, peerData) {
   var details = [
     { label: 'COUNTRY', value: (info.rir_allocation || {}).country_code || info.country_code || '??' },
     { label: 'RIR', value: (info.rir_allocation || {}).rir_name || '??' },
-    { label: 'ALLOCATED', value: (info.rir_allocation || {}).date_allocated || '??' },
+    { label: 'ALLOCATED', value: (info.rir_allocation || {}).date_allocated || 'N/A' },
     { label: 'WEBSITE', value: info.website || 'N/A' },
     { label: 'EMAIL', value: (info.email_contacts || [])[0] || 'N/A' },
     { label: 'ABUSE', value: (info.abuse_contacts || [])[0] || 'N/A' }

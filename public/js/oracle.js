@@ -1257,7 +1257,7 @@ export function renderOracle(main) {
       '<div class="or-panel">' +
         '<div class="or-panel-h">STIX 2.1 Bundle Viewer<span style="flex:1"></span><button class="or-btn sm fill" id="or-stix-sample">Load Sample Bundle</button></div>' +
         '<div class="or-panel-b">' +
-          '<textarea class="or-textarea" id="or-stix-input" placeholder="Paste a STIX 2.1 JSON bundle here..." style="min-height:100px">' + (stixBundle ? JSON.stringify(stixBundle, null, 2) : '') + '</textarea>' +
+          '<textarea class="or-textarea" id="or-stix-input" placeholder="Paste a STIX 2.1 JSON bundle here..." style="min-height:100px">' + (stixBundle ? esc(JSON.stringify(stixBundle, null, 2)) : '') + '</textarea>' +
           '<div style="display:flex;gap:8px;margin-top:8px"><button class="or-btn fill" id="or-stix-parse">Parse Bundle</button></div>' +
         '</div>' +
       '</div>';
@@ -1310,8 +1310,6 @@ export function renderOracle(main) {
           '</div>' +
         '</div>';
 
-      _renderStixGraph(c.querySelector('#or-stix-graph'), objs, rels, stixColors);
-
       if (selectedStixNode) {
         var node = stixBundle.objects.find(function(o) { return o.id === selectedStixNode; });
         if (node) {
@@ -1324,6 +1322,9 @@ export function renderOracle(main) {
           if (ci) ci.onclick = function() { selectedStixNode = null; renderSTIX(c); };
         }
       }
+      // Draw the graph last: the innerHTML += above re-parses the container and
+      // would drop the graph nodes' click/drag handlers.
+      _renderStixGraph(c.querySelector('#or-stix-graph'), objs, rels, stixColors);
     }
 
     c.querySelector('#or-stix-sample').onclick = function() {
@@ -1364,17 +1365,19 @@ export function renderOracle(main) {
       return '<div class="or-stix-node' + (selectedStixNode === n.id ? ' selected' : '') + '" data-node="' + esc(n.id) + '" style="left:' + (n.x - 50) + 'px;top:' + (n.y - 16) + 'px;border-color:' + color + ';background:' + color + '18;color:' + color + '">' + esc(n.name) + '</div>';
     }).join('');
 
-    var dragNode = null, dragOff = {x:0,y:0};
+    var dragNode = null, dragOff = {x:0,y:0}, dragStart = {x:0,y:0}, dragMoved = false;
     container.querySelectorAll('.or-stix-node').forEach(function(el) {
       el.onmousedown = function(e) {
         dragNode = el;
         dragOff.x = e.clientX - el.offsetLeft;
         dragOff.y = e.clientY - el.offsetTop;
+        dragStart.x = e.clientX; dragStart.y = e.clientY; dragMoved = false;
         el.style.cursor = 'grabbing';
         e.preventDefault();
       };
       el.onclick = function() {
-        if (!dragNode || Math.abs(dragOff.x) < 5) {
+        // A drag ends in a click too; only a real click (no movement) selects.
+        if (!dragMoved) {
           selectedStixNode = el.dataset.node;
           renderSTIX(main.querySelector('#or-content'));
         }
@@ -1382,6 +1385,7 @@ export function renderOracle(main) {
     });
     document.onmousemove = function(e) {
       if (!dragNode) return;
+      if (Math.abs(e.clientX - dragStart.x) > 4 || Math.abs(e.clientY - dragStart.y) > 4) dragMoved = true;
       dragNode.style.left = (e.clientX - dragOff.x) + 'px';
       dragNode.style.top = (e.clientY - dragOff.y) + 'px';
     };

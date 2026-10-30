@@ -559,3 +559,20 @@ group("signin-forensics: impossible travel with country-level locations", () => 
     assert.equal(travel([mk(0, "1.1.1.1", { city: "London", country: "GB" }), mk(60, "2.2.2.2", { country: "JP" })]).length, 1);
   });
 });
+
+group("signin-forensics: timestamp forms", () => {
+  const at = (s) => { const v = parseTs(s); return Number.isNaN(v) ? null : new Date(v).toISOString(); };
+  test("date-only ISO is midnight UTC in any viewer zone (no local shift)", () => {
+    assert.equal(at("2026-03-05"), "2026-03-05T00:00:00.000Z");
+    assert.equal(at("2026-02-30"), null);
+  });
+  test("day-first slash dates are read, impossible ones rejected", () => {
+    assert.equal(at("25/12/2024 13:00:00"), "2024-12-25T13:00:00.000Z");
+    assert.equal(at("10/5/2026, 2:03:22 PM"), "2026-10-05T14:03:22.000Z");
+    assert.equal(at("13/13/2024 1:00:00"), null);
+  });
+  test("one-digit GMT offsets (Google console) apply the offset", () => {
+    assert.equal(at("October 5, 2026 at 2:03:22 PM GMT+5:30"), "2026-10-05T08:33:22.000Z");
+    assert.equal(at("Oct 5, 2026, 2:03:22 PM GMT-4"), "2026-10-05T18:03:22.000Z");
+  });
+});

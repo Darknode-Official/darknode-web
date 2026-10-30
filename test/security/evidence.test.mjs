@@ -400,6 +400,14 @@ group("evidence: package, calendar, import, register", () => {
     assert.equal(p.confidence, "high");
     assert.equal(p.rows[0].id, "x");
   });
+  test("parseInput reports a truncated or malformed JSON file instead of throwing", () => {
+    // The import dropzone awaited parseInput without a catch, so a bad file failed silently.
+    for (const text of ["{", '[{"refs":', '{"a":1']) {
+      const p = parseInput([{ name: "broken.json", text }]);
+      assert.equal(p.format, "unknown");
+      assert.equal(p.rows.length, 0);
+    }
+  });
   test("CSV evidence spreadsheet: mapping detected with high confidence and rows normalised", () => {
     const csv = [
       "Framework,Control ID,Control Name,Owner,Frequency,Last Collected,Status,Evidence,SHA256,Notes",

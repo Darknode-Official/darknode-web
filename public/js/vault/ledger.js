@@ -345,7 +345,7 @@ export function screenTransfer(ledger, { from, amount, payee, by }) {
   }
   // first-time payee (not seen in any prior released transfer)
   if (payee) {
-    const seen = [...ledger.transfers.values()].some((t) => t.status !== "pending" && (t.payee || "").toLowerCase() === payee.toLowerCase());
+    const seen = [...ledger.transfers.values()].some((t) => (t.status === "released" || t.status === "settled") && (t.payee || "").toLowerCase() === payee.toLowerCase());
     if (!seen) flags.push("first-time payee: " + payee);
   }
   const level = flags.length >= 2 ? "high" : flags.length === 1 ? "medium" : "low";

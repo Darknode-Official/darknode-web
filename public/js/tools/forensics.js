@@ -500,6 +500,7 @@ export const TOOLS = [
       if (b === 0n) return "0 = not set / none";
       if (b === -9223372036854775808n || b === 9223372036854775807n) return "This value means 'never' (no expiry).";
       let ns100 = b < 0n ? -b : b;
+      if (ns100 > 9223372036854775808n) return { error: "Out of range: AD intervals are signed 64-bit integers." };
       let totalSec = Number(ns100) / 1e7;
       const days = Math.floor(totalSec / 86400); totalSec -= days * 86400;
       const h = Math.floor(totalSec / 3600); totalSec -= h * 3600;

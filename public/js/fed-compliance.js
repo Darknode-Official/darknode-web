@@ -625,7 +625,7 @@ export function renderFedCompliance(container) {
   h += '</select>';
   h += '</div>';
   h += '<div class="fc-form-row"><span class="fc-form-label">Priority</span><select class="fc-select" id="fc-poam-priority" style="max-width:200px"><option>Critical</option><option selected>High</option><option>Moderate</option><option>Low</option></select></div>';
-  h += '<div class="fc-form-row"><span class="fc-form-label">Scheduled Date</span><input type="date" class="fc-input" id="fc-poam-date" style="max-width:200px" value="2027-03-31"></div>';
+  h += '<div class="fc-form-row"><span class="fc-form-label">Scheduled Date</span><input type="date" class="fc-input" id="fc-poam-date" style="max-width:200px"></div>';
   h += '<div class="fc-form-row"><span class="fc-form-label">Weakness</span><textarea class="fc-textarea" id="fc-poam-weakness" placeholder="Describe the weakness or gap..."></textarea></div>';
   h += '<div class="fc-form-row"><span class="fc-form-label">Milestones</span><textarea class="fc-textarea" id="fc-poam-milestones" placeholder="1. Draft policy (30 days)&#10;2. Implement control (60 days)&#10;3. Verify and test (90 days)"></textarea></div>';
   h += '<div class="fc-form-row"><span class="fc-form-label">Resources</span><input class="fc-input" id="fc-poam-resources" placeholder="e.g., ISSO, $15,000 for tooling, 2 FTEs"></div>';
@@ -737,7 +737,7 @@ export function renderFedCompliance(container) {
       const ctrlId = container.querySelector('#fc-poam-ctrl')?.value;
       const ctrl = NIST_CONTROLS.find(c => c.id === ctrlId);
       const priority = container.querySelector('#fc-poam-priority')?.value || 'High';
-      const date = container.querySelector('#fc-poam-date')?.value || '2027-03-31';
+      const date = container.querySelector('#fc-poam-date')?.value || 'Not scheduled';
       const weakness = container.querySelector('#fc-poam-weakness')?.value || ctrl?.desc || '';
       const milestones = container.querySelector('#fc-poam-milestones')?.value || '';
       const resources = container.querySelector('#fc-poam-resources')?.value || '';

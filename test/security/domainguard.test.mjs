@@ -456,3 +456,11 @@ group("domainguard: analyze, diff, exports", () => {
     let n = 0; analyze(ex.dataset, { now: ex.now }, { progress: () => n++ }); assert.ok(n >= 1);
   });
 });
+
+group("domainguard: several domains on one list line", () => {
+  test("a second domain on a line is kept, not read as a flag and dropped", () => {
+    const r = parseDomainList("example.com, example.net\nexample.org parked");
+    assert.deepEqual(r.domains.map((d) => d.domain), ["example.com", "example.net", "example.org"]);
+    assert.equal(r.domains.find((d) => d.domain === "example.org").parked, true);
+  });
+});

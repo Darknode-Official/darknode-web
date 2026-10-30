@@ -239,3 +239,16 @@ app.get("/p", (req, res) => {
     for (const p of ["src/public/data/x.js", "x/top.js", "public/database.js", "keep.js"]) assert.ok(!g.test(p), p);
   });
 });
+
+group("codescan: sql concat with a quoted value", () => {
+  test("js/py: a literal ending in a quote before + still fires", () => {
+    hit("a.js", `db.query("SELECT * FROM u WHERE name='" + n + "'")`, "js.sql-concat");
+    hit("a.py", `cur.execute("SELECT * FROM t WHERE a='" + n + "'")`, "py.sql-format");
+  });
+  test("go: plain string concatenation into Query fires; literal + literal does not", () => {
+    hit("a.go", 'db.Query("SELECT * FROM u WHERE id=" + id)', "go.sql-sprintf");
+    hit("a.go", `db.Query("SELECT * FROM u WHERE n='" + n + "'")`, "go.sql-sprintf");
+    miss("a.go", 'db.Query("SELECT * FROM u " + "WHERE id=$1", id)', "go.sql-sprintf");
+    miss("a.go", 'db.Query("SELECT * FROM u WHERE id=$1", id)', "go.sql-sprintf");
+  });
+});

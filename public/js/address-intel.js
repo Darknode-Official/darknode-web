@@ -1534,20 +1534,21 @@ export function renderAddressIntel(main) {
   });
 
   // Raw data toggle delegation
-  document.addEventListener("click", function(e) {
-    if (e.target && e.target.classList && e.target.classList.contains("ai-raw-toggle")) {
-      var targetId = e.target.getAttribute("data-target");
+  if (!window.__dnAiRawBound) { window.__dnAiRawBound = true; document.addEventListener("click", function(e) {
+    var btn = e.target && e.target.closest ? e.target.closest(".ai-raw-toggle") : null;
+    if (btn) {
+      var targetId = btn.getAttribute("data-target");
       if (targetId) {
         var el = document.getElementById(targetId);
         if (el) {
           var visible = el.style.display !== "none";
           el.style.display = visible ? "none" : "block";
-          var arrow = e.target.querySelector(".ai-raw-arrow");
+          var arrow = btn.querySelector(".ai-raw-arrow");
           if (arrow) arrow.textContent = visible ? "+" : "-";
         }
       }
     }
-  });
+  }); }
 
   // Render history
   function renderHistory() {

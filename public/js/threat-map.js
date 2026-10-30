@@ -84,7 +84,8 @@
     if (_tmWorldData) { cb(_tmWorldData); return; }
     if (_tmLoading) {
       var check = setInterval(function() {
-        if (_tmWorldData) { clearInterval(check); cb(_tmWorldData); }
+        // Also stop when the in-flight load failed, or a waiter polls forever.
+        if (_tmWorldData || !_tmLoading) { clearInterval(check); cb(_tmWorldData); }
       }, 100);
       return;
     }

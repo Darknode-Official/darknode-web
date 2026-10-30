@@ -5,7 +5,7 @@
 // parallel and assembles a single, exportable intelligence report:
 //   - Subdomains via crt.sh certificate transparency
 //   - DNS records via DNS-over-HTTPS (dns.google)
-//   - ASN / network via api.bgpview.io (resolves the A record first)
+//   - ASN / network via RIPEstat (stat.ripe.net; resolves the A record first)
 //   - Registration (RDAP / WHOIS) via rdap.org
 //   - A computed risk / summary panel
 // Every lookup is caught per-section — one failure never breaks the others.
@@ -88,24 +88,37 @@ function certSubdomains(domain) {
     });
 }
 
-// ASN / network via BGPView. Needs an IPv4/IPv6 address.
+// ASN / network via RIPEstat (stat.ripe.net; BGPView has shut down). Needs an
+// IPv4/IPv6 address. prefix-overview gives the announcing ASN(s), holder and
+// prefix; rir-stats-country adds the registry country (optional).
 function bgpLookup(ip) {
-  return fetchJSON("https://api.bgpview.io/ip/" + encodeURIComponent(ip)).then(function (res) {
-    var d = (res.json && res.json.data) || {};
-    var pref = (Array.isArray(d.prefixes) && d.prefixes[0]) || null;
-    var asn = pref && pref.asn ? pref.asn : null;
+  var base = "https://stat.ripe.net/data/";
+  var q = "/data.json?resource=" + encodeURIComponent(ip);
+  return Promise.all([
+    fetchJSON(base + "prefix-overview" + q),
+    fetchJSON(base + "rir-stats-country" + q).catch(function () { return null; })
+  ]).then(function (res) {
+    if (!res[0].json || res[0].json.status !== "ok") throw new Error("RIPEstat returned no data.");
+    var d = res[0].json.data || {};
+    var asns = Array.isArray(d.asns) ? d.asns : [];
+    var asn = asns[0] || null;
+    var holder = asn ? String(asn.holder || "") : "";
+    var cut = holder.indexOf(" - ");
+    var block = d.block || {};
+    var rirM = /(?:^|Administered by\s+|Designated to\s+|Allocated to\s+)(AFRINIC|APNIC|ARIN|LACNIC|RIPE NCC)\b/i.exec(block.desc || "");
+    var loc = res[1] && res[1].json && res[1].json.data && res[1].json.data.located_resources;
     return {
-      ip: d.ip || ip,
-      ptr: d.ptr_record || "",
-      prefix: pref ? pref.prefix : "",
-      prefixName: pref ? (pref.name || "") : "",
-      prefixDesc: pref ? (pref.description || "") : "",
+      ip: ip,
+      ptr: "",
+      prefix: d.announced ? (d.resource || "") : "",
+      prefixName: "",
+      prefixDesc: "",
       asn: asn ? asn.asn : "",
-      asnName: asn ? (asn.name || "") : "",
-      asnDesc: asn ? (asn.description || "") : "",
-      country: asn ? (asn.country_code || "") : (pref ? (pref.country_code || "") : ""),
-      rir: (d.rir_allocation && d.rir_allocation.rir_name) || "",
-      allPrefixes: Array.isArray(d.prefixes) ? d.prefixes.map(function (x) { return x.prefix; }) : []
+      asnName: cut > 0 ? holder.slice(0, cut) : holder,
+      asnDesc: cut > 0 ? holder.slice(cut + 3) : "",
+      country: (Array.isArray(loc) && loc[0] && loc[0].location) || "",
+      rir: rirM ? rirM[1].toUpperCase() : "",
+      allPrefixes: []
     };
   });
 }
@@ -319,7 +332,7 @@ export function renderDossier(main) {
       panel("summary", "Risk & Summary") +
       panel("subs", "Subdomains — crt.sh") +
       panel("dns", "DNS Records — dns.google") +
-      panel("net", "Network / ASN — BGPView") +
+      panel("net", "Network / ASN — RIPEstat") +
       panel("geo", "Geolocation & Reverse DNS") +
       panel("reg", "Registration — RDAP / WHOIS");
 
@@ -371,7 +384,7 @@ export function renderDossier(main) {
       }).then(function () { done("subs"); });
     }
 
-    // ── Network / ASN (BGPView) — waits for the A record if we have a domain ──
+    // ── Network / ASN (RIPEstat) — waits for the A record if we have a domain ──
     dnsReady.then(function () {
       if (!primaryIP) {
         body("net").innerHTML = '<div class="dsr-note muted">No A record resolved — network lookup skipped.</div>';
@@ -383,7 +396,7 @@ export function renderDossier(main) {
         renderNet(net);
         count("net", net.asn ? "AS" + net.asn : "");
       }).catch(function (e) {
-        body("net").innerHTML = unavailable((e && e.message) || "BGPView unreachable.");
+        body("net").innerHTML = unavailable((e && e.message) || "RIPEstat unreachable.");
       }).then(function () { done("net"); });
     });
 
@@ -658,7 +671,7 @@ function toMarkdown(d) {
   } else { L.push("", "_None found or unavailable._"); }
   L.push("");
 
-  L.push("## Network / ASN (BGPView)");
+  L.push("## Network / ASN (RIPEstat)");
   if (d.network) {
     var n = d.network;
     L.push("");

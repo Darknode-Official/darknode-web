@@ -1153,7 +1153,8 @@ export function renderIncidentCost(container) {
 
     // Records
     var recordsEl = wrap.querySelector('#ic-records');
-    if (recordsEl) recordsEl.addEventListener('input', function() { state.records = parseInt(this.value); render(); });
+    if (recordsEl) recordsEl.addEventListener('input', function() { state.records = parseInt(this.value); if (this.nextElementSibling) this.nextElementSibling.textContent = fmtN(state.records); });
+    if (recordsEl) recordsEl.addEventListener('change', render);
 
     // Data types
     wrap.querySelectorAll('[data-dtype]').forEach(function(cb) {
@@ -1168,11 +1169,13 @@ export function renderIncidentCost(container) {
 
     // MTTI
     var mttiEl = wrap.querySelector('#ic-mtti');
-    if (mttiEl) mttiEl.addEventListener('input', function() { state.mtti = parseInt(this.value); render(); });
+    if (mttiEl) mttiEl.addEventListener('input', function() { state.mtti = parseInt(this.value); if (this.nextElementSibling) this.nextElementSibling.textContent = state.mtti + 'd'; });
+    if (mttiEl) mttiEl.addEventListener('change', render);
 
     // MTTC
     var mttcEl = wrap.querySelector('#ic-mttc');
-    if (mttcEl) mttcEl.addEventListener('input', function() { state.mttc = parseInt(this.value); render(); });
+    if (mttcEl) mttcEl.addEventListener('input', function() { state.mttc = parseInt(this.value); if (this.nextElementSibling) this.nextElementSibling.textContent = state.mttc + 'd'; });
+    if (mttcEl) mttcEl.addEventListener('change', render);
 
     // Revenue
     var revEl = wrap.querySelector('#ic-revenue');

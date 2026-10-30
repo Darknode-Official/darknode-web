@@ -255,7 +255,7 @@ group("everyday: round 7", () => {
   test("currency is refused honestly, mass units still convert", () => {
     assert.ok(/exchange rate/.test(ask("what is 100 usd in eur")));
     assert.ok(/exchange rate.*DOLLARS to GBP/.test(ask("convert 50 dollars to gbp")));
-    assert.ok(/90\.7184 kg/.test(ask("200 pounds to kg")));
+    assert.ok(/90\.718474 kg/.test(ask("200 pounds to kg")));
     assert.ok(/exchange rate/.test(ask("100 pounds to dollars")));
   });
   test("fractions: simplify, lowest terms, as a percent", () => {

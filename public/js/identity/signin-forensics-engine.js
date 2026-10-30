@@ -149,6 +149,21 @@ export function parseTs(v) {
   // these columns UTC, so read them as UTC rather than the browser's local zone.
   const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3})\d*)?)?$/);
   if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0), +((m[7] || "0").padEnd(3, "0")));
+  // Date-only ISO: Date.parse already reads it as UTC, so it must not get the local shift below.
+  const dm = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dm) { const t = Date.UTC(+dm[1], +dm[2] - 1, +dm[3]); return new Date(t).getUTCDate() === +dm[3] ? t : NaN; }
+  // Slash dates: month-first, but 25/12/2024 can only be day-first (EU-locale Excel re-save).
+  const sm = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AP]M)?)?$/i);
+  if (sm) {
+    let mo = +sm[1], d = +sm[2], h = +(sm[4] || 0);
+    if (mo > 12) { const x = mo; mo = d; d = x; }
+    if (sm[7]) { if (h < 1 || h > 12) return NaN; h = (h % 12) + (/p/i.test(sm[7]) ? 12 : 0); }
+    const t = Date.UTC(+sm[3], mo - 1, d, h, +(sm[5] || 0), +(sm[6] || 0));
+    const c = new Date(t);
+    return mo >= 1 && mo <= 12 && c.getUTCDate() === d && h < 24 && +(sm[5] || 0) < 60 && +(sm[6] || 0) < 60 ? t : NaN;
+  }
+  // "GMT+5:30" / "UTC-4" (Google console): Date.parse misreads a one-digit offset hour.
+  s = s.replace(/\b(?:GMT|UTC)([+-])(\d{1,2})(?::?(\d{2}))?\s*$/i, (_, sg, hh, mm) => sg + hh.padStart(2, "0") + ":" + (mm || "00"));
   // "October 5, 2026 at 2:03:22 PM UTC" (Google console)
   s = s.replace(/\bat\b/i, "").replace(/\s{2,}/g, " ").trim();
   const t = Date.parse(s);

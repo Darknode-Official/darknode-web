@@ -2,7 +2,7 @@
 // Native Secret & Code Scan: codescan/rules.js over pasted code or a dropped project
 // folder, entirely in the browser. Secrets are shown masked; nothing is uploaded.
 
-import { scanFile, SEV_ORDER } from "/js/codescan/rules.js?v=20261029a";
+import { scanFile, SEV_ORDER } from "/js/codescan/rules.js?v=20261029c";
 import { esc, toast, sevPill, recordRun, readFiles, download } from "./ui.js";
 
 const rank = (s) => (s in SEV_ORDER ? SEV_ORDER[s] : 99);

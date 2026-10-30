@@ -14,9 +14,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, MAP_KEYS, MAP_LABEL, SEV_RANK, CONF_RANK, PROVIDER_LABEL,
   detectFile, findingsToCsv, timelineToCsv, resourcesToCsv, accountsToCsv, summaryText, exampleDataset,
-} from "./cloudspend-engine.js?v=20261017c";
+} from "./cloudspend-engine.js?v=20261029c";
 
-const ENGINE = engineUrl("./cloudspend-engine.js?v=20261017c", import.meta);
+const ENGINE = engineUrl("./cloudspend-engine.js?v=20261029c", import.meta);
 const P = "csa";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

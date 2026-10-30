@@ -639,7 +639,7 @@ function explainRegex(src, flags) {
   }
   while (i < pat.length) {
     const c = pat[i]; let desc = "";
-    if (c === "\\") { desc = descEscape(pat[i + 1]); i += 2; }
+    if (c === "\\") { if (i + 1 >= pat.length) throw new Error("the pattern ends with a lone backslash (\\ at end of pattern)."); desc = descEscape(pat[i + 1]); i += 2; }
     else if (c === "[") desc = cls();
     else if (c === "^") { desc = "anchor: start of string/line"; i++; }
     else if (c === "$") { desc = "anchor: end of string/line"; i++; }
@@ -909,7 +909,7 @@ export const TOOLS = [
         const esc = (s, key) => String(s).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r").replace(key ? /[=:#!\s]/g : /^\s|[\n]/g, (m) => "\\" + m);
         return Object.keys(flat).map((k) => esc(k, true) + "=" + String(flat[k] == null ? "" : flat[k]).replace(/\\/g, "\\\\").replace(/\n/g, "\\n")).join("\n") + "\n";
       }
-      const unesc = (s) => { let o = ""; for (let i = 0; i < s.length; i++) { if (s[i] === "\\") { const n = s[i + 1]; if (n === "t") { o += "\t"; i++; } else if (n === "n") { o += "\n"; i++; } else if (n === "r") { o += "\r"; i++; } else if (n === "f") { o += "\f"; i++; } else if (n === "u") { o += String.fromCharCode(parseInt(s.substr(i + 2, 4), 16) || 0); i += 5; } else { o += n; i++; } } else o += s[i]; } return o; };
+      const unesc = (s) => { let o = ""; for (let i = 0; i < s.length; i++) { if (s[i] === "\\") { const n = s[i + 1]; if (n === "t") { o += "\t"; i++; } else if (n === "n") { o += "\n"; i++; } else if (n === "r") { o += "\r"; i++; } else if (n === "f") { o += "\f"; i++; } else if (n === "u") { o += String.fromCharCode(parseInt(s.substr(i + 2, 4), 16) || 0); i += 5; } else if (n !== undefined) { o += n; i++; } } else o += s[i]; } return o; };
       const endsOdd = (l) => { const m = /\\+$/.exec(l); return m ? m[0].length % 2 === 1 : false; };
       const lines = S(v.text).replace(/\r\n?/g, "\n").split("\n");
       const obj = {};

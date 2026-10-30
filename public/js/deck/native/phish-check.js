@@ -2,7 +2,7 @@
 // Native Link & Email Check: phish-engine verdicts for a pasted link or a full email
 // source. Enterprise mode ("queue") keeps a triage log of everything reported.
 
-import { analyzeUrl, triageEmail, defangText, refangText, buildTriageReport } from "/js/dataprotect/phish-engine.js?v=20261026b";
+import { analyzeUrl, triageEmail, defangText, refangText, buildTriageReport } from "/js/dataprotect/phish-engine.js?v=20261029c";
 import { phishUrlFindings, phishEmailFindings } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";
 import { esc, toast, SEV, sevPill, recordRun, readList, writeList, ago, download } from "./ui.js";

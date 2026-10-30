@@ -154,11 +154,11 @@ function ts(d) {
 }
 export const isDate = (d) => Number.isFinite(ts(d));
 const ymd = (t) => new Date(t).toISOString().slice(0, 10);
-/** Whole days from `now` to `d` (negative = in the past). null when d is not a date. */
+/** Whole calendar days (UTC) from `now` to `d` (negative = in the past). null when d is not a date. */
 export function daysUntil(d, now) {
   const a = ts(d), b = ts(now);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
-  return Math.floor((a - b) / DAY);
+  return Math.floor(a / DAY) - Math.floor(b / DAY);
 }
 /** Add calendar months to a date (UTC), clamping the day to the month length. */
 export function addMonths(d, months) {
@@ -343,7 +343,7 @@ export function inherentRisk(rec, policy) {
 }
 
 const docsOf = (rec, type) => (rec.docs || []).filter((d) => d.type === type);
-const notExpired = (d, now) => !d.expires || (isDate(d.expires) && ts(d.expires) >= ts(now));
+const notExpired = (d, now) => !d.expires || (isDate(d.expires) && daysUntil(d.expires, now) >= 0);
 const newestBy = (list, key) => list.slice().sort((a, b) => (ts(b[key]) || 0) - (ts(a[key]) || 0) || str(a.id).localeCompare(str(b.id)))[0] || null;
 
 /** Is there a bridge letter issued on/after the report period end that has not expired? */
@@ -354,13 +354,13 @@ function bridgeCovers(rec, report, now) {
 /** Current = period end within socStaleMonths (or bridged) and not expired. */
 function socCurrent(rec, report, now, o) {
   if (!report || !isDate(report.periodEnd) || !notExpired(report, now)) return false;
-  const stale = ts(addMonths(report.periodEnd, o.socStaleMonths)) < ts(now);
+  const stale = daysUntil(addMonths(report.periodEnd, o.socStaleMonths), now) < 0;
   return !stale || bridgeCovers(rec, report, now);
 }
 
 function freshDoc(d, now, months) {
   const ref = d.periodEnd || d.issued;
-  return !!d && isDate(ref) && ts(addMonths(ref, months)) >= ts(now) && notExpired(d, now);
+  return !!d && isDate(ref) && daysUntil(addMonths(ref, months), now) >= 0 && notExpired(d, now);
 }
 
 /** Required contractual documents given the data types. */
@@ -382,7 +382,7 @@ export function assuranceCredit(rec, policy, now, opts) {
   const t1 = newestBy(docsOf(rec, "soc2t1"), "periodEnd");
   if (t2 && socCurrent(rec, t2, now, o)) parts.push({ item: "Current SOC 2 Type II", credit: num(K.soc2t2) });
   else if (t1 && socCurrent(rec, t1, now, o)) parts.push({ item: "Current SOC 2 Type I", credit: num(K.soc2t1) });
-  const iso = docsOf(rec, "iso27001").find((d) => isDate(d.expires) && ts(d.expires) >= ts(now));
+  const iso = docsOf(rec, "iso27001").find((d) => isDate(d.expires) && daysUntil(d.expires, now) >= 0);
   if (iso) parts.push({ item: "Valid ISO 27001 certificate", credit: num(K.iso27001) });
   const pt = newestBy(docsOf(rec, "pentest"), "issued");
   if (pt && freshDoc(pt, now, o.freshMonths)) parts.push({ item: "Pentest within " + o.freshMonths + " months", credit: num(K.pentest) });
@@ -392,7 +392,7 @@ export function assuranceCredit(rec, policy, now, opts) {
     const c = Math.round(num(K.questionnaire) * qs / 100 * 10) / 10;
     parts.push({ item: "Questionnaire within " + o.freshMonths + " months" + (rec.questionnaireScore !== "" && rec.questionnaireScore != null ? " (score " + qs + ")" : ""), credit: c });
   }
-  const ins = docsOf(rec, "insurance").find((d) => isDate(d.expires) && ts(d.expires) >= ts(now));
+  const ins = docsOf(rec, "insurance").find((d) => isDate(d.expires) && daysUntil(d.expires, now) >= 0);
   if (ins) parts.push({ item: "Cyber insurance in force", credit: num(K.insurance) });
   for (const req of requiredDocs(rec)) {
     if (docsOf(rec, req).some((d) => notExpired(d, now))) parts.push({ item: docLabel(req) + " on file (required by data types)", credit: num(K.requiredContract) });
@@ -831,7 +831,7 @@ export function gradeVendor(record, postureResults, policy, { now, ...opts } = {
     }
     // SOC 2 period staleness without bridge letter
     const soc = newestBy(docsOf(rec, "soc2t2"), "periodEnd") || newestBy(docsOf(rec, "soc2t1"), "periodEnd");
-    if (soc && isDate(soc.periodEnd) && ts(addMonths(soc.periodEnd, o.socStaleMonths)) < ts(now) && !bridgeCovers(rec, soc, now)) {
+    if (soc && isDate(soc.periodEnd) && daysUntil(addMonths(soc.periodEnd, o.socStaleMonths), now) < 0 && !bridgeCovers(rec, soc, now)) {
       add({
         id: id("soc-stale"), title: "SOC 2 report period ended over " + o.socStaleMonths + " months ago with no bridge letter", severity: "medium", category: "assurance",
         description: vn + ": newest " + docLabel(soc.type) + " period ended " + soc.periodEnd + " (" + -daysUntil(soc.periodEnd, now) + " days ago) and no bridge letter issued after it is on file.",

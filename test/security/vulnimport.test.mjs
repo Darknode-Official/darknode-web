@@ -581,3 +581,10 @@ test("empty input yields an empty, well-formed result", () => {
   assert.ok(Array.isArray(r.tables.burndown));
 });
 });
+
+test("SARIF 2.1.0: suppressed (accepted) and kind pass results are not imported", () => {
+  const s = JSON.parse(SARIF);
+  const live = s.runs[0].results.find((r) => /CVE-/.test(JSON.stringify(r)));
+  s.runs[0].results = [live, { ...live, suppressions: [{ kind: "external", status: "accepted" }] }, { ...live, kind: "pass" }, { ...live, suppressions: [{ kind: "external", status: "rejected" }] }];
+  assert.equal(parse1("scan.sarif", JSON.stringify(s)).file.records, 2);
+});

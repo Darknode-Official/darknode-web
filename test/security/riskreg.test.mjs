@@ -461,6 +461,12 @@ group("riskreg: register, history, exports", () => {
     const line = findingsToCsv([{ severity: "high", confidence: "likely", category: "x", title: "=HYPERLINK(\"http://x\")", description: "-2", recommendation: "@SUM(A1)", controls: [], evidenceCount: 0 }]).split("\n")[1];
     assert.ok(line.includes('"\'=HYPERLINK') && line.includes('"\'@SUM') && line.includes('"-2"'), line);
   });
+  test("register CSV guards a formula that starts with a negative number (-2+3+cmd)", () => {
+    const evil = "-2+3+cmd|' /C calc'!A0";
+    const row = registerToCsv([{ id: "r1", title: evil, slp: -0.5 }]).split("\r\n")[1];
+    assert.ok(row.includes(",'-2+3+cmd"), row);
+    assert.ok(!row.includes("'-0.5"), row);
+  });
 });
 
 group("riskreg: example, determinism, self-test", () => {

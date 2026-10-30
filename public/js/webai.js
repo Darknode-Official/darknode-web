@@ -663,7 +663,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
   try { curId = localStorage.getItem(acct(CUR_KEY)) || null; } catch (_) {}
   if (curId) {
     const c = loadConvos().find((x) => x.id === curId);
-    if (c && c.msgs) c.msgs.forEach((m) => history.push({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped }));
+    if (c && c.msgs) c.msgs.forEach((m) => history.push({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped, toolCall: m.toolCall, toolResult: m.toolResult }));
     else curId = null;
   }
 
@@ -727,7 +727,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
   // ---- persistence + history sidebar ----
   const deriveTitle = (msgs) => { const u = msgs.find((m) => m.role === "user"); let t = ((u && u.content) || "New chat").replace(/\s+/g, " ").trim(); if (!t) t = "New chat"; return t.length > 46 ? t.slice(0, 46) + "…" : t; };
   function persist() {
-    const msgs = history.slice(1).map((m) => ({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped }));
+    const msgs = history.slice(1).map((m) => ({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped, toolCall: m.toolCall, toolResult: m.toolResult }));
     if (!msgs.length) return;
     if (!curId) { curId = uid(); try { localStorage.setItem(acct(CUR_KEY), curId); } catch (_) {} }
     const convos = loadConvos();
@@ -751,7 +751,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     const c = loadConvos().find((x) => x.id === id); if (!c) return;
     curId = id; try { localStorage.setItem(acct(CUR_KEY), id); } catch (_) {}
     history.length = 1;
-    (c.msgs || []).forEach((m) => history.push({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped }));
+    (c.msgs || []).forEach((m) => history.push({ role: m.role, content: m.content, images: m.images, files: m.files, stopped: m.stopped, toolCall: m.toolCall, toolResult: m.toolResult }));
     renderMessages(); drawHistory(); status.textContent = "";
   }
   function newChat() {

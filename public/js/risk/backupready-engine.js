@@ -1450,7 +1450,7 @@ function countBy(items, key) {
 // ---------------------------------------------------------------------------
 const q = (v) => {
   let s = v == null ? "" : Array.isArray(v) ? v.join("; ") : String(v);
-  if (/^[=+@\t\r]/.test(s) || /^-[^\d]/.test(s)) s = "'" + s;
+  if (/^[=+@\t\r]/.test(s) || (/^-/.test(s) && !/^-\d+(\.\d+)?$/.test(s))) s = "'" + s;
   return '"' + s.replace(/"/g, '""') + '"';
 };
 

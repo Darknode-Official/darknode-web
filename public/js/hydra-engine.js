@@ -1400,7 +1400,7 @@ export function renderHydra(main) {
       '<div class="hy-wrap">' +
         '<div class="hy-header">' +
           '<h1 class="hy-title">HYDRA</h1>' +
-          '<span class="hy-subtitle">Heuristic Yielding Dynamic Recon &amp; Attack</span>' +
+          '<span class="hy-subtitle">Heuristic Yielding Dynamic Recon &amp; Attack &mdash; simulation on modeled networks; no real hosts are scanned or attacked</span>' +
           '<span style="flex:1"></span>' +
           '<div class="hy-threat-gauge" style="border-color:' + tColor + '">' +
             '<span class="hy-threat-val" style="color:' + tColor + '">' + engine.threatScore + '</span>' +

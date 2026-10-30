@@ -95,6 +95,9 @@ window._wsConnect = function() {
   if (!url) return;
 
   if (_wsConnection) {
+    // Detach first: the old socket's late onclose would otherwise null out
+    // the new connection and mark it DISCONNECTED.
+    _wsConnection.onopen = _wsConnection.onmessage = _wsConnection.onclose = _wsConnection.onerror = null;
     try { _wsConnection.close(); } catch (e) {}
   }
 

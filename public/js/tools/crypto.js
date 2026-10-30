@@ -660,17 +660,19 @@ export const TOOLS = [
       let n = parseBig(v.n); if (n == null) return ""; if (n < 2n) return { error: "n must be >= 2." };
       if (isProbablePrime(n, 10)) return { error: "n is prime — not a valid RSA modulus." };
       const factors = [];
+      const end = Date.now() + 4000; // wall-clock cap so a hard n cannot freeze the tab
       for (const sp of [2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n, 41n, 43n, 47n]) { while (n % sp === 0n) { factors.push(sp); n /= sp; } }
       function rho(m) {
         if (m % 2n === 0n) return 2n;
         let x = 2n, y = 2n, c = 1n + BigInt(Math.floor(Math.random() * 20)), d = 1n, i = 0;
         const f = (z) => (z * z + c) % m;
-        while (d === 1n && i < 2000000) { x = f(x); y = f(f(y)); d = gcdBig(bigAbs(x - y), m); i++; }
-        return d === m ? null : d;
+        while (d === 1n && i < 2000000 && ((i & 1023) || Date.now() < end)) { x = f(x); y = f(f(y)); d = gcdBig(bigAbs(x - y), m); i++; }
+        return d === m || d === 1n ? null : d;
       }
       const stack = n > 1n ? [n] : [];
       let guard = 0;
       while (stack.length && guard++ < 200) { const m = stack.pop(); if (m === 1n) continue; if (isProbablePrime(m, 10)) { factors.push(m); continue; } let d = null; for (let a = 0; a < 8 && !d; a++) d = rho(m); if (!d) return { error: "Could not factor within limits — n is too large for this toy factorer." }; stack.push(d, m / d); }
+      if (stack.length) return { error: "Could not factor within limits — n is too large for this toy factorer." };
       factors.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
       const distinct = factors.length === 2 && factors[0] !== factors[1];
       return `n = ${factors.join(" * ")}\n\n${distinct ? `p = ${factors[0]}\nq = ${factors[1]}` : "Factors: " + factors.join(", ")}`;
@@ -726,11 +728,12 @@ export const TOOLS = [
     inputs: [{ k: "n", label: "n", type: "text" }],
     run(v) {
       let n = parseBig(v.n); if (n == null) return ""; if (n < 1n) return { error: "n must be >= 1." }; if (n === 1n) return "phi(1) = 1";
-      const orig = n; const fac = new Map();
-      function rho(m) { if (m % 2n === 0n) return 2n; let x = 2n, y = 2n, c = 1n + BigInt(Math.floor(Math.random() * 20)), d = 1n, i = 0; const f = (z) => (z * z + c) % m; while (d === 1n && i < 2000000) { x = f(x); y = f(f(y)); d = gcdBig(bigAbs(x - y), m); i++; } return d === m ? null : d; }
+      const orig = n; const fac = new Map(); const end = Date.now() + 4000; // wall-clock cap so a hard n cannot freeze the tab
+      function rho(m) { if (m % 2n === 0n) return 2n; let x = 2n, y = 2n, c = 1n + BigInt(Math.floor(Math.random() * 20)), d = 1n, i = 0; const f = (z) => (z * z + c) % m; while (d === 1n && i < 2000000 && ((i & 1023) || Date.now() < end)) { x = f(x); y = f(f(y)); d = gcdBig(bigAbs(x - y), m); i++; } return d === m || d === 1n ? null : d; }
       for (const sp of [2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n]) while (n % sp === 0n) { fac.set(sp, (fac.get(sp) || 0n) + 1n); n /= sp; }
       const stack = n > 1n ? [n] : []; let guard = 0;
       while (stack.length && guard++ < 200) { const m = stack.pop(); if (m === 1n) continue; if (isProbablePrime(m, 10)) { fac.set(m, (fac.get(m) || 0n) + 1n); continue; } let d = null; for (let a = 0; a < 8 && !d; a++) d = rho(m); if (!d) return { error: "Could not factor n within limits." }; stack.push(d, m / d); }
+      if (stack.length) return { error: "Could not factor n within limits." };
       let phi = 1n; const parts = []; for (const [pf, k] of [...fac.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))) { phi *= (pf - 1n) * (pf ** (k - 1n)); parts.push(k === 1n ? `${pf}` : `${pf}^${k}`); }
       return `n = ${orig} = ${parts.join(" * ")}\nphi(n) = ${phi}`;
     } },

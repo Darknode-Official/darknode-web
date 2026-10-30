@@ -100,8 +100,9 @@ const B = {
     if (oct.length !== 4 || oct.some((o) => !(o >= 0 && o <= 255)) || !(bits >= 0 && bits <= 32)) throw new Error("bad CIDR, e.g. 192.168.1.0/24");
     const ipn = oct.reduce((a, o) => a * 256 + o, 0) >>> 0, mask = bits === 0 ? 0 : (0xFFFFFFFF << (32 - bits)) >>> 0;
     const net = (ipn & mask) >>> 0, bc = (net | (~mask >>> 0)) >>> 0, toIp = (n) => [24, 16, 8, 0].map((s2) => (n >>> s2) & 255).join(".");
-    const hosts = bits >= 31 ? 0 : bc - net - 1;
-    return `Network:    ${toIp(net)}\nBroadcast:  ${toIp(bc)}\nNetmask:    ${toIp(mask)}  (/${bits})\nFirst host: ${bits >= 31 ? "n/a" : toIp(net + 1)}\nLast host:  ${bits >= 31 ? "n/a" : toIp(bc - 1)}\nUsable:     ${hosts}`;
+    // /31 point-to-point links use both addresses (RFC 3021); /32 is a single host
+    const hosts = bits === 32 ? 1 : bits === 31 ? 2 : bc - net - 1;
+    return `Network:    ${toIp(net)}\nBroadcast:  ${bits >= 31 ? "n/a" : toIp(bc)}\nNetmask:    ${toIp(mask)}  (/${bits})\nFirst host: ${toIp(bits >= 31 ? net : net + 1)}\nLast host:  ${toIp(bits >= 31 ? bc : bc - 1)}\nUsable:     ${hosts}`;
   } }], "CIDR e.g. 192.168.1.0/24"),
 
   passgen: (r) => {
@@ -133,7 +134,7 @@ const B = {
 
 // ---- extra browser tools ----
 // Normalize a hex colour: drop '#', expand 3-digit shorthand (#abc -> aabbcc).
-const expandHex = (h) => { h = String(h).trim().replace(/^#/, ""); return h.length === 3 ? h.replace(/./g, (c) => c + c) : h; };
+const expandHex = (h) => { h = String(h).trim().replace(/^#/, ""); h = h.length === 3 ? h.replace(/./g, (c) => c + c) : h; if (!/^[0-9a-f]{6}$/i.test(h)) throw new Error("not a hex colour, e.g. #00d4ff or #0df"); return h; };
 const hexToHsl = (hex) => {
   hex = expandHex(hex);
   const r = parseInt(hex.slice(0, 2), 16) / 255, g = parseInt(hex.slice(2, 4), 16) / 255, b = parseInt(hex.slice(4, 6), 16) / 255;
@@ -188,9 +189,9 @@ B.entropy = (r) => io(r, [{ label: "Shannon entropy", fn: (s) => { if (!s) retur
 B.slug = (r) => io(r, [{ label: "Slugify", fn: (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") }]);
 B.wordcount = (r) => io(r, [{ label: "Count", fn: (s) => `Characters: ${s.length}\nWords: ${(s.trim().match(/\S+/g) || []).length}\nLines: ${s.split(/\n/).length}` }]);
 B.lorem = (r) => { const W = "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud".split(" "); r.innerHTML = `<div class="tk-row">Paragraphs <input class="tk-f" id="lo-n" type="number" value="2" min="1" max="10" style="max-width:90px"></div><div class="tk-btns"><button class="btn sm" id="lo-go">Generate</button></div><pre class="tk-out" id="lo-out"></pre>`; r.querySelector("#lo-go").onclick = () => { const n = Math.max(1, Math.min(10, +r.querySelector("#lo-n").value || 2)); const p = () => Array.from({ length: 40 }, () => W[Math.floor(Math.random() * W.length)]).join(" "); r.querySelector("#lo-out").textContent = Array.from({ length: n }, p).join("\n\n"); }; };
-B.regex = (r) => { r.innerHTML = `<div class="tk-row"><input class="tk-f" id="rx-p" placeholder="pattern e.g. \\d+"><input class="tk-f" id="rx-f" placeholder="flags" value="g" style="max-width:80px"></div><textarea class="tk-in" id="rx-in" rows="4" placeholder="Test string"></textarea><div class="tk-btns"><button class="btn sm" id="rx-go">Match</button></div><pre class="tk-out" id="rx-out"></pre>`; r.querySelector("#rx-go").onclick = () => { try { const re = new RegExp(r.querySelector("#rx-p").value, r.querySelector("#rx-f").value); const m = [...r.querySelector("#rx-in").value.matchAll(re)]; r.querySelector("#rx-out").textContent = m.length ? m.map((x, i) => `${i}: ${x[0]}`).join("\n") : "no matches"; } catch (e) { r.querySelector("#rx-out").textContent = "Error: " + e.message; } }; };
+B.regex = (r) => { r.innerHTML = `<div class="tk-row"><input class="tk-f" id="rx-p" placeholder="pattern e.g. \\d+"><input class="tk-f" id="rx-f" placeholder="flags" value="g" style="max-width:80px"></div><textarea class="tk-in" id="rx-in" rows="4" placeholder="Test string"></textarea><div class="tk-btns"><button class="btn sm" id="rx-go">Match</button></div><pre class="tk-out" id="rx-out"></pre>`; r.querySelector("#rx-go").onclick = () => { try { const fl = r.querySelector("#rx-f").value; const re = new RegExp(r.querySelector("#rx-p").value, fl.includes("g") ? fl : fl + "g"); const m = [...r.querySelector("#rx-in").value.matchAll(re)]; r.querySelector("#rx-out").textContent = m.length ? m.map((x, i) => `${i}: ${x[0]}`).join("\n") : "no matches"; } catch (e) { r.querySelector("#rx-out").textContent = "Error: " + e.message; } }; };
 B.color = (r) => io(r, [{ label: "Hex -> RGB", fn: (s) => { const n = parseInt(expandHex(s), 16); return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`; } }, { label: "Hex -> HSL", fn: (s) => hexToHsl(s.trim()) }], "#00d4ff");
-B.ip2int = (r) => io(r, [{ label: "IP -> int", fn: (s) => String(s.trim().split(".").reduce((a, o) => a * 256 + (+o), 0) >>> 0) }, { label: "int -> IP", fn: (s) => { const n = (+s.trim()) >>> 0; return [24, 16, 8, 0].map((sh) => (n >>> sh) & 255).join("."); } }], "192.168.1.1");
+B.ip2int = (r) => io(r, [{ label: "IP -> int", fn: (s) => { const o = s.trim().split("."); if (o.length !== 4 || o.some((x) => !/^\d{1,3}$/.test(x) || +x > 255)) throw new Error("not an IPv4 address, e.g. 192.168.1.1"); return String(o.reduce((a, x) => a * 256 + (+x), 0)); } }, { label: "int -> IP", fn: (s) => { if (!/^\d+$/.test(s.trim()) || +s.trim() > 4294967295) throw new Error("enter a whole number from 0 to 4294967295"); const n = (+s.trim()) >>> 0; return [24, 16, 8, 0].map((sh) => (n >>> sh) & 255).join("."); } }], "192.168.1.1");
 
 // id, name, category, kind, desc, and (browser) render / (local) install command.
 export const CATALOG = [

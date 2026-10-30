@@ -689,24 +689,16 @@ function renderMainShell() {
   // Global status bar
   h += '<div class="se-status-bar">';
   h += '<div class="se-status-item">';
-  h += '<span class="se-status-label">Active Threats:</span>';
-  h += '<span class="se-status-value se-critical" id="se-active-threats">17</span>';
+  h += '<span class="se-status-label">Active APT Groups:</span>';
+  h += '<span class="se-status-value se-critical" id="se-active-threats">' + APT_GROUPS.filter(function(a) { return a.active; }).length + '</span>';
   h += '</div>';
   h += '<div class="se-status-item">';
-  h += '<span class="se-status-label">Monitored Nations:</span>';
-  h += '<span class="se-status-value">12</span>';
+  h += '<span class="se-status-label">Nation Profiles:</span>';
+  h += '<span class="se-status-value">' + NATION_STATE_PROFILES.length + '</span>';
   h += '</div>';
   h += '<div class="se-status-item">';
   h += '<span class="se-status-label">APT Groups Tracked:</span>';
-  h += '<span class="se-status-value">38</span>';
-  h += '</div>';
-  h += '<div class="se-status-item">';
-  h += '<span class="se-status-label">Active Predictions:</span>';
-  h += '<span class="se-status-value se-warning" id="se-active-preds">25</span>';
-  h += '</div>';
-  h += '<div class="se-status-item">';
-  h += '<span class="se-status-label">Last Nation-State Incident:</span>';
-  h += '<span class="se-status-value" id="se-last-incident">4h 23m ago</span>';
+  h += '<span class="se-status-value">' + APT_GROUPS.length + '</span>';
   h += '</div>';
   h += '<div class="se-status-item">';
   h += '<span class="se-status-label">System Time:</span>';
@@ -1080,6 +1072,8 @@ function initTicker() {
   var html = '';
   // Double the items for seamless scrolling
   for (var pass = 0; pass < 2; pass++) {
+    // The pool is a fixed scenario set, not live detections; say so in the feed.
+    html += '<span class="se-ticker-item" style="color:#8aa8c8;font-weight:700">ILLUSTRATIVE SCENARIO FEED - not live detections</span><span class="se-ticker-sep">|</span>';
     for (var ai = 0; ai < alertPool.length; ai++) {
       var a = alertPool[ai];
       var dotColor = sevColors[a.sev] || '#5a7a9a';
@@ -1100,6 +1094,7 @@ function initTicker() {
 // ---------------------------------------------------------------------------
 // initEventHandlers() — master event system
 // ---------------------------------------------------------------------------
+var _seDocBound = false;
 function initEventHandlers() {
   var SE_STORAGE_KEY = 'dn_sentinel_eye_v1';
 
@@ -1127,6 +1122,10 @@ function initEventHandlers() {
     });
   }
 
+  // Document-level delegated handlers are bound once per page: re-rendering
+  // must not stack duplicates (a doubled toggle re-closes every panel).
+  if (!_seDocBound) {
+  _seDocBound = true;
   // ---- Panel expand/collapse ----
   document.addEventListener('click', function(e) {
     var expandHead = e.target.closest('.se-expand-head');
@@ -1214,6 +1213,7 @@ function initEventHandlers() {
       if (alertEl) alertEl.style.display = 'none';
     }
   });
+  }
 
   // ---- System time updater ----
   function updateSystemTime() {
@@ -1234,29 +1234,6 @@ function initEventHandlers() {
   }
   _seTimers.push(setInterval(updateSystemTime, 1000));
   updateSystemTime();
-
-  // ---- Simulated threat level shifts ----
-  _seTimers.push(setInterval(function() {
-    var threatsEl = document.getElementById('se-active-threats');
-    if (threatsEl) {
-      var current = parseInt(threatsEl.textContent) || 17;
-      var shift = Math.floor(Math.random() * 3) - 1;
-      var newVal = Math.max(10, Math.min(30, current + shift));
-      threatsEl.textContent = String(newVal);
-    }
-
-    var lastIncEl = document.getElementById('se-last-incident');
-    if (lastIncEl) {
-      var text = lastIncEl.textContent;
-      var hoursMatch = text.match(/(\d+)h/);
-      var minsMatch = text.match(/(\d+)m/);
-      var hours = hoursMatch ? parseInt(hoursMatch[1]) : 4;
-      var mins = minsMatch ? parseInt(minsMatch[1]) : 23;
-      mins++;
-      if (mins >= 60) { mins = 0; hours++; }
-      lastIncEl.textContent = hours + 'h ' + (mins < 10 ? '0' : '') + mins + 'm ago';
-    }
-  }, 60000));
 
   // D3.js threat map handles its own resize internally
 
@@ -2218,22 +2195,26 @@ function _seFetchActiveThreats(callback) {
       .then(function(r) { if (!r || !r.ok) throw new Error('local feed'); return r.json(); })
       .then(function(data) {
         var items = [];
-        var vulns = (data.vulnerabilities || []).slice(0, 15);
+        // The mirrored feed is { data: [{ cve, name, description, dateAdded }] }.
+        // KEV carries no CVSS score, so none is shown (never a made-up one).
+        var vulns = (data.data || data.vulnerabilities || []).slice().sort(function(a, b) {
+          var da = a.dateAdded || ''; var db = b.dateAdded || '';
+          return da > db ? -1 : da < db ? 1 : 0;
+        }).slice(0, 15);
         for (var vi = 0; vi < vulns.length; vi++) {
           var c = vulns[vi];
           items.push({
-            id: c.cveID || 'CVE-UNKNOWN',
-            desc: c.shortDescription || c.vulnerabilityName || 'No description',
-            score: '9.8',
+            id: c.cve || c.cveID || 'CVE-UNKNOWN',
+            desc: c.description || c.shortDescription || c.name || c.vulnerabilityName || 'No description',
+            score: '',
             published: c.dateAdded || ''
           });
         }
-        if (items.length > 0) { results.nvd = items; }
-        else { results.nvd = _seFallbackNVD(); }
+        results.nvd = items;
       })
-      .catch(function() { results.nvd = _seFallbackNVD(); })
+      .catch(function() { results.nvd = []; })
       .then(checkDone);
-  } catch (e) { results.nvd = _seFallbackNVD(); checkDone(); }
+  } catch (e) { results.nvd = []; checkDone(); }
   // ThreatFox Recent IOCs (from local feed — no CORS issues)
   try {
     fetch('/data/feeds/threat-iocs.json')
@@ -2294,7 +2275,7 @@ function _seInitPredictTab() {
 
     // NVD CVEs
     h += '<div style="margin-bottom:14px;">';
-    h += '<div style="font-family:monospace;font-size:11px;color:#ff6622;letter-spacing:2px;margin-bottom:6px;font-weight:bold;">CRITICAL CVEs (NVD - National Vulnerability Database)</div>';
+    h += '<div style="font-family:monospace;font-size:11px;color:#ff6622;letter-spacing:2px;margin-bottom:6px;font-weight:bold;">KNOWN EXPLOITED CVEs (CISA KEV)</div>';
     if (data.nvd && data.nvd.length > 0) {
       for (var ni = 0; ni < data.nvd.length; ni++) {
         var cve = data.nvd[ni];
@@ -2308,7 +2289,7 @@ function _seInitPredictTab() {
         h += '</div>';
       }
     } else {
-      h += '<div style="font-family:monospace;font-size:10px;color:#4a6a8a;padding:8px;">NVD API unavailable or no critical CVEs returned</div>';
+      h += '<div style="font-family:monospace;font-size:10px;color:#4a6a8a;padding:8px;">CISA KEV feed unavailable</div>';
     }
     h += '</div>';
 
@@ -2483,9 +2464,9 @@ function _seInitEarlyWarningTab() {
         h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
         h += '<div style="display:flex;align-items:center;gap:8px;">';
         if (cve.published) h += '<span style="font-family:monospace;font-size:9px;color:#4a6a8a;">' + esc(cve.published.substring(0, 10)) + '</span>';
-        h += '<span style="font-family:monospace;font-size:9px;background:#ff2244;color:#000;padding:1px 6px;border-radius:3px;font-weight:bold;">CRITICAL</span>';
+        h += '<span style="font-family:monospace;font-size:9px;background:#ff2244;color:#000;padding:1px 6px;border-radius:3px;font-weight:bold;">KEV</span>';
         h += '</div>';
-        h += '<span style="font-family:monospace;font-size:9px;color:#4a6a8a;">Source: NVD</span>';
+        h += '<span style="font-family:monospace;font-size:9px;color:#4a6a8a;">Source: CISA KEV</span>';
         h += '</div>';
         h += '<div style="font-family:monospace;font-size:11px;color:#ff2244;font-weight:bold;margin-bottom:3px;">' + esc(cve.id);
         if (cve.score) h += ' (CVSS ' + esc(cve.score) + ')';
@@ -2494,7 +2475,7 @@ function _seInitEarlyWarningTab() {
         h += '</div>';
       }
     } else {
-      h += '<div style="font-family:monospace;font-size:10px;color:#4a6a8a;padding:8px;">NVD API unavailable or no critical CVEs returned</div>';
+      h += '<div style="font-family:monospace;font-size:10px;color:#4a6a8a;padding:8px;">CISA KEV feed unavailable</div>';
     }
     h += '</div>';
 
@@ -2756,28 +2737,30 @@ function renderAptTrack() {
       for (var di = 0; di < days.length; di++) {
         h += '<tr><td style="padding:2px 4px;color:#4a6a8a;">' + days[di] + '</td>';
         for (var hri = 0; hri < 24; hri += 3) {
-          var activityLevel = apt.activityHeatmap ? apt.activityHeatmap[di * 8 + Math.floor(hri / 3)] || 0 : Math.floor(Math.random() * 5);
+          var activityLevel = apt.activityHeatmap ? apt.activityHeatmap[di * 8 + Math.floor(hri / 3)] || 0 : 0;
           var heatColor = activityLevel === 0 ? '#0a1020' : activityLevel === 1 ? '#0c2a1a' : activityLevel === 2 ? '#1a4a2a' : activityLevel === 3 ? '#2a6a3a' : '#44cc44';
           h += '<td style="padding:2px 3px;text-align:center;"><div style="width:14px;height:10px;background:' + heatColor + ';border-radius:2px;margin:0 auto;"></div></td>';
         }
         h += '</tr>';
       }
       h += '</table>';
+      // No group carries timing data yet; say so instead of drawing random cells.
+      if (!apt.activityHeatmap) h += '<div style="font-family:monospace;font-size:9px;color:#4a6a8a;margin-top:4px;">No activity-timing data recorded for this group.</div>';
       h += '</div>';
 
       // Infrastructure stats
       h += '<div style="font-family:monospace;font-size:10px;color:#4a6a8a;letter-spacing:2px;margin:12px 0 6px;">INFRASTRUCTURE</div>';
       h += '<div style="display:flex;gap:12px;">';
       h += '<div style="flex:1;background:#060a14;border:1px solid #1a3a5c;border-radius:4px;padding:8px;text-align:center;">';
-      h += '<div style="font-family:monospace;font-size:16px;color:#ff6622;font-weight:bold;">' + (apt.infrastructure ? apt.infrastructure.domains : Math.floor(Math.random() * 200 + 50)) + '</div>';
+      h += '<div style="font-family:monospace;font-size:16px;color:#ff6622;font-weight:bold;">' + (apt.infrastructure ? esc(apt.infrastructure.domains) : '--') + '</div>';
       h += '<div style="font-family:monospace;font-size:8px;color:#4a6a8a;">DOMAINS</div>';
       h += '</div>';
       h += '<div style="flex:1;background:#060a14;border:1px solid #1a3a5c;border-radius:4px;padding:8px;text-align:center;">';
-      h += '<div style="font-family:monospace;font-size:16px;color:#00aaff;font-weight:bold;">' + (apt.infrastructure ? apt.infrastructure.ips : Math.floor(Math.random() * 100 + 20)) + '</div>';
+      h += '<div style="font-family:monospace;font-size:16px;color:#00aaff;font-weight:bold;">' + (apt.infrastructure ? esc(apt.infrastructure.ips) : '--') + '</div>';
       h += '<div style="font-family:monospace;font-size:8px;color:#4a6a8a;">IP ADDRESSES</div>';
       h += '</div>';
       h += '<div style="flex:1;background:#060a14;border:1px solid #1a3a5c;border-radius:4px;padding:8px;text-align:center;">';
-      h += '<div style="font-family:monospace;font-size:16px;color:#ffaa00;font-weight:bold;">' + (apt.infrastructure ? apt.infrastructure.c2Servers : Math.floor(Math.random() * 30 + 5)) + '</div>';
+      h += '<div style="font-family:monospace;font-size:16px;color:#ffaa00;font-weight:bold;">' + (apt.infrastructure ? esc(apt.infrastructure.c2Servers) : '--') + '</div>';
       h += '<div style="font-family:monospace;font-size:8px;color:#4a6a8a;">C2 SERVERS</div>';
       h += '</div>';
       h += '</div>';
@@ -7572,16 +7555,20 @@ function _seFetchNVD() {
   fetch('/data/feeds/cisa-kev.json')
     .then(function(r) { if (!r.ok) throw new Error('feed unavailable'); return r.json(); })
     .then(function(data) {
-      var vulns = (data.vulnerabilities || []).slice(0, 20);
-      if (vulns.length === 0) vulns = _seFallbackNVD().map(function(v) { return { cveID: v.id, shortDescription: v.desc, dateAdded: v.published }; });
+      // Mirrored feed shape is { data: [{ cve, name, description, dateAdded, ransomware }] }.
+      var vulns = (data.data || data.vulnerabilities || []).slice().sort(function(a, b) {
+        var da = a.dateAdded || ''; var db = b.dateAdded || '';
+        return da > db ? -1 : da < db ? 1 : 0;
+      }).slice(0, 20);
+      if (vulns.length === 0) throw new Error('empty feed');
       var h = '';
       var critCount = 0;
       for (var vi = 0; vi < vulns.length; vi++) {
         var cve = vulns[vi];
-        var cveId = cve.cveID || 'CVE-UNKNOWN';
-        var desc = cve.shortDescription || cve.vulnerabilityName || '';
+        var cveId = cve.cve || cve.cveID || 'CVE-UNKNOWN';
+        var desc = cve.description || cve.shortDescription || cve.name || cve.vulnerabilityName || '';
         if (desc.length > 160) desc = desc.substring(0, 157) + '...';
-        var knownRansomware = cve.knownRansomwareCampaignUse === 'Known';
+        var knownRansomware = (cve.ransomware || cve.knownRansomwareCampaignUse) === 'Known';
         var scoreColor = knownRansomware ? '#ff0000' : '#ff6600';
         var sevLabel = knownRansomware ? 'CRITICAL' : 'HIGH';
         if (knownRansomware) critCount++;

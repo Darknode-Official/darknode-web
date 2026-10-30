@@ -262,10 +262,14 @@ export function rateCipherSuite(name) {
 export function parsePCAP(data) {
   const bytes = data instanceof Uint8Array ? data : new Uint8Array(data);
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (bytes.byteLength < 24) return { error: "Not a PCAP file" };
   const magic = dv.getUint32(0);
-  let le;
+  let le, tsDiv = 1e6;
   if (magic === 0xA1B2C3D4) le = false;
   else if (magic === 0xD4C3B2A1) le = true;
+  // Nanosecond-resolution pcap (tcpdump --time-stamp-precision=nano).
+  else if (magic === 0xA1B23C4D) { le = false; tsDiv = 1e9; }
+  else if (magic === 0x4D3CB2A1) { le = true; tsDiv = 1e9; }
   else return { error: "Not a PCAP file" };
 
   const vMajor = dv.getUint16(4, le);
@@ -283,7 +287,7 @@ export function parsePCAP(data) {
     pos += 16;
     if (pos + inclLen > bytes.length) break;
     const pktData = bytes.slice(pos, pos + inclLen);
-    packets.push({ timestamp: tsSec + tsUsec/1e6, capturedLen: inclLen, originalLen: origLen, data: pktData });
+    packets.push({ timestamp: tsSec + tsUsec/tsDiv, capturedLen: inclLen, originalLen: origLen, data: pktData });
     pos += inclLen;
   }
 

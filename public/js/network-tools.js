@@ -243,8 +243,8 @@ function renderSubnetCalculator(root) {
           <div class="stat-l">Broadcast</div><div class="mono">${intToIp(broadcast)}</div>
           <div class="stat-l">Netmask</div><div class="mono">${intToIp(mask)} (/${bits})</div>
           <div class="stat-l">Wildcard mask</div><div class="mono">${intToIp(wildcard)}</div>
-          <div class="stat-l">First usable host</div><div class="mono">${bits === 32 ? "n/a" : intToIp(firstHost)}</div>
-          <div class="stat-l">Last usable host</div><div class="mono">${bits === 32 ? "n/a" : intToIp(lastHost)}</div>
+          <div class="stat-l">First usable host</div><div class="mono">${intToIp(firstHost)}</div>
+          <div class="stat-l">Last usable host</div><div class="mono">${intToIp(lastHost)}</div>
           <div class="stat-l">Usable hosts</div><div class="mono">${usable.toLocaleString()}</div>
           <div class="stat-l">Total addresses</div><div class="mono">${totalAddrs.toLocaleString()}</div>
           <div class="stat-l">Address class</div><div class="mono">${cls}</div>
@@ -736,8 +736,9 @@ function parseIPv6(input) {
     const parts = s.split("::");
     head = parts[0]; tail = parts[1] || "";
   }
-  const headParts = head ? head.split(":").filter((p) => p !== "") : [];
-  const tailParts = tail ? tail.split(":").filter((p) => p !== "") : [];
+  const headParts = head ? head.split(":") : [];
+  const tailParts = tail ? tail.split(":") : [];
+  if (headParts.includes("") || tailParts.includes("")) throw new Error("stray \":\" (empty group)");
   const total = headParts.length + tailParts.length;
   if (!hasCompression && total !== 8) throw new Error(`expected 8 groups, got ${total}`);
   if (hasCompression && total >= 8) throw new Error(`"::" implies missing groups, but ${total} were given`);

@@ -738,10 +738,19 @@ function _vgPhase3_HostProbe() {
             completed++;
             return entry;
           })
-          .catch(function() {
+          .catch(function(e0) {
             // HTTP fallback skipped on HTTPS pages (mixed content blocked by browsers)
             if (location.protocol === 'https:') {
               var elapsed2 = Math.round(performance.now() - startTime);
+              // An instant failure is the page's CSP refusing the request: the
+              // host was never contacted, so it must not be reported as down.
+              if ((e0 && e0.message && e0.message.indexOf('Content Security Policy') !== -1) || elapsed2 < 50) {
+                cspBlocked++;
+                hosts.push({ host: host, protocol: 'none', status: 0, time: elapsed2, alive: false, blocked: true });
+                _vgLog('  → [NOT PROBED] ' + host + ' — request blocked by the browser', 'muted');
+                completed++;
+                return null;
+              }
               _vgLog('  → [DOWN] ' + host + ' — HTTPS unreachable (' + elapsed2 + 'ms)', 'muted');
               _vgAddFinding({ severity: 'info', title: 'Host unreachable via HTTPS', description: host + ' did not respond to HTTPS probe. HTTP fallback skipped (mixed content).', phase: 'Host Probe', host: host, remediation: 'Use Darknode CLI for full HTTP/HTTPS probing' });
               completed++;
@@ -759,9 +768,9 @@ function _vgPhase3_HostProbe() {
               })
               .catch(function(e) {
                 var elapsed3 = Math.round(performance.now() - startTime);
-                if (e && e.message && e.message.indexOf('Content Security Policy') !== -1) cspBlocked++;
-                else if (elapsed3 < 50) cspBlocked++;
-                hosts.push({ host: host, protocol: 'none', status: 0, time: elapsed3, alive: false });
+                var blocked = (e && e.message && e.message.indexOf('Content Security Policy') !== -1) || elapsed3 < 50;
+                if (blocked) cspBlocked++;
+                hosts.push({ host: host, protocol: 'none', status: 0, time: elapsed3, alive: false, blocked: blocked });
                 completed++;
                 return null;
               });
@@ -1441,7 +1450,8 @@ function _vgComputeTakeover() {
   var hosts = _vgState.results.hosts || [];
   var dns = _vgState.results.dns || {};
   var aliveMap = {}, probedMap = {};
-  hosts.forEach(function(h) { probedMap[h.host] = h; if (h.alive) aliveMap[h.host] = h; });
+  // A browser-blocked request never reached the host: not evidence of a dangling record.
+  hosts.forEach(function(h) { if (!h.blocked) probedMap[h.host] = h; if (h.alive) aliveMap[h.host] = h; });
   var riskTokens = ['old', 'legacy', 'test', 'staging', 'dev', 'beta', 'demo', 'sandbox', 'backup', 'tmp', 'temp', 'deprecated', 'archive', 'preview', 'uat', 'qa', 'internal'];
   var results = [];
 

@@ -2010,7 +2010,7 @@ export function renderAegis(main) {
       // Real NVD CVE search for the target
       var nvdContainer = results.querySelector('#ag-nvdresults');
       fetch('https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=' + encodeURIComponent(target) + '&resultsPerPage=20')
-        .then(function(r) { return r.json(); })
+        .then(function(r) { if (!r.ok) throw new Error('NVD returned ' + r.status); return r.json(); })
         .then(function(data) {
           var vulns = (data.vulnerabilities || []);
           if (vulns.length === 0) {
@@ -2056,7 +2056,7 @@ export function renderAegis(main) {
       var subResults = c.querySelector('#ag-subresults');
       subResults.innerHTML = '<div style="color:var(--acc);font-size:.72rem;padding:10px;text-align:center">Querying crt.sh certificate transparency logs for *.' + esc(domain) + '...</div>';
       fetch('https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json')
-        .then(function(r) { return r.json(); })
+        .then(function(r) { if (!r.ok) throw new Error('crt.sh returned ' + r.status); return r.json(); })
         .then(function(data) {
           var seen = {};
           var subdomains = [];
@@ -2101,11 +2101,11 @@ export function renderAegis(main) {
       dnsResults.innerHTML = '<div style="color:var(--acc);font-size:.72rem;padding:10px;text-align:center">Querying DNS records for ' + esc(domain) + ' via DNS over HTTPS...</div>';
       var types = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
       var allRecords = [];
-      var completed = 0;
+      var completed = 0, failed = 0;
       var total = types.length;
       types.forEach(function(type) {
         fetch('https://dns.google/resolve?name=' + encodeURIComponent(domain) + '&type=' + type)
-          .then(function(r) { return r.json(); })
+          .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
           .then(function(data) {
             if (data.Answer) {
               data.Answer.forEach(function(ans) {
@@ -2113,10 +2113,14 @@ export function renderAegis(main) {
               });
             }
           })
-          .catch(function() { /* skip failed type */ })
+          .catch(function() { failed++; /* skip failed type */ })
           .then(function() {
             completed++;
             if (completed === total) {
+              if (allRecords.length === 0 && failed === total) {
+                dnsResults.innerHTML = '<div style="color:#ff9100;font-size:.72rem;text-align:center;padding:10px">DNS over HTTPS lookup failed for ' + esc(domain) + ' (resolver unreachable). No result is shown.</div>';
+                return;
+              }
               if (allRecords.length === 0) {
                 dnsResults.innerHTML = '<div style="color:var(--mut);font-size:.72rem;text-align:center;padding:10px">No DNS records found for ' + esc(domain) + '.</div>';
                 return;
@@ -3341,10 +3345,10 @@ export function renderAegis(main) {
               '<div class="ag-grid2" style="gap:8px;margin-bottom:10px">' +
                 '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Ticket Type</label>' +
                   '<select class="ag-sel" id="ag-krbtype" style="width:100%"><option>Golden Ticket (TGT)</option><option>Silver Ticket (TGS)</option><option>Diamond Ticket</option></select></div>' +
-                '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Domain</label><input class="ag-inp" id="ag-krbdom" value="CORP.LOCAL"></div>' +
+                '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Domain</label><input class="ag-inp" id="ag-krbdom" placeholder="e.g. CORP.LOCAL"></div>' +
               '</div>' +
               '<div class="ag-grid2" style="gap:8px;margin-bottom:10px">' +
-                '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Domain SID</label><input class="ag-inp" id="ag-krbsid" value="S-1-5-21-1234567890-9876543210-1122334455"></div>' +
+                '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Domain SID</label><input class="ag-inp" id="ag-krbsid" placeholder="e.g. S-1-5-21-..."></div>' +
                 '<div><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">krbtgt/Service Hash (NTLM)</label><input class="ag-inp" id="ag-krbhash" placeholder="e.g. a4f49c406510bdcab6824ee7c30fd852"></div>' +
               '</div>' +
               '<div class="ag-grid3" style="gap:8px;margin-bottom:10px">' +
@@ -3359,8 +3363,8 @@ export function renderAegis(main) {
 
         ac.querySelector('#ag-krbforge').onclick = function() {
           var type = ac.querySelector('#ag-krbtype').value;
-          var domain = ac.querySelector('#ag-krbdom').value;
-          var sid = ac.querySelector('#ag-krbsid').value;
+          var domain = ac.querySelector('#ag-krbdom').value.trim() || 'DOMAIN.LOCAL';
+          var sid = ac.querySelector('#ag-krbsid').value.trim() || 'DOMAIN_SID';
           var hash = ac.querySelector('#ag-krbhash').value || 'HASH_HERE';
           var user = ac.querySelector('#ag-krbuser').value;
           var uid = ac.querySelector('#ag-krbuid').value;
@@ -3397,7 +3401,7 @@ export function renderAegis(main) {
           '<div class="ag-panel">' +
             '<div class="ag-panel-h"><span style="color:var(--acc)">LDAP QUERY BUILDER</span></div>' +
             '<div class="ag-panel-b">' +
-              '<div style="margin-bottom:8px"><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Base DN</label><input class="ag-inp" id="ag-ldapbase" value="DC=corp,DC=local"></div>' +
+              '<div style="margin-bottom:8px"><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Base DN</label><input class="ag-inp" id="ag-ldapbase" placeholder="e.g. DC=corp,DC=local"></div>' +
               '<div style="margin-bottom:8px"><label style="font-size:.62rem;color:var(--mut);text-transform:uppercase">Query Template</label>' +
                 '<select class="ag-sel" id="ag-ldaptempl" style="width:100%">' +
                   '<option value="(&(objectClass=user)(objectCategory=person))">All Users</option>' +
@@ -3418,7 +3422,7 @@ export function renderAegis(main) {
           '</div>';
 
         ac.querySelector('#ag-ldaprun').onclick = function() {
-          var base = ac.querySelector('#ag-ldapbase').value;
+          var base = ac.querySelector('#ag-ldapbase').value.trim() || 'DC=domain,DC=local';
           var template = ac.querySelector('#ag-ldaptempl').value;
           var custom = ac.querySelector('#ag-ldapcustom').value.trim();
           var filter = custom || template;

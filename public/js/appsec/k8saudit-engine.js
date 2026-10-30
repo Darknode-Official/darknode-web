@@ -1271,7 +1271,7 @@ export function analyze(input, opts = {}, ctx) {
 // ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
-const q = (v) => { const s = v == null ? "" : String(v); return /[",\r\n]/.test(s) || /^[=+\-@]/.test(s) ? '"' + (/^[=+\-@]/.test(s) ? "'" : "") + s.replace(/"/g, '""') + '"' : s; };
+const q = (v) => { const s = v == null ? "" : String(v); return /[",\r\n]/.test(s) || /^[=+\-@\t\r]/.test(s) ? '"' + (/^[=+\-@\t\r]/.test(s) ? "'" : "") + s.replace(/"/g, '""') + '"' : s; };
 const csv = (cols, rows) => [cols.join(","), ...rows.map((r) => cols.map((c) => q(r[c])).join(","))].join("\n") + "\n";
 
 export const FINDING_COLS = ["severity", "confidence", "category", "check", "title", "description", "recommendation", "controls", "evidenceCount", "assets", "path"];

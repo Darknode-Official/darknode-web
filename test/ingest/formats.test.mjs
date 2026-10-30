@@ -131,3 +131,23 @@ group("formats/native scanner exports", () => {
     assert.ok(r.errors.length >= 1);
   });
 });
+
+group("ingest/SARIF: non-problem results and rule references", () => {
+  const sarif = { version: "2.1.0", runs: [{ tool: { driver: { name: "x", rules: [{ id: "R1", properties: { "security-severity": "9.1" } }] } }, results: [
+    { ruleId: "R1", message: { text: "real" } },
+    { ruleId: "R1", kind: "pass", message: { text: "passed check" } },
+    { ruleId: "R1", kind: "notApplicable", message: { text: "n/a" } },
+    { ruleId: "R1", message: { text: "dismissed" }, suppressions: [{ kind: "external", status: "accepted" }] },
+    { ruleId: "R1", message: { text: "rejected suppression" }, suppressions: [{ kind: "external", status: "rejected" }] },
+    { ruleIndex: 0, message: { text: "by index" } },
+  ] }] };
+  test("pass / notApplicable / suppressed results are not imported as findings", () => {
+    const titles = parseSarif(sarif).findings.map((f) => f.title);
+    assert.deepEqual(titles, ["real", "rejected suppression", "by index"]);
+  });
+  test("a result naming its rule only by ruleIndex gets the rule's severity and id", () => {
+    const f = parseSarif(sarif).findings.find((x) => x.title === "by index");
+    assert.equal(f.severity, "critical");
+    assert.equal(f.category, "R1");
+  });
+});

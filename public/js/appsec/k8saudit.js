@@ -17,9 +17,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, DETECTIONS, SEV_RANK,
   findingsToCsv, workloadsToCsv, rbacMatrixCsv, remediationYaml, summaryText, exampleDataset,
-} from "./k8saudit-engine.js?v=20261016k";
+} from "./k8saudit-engine.js?v=20261029c";
 
-const ENGINE = engineUrl("./k8saudit-engine.js?v=20261016k", import.meta);
+const ENGINE = engineUrl("./k8saudit-engine.js?v=20261029c", import.meta);
 const P = "kub";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

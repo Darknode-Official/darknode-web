@@ -24,6 +24,12 @@ group("strongroom: parsing", () => {
     assert.equal(parseDay("2026-01-05"), parseDay("1/5/2026"));
     assert.equal(parseDay("not a date"), null);
   });
+  test("parseDay rejects a day the month does not have instead of rolling over", () => {
+    assert.equal(parseDay("2026-02-31"), null);
+    assert.equal(parseDay("4/31/2026"), null);
+    assert.equal(parseDay("2028-02-29"), parseDay("2/29/2028"));
+    assert.ok(parseDay("2028-02-29") != null);
+  });
   test("parseCSV handles quoted commas", () => {
     const rows = parseCSV('a,b\n"x,y",z');
     assert.equal(rows[1][0], "x,y");

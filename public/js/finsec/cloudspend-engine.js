@@ -1151,7 +1151,7 @@ export function analyze(dataset, opts = {}, ctx) {
 // ---------------------------------------------------------------------------
 const cell = (v) => {
   let s = Array.isArray(v) ? v.join("; ") : v == null ? "" : String(v);
-  if (/^[=+@\t\r]/.test(s) || /^-[^\d]/.test(s)) s = "'" + s;
+  if (/^[=+@\t\r]/.test(s) || (/^-/.test(s) && !/^-\d+(\.\d+)?$/.test(s))) s = "'" + s;
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 };
 const csv = (cols, rows, fn) => [cols.join(",")].concat((rows || []).map((r) => fn(r).map(cell).join(","))).join("\n") + "\n";

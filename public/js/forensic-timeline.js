@@ -35,9 +35,9 @@ const PARSERS = [
   },
   {
     name: 'Apache/Nginx Access Log',
-    detect: function(line) { return /^\d+\.\d+\.\d+\.\d+\s.*\[.*\]\s"(GET|POST|PUT|DELETE|HEAD|OPTIONS)/.test(line); },
+    detect: function(line) { return /^\d+\.\d+\.\d+\.\d+\s.*\[.*\]\s"(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)/.test(line); },
     parse: function(line) {
-      var m = line.match(/^(\S+)\s+\S+\s+(\S+)\s+\[([^\]]+)\]\s+"(\S+)\s+(\S+)\s+\S+"\s+(\d+)\s+(\d+)/);
+      var m = line.match(/^(\S+)\s+\S+\s+(\S+)\s+\[([^\]]+)\]\s+"(\S+)\s+(\S+)\s+\S+"\s+(\d+)\s+(\d+|-)/);
       if (!m) return null;
       var ts = new Date(m[3].replace(/\//g, '-').replace(/:/, ' '));
       return { timestamp: ts, source: 'WebAccess', detail: m[4] + ' ' + m[5] + ' -> ' + m[6] + ' (' + m[7] + 'B)', ip: m[1], user: m[2], raw: line, category: 'web' };

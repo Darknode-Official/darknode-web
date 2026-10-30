@@ -1478,7 +1478,7 @@ export function extractResolvedLicense(kind, json) {
 // ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
-const csvCell = (v) => { const s = String(v == null ? "" : v); const guard = /^[=+\-@\t]/.test(s) ? "'" : ""; return /[",\n\r]/.test(s) || guard ? '"' + guard + s.replace(/"/g, '""') + '"' : s; };
+const csvCell = (v) => { const s = String(v == null ? "" : v); const guard = /^[=+\-@\t\r]/.test(s) ? "'" : ""; return /[",\n\r]/.test(s) || guard ? '"' + guard + s.replace(/"/g, '""') + '"' : s; };
 const FINDING_COLS = ["severity", "confidence", "rule", "category", "title", "description", "recommendation", "controls", "evidenceCount", "packages"];
 
 /** Findings as CSV with fixed columns. */

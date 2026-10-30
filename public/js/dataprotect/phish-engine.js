@@ -368,7 +368,10 @@ export function parseEmailHeaders(raw) {
 }
 
 export function domainOf(addr) {
-  const m = String(addr || "").match(/@([^\s>"']+)/);
+  // The real address is the <angle-addr>; a display name can itself hold an address
+  // ("service@brand.com" <x@attacker.example>), the classic From spoof.
+  const s = String(addr || ""), angle = s.match(/<([^<>]*)>\s*$/);
+  const m = (angle ? angle[1] : s).match(/@([^\s>"']+)/);
   return m ? m[1].toLowerCase().replace(/[>)\].,]+$/, "") : "";
 }
 export function displayName(fromVal) {

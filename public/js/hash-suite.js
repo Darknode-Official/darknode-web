@@ -188,6 +188,7 @@ const MD5 = (function () {
 
   return {
     hash: function (str) { return rstr2hex(rstrMD5(str2rstrUTF8(str))); },
+    raw: function (bin) { return rstr2hex(rstrMD5(bin)); }, // bin = one char per byte (0-255), not UTF-8 encoded again
     hmac: function (key, data) { return rstr2hex(hmacMD5(key, data)); }
   };
 })();
@@ -289,6 +290,7 @@ const SHA1 = (function () {
 
   return {
     hash: function (str) { return rstr2hex(rstrSHA1(str2rstrUTF8(str))); },
+    raw: function (bin) { return rstr2hex(rstrSHA1(bin)); }, // bin = one char per byte (0-255), not UTF-8 encoded again
     hmac: function (key, data) { return rstr2hex(hmacSHA1(key, data)); }
   };
 })();
@@ -412,6 +414,7 @@ const SHA256 = (function () {
 
   return {
     hash: function (str) { return rstr2hex(rstrSHA256(str2rstrUTF8(str))); },
+    raw: function (bin) { return rstr2hex(rstrSHA256(bin)); }, // bin = one char per byte (0-255), not UTF-8 encoded again
     hmac: function (key, data) { return rstr2hex(hmacSHA256(key, data)); }
   };
 })();
@@ -619,7 +622,8 @@ const SHA512 = (function () {
     hash: function (str) {
       const s = str2rstrUTF8(str);
       return coreSHA512(s, s.length * 8);
-    }
+    },
+    raw: function (bin) { return coreSHA512(bin, bin.length * 8); }
   };
 })();
 
@@ -766,6 +770,9 @@ function estimateRainbowTable(charset, maxLen, hashBits, chainLen, numTables) {
   };
 }
 
+// file names and MIME types come from the dropped file, so escape them before innerHTML
+const hsEsc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
 function formatBytes(bytes) {
   if (bytes < 1024) return bytes + " B";
   if (bytes < 1048576) return (bytes / 1024).toFixed(2) + " KB";
@@ -859,11 +866,11 @@ async function hashFile(file, algorithm, progressCallback) {
       if (progressCallback) progressCallback(50);
       let result;
       switch ((algorithm || "sha256").toLowerCase().replace(/[- ]/g, "")) {
-        case "md5":    result = MD5.hash(text); break;
-        case "sha1":   result = SHA1.hash(text); break;
-        case "sha256": result = SHA256.hash(text); break;
-        case "sha512": result = SHA512.hash(text); break;
-        default:       result = SHA256.hash(text); break;
+        case "md5":    result = MD5.raw(text); break;
+        case "sha1":   result = SHA1.raw(text); break;
+        case "sha256": result = SHA256.raw(text); break;
+        case "sha512": result = SHA512.raw(text); break;
+        default:       result = SHA256.raw(text); break;
       }
       if (progressCallback) progressCallback(100);
       resolve({
@@ -1411,16 +1418,16 @@ export function renderHashSuite(container) {
       const result = await hashFile(file, algo, (pct) => { progressBar.style.width = pct + "%"; });
       out.innerHTML = `
         <div class="hs-card" style="margin-top:12px;">
-          <div class="hs-info-row"><span class="hs-info-label">File</span><span class="hs-info-value">${result.filename}</span></div>
+          <div class="hs-info-row"><span class="hs-info-label">File</span><span class="hs-info-value">${hsEsc(result.filename)}</span></div>
           <div class="hs-info-row"><span class="hs-info-label">Size</span><span class="hs-info-value">${result.sizeFormatted} (${result.size.toLocaleString()} bytes)</span></div>
-          <div class="hs-info-row"><span class="hs-info-label">Type</span><span class="hs-info-value">${result.type}</span></div>
+          <div class="hs-info-row"><span class="hs-info-label">Type</span><span class="hs-info-value">${hsEsc(result.type)}</span></div>
           <div class="hs-info-row"><span class="hs-info-label">Algorithm</span><span class="hs-info-value">${result.algorithm.toUpperCase()}</span></div>
           <div class="hs-info-row"><span class="hs-info-label">Computed</span><span class="hs-info-value">${result.timestamp}</span></div>
           <div class="hs-output" style="margin-top:8px;">${result.hash}<button class="hs-copy-btn">Copy</button></div>
         </div>`;
       attachCopy(out);
     } catch (err) {
-      out.innerHTML = '<div class="hs-output" style="color:#f44336;">Error: ' + err.message + '</div>';
+      out.innerHTML = '<div class="hs-output" style="color:#f44336;">Error: ' + hsEsc(err.message) + '</div>';
     }
     setTimeout(() => { progress.classList.remove("active"); }, 500);
   }

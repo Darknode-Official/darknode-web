@@ -64,7 +64,15 @@ export function parseSarif(obj) {
     const rulesById = new Map();
     for (const r of (tool.rules || [])) if (r && r.id) rulesById.set(r.id, r);
     for (const res of (run.results || [])) {
-      const rule = rulesById.get(res.ruleId) || {};
+      // SARIF 3.27.9: only kind "fail" (the default) or open/review is a problem; pass and
+      // notApplicable results are not findings. 3.35: a suppression that is not rejected
+      // or under review (status absent or "accepted") dismisses the result.
+      if (/^(pass|notApplicable|informational)$/.test(str(res.kind))) continue;
+      if (Array.isArray(res.suppressions) && res.suppressions.some((x) => x && (!x.status || x.status === "accepted"))) continue;
+      // the rule may be named by ruleId, by rule.id, or only by its index in driver.rules
+      const rid = res.ruleId || (res.rule && res.rule.id);
+      const idx = res.ruleIndex != null ? res.ruleIndex : res.rule && res.rule.index;
+      const rule = rulesById.get(rid) || (Number.isInteger(idx) && (tool.rules || [])[idx]) || {};
       const title = str((res.message && (res.message.text || res.message.id)) || rule.name || rule.id || res.ruleId) || "SARIF result";
       // severity: numeric security-severity wins, else level, else rule default.
       const secSev = (res.properties && res.properties["security-severity"]) || (rule.properties && rule.properties["security-severity"]);
@@ -76,7 +84,7 @@ export function parseSarif(obj) {
         const line = loc && loc.physicalLocation && loc.physicalLocation.region && loc.physicalLocation.region.startLine;
         if (uri) assets.push({ type: "ASSET", name: str(unUri(uri)), data: line ? { line } : {} });
       }
-      const f = { title, severity, category: str(res.ruleId || rule.id) || (tool.name ? str(tool.name) : "sarif"), tags: ["sarif", ...(tool.name ? [str(tool.name).toLowerCase()] : [])] };
+      const f = { title, severity, category: str(rid || rule.id) || (tool.name ? str(tool.name) : "sarif"), tags: ["sarif", ...(tool.name ? [str(tool.name).toLowerCase()] : [])] };
       const help = rule.help && (rule.help.text || rule.help.markdown);
       const desc = rule.fullDescription && rule.fullDescription.text;
       if (desc) f.description = str(desc);

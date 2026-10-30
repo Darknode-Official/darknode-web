@@ -53,6 +53,8 @@ export function parseSnortRule(line) {
   for (const opt of opts) {
     const colonIdx = opt.indexOf(":");
     if (colonIdx < 0) {
+      // nocase is a modifier of the preceding content match, not a rule-level flag.
+      if (opt.trim() === "nocase" && rule.content.length) rule.content[rule.content.length - 1].nocase = true;
       rule.options[opt.trim()] = true;
       continue;
     }
@@ -78,7 +80,7 @@ export function parseSnortRule(line) {
 
 function parseSnortContent(raw) {
   const isHex = raw.startsWith("|") && raw.endsWith("|");
-  const nocase = raw.includes("nocase");
+  const nocase = false; // set by a following `nocase;` option
   let pattern = raw.replace(/"/g, "");
   if (isHex) {
     pattern = pattern.slice(1, -1).trim();

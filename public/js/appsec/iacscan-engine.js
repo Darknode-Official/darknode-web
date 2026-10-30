@@ -2215,7 +2215,7 @@ const FINDING_COLS = ["severity", "confidence", "rule", "title", "platform", "re
 
 /** Findings as CSV with fixed columns. */
 export function findingsToCsv(findings) {
-  const q = (v) => { const s = String(v == null ? "" : v); return /[",\n\r]|^[=+\-@\t]/.test(s) ? '"' + (/^[=+\-@\t]/.test(s) ? "'" : "") + s.replace(/"/g, '""') + '"' : s; };
+  const q = (v) => { const s = String(v == null ? "" : v); return /[",\n\r]|^[=+\-@\t\r]/.test(s) ? '"' + (/^[=+\-@\t\r]/.test(s) ? "'" : "") + s.replace(/"/g, '""') + '"' : s; };
   const body = (findings || []).map((f) => [f.severity, f.confidence, f.ruleId, f.title, f.platform, f.resource, f.resourceType, f.file, f.line,
     (f.controls || []).map((c) => c.framework + " " + c.id).join("; "), f.description, f.recommendation, f.evidenceCount != null ? f.evidenceCount : (f.evidence || []).length].map(q).join(","));
   return [FINDING_COLS.join(","), ...body].join("\n") + "\n";

@@ -546,8 +546,10 @@ export function parseDomainList(text, mapping = {}) {
     const parts = l.split(/[\s,;\t]+/).filter(Boolean);
     const d = cleanDomain(parts[0]);
     if (!d) { skipped.push({ check: "domain list", reason: "not a domain: " + l.trim().slice(0, 60) }); continue; }
-    const flags = parts.slice(1).join(" ").toLowerCase();
-    domains.push({ domain: d, sendsMail: /\bno-?mail\b|\bparked\b/.test(flags) ? false : /\bmail\b|\bsends\b/.test(flags) ? true : null, parked: /\bparked\b/.test(flags) });
+    // "a.com, b.com" on one line: every token that is a domain is a domain, the rest are flags.
+    const more = parts.slice(1).map(cleanDomain);
+    const flags = parts.slice(1).filter((p, i) => !more[i]).join(" ").toLowerCase();
+    for (const dd of [d, ...more.filter(Boolean)]) domains.push({ domain: dd, sendsMail: /\bno-?mail\b|\bparked\b/.test(flags) ? false : /\bmail\b|\bsends\b/.test(flags) ? true : null, parked: /\bparked\b/.test(flags) });
   }
   return { format: "list", headers: [], domains: dedupeDomains(domains), skipped };
 }

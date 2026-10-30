@@ -18,7 +18,7 @@ import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261028c";
 import { testKey, canTest } from "/js/integrations/connect.js?v=20261029c";
 import { toolsFor } from "/js/integrations/intel-core.js?v=20261029c";
 // Live-data layer: the SSRF-guarded worker proxy. dnFetchJSON routes keyless public
-// feeds (CISA KEV, FIRST EPSS, ransomware.live, crt.sh, DoH, RDAP, BGPView) through
+// feeds (CISA KEV, FIRST EPSS, ransomware.live, crt.sh, DoH, RDAP, RIPEstat) through
 // /api/fetch; it throws on failure and never fabricates. net.js is stateless.
 import { dnFetch, dnFetchJSON, proxyConfigured } from "/js/net.js";
 // Attack-surface data wrappers (crt.sh / DoH / RDAP / Team Cymru ASN / HTTP probe),
@@ -42,7 +42,7 @@ import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js
 const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => { p = null; throw e; })); };
 const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261027c");
-const corrMod = lazyMod("/js/deck/correlations.js?v=20261029b");
+const corrMod = lazyMod("/js/deck/correlations.js?v=20261029c");
 const monMod = lazyMod("/js/deck/monitors.js?v=20261028a");
 const keysMod = lazyMod("/js/deck/apikeys.js?v=20261029c");
 const auditMod = lazyMod("/js/deck/audit.js?v=20261028a");
@@ -2223,7 +2223,7 @@ export function renderDeck(host, opts) {
         try { window.dnKeys.set("dn_key_" + it.id, key); } catch (_) {} // per account (user-keys.js)
         saveConns(conns);
         toast(res.ok ? `${it.name} connected, key verified${res.note ? " (" + res.note + ")" : ""}` : `${it.name} key saved but not verified: ${res.error || "no live test for this provider"}`, res.ok ? undefined : "warn");
-        refreshConnState(it); openDrawer(it);
+        refreshConnState(it); if (form.isConnected && drawer.classList.contains("on")) openDrawer(it); // the test is async: a panel closed or switched meanwhile stays that way
       };
     }
     const connBtn = drawerBody.querySelector('[data-act="conn"]');     // link-type only
@@ -2239,7 +2239,7 @@ export function renderDeck(host, opts) {
       if (res.ok) { r.verified = Date.now(); delete r.unverified; toast(`${it.name} key works`); }
       else if (res.ok === false) { delete r.verified; r.unverified = true; toast(`${it.name} key failed: ${res.error}`, "error"); }
       else toast(`Could not test ${it.name}: ${res.error}`, "warn");
-      conns[it.id] = r; saveConns(conns); refreshConnState(it); openDrawer(it);
+      conns[it.id] = r; saveConns(conns); refreshConnState(it); if (retestBtn.isConnected && drawer.classList.contains("on")) openDrawer(it);
     };
     const discBtn = drawerBody.querySelector('[data-act="disc"]');
     if (discBtn) discBtn.onclick = () => { delete conns[it.id]; saveConns(conns); try { window.dnKeys.del("dn_key_" + it.id); } catch (_) {} toast(`${it.name} disconnected`); refreshConnState(it); openDrawer(it); };
@@ -2660,7 +2660,7 @@ export function renderDeck(host, opts) {
   function buildBellMenu(){
     const rows = mergedNotifs();
     popBell.innerHTML = `<div class="dk-pop-h">Notifications <button id="dkNClear">Mark all read</button></div>
-      <div class="dk-notif">${rows.length ? rows.map((x) => `<div class="dk-nrow${notifUnseen(x) ? "" : " seen"}"><span class="nd"></span><div><div class="nt">${esc(x.text)}${x.acct ? `<span class="nk">Account</span>` : ""}</div><div class="na">${timeAgo(x.ts)}</div></div></div>`).join("") : `<div class="dk-nempty">No notifications yet. Platform events — tools run, graph entities added, providers connected — stream in here live.</div>`}</div>`;
+      <div class="dk-notif">${rows.length ? rows.map((x) => `<div class="dk-nrow${notifUnseen(x) ? "" : " seen"}"><span class="nd"></span><div><div class="nt">${esc(x.text)}${x.acct ? `<span class="nk">Account</span>` : ""}</div><div class="na">${timeAgo(x.ts)}</div></div></div>`).join("") : `<div class="dk-nempty">No notifications yet. Platform events — tools run, graph entities added — stream in here live.</div>`}</div>`;
     const clr = popBell.querySelector("#dkNClear");
     if (clr) clr.onclick = () => {
       notifSeen = Date.now(); try { localStorage.setItem(LS_NOTIF_SEEN, String(notifSeen)); } catch (_) {}
@@ -4873,7 +4873,7 @@ export function renderDeck(host, opts) {
   // KPIs, nav scenes and badges come from the EXPLAIN registry; tools fall back to the
   // console's plain-English section help.
   let secHelp = null;
-  import("/js/section-help.js?v=20261010j").then((m) => { secHelp = m.SECTION_HELP; }).catch(() => {});
+  import("/js/section-help.js?v=20261029c").then((m) => { secHelp = m.SECTION_HELP; }).catch(() => {});
   const toolExplain = (sec, label) => {
     const h = secHelp && secHelp[sec]; if (!h) return null;
     return { title: label || secLabel[sec] || sec, body: [h.what, h.when].filter(Boolean).join(" "), src: h.note || "" };

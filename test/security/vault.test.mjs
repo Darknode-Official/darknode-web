@@ -127,3 +127,14 @@ group("vault: segregation of duties + idempotency", () => {
     assert.throws(() => L.release("t", "carol"), "re-release must be refused");
   });
 });
+
+group("vault: movement screen", () => {
+  test("a payee seen only on a rejected transfer is still first-time", () => {
+    const L = new Ledger();
+    L.openAccount({ id: "bank", type: "asset" }); L.openAccount({ id: "c", type: "clearing" });
+    L.createTransfer({ id: "t1", from: "bank", to: "c", amount: "5", by: "u1", payee: "Payee X" });
+    L.reject("t1", "u2", "suspicious");
+    const t2 = L.createTransfer({ id: "t2", from: "bank", to: "c", amount: "5", by: "u1", payee: "Payee X" });
+    assert.ok(t2.screen.flags.some((f) => f.startsWith("first-time payee")));
+  });
+});

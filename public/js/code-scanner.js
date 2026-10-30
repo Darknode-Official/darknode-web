@@ -8,7 +8,7 @@
 // come from OSV.dev. Code is fetched straight from GitHub into this tab and scanned
 // here: nothing is uploaded to Darknode, and no AI is involved.
 
-import { scanFile, parseManifest, isManifest, depFinding, dedupeDeps, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261029a";
+import { scanFile, parseManifest, isManifest, depFinding, dedupeDeps, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261029c";
 import * as gh from "/js/codescan/github.js?v=20261018i";
 import { findingKey, serializeBaseline, diffFindings, baselineKeySet } from "/js/codescan/baseline.js?v=20261014a";
 import { createWatch } from "/js/codescan/watch-ui.js?v=20261017f";

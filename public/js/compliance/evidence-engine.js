@@ -942,7 +942,8 @@ export function parseInput(input) {
   if (fmt === "json" || fmt === "ndjson" || /^\s*[[{]/.test(t)) {
     let arr = null;
     try { const v = JSON.parse(t); arr = Array.isArray(v) ? v : Array.isArray(v && v.records) ? v.records : null; } catch (_) {
-      arr = []; for (const r of iterJson(t)) if (isObj(r)) arr.push(r);
+      arr = [];
+      try { for (const r of iterJson(t)) if (isObj(r)) arr.push(r); } catch (_) { arr = null; }
     }
     if (!arr) return { format: "unknown", headers: [], rows: [], skipped: [{ check: "import", reason: "JSON is not an array of records" }], mapping: {}, confidence: "low" };
     const recs = arr.filter(isObj);

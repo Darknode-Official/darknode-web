@@ -731,6 +731,8 @@ function parseSarif(o, file) {
     const rules = new Map(((run.tool && run.tool.driver && run.tool.driver.rules) || []).map((r) => [r.id, r]));
     const project = str((run.automationDetails && run.automationDetails.id) || (run.properties && run.properties.imageName) || file);
     for (const r of run.results || []) {
+      // not a problem (SARIF 3.27.9 kind) or dismissed (3.35 suppression not rejected / under review)
+      if (/^(pass|notApplicable|informational)$/.test(str(r.kind)) || (Array.isArray(r.suppressions) && r.suppressions.some((x) => x && (!x.status || x.status === "accepted")))) continue;
       const rule = rules.get(r.ruleId) || {};
       const msg = str(r.message && r.message.text);
       const cves = extractCves([r.ruleId, rule.id, rule.name, msg].join(" "));

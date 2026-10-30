@@ -1192,6 +1192,11 @@ export function renderDataViz(main) {
   title.style.cssText = `font-size:1.375rem;font-weight:700;color:${INK_PRIMARY};margin:0 0 16px 0;`;
   wrapper.appendChild(title);
 
+  const exampleNote = document.createElement('p');
+  exampleNote.textContent = 'Example data. These charts demonstrate the chart components and do not show live telemetry from your environment.';
+  exampleNote.style.cssText = 'font-size:.85rem;color:#4b5563;margin:-8px 0 16px 0;';
+  wrapper.appendChild(exampleNote);
+
   const styleTag = document.createElement('style');
   styleTag.textContent = `
     .dv-grid { display:grid; grid-template-columns: 1fr; gap:16px; }

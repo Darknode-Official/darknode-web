@@ -2044,13 +2044,16 @@ function parseApacheError(text) {
   const results = [];
   for (const line of lines) {
     let m = APACHE_ERROR_RE.exec(line);
-    if (!m) m = NGINX_ERROR_RE.exec(line);
-    if (m) {
+    const nx = m ? null : NGINX_ERROR_RE.exec(line);
+    if (nx) {
+      // nginx: ts [level] pid#tid: message
+      results.push({ timestamp: nx[1], level: nx[2], extra: nx[3] + '#' + nx[4], message: nx[5] || '', raw: line });
+    } else if (m) {
       results.push({
         timestamp: m[1],
         level: m[2],
         extra: m[3] || '',
-        message: m[4] || m[5] || '',
+        message: m[4] || '',
         raw: line
       });
     } else {
@@ -2068,7 +2071,10 @@ function parseAuthLog(text) {
     const isSuccess = AUTH_SUCCESS_RE.test(line);
     const isSudo = SUDO_RE.test(line);
     const ips = line.match(IPV4_RE) || [];
-    const userMatch = line.match(/(?:for(?:\s+user)?|user[= ])\s*(\S+)/i);
+    // Most specific first: "for invalid user X" must not yield "invalid", and pam's
+    // "ruser= rhost=..." must not be read as the user name.
+    const userMatch = line.match(/\bsudo:\s+(\S+)\s+:/) || line.match(/\bfor invalid user (\S+)/i) || line.match(/\bInvalid user (\S+)/i) ||
+      line.match(/\buser=(\S+)/i) || line.match(/\bfor(?:\s+user)?\s+(\S+)/i) || line.match(/\buser\s+(\S+)/i);
     entries.push({
       raw: line,
       type: isFailed ? 'failed' : isSuccess ? 'success' : isSudo ? 'sudo' : 'other',
@@ -3233,15 +3239,15 @@ function renderYARATab(container) {
         <h3>YARA Rule Builder</h3>
         <div class="tk-row" style="margin:8px 0">
           <label style="width:100px">Rule Name:</label>
-          <input class="tk-f" id="yb-name" placeholder="My_Rule" value="Custom_Detection">
+          <input class="tk-f" id="yb-name" placeholder="My_Rule">
         </div>
         <div class="tk-row" style="margin:8px 0">
           <label style="width:100px">Description:</label>
-          <input class="tk-f" id="yb-desc" placeholder="Description of what this rule detects" value="Custom YARA detection rule">
+          <input class="tk-f" id="yb-desc" placeholder="Description of what this rule detects">
         </div>
         <div class="tk-row" style="margin:8px 0">
           <label style="width:100px">Author:</label>
-          <input class="tk-f" id="yb-author" placeholder="Your name" value="Analyst">
+          <input class="tk-f" id="yb-author" placeholder="Your name">
         </div>
         <div class="tk-row" style="margin:8px 0">
           <label style="width:100px">Severity:</label>
@@ -3273,8 +3279,8 @@ $hex1 = { 4D 5A 90 00 }'></textarea>
 
     content.querySelector('#yb-generate').onclick = () => {
       const name = content.querySelector('#yb-name').value.trim().replace(/\s+/g, '_') || 'Custom_Rule';
-      const desc = content.querySelector('#yb-desc').value.trim();
-      const author = content.querySelector('#yb-author').value.trim();
+      const desc = content.querySelector('#yb-desc').value.trim().replace(/[\\"]/g, '\\$&');
+      const author = content.querySelector('#yb-author').value.trim().replace(/[\\"]/g, '\\$&');
       const severity = content.querySelector('#yb-severity').value;
       const stringsText = content.querySelector('#yb-strings').value.trim();
       const condition = content.querySelector('#yb-condition').value.trim() || 'any of them';

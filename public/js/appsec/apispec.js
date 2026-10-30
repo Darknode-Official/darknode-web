@@ -6,9 +6,9 @@ import { runInWorker, engineUrl } from "../ingest/worker.js";
 import { summarize } from "../core/sink-map.js";
 import { attachSinkButton } from "../core/sink.js";
 import { download, toJson, fileStamp } from "../core/export.js";
-import { DEFAULTS, DEFAULT_LABELS, TOOL_ID, SEVERITIES, OWASP_API_2023, parseInput, findingsToCsv, inventoryToCsv, toSarif, toTxt, exampleDataset } from "./apispec-engine.js?v=20261028c";
+import { DEFAULTS, DEFAULT_LABELS, TOOL_ID, SEVERITIES, OWASP_API_2023, parseInput, findingsToCsv, inventoryToCsv, toSarif, toTxt, exampleDataset } from "./apispec-engine.js?v=20261029c";
 
-const ENGINE = engineUrl("./apispec-engine.js?v=20261028c", import.meta);
+const ENGINE = engineUrl("./apispec-engine.js?v=20261029c", import.meta);
 const P = "api";
 const MAX_FILES = 50, MAX_BYTES = 50 * 1024 * 1024;
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t); } catch (_) {} };

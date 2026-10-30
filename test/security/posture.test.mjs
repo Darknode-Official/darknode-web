@@ -331,3 +331,23 @@ group("posture: certificate SAN coverage", () => {
     assert.equal(certDaysLeft("2026-01-31T23:59:59Z", now), 30);
   });
 });
+
+group("posture: CSP nonce/hash fallbacks and quoted HSTS max-age", () => {
+  test("'unsafe-inline' next to a nonce is ignored by browsers and not graded critical", () => {
+    const g = gradeCSPDeep("default-src 'self'; script-src 'nonce-r4nd0m' 'unsafe-inline'");
+    assert.ok(!g.findings.some((f) => /unsafe-inline/.test(f.msg)));
+  });
+  test("strict CSP with 'strict-dynamic' fallbacks (https: 'unsafe-inline') is not flagged as broad", () => {
+    const g = gradeCSPDeep("default-src 'self'; script-src 'nonce-r4nd0m' 'strict-dynamic' 'unsafe-inline' https:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+    assert.equal(g.findings.filter((f) => f.sev === "critical" || /HTTPS source/.test(f.msg)).length, 0);
+    assert.equal(g.grade, "A");
+  });
+  test("without a nonce or hash 'unsafe-inline' and https: are still flagged", () => {
+    const g = gradeCSPDeep("default-src 'self'; script-src 'unsafe-inline' https:");
+    assert.ok(g.findings.some((f) => f.sev === "critical" && /unsafe-inline/.test(f.msg)));
+    assert.ok(g.findings.some((f) => /HTTPS source/.test(f.msg)));
+  });
+  test("HSTS max-age as a quoted-string (RFC 6797 6.1) is read", () => {
+    assert.equal(parseHSTS('max-age="31536000"; includeSubDomains').maxAge, 31536000);
+  });
+});

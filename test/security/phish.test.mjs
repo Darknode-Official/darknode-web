@@ -292,3 +292,12 @@ group("phish: defang, refang and report", () => {
     assert.notEqual(r.verdict.level, "likely-legitimate");
   });
 });
+
+group("phish: From address inside the display name", () => {
+  test("the angle-addr domain is the sender, not an address in the display name", () => {
+    const raw = "From: \"service@paypal.com\" <alerts@evil.tk>\nReturn-Path: <b@evil.tk>\nSubject: hi\n\nhello\n";
+    const r = triageEmail(raw);
+    assert.equal(r.fromDomain, "evil.tk");
+    assert.ok(r.findings.some((f) => /Display name mentions "paypal"/.test(f.t)));
+  });
+});

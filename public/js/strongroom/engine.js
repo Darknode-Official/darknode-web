@@ -111,6 +111,7 @@ export function parseDay(s) {
     else return null;
   }
   if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  if (new Date(Date.UTC(y, m - 1, d)).getUTCDate() !== d) return null; // no such day (Feb 30, Apr 31): reject, don't roll over
   return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
 }
 

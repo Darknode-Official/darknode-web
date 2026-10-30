@@ -39,7 +39,7 @@ export function renderCorsTester(container) {
     { url: 'https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=1', label: 'NVD API' },
     { url: 'https://ipapi.co/json/', label: 'ipapi.co' },
     { url: 'https://crt.sh/?q=google.com&output=json', label: 'crt.sh' },
-    { url: 'https://api.bgpview.io/asn/13335', label: 'BGPView' },
+    { url: 'https://stat.ripe.net/data/as-overview/data.json?resource=AS13335', label: 'RIPEstat' },
     { url: 'https://opensky-network.org/api/states/all?lamin=45&lomin=-1&lamax=46&lomax=0', label: 'OpenSky' }
   ];
   for (var i = 0; i < quickTests.length; i++) {

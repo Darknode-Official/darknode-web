@@ -665,6 +665,11 @@ group("backupready: 3-2-1-1-0, score, exports", () => {
     assert.ok(lines[1].includes('"CIS Controls v8 11.3"'));
     assert.ok(lines[1].endsWith('"3"'));
   });
+  test("findingsToCsv guards a formula that starts with a negative number (-2+3+cmd)", () => {
+    const line = findingsToCsv([{ id: "x", title: "-2+3+cmd|' /C calc'!A0", description: "-5", assets: [{ name: "-1+1" }] }]).trim().split("\n")[1];
+    assert.ok(line.includes(`"'-2+3+cmd`) && line.includes(`"'-1+1"`), line);
+    assert.ok(line.includes('"-5"'), line);
+  });
 
   test("recovery CSV, readiness report and summary text", () => {
     const ex = exampleDataset();

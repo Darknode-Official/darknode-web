@@ -323,11 +323,22 @@ group("vendorrisk: snapshots and diffs", () => {
 
 group("vendorrisk: dates, register, import, exports", () => {
   test("date maths with explicit now", () => {
-    assert.equal(daysUntil("2026-10-26", NOW), 9);
-    assert.equal(daysUntil("2026-10-01", NOW), -16);
+    assert.equal(daysUntil("2026-10-26", NOW), 10);
+    assert.equal(daysUntil("2026-10-01", NOW), -15);
     assert.equal(addMonths("2026-01-31", 1), "2026-02-28");
     assert.equal(addMonths("2025-10-16", 12), "2026-10-16");
     assert.equal(daysUntil("not a date", NOW), null);
+  });
+  test("a date counts in calendar days: a document expiring today is not yet expired", () => {
+    // NOW is midday; expiring today used to read as "expired 1 days ago" and tomorrow as "in 0 days".
+    assert.equal(daysUntil("2026-10-16", NOW), 0);
+    assert.equal(daysUntil("2026-10-17", NOW), 1);
+    const g = gradeVendor(normalizeRecord({ id: "v1", legalName: "Vendor X", dataTypes: "pii", docs: [{ id: "d1", type: "dpa", expires: "2026-10-16" }], renewal: "2026-11-15", noticeDays: 30 }), [], {}, { now: NOW });
+    const ids = g.findings.map((f) => f.id);
+    assert.ok(!ids.includes("tpr-missing-dpa-v1"), "a DPA expiring today is still on file");
+    const doc = g.findings.find((f) => f.id === "tpr-doc-d1-v1");
+    assert.equal(doc.title, "Assurance document expiring soon");
+    assert.ok(g.findings.find((f) => f.id === "tpr-renewal-v1").description.includes("is due by 2026-10-16 (in 0 days)"));
   });
   test("register round-trip with Map storage and a fake graph mirrors VENDOR fields", () => {
     const m = new Map();

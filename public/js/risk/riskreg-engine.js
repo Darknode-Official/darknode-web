@@ -943,7 +943,7 @@ export const SETTINGS_ID = "riskreg-settings";
 
 const csvCell = (v) => {
   let s = Array.isArray(v) ? v.join("; ") : str(v);
-  if (/^[=+\-@\t\r]/.test(s) && !/^-?\d/.test(s)) s = "'" + s;
+  if (/^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?(e[+-]?\d+)?$/i.test(s)) s = "'" + s;
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 };
 

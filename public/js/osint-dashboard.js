@@ -325,7 +325,7 @@ const OSINT_TOOLS = {
     { name: "MaxMind GeoIP", url: "https://maxmind.com", desc: "IP geolocation database" },
     { name: "AbuseIPDB", url: "https://abuseipdb.com", desc: "IP reputation and abuse reports" },
     { name: "GreyNoise", url: "https://viz.greynoise.io", desc: "Internet scanner identification" },
-    { name: "BGPView", url: "https://bgpview.io", desc: "BGP routing information" },
+    { name: "RIPEstat", url: "https://stat.ripe.net", desc: "BGP routing and ASN information" },
     { name: "Hurricane Electric BGP", url: "https://bgp.he.net", desc: "BGP toolkit" },
     { name: "RIPE NCC", url: "https://apps.db.ripe.net", desc: "European IP registry" },
     { name: "ARIN Whois", url: "https://whois.arin.net", desc: "North American IP registry" },

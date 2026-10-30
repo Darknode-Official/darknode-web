@@ -215,6 +215,7 @@ export const TOOLS = [
       let h, p;
       try { h = JSON.parse(v.header); } catch (e) { return { error: "Header is not valid JSON." }; }
       try { p = JSON.parse(v.payload); } catch (e) { return { error: "Payload is not valid JSON." }; }
+      if (!h || typeof h !== "object" || Array.isArray(h)) return { error: "Header must be a JSON object." };
       h.alg = h.alg && /none/i.test(h.alg) ? h.alg : "none";
       const h64 = b64urlBytes(H.bytes(JSON.stringify(h)));
       const p64 = b64urlBytes(H.bytes(JSON.stringify(p)));
@@ -356,8 +357,11 @@ export const TOOLS = [
       { k: "mode", label: "Mode", type: "select", opts: ["Expand", "Compress"], value: "Expand" },
     ],
     run(v) {
-      const a = S(v.addr).trim();
+      let a = S(v.addr).trim();
       if (!a) return "";
+      // embedded IPv4 tail (::ffff:192.0.2.1) -> two hex groups
+      const m4 = a.match(/^(.*:)(\d{1,3}(?:\.\d{1,3}){3})$/);
+      if (m4) { const o = m4[2].split(".").map(Number); if (o.some((x) => x > 255)) return { error: "Invalid embedded IPv4 address." }; a = m4[1] + ((o[0] << 8) | o[1]).toString(16) + ":" + ((o[2] << 8) | o[3]).toString(16); }
       if (!/^[0-9a-fA-F:]+$/.test(a) || (a.match(/::/g) || []).length > 1) return { error: "Invalid IPv6 address." };
       let groups;
       if (a.includes("::")) {
@@ -365,11 +369,13 @@ export const TOOLS = [
         const lp = l ? l.split(":") : [];
         const rp = r ? r.split(":") : [];
         const fill = 8 - lp.length - rp.length;
-        if (fill < 0) return { error: "Too many groups." };
+        if (fill < 1) return { error: "Too many groups." };
+        if (lp.includes("") || rp.includes("")) return { error: "Invalid IPv6 address: empty group (stray colon)." };
         groups = lp.concat(Array(fill).fill("0"), rp);
       } else {
         groups = a.split(":");
         if (groups.length !== 8) return { error: "Full IPv6 needs 8 groups." };
+        if (groups.includes("")) return { error: "Invalid IPv6 address: empty group (stray colon)." };
       }
       groups = groups.map((g) => g === "" ? "0" : g);
       for (const g of groups) if (g.length > 4) return { error: "Group has more than 4 hex digits." };

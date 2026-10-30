@@ -720,7 +720,7 @@ export function renderYaraBuilder(main) {
     return '<button type="button" data-ex="' + i + '">' + esc(e.name) + "</button>";
   }).join("");
   $("yr-example-btn").onclick = function (e) { e.stopPropagation(); exMenu.classList.toggle("open"); };
-  document.addEventListener("click", function () { exMenu.classList.remove("open"); });
+  document.addEventListener("click", function onDoc() { if (!exMenu.isConnected) { document.removeEventListener("click", onDoc); return; } exMenu.classList.remove("open"); });
   exMenu.onclick = function (e) {
     var b = e.target.closest("button[data-ex]");
     if (!b) return;

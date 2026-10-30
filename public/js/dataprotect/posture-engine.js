@@ -15,7 +15,7 @@ const STATUS_SCORE = { pass: 100, warn: 55, info: null, fail: 0, na: null };
 export function parseHSTS(value) {
   if (!value) return { present: false };
   const v = String(value).toLowerCase();
-  const m = v.match(/max-age\s*=\s*(\d+)/);
+  const m = v.match(/max-age\s*=\s*"?(\d+)/); // RFC 6797 6.1: the value may be a quoted-string
   return {
     present: true,
     maxAge: m ? parseInt(m[1], 10) : 0,
@@ -191,13 +191,17 @@ export function gradeCSPDeep(raw) {
   const add = (sev, msg) => findings.push({ sev, msg });
   const ss = (dirs["script-src"] || dirs["default-src"] || []).map((s) => s.toLowerCase());
 
+  // A nonce or hash makes browsers ignore 'unsafe-inline' (CSP2), and 'strict-dynamic' also
+  // ignores host and scheme sources (CSP3): both are the documented fallbacks for old browsers.
+  const hasNonceHash = ss.some((s) => s.indexOf("'nonce-") === 0 || /^'sha(256|384|512)-/.test(s));
+  const strictDyn = hasNonceHash && ss.indexOf("'strict-dynamic'") >= 0;
   if (!dirs["default-src"]) { score -= 15; add("high", "Missing default-src — no fallback policy."); }
-  if (ss.indexOf("'unsafe-inline'") >= 0) { score -= 25; add("critical", "script-src allows 'unsafe-inline' — XSS protection nullified."); }
+  if (ss.indexOf("'unsafe-inline'") >= 0 && !hasNonceHash) { score -= 25; add("critical", "script-src allows 'unsafe-inline' — XSS protection nullified."); }
   if (ss.indexOf("'unsafe-eval'") >= 0) { score -= 20; add("critical", "script-src allows 'unsafe-eval' — code injection possible."); }
-  if (ss.indexOf("*") >= 0) { score -= 20; add("critical", "script-src allows the * wildcard — any origin can run scripts."); }
-  if (ss.indexOf("data:") >= 0) { score -= 15; add("high", "script-src allows data: — XSS via data: URIs."); }
-  if (ss.indexOf("https:") >= 0) { score -= 10; add("high", "script-src allows any HTTPS source — too broad."); }
-  if (ss.indexOf("http:") >= 0) { score -= 10; add("high", "script-src allows plain http: sources."); }
+  if (!strictDyn && ss.indexOf("*") >= 0) { score -= 20; add("critical", "script-src allows the * wildcard — any origin can run scripts."); }
+  if (!strictDyn && ss.indexOf("data:") >= 0) { score -= 15; add("high", "script-src allows data: — XSS via data: URIs."); }
+  if (!strictDyn && ss.indexOf("https:") >= 0) { score -= 10; add("high", "script-src allows any HTTPS source — too broad."); }
+  if (!strictDyn && ss.indexOf("http:") >= 0) { score -= 10; add("high", "script-src allows plain http: sources."); }
 
   if (!dirs["frame-ancestors"]) { score -= 10; add("high", "Missing frame-ancestors — no clickjacking protection."); }
   const objSrc = (dirs["object-src"] || dirs["default-src"] || []).map((s) => s.toLowerCase());
@@ -210,7 +214,6 @@ export function gradeCSPDeep(raw) {
   const cs = (dirs["connect-src"] || dirs["default-src"] || []).map((s) => s.toLowerCase());
   if (cs.indexOf("*") >= 0 || cs.indexOf("https:") >= 0) { score -= 5; add("medium", "connect-src is wildcard/https: — broad exfiltration surface."); }
   // strict-dynamic without a nonce/hash is a no-op.
-  const hasNonceHash = ss.some((s) => s.indexOf("'nonce-") === 0 || /^'sha(256|384|512)-/.test(s));
   if (ss.indexOf("'strict-dynamic'") >= 0 && !hasNonceHash) { score -= 5; add("high", "strict-dynamic without a nonce/hash is meaningless."); }
 
   if (dirs["upgrade-insecure-requests"]) score += 3;

@@ -462,7 +462,7 @@ export function convertTimestamp(value, fromFormat = "auto") {
       // Microseconds
       results.unix_us = { date: new Date(num / 1000), format: "Unix microseconds" };
     }
-    if (num > 1e12) {
+    if (num > 1e12 && num < 1e15) {
       // Milliseconds
       results.unix_ms = { date: new Date(num), format: "Unix milliseconds" };
     }
@@ -517,6 +517,7 @@ export function convertTimestamp(value, fromFormat = "auto") {
   // Format all results
   for (const key of Object.keys(results)) {
     const r = results[key];
+    if (isNaN(r.date.getTime())) { delete results[key]; continue; }
     r.iso = r.date.toISOString();
     r.utc = r.date.toUTCString();
     r.local = r.date.toLocaleString();

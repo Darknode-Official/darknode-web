@@ -66,6 +66,13 @@ export function numberBase(input) {
     if (rm) { const v = fromRoman(rm[1]); return v ? { ok: true, kind: "roman", text: rm[1].toUpperCase() + " = " + v } : { ok: false, error: "invalid Roman numeral" }; }
     return { ok: false, error: "give a number 1..3999 or a Roman numeral" };
   }
+  // "1010 in binary to decimal", "ff from hex to binary": the first base names the SOURCE, so read the digits in it
+  const sm = low.match(/\b([0-9a-z]+)\s+(?:in|from)\s+(hex\w*|bin\w*|oct\w*|dec\w*)\s+(?:to|into|as)\s+(hex\w*|bin\w*|oct\w*|dec\w*|base\s*\d+)/);
+  if (sm && !/^0[xbo]/.test(sm[1])) {
+    const [pre, re] = /^hex/.test(sm[2]) ? ["0x", /^[0-9a-f]+$/] : /^bin/.test(sm[2]) ? ["0b", /^[01]+$/] : /^oct/.test(sm[2]) ? ["0o", /^[0-7]+$/] : ["", /^\d+$/];
+    if (!re.test(sm[1])) return { ok: false, error: sm[1] + " is not a valid " + sm[2] + " number" };
+    return numberBase(pre + sm[1] + " to " + sm[3]);
+  }
   const m = low.match(/(0x[0-9a-f]+|0b[01]+|0o[0-7]+|\d+)\s*(?:to|in|into|as)\s*(hex\w*|bin\w*|oct\w*|dec\w*|base\s*\d+)/);
   if (!m) return { ok: false, error: "try: 255 to hex, 0xff to binary, 42 in binary, 12 to roman" };
   const t = m[1]; let v;

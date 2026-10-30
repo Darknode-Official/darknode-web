@@ -311,7 +311,7 @@ function parseIPv4(bytes, offset) {
     while (optOff < offset + headerLen) {
       const type = bytes[optOff];
       if (type === 0) break;
-      if (type === 1) { options.push({ name: "NOP", offset: optOff, length: 1 }); optOff++; continue; }
+      if (type === 1) { options.push({ name: "NOP", value: "padding", offset: optOff, length: 1 }); optOff++; continue; }
       const optLen = bytes[optOff + 1] || 1;
       const optNames = { 7: "Record Route", 68: "Timestamp", 131: "Loose Source Route", 137: "Strict Source Route", 148: "Router Alert" };
       options.push({ name: optNames[type] || ("Option " + type), offset: optOff, length: optLen, data: bytesToHex(bytes, optOff, optLen) });
@@ -396,7 +396,7 @@ function parseTCP(bytes, offset) {
     while (optOff < offset + dataOffset) {
       const kind = bytes[optOff];
       if (kind === 0) break;
-      if (kind === 1) { options.push({ name: "NOP", offset: optOff, length: 1 }); optOff++; continue; }
+      if (kind === 1) { options.push({ name: "NOP", value: "padding", offset: optOff, length: 1 }); optOff++; continue; }
       const optLen = bytes[optOff + 1] || 1;
       let optName = "Unknown (" + kind + ")";
       let optValue = bytesToHex(bytes, optOff + 2, Math.max(0, optLen - 2));
@@ -864,7 +864,7 @@ const SAMPLE_PACKETS = [
     name: "TLS ClientHello",
     description: "TLS 1.2 ClientHello with SNI",
     hex: "aabbccddeeff 001122334455 0800 4500 00f0 abcd 4000 4006 0000 0a000001 5db8d822 c0a0 01bb 00000001 00000001 5018 ffff 0000 0000 16 0301 00c1 01 0000bd 0303" +
-      "aabbccdd".repeat(8) + "00 0008 1301 1302 c02f c030 0100 0086 0000 0013 0011 00 000e 6578616d706c652e636f6d 000d 0014 0012 0403 0503 0603 0804 0805 0806 0401 0501 0601 002b 0003 02 0303 000a 0006 0004 001d 0017 0033 0026 0024 001d 0020" +
+      "aabbccdd".repeat(8) + "00 0008 1301 1302 c02f c030 0100 0086 0000 0010 000e 00 000b 6578616d706c652e636f6d 000d 0014 0012 0403 0503 0603 0804 0805 0806 0401 0501 0601 002b 0003 02 0303 000a 0006 0004 001d 0017 0033 0026 0024 001d 0020" +
       "1122334455667788".repeat(4),
   },
   {

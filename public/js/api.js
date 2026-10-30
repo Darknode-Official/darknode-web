@@ -59,7 +59,7 @@ export async function renderAPI(main, user) {
 git clone https://github.com/Darknode-Official/darknode-cli
 cd darknode-cli &amp;&amp; npm install
 
-# Start the API server. With DARKNODE_API_TOKEN set, every request must send it.
+# Start the API server. Every request must send the token (if you set none, the server makes one and prints it).
 export DARKNODE_API_TOKEN="choose-a-long-secret"
 node darknode.js api start --port 8080
 
