@@ -543,7 +543,7 @@ async function fetchCveDetail(id){
     });
     const desc = ((cve.descriptions || []).find((x) => x.lang === "en") || {}).value || "";
     const cwes = [...new Set([].concat(...(cve.weaknesses || []).map((w) => (w.description || []).filter((x) => x.lang === "en").map((x) => x.value))))].filter((c) => c && c !== "NVD-CWE-noinfo" && c !== "NVD-CWE-Other");
-    const refs = (cve.references || []).map((x) => ({ url: x.url, tags: x.tags || [] })).slice(0, 40);
+    const refs = (cve.references || []).filter((x) => /^https?:\/\//i.test(String(x && x.url || ""))).map((x) => ({ url: x.url, tags: x.tags || [] })).slice(0, 40); // only web links become <a href>, never javascript:/data:
     const cpes = [...new Set([].concat(...(cve.configurations || []).map((cf) => [].concat(...(cf.nodes || []).map((n) => (n.cpeMatch || []).filter((c) => c.vulnerable).map((c) => c.criteria))))))].slice(0, 60);
     return { id: cve.id, published: String(cve.published || "").slice(0, 10), modified: String(cve.lastModified || "").slice(0, 10), desc, metrics, cwes, refs, cpes };
   })().catch((e) => { _cveOne.delete(id); throw e; });
@@ -1965,6 +1965,8 @@ export function renderDeck(host, opts) {
   // sec -> label, for activity lines and quick-action titles
   const secLabel = {}; for (const g of groups) for (const it of g.items) secLabel[it.sec] = it.label;
   const isSec = (x) => typeof x === "string" && Object.prototype.hasOwnProperty.call(secLabel, x); // own key: "constructor" is not a tool
+  // same for /area/<id>: SECTIONS["constructor"] is truthy, then renderSection throws and the id is saved
+  const isSect = (x) => typeof x === "string" && Object.prototype.hasOwnProperty.call(SECTIONS, x);
   pins = [...new Set(pins)].filter(isSec);   // drop pins whose tool no longer exists, and repeats
   // Toggle a tool's pinned state (shown on the overview). Returns the new state.
   function togglePin(sec){
@@ -1996,7 +1998,7 @@ export function renderDeck(host, opts) {
     const raw = String(pathname || "").replace(/^\/+|\/+$/g, "");
     if (!raw) return { scene: "overview" };
     const m = raw.match(/^area\/(\w+)$/);
-    if (m) return SECTIONS[m[1]] ? { scene: "section", arg: m[1] } : null;
+    if (m) return isSect(m[1]) ? { scene: "section", arg: m[1] } : null;
     const sp = raw.match(/^(personal|enterprise)\/([\w-]+)$/);
     if (sp) return { scene: sp[1], arg: { tab: sp[2] } };
     for (const k in SCENES) if (k !== "section" && (k in SCENE_PATH ? SCENE_PATH[k] : k) === raw) return { scene: k };
@@ -2016,9 +2018,9 @@ export function renderDeck(host, opts) {
     });
   }
   function go(scene, arg){
-    if (!SCENES[scene] || isLocked(scene === "section" ? "section:" + (SECTIONS[arg] ? arg : curSect) : "scene:" + scene)) scene = "overview";
+    if (!SCENES[scene] || isLocked(scene === "section" ? "section:" + (isSect(arg) ? arg : curSect) : "scene:" + scene)) scene = "overview";
     curScene = scene;
-    if (scene === "section") { if (SECTIONS[arg]) curSect = arg; try { localStorage.setItem("dn_deck_sect", curSect); } catch (_) {} }
+    if (scene === "section") { if (isSect(arg)) curSect = arg; try { localStorage.setItem("dn_deck_sect", curSect); } catch (_) {} }
     syncUrl(scenePath(scene, curSect));
     try { localStorage.setItem(LS_SCENE, scene); } catch (_) {}
     closeAllMenus();
@@ -2927,7 +2929,7 @@ export function renderDeck(host, opts) {
     } else if (m.type === BMSG.OPEN_ENTITY) {
       const id = m.payload.id; if (id) { try { openEntityDrawer(String(id)); } catch (_) {} }
     } else if (m.type === BMSG.OPEN_TOOL) {
-      const s = m.payload.sec; if (s && secLabel[s]) { if (m.payload.focus) pendingFocus.set(s, m.payload.focus); openTool(s, secLabel[s]); }
+      const s = m.payload.sec; if (isSec(s)) { if (m.payload.focus) pendingFocus.set(s, m.payload.focus); openTool(s, secLabel[s]); }
     } else if (m.type === BMSG.PALETTE) {
       if (!spot.classList.contains("on")) openSpot();
     } else if (m.type === BMSG.READY) {
@@ -3886,7 +3888,7 @@ export function renderDeck(host, opts) {
     compliance: { title: "Compliance", blurb: "Framework mappings, self-assessments and data-protection scanning. Self-reported findings reflect what you enter or paste, not an automated audit.", types: ["CONTROL", "REPORT"], match: /compliance|crosswalk|data protection|dlp/i, ints: [] },
   };
   let curSect = "exposure";
-  try { const v = localStorage.getItem("dn_deck_sect"); if (v && SECTIONS[v]) curSect = v; } catch (_) {}
+  try { const v = localStorage.getItem("dn_deck_sect"); if (v && isSect(v)) curSect = v; } catch (_) {}
   function renderSection(){
     const id = curSect, S = SECTIONS[id], el = sceneEls.section;
     const grp = NAV_DEF.find((g) => g.id === id) || { items: [] };
@@ -4750,6 +4752,8 @@ export function renderDeck(host, opts) {
       // a dialog layered on top (CVE details, dnModal/dnConfirm) closes itself — Esc must not also leave the scene
       if (e.defaultPrevented || [...document.querySelectorAll('[aria-modal="true"]')].some((m) => m.offsetParent && m !== spot && m !== keysEl)) return;
       if (popNew.classList.contains("on") || popWs.classList.contains("on") || popBell.classList.contains("on") || popAcct.classList.contains("on")) { closeAllMenus(); return; }
+      // Esc in a field (or ending an IME composition) leaves the field, not the page and what was typed
+      if (e.isComposing || inTyping(e)) { if (!e.isComposing && e.target.blur) e.target.blur(); return; }
       if (!sceneWork.hidden) { closeTool(); return; }
       if (drawer.classList.contains("on")) { closeDrawer(); return; }
       if (curScene !== "overview") { go("overview"); return; }
@@ -4936,7 +4940,7 @@ export function renderDeck(host, opts) {
         else {
           const raw = location.pathname.replace(/^\/+|\/+$/g, "");
           const sec = raw.startsWith("tool-") ? raw : raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-          if (sec && secLabel[sec] && !isLocked("tool:" + sec)) openTool(sec, secLabel[sec]); else go("overview");
+          if (isSec(sec) && !isLocked("tool:" + sec)) openTool(sec, secLabel[sec]); else go("overview");
         }
       } finally { routing = false; }
     };
