@@ -86,7 +86,7 @@ export const CODESCAN_IDS = {
   "secret.aws-access-key": "aws-key", "secret.aws-secret-key": "aws-secret", "secret.github-token": "github-token", "secret.slack-token": "slack-token",
   "secret.slack-webhook": "slack-webhook", "secret.stripe-live": "stripe-key", "secret.google-api-key": "gcp-key", "secret.private-key": "private-key",
   "secret.openai-key": "openai-key", "secret.anthropic-key": "anthropic-key", "secret.sendgrid-key": "sendgrid-key", "secret.twilio-key": "twilio-api-key",
-  "secret.npm-token": "npm-token", "secret.jwt": "jwt", "secret.db-url": "conn-string", "secret.generic": "pat-assignment",
+  "secret.npm-token": "npm-token", "secret.jwt": "jwt", "secret.db-url": "conn-string", "secret.generic": "pat-assignment", "secret.password": "pat-assignment",
   "secret.gitlab-token": "gitlab-pat", "secret.stripe-test": "stripe-test-key", "secret.huggingface-token": "huggingface-token", "secret.pypi-token": "pypi-token",
   "secret.digitalocean-token": "digitalocean-token", "secret.planetscale-token": "planetscale-token", "secret.shopify-token": "shopify-token",
   "secret.google-oauth-secret": "google-oauth", "secret.azure-storage-key": "azure-storage-key",
@@ -172,14 +172,22 @@ group("secret-detectors: former DLP detectors (LEAKPROBE reuses these)", () => {
 });
 
 group("secret-detectors: former Code Scanner rules", () => {
-  test("the rule set is the 25 ids listed here", () => {
+  test("the rule set is the 26 ids listed here", () => {
     assert.deepEqual(SECRET_RULES.map((x) => x.id).sort(), Object.keys(CODESCAN_IDS).sort());
   });
   const ids = (text) => scanFile("src/settings.js", text + "\n").map((x) => x.ruleId);
   for (const [id, core] of Object.entries(CODESCAN_IDS)) test(id, () => {
-    const f = core === "pat-assignment" ? { pos: 'config.password = "' + r(16) + '"', neg: 'password_hint = "' + r(16) + '"' } : fixture(core);
+    const f = id === "secret.password" ? { pos: 'db_password = "Winter2026!"', neg: 'db_password = "password1"' } : core === "pat-assignment" ? { pos: 'config.password = "' + r(16) + '"', neg: 'password_hint = "' + r(16) + '"' } : fixture(core);
     assert.ok(ids(f.pos).includes(id), id + " missed its positive: " + f.pos.slice(0, 80));
     assert.ok(!ids(f.neg).includes(id), id + " fired on its negative");
+  });
+  test("secret.password: a short mixed password under a password key is reported; words, placeholders and other keys are not", () => {
+    for (const t of ['DB_PASSWORD = "Winter2026!"', 'const dbPassword = "Summer#2025";', 'pwd = "Tr0ub4dor&3"']) assert.ok(ids(t).includes("secret.password"), t);
+    for (const t of ['password: "changeme"', 'password = "password1"', 'const PASSWORD = "YourPassword1"', 'bypass = "Abc12345!"', 'token = "Abc123!xyz"']) assert.ok(!ids(t).includes("secret.password"), t);
+  });
+  test("secret.password leaves 12+ character passwords to secret.generic, so their finding id does not change", () => {
+    const got = ids('password = "Kq8#vT2!mZ9@pL4w"');
+    assert.ok(got.includes("secret.generic") && !got.includes("secret.password"));
   });
   test("secret.generic: a credential word ending a snake/kebab key counts (db_password, DB_PASSWORD, github-token); one inside it does not", () => {
     for (const k of ["db_password", "DB_PASSWORD", "github-token", "stripe_api_key"]) assert.ok(ids(k + ' = "' + r(16) + '"').includes("secret.generic"), k);

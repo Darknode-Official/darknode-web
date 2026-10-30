@@ -130,6 +130,14 @@ export const SECRET_RULES = [
   { id: "secret.db-url", title: "Database URL with password", detectors: ["conn-string"], pick: (h) => h.m[1], minLen: 4, sev: "high", cwe: 798,
     why: "Connection strings with an inline password give direct database access to anyone who reads the repo.",
     fix: "Move the connection string to an environment variable or secrets manager and rotate the password." },
+  // Real passwords are often shorter than the generic rule's 12 characters (Winter2026!). This fills that
+  // gap only (8 to 11 characters; longer ones stay secret.generic so tracked findings keep their id), for a
+  // key that names a password and a value mixing three of upper, lower, digit and symbol.
+  { id: "secret.password", title: "Hardcoded password", detectors: ["pat-assignment", "config-assignment"], only: { "config-assignment": CONFIG_FILE },
+    accept: (h) => h.value.length < 12 && /(?:passw(?:or)?d|passphrase|pwd)$/i.test(h.m[1] || assignmentKey(h.whole)) && [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((re) => re.test(h.value)).length >= 3,
+    minLen: 8, sev: "medium", cwe: 259,
+    why: "A password in source is readable by everyone with repo access and stays in git history after it is removed.",
+    fix: "Change the password, load it from the environment or a secrets manager, and purge it from history." },
   { id: "secret.generic", title: "Hardcoded credential", detectors: ["pat-assignment", "config-assignment"], only: { "config-assignment": CONFIG_FILE }, accept: (h) => keyHoldsSecret(h.m[1] || assignmentKey(h.whole), "._-"), minLen: 12, sev: "medium", cwe: 798, minEntropy: 3.5,
     why: "Credentials embedded in source are readable by everyone with repo access and persist in git history.",
     fix: "Load the value from the environment or a secrets manager, rotate it, and purge it from history." }
