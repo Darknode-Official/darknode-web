@@ -3625,7 +3625,7 @@ export function renderDeck(host, opts) {
     const sel = el.querySelector("#dkCloudSel"), descEl = el.querySelector("#dkCloudDesc"), inEl = el.querySelector("#dkCloudIn"), outEl = el.querySelector("#dkCloudOut"), runBtn = el.querySelector("#dkCloudRun"), grid = el.querySelector("#dkCloudGrid");
     el.querySelector("#dkCloudRoadmap").onclick = () => { if (window.dnModal) window.dnModal({ title: "Cloud connectors — the plan", desc: "Phase 1 (now): paste-and-lint posture checks for IAM, S3, security groups, Dockerfiles, docker-compose and Kubernetes — 69 deterministic checks that run in your browser.\n\nPhase 2 (next): read-only AWS, Azure and GCP connectors using scoped, read-only credentials (e.g. an AWS SecurityAudit role). They will inventory assets and surface public buckets, over-broad IAM, open security groups and unencrypted storage against live configuration.\n\nPrinciple: read-only only, no write access, and findings are always from real configuration — never simulated.", submitText: "Got it", cancelText: "" }); else toast("Read-only cloud connectors are on the roadmap."); };
     el.querySelector("#dkCloudOpen").onclick = () => { const t = _cloudTools && _cloudTools.find((x) => x.id === sel.value); if (sel.value) openTool("tool-" + sel.value, t ? t.name : sel.value); };
-    import("/js/tools/cloud.js").then((m) => {
+    import("/js/tools/cloud.js?v=20261029e").then((m) => {
       _cloudTools = (m.TOOLS || []).filter((t) => t.cat === "cloud");
       const nEl = el.querySelector("#dkCloudN"); if (nEl) nEl.textContent = _cloudTools.length + " offline tools";
       const wb = CLOUD_WB.map((id) => _cloudTools.find((t) => t.id === id)).filter(Boolean);
