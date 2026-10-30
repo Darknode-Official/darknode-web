@@ -1,7 +1,7 @@
 // Email Auth checker parsers (public/js/email-auth.js): SPF and DMARC record analysis.
 
 import { test, assert, group } from "../harness.mjs";
-import { analyzeSPF, analyzeDMARC } from "../../public/js/email-auth.js";
+import { analyzeSPF, analyzeDMARC, analyzeDKIM } from "../../public/js/email-auth.js";
 
 group("email-auth: SPF/DMARC parsers", () => {
   test("one SPF record with -all passes", () => {
@@ -19,5 +19,11 @@ group("email-auth: SPF/DMARC parsers", () => {
     const r = analyzeDMARC(["v=DMARC1; p=reject; rua=mailto:test@darknode.ai", "v=DMARC1; p=none"]);
     assert.equal(r.status, "FAIL");
     assert.ok(/2 DMARC records/.test(r.findings[0].text));
+  });
+  test("a revoked DKIM key (empty p=) is not also called a published key", () => {
+    const r = analyzeDKIM([{ selector: "default", found: true, record: "v=DKIM1; p=", error: null }]);
+    assert.equal(r.status, "WARN");
+    assert.ok(!r.findings.some((f) => /publishes a DKIM key/.test(f.text)));
+    assert.ok(r.findings.some((f) => /revoked/.test(f.text)));
   });
 });

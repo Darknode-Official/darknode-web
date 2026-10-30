@@ -279,12 +279,13 @@ function analyzeDKIM(results) {
   }
   status = "PASS";
   hits.forEach(function (h) {
-    findings.push({ kind: "good", text: "Selector '" + h.selector + "' publishes a DKIM key." });
+    var revoked = /p=\s*(;|$)/i.test(h.record);
+    if (!revoked) findings.push({ kind: "good", text: "Selector '" + h.selector + "' publishes a DKIM key." });
     if (/t=y/i.test(h.record)) {
       findings.push({ kind: "warn", text: "Selector '" + h.selector + "' is in test mode (t=y); receivers may ignore failures." });
       if (status === "PASS") status = "WARN";
     }
-    if (/p=\s*(;|$)/i.test(h.record)) {
+    if (revoked) {
       findings.push({ kind: "warn", text: "Selector '" + h.selector + "' has an empty public key (p=) — the key is revoked/disabled." });
       if (status === "PASS") status = "WARN";
     }
@@ -431,7 +432,7 @@ function scoreFor(status) {
 }
 
 // ── render ──
-export { analyzeSPF, analyzeDMARC };
+export { analyzeSPF, analyzeDMARC, analyzeDKIM };
 
 export function renderEmailAuth(main) {
   main.innerHTML = EA_CSS +
