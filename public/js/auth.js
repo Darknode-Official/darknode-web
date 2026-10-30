@@ -2097,7 +2097,7 @@ function renderApp(user) {
     else if (sec === "securitytxt") { import("/js/security-txt.js?v=20261021a").then(m => live() && m.renderSecurityTxt(main)); }
     else if (sec === "codescan") { import("/js/code-scanner.js?v=20261029c").then(m => live() && m.renderCodeScanner(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js?v=20261013b").then(m => live() && m.renderReconPlanner(main)); }
-    else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20261028a").then(m => live() && m.renderAPIFuzzer(main)); }
+    else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20261029e").then(m => live() && m.renderAPIFuzzer(main)); }
     else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260928m").then(m => live() && m.renderPrivescToolkit(main)); }
     else if (sec === "reverseshell") { import("/js/reverse-shell.js?v=20260928m").then(m => live() && m.renderReverseShell(main)); }
     else if (sec === "xsslab") { import("/js/xss-lab.js?v=20260928m").then(m => live() && m.renderXSSLab(main)); }
