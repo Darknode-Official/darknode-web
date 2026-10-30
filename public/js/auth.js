@@ -2083,7 +2083,7 @@ function renderApp(user) {
     else if (sec === "incidentcost") { import("/js/incident-cost.js?v=20261029c").then(m => live() && m.renderIncidentCost(main)); }
     else if (sec === "fedcompliance") { import("/js/fed-compliance.js").then(m => live() && m.renderFedCompliance(main)); }
     else if (sec === "adversaryplaybook") { import("/js/adversary-playbook.js?v=20261028c").then(m => live() && m.renderAdversaryPlaybook(main)); }
-    else if (sec === "emailheader") { import("/js/email-header.js?v=20260924b").then(m => live() && m.renderEmailHeader(main)); }
+    else if (sec === "emailheader") { import("/js/email-header.js?v=20261029e").then(m => live() && m.renderEmailHeader(main)); }
     else if (sec === "dossier") { import("/js/target-dossier.js").then(m => live() && m.renderDossier(main)); }
     else if (sec === "payloadstudio") { import("/js/payload-studio.js?v=20261013m").then(m => live() && m.renderPayloadStudio(main)); }
     else if (sec === "sigma") { import("/js/sigma-builder.js?v=20261029c").then(m => live() && m.renderSigmaBuilder(main)); }
