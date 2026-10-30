@@ -1,5 +1,6 @@
 // Memory Forensics — hex viewer, process tree, Volatility reference, YARA scanning, memory structures
 // All analysis runs client-side. Nothing leaves the browser.
+import { scanCustomYara } from "./malware-classifier.js?v=20261030b";
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -308,8 +309,8 @@ function formatHexView(bytes, startOffset) {
   return lines.join("\n");
 }
 
-function parseHexInput(input) {
-  var clean = input.replace(/[^0-9a-fA-F]/g, "");
+export function parseHexInput(input) {
+  var clean = input.replace(/(^|[^0-9a-fA-F])0x/gi, "$1").replace(/[^0-9a-fA-F]/g, "");
   if (clean.length % 2 !== 0) return null;
   var bytes = new Uint8Array(clean.length / 2);
   for (var i = 0; i < clean.length; i += 2) {
@@ -318,68 +319,21 @@ function parseHexInput(input) {
   return bytes;
 }
 
-// ─── YARA rule parsing (simple) ───
-function parseYaraRule(ruleText) {
-  var nameMatch = ruleText.match(/rule\s+(\w+)/);
-  if (!nameMatch) return null;
-  var rule = { name: nameMatch[1], strings: [], condition: "" };
-  var stringsSection = ruleText.match(/strings:\s*([\s\S]*?)(?:condition:|$)/);
-  if (stringsSection) {
-    var lines = stringsSection[1].split("\n");
-    for (var line of lines) {
-      line = line.trim();
-      if (!line || line.startsWith("//")) continue;
-      var hexMatch = line.match(/(\$\w+)\s*=\s*\{\s*([0-9a-fA-F\s?]+)\s*\}/);
-      if (hexMatch) {
-        rule.strings.push({ name: hexMatch[1], type: "hex", value: hexMatch[2].replace(/\s/g, "").toLowerCase() });
-        continue;
-      }
-      var strMatch = line.match(/(\$\w+)\s*=\s*"([^"]+)"/);
-      if (strMatch) {
-        rule.strings.push({ name: strMatch[1], type: "text", value: strMatch[2] });
-      }
-    }
-  }
-  var condMatch = ruleText.match(/condition:\s*([\s\S]*?)$/);
-  if (condMatch) rule.condition = condMatch[1].trim();
-  return rule;
-}
-
-function yaraSearch(bytes, rule) {
-  var matches = [];
-  for (var s of rule.strings) {
-    if (s.type === "hex") {
-      var pattern = s.value.replace(/\?/g, ".");
-      var hexStr = Array.from(bytes).map(function(b) { return b.toString(16).padStart(2, "0"); }).join("");
-      var re = new RegExp(pattern, "gi");
-      var m;
-      while ((m = re.exec(hexStr)) !== null) {
-        if (m.index % 2 !== 0) { re.lastIndex = m.index + 1; continue; }
-        matches.push({ string: s.name, offset: m.index / 2, matchHex: m[0], length: m[0].length / 2 });
-      }
-    } else if (s.type === "text") {
-      var textBytes = new TextEncoder().encode(s.value);
-      for (var i = 0; i <= bytes.length - textBytes.length; i++) {
-        var found = true;
-        for (var j = 0; j < textBytes.length; j++) {
-          if (bytes[i + j] !== textBytes[j]) { found = false; break; }
-        }
-        if (found) {
-          matches.push({ string: s.name, offset: i, matchText: s.value, length: textBytes.length });
-        }
-      }
-    }
-  }
-  return matches;
-}
-
 // ─── Process tree builder ───
-function buildProcessTree(processes) {
+export function buildProcessTree(processes) {
   var map = {};
   for (var p of processes) map[p.pid] = { ...p, children: [] };
   var roots = [];
+  // A parent chain that leads back to the process (pid==ppid, A<->B) would hide it from every root.
+  function loops(pid, ppid) {
+    for (var seen = 0; ppid && map[ppid] && seen <= processes.length; seen++) {
+      if (ppid === pid) return true;
+      ppid = map[ppid].ppid;
+    }
+    return false;
+  }
   for (var p of processes) {
-    if (p.ppid && map[p.ppid]) {
+    if (p.ppid && map[p.ppid] && !loops(p.pid, p.ppid)) {
       map[p.ppid].children.push(map[p.pid]);
     } else {
       roots.push(map[p.pid]);
@@ -758,23 +712,24 @@ function renderYaraTab(container) {
     var ruleText = container.querySelector("#mf-yara-rule").value;
     var hexData = container.querySelector("#mf-yara-data").value;
     var resultEl = container.querySelector("#mf-yara-result");
-    var rule = parseYaraRule(ruleText);
-    if (!rule) { resultEl.innerHTML = '<div class="mf-err">Could not parse YARA rule. Check syntax.</div>'; return; }
     var bytes = parseHexInput(hexData);
     if (!bytes || bytes.length === 0) { resultEl.innerHTML = '<div class="mf-err">Invalid hex data.</div>'; return; }
-    var matches = yaraSearch(bytes, rule);
-    if (matches.length === 0) {
-      resultEl.innerHTML = '<div class="mf-muted">Rule "' + esc(rule.name) + '" — no matches found.</div>';
-      return;
+    var rules = scanCustomYara(ruleText, bytes);
+    if (!rules.length) { resultEl.innerHTML = '<div class="mf-err">Could not parse YARA rule. Check syntax.</div>'; return; }
+    var html = '';
+    for (var r of rules) {
+      if (r.error) html += '<div class="mf-err">Rule "' + esc(r.name) + '" — error: ' + esc(r.error) + '</div>';
+      else if (r.matched) html += '<div class="mf-pass">Rule "' + esc(r.name) + '" — MATCH (condition met)</div>';
+      else html += '<div class="mf-muted">Rule "' + esc(r.name) + '" — condition not met.</div>';
+      if (!r.strings.length) continue;
+      html += '<div class="mf-table-wrap"><table class="mf-table">' +
+        '<thead><tr><th>String</th><th>Hits</th><th>First offsets</th></tr></thead><tbody>';
+      for (var st of r.strings) {
+        html += '<tr><td>' + esc(st.id) + '</td><td>' + st.count + (st.count >= 1000 ? '+' : '') + '</td>' +
+          '<td><code>' + st.first.map(function(o) { return "0x" + o.toString(16).toUpperCase(); }).join(", ") + '</code></td></tr>';
+      }
+      html += '</tbody></table></div>';
     }
-    var html = '<div class="mf-pass">Rule "' + esc(rule.name) + '" — ' + matches.length + ' match(es) found!</div>' +
-      '<div class="mf-table-wrap"><table class="mf-table">' +
-      '<thead><tr><th>String</th><th>Offset</th><th>Length</th><th>Match</th></tr></thead><tbody>';
-    for (var m of matches) {
-      html += '<tr><td>' + esc(m.string) + '</td><td>0x' + m.offset.toString(16).toUpperCase() + '</td>' +
-        '<td>' + m.length + ' bytes</td><td><code>' + esc(m.matchHex || m.matchText || "") + '</code></td></tr>';
-    }
-    html += '</tbody></table></div>';
     resultEl.innerHTML = html;
   };
 }

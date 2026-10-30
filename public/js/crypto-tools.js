@@ -2660,7 +2660,7 @@ function base85Encode(bytes) {
   return out;
 }
 
-function base85Decode(str) {
+export function base85Decode(str) {
   const clean = str.trim().replace(/z/g, "!!!!!");
   const bytesOut = [];
   for (let i = 0; i < clean.length; i += 5) {
@@ -2673,6 +2673,7 @@ function base85Decode(str) {
       if (code < 0 || code > 84) throw new Error(`Invalid Base85 character: ${ch}`);
       value = value * 85 + code;
     }
+    if (value > 0xFFFFFFFF) throw new Error(`Base85 group "${clean.slice(i, i + 5)}" exceeds 32 bits`);
     const b = [(value >>> 24) & 0xff, (value >>> 16) & 0xff, (value >>> 8) & 0xff, value & 0xff];
     bytesOut.push(...(padLen > 0 ? b.slice(0, 4 - padLen) : b));
   }
@@ -2784,10 +2785,10 @@ function textToMorse(text) {
   }).filter(Boolean).join(" ");
 }
 
-function morseToText(morse) {
+export function morseToText(morse) {
   return morse.trim().split(/\s+/).map((code) => {
     if (code === "/") return " ";
-    return MORSE_TABLE_REVERSE[code] || "?";
+    return Object.prototype.hasOwnProperty.call(MORSE_TABLE_REVERSE, code) ? MORSE_TABLE_REVERSE[code] : "?";
   }).join("");
 }
 
@@ -2864,12 +2865,14 @@ registerTab("morse", "Morse Code", renderMorse);
 const BASE_NAMES = { 2: "Binary", 8: "Octal", 10: "Decimal", 16: "Hexadecimal" };
 const BASE_DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz";
 
-function parseBigIntInBase(str, base) {
-  const clean = str.trim().toLowerCase().replace(/^0b|^0o|^0x/, "");
-  if (!clean) throw new Error("Empty input");
+export function parseBigIntInBase(str, base) {
+  let s = str.trim().toLowerCase();
   let negative = false;
-  let s = clean;
   if (s[0] === "-") { negative = true; s = s.slice(1); }
+  // Only strip the prefix that names this base: in base 16, "0b1" is the number 0xB1.
+  const prefix = { 2: "0b", 8: "0o", 16: "0x" }[base];
+  if (prefix && s.startsWith(prefix)) s = s.slice(2);
+  if (!s) throw new Error("Empty input");
   let value = 0n;
   const b = BigInt(base);
   for (const ch of s) {

@@ -363,10 +363,11 @@ var FILE_SIGNATURES = [
   { name: "ELF", magic: [0x7F, 0x45, 0x4C, 0x46], eof: null },
 ];
 
-function detectFileType(bytes) {
+export function detectFileType(bytes) {
   for (var i = 0; i < FILE_SIGNATURES.length; i++) {
     var sig = FILE_SIGNATURES[i];
-    var match = true;
+    // A file shorter than the magic used to match vacuously (an empty file was "JPEG").
+    var match = bytes.length >= sig.magic.length;
     for (var j = 0; j < sig.magic.length && j < bytes.length; j++) {
       if (bytes[j] !== sig.magic[j]) { match = false; break; }
     }
@@ -375,7 +376,19 @@ function detectFileType(bytes) {
   return null;
 }
 
-function findAppendedData(bytes) {
+export function findAppendedData(bytes) {
+  // PNG ends at the IEND chunk; scanning a PNG for FF D9 hit random bytes in the
+  // compressed IDAT (false "appended data") and missed real data after IEND.
+  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+    var end = pngEnd(bytes);
+    return end > 0 && end < bytes.length ? { offset: end, size: bytes.length - end } : null;
+  }
+  // BMP (bfSize at 2) and RIFF/WebP (size at 4, +8 header) declare their own length.
+  var declared = -1;
+  if (bytes.length >= 6 && bytes[0] === 0x42 && bytes[1] === 0x4D) declared = (bytes[2] | (bytes[3] << 8) | (bytes[4] << 16) | (bytes[5] << 24)) >>> 0;
+  else if (bytes.length >= 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) declared = ((bytes[4] | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24)) >>> 0) + 8 + (bytes[4] & 1);
+  if (declared >= 0) return declared > 0 && declared < bytes.length ? { offset: declared, size: bytes.length - declared } : null;
+  if (!(bytes[0] === 0xFF && bytes[1] === 0xD8)) return null;
   // Check for data after JPEG EOF marker (FF D9)
   for (var i = bytes.length - 1; i >= 2; i--) {
     if (bytes[i - 1] === 0xFF && bytes[i] === 0xD9) {
@@ -388,8 +401,21 @@ function findAppendedData(bytes) {
   return null;
 }
 
+// Offset just past the PNG IEND chunk, or -1 if the chunk chain is malformed.
+function pngEnd(bytes) {
+  var pos = 8;
+  while (pos + 12 <= bytes.length) {
+    var len = ((bytes[pos] << 24) | (bytes[pos + 1] << 16) | (bytes[pos + 2] << 8) | bytes[pos + 3]) >>> 0;
+    var next = pos + 12 + len;
+    if (next > bytes.length) return -1;
+    if (bytes[pos + 4] === 0x49 && bytes[pos + 5] === 0x45 && bytes[pos + 6] === 0x4E && bytes[pos + 7] === 0x44) return next;
+    pos = next;
+  }
+  return -1;
+}
+
 // ── EXIF-like metadata reader ──
-function readImageMetadata(bytes) {
+export function readImageMetadata(bytes) {
   var meta = [];
   var sig = detectFileType(bytes);
   meta.push({ key: "File Type", value: sig ? sig.name : "Unknown" });
@@ -451,7 +477,8 @@ function readImageMetadata(bytes) {
   if (bytes[0] === 0x89 && bytes[1] === 0x50) {
     var pos = 8;
     while (pos + 12 < bytes.length) {
-      var chunkLen = (bytes[pos] << 24) | (bytes[pos + 1] << 16) | (bytes[pos + 2] << 8) | bytes[pos + 3];
+      // >>> 0: a length with the top bit set went negative and stalled this loop forever.
+      var chunkLen = ((bytes[pos] << 24) | (bytes[pos + 1] << 16) | (bytes[pos + 2] << 8) | bytes[pos + 3]) >>> 0;
       var chunkType = "";
       for (var ct = 0; ct < 4; ct++) chunkType += String.fromCharCode(bytes[pos + 4 + ct]);
 
@@ -1074,7 +1101,9 @@ export function renderSteganography(main) {
       }
       html += '</div>';
     } else {
-      html += '<div class="steg-result ok">No appended data detected after EOF marker.</div>';
+      html += /^(\xFF\xD8|\x89PNG|BM|RIFF)/.test(String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]))
+        ? '<div class="steg-result ok">No appended data detected after EOF marker.</div>'
+        : '<div class="steg-result">Appended-data check supports JPEG, PNG, BMP and RIFF/WebP only; not checked for this format.</div>';
     }
 
     // Known signature table

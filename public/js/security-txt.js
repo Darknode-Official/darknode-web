@@ -112,9 +112,12 @@ function checkFieldValue(findings, spec, name, value, lineNo) {
   if (value === "") return; // empty-value already reported by the caller
 
   if (spec.kind === "timestamp") {
-    var d = new Date(value);
+    // RFC 9116 §2.5.5: the value MUST be an RFC 3339 date-time (Date() alone also
+    // accepts RFC 2822 / US-style / date-only strings, which are not compliant).
+    var rfc3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/i.test(value);
+    var d = rfc3339 ? new Date(value.toUpperCase()) : new Date(NaN);
     if (isNaN(d.getTime())) {
-      findings.push({ level: "error", msg: spec.name + " value '" + value + "' is not a valid ISO 8601 timestamp.", line: lineNo });
+      findings.push({ level: "error", msg: spec.name + " value '" + value + "' is not an RFC 3339 date-time (e.g. 2027-01-01T00:00:00Z).", line: lineNo });
       return;
     }
     var now = Date.now();
@@ -342,7 +345,7 @@ var ST_CSS =
 export function renderSecurityTxt(main) {
   var state = {
     mode: "generate",
-    contact: ["mailto:security@example.com"],
+    contact: [],
     expires: toIsoUtc(toLocalInputValue(oneYearOut())),
     encryption: [],
     acknowledgments: [],
@@ -604,7 +607,7 @@ export function renderSecurityTxt(main) {
     body.querySelector("#st-fetch").onclick = function () {
       var btn = body.querySelector("#st-fetch");
       var domain = (body.querySelector("#st-domain").value || "").trim()
-        .replace(/^https?:\/\//i, "").replace(/\/.*$/, "");
+        .replace(/^https?:\/\//i, "").replace(/[\/?#].*$/, "");
       if (!domain) { toast("Enter a domain first"); return; }
       var target = "https://" + domain + "/.well-known/security.txt";
       btn.disabled = true;

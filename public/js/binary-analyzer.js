@@ -380,14 +380,15 @@ function extractStrings(data, minLen) {
 }
 
 // ─── IoC extraction ────────────────────────────────────────────────────────
-function extractIoCs(strings) {
+export function extractIoCs(strings) {
   var iocs = { urls: [], ips: [], emails: [], registryPaths: [], filePaths: [], domains: [] };
   var urlRe = /https?:\/\/[^\s'"<>]{4,}/g;
   var ipRe = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
-  var emailRe = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  // Bounded runs (RFC 5321/1035 limits): unbounded + made a 100 KB dotted string take ~13 s.
+  var emailRe = /[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]{1,253}\.[a-zA-Z]{2,}/g;
   var regRe = /(?:HKEY_[A-Z_]+|HKLM|HKCU|HKCR)\\[^\s'"]{4,}/gi;
   var fileRe = /[A-Z]:\\[^\s'"<>]{4,}|\/(?:etc|usr|var|tmp|home|opt|root)\/[^\s'"<>]{2,}/g;
-  var domRe = /\b(?:[a-zA-Z0-9-]+\.)+(?:com|net|org|io|ru|cn|tk|cc|xyz|top|info|biz|pw|ws)\b/g;
+  var domRe = /\b(?:[a-zA-Z0-9-]{1,63}\.){1,126}(?:com|net|org|io|ru|cn|tk|cc|xyz|top|info|biz|pw|ws)\b/g;
 
   for (var i = 0; i < strings.length; i++) {
     var s = strings[i].value;
@@ -425,7 +426,7 @@ function extractIoCs(strings) {
 }
 
 // ─── YARA rule generator ───────────────────────────────────────────────────
-function generateYARA(name, strings, data) {
+export function generateYARA(name, strings, data) {
   var unique = strings.filter(function(s) { return s.value.length >= 6 && s.value.length <= 200; }).slice(0, 20);
   var hexPatterns = [];
   // Find unique byte sequences near entry point or interesting sections
@@ -462,13 +463,13 @@ function generateYARA(name, strings, data) {
   }
 
   var lines = [];
-  lines.push("rule " + name.replace(/[^a-zA-Z0-9_]/g, "_") + " {");
+  lines.push("rule " + name.replace(/[^a-zA-Z0-9_]/g, "_").replace(/^(?=\d)/, "_") + " {");
   lines.push("  meta:");
   lines.push('    description = "Auto-generated rule for ' + name.replace(/"/g, "'") + '"');
   lines.push('    author = "Darknode Binary Analyzer"');
   lines.push('    date = "' + new Date().toISOString().slice(0, 10) + '"');
   lines.push("");
-  lines.push("  strings:");
+  if (unique.length || hexPatterns.length) lines.push("  strings:");
   for (var i = 0; i < unique.length; i++) {
     var s = unique[i];
     var varName = "$s" + (i + 1);
@@ -485,17 +486,27 @@ function generateYARA(name, strings, data) {
   lines.push("  condition:");
   if (unique.length > 3) {
     lines.push("    " + Math.min(3, Math.ceil(unique.length / 2)) + " of ($s*)" + (hexPatterns.length ? " or $entry" : ""));
-  } else if (unique.length > 0) {
+  } else if (unique.length > 0 || hexPatterns.length) {
     lines.push("    any of them");
   } else {
-    lines.push("    true");
+    lines.push("    filesize == " + data.length);
   }
   lines.push("}");
   return lines.join("\n");
 }
 
 // ─── Simple x86 disassembler ───────────────────────────────────────────────
-function disassemble(data, baseAddr, maxInstructions) {
+// Bytes after the ModRM byte at p: SIB (rm=4) plus disp8/disp32 per mod.
+function modrmExtra(data, p) {
+  var m = data[p], mod = m >> 6, rm = m & 7;
+  if (mod === 3) return 0;
+  var n = 0, base = -1;
+  if (rm === 4) { n = 1; base = p + 1 < data.length ? data[p + 1] & 7 : -1; }
+  if (mod === 1) return n + 1;
+  if (mod === 2) return n + 4;
+  return n + ((rm === 5 || base === 5) ? 4 : 0);
+}
+export function disassemble(data, baseAddr, maxInstructions) {
   maxInstructions = maxInstructions || 200;
   var instructions = [];
   var i = 0;
@@ -505,30 +516,37 @@ function disassemble(data, baseAddr, maxInstructions) {
     var info = X86_OPCODES[opcode];
     var addr = (baseAddr + i).toString(16).padStart(8, "0");
     if (info) {
+      // ModRM forms carry an optional SIB byte and displacement before any immediate.
+      var hasModrm = info.operands.indexOf("r/m") >= 0 || opcode === 0x8D;
+      var extra = hasModrm && i + 1 < data.length ? modrmExtra(data, i + 1) : 0;
+      var size = info.size + extra;
       var bytes = [];
-      for (var b = 0; b < info.size && i + b < data.length; b++) {
+      for (var b = 0; b < size && i + b < data.length; b++) {
         bytes.push(data[i + b].toString(16).padStart(2, "0"));
       }
       var operandStr = info.operands;
+      // Immediates follow the ModRM byte for r/m forms (83 /x ib, C7 /0 id); reading
+      // them at i + 1 printed the ModRM byte as the value.
+      var io = i + (hasModrm ? 2 + extra : 1);
       // Resolve immediate values and relative addresses
-      if (info.operands.indexOf("imm32") >= 0 && i + 4 < data.length) {
-        var imm32 = readU32LE(data, i + 1);
+      if (info.operands.indexOf("imm32") >= 0 && io + 3 < data.length) {
+        var imm32 = readU32LE(data, io);
         operandStr = info.operands.replace("imm32", "0x" + imm32.toString(16).toUpperCase());
-      } else if (info.operands.indexOf("imm16") >= 0 && i + 2 < data.length) {
-        var imm16 = readU16LE(data, i + 1);
+      } else if (info.operands.indexOf("imm16") >= 0 && io + 1 < data.length) {
+        var imm16 = readU16LE(data, io);
         operandStr = info.operands.replace("imm16", "0x" + imm16.toString(16).toUpperCase());
-      } else if (info.operands.indexOf("imm8") >= 0 && i + 1 < data.length) {
-        operandStr = info.operands.replace("imm8", "0x" + data[i + 1].toString(16).toUpperCase());
+      } else if (info.operands.indexOf("imm8") >= 0 && io < data.length) {
+        operandStr = info.operands.replace("imm8", "0x" + data[io].toString(16).toUpperCase());
       } else if (info.operands.indexOf("rel32") >= 0 && i + 4 < data.length) {
         var rel32 = readU32LE(data, i + 1);
         if (rel32 > 0x7FFFFFFF) rel32 = rel32 - 0x100000000;
         var target = baseAddr + i + info.size + rel32;
-        operandStr = info.operands.replace("rel32", "0x" + (target >>> 0).toString(16).toUpperCase());
+        operandStr = info.operands.replace("rel32", "0x" + (target < 0 ? target >>> 0 : target).toString(16).toUpperCase());
       } else if (info.operands.indexOf("rel8") >= 0 && i + 1 < data.length) {
         var rel8 = data[i + 1];
         if (rel8 > 127) rel8 = rel8 - 256;
         var target8 = baseAddr + i + info.size + rel8;
-        operandStr = info.operands.replace("rel8", "0x" + (target8 >>> 0).toString(16).toUpperCase());
+        operandStr = info.operands.replace("rel8", "0x" + (target8 < 0 ? target8 >>> 0 : target8).toString(16).toUpperCase());
       }
       instructions.push({
         address: addr,
@@ -536,7 +554,7 @@ function disassemble(data, baseAddr, maxInstructions) {
         mnemonic: info.mnemonic,
         operands: operandStr,
       });
-      i += info.size;
+      i += size;
     } else {
       instructions.push({
         address: addr,
@@ -552,7 +570,7 @@ function disassemble(data, baseAddr, maxInstructions) {
 }
 
 // ─── PE parser ─────────────────────────────────────────────────────────────
-function parsePE(data) {
+export function parsePE(data) {
   var result = { valid: false };
   if (data[0] !== 0x4D || data[1] !== 0x5A) return result;
   result.valid = true;
@@ -564,7 +582,7 @@ function parsePE(data) {
   };
 
   var pe = result.dosHeader.e_lfanew;
-  if (pe + 24 > data.length) return result;
+  if (pe + 24 > data.length) { result.valid = false; return result; }
   if (data[pe] !== 0x50 || data[pe + 1] !== 0x45) { result.valid = false; return result; }
 
   // COFF header
@@ -600,7 +618,8 @@ function parsePE(data) {
     sizeOfUninitializedData: readU32LE(data, optStart + 12),
     addressOfEntryPoint: readU32LE(data, optStart + 16),
     baseOfCode: readU32LE(data, optStart + 20),
-    imageBase: is64 ? readU32LE(data, optStart + 24) : readU32LE(data, optStart + 28),
+    // PE32+ ImageBase is a 64-bit field; reading 32 bits turned 0x140000000 into 0x40000000.
+    imageBase: is64 ? readU32LE(data, optStart + 28) * 4294967296 + readU32LE(data, optStart + 24) : readU32LE(data, optStart + 28),
     sectionAlignment: readU32LE(data, optStart + (is64 ? 32 : 32)),
     fileAlignment: readU32LE(data, optStart + (is64 ? 36 : 36)),
     sizeOfImage: readU32LE(data, optStart + (is64 ? 56 : 56)),
@@ -697,7 +716,7 @@ function parsePE(data) {
 }
 
 // ─── ELF parser ────────────────────────────────────────────────────────────
-function parseELF(data) {
+export function parseELF(data) {
   var result = { valid: false };
   if (data[0] !== 0x7F || data[1] !== 0x45 || data[2] !== 0x4C || data[3] !== 0x46) return result;
   result.valid = true;
@@ -706,6 +725,12 @@ function parseELF(data) {
   var isLE = data[5] === 1;
   var read16 = isLE ? readU16LE : function(buf, off) { return (buf[off] << 8) | buf[off + 1]; };
   var read32 = isLE ? readU32LE : function(buf, off) { return ((buf[off] << 24) | (buf[off + 1] << 16) | (buf[off + 2] << 8) | buf[off + 3]) >>> 0; };
+  // 64-bit field: exact BigInt for addresses (shown in hex), Number for offsets/sizes.
+  var read64n = function(buf, off) {
+    var lo = BigInt(read32(buf, isLE ? off : off + 4)), hi = BigInt(read32(buf, isLE ? off + 4 : off));
+    return (hi << 32n) | lo;
+  };
+  var read64 = function(buf, off) { return Number(read64n(buf, off)); };
 
   result.header = {
     class: is64 ? "ELF64" : "ELF32",
@@ -716,9 +741,9 @@ function parseELF(data) {
     machine: read16(data, 18),
     machineName: ELF_MACHINES[read16(data, 18)] || "Unknown (" + read16(data, 18) + ")",
     version: read32(data, 20),
-    entryPoint: is64 ? read32(data, 24) : read32(data, 24),
-    phOffset: is64 ? read32(data, 32) : read32(data, 28),
-    shOffset: is64 ? read32(data, 40) : read32(data, 32),
+    entryPoint: is64 ? read64n(data, 24) : read32(data, 24),
+    phOffset: is64 ? read64(data, 32) : read32(data, 28),
+    shOffset: is64 ? read64(data, 40) : read32(data, 32),
     flags: read32(data, is64 ? 48 : 36),
     ehSize: read16(data, is64 ? 52 : 40),
     phEntSize: read16(data, is64 ? 54 : 42),
@@ -741,11 +766,11 @@ function parseELF(data) {
     };
     if (is64) {
       ph.flags = read32(data, phOff + 4);
-      ph.offset = read32(data, phOff + 8);
-      ph.vaddr = read32(data, phOff + 16);
-      ph.paddr = read32(data, phOff + 24);
-      ph.filesz = read32(data, phOff + 32);
-      ph.memsz = read32(data, phOff + 40);
+      ph.offset = read64(data, phOff + 8);
+      ph.vaddr = read64n(data, phOff + 16);
+      ph.paddr = read64n(data, phOff + 24);
+      ph.filesz = read64(data, phOff + 32);
+      ph.memsz = read64(data, phOff + 40);
     } else {
       ph.offset = read32(data, phOff + 4);
       ph.vaddr = read32(data, phOff + 8);
@@ -768,8 +793,8 @@ function parseELF(data) {
   if (result.header.shStrndx < result.header.shNum) {
     var shStrOff = result.header.shOffset + result.header.shStrndx * result.header.shEntSize;
     if (shStrOff + result.header.shEntSize <= data.length) {
-      var strTabOff = is64 ? read32(data, shStrOff + 24) : read32(data, shStrOff + 16);
-      var strTabSize = is64 ? read32(data, shStrOff + 32) : read32(data, shStrOff + 20);
+      var strTabOff = is64 ? read64(data, shStrOff + 24) : read32(data, shStrOff + 16);
+      var strTabSize = is64 ? read64(data, shStrOff + 32) : read32(data, shStrOff + 20);
       if (strTabOff + strTabSize <= data.length) {
         shStrTab = data.slice(strTabOff, strTabOff + strTabSize);
       }
@@ -781,16 +806,16 @@ function parseELF(data) {
     if (shOff + result.header.shEntSize > data.length) break;
     var nameIdx = read32(data, shOff);
     var shType = read32(data, shOff + 4);
-    var shFlags = is64 ? read32(data, shOff + 8) : read32(data, shOff + 8);
+    var shFlags = is64 ? read32(data, shOff + (isLE ? 8 : 12)) : read32(data, shOff + 8);
     var sec = {
       nameIndex: nameIdx,
       name: shStrTab ? readString(shStrTab, nameIdx, 128) : "(idx " + nameIdx + ")",
       type: shType,
       typeName: SHT_TYPES[shType] || "0x" + shType.toString(16),
       flags: shFlags,
-      addr: is64 ? read32(data, shOff + 16) : read32(data, shOff + 12),
-      offset: is64 ? read32(data, shOff + 24) : read32(data, shOff + 16),
-      size: is64 ? read32(data, shOff + 32) : read32(data, shOff + 20),
+      addr: is64 ? read64n(data, shOff + 16) : read32(data, shOff + 12),
+      offset: is64 ? read64(data, shOff + 24) : read32(data, shOff + 16),
+      size: is64 ? read64(data, shOff + 32) : read32(data, shOff + 20),
       writable: !!(shFlags & 1),
       allocatable: !!(shFlags & 2),
       executable: !!(shFlags & 4),
@@ -1289,7 +1314,7 @@ export function renderBinaryAnalyzer(main) {
         var suspFound = [];
         for (var i = 0; i < strings.length; i++) {
           var s = strings[i].value;
-          if (SUSPICIOUS_IMPORTS[s]) {
+          if (Object.prototype.hasOwnProperty.call(SUSPICIOUS_IMPORTS, s)) {
             suspFound.push({ name: s, info: SUSPICIOUS_IMPORTS[s], offset: strings[i].offset });
           }
         }
@@ -1409,7 +1434,8 @@ export function renderBinaryAnalyzer(main) {
     for (var p = 0; p < PACKER_SIGNATURES.length; p++) {
       var packer = PACKER_SIGNATURES[p];
       for (var pat = 0; pat < packer.patterns.length; pat++) {
-        if (allText.indexOf(packer.patterns[pat]) >= 0 || sectionNames.indexOf(packer.patterns[pat]) >= 0) {
+        var pt = packer.patterns[pat];
+        if ((pt.length >= 4 && allText.indexOf(pt) >= 0) || sectionNames.indexOf(pt) >= 0) {
           detected.push(packer);
           break;
         }

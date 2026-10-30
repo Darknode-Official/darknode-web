@@ -29,8 +29,8 @@ export function renderForensicsToolkit(container) {
     { hex: "425A68", ext: "BZ2", desc: "Bzip2 compressed" },
     { hex: "FD377A585A00", ext: "XZ", desc: "XZ compressed" },
     { hex: "377ABCAF271C", ext: "7Z", desc: "7-Zip archive" },
-    { hex: "526172211A07", ext: "RAR", desc: "RAR archive (v4)" },
-    { hex: "526172211A0700", ext: "RAR", desc: "RAR archive (v5)" },
+    { hex: "526172211A0700", ext: "RAR", desc: "RAR archive (v4)" },
+    { hex: "526172211A070100", ext: "RAR", desc: "RAR archive (v5)" },
     { hex: "7573746172", ext: "TAR", desc: "TAR archive (offset 257)" },
     { hex: "213C617263683E", ext: "DEB/AR", desc: "Debian package / Unix AR archive" },
     { hex: "EDABEEDB", ext: "RPM", desc: "Red Hat RPM package" },
@@ -287,7 +287,9 @@ export function renderForensicsToolkit(container) {
       case "iso": ms = new Date(value).getTime(); break;
       default: ms = n * 1000;
     }
-    if (isNaN(ms)) return null;
+    // Blank input (Number("") = 0) and values past the Date range (+-8.64e15 ms)
+    // used to render 1970 or throw RangeError from toISOString().
+    if (String(value).trim() === "" || isNaN(ms) || Math.abs(ms) > 8.64e15) return null;
     const d = new Date(ms);
     const winFT = BigInt(Math.round(ms + 11644473600000)) * 10000n;
     const macAbs = Math.floor(ms / 1000) - 978307200;
