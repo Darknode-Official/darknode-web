@@ -5,7 +5,7 @@
 // Discord / signed webhooks with retry. State and scheduling are the DO's; the grading
 // is the SAME pure engine the browser tools use (worker/checks.js), and the alert brain
 // is worker/monitor-core.js — both unit-tested without a deploy.
-import { runCheck, cvesFromEntities } from "./checks.js";
+import { runCheck, cvesFromEntities, hostOnly } from "./checks.js";
 import { diffFindings, diffToEvents, shouldAlert, defaultAlertRules } from "./monitor-core.js";
 import { buildGraphWrite } from "./monitor-graph.js";
 import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
@@ -106,11 +106,12 @@ export class MonitorDO {
     try {
       if (m.type === "kev-epss" && extra.cves == null) throw new Error("could not read the workspace's CVE inventory; nothing changed this run");
       findings = await runCheck(m.type, m.config || {}, { fetch: deps.fetch, now: t0, ...extra });
-      if (findings && findings.unreachable) throw new Error("a feed did not answer; nothing changed this run");
+      if (findings && findings.unreachable) throw new Error(m.type === "email-posture" ? "no DNS resolver answered; nothing changed this run" : "a feed did not answer; nothing changed this run");
     }
     catch (e) { await this._log("history", HISTORY_CAP, { id: m.id, at: t0, error: String(e.message || e) }); return { id: m.id, error: String(e.message || e) }; }
 
     // a domain whose lookup got no answer keeps its last finding as it was (checks.js held)
+    const skipped = (findings.unknown || []).length, checked = findings.checked;
     const prevByKey = new Map((m.lastResults || []).map((f) => [f.key, f]));
     findings = [...findings, ...(findings.held || []).filter((k) => prevByKey.has(k) && !findings.some((f) => f.key === k)).map((k) => prevByKey.get(k))];
     const diff = diffFindings(m.lastResults || [], findings);
@@ -126,6 +127,10 @@ export class MonitorDO {
       if (m.type === "cert-expiry" && real) { ev.kind = "cert"; ev.daysToExpiry = findings.find((f) => f.key === ev.key)?.daysToExpiry; }
       // a new/worsened KEV-or-high-EPSS match alerts regardless of severity (onKev path)
       else if (m.type === "kev-epss" && real) ev.kind = "kev";
+      // once a domain has a baseline (a run where its records answered), any new or worsened
+      // record on it is drift and alerts regardless of severity (onDrift). A domain's first
+      // answered run, including one added to an existing monitor, obeys minSeverity.
+      else if (m.type === "email-posture" && real && (m.baselined || []).includes((findings.find((f) => f.key === ev.key) || {}).domain)) ev.kind = "drift";
       const d = shouldAlert(ev, rules, t0);
       if (d.alert) alerted.push(ev); else if (d.suppressed) held.push(ev);
     }
@@ -168,6 +173,8 @@ export class MonitorDO {
     // finding with a reset first-seen (SLA) clock on the retried run.
     m.lastResults = findings;
     m.lastRunAt = t0;
+    // a domain removed from the monitor loses its baseline, so re-adding it starts fresh
+    if (checked) { const watched = new Set(((m.config && m.config.domains) || []).map(hostOnly)); m.baselined = [...new Set([...(m.baselined || []), ...checked])].filter((d) => watched.has(d)); }
     let graphSynced = 0, graphError = null;
     try {
       const write = buildGraphWrite(m.id, m.name || m.type, findings, resolvedList, gm, t0);
@@ -182,7 +189,7 @@ export class MonitorDO {
       }
     } catch (e) { graphError = String(e.message || e); }
 
-    await this._log("history", HISTORY_CAP, { id: m.id, at: t0, found: findings.length, added: diff.added.length, changed: diff.changed.length, removed: diff.removed.length, alerted: alerted.length, held: held.length, delivered, graphSynced, graphError, ms: now() - t0 });
+    await this._log("history", HISTORY_CAP, { id: m.id, at: t0, found: findings.length, added: diff.added.length, changed: diff.changed.length, removed: diff.removed.length, alerted: alerted.length, held: held.length, ...(skipped ? { skipped } : {}), delivered, graphSynced, graphError, ms: now() - t0 });
     return { id: m.id, found: findings.length, alerted: alerted.length, delivered, graphSynced };
   }
 
@@ -249,7 +256,7 @@ export class MonitorDO {
       const mons = await this._monitors();
       const id = m.id && mons[m.id] ? m.id : uid();
       const prev = mons[id] || {};
-      mons[id] = { id, name: m.name || m.type, type: m.type, config: m.config || {}, rules: m.rules || prev.rules || {}, channels: Array.isArray(m.channels) ? m.channels : (prev.channels || []), intervalMs: Math.max(m.intervalMs || prev.intervalMs || MIN_INTERVAL, MIN_INTERVAL), paused: !!m.paused, lastRunAt: prev.lastRunAt || 0, lastResults: prev.lastResults || [], graphMeta: prev.graphMeta || {} };
+      mons[id] = { id, name: m.name || m.type, type: m.type, config: m.config || {}, rules: m.rules || prev.rules || {}, channels: Array.isArray(m.channels) ? m.channels : (prev.channels || []), intervalMs: Math.max(m.intervalMs || prev.intervalMs || MIN_INTERVAL, MIN_INTERVAL), paused: !!m.paused, lastRunAt: prev.lastRunAt || 0, lastResults: prev.lastResults || [], graphMeta: prev.graphMeta || {}, baselined: prev.baselined || [] };
       await this._put(mons); await this._reschedule();
       return reply({ monitor: safeMonitor(mons[id]) });
     }

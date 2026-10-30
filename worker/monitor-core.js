@@ -61,6 +61,7 @@ export function defaultAlertRules() {
     onCorrelation: true,      // a new correlation chain always alerts
     onSlaBreach: true,
     certExpiryDays: 21,       // alert when a watched cert expires within N days
+    onDrift: true,            // a watched DNS/email record weakened since the last run always alerts
     quietHours: null,         // { startHour, endHour } in UTC, or null
     digest: false,            // true = collect, don't alert per-event (the cron sends a digest)
   };
@@ -76,7 +77,7 @@ export function inQuietHours(now, rules) {
 }
 
 // shouldAlert(event, rules, now) -> { alert, reason, suppressed }
-// Decides whether a single event raises an alert. KEV / correlation / SLA / cert events
+// Decides whether a single event raises an alert. KEV / correlation / SLA / cert / drift events
 // alert regardless of severity (when their toggle is on); finding events obey minSeverity.
 // Digest mode and quiet hours suppress immediate delivery (reason records why).
 export function shouldAlert(event, rules = defaultAlertRules(), now = Date.now()) {
@@ -87,6 +88,7 @@ export function shouldAlert(event, rules = defaultAlertRules(), now = Date.now()
     case "kev": want = !!r.onKev; reason = "new KEV match"; break;
     case "correlation": want = !!r.onCorrelation; reason = "correlation chain"; break;
     case "sla": want = !!r.onSlaBreach; reason = "SLA breach"; break;
+    case "drift": want = !!r.onDrift; reason = `record weakened (${event.severity})`; break;
     case "cert": {
       const days = Number(event.daysToExpiry);
       want = Number.isFinite(days) && days <= (r.certExpiryDays || 0); reason = `certificate expires in ${days}d`; break;

@@ -249,6 +249,63 @@ group("monitor DO/kev-epss", () => {
   });
 });
 
+// ---- Email & DNS posture drift ----
+// fake DoH: zone maps "TYPE name" -> data rows or "fail"; other URLs are webhook deliveries.
+function dohNet(zone) {
+  const deliveries = [];
+  const fetch = async (url, opts) => {
+    if (!/cloudflare-dns\.com|dns\.google/.test(url)) { deliveries.push({ url, body: opts && opts.body }); return { ok: true, status: 200 }; }
+    const u = new URL(url), type = u.searchParams.get("type"), name = u.searchParams.get("name"), rows = zone[type + " " + name];
+    if (rows === "fail") return { ok: false, status: 502, json: async () => null };
+    return { ok: true, status: 200, json: async () => ({ Status: 0, Answer: (rows || []).map((data) => ({ name, type: { TXT: 16, MX: 15, CAA: 257 }[type], data })) }) };
+  };
+  return { fetch, deliveries };
+}
+
+group("monitor DO/email-posture", () => {
+  test("the baseline run obeys minSeverity; a later weakening alerts as drift; a failed lookup holds", async () => {
+    const st = memState(); const mon = new MonitorDO(st);
+    await post(mon, { op: "upsert", monitor: { name: "Mail", type: "email-posture", config: { domains: ["example.com"] }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    const zone = { "TXT example.com": ["v=spf1 mx -all"], "TXT _dmarc.example.com": ["v=DMARC1; p=reject; rua=mailto:d@example.com"], "MX example.com": ["10 mx.example.net."] };
+    const a = dohNet(zone);
+    const r1 = await mon.runDue({ force: true, fetch: a.fetch, sleep: async () => {} });
+    assert.equal(r1.ran[0].found, 1, "only the missing CAA (low)");
+    assert.equal(a.deliveries.length, 0, "a low baseline finding does not alert");
+    zone["TXT example.com"] = ["v=spf1 mx ~all"];
+    const b = dohNet(zone);
+    await mon.runDue({ force: true, fetch: b.fetch, sleep: async () => {} });
+    assert.equal(b.deliveries.length, 1, "SPF weakened -all -> ~all alerts as drift");
+    assert.ok(b.deliveries[0].body.includes("email:example.com:spf") || b.deliveries[0].body.includes("SPF on example.com"));
+    zone["TXT example.com"] = "fail";
+    const c = dohNet(zone);
+    await mon.runDue({ force: true, fetch: c.fetch, sleep: async () => {} });
+    assert.equal(c.deliveries.length, 0, "an unanswered lookup is not read as fixed");
+    const m = Object.values(await st.storage.get("monitors"))[0];
+    assert.ok(m.lastResults.some((f) => f.key === "email:example.com:spf"), "the SPF finding is held");
+    const hist = (await post(mon, { op: "list" })).json.history;
+    assert.equal(hist[0].skipped, 1, "the run records what could not be checked");
+  });
+  test("a domain added to an existing monitor gets its own baseline run, not drift alerts", async () => {
+    const st = memState(); const mon = new MonitorDO(st);
+    const base = { name: "Mail", type: "email-posture", channels: [{ type: "webhook", url: "https://hook.test/x" }] };
+    await post(mon, { op: "upsert", monitor: { ...base, config: { domains: ["example.com"] } } });
+    const zone = { "TXT example.com": ["v=spf1 mx -all"], "TXT _dmarc.example.com": ["v=DMARC1; p=reject; rua=mailto:d@example.com"], "MX example.com": ["10 mx.example.net."],
+      "TXT example.org": ["v=spf1 mx ~all"], "TXT _dmarc.example.org": ["v=DMARC1; p=quarantine; rua=mailto:d@example.org"], "MX example.org": ["10 mx.example.net."] };
+    await mon.runDue({ force: true, fetch: dohNet(zone).fetch, sleep: async () => {} });
+    const id = Object.keys(await st.storage.get("monitors"))[0];
+    await post(mon, { op: "upsert", monitor: { ...base, id, config: { domains: ["example.com", "https://example.org/"] } } });
+    const b = dohNet(zone);
+    await mon.runDue({ force: true, fetch: b.fetch, sleep: async () => {} });
+    assert.equal(b.deliveries.length, 0, "the new domain's low findings (~all, quarantine, no CAA) do not alert on its first run");
+    zone["TXT example.org"] = ["v=spf1 mx ?all"];
+    const c = dohNet(zone);
+    await mon.runDue({ force: true, fetch: c.fetch, sleep: async () => {} });
+    assert.equal(c.deliveries.length, 1, "once baselined, a weakening on it alerts as drift");
+    const m = Object.values(await st.storage.get("monitors"))[0];
+    assert.deepEqual(m.baselined.slice().sort(), ["example.com", "example.org"], "editing the monitor kept the existing domain's baseline");
+  });
+});
+
 // ---- Graph sync: a monitor run writes its findings into the workspace GraphDO ----
 // A capturing graph stub: records every POST body and still serves GET pulls (kev-epss).
 function capturingGraphEnv(entities = []) {

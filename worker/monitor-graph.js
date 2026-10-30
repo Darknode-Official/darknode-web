@@ -70,6 +70,20 @@ export function monitorFindingToCommon(f, status, resolution) {
     };
   }
 
+  if (str(f.key).startsWith("email:") || f.category === "email-dns") {
+    const dom = str(f.domain);
+    return {
+      ...base,
+      // the record (SPF, DMARC, MX, CAA) and domain are stable; the detail moves with the record
+      title: `Weak ${str(f.check) || "DNS"} record: ${dom}`,
+      category: "email-dns",
+      tags: [...base.tags, "email-dns"],
+      assets: dom ? [{ type: "DOMAIN", name: dom }] : [],
+      description: str(f.detail),
+      evidence: [{ domain: dom, check: str(f.check), detail: str(f.detail), advice: str(f.advice) }],
+    };
+  }
+
   // Generic: keep every field as evidence, no invented assets/links.
   const { key, severity, title, status: _s, ...rest } = f;
   return {

@@ -54,6 +54,11 @@ group("monitor/alert rules", () => {
     assert.equal(shouldAlert({ kind: "cert", daysToExpiry: 60 }).alert, false);
   });
 
+  test("a drift event (record weakened) alerts at any severity unless onDrift is off", () => {
+    assert.equal(shouldAlert({ kind: "drift", severity: "low" }).alert, true);
+    assert.equal(shouldAlert({ kind: "drift", severity: "low" }, { ...defaultAlertRules(), onDrift: false }).alert, false);
+  });
+
   test("resolved is silent by default but can be enabled", () => {
     assert.equal(shouldAlert({ kind: "resolved", severity: "high" }).alert, false);
     assert.equal(shouldAlert({ kind: "resolved", severity: "high" }, { ...defaultAlertRules(), onResolved: true }).alert, true);

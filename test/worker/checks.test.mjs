@@ -137,3 +137,135 @@ group("checks/kev-epss", () => {
     assert.equal((await kevEpssCheck({}, { fetch: down, cves: ["CVE-2021-44228"] })).length, 0);
   });
 });
+
+// ---- Email & DNS posture drift ---------------------------------------------
+import { emailPostureCheck, gradeEmailDns, dohQuery, parseCaa } from "../../worker/checks.js";
+import { diffFindings, diffToEvents } from "../../worker/monitor-core.js";
+
+// a fake DoH resolver: zone maps "TYPE name" -> data strings; "fail" = that lookup errors on
+// both resolvers; down = every request throws. Unlisted names answer NOERROR with no records.
+const RRT = { TXT: 16, MX: 15, CAA: 257 };
+const dohFetch = (zone, { down = false } = {}) => {
+  const calls = [];
+  const f = async (url) => {
+    calls.push(url);
+    if (down) throw new Error("network down");
+    const u = new URL(url), type = u.searchParams.get("type"), name = u.searchParams.get("name");
+    const rows = zone[type + " " + name];
+    if (rows === "fail") return { ok: false, status: 502, json: async () => null };
+    return { ok: true, status: 200, json: async () => ({ Status: 0, Answer: (rows || []).map((data) => ({ name, type: RRT[type], data: type === "TXT" ? `"${data}"` : data })) }) };
+  };
+  f.calls = calls;
+  return f;
+};
+const healthy = (d) => ({
+  ["TXT " + d]: ["v=spf1 include:_spf.example.net -all"],
+  ["TXT _dmarc." + d]: ["v=DMARC1; p=reject; rua=mailto:dmarc@" + d],
+  ["MX " + d]: ["10 mx1.example.net."],
+  ["CAA " + d]: ['0 issue "letsencrypt.org"'],
+});
+const byId = (out, id) => out.find((f) => f.key.endsWith(":" + id));
+
+group("checks/email-posture", () => {
+  test("a healthy domain yields no findings and nothing unknown", async () => {
+    const out = await emailPostureCheck(["example.com"], { fetch: dohFetch(healthy("example.com")) });
+    assert.equal(out.length, 0);
+    assert.equal(out.unknown.length, 0);
+    assert.equal(out.held.length, 0);
+  });
+
+  test("a missing SPF record is a high finding", async () => {
+    const z = healthy("example.com"); delete z["TXT example.com"];
+    const out = await emailPostureCheck(["example.com"], { fetch: dohFetch(z) });
+    assert.equal(out.length, 1);
+    assert.equal(out[0].key, "email:example.com:spf");
+    assert.equal(out[0].severity, "high");
+    assert.equal(out[0].tool, "monitor:email-posture");
+    assert.ok(/No SPF/.test(out[0].title));
+  });
+
+  test("SPF +all is critical, ~all low, ?all medium", async () => {
+    for (const [q, sev] of [["+all", "critical"], ["all", "critical"], ["~all", "low"], ["?all", "medium"]]) {
+      const z = healthy("example.com"); z["TXT example.com"] = ["v=spf1 mx " + q];
+      const out = await emailPostureCheck(["example.com"], { fetch: dohFetch(z) });
+      assert.equal(byId(out, "spf").severity, sev, q);
+    }
+  });
+
+  test("DMARC missing is high, p=none medium, p=quarantine low", async () => {
+    const z = healthy("example.com"); delete z["TXT _dmarc.example.com"];
+    assert.equal(byId(await emailPostureCheck(["example.com"], { fetch: dohFetch(z) }), "dmarc").severity, "high");
+    z["TXT _dmarc.example.com"] = ["v=DMARC1; p=none; rua=mailto:d@example.com"];
+    const none = await emailPostureCheck(["example.com"], { fetch: dohFetch(z) });
+    assert.equal(none.length, 1);
+    assert.equal(byId(none, "dmarc").severity, "medium");
+    z["TXT _dmarc.example.com"] = ["v=DMARC1; p=quarantine; rua=mailto:d@example.com"];
+    assert.equal(byId(await emailPostureCheck(["example.com"], { fetch: dohFetch(z) }), "dmarc").severity, "low");
+  });
+
+  test("a subdomain inherits the organizational DMARC and the closest CAA", async () => {
+    const z = { ...healthy("example.com"), "TXT mail.example.com": ["v=spf1 -all"], "MX mail.example.com": ["10 mx1.example.net."] };
+    const out = await emailPostureCheck(["mail.example.com"], { fetch: dohFetch(z) });
+    assert.equal(out.length, 0);
+  });
+
+  test("missing MX is medium, a null MX alone is fine, missing CAA is low", async () => {
+    const z = healthy("example.com"); delete z["MX example.com"]; delete z["CAA example.com"];
+    const out = await emailPostureCheck(["example.com"], { fetch: dohFetch(z) });
+    assert.equal(byId(out, "mx").severity, "medium");
+    assert.equal(byId(out, "caa").severity, "low");
+    z["MX example.com"] = ["0 ."];
+    assert.equal(byId(await emailPostureCheck(["example.com"], { fetch: dohFetch(z) }), "mx"), undefined);
+  });
+
+  test("parseCaa reads presentation and RFC 3597 generic forms", () => {
+    assert.deepEqual(parseCaa('0 issue "pki.example"'), { flags: 0, tag: "issue", value: "pki.example" });
+    const hx = (s) => [...s].map((c) => c.charCodeAt(0).toString(16)).join(" ");
+    assert.deepEqual(parseCaa("\\# 14 00 05 " + hx("issue") + " " + hx("ca.test")), { flags: 0, tag: "issue", value: "ca.test" });
+  });
+
+  test("a DoH failure is no finding and an explicit unknown, held so the last state stands", async () => {
+    const z = healthy("example.com"); z["TXT example.com"] = "fail"; z["CAA example.com"] = "fail";
+    const out = await emailPostureCheck(["example.com"], { fetch: dohFetch(z) });
+    assert.equal(out.length, 0, "no fake pass or fail");
+    assert.deepEqual(out.unknown.map((u) => u.check).sort(), ["CAA", "SPF"]);
+    for (const k of ["email:example.com:spf", "email:example.com:spf-lookups", "email:example.com:caa"]) assert.ok(out.held.includes(k), k);
+  });
+
+  test("resolvers down for every lookup marks the run unreachable, never clean", async () => {
+    const f = dohFetch({}, { down: true });
+    const out = await emailPostureCheck(["example.com"], { fetch: f });
+    assert.equal(out.length, 0);
+    assert.equal(out.unreachable, true);
+    assert.ok(f.calls.some((u) => u.startsWith("https://cloudflare-dns.com/")) && f.calls.some((u) => u.startsWith("https://dns.google/")), "both resolvers tried");
+    assert.equal((await dohQuery("example.com", "TXT", f)).failed, true);
+  });
+
+  test("a SERVFAIL answer is a failed lookup, NXDOMAIN is a real empty answer", async () => {
+    const st = (Status) => async () => ({ ok: true, status: 200, json: async () => ({ Status }) });
+    assert.equal((await dohQuery("example.com", "TXT", st(2))).failed, true);
+    const nx = await dohQuery("example.com", "TXT", st(3));
+    assert.equal(nx.failed, undefined);
+    assert.equal(nx.length, 0);
+  });
+
+  test("a record weakened between runs diffs as new/worsened events via monitor-core", async () => {
+    const z = healthy("example.com"); z["TXT example.com"] = ["v=spf1 mx ~all"];
+    const run1 = await emailPostureCheck(["example.com"], { fetch: dohFetch(z) });
+    z["TXT example.com"] = ["v=spf1 mx +all"]; delete z["TXT _dmarc.example.com"];
+    const run2 = await emailPostureCheck(["example.com"], { fetch: dohFetch(z) });
+    const ev = diffToEvents(diffFindings(run1, run2), "m1", NOW);
+    assert.deepEqual(ev.map((e) => [e.kind, e.key, e.severity]), [
+      ["new", "email:example.com:dmarc", "high"],
+      ["worsened", "email:example.com:spf", "critical"],
+    ]);
+  });
+
+  test("gradeEmailDns is pure and runCheck dispatches email-posture", async () => {
+    const g = gradeEmailDns("example.com", { spfTxts: [], dmarcTxts: [], mx: [], caa: [] });
+    assert.deepEqual(g.findings.map((f) => f.key), ["email:example.com:caa", "email:example.com:dmarc", "email:example.com:mx", "email:example.com:spf"]);
+    const out = await runCheck("email-posture", { domains: ["https://Example.com/x"] }, { fetch: dohFetch(healthy("example.com")) });
+    assert.equal(out.length, 0);
+    assert.equal(out.unknown.length, 0);
+  });
+});

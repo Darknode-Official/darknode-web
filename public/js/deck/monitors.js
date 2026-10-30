@@ -96,14 +96,15 @@ function paint() {
 
   box.innerHTML = `
     <p class="mon-sub">${mons.length.toLocaleString()} monitor${mons.length === 1 ? "" : "s"}. Monitors run on the server's own schedule; alerts fire only when something changes.</p>
-    <div style="margin:0 0 14px;display:flex;gap:8px;flex-wrap:wrap"><button class="mon-btn pri" id="monAdd">Add certificate monitor</button><button class="mon-btn" id="monAddKev">Add KEV/EPSS watch</button></div>
+    <div style="margin:0 0 14px;display:flex;gap:8px;flex-wrap:wrap"><button class="mon-btn pri" id="monAdd">Add certificate monitor</button><button class="mon-btn" id="monAddKev">Add KEV/EPSS watch</button><button class="mon-btn" id="monAddMail">Add email &amp; DNS watch</button></div>
     <div id="monFormSlot"></div>
     ${monHtml}
-    ${logPanel("Recent runs", (S.data.history || []).slice(0, 8), (h) => `<b>${E((S.data.monitors.find((m) => m.id === h.id) || {}).name || h.id)}</b> — ${h.error ? ("error: " + E(h.error)) : `${h.found} open, ${h.added} new, ${h.changed} changed, ${h.alerted} alerted${h.graphError ? ", not synced to Findings: " + E(h.graphError) : ""}`} · ${E(ago(h.at))}`)}
+    ${logPanel("Recent runs", (S.data.history || []).slice(0, 8), (h) => `<b>${E((S.data.monitors.find((m) => m.id === h.id) || {}).name || h.id)}</b> — ${h.error ? ("error: " + E(h.error)) : `${h.found} open, ${h.added} new, ${h.changed} changed, ${h.alerted} alerted${h.skipped ? `, ${h.skipped} could not be checked` : ""}${h.graphError ? ", not synced to Findings: " + E(h.graphError) : ""}`} · ${E(ago(h.at))}`)}
     ${logPanel("Delivery log", (S.data.deliveries || []).slice(0, 8), (d) => `<b>${E(d.type)}</b> ${d.ok ? "delivered" : "failed"} (${d.status})${d.error ? " — " + E(d.error) : ""} · ${E(ago(d.at))}`)}`;
 
   box.querySelector("#monAdd").onclick = () => { const was = S.adding && S.kind === "cert-expiry"; S.kind = "cert-expiry"; S.adding = !was; renderForm(); };
   box.querySelector("#monAddKev").onclick = () => { const was = S.adding && S.kind === "kev-epss"; S.kind = "kev-epss"; S.adding = !was; renderForm(); };
+  box.querySelector("#monAddMail").onclick = () => { const was = S.adding && S.kind === "email-posture"; S.kind = "email-posture"; S.adding = !was; renderForm(); };
   if (S.adding) renderForm();
   box.querySelectorAll(".mon-row").forEach((row) => row.querySelector(".mon-actions").onclick = (e) => {
     const b = e.target.closest("[data-act]"); if (!b) return;
@@ -122,14 +123,16 @@ function logPanel(title, rows, fmt) {
 function renderForm() {
   const slot = S.el && S.el.querySelector("#monFormSlot"); if (!slot) return;
   if (!S.adding) { slot.innerHTML = ""; return; }
-  const kev = S.kind === "kev-epss";
-  const specific = kev
+  const kev = S.kind === "kev-epss", mail = S.kind === "email-posture";
+  const specific = mail
+    ? `<div class="mon-field"><label for="mfDomains">Domains</label><textarea id="mfDomains" placeholder="one per line or comma-separated" spellcheck="false"></textarea><p class="hint">Domains to watch, e.g. example.com. SPF, DMARC, MX and CAA are read over public DNS-over-HTTPS; after the first run, any record that is removed or weakened raises an alert.</p></div>`
+    : kev
     ? `<div class="mon-field"><label for="mfEpss">EPSS alert floor (0–1)</label><input id="mfEpss" type="number" min="0" max="1" step="0.05" placeholder="0.5"><p class="hint">A CVE in your graph alerts when it is in the CISA KEV catalogue, or its EPSS exploit-prediction score is at or above this floor. Nothing is sent anywhere; the match runs against the current feeds.</p></div>`
     : `<div class="mon-field"><label for="mfDomains">Domains</label><textarea id="mfDomains" placeholder="one per line or comma-separated" spellcheck="false"></textarea><p class="hint">Hostnames to watch, e.g. test.darknode.ai. Certificate transparency logs are checked; nothing is sent to the domains.</p></div>
     <div class="mon-field"><label for="mfWarn">Warn when expiring within (days)</label><input id="mfWarn" type="number" min="1" max="365" placeholder="21"></div>`;
   slot.innerHTML = `<div class="mon-form">
-    <h3>${kev ? "New KEV / EPSS watch" : "New certificate-expiry monitor"}</h3>
-    <div class="mon-field"><label for="mfName">Name</label><input id="mfName" placeholder="${kev ? "Known-exploited vulnerabilities" : "Public certificates"}" autocomplete="off"></div>
+    <h3>${kev ? "New KEV / EPSS watch" : mail ? "New email &amp; DNS watch" : "New certificate-expiry monitor"}</h3>
+    <div class="mon-field"><label for="mfName">Name</label><input id="mfName" placeholder="${kev ? "Known-exploited vulnerabilities" : mail ? "Email and DNS records" : "Public certificates"}" autocomplete="off"></div>
     ${specific}
     <div class="mon-field"><label for="mfInt">Check interval (minutes)</label><input id="mfInt" type="number" min="15" max="10080" placeholder="1440"></div>
     <div class="mon-field"><label for="mfChUrl">Alert channel</label>
@@ -168,6 +171,7 @@ function readForm(slot) {
   const raw = ($("#mfDomains").value || "").split(/[\s,]+/).map((x) => x.trim()).filter(Boolean);
   const domains = [], bad = [];
   for (const x of raw) { const h = hostOf(x); if (h) { if (!domains.includes(h)) domains.push(h); } else bad.push(x); }
+  if (S.kind === "email-posture") return { bad, name: ($("#mfName").value || "").trim() || "Email and DNS watch", type: "email-posture", config: { domains }, intervalMs, channels };
   return {
     bad,
     name: ($("#mfName").value || "").trim() || "Certificate monitor",
@@ -183,7 +187,7 @@ async function saveMonitor(slot) {
   const mon = readForm(slot);
   if (mon.bad && mon.bad.length) { toast("Not a domain name: " + mon.bad.slice(0, 3).join(", ") + (mon.bad.length > 3 ? " and " + (mon.bad.length - 3) + " more" : "") + ". Use hostnames such as test.darknode.ai.", "warn"); return; }
   delete mon.bad;
-  if (mon.type === "cert-expiry" && !mon.config.domains.length) { toast("Add at least one domain.", "warn"); return; }
+  if ((mon.type === "cert-expiry" || mon.type === "email-posture") && !mon.config.domains.length) { toast("Add at least one domain.", "warn"); return; }
   S.busy = true;
   try { await monitorApi({ op: "upsert", monitor: mon }); toast("Monitor saved.", "ok"); S.adding = false; await load(); }
   catch (e) { toast(e.message || "Could not save.", "error"); }
