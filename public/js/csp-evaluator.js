@@ -1,3 +1,4 @@
+import { dnFetch } from '/js/net.js';
 /**
  * DARKNODE — CSP Evaluator & Generator
  * Content Security Policy parser, grader, bypass detector, and builder
@@ -398,17 +399,20 @@ export function renderCspEvaluator(container) {
     if (!url) { showStatus('Enter a URL', 'error'); return; }
     if (url.indexOf('http') !== 0) url = 'https://' + url;
     showStatus('Fetching headers from ' + url + '...', 'info');
-    fetch(url, { method: 'HEAD', mode: 'cors' }).then(function(resp) {
-      var csp = resp.headers.get('content-security-policy') || resp.headers.get('content-security-policy-report-only');
+    // through the edge proxy: a cross-origin fetch in the browser can't read this header
+    dnFetch(url, { raw: true }).then(function(resp) {
+      var h = resp.headers || {};
+      var csp = h['content-security-policy'] || h['content-security-policy-report-only'];
       if (csp) {
         inputEl.value = csp;
         showStatus('CSP header retrieved — ' + csp.length + ' chars', 'success');
         analyze(csp);
       } else {
-        showStatus('No CSP header found in the response (CORS may hide it — try pasting the header manually)', 'error');
+        inputEl.value = ''; var prev = document.getElementById('csp-results'); if (prev) prev.innerHTML = '';
+        showStatus('No Content-Security-Policy header in the response from ' + (resp.finalUrl || url) + ' (HTTP ' + resp.status + '). It may be set in a <meta> tag instead; paste it here to analyze it.', 'error');
       }
     }).catch(function(err) {
-      showStatus('Fetch failed: ' + err.message + ' — CORS likely blocked the request. Copy the CSP header manually from browser DevTools → Network → Response Headers.', 'error');
+      showStatus('Fetch failed: ' + err.message, 'error');
     });
   });
 
