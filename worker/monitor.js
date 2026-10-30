@@ -12,6 +12,7 @@ import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
 import { verifyIdToken } from "./vault-auth.js";
 import { isSuspended } from "./gate.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
+import { readCapped } from "./body-cap.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
 const HISTORY_CAP = 200, DELIVERY_CAP = 200;
@@ -304,8 +305,8 @@ export async function handleMonitor(request, env, wid, json) {
   try { role = await resolveWorkspaceRole(projectId, wid, who.uid, m[1]); }
   catch (e) { return json({ error: e.message }, 502); }
   if (!role) return json({ error: "You are not a member of this workspace." }, 403);
-  const bodyText = await request.text();
-  if (bodyText.length > 256 * 1024) return json({ error: "Request too large." }, 413);
+  const bodyText = await readCapped(request, 256 * 1024);
+  if (bodyText === null) return json({ error: "Request too large." }, 413);
   const stub = env.MONITOR.get(env.MONITOR.idFromName(wid));
   const res = await stub.fetch("https://monitor/", { method: "POST", body: bodyText || "{}", headers: { "Content-Type": "application/json", "x-mon-uid": who.uid, "x-mon-role": role, "x-mon-wid": wid } });
   return json(await res.json(), res.status);

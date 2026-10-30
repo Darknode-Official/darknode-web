@@ -22,6 +22,7 @@ import { handleGraph } from "./graph.js";
 import { handleMonitor } from "./monitor.js";
 import { handleKeys, handleIngest } from "./ingest.js";
 import { hostAllowed } from "./net-guard.js";
+import { readCapped } from "./body-cap.js";
 import { handleIntel } from "./intel.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
@@ -232,8 +233,8 @@ async function handleFetch(request) {
     // Cap the request body BEFORE parsing — this control body is tiny ({url,...}),
     // so 64 KB is generous and stops an unbounded JSON parse (every other route
     // caps first). Oversize is rejected; a malformed small body is ignored as before.
-    const txt = await request.text();
-    if (txt.length > 65536) return new Response(JSON.stringify({ error: "Request body too large." }), { status: 413, headers: { "Content-Type": "application/json" } });
+    const txt = await readCapped(request, 65536);
+    if (txt === null) return json({ error: "Request body too large." }, 413);
     try {
       const b = JSON.parse(txt || "{}");
       if (b && b.url) target = b.url;
@@ -494,8 +495,8 @@ async function handleSmart(request, env) {
   let body;
   // Cap the body before parsing (input is sliced to 6 KB + up to 6 history turns);
   // 256 KB is ample and matches the monitor route, so an unbounded parse can't run.
-  const smartTxt = await request.text();
-  if (smartTxt.length > 262144) return json({ error: "Request body too large." }, 413);
+  const smartTxt = await readCapped(request, 262144);
+  if (smartTxt === null) return json({ error: "Request body too large." }, 413);
   try { body = JSON.parse(smartTxt || "{}"); } catch (_) { return json({ error: "Invalid JSON body" }, 400); }
   const input = String((body && body.input) || "").slice(0, 6000).trim();
   if (!input) return json({ error: "Empty request" }, 400);
@@ -571,8 +572,8 @@ async function route(request, env) {
 
     let body;
     try {
-      const raw = await request.text();
-      if (raw.length > 1024 * 1024) return json({ error: "Request too large." }, 413); // parity with the other routes' body caps
+      const raw = await readCapped(request, 1024 * 1024);
+      if (raw === null) return json({ error: "Request too large." }, 413); // parity with the other routes' body caps
       body = JSON.parse(raw);
     } catch (_) { return json({ error: "Invalid JSON body" }, 400); }
     const { provider, model, messages } = body || {};

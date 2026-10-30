@@ -57,3 +57,23 @@ group("worker/net-guard trailing-dot hosts", () => {
     assert.equal(hostAllowed(new URL("http://example.com./")), true);
   });
 });
+
+group("worker/body-cap", () => {
+  test("bodies over the cap are refused without buffering them whole", async () => {
+    const { readCapped } = await import("../../worker/body-cap.js");
+    const req = (body, headers) => new Request("https://example.com/", { method: "POST", body, headers, duplex: "half" });
+    assert.equal(await readCapped(req("héllo"), 100), "héllo");
+    assert.equal(await readCapped(req("x".repeat(101)), 100), null);
+    assert.equal(await readCapped(req("x", { "content-length": "999999" }), 100), null);
+    let pulled = 0;
+    const stream = new ReadableStream({ pull(c) { pulled++; c.enqueue(new Uint8Array(64 * 1024)); } });
+    assert.equal(await readCapped(req(stream), 100000), null);
+    assert.ok(pulled < 5, "stopped reading after the cap, pulled " + pulled);
+    assert.equal(await readCapped(new Request("https://example.com/"), 10), "");
+  });
+  test("/api/chat rejects an oversized body with CORS headers", async () => {
+    const r = await worker.fetch(new Request("https://w.test/api/chat", { method: "POST", body: "x".repeat(1024 * 1024 + 1), headers: { "cf-connecting-ip": "203.0.113.251" } }), {});
+    assert.equal(r.status, 413);
+    assert.ok(r.headers.get("access-control-allow-origin"));
+  });
+});

@@ -22,6 +22,7 @@ import { mergeToolData, nextStatus, toolSeverity } from "../public/js/core/sink-
 import { verifyIdToken } from "./vault-auth.js";
 import { isSuspended } from "./gate.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
+import { readCapped } from "./body-cap.js";
 import { chainAppend, chainVerify, GENESIS, pad } from "./audit-chain.js";
 
 // The audit chain is never trimmed: "verify from genesis" must stay meaningful. It only
@@ -262,8 +263,8 @@ export async function handleGraph(request, env, wid, json) {
   }
   let bodyText = null;
   if (request.method === "POST") {
-    bodyText = await request.text();
-    if (bodyText.length > 4 * 1024 * 1024) return json({ error: "Request too large — sync in smaller batches." }, 413);
+    bodyText = await readCapped(request, 4 * 1024 * 1024);
+    if (bodyText === null) return json({ error: "Request too large — sync in smaller batches." }, 413);
   }
   const stub = env.GRAPH.get(env.GRAPH.idFromName(wid));
   const res = await stub.fetch("https://graph/" + (new URL(request.url).search || ""), {
