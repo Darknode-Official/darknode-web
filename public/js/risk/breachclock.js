@@ -17,9 +17,9 @@ import {
   DEFAULTS, TOOL_ID, SECTORS, DATA_TYPES, COUNTRIES, EU_STATES, VERIFY_LINE, REGISTER_SCHEMA, INCIDENT_STATUSES,
   parseInput, parseCounts, analyze, findingsToCsv, checklistToCsv, icsEvents, exportBundle, summaryText, draftNotice,
   exampleDataset, snapshot, isValidTz, fmtDur,
-} from "./breachclock-engine.js?v=20261026b";
+} from "./breachclock-engine.js?v=20261029e";
 
-const ENGINE = engineUrl("./breachclock-engine.js?v=20261026b", import.meta);
+const ENGINE = engineUrl("./breachclock-engine.js?v=20261029e", import.meta);
 const P = "bnc";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

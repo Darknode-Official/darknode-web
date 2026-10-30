@@ -2154,10 +2154,10 @@ function renderApp(user) {
     else if (sec === "fleetcomply") { import("/js/exposure/fleetcomply.js?v=20261029c").then(m => live() && m.renderFleetComply(main)); }
     else if (sec === "k8saudit") { import("/js/appsec/k8saudit.js?v=20261029e").then(m => live() && m.renderK8sAudit(main)); }
     else if (sec === "cloudspend") { import("/js/finsec/cloudspend.js?v=20261029c").then(m => live() && m.renderCloudSpend(main)); }
-    else if (sec === "breachclock") { import("/js/risk/breachclock.js?v=20261029c").then(m => live() && m.renderBreachClock(main)); }
-    else if (sec === "riskreg") { import("/js/risk/riskreg.js?v=20261029c").then(m => live() && m.renderRiskRegister(main)); }
+    else if (sec === "breachclock") { import("/js/risk/breachclock.js?v=20261029e").then(m => live() && m.renderBreachClock(main)); }
+    else if (sec === "riskreg") { import("/js/risk/riskreg.js?v=20261029e").then(m => live() && m.renderRiskRegister(main)); }
     else if (sec === "evidence") { import("/js/compliance/evidence.js?v=20261029e").then(m => live() && m.renderEvidence(main)); }
-    else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261029c").then(m => live() && m.renderVendorRisk(main)); }
+    else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261029e").then(m => live() && m.renderVendorRisk(main)); }
     else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261029c").then(m => live() && m.renderBackupReady(main)); }
     else if (sec === "dmarcreports") { import("/js/exposure/dmarcreports.js?v=20261017c").then(m => live() && m.renderDmarcReports(main)); }
     else if (sec === "domainguard") { import("/js/exposure/domainguard.js?v=20261029c").then(m => live() && m.renderDomainGuard(main)); }

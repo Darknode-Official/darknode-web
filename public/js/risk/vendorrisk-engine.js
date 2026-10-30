@@ -149,8 +149,16 @@ const DAY = 86400000;
 function ts(d) {
   if (d == null || d === "") return NaN;
   const s = String(d).trim();
-  const t = /^\d{4}-\d{2}-\d{2}$/.test(s) ? Date.parse(s + "T00:00:00Z") : Date.parse(s);
+  const t = /^\d{4}-\d{2}-\d{2}$/.test(s) ? Date.parse(s + "T00:00:00Z") : parseDay(s);
   return Number.isFinite(t) ? t : NaN;
+}
+// Date.parse reads a date-only "Oct 30, 2026" / "2026/10/30" as LOCAL midnight, which is the
+// previous UTC day east of UTC: keep the written calendar day. Strings with a time stay absolute.
+function parseDay(s) {
+  const t = Date.parse(s);
+  if (!Number.isFinite(t) || /\d:\d/.test(s)) return t;
+  const d = new Date(t);
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
 }
 export const isDate = (d) => Number.isFinite(ts(d));
 const ymd = (t) => new Date(t).toISOString().slice(0, 10);
@@ -1000,7 +1008,7 @@ const toIsoDate = (v) => {
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
   const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); // US m/d/yyyy (spreadsheet default)
   if (m) return m[3] + "-" + m[1].padStart(2, "0") + "-" + m[2].padStart(2, "0");
-  const t = Date.parse(s);
+  const t = parseDay(s);
   return Number.isFinite(t) ? ymd(t) : s;
 };
 

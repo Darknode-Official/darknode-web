@@ -193,13 +193,14 @@ export function parseTime(v, tz = "UTC") {
   const s = String(v).trim();
   if (!s) return null;
   if (/(Z|[+-]\d\d:?\d\d)$/i.test(s) && /\d{4}-\d\d-\d\d[T ]\d\d:\d\d/.test(s)) {
+    const [y, mo, d] = s.slice(0, 10).split("-").map(Number);
     const t = Date.parse(s.replace(" ", "T"));
-    return Number.isFinite(t) ? t : null;
+    return Number.isFinite(t) && d <= new Date(Date.UTC(y, mo, 0)).getUTCDate() ? t : null;
   }
   const m = /^(\d{4})-(\d\d)-(\d\d)(?:[T ](\d\d):(\d\d)(?::(\d\d)(?:\.\d+)?)?)?$/.exec(s);
   if (!m) return null;
   const [y, mo, d, h, mi, se] = [m[1], m[2], m[3], m[4] || 0, m[5] || 0, m[6] || 0].map(Number);
-  if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59 || se > 59) return null;
+  if (mo < 1 || mo > 12 || d < 1 || d > new Date(Date.UTC(y, mo, 0)).getUTCDate() || h > 23 || mi > 59 || se > 59) return null; // 2026-02-30 would roll to March
   return zonedToUtc(y, mo, d, h, mi, se, isValidTz(tz) ? tz : "UTC");
 }
 
@@ -266,14 +267,16 @@ export function parseCount(v) {
   return Number.isSafeInteger(n) ? n : null;
 }
 
-// Split one line on comma / tab / semicolon, honouring double quotes ("1,200").
+// Split one line on its delimiter (tab, else semicolon, else comma), honouring double quotes
+// ("1,200"). A spreadsheet paste is tab-separated with formatted counts: California<TAB>1,200.
 function splitCells(line) {
   const out = [];
+  const d = line.includes("\t") ? "\t" : line.includes(";") ? ";" : ",";
   let cur = "", inQ = false;
   for (let i = 0; i < line.length; i++) {
     const c = line[i];
     if (c === '"') { if (inQ && line[i + 1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
-    else if (!inQ && (c === "," || c === "\t" || c === ";")) { out.push(cur.trim()); cur = ""; }
+    else if (!inQ && c === d) { out.push(cur.trim()); cur = ""; }
     else cur += c;
   }
   out.push(cur.trim());

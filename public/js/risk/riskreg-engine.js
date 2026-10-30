@@ -703,7 +703,7 @@ export function analyze(dataset, opts = {}, ctx) {
   if (!appetiteOn) skipped.push({ check: "over_appetite", reason: "risk appetite amount not set (Settings)" });
   if (!now) skipped.push({ check: "review_overdue", reason: "no reference date (no dates in the register and no 'now' passed)" });
   const n = all.length;
-  const series = new Map(); // id -> { current sorted, inherent sorted, residual sorted, raw current }
+  const series = new Map(); // row index (ids may repeat) -> { current sorted, inherent sorted, residual sorted, raw current }
   const byCurrency = new Map();
   let noLastReviewed = 0;
 
@@ -742,9 +742,9 @@ export function analyze(dataset, opts = {}, ctx) {
     });
     risks.push(row);
     if (rec.status !== "closed") {
-      series.set(key, { cur: useRes ? sim.residual.losses : sim.inherent.losses, inh: sim.inherent.losses, curEvents: useRes ? sim.residual.events : sim.inherent.events });
+      series.set(i, { cur: useRes ? sim.residual.losses : sim.inherent.losses, inh: sim.inherent.losses, curEvents: useRes ? sim.residual.events : sim.inherent.events });
       if (!byCurrency.has(currency)) byCurrency.set(currency, []);
-      byCurrency.get(currency).push(key);
+      byCurrency.get(currency).push(i);
     }
     // ---- findings ----
     if (rec.status === "closed") continue;
@@ -812,9 +812,9 @@ export function analyze(dataset, opts = {}, ctx) {
     const stats = lossStats(tot, null, sTot), statsInh = lossStats(inh, null, sInh);
     const grid = lecGrid([sTot, sInh]);
     const et = exceedance(sTot, grid), ei = exceedance(sInh, grid);
-    const contributors = ids.map((id) => {
-      const r = risks.find((x) => x.id === id);
-      return { id, title: r.title, ale: r.currentStats.mean, share: r4(stats.mean > 0 ? r.currentStats.mean / stats.mean : 0), p90: r.currentStats.p90 };
+    const contributors = ids.map((ix) => {
+      const r = risks[ix];
+      return { id: r.id, title: r.title, ale: r.currentStats.mean, share: r4(stats.mean > 0 ? r.currentStats.mean / stats.mean : 0), p90: r.currentStats.p90 };
     }).sort((a, b) => b.ale - a.ale || (a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
     const p = { currency, risks: ids.length, current: stats, inherent: statsInh, lec: grid.map((x, j) => ({ x: r2(x), current: et[j], inherent: ei[j] })), histogram: histogram(sTot), topContributors: contributors.slice(0, 10) };
     if (appetiteOn && currency === S.currency) {
