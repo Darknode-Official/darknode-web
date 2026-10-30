@@ -361,9 +361,9 @@ async function callUpstream(cfg, env, model, messages, key, opts = {}) {
   let upstream;
   for (let attempt = 0; attempt < 3; attempt++) {
     // A model that never answers (seen with gemini-flash-latest: no headers for 100s+, so
-    // Cloudflare cut the chat at 524) must not hang the chat: give up on headers after 30s
+    // Cloudflare cut the chat at 524) must not hang the chat: give up on headers after 12s
     // and report 504, which the caller treats like an overloaded model and falls back.
-    const ac = new AbortController(), to = setTimeout(() => ac.abort(), 30000);
+    const ac = new AbortController(), to = setTimeout(() => ac.abort(), 12000);
     try { upstream = await fetch(url, { method: "POST", headers, body: build(), signal: ac.signal }); }
     catch (e) { if (!ac.signal.aborted) throw e; upstream = new Response(JSON.stringify({ error: { message: "the model did not answer in time" } }), { status: 504 }); }
     finally { clearTimeout(to); }
