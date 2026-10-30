@@ -43,7 +43,7 @@ const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => {
 const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261027c");
 const corrMod = lazyMod("/js/deck/correlations.js?v=20261029c");
-const monMod = lazyMod("/js/deck/monitors.js?v=20261028a");
+const monMod = lazyMod("/js/deck/monitors.js?v=20261029d");
 const keysMod = lazyMod("/js/deck/apikeys.js?v=20261029c");
 const auditMod = lazyMod("/js/deck/audit.js?v=20261028a");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261027c";
@@ -2547,7 +2547,7 @@ export function renderDeck(host, opts) {
     { type: "action", label: "Go to Reports", group: "Navigate", icon: IC.note, run: () => go("reports"), k: "scene:reports" },
     { type: "action", label: "Go to Asset Inventory", group: "Navigate", icon: IC.tree, run: () => go("inventory"), k: "scene:inventory" },
     { type: "action", label: "Go to Correlations", group: "Navigate", icon: IC.nodes, run: () => go("correlations"), k: "scene:correlations" },
-    { type: "action", label: "Go to Monitors", group: "Navigate", icon: IC.bell, run: () => go("monitors"), k: "scene:monitors" },
+    { type: "action", label: "Go to Monitors", group: "Navigate", icon: IC.bell, run: () => go("monitors"), k: "scene:monitors", kw: "watch alert schedule certificate expiry email dns spf dmarc mx caa drift" },
     { type: "action", label: "Go to API & Ingest", group: "Navigate", icon: IC.key, run: () => go("apikeys"), k: "scene:apikeys" },
     { type: "action", label: "Go to Audit Log", group: "Navigate", icon: IC.lock, run: () => go("audit"), k: "scene:audit" },
     { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.search, run: () => go("invest"), k: "scene:invest" },
