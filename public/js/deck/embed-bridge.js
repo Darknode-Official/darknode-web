@@ -45,6 +45,7 @@ export function initEmbedBridge(win) {
       return () => { const i = focusCbs.indexOf(cb); if (i >= 0) focusCbs.splice(i, 1); };
     },
     ready: () => post(MSG.READY, {}),
+    palette: () => post(MSG.PALETTE, {}),
     teardown: () => { try { off && off(); } catch (_) {} w.removeEventListener("message", onMsg); try { if (w.dnBridge === api) delete w.dnBridge; } catch (_) {} },
   };
   try { w.dnBridge = api; } catch (_) {}

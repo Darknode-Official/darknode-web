@@ -48,6 +48,7 @@ group("tool-bridge/parseMessage", () => {
 
   test("isBridgeType knows the protocol types", () => {
     assert.equal(isBridgeType(MSG.FOCUS), true);
+    assert.equal(isBridgeType(MSG.PALETTE), true);
     assert.equal(isBridgeType("nope"), false);
   });
 });

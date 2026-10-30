@@ -8,12 +8,13 @@
 export const BRIDGE = "dnbridge";
 export const BRIDGE_VERSION = 1;
 
-// Message types. RESULT/OPEN_ENTITY/OPEN_TOOL/READY travel tool -> host; FOCUS travels host -> tool.
+// Message types. RESULT/OPEN_ENTITY/OPEN_TOOL/READY/PALETTE travel tool -> host; FOCUS travels host -> tool.
 export const MSG = {
   READY: "ready",
   RESULT: "result",
   OPEN_ENTITY: "open-entity",
   OPEN_TOOL: "open-tool",
+  PALETTE: "palette", // Ctrl/Cmd+K pressed inside the tool: open the host's search
   FOCUS: "focus",
 };
 const TYPES = new Set(Object.keys(MSG).map((k) => MSG[k]));

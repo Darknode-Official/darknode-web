@@ -2771,6 +2771,8 @@ document.addEventListener("keydown", (e) => {
   if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
     if (!document.body.classList.contains("app")) return;
     e.preventDefault();
+    // inside a Deck tool frame the shortcut belongs to the Deck's search, not this frame's palette
+    if (document.body.classList.contains("dn-embed")) { if (window.dnBridge && window.dnBridge.palette) window.dnBridge.palette(); return; }
     const ex = document.getElementById("cmdk"); if (ex) ex.remove(); else openPalette();
   }
 });

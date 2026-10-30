@@ -2917,6 +2917,8 @@ export function renderDeck(host, opts) {
       const id = m.payload.id; if (id) { try { openEntityDrawer(String(id)); } catch (_) {} }
     } else if (m.type === BMSG.OPEN_TOOL) {
       const s = m.payload.sec; if (s && secLabel[s]) { if (m.payload.focus) pendingFocus.set(s, m.payload.focus); openTool(s, secLabel[s]); }
+    } else if (m.type === BMSG.PALETTE) {
+      if (!spot.classList.contains("on")) openSpot();
     } else if (m.type === BMSG.READY) {
       const fc = pendingFocus.get(sec);
       if (fc) { pendingFocus.delete(sec); const msg = makeBridge(BMSG.FOCUS, fc); if (msg) { try { e.source.postMessage(msg, location.origin); } catch (_) {} } }
