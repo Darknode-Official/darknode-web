@@ -34,7 +34,7 @@ function _deParseAnswer(type, a) {
   const name = _deStripDot(a.name);
   const ttl = a.TTL;
   const d = String(a.data || '');
-  if (type === 'MX') { const p = d.split(/\s+/); return { name, ttl, priority: parseInt(p[0], 10), value: _deStripDot(p[1] || d) }; }
+  if (type === 'MX') { const p = d.split(/\s+/); return { name, ttl, priority: parseInt(p[0], 10), value: p[1] === '.' ? '. (null MX: the domain accepts no mail)' : _deStripDot(p[1] || d) }; }
   if (type === 'SRV') { const p = d.split(/\s+/); return { name, ttl, priority: parseInt(p[0], 10), weight: p[1], port: p[2], value: _deStripDot(p[3] || d) }; }
   if (type === 'CAA') { const m = d.match(/^(\d+)\s+(\S+)\s+"?(.*?)"?$/); return m ? { name, ttl, flag: m[1], tag: m[2], value: m[3] } : { name, ttl, value: d }; }
   if (type === 'TXT') return { name, ttl, value: d.replace(/^"|"$/g, '').replace(/"\s*"/g, '') };
