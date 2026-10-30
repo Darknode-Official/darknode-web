@@ -17,7 +17,7 @@ export function mount(el, { space, mode }) {
         : "Know before your site's certificate expires and visitors see a security warning. Add the domains you run; the list is saved in this browser."}</p>
       <textarea class="ns-ta" id="nsCwIn" aria-label="Domains to watch" style="min-height:${fleet ? 110 : 70}px" placeholder="One domain per line" spellcheck="false"></textarea>
       <div class="ns-row"><button class="ns-btn" id="nsCwGo">Check certificates</button><button class="ns-btn ghost" id="nsCwCsv" disabled>Export CSV</button><button class="ns-btn ghost" id="nsCwLoad" hidden></button>${fleet ? `<button class="ns-btn ghost" id="nsCwPf" hidden>Add portfolio domains</button>` : ""}<span class="ns-help" id="nsCwSt" style="margin:0"></span></div>
-      <p class="ns-help">Certificate-transparency lookups are public. Up to ${fleet ? 200 : 20} domains.</p></div>
+      <p class="ns-help">Reads the newest certificate issued for each domain in the public certificate-transparency logs, which can differ from the one the site serves right now. Lookups are public. Up to ${fleet ? 200 : 20} domains.</p></div>
     <div id="nsCwOut"></div>`;
   const ta = el.querySelector("#nsCwIn"), go = el.querySelector("#nsCwGo"), csv = el.querySelector("#nsCwCsv"), st = el.querySelector("#nsCwSt"), out = el.querySelector("#nsCwOut");
   const cnt = () => { const n = parseDomains(ta.value).length; el.querySelector("#nsCwCount").textContent = n ? n + " domain" + (n === 1 ? "" : "s") : ""; };
