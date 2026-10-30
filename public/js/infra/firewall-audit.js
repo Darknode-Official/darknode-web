@@ -12,7 +12,7 @@
 import {
   detectFormat, parseConfig, analyze, FORMATS, DEFAULT_INTERNAL, describeAddr, describePorts,
   findingsToCsv, resultToJson, remediationText, summaryText, SEVERITY_ORDER, toSinkFindings,
-} from "./firewall-audit-engine.js?v=20261026b";
+} from "./firewall-audit-engine.js?v=20261029e";
 import { sampleShare, SAMPLE_SHARE } from "../core/sink-map.js";
 import { attachSinkButton } from "../core/sink.js";
 

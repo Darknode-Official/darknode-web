@@ -309,7 +309,7 @@ export function portsFromToken(tok) {
   // iptables open-ended ranges: "1024:" = 1024-65535, ":1023" = 0-1023 (were unresolved)
   if ((m = /^(\d+):$/.exec(tok))) { const a = +m[1]; return a > 65535 ? null : [[a, 65535]]; }
   if ((m = /^:(\d+)$/.exec(tok))) { const b = +m[1]; return b > 65535 ? null : [[0, b]]; }
-  if (SERVICES[tok] != null) { const p = SERVICES[tok]; return [[p, p]]; }
+  if (Object.hasOwn(SERVICES, tok)) { const p = SERVICES[tok]; return [[p, p]]; }
   return null;
 }
 
@@ -651,10 +651,11 @@ export function parseNft(text) {
 
 // ---------------------------------------------------------------- Cisco ASA / IOS
 const CISCO_IP_PROTOS = /^(ip|tcp|udp|icmp|icmp6|esp|ah|ahp|gre|ospf|eigrp|pim|igmp|igrp|nos|pcp|snp|ipinip|ipsec|sctp|\d+)$/i;
-function ciscoPortTok(t) { return /^\d+$/.test(t) || SERVICES[t.toLowerCase()] != null; }
+function ciscoPortTok(t) { return /^\d+$/.test(t) || Object.hasOwn(SERVICES, t.toLowerCase()); }
 
 export function parseCisco(text) {
-  const notes = [], netObjs = {}, svcObjs = {}, bindings = {}, remarks = {}, rules = [];
+  // null-prototype maps: an object or ACL named "constructor" must not resolve to Object.prototype members
+  const notes = [], netObjs = Object.create(null), svcObjs = Object.create(null), bindings = Object.create(null), remarks = Object.create(null), rules = [];
   let cur = null, lineNo = 0, iosBlock = null, curIface = null;
   const L = lines(text);
   // pass 1: objects + bindings
@@ -920,7 +921,7 @@ export function parsePfsenseCsv(text) {
 }
 
 export function parsePfsenseXml(text) {
-  const notes = [], rules = [], aliases = {};
+  const notes = [], rules = [], aliases = Object.create(null);
   const s = String(text || "");
   const tag = (x, t) => { const m = new RegExp(`<${t}>([\\s\\S]*?)</${t}>`, "i").exec(x); return m ? m[1].trim() : null; };
   const has = (x, t) => new RegExp(`<${t}\\s*/>|<${t}>\\s*</${t}>|<${t}>`, "i").test(x);
@@ -993,7 +994,7 @@ function fortiPortRange(v) { // "22", "22-23", "3389:1024-65535", "80 443"
   const out = []; for (const part of String(v).split(/\s+/).filter(Boolean)) { const dst = part.split(":")[0]; const p = portsFromToken(dst.replace(/-/, "-")); if (p) out.push(...p); } return out;
 }
 export function parseFortigate(text) {
-  const notes = [], rules = [], addrs = {}, grps = {}, svcs = {}, svcGrps = {};
+  const notes = [], rules = [], addrs = Object.create(null), grps = Object.create(null), svcs = Object.create(null), svcGrps = Object.create(null);
   let stack = [], cur = null, lineNo = 0, implicitLog = null;
   const section = () => stack[stack.length - 1] || "";
   for (const raw of lines(text)) {
@@ -1084,7 +1085,7 @@ export function parseFortigate(text) {
     }
     const g = svcGrps[name] || svcGrps[key];
     if (g) { const out = []; for (const mm of g.members) { const r = resolveSvc(mm, seen); if (!r) { out.push({ proto: "any", ports: null, unresolved: mm }); unresolvedNames.add(mm); } else out.push(...r); } return out; }
-    const b = FORTI_SERVICES[key];
+    const b = Object.hasOwn(FORTI_SERVICES, key) ? FORTI_SERVICES[key] : null;
     if (b) return [{ proto: b.proto, ports: b.ports }];
     return null;
   };
@@ -1164,13 +1165,13 @@ export function parseWindowsNetsh(text) {
   let m; const prof = /^(\w+) Profile Settings:[\s\S]*?Firewall Policy\s+(\w+),(\w+)/gm;
   while ((m = prof.exec(src))) policies[m[1]] = m[2] + "," + m[3];
   const parts = src.split(/^(?=Rule Name:)/m);
-  let offset = 0;
+  let lineNo = 1; // counted per block; re-splitting the whole prefix each time was quadratic
   for (const block of parts) {
-    const lineNo = src.slice(0, offset).split("\n").length; offset += block.length;
+    const startLine = lineNo; lineNo += block.split("\n").length - 1;
     if (!/^Rule Name:/.test(block)) continue;
     const f = {};
     for (const ln of block.split("\n")) { const mm = /^([A-Za-z][A-Za-z ]*?):\s*(.*)$/.exec(ln); if (mm) f[mm[1].toLowerCase().replace(/\s+/g, "")] = mm[2].trim(); }
-    rules.push(winRuleFrom(f, lineNo, block.trim().split("\n").filter((l) => /^(Rule Name|Enabled|Direction|Profiles|LocalIP|RemoteIP|Protocol|LocalPort|RemotePort|Action|Program):/.test(l)).join("\n"), "windows-netsh"));
+    rules.push(winRuleFrom(f, startLine, block.trim().split("\n").filter((l) => /^(Rule Name|Enabled|Direction|Profiles|LocalIP|RemoteIP|Protocol|LocalPort|RemotePort|Action|Program):/.test(l)).join("\n"), "windows-netsh"));
   }
   if (!Object.keys(policies).length) notes.push("Profile defaults are not in this export. Windows Firewall defaults to BlockInbound,AllowOutbound; include 'netsh advfirewall show allprofiles' to verify.");
   notes.push("Windows Firewall is not order-based: a Block rule always beats an Allow rule, so shadowing is reported as block-overrides-allow instead of first-match.");

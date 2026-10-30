@@ -283,7 +283,7 @@ export function editDistance(a, b, max = 3) {
  * "edit-2", "other TLD", "contains brand", "IDN".
  */
 export function lookalikeOf(reg, own) {
-  if (!reg || !own.length) return null;
+  if (!reg || !own.length || own.includes(reg)) return null; // a second own domain (example.net next to example.com) is not a lookalike
   const uni = toUnicodeName(reg);
   const label = uni.split(".")[0];
   const tld = reg.split(".").slice(1).join(".");
@@ -601,7 +601,7 @@ function newAgg() {
     events: 0, queries: 0, responses: 0, minTs: null, maxTs: null,
     has: { ts: false, rcode: false, answers: false, server: false, user: false },
     domains: new Map(), clients: new Map(), pairs: new Map(), pairsCapped: false, domainsCapped: false,
-    encrypted: new Map(), external: new Map(), intel: new Map(), canary: { q: 0, nx: 0, ok: 0, clients: new Set(), rows: [] },
+    encrypted: new Map(), external: new Map(), resolvers: new Set(), intel: new Map(), canary: { q: 0, nx: 0, ok: 0, clients: new Set(), rows: [] },
   };
 }
 
@@ -685,7 +685,8 @@ function foldEvent(A, e, ctxOpts) {
     }
     if (e.server && e.client) {
       const approved = ctxOpts.approved.length ? ctxOpts.approved.includes(e.server) : isInternalIp(e.server, ctxOpts.cidrs);
-      if (!approved && e.server !== e.client) {
+      if (approved) addCapped(A.resolvers, e.server, 5000);
+      else if (e.server !== e.client) {
         let x = A.external.get(e.client);
         if (!x) { x = { q: 0, servers: new Map(), rows: [] }; A.external.set(e.client, x); }
         x.q++; x.servers.set(e.server, (x.servers.get(e.server) || 0) + 1); pushCapped(x.rows, e);
@@ -976,7 +977,9 @@ function buildReport(A, o, X, ctx) {
   }
 
   // --- Resolver bypass ----------------------------------------------------
-  const ext = [...A.external.entries()].sort((a, b) => b[1].q - a[1].q || cmp(a[0], b[0]));
+  // A resolver's own recursive lookups (a Zeek sensor sees 10.0.0.2 -> root/authoritative
+  // servers) are not a bypass: drop clients that are approved or were seen answering others.
+  const ext = [...A.external.entries()].filter(([client]) => !X.ctxOpts.approved.includes(client) && !A.resolvers.has(client)).sort((a, b) => b[1].q - a[1].q || cmp(a[0], b[0]));
   if (!A.has.server) skipped.push({ check: "Clients using unapproved resolvers", reason: "the log has no resolver/server address (Zeek id.resp_h or a mapped server column)" });
   tables.externalResolvers = ext.map(([client, x]) => ({ client, queries: x.q, resolvers: [...x.servers.keys()].sort().join(" ") }));
   if (ext.length) {
