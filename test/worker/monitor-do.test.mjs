@@ -285,6 +285,25 @@ group("monitor DO/email-posture", () => {
     const hist = (await post(mon, { op: "list" })).json.history;
     assert.equal(hist[0].skipped, 1, "the run records what could not be checked");
   });
+  test("a domain added to an existing monitor gets its own baseline run, not drift alerts", async () => {
+    const st = memState(); const mon = new MonitorDO(st);
+    const base = { name: "Mail", type: "email-posture", channels: [{ type: "webhook", url: "https://hook.test/x" }] };
+    await post(mon, { op: "upsert", monitor: { ...base, config: { domains: ["example.com"] } } });
+    const zone = { "TXT example.com": ["v=spf1 mx -all"], "TXT _dmarc.example.com": ["v=DMARC1; p=reject; rua=mailto:d@example.com"], "MX example.com": ["10 mx.example.net."],
+      "TXT example.org": ["v=spf1 mx ~all"], "TXT _dmarc.example.org": ["v=DMARC1; p=quarantine; rua=mailto:d@example.org"], "MX example.org": ["10 mx.example.net."] };
+    await mon.runDue({ force: true, fetch: dohNet(zone).fetch, sleep: async () => {} });
+    const id = Object.keys(await st.storage.get("monitors"))[0];
+    await post(mon, { op: "upsert", monitor: { ...base, id, config: { domains: ["example.com", "https://example.org/"] } } });
+    const b = dohNet(zone);
+    await mon.runDue({ force: true, fetch: b.fetch, sleep: async () => {} });
+    assert.equal(b.deliveries.length, 0, "the new domain's low findings (~all, quarantine, no CAA) do not alert on its first run");
+    zone["TXT example.org"] = ["v=spf1 mx ?all"];
+    const c = dohNet(zone);
+    await mon.runDue({ force: true, fetch: c.fetch, sleep: async () => {} });
+    assert.equal(c.deliveries.length, 1, "once baselined, a weakening on it alerts as drift");
+    const m = Object.values(await st.storage.get("monitors"))[0];
+    assert.deepEqual(m.baselined.slice().sort(), ["example.com", "example.org"], "editing the monitor kept the existing domain's baseline");
+  });
 });
 
 // ---- Graph sync: a monitor run writes its findings into the workspace GraphDO ----

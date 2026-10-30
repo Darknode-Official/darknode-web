@@ -38,7 +38,7 @@ export async function fetchCertRows(domain, f) {
 }
 
 // "https://site.com/path", user@host, host:port, *.site and a trailing root dot -> the hostname
-const hostOnly = (d) => String(d || "").trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/[/?#].*$/, "").replace(/^[^@]*@/, "").replace(/:\d+$/, "").replace(/^\*\./, "").replace(/\.$/, "");
+export const hostOnly = (d) => String(d || "").trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/[/?#].*$/, "").replace(/^[^@]*@/, "").replace(/:\d+$/, "").replace(/^\*\./, "").replace(/\.$/, "");
 
 const sev = (days, warnDays) => {
   if (days == null) return null;          // no data -> no finding (never a fake pass/fail)
@@ -282,20 +282,21 @@ async function lookupEmailDns(dom, f) {
 export async function emailPostureCheck(domains, deps = {}) {
   const f = deps.fetch || (typeof fetch !== "undefined" ? fetch : null);
   if (!f) return [];
-  const out = [], held = [], unknown = [];
+  const out = [], held = [], unknown = [], checked = [];
   let tried = false, answered = false;
   for (const domain of (domains || [])) {
     const dom = hostOnly(domain);
     if (!dom) continue;
     tried = true;
     const rec = await lookupEmailDns(dom, f);
-    if ([rec.spfTxts, rec.dmarcTxts, rec.mx, rec.caa].some((v) => !v.failed)) answered = true;
+    if ([rec.spfTxts, rec.dmarcTxts, rec.mx, rec.caa].some((v) => !v.failed)) { answered = true; checked.push(dom); }
     const g = gradeEmailDns(dom, rec);
     out.push(...g.findings);
     for (const u of g.unknown) { unknown.push(u); held.push(...u.keys); }
   }
   if (tried && !answered) return Object.assign([], { unreachable: true, unknown });
-  return Object.assign(out, { held, unknown });
+  // checked: the domains that answered, so the monitor knows which have a baseline (see drift)
+  return Object.assign(out, { held, unknown, checked });
 }
 
 // Registry of worker-native check types a monitor can run. Each: (config, deps) -> findings[].
