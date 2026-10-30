@@ -8,8 +8,21 @@ import { dnFetch, proxyConfigured } from '/js/net.js';
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
 
+// A CSP only stops injected script if the source list in force for scripts (script-src,
+// else default-src) leaves none in: no wildcard or bare scheme, no 'unsafe-inline'
+// without a nonce/hash/'strict-dynamic' (CSP3 ignores it then).
+function _haCspWeak(v) {
+  var dirs = {};
+  String(v).split(';').forEach(function(d) { var p = d.trim().split(/\s+/); if (p[0]) dirs[p[0].toLowerCase()] = p.slice(1).map(function(x) { return x.toLowerCase(); }); });
+  var src = dirs['script-src'] || dirs['default-src'];
+  if (!src) return true;
+  if (src.some(function(x) { return x === '*' || x === 'http:' || x === 'https:' || x === 'data:'; })) return true;
+  var guarded = src.some(function(x) { return /^'(nonce-|sha(256|384|512)-)/.test(x) || x === "'strict-dynamic'"; });
+  return src.indexOf("'unsafe-inline'") >= 0 && !guarded;
+}
+
 var _haSecurityHeaders = [
-  { name: 'Content-Security-Policy', weight: 20, critical: true, desc: 'Controls which resources the browser can load. Prevents XSS, data injection, clickjacking.', rec: 'Add a strict CSP: default-src \'self\'; script-src \'self\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data:; object-src \'none\'; base-uri \'self\'; form-action \'self\'' },
+  { name: 'Content-Security-Policy', weight: 20, critical: true, desc: 'Controls which resources the browser can load. Prevents XSS, data injection, clickjacking.', rec: 'Add a strict CSP: default-src \'self\'; script-src \'self\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data:; object-src \'none\'; base-uri \'self\'; form-action \'self\'', weak: _haCspWeak },
   { name: 'Strict-Transport-Security', weight: 15, critical: true, desc: 'Forces HTTPS connections. Prevents SSL stripping attacks.', rec: 'Add: Strict-Transport-Security: max-age=31536000; includeSubDomains; preload', weak: function(v) { if (!v) return false; /* RFC 6797 §6.1: directive names are case-insensitive and the value may be a quoted-string, so a valid "Max-Age=..." or max-age="..." must not be mis-graded weak. */ var m = /max-age\s*=\s*"?(\d+)"?/i.exec(v); return !m || parseInt(m[1], 10) < 31536000; } },
   { name: 'X-Content-Type-Options', weight: 10, critical: false, desc: 'Prevents MIME-type sniffing. Stops browsers from guessing content types.', rec: 'Add: X-Content-Type-Options: nosniff', weak: function(v) { return v && v.toLowerCase() !== 'nosniff'; } },
   { name: 'X-Frame-Options', weight: 10, critical: false, desc: 'Prevents clickjacking by controlling iframe embedding.', rec: 'Add: X-Frame-Options: DENY (or SAMEORIGIN)', weak: function(v) { return v && v.toLowerCase() === 'allowall'; } },
