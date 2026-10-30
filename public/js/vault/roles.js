@@ -16,7 +16,8 @@ export const CAN = {
   release: ["owner", "admin", "approver"],
   reconcile: ["owner", "admin"],
 };
-export const canDo = (role, op) => !!(CAN[op] && CAN[op].includes(role));
+// Own keys only: an op named "constructor" or "toString" must be a 403, not a TypeError.
+export const canDo = (role, op) => Object.prototype.hasOwnProperty.call(CAN, op) && CAN[op].includes(role);
 
 export const ROLE_HELP = {
   owner: "Everything, including members, approval policy and opening entries. Cannot change their own role.",
