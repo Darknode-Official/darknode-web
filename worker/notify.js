@@ -89,7 +89,9 @@ export async function deliver(channel, alert, deps = {}) {
   let target;
   try { target = new URL(channel.url); } catch (_) { return { ok: false, status: 0, error: "invalid channel url" }; }
   if (!hostAllowed(target)) return { ok: false, status: 0, error: "channel url host is not allowed" };
-  const build = BUILDERS[channel.type] || genericPayload;
+  // own-property lookup: a type of "__proto__"/"hasOwnProperty" must not resolve to an
+  // Object.prototype member (that threw, failing the whole alarm before it saved its run)
+  const build = Object.hasOwn(BUILDERS, channel.type) ? BUILDERS[channel.type] : genericPayload;
   const bodyStr = JSON.stringify(build(alert));
   const headers = { "content-type": "application/json" };
   if (channel.type === "webhook" && channel.secret) {

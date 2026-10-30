@@ -185,7 +185,7 @@ function subjectsOf(f, idx) {
 //     explanation, legs:[{ id, label, findingId, findingTitle }], window, span }
 const CLOSED = new Set(["resolved", "closed"]);
 export function correlate(entities, opts = {}) {
-  const ents = entities || [];
+  const ents = (entities || []).filter(Boolean);
   const idx = buildIndex(ents);
 
   // finding views + their subjects
@@ -222,10 +222,30 @@ export function correlate(entities, opts = {}) {
       // Each leg's candidate findings (newest-first, id tiebreak — inherited from findingsSorted).
       const perLeg = rule.legs.map((leg) => findingsSorted.filter((f) => leg.when(f)));
       if (perLeg.some((list) => list.length === 0)) continue; // a leg with no evidence => no hit
+      // Each leg needs its OWN finding: one finding that happens to satisfy two legs (a
+      // netexposure RDP finding tagged kev is both "vuln" and "exposed") is not a chain.
+      // Backtracks (legs are few) so a greedy first pick cannot hide a valid assignment.
+      const pickDistinct = (ok) => {
+        const pick = [], used = new Set();
+        if (perLeg.some((list) => !list.some(ok))) return perLeg.map(() => null); // cheap reject before backtracking
+        const go = (i) => {
+          if (i === perLeg.length) return true;
+          for (const f of perLeg[i]) {
+            if (used.has(f.id) || !ok(f)) continue;
+            used.add(f.id); pick[i] = f;
+            if (go(i + 1)) return true;
+            used.delete(f.id);
+          }
+          return false;
+        };
+        return go(0) ? pick : perLeg.map(() => null);
+      };
       let matched = null;
       if (!rule.window) {
         // No time constraint: newest finding per leg.
-        matched = rule.legs.map((leg, i) => ({ leg, f: perLeg[i][0] }));
+        const pick = pickDistinct(() => true);
+        if (!pick.every(Boolean)) continue;
+        matched = rule.legs.map((leg, i) => ({ leg, f: pick[i] }));
       } else {
         // Windowed rule: find the MOST RECENT window [r-W, r] of width W that holds, for EVERY
         // leg, at least one TIMESTAMPED finding, then take the newest in-window finding per leg.
@@ -240,7 +260,7 @@ export function correlate(entities, opts = {}) {
         anchors.sort((a, b) => b - a); // newest first => most recent feasible window wins
         for (const r of anchors) {
           const lo = r - W;
-          const pick = perLeg.map((list) => list.find((f) => f.ts > 0 && f.ts >= lo && f.ts <= r));
+          const pick = pickDistinct((f) => f.ts > 0 && f.ts >= lo && f.ts <= r);
           if (pick.every(Boolean)) { matched = rule.legs.map((leg, i) => ({ leg, f: pick[i] })); break; }
         }
         if (!matched) continue; // no in-window combination exists
@@ -279,7 +299,7 @@ export function materializeIncidents(hits, entities, opts = {}) {
   // finding id -> { created, updated } in ms (stable graph data drives the incident clock)
   const ftimes = new Map();
   for (const e of (entities || [])) {
-    if (e.type !== "FINDING" && e.type !== "VULNERABILITY") continue;
+    if (!e || (e.type !== "FINDING" && e.type !== "VULNERABILITY")) continue;
     const u = toMs(e.updatedAt), c = toMs(e.createdAt);
     ftimes.set(e.id, { created: Number.isFinite(c) ? c : (Number.isFinite(u) ? u : nowMs), updated: Number.isFinite(u) ? u : (Number.isFinite(c) ? c : nowMs) });
   }

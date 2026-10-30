@@ -12,6 +12,7 @@ export const SAVED_VIEWS_MAX = 30;
 export const SAVED_NAME_MAX = 60;
 
 const str = (v) => String(v == null ? "" : v);
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k); // tool-written resolution/severity strings may name Object.prototype members
 const toMs = (v) => {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   if (typeof v === "string" && v) { const n = Date.parse(v); return Number.isFinite(n) ? n : null; }
@@ -28,7 +29,7 @@ export function isoDay(v) {
 export function statusText(status, resolution) {
   const s = str(status || "new");
   const base = s.charAt(0).toUpperCase() + s.slice(1);
-  return resolution && RESOLUTION_LABEL[resolution] ? `${base} (${RESOLUTION_LABEL[resolution].toLowerCase()})` : base;
+  return resolution && own(RESOLUTION_LABEL, resolution) ? `${base} (${RESOLUTION_LABEL[resolution].toLowerCase()})` : base;
 }
 
 /**
@@ -87,11 +88,11 @@ export function slaBasis(entity, policy, kevSet, fmtDate = isoDay) {
 export function urgencySort(rows, slaOf) {
   const bucket = { overdue: 0, due_soon: 1, on_track: 2, excepted: 3, none: 4, closed: 5 };
   return (rows || []).map((r, i) => [r, slaOf(r) || {}, i]).sort((a, b) => {
-    const ba = bucket[a[1].state] ?? 6, bb = bucket[b[1].state] ?? 6;
+    const ba = own(bucket, a[1].state) ? bucket[a[1].state] : 6, bb = own(bucket, b[1].state) ? bucket[b[1].state] : 6;
     if (ba !== bb) return ba - bb;
     const da = a[1].dueAt == null ? Infinity : a[1].dueAt, db = b[1].dueAt == null ? Infinity : b[1].dueAt;
     if (da !== db) return da < db ? -1 : 1;
-    const sa = SEV_RANK[a[0].severity] ?? -1, sb = SEV_RANK[b[0].severity] ?? -1;
+    const sa = own(SEV_RANK, a[0].severity) ? SEV_RANK[a[0].severity] : -1, sb = own(SEV_RANK, b[0].severity) ? SEV_RANK[b[0].severity] : -1;
     if (sa !== sb) return sb - sa;
     return a[2] - b[2];
   }).map((x) => x[0]);
@@ -139,7 +140,7 @@ export function whoLabel(uid, nameOf, toolName) {
 export function timelineSentences(rows, { nameOf, toolName, fmtDate = isoDay } = {}) {
   const out = [];
   const list = rows || [];
-  const res = (r) => (r && RESOLUTION_LABEL[r] ? RESOLUTION_LABEL[r].toLowerCase() : str(r));
+  const res = (r) => (r && own(RESOLUTION_LABEL, r) ? RESOLUTION_LABEL[r].toLowerCase() : str(r));
   for (let i = 0; i < list.length; i++) {
     const r = list[i];
     if (!r) continue;

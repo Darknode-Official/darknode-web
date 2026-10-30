@@ -51,8 +51,10 @@ export function wins(incoming, existing, key) {
 export function mergeList(map, incoming, key) {
   const changed = [];
   for (const rec of incoming || []) {
-    if (!rec || typeof rec.id !== "string" || !rec.id) continue;
-    if (wins(rec, map[rec.id], key)) { map[rec.id] = rec; changed.push(rec.id); }
+    // "__proto__" would hit the prototype setter (re-parenting the map instead of storing a
+    // record) and an inherited name ("toString") would read a function as the existing record.
+    if (!rec || typeof rec.id !== "string" || !rec.id || rec.id === "__proto__") continue;
+    if (wins(rec, Object.prototype.hasOwnProperty.call(map, rec.id) ? map[rec.id] : undefined, key)) { map[rec.id] = rec; changed.push(rec.id); }
   }
   return changed;
 }
@@ -61,7 +63,7 @@ export function mergeList(map, incoming, key) {
 // care about present records.
 export function liveValues(map) {
   const out = [];
-  for (const id in map) { const r = map[id]; if (r && !r.deleted) out.push(r); }
+  for (const id of Object.keys(map)) { const r = map[id]; if (r && !r.deleted) out.push(r); }
   return out;
 }
 

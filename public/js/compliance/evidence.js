@@ -19,9 +19,9 @@ import {
   parseInput, importRows, findingsToCsv, summaryText, exampleDataset, scopedRows, bulkCreate, assignOwners, normalizeRecord,
   mergeRecords, addHistory, refsLabel, fwLabel, sha256Hex, icsEvents, buildPackage, registerCsv, suggestionEvidence,
   toDay, addMonths, addDays, catalogsHaveCrosswalk, normControlId,
-} from "./evidence-engine.js?v=20261029c";
+} from "./evidence-engine.js?v=20261029e";
 
-const ENGINE = engineUrl("./evidence-engine.js?v=20261029c", import.meta);
+const ENGINE = engineUrl("./evidence-engine.js?v=20261029e", import.meta);
 const P = "evd";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

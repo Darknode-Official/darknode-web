@@ -1,6 +1,6 @@
 // Unit tests for worker/checks.js — server-side cert-expiry monitor over CT logs.
 import { test, group, assert } from "../harness.mjs";
-import { certExpiryCheck, fetchCertRows, runCheck } from "../../worker/checks.js";
+import { certExpiryCheck, fetchCertRows, runCheck, hostOnly } from "../../worker/checks.js";
 
 const NOW = Date.parse("2026-10-17T00:00:00Z");
 const day = (n) => new Date(NOW + n * 86400000).toISOString();
@@ -71,6 +71,21 @@ group("checks/cert-expiry", () => {
     const rows = await fetchCertRows("e.test.darknode.ai", f);
     assert.equal(rows.length, 1);
     assert.equal(rows[0].not_after, day(9));
+  });
+
+  test("an EXPIRED-only domain is found through crt.sh's full history and raises a critical finding", async () => {
+    const f = async (url) => {
+      if (url.includes("crt.sh") && url.includes("exclude=expired")) return { ok: true, status: 200, json: async () => [] };
+      if (url.includes("crt.sh")) return { ok: true, status: 200, json: async () => [cert(day(-3))] };
+      return { ok: true, status: 200, json: async () => [] };
+    };
+    const out = await certExpiryCheck(["x.test.darknode.ai"], { fetch: f, now: NOW, warnDays: 21 });
+    assert.equal(out.length, 1);
+    assert.equal(out[0].severity, "critical");
+  });
+
+  test("hostOnly keeps the host after the last @", () => {
+    assert.equal(hostOnly("https://test@darknode.ai@example.com/x"), "example.com");
   });
 
   test("runCheck dispatches by type and is empty for unknown types", async () => {

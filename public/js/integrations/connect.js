@@ -2,7 +2,7 @@
 // Integrations that really run: a key is tested with a live call before the Deck
 // calls it connected, and connected security integrations become tools the
 // Assistant can use (each call goes through the Worker relay, /api/intel).
-import { PROVIDERS, findTool, checkArgs } from "/js/integrations/intel-core.js?v=20261029c";
+import { PROVIDERS, findTool, checkArgs } from "/js/integrations/intel-core.js?v=20261029e";
 
 const CONN_KEY = "dn_deck_connections_v1";
 const acct = (k) => { let u = null; try { u = window.__dnUid || null; } catch (_) {} return k + "__" + (!u ? "nouser" : /^(test|app-guest)-/.test(u) ? "guest" : "u_" + u); };

@@ -9,6 +9,7 @@ import { ingestToFindings } from "../public/js/ingest/formats.js";
 import { verifyIdToken } from "./vault-auth.js";
 import { isSuspended } from "./gate.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
+import { readCapped } from "./body-cap.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
 const QUEUE_CAP = 2000;           // max findings held awaiting a browser drain
@@ -183,8 +184,8 @@ export async function handleKeys(request, env, wid, json) {
   if (!WID.test(wid)) return json({ error: "Invalid workspace id" }, 400);
   if (request.method !== "POST") return json({ error: "POST only" }, 405);
   const a = await authWorkspace(request, env, wid, json); if (a.err) return a.err;
-  const text = await request.text();
-  if (text.length > 64 * 1024) return json({ error: "Request too large." }, 413);
+  const text = await readCapped(request, 64 * 1024);
+  if (text === null) return json({ error: "Request too large." }, 413);
   const stub = env.INGEST.get(env.INGEST.idFromName(wid));
   const res = await stub.fetch("https://ingest/", { method: "POST", body: text || "{}", headers: { "Content-Type": "application/json", "x-ing-uid": a.uid, "x-ing-role": a.role } });
   return json(await res.json(), res.status);
@@ -201,8 +202,8 @@ export async function handleIngest(request, env, wid, json, kind) {
   if (!key) return json({ error: "API key required (send header x-darknode-key or Authorization: Bearer dk_...)." }, 401);
   const isRead = kind === "findings";
   if (isRead ? request.method !== "GET" : request.method !== "POST") return json({ error: (isRead ? "GET" : "POST") + " only" }, 405);
-  const bodyText = isRead ? null : await request.text();
-  if (bodyText && bodyText.length > BODY_CAP) return json({ error: "Body too large." }, 413);
+  const bodyText = isRead ? null : await readCapped(request, BODY_CAP);
+  if (!isRead && bodyText === null) return json({ error: "Body too large." }, 413);
   const stub = env.INGEST.get(env.INGEST.idFromName(wid));
   const res = await stub.fetch("https://ingest/" + (isRead ? "findings" : ""), { method: isRead ? "GET" : "POST", body: bodyText, headers: { "x-ing-key": key, "Content-Type": "application/json" } });
   return json(await res.json(), res.status);

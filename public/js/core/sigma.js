@@ -115,7 +115,7 @@ function evalCondition(cond, selResults, selNames) {
   const ofPrefix = (word) => { // "all of foo*" / "N of them"
     const m = /^(all|\d+) of (.+)$/i.exec(word); if (!m) return false;
     const which = m[1].toLowerCase(), target = m[2].trim();
-    const names = target === "them" ? selNames : selNames.filter((n) => matchPrefix(n, target));
+    const names = target.toLowerCase() === "them" ? selNames : selNames.filter((n) => matchPrefix(n, target));
     if (!names.length) return false;
     const nMatch = names.filter((n) => !!selResults[n]).length;
     if (which === "all") return nMatch === names.length;
@@ -145,19 +145,27 @@ function matchPrefix(name, pattern) {
 function checkCondition(cond, names) {
   if (/\|/.test(cond)) return "Aggregation conditions (after |, such as count() or near) are not supported.";
   if (cond.replace(/\(|\)|\ball of them\b|\b\d+ of them\b|\ball of [A-Za-z0-9_*]+|\b\d+ of [A-Za-z0-9_*]+|\band\b|\bor\b|\bnot\b|[A-Za-z0-9_*]+/gi, "").trim()) return "The condition has characters it cannot read. Use selection names with and, or, not, parentheses, \"1 of name*\" or \"all of them\".";
-  let depth = 0;
+  // operand = an identifier or quantifier the parser can read next. Two operands in a row
+  // ("selection filter") or a dangling operator ("selection and", "x and not", "()") made the
+  // parser stop early or read a missing selection as false, so the rule ran as something else.
+  let depth = 0, operand = true;
+  const shape = "The condition is incomplete: join selections with and / or, and give every and, or, not and ( something to apply to.";
   for (const t of tokenizeCond(cond)) {
-    if (t === "(") depth++;
-    else if (t === ")") { if (--depth < 0) return "The condition has an unmatched \")\"."; }
-    else if (/^(and|or|not)$/i.test(t)) continue;
+    if (t === "(") { if (!operand) return shape; depth++; }
+    else if (t === ")") { if (operand) return shape; if (--depth < 0) return "The condition has an unmatched \")\"."; }
+    else if (/^not$/i.test(t)) { if (!operand) return shape; }
+    else if (/^(and|or)$/i.test(t)) { if (operand) return shape; operand = true; }
     else {
+      if (!operand) return shape;
+      operand = false;
       const m = /^(?:all|\d+) of (.+)$/i.exec(t), target = m ? m[1] : t;
       if (m && target.toLowerCase() === "them") continue;
       if (!m && t.includes("*")) return "\"" + t + "\" needs a quantifier, such as \"1 of " + t + "\" or \"all of " + t + "\".";
       if (!names.some((n) => matchPrefix(n, target))) return "The condition names \"" + target + "\", which is not a search identifier under detection.";
     }
   }
-  return depth ? "The condition has an unmatched \"(\"." : "";
+  if (depth) return "The condition has an unmatched \"(\".";
+  return operand ? shape : "";
 }
 
 /**

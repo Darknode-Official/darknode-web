@@ -217,7 +217,7 @@ function collect(items, uf, describe) {
   for (const members of groups.values()) {
     members.sort((a, b) => String(a.e.id).localeCompare(String(b.e.id))); // stable rep + output, independent of input order
     const ids = members.map((m) => m.e.id);
-    const bySource = {};
+    const bySource = Object.create(null); // keyed by untrusted source strings: "constructor"/"__proto__" must be real buckets, not inherited members
     for (const m of members) { const s = sourceOf(m.e) || "unknown"; (bySource[s] = bySource[s] || []).push(m.e.id); }
     for (const s of Object.keys(bySource)) bySource[s].sort((a, b) => String(a).localeCompare(String(b)));
     const sources = Object.keys(bySource).sort();

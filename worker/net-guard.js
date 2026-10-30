@@ -49,7 +49,7 @@ export function ipv4Private(host) {
 
 export function hostAllowed(u) {
   if (u.protocol !== "http:" && u.protocol !== "https:") return false;
-  const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, "").replace(/\.+$/, ""); // "localhost." is the same host
   if (!h || h === "localhost" || h.endsWith(".local") || h.endsWith(".internal") || h.endsWith(".localhost")) return false;
   // Test the canonical dotted form so numeric-encoded private addresses can't slip through.
   const dotted = normalizeIpv4(h) || h;

@@ -139,7 +139,9 @@ export const PROVIDERS = {
   },
 };
 
-export const toolsFor = (id) => (PROVIDERS[id] ? PROVIDERS[id].tools : []);
+// own keys only: "constructor" or "__proto__" must not resolve to Object.prototype members
+const prov = (id) => (Object.prototype.hasOwnProperty.call(PROVIDERS, id) ? PROVIDERS[id] : null);
+export const toolsFor = (id) => (prov(id) ? prov(id).tools : []);
 export function findTool(name) {
   for (const [pid, p] of Object.entries(PROVIDERS)) { const t = p.tools.find((x) => x.name === name); if (t) return { provider: pid, p, tool: t }; }
   return null;
@@ -160,7 +162,7 @@ export function checkArgs(tool, raw) {
 // The exact upstream request for a provider call (a tool, or the key test when
 // tool is null). Returns { url, headers } - the relay sends nothing else.
 export function buildRequest(providerId, toolName, rawArgs, key) {
-  const p = PROVIDERS[providerId];
+  const p = prov(providerId);
   if (!p) return { error: "unknown integration" };
   let spec;
   if (toolName) {
@@ -184,13 +186,13 @@ export function buildRequest(providerId, toolName, rawArgs, key) {
 
 // Did the key test pass?
 export function testPassed(providerId, status, data) {
-  const t = (PROVIDERS[providerId] || {}).test || {};
+  const t = (prov(providerId) || {}).test || {};
   return t.ok ? !!t.ok(status, data) : status >= 200 && status < 300;
 }
 
 // A plain-language reason for a failed call.
 export function statusReason(status, data) {
-  const m = data && typeof data === "object" ? data.message || data.error || (data.errors && data.errors[0] && (data.errors[0].detail || data.errors[0].title)) : "";
+  const m = data && typeof data === "object" ? data.message || (data.error && data.error.message) || data.error || (data.errors && data.errors[0] && (data.errors[0].detail || data.errors[0].title)) : "";
   const why = typeof m === "string" && m && m.length < 160 ? ": " + m : "";
   return baseReason(status) + why;
 }

@@ -3,15 +3,15 @@
 // input object scorePosture() grades; throws (with the reason, e.g. the name does not
 // resolve) when the host answers neither HTTP nor HTTPS.
 
-import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261029c";
-import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
+import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261029e";
+import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261029e";
 import { dnFetch } from "/js/net.js";
-import { registrableDomain } from "/js/dataprotect/phish-engine.js?v=20261029c";
+import { registrableDomain } from "/js/dataprotect/phish-engine.js?v=20261029e";
 
 export function cleanDomain(raw) {
   let d = String(raw || "").trim();
   // also accept what people paste: you@domain / mailto:, ?query or #hash without a path, a trailing root dot
-  d = d.replace(/^mailto:/i, "").replace(/^[a-z]+:\/\//i, "").replace(/[/?#].*$/, "").replace(/^[^@]*@/, "").replace(/:\d+$/, "").replace(/\.$/, "").replace(/^www\./i, "");
+  d = d.replace(/^mailto:/i, "").replace(/^[a-z]+:\/\//i, "").replace(/[/?#].*$/, "").replace(/^.*@/, "").replace(/:\d+$/, "").replace(/\.$/, "").replace(/^www\./i, "");
   if (/[^\x00-\x7f]/.test(d)) { try { d = new URL("http://" + d).hostname; } catch (_) {} } // international names -> punycode (xn--)
   return d.toLowerCase();
 }
@@ -19,11 +19,18 @@ export const validDomain = (d) => /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z
 
 // Public DoH TXT (Cloudflare, Google fallback). Returns array of TXT strings.
 export async function dohTXT(name) {
-  const decode = (j) => ((j && j.Answer) || []).filter((a) => a.type === 16 || a.type === "TXT")
-    .map((a) => String(a.data || "").replace(/^"|"$/g, "").replace(/"\s*"/g, ""));
+  return dohQuery(name, "TXT", 16, (d) => d.replace(/^"|"$/g, "").replace(/"\s*"/g, ""));
+}
+// MX exchanges, lowercased without the trailing dot; a null MX (RFC 7505, "0 .") comes back as "".
+export async function dohMX(name) {
+  return dohQuery(name, "MX", 15, (d) => d.trim().split(/\s+/).pop().toLowerCase().replace(/\.$/, ""));
+}
+async function dohQuery(name, type, code, map) {
+  const decode = (j) => ((j && j.Answer) || []).filter((a) => a.type === code || a.type === type)
+    .map((a) => map(String(a.data || "")));
   const urls = [
-    "https://cloudflare-dns.com/dns-query?type=TXT&name=" + encodeURIComponent(name),
-    "https://dns.google/resolve?type=TXT&name=" + encodeURIComponent(name),
+    "https://cloudflare-dns.com/dns-query?type=" + type + "&name=" + encodeURIComponent(name),
+    "https://dns.google/resolve?type=" + type + "&name=" + encodeURIComponent(name),
   ];
   for (const u of urls) {
     try {
@@ -78,8 +85,9 @@ async function probeDkim(domain) {
   const out = await Promise.all(DKIM_SELECTORS.map(async (selector) => {
     try {
       const txts = await dohTXT(selector + "._domainkey." + domain);
-      const present = txts.some((t) => /v\s*=\s*dkim1|(^|;)\s*k\s*=|(^|;)\s*p\s*=/i.test(String(t)));
-      return { selector, present };
+      const recs = txts.filter((t) => /v\s*=\s*dkim1|(^|;)\s*k\s*=|(^|;)\s*p\s*=/i.test(String(t)));
+      // an empty p= is a revoked key (RFC 6376 3.6.1): it signs nothing
+      return { selector, present: recs.length > 0, revoked: recs.length > 0 && recs.every((t) => /(^|;)\s*p\s*=\s*(;|$)/i.test(String(t))) };
     } catch (_) { return { selector, present: false }; }
   }));
   return out;
@@ -100,7 +108,7 @@ async function fetchMtaSts(domain) {
 }
 
 export async function collectPosture(domain) {
-  const [httpsP, httpP, spfP, dmarcP, certP, stxtP, dkimP, mtaP, tlsRptP] = await Promise.allSettled([
+  const [httpsP, httpP, spfP, dmarcP, certP, stxtP, dkimP, mtaP, tlsRptP, mxP] = await Promise.allSettled([
     dnFetch("https://" + domain, { timeout: 14000 }),
     dnFetch("http://" + domain, { timeout: 12000 }),
     dohTXT(domain),
@@ -110,6 +118,7 @@ export async function collectPosture(domain) {
     probeDkim(domain),
     fetchMtaSts(domain),
     dohTXT("_smtp._tls." + domain),
+    dohMX(domain),
   ]);
   const val = (p) => (p.status === "fulfilled" ? p.value : null);
   const https = val(httpsP), http = val(httpP);
@@ -136,6 +145,7 @@ export async function collectPosture(domain) {
     dkimSelectors: val(dkimP) || [],
     mtaStsTxts: (val(mtaP) && val(mtaP).txts) || [], mtaStsPolicy: (val(mtaP) && val(mtaP).policy) || null,
     tlsRptTxts: val(tlsRptP) || [],
+    mxHosts: val(mxP) || Object.assign([], { failed: true }),
     cert: val(certP) && !val(certP).unreachable ? val(certP) : null,
     certUnreachable: certP.status === "rejected" || !!(val(certP) && val(certP).unreachable),
     securityTxt: val(stxtP) || { present: false },

@@ -6,9 +6,9 @@ import { runInWorker, engineUrl } from "../ingest/worker.js";
 import { summarize } from "../core/sink-map.js";
 import { attachSinkButton } from "../core/sink.js";
 import { download, toJson, fileStamp } from "../core/export.js";
-import { DEFAULTS, TOOL_ID, RULES, PLATFORM_LABEL, SEVERITIES, classify, findingsToCsv, toSarif, toTxt, exampleDataset } from "./iacscan-engine.js?v=20261029c";
+import { DEFAULTS, TOOL_ID, RULES, PLATFORM_LABEL, SEVERITIES, classify, findingsToCsv, toSarif, toTxt, exampleDataset } from "./iacscan-engine.js?v=20261029e";
 
-const ENGINE = engineUrl("./iacscan-engine.js?v=20261029c", import.meta);
+const ENGINE = engineUrl("./iacscan-engine.js?v=20261029e", import.meta);
 const P = "iac";
 const MAX_FILES = 500, MAX_BYTES = 256 * 1024 * 1024;
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t); } catch (_) {} };

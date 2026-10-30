@@ -310,3 +310,17 @@ group("dlp: slash-joined words are not secrets", () => {
     assert.equal(ent("k=Zm9vYmFy/Qk1xZ3J0eVhUa2/9wQW1zN2Rk").length, 1);
   });
 });
+
+group("dlp: version strings are not IP addresses", () => {
+  const ips = (t) => scan(t).findings.filter((f) => f.id === "ipv4").length;
+  test("a version or build number is not reported, even without the private-IP option", () => {
+    assert.equal(ips("version 1.2.3.4 released"), 0);
+    assert.equal(ips("build 10.0.19045.1"), 0);
+    assert.equal(ips("see 1.2.3.4.5"), 0);
+  });
+  test("an address after a sentence's full stop or before punctuation is still reported", () => {
+    assert.equal(ips("Done. 8.8.8.8 answered"), 1);
+    assert.equal(ips("Server at 8.8.8.8."), 1);
+    assert.equal(ips("host 10.1.2.3 here"), 1);
+  });
+});

@@ -36,6 +36,7 @@ function parseV6(str) {
   let s = String(str || "").trim().replace(/%.*$/, "");
   if (!s) return null;
   if (s.indexOf("::") !== s.lastIndexOf("::")) return null;
+  if (s.includes(".") && !/(^|:)(\d{1,3}\.){3}\d{1,3}$/.test(s)) return null; // dotted IPv4 only as the last 32 bits
   let head, tail;
   if (s.includes("::")) { const p = s.split("::"); head = p[0] ? p[0].split(":") : []; tail = p[1] ? p[1].split(":") : []; }
   else { head = s.split(":"); tail = []; }
@@ -43,7 +44,7 @@ function parseV6(str) {
     const out = [];
     for (const p of arr) {
       if (p === "") return null;
-      if (p.includes(".")) { const o = p.split("."); if (o.length !== 4) return null; const b = o.map((x) => parseInt(x, 10)); if (b.some((x) => isNaN(x) || x < 0 || x > 255)) return null; out.push((b[0] << 8) | b[1]); out.push((b[2] << 8) | b[3]); }
+      if (p.includes(".")) { const b = parseV4(p); if (!b) return null; out.push((b[0] << 8) | b[1]); out.push((b[2] << 8) | b[3]); }
       else { if (!/^[0-9a-fA-F]{1,4}$/.test(p)) return null; out.push(parseInt(p, 16)); }
     }
     return out;
@@ -54,6 +55,13 @@ function parseV6(str) {
   if (s.includes("::")) { if (total > 7) return null; return [...h, ...new Array(8 - total).fill(0), ...t]; }
   if (total !== 8) return null;
   return h;
+}
+
+// DNS names on the wire are ASCII: an IDN (münchen.de) goes out as its punycode A-label (xn--mnchen-3ya.de).
+function toAsciiName(v) {
+  const name = String(v || "").trim().replace(/\.$/, "");
+  if (!/[^\x00-\x7f]/.test(name)) return name;
+  try { return new URL("http://" + name).hostname; } catch (e) { return { error: "Could not convert this internationalized name to its punycode (xn--) form." }; }
 }
 
 // ---- internet checksum (RFC 1071) ----
@@ -281,6 +289,7 @@ export const TOOLS = [
           let lab = ""; for (let k = 0; k < len; k++) lab += String.fromCharCode(u[pos + 1 + k]);
           labels.push(lab); pos += 1 + len;
         }
+        if (safety > 128) return null; // compression-pointer loop
         return { name: labels.join(".") || "<root>", consumed };
       }
       const out = [
@@ -304,7 +313,8 @@ export const TOOLS = [
     inputs: [{ k: "val", label: "Flags value (hex or decimal)", type: "text", placeholder: "0x8180" }],
     run(v) {
       if (!v.val) return "";
-      const s = String(v.val).trim();
+      const s = String(v.val).trim().replace(/^([0-9a-f]{2})\s+([0-9a-f]{2})$/i, "0x$1$2"); // "81 80" copied from a hex dump
+      if (!/^(0x[0-9a-f]+|\d+|[0-9a-f]{4})$/i.test(s)) return { error: "Enter a 16-bit value (0-65535 or 0x0000-0xffff)." };
       const fl = /^0x/i.test(s) ? parseInt(s, 16) : /^[0-9a-f]{4}$/i.test(s) && !/^\d+$/.test(s) ? parseInt(s, 16) : parseInt(s, 10);
       if (isNaN(fl) || fl < 0 || fl > 0xffff) return { error: "Enter a 16-bit value (0-65535 or 0x0000-0xffff)." };
       const OP = { 0: "QUERY", 1: "IQUERY", 2: "STATUS", 4: "NOTIFY", 5: "UPDATE", 6: "DSO" };
@@ -323,19 +333,21 @@ export const TOOLS = [
         if (pos >= u.length) return { error: "Ran off the end — missing a terminating 0x00 byte." };
         const len = u[pos];
         if (len === 0) break;
-        if ((len & 0xc0) === 0xc0) { note = `\n(compression pointer 0x${((len & 0x3f) << 8 | (u[pos + 1] || 0)).toString(16)} — resolved only within these bytes)`; const ptr = ((len & 0x3f) << 8) | u[pos + 1]; pos = ptr; continue; }
+        if ((len & 0xc0) === 0xc0) { if (pos + 1 >= u.length) return { error: "Compression pointer is cut off (needs 2 bytes)." }; note = `\n(compression pointer 0x${((len & 0x3f) << 8 | (u[pos + 1] || 0)).toString(16)} — resolved only within these bytes)`; const ptr = ((len & 0x3f) << 8) | u[pos + 1]; pos = ptr; continue; }
         if ((len & 0xc0) !== 0) return { error: "Invalid label length bits." };
         if (pos + 1 + len > u.length) return { error: "Label length runs past the data." };
         let lab = ""; for (let k = 0; k < len; k++) lab += String.fromCharCode(u[pos + 1 + k]);
         labels.push(lab); pos += 1 + len;
       }
+      if (safety > 128) return { error: "Compression pointers loop back on themselves - malformed name." };
       return `${labels.join(".") || "<root>"}${note}`;
     } },
 
   { id: "np-dns-name-encode", name: "DNS Name Encoder", cat: "netproto", desc: "Encode a domain name into DNS wire format: each label prefixed by its length byte, ended with 0x00. Shows the hex bytes.", tags: ["dns", "name", "labels", "wire", "encode"],
     inputs: [{ k: "name", label: "Domain name", type: "text", placeholder: "www.example.com" }],
     run(v) {
-      const name = String(v.name || "").trim().replace(/\.$/, "");
+      const name = toAsciiName(v.name);
+      if (name && name.error) return name;
       if (!name) return "";
       const labels = name.split(".");
       const bytes = [];
@@ -353,7 +365,8 @@ export const TOOLS = [
       { k: "rd", label: "Recursion desired", type: "checkbox", value: true },
     ],
     run(v) {
-      const name = String(v.name || "").trim().replace(/\.$/, "");
+      const name = toAsciiName(v.name);
+      if (name && name.error) return name;
       if (!name) return "";
       const qtype = DNS_TYPE_BY_NAME[v.type] || 1;
       const out = [];
@@ -522,7 +535,8 @@ export const TOOLS = [
     inputs: [{ k: "hex", label: "IPv4 header bytes (hex)", type: "textarea", rows: 2, placeholder: "4500 003c 1c46 4000 4006 0000 c0a80001 c0a800c7" }, { k: "mode", label: "Mode", type: "select", opts: ["Compute", "Verify"], value: "Compute" }],
     run(v) {
       if (!v.hex) return "";
-      const u = hexBytes(v.hex); if (u.err) return { error: u.err };
+      let u = hexBytes(v.hex); if (u.err) return { error: u.err };
+      if ((u[0] >> 4) === 4 && (u[0] & 0xf) >= 5 && (u[0] & 0xf) * 4 < u.length) u = u.slice(0, (u[0] & 0xf) * 4); // checksum covers the header only (IHL), not a pasted payload
       if (u.length < 20 || u.length % 4) return { error: "An IPv4 header is 20+ bytes in 4-byte words." };
       if (v.mode === "Verify") { const fold = foldSum(u, 0, u.length); return fold === 0xffff ? `Valid: the ones-complement sum folds to 0xFFFF (checksum OK).` : `INVALID: sum folds to ${hx(fold, 4)} (should be 0xFFFF). Stored checksum does not match.`; }
       const c = Uint8Array.from(u); c[10] = 0; c[11] = 0;
@@ -661,7 +675,7 @@ export const TOOLS = [
     inputs: [{ k: "val", label: "Community (ASN:value, N:N:N, or 32-bit int)", type: "text", placeholder: "65001:100" }],
     run(v) {
       const s = String(v.val || "").trim(); if (!s) return "";
-      const WK = { 0xffffff01: "NO_EXPORT", 0xffffff02: "NO_ADVERTISE", 0xffffff03: "NO_EXPORT_SUBCONFED (LOCAL_AS)", 0xffffff04: "NO_PEER", 0xffff0000: "planned-shut (RFC 8326)", 0xffff029a: "BLACKHOLE" };
+      const WK = { 0xffffff01: "NO_EXPORT", 0xffffff02: "NO_ADVERTISE", 0xffffff03: "NO_EXPORT_SUBCONFED (LOCAL_AS)", 0xffffff04: "NO_PEER", 0xffff0000: "GRACEFUL_SHUTDOWN (RFC 8326)", 0xffff029a: "BLACKHOLE" };
       if (!/^\d+(:\d+){0,2}$/.test(s)) return { error: "Enter ASN:value, N:N:N, or a 32-bit integer." };
       const parts = s.split(":");
       if (parts.length === 3) { const n = parts.map((x) => parseInt(x, 10)); if (n.some((x) => isNaN(x) || x < 0 || x > 4294967295)) return { error: "Large community is three 32-bit numbers ASN:func:param." }; return `Large community: ${n[0]}:${n[1]}:${n[2]} (12 bytes)`; }
@@ -999,8 +1013,8 @@ export const TOOLS = [
       if (v.dst) parts.push(`${ipf(v.dst)}.dst == ${v.dst.trim()}`);
       if (v.port !== "" && v.port != null) {
         const p = parseInt(v.port, 10); if (isNaN(p) || p < 0 || p > 65535) return { error: "Port must be 0-65535." };
-        const l4 = (v.proto === "udp") ? "udp" : "tcp";
-        parts.push(`${l4}.port == ${p}`);
+        const l4 = v.proto === "udp" ? "udp" : ["tcp", "http", "tls"].includes(v.proto) ? "tcp" : null; // DNS and "any" ride UDP too
+        parts.push(l4 ? `${l4}.port == ${p}` : `(tcp.port == ${p} || udp.port == ${p})`);
       }
       if (v.extra && v.extra.trim()) parts.push(`(${v.extra.trim()})`);
       if (!parts.length) return { error: "Fill at least one field." };

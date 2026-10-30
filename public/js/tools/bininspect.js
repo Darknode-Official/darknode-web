@@ -57,7 +57,7 @@ const isPrintable = (b) => b === 9 || b === 10 || b === 13 || (b >= 0x20 && b <=
 function decodeFlags(map, val) {
   const set = [], extra = [];
   let covered = 0;
-  for (const [bit, name] of map) if ((val & bit) === bit && bit !== 0) { set.push(name + " (" + hx(bit) + ")"); covered |= bit; }
+  for (const [bit, name] of map) if (((val & bit) >>> 0) === bit && bit !== 0) { set.push(name + " (" + hx(bit) + ")"); covered |= bit; }
   const unknown = (val & ~covered) >>> 0;
   if (unknown) extra.push("unrecognised bits: " + hx(unknown));
   return { set, extra };
@@ -392,7 +392,7 @@ export const TOOLS = [
       if (!secs.length) return "";
       const n = pint(v.value); if (n == null) return "";
       if (v.dir.startsWith("RVA")) {
-        for (const s of secs) if (n >= s.va && n < s.va + Math.max(s.vs, s.rs)) return "RVA " + hx(n) + "  in section " + s.name + "\n-> file offset " + hx(s.rp + (n - s.va));
+        for (const s of secs) if (n >= s.va && n < s.va + Math.max(s.vs, s.rs)) return n - s.va >= s.rs ? "RVA " + hx(n) + "  in section " + s.name + "\n-> no file offset: it is past the section's raw data (zero-filled in memory, not stored in the file)" : "RVA " + hx(n) + "  in section " + s.name + "\n-> file offset " + hx(s.rp + (n - s.va));
         if (n < secs[0].va) return "RVA " + hx(n) + " is inside the headers (offset == RVA): " + hx(n);
         return { error: "RVA " + hx(n) + " is not inside any listed section." };
       }
@@ -571,6 +571,7 @@ export const TOOLS = [
         if (v.signed && n >= half) n -= mod;
         return "0x" + (n < 0n ? (n + mod) : n).toString(16) + " = " + n.toString() + (v.signed ? " (signed)" : " (unsigned)");
       }
+      if (!S(v.val).trim()) return "";
       let n; try { n = BigInt(S(v.val).trim()); } catch (e) { return { error: "Not a decimal integer." }; }
       let m = ((n % mod) + mod) % mod;
       return "0x" + m.toString(16).padStart(bits / 4, "0") + "  (" + bits + "-bit)";
@@ -598,7 +599,7 @@ export const TOOLS = [
       const out = [];
       if (v.mode === "ASCII" || v.mode === "Both") {
         let cur = "", start = 0;
-        for (let i = 0; i <= u.length; i++) { const b = u[i]; if (b !== undefined && b >= 0x20 && b <= 0x7e) { if (!cur) start = i; cur += String.fromCharCode(b); } else { if (cur.length >= min) out.push(hx(start, 8) + "  " + cur); cur = ""; } }
+        for (let i = 0; i <= u.length; i++) { const b = u[i]; if (b !== undefined && ((b >= 0x20 && b <= 0x7e) || b === 9)) { if (!cur) start = i; cur += String.fromCharCode(b); } else { if (cur.length >= min) out.push(hx(start, 8) + "  " + cur); cur = ""; } }
       }
       if (v.mode === "Wide (UTF-16LE)" || v.mode === "Both") {
         let cur = "", start = 0;
@@ -664,7 +665,7 @@ export const TOOLS = [
       for (let i = 0; i < 10; i++) {
         let s = cur; if (v.plus) s = s.replace(/\+/g, " ");
         if (!/%[0-9a-f]{2}/i.test(s)) break;
-        let d; try { d = decodeURIComponent(s); } catch (e) { break; }
+        let d; try { d = decodeURIComponent(s); } catch (e) { d = s.replace(/(?:%[0-9a-f]{2})+/gi, (m) => { try { return decodeURIComponent(m); } catch (_) { return m; } }); }
         if (d === cur) break; cur = d; layers++;
       }
       return "decoded (" + layers + " layer" + (layers === 1 ? "" : "s") + "):\n" + cur;
@@ -682,7 +683,7 @@ export const TOOLS = [
       }
       const nums = s.split(/[,\s]+/).map((x) => x.trim()).filter(Boolean);
       if (nums.length && nums.every((n) => /^(0x)?[0-9a-f]+$/i.test(n))) {
-        const hexish = nums.some((n) => /^0x/i.test(n));
+        const hexish = nums.some((n) => /^0x|[a-f]/i.test(n));
         let out = "";
         for (const n of nums) { const code = /^0x/i.test(n) ? parseInt(n, 16) : (hexish ? parseInt(n, 16) : parseInt(n, 10)); if (code >= 0 && code <= 0x10ffff) out += String.fromCodePoint(code); }
         return out;
@@ -860,7 +861,7 @@ export const TOOLS = [
     run(v) {
       const q = S(v.q).trim().toLowerCase().replace(/^0x/, "");
       if (!q) return X86_OPCODES.map((r) => r[0].padEnd(7) + "  " + r[1]).join("\n");
-      const hits = X86_OPCODES.filter((r) => r[0].toLowerCase().includes(q) || r[1].toLowerCase().includes(q));
+      const hits = X86_OPCODES.filter((r) => r[0].toLowerCase().replace(/\s/g, "").includes(q.replace(/\s/g, "")) || r[1].toLowerCase().includes(q));
       return hits.length ? hits.map((r) => r[0].padEnd(7) + "  " + r[1]).join("\n") : { error: "No opcode entry matching \"" + S(v.q).trim() + "\"." };
     } },
 

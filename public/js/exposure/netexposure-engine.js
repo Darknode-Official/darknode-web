@@ -468,12 +468,25 @@ export function parseVulners(output, obj) {
 // Normalised records
 // ---------------------------------------------------------------------------
 const hnames = (host) => uniq(host.hostnames.map((h) => h.name)).join(" ");
+// One spelling per IPv6 address (RFC 5952) so "2001:DB8:0::1" in one scan and "2001:db8::1" in
+// the next are the same host, not a disappeared host plus a new one.
+function canonIp(ip) {
+  const s = String(ip == null ? "" : ip).trim();
+  if (!s.includes(":")) return s;
+  const p = ipToInt(s);
+  if (!p || p.v !== 6) return s.toLowerCase();
+  const g = [];
+  for (let i = 7; i >= 0; i--) g.push(Number((p.n >> BigInt(i * 16)) & 0xffffn).toString(16));
+  let best = -1, len = 0;
+  for (let i = 0; i < 8;) { if (g[i] !== "0") { i++; continue; } let j = i; while (j < 8 && g[j] === "0") j++; if (j - i > len && j - i >= 2) { best = i; len = j - i; } i = j; }
+  return best < 0 ? g.join(":") : g.slice(0, best).join(":") + "::" + g.slice(best + len).join(":");
+}
 function newHost(ip) {
   return { ip, hostnames: [], status: "up", os: "", osAccuracy: null, smbOs: "", nessusOs: "", mac: "", recs: new Map(), hostScripts: {}, pendingHostFindings: [] };
 }
 function newRec(ip, port, proto) {
   return {
-    ip, port, proto: String(proto || "tcp").toLowerCase(), state: "open", reason: "", service: "", serviceGuess: false, product: "", version: "", extrainfo: "", tunnel: "",
+    ip: canonIp(ip), port, proto: String(proto || "tcp").toLowerCase(), state: "open", reason: "", service: "", serviceGuess: false, product: "", version: "", extrainfo: "", tunnel: "",
     cpe: [], tls: { versions: [], grade: "", weakCiphers: [], cert: null }, banners: { title: "", server: "", poweredBy: "", ssh: "", raw: "" },
     ssh: null, scriptFindings: [], scripts: {}, vulns: [],
   };
@@ -553,6 +566,7 @@ function putRec(host, rec) {
   host.recs.set(key, prev ? mergeRec(prev, rec) : rec);
 }
 function getHost(scan, ip) {
+  ip = canonIp(ip);
   let h = scan.hosts.get(ip);
   if (!h) { h = newHost(ip); scan.hosts.set(ip, h); }
   return h;
@@ -650,7 +664,7 @@ export function parseNmapXml(text, file = "nmap.xml", ctx) {
     const a = addrs.find((x) => /ipv[46]/.test(x.attrs.addrtype || "")) || addrs[0];
     if (!a) continue;
     const ip = a.attrs.addr;
-    if (st && st.attrs.state && st.attrs.state !== "up") { scan.down.add(ip); continue; }
+    if (st && st.attrs.state && st.attrs.state !== "up") { scan.down.add(canonIp(ip)); continue; }
     const host = getHost(scan, ip);
     const mac = addrs.find((x) => x.attrs.addrtype === "mac");
     if (mac) host.mac = mac.attrs.addr + (mac.attrs.vendor ? " (" + mac.attrs.vendor + ")" : "");
@@ -730,7 +744,7 @@ export function parseNmapGrep(text, file = "nmap.gnmap", ctx) {
     const ip = m[1];
     const fields = {};
     for (const f of m[3].split("\t")) { const i = f.indexOf(": "); if (i > 0) fields[f.slice(0, i).trim()] = f.slice(i + 2); }
-    if (fields.Status && !/^Up/i.test(fields.Status)) { scan.down.add(ip); continue; }
+    if (fields.Status && !/^Up/i.test(fields.Status)) { scan.down.add(canonIp(ip)); continue; }
     const host = getHost(scan, ip);
     if (m[2]) addHostname(host, m[2], "PTR");
     if (fields.OS) host.os = fields.OS.trim();

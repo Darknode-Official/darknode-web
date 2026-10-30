@@ -49,20 +49,22 @@ export function findingKey(finding) {
 // Keeps only stable keys + severity + kind + a short label/path for the resolved
 // list, plus the target ref and timestamp. No secret values are ever stored.
 export function serializeBaseline(findings, meta = {}) {
-  const seen = new Set();
+  const seen = new Map();
   const items = [];
   for (const f of findings || []) {
     const k = findingKey(f);
-    if (seen.has(k)) continue;
-    seen.add(k);
-    items.push({
+    if (seen.has(k)) { seen.get(k).n++; continue; } // identical copies share a key: count them
+    const it = {
       k,
+      n: 1,
       sev: f.sev || "low",
       kind: f.kind || "code",
       // A human label for the FIXED list (file-anchored location is gone by then).
       label: String(f.kind === "dep" ? ((f.pkg || "") + " " + (f.version || "") + ": " + (f.title || f.advisory || "")) : (f.title || f.ruleId || "")).slice(0, 180),
       path: String(f.path || ""),
-    });
+    };
+    seen.set(k, it);
+    items.push(it);
   }
   return {
     v: 1,
@@ -82,21 +84,32 @@ export function baselineKeySet(baseline) {
   return new Set(items.map((it) => it && it.k).filter(Boolean));
 }
 
-// Classify current findings against a baseline key set.
+// Key -> how many copies the baseline holds (items saved before counts existed count 1).
+export function baselineKeyCounts(baseline) {
+  const items = (baseline && Array.isArray(baseline.items)) ? baseline.items : [];
+  const m = new Map();
+  for (const it of items) if (it && it.k) m.set(it.k, (m.get(it.k) || 0) + (Number(it.n) > 0 ? Number(it.n) : 1));
+  return m;
+}
+
+// Classify current findings against a baseline key set, or a key -> count Map
+// (baselineKeyCounts). With counts, a second identical copy pasted into a file is NEW
+// and removing one of two copies lists that key as fixed; a Set treats copies as one.
 //   newFindings — current findings whose key is not in the baseline
 //   unchanged   — current findings whose key is in the baseline
 //   fixedKeys   — baseline keys with no current finding (resolved; no file location)
 export function diffFindings(baselineKeys, currentFindings) {
-  const base = baselineKeys instanceof Set ? baselineKeys : new Set(baselineKeys || []);
+  const base = baselineKeys instanceof Map ? baselineKeys
+    : new Map([...(baselineKeys instanceof Set ? baselineKeys : new Set(baselineKeys || []))].map((k) => [k, Infinity]));
   const newFindings = [], unchanged = [];
-  const present = new Set();
+  const present = new Map();
   for (const f of currentFindings || []) {
-    const k = findingKey(f);
-    present.add(k);
-    if (base.has(k)) unchanged.push(f); else newFindings.push(f);
+    const k = findingKey(f), c = (present.get(k) || 0) + 1;
+    present.set(k, c);
+    if (c <= (base.get(k) || 0)) unchanged.push(f); else newFindings.push(f);
   }
   const fixedKeys = [];
-  for (const k of base) if (!present.has(k)) fixedKeys.push(k);
+  for (const [k, n] of base) if ((present.get(k) || 0) < (n === Infinity ? 1 : n)) fixedKeys.push(k);
   return { newFindings, unchanged, fixedKeys };
 }
 

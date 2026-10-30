@@ -194,13 +194,16 @@ export function normStatus(s) {
 export function toDay(v) {
   const s = str(v).trim();
   if (!s) return null;
-  let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  // ISO date or datetime: the calendar day as written (no time-zone shift, no 30 Feb rollover).
+  let m = /^(\d{4})-(\d{2})-(\d{2})(?:$|[T ]\d)/.exec(s);
   if (m) return valid(+m[1], +m[2], +m[3]);
   m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
   if (m) return +m[1] > 12 ? valid(+m[3], +m[2], +m[1]) : valid(+m[3], +m[1], +m[2]); // 25/12/2024 can only be day-first
   const t = Date.parse(s);
   if (!Number.isFinite(t)) return null;
-  return new Date(t).toISOString().slice(0, 10);
+  // Date.parse reads zone-less text ("March 5, 2024") as local time: read it back in local time too.
+  const dt = new Date(t);
+  return /(z|gmt|utc|[+-]\d\d:?\d\d)\s*$/i.test(s) ? dt.toISOString().slice(0, 10) : valid(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
 }
 function valid(y, mo, d) {
   if (mo < 1 || mo > 12 || d < 1 || d > daysInMonth(y, mo)) return null;

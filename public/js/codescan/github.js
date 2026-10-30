@@ -69,6 +69,9 @@ export async function api(path, { raw = false, method = "GET", body } = {}) {
   if (r.status === 401) { token = ""; throw fail("GitHub rejected the session. Connect again."); }
   if (r.status === 403 || r.status === 429) {
     if (rate.remaining === 0) throw fail("GitHub API rate limit reached. It resets at " + new Date(rate.reset).toLocaleTimeString() + (token ? "." : ". Connecting GitHub raises the limit from 60 to 5,000 requests an hour."), { rateLimited: true });
+    // Secondary (abuse) limit: quota left, but GitHub answers 429 or 403 with Retry-After.
+    const wait = +r.headers.get("retry-after") || 0;
+    if (r.status === 429 || wait) throw fail("GitHub is throttling requests (secondary rate limit). Wait " + (wait || 60) + " seconds and try again.", { rateLimited: true, retryAfter: wait || 60 });
     throw fail("GitHub refused the request (HTTP " + r.status + "). Your organization may need to approve the Darknode app.");
   }
   if (!r.ok) throw fail("GitHub returned HTTP " + r.status + ".");
@@ -89,7 +92,7 @@ export async function listRepos() {
 
 // Accept "owner/repo", a github.com URL, or ".../tree/<branch>".
 export function parseRepo(input) {
-  const s = String(input || "").trim().replace(/\.git$/, "").replace(/\/+$/, "");
+  const s = String(input || "").trim().replace(/\/+$/, "").replace(/\.git$/, ""); // slash first: ".../r.git/" is still repo r
   const m = s.match(/^(?:https?:\/\/)?(?:www\.)?github\.com\/([^/\s]+)\/([^/\s#?]+)(?:\/tree\/([^\s#?]+))?/i) || s.match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
   return m ? { owner: m[1], repo: m[2], branch: m[3] || "" } : null;
 }
@@ -185,6 +188,7 @@ export async function osvVuln(id) {
   if (vulnCache.has(id)) return vulnCache.get(id);
   const p = fetch("https://api.osv.dev/v1/vulns/" + encodeURIComponent(id)).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   vulnCache.set(id, p);
+  p.then((v) => { if (!v && vulnCache.get(id) === p) vulnCache.delete(id); }); // a failed fetch is retried next time, not cached as "no details"
   return p;
 }
 

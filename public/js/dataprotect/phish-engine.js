@@ -73,6 +73,9 @@ const TWO_LEVEL = new Set([
   "co.id", "or.id", "web.id", "go.id", "ac.id",
   "com.vn", "net.vn", "org.vn", "gov.vn", "edu.vn",
   "com.sa", "net.sa", "org.sa", "gov.sa", "edu.sa",
+  // Africa / Middle East / South Asia / rest of Latin America / Austria / Thailand
+  "com.eg", "com.ng", "co.ke", "co.tz", "co.ug", "com.gh", "co.ae", "com.qa", "com.kw", "com.pk", "com.bd", "com.np", "com.lk",
+  "co.th", "in.th", "ac.th", "go.th", "or.th", "co.at", "or.at", "com.pe", "com.ve", "co.ve", "com.ec", "com.uy", "com.bo", "com.py",
 ]);
 
 // Known URL-shortener hosts (unfurl recommended).
@@ -156,6 +159,17 @@ export function analyzeUrl(raw) {
   const out = { input: raw, host: "", scheme: "", reasons: [], severity: "info" };
   let u;
   let s = refangText(String(raw || "").trim()); // a defanged IOC (hxxps://evil[.]com) is analysed as the link it stands for
+  // links that are not web pages: these used to fall through to "Unparseable URL" (medium)
+  const odd = /^\s*(javascript|vbscript|data|file):/i.exec(s);
+  if (odd) {
+    const k = odd[1].toLowerCase();
+    out.scheme = k;
+    out.reasons.push(k === "data" ? { w: 5, t: "The whole page is packed into the link itself (data: URL), a way to hide a phishing page from link scanners." }
+      : k === "file" ? { w: 3, t: "The link opens a file on your computer or a network share, not a web page." }
+      : { w: 7, t: "The link runs script code (" + k + ":) when clicked instead of opening a page." });
+    out.severity = sevFromWeight(sumWeight(out.reasons));
+    return out;
+  }
   const hadScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
   if (!hadScheme) s = "http://" + s; // tolerate scheme-less
   try { u = new URL(s); } catch (_) { out.reasons.push({ w: 3, t: "Unparseable URL." }); out.severity = "medium"; return out; }
@@ -202,15 +216,19 @@ export function analyzeUrl(raw) {
   if (fakeAt > 0) out.reasons.push({ w: 2, t: `The address reads as if it ends at "${labels.slice(0, fakeAt + 1).join(".")}", but the real domain is "${reg}".` });
   if (look.homograph) out.reasons.push({ w: 4, t: `Its letters imitate "${look.brand}": "${look.shown}" reads as "${look.reads}".` });
   else if (look.impersonation) out.reasons.push({ w: 4, t: `Brand "${look.brand}" appears in a subdomain but the registered domain is "${reg}".` });
+  else if (look.leet) out.reasons.push({ w: 4, t: `"${reg}" spells "${look.brand}" with digits in place of letters, a deliberate lookalike.` });
   else if (look.inName) out.reasons.push({ w: 2, t: `The domain "${reg}" has the brand name "${look.brand}" in it but is a different domain from the brand's own; check who owns it.` });
   else if (look.oddTld) out.reasons.push({ w: 3, t: `"${reg}" uses the brand name "${look.brand}" on .${look.oddTld}, which is not where that brand's sites live (they use .com or a country domain); check who owns it.` });
   else if (look.near) out.reasons.push({ w: 3, t: `Domain stem "${look.stem}" is a near-miss (edit distance ${look.distance}) of brand "${look.brand}".` });
 
+  // a brand's own address in the path or query (evil.example/https://paypal.com/) makes the link read as the brand's
+  if (!look.exact) { const inPath = BRANDS.find((b) => b.length >= 4 && new RegExp("(^|[^a-z0-9-])" + b + "\\.(com|net|org)\\b").test(decodeSafe(out.path).toLowerCase())); if (inPath) out.reasons.push({ w: 1, t: `The path mentions "${inPath}" but the link goes to "${reg}".` }); }
   out.severity = sevFromWeight(sumWeight(out.reasons));
   out.lookalike = look;
   return out;
 }
 
+function decodeSafe(s) { try { return decodeURIComponent(s || ""); } catch (_) { return String(s || ""); } }
 function sumWeight(reasons) { return reasons.reduce((a, r) => a + r.w, 0); }
 function sevFromWeight(w) { return w >= 7 ? "critical" : w >= 4 ? "high" : w >= 2 ? "medium" : w >= 1 ? "low" : "info"; }
 
@@ -247,6 +265,9 @@ function asciiLookalike(host) {
     if (labels.includes(b) || sub.some((l) => l.split("-").some((t) => isBrand(t, b))))
       return { brand: b, stem, impersonation: true, near: false, distance: 0 };
   }
+  // the brand with digits swapped in for letters (paypa1, g00gle, micr0soft): a deliberate imitation
+  const leet = BRANDS.find((b) => b.length >= 4 && leetIs(stem, b));
+  if (leet) return { brand: leet, stem, impersonation: false, near: true, leet: true, distance: levenshtein(stem, leet) };
   // near-miss typosquat on the stem
   let best = null;
   for (const b of BRANDS) {
@@ -260,7 +281,7 @@ function asciiLookalike(host) {
   if (best) return { ...best, impersonation: false, near: true };
   // the registered name carries the brand as a hyphen-part (paypal-secure.com, m1crosoft-help.com)
   const part = stem.includes("-") && BRANDS.find((b) => stem.split("-").some((t) => t === b || leetIs(t, b)));
-  if (part) return { brand: part, stem, impersonation: false, near: true, inName: true, distance: 0 };
+  if (part) return { brand: part, stem, impersonation: false, near: true, inName: true, leet: stem.split("-").some((t) => leetIs(t, part)), distance: 0 };
   return { brand: null, stem, impersonation: false, near: false, distance: null };
 }
 
@@ -273,9 +294,10 @@ export function extractIOCs(text) {
   const uniq = (arr) => Array.from(new Set(arr));
   const urls = uniq((t.match(/\bhttps?:\/\/[^\s"'<>)\]]+/gi) || []).map((u) => u.replace(/[.,;]+$/, "")));
   const ips = uniq((t.match(/\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g) || []).filter((ip) => ip.split(".")[0] !== "0"));
-  const emails = uniq((t.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g) || []));
+  // length caps (RFC 5321 local part, 127 labels) keep long @-less / dotted runs linear, not quadratic
+  const emails = uniq((t.match(/\b[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,}\b/g) || []));
   const hostsFromUrls = urls.map((u) => { try { return new URL(u).hostname.toLowerCase(); } catch (_) { return null; } }).filter(Boolean);
-  const bareDomains = uniq((t.match(/\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b/gi) || []).map((d) => d.toLowerCase()));
+  const bareDomains = uniq((t.match(/\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.){1,127}[a-z]{2,}\b/gi) || []).map((d) => d.toLowerCase()));
   const domains = uniq(hostsFromUrls.concat(bareDomains).filter((d) => !/\.(png|jpg|jpeg|gif|svg|css|js|json|html|webp)$/i.test(d)));
   const hashes = uniq((t.match(/\b[a-f0-9]{64}\b|\b[a-f0-9]{40}\b|\b[a-f0-9]{32}\b/gi) || []));
   return { urls, domains, ips, emails, hashes };
@@ -299,7 +321,7 @@ const FILE_EXT = /\.(png|jpg|jpeg|gif|svg|css|js|json|html?|webp|txt|pdf|docx?|x
 export function defangText(text) {
   const dots = (s) => s.replace(/\./g, "[.]");
   return refangText(text).replace(
-    /\bhttps?:\/\/[^\s"'<>)\]]+|\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b|\b(?:\d{1,3}\.){3}\d{1,3}\b|\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b/gi,
+    /\bhttps?:\/\/[^\s"'<>)\]]+|\b[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,}\b|\b(?:\d{1,3}\.){3}\d{1,3}\b|\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.){1,127}[a-z]{2,}\b/gi,
     (m) => {
       if (/^https?:\/\//i.test(m)) {
         const i = m.indexOf("://") + 3, rest = m.slice(i), cut = rest.search(/[\/?#]/), host = cut < 0 ? rest : rest.slice(0, cut);
@@ -431,6 +453,7 @@ export function triageEmail(raw) {
   const fromLook = fromReg ? lookalike(fromDomain) : { near: false, impersonation: false };
   if (fromLook.impersonation) add(4, `From domain impersonates brand "${fromLook.brand}" in a subdomain.`);
   else if (fromLook.homograph) add(4, `From domain imitates brand "${fromLook.brand}": "${fromLook.shown}" reads as "${fromLook.reads}".`);
+  else if (fromLook.leet) add(4, `From domain ${fromReg} spells "${fromLook.brand}" with digits in place of letters.`);
   else if (fromLook.inName) add(3, `From domain ${fromReg} has the brand name "${fromLook.brand}" in it but is a different domain from the brand's own.`);
   else if (fromLook.oddTld) add(3, `From domain ${fromReg} uses the brand name "${fromLook.brand}" on .${fromLook.oddTld}, not the brand's own domain.`);
   else if (fromLook.near) add(3, `From domain is a near-miss of brand "${fromLook.brand}".`);

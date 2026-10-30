@@ -16,6 +16,7 @@
 // VAULT still holds no money: it is the control and record layer for funds at a bank.
 
 import { Ledger, toCents, fmtCents, hashStr, canon } from "../public/js/vault/ledger.js";
+import { readCapped } from "./body-cap.js";
 import { verifyIdToken } from "./vault-auth.js";
 import { isSuspended } from "./gate.js";
 import { ROLES, canDo } from "../public/js/vault/roles.js";
@@ -264,8 +265,8 @@ export async function handleVault(request, env, vid, json) {
   if (!role) return json({ error: "You are not a member of this vault." }, 403);
   let body = null;
   if (request.method === "POST") {
-    body = await request.text();
-    if (body.length > 512 * 1024) return json({ error: "Request too large" }, 413);
+    body = await readCapped(request, 512 * 1024);
+    if (body === null) return json({ error: "Request too large" }, 413);
   }
   const stub = env.VAULT.get(env.VAULT.idFromName(vid));
   const res = await stub.fetch("https://vault/" + (new URL(request.url).search || ""), {

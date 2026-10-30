@@ -7,7 +7,7 @@
 // parseManifest(path, text) extracts pinned dependencies (with their declaring line)
 // for the OSV.dev lookup. No AI is involved in detection or ranking.
 
-import { taintScan } from "./taint-js.js?v=20261013a";
+import { taintScan } from "./taint-js.js?v=20261029e";
 import { detector, findAll, keyHoldsSecret, assignmentKey } from "../core/secret-detectors.js";
 import { OSV_ECOSYSTEM, formatForName, parseLockfile } from "../core/lockfiles.js";
 
@@ -130,6 +130,14 @@ export const SECRET_RULES = [
   { id: "secret.db-url", title: "Database URL with password", detectors: ["conn-string"], pick: (h) => h.m[1], minLen: 4, sev: "high", cwe: 798,
     why: "Connection strings with an inline password give direct database access to anyone who reads the repo.",
     fix: "Move the connection string to an environment variable or secrets manager and rotate the password." },
+  // Real passwords are often shorter than the generic rule's 12 characters (Winter2026!). This fills that
+  // gap only (8 to 11 characters; longer ones stay secret.generic so tracked findings keep their id), for a
+  // key that names a password and a value mixing three of upper, lower, digit and symbol.
+  { id: "secret.password", title: "Hardcoded password", detectors: ["pat-assignment", "config-assignment"], only: { "config-assignment": CONFIG_FILE },
+    accept: (h) => h.value.length < 12 && /(?:passw(?:or)?d|passphrase|pwd)$/i.test(h.m[1] || assignmentKey(h.whole)) && [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((re) => re.test(h.value)).length >= 3,
+    minLen: 8, sev: "medium", cwe: 259,
+    why: "A password in source is readable by everyone with repo access and stays in git history after it is removed.",
+    fix: "Change the password, load it from the environment or a secrets manager, and purge it from history." },
   { id: "secret.generic", title: "Hardcoded credential", detectors: ["pat-assignment", "config-assignment"], only: { "config-assignment": CONFIG_FILE }, accept: (h) => keyHoldsSecret(h.m[1] || assignmentKey(h.whole), "._-"), minLen: 12, sev: "medium", cwe: 798, minEntropy: 3.5,
     why: "Credentials embedded in source are readable by everyone with repo access and persist in git history.",
     fix: "Load the value from the environment or a secrets manager, rotate it, and purge it from history." }
@@ -321,7 +329,7 @@ export const CODE_RULES = [
     why: "The script is executed without integrity verification; a compromised host or MITM runs code in your build.",
     fix: "Download to a file, verify a pinned checksum or signature, then run it." }),
   R({ id: "docker.latest-tag", langs: ["docker"], title: "Base image not pinned", sev: "low", cwe: 1104,
-    re: /^\s*FROM\s+(?!scratch\b)[^\s:@]+(?::latest)?(?:\s+AS\s+\w+)?\s*$/i,
+    re: /^\s*FROM\s+(?:--\S+\s+)*(?!scratch\b)[^\s:@]+(?::latest)?(?:\s+AS\s+\w+)?\s*$/i,
     why: "Unpinned or :latest base images change underneath you, making builds non-reproducible and unreviewed.",
     fix: "Pin to a version tag, ideally with an @sha256 digest." }),
   // GitHub Actions
@@ -340,13 +348,24 @@ export const CODE_RULES = [
 function fileChecks(lang, lines) {
   const out = [];
   if (lang === "docker" && lines.some((l) => /^\s*FROM\s/i.test(l))) {
-    const users = lines.map((l, i) => [l, i]).filter(([l]) => /^\s*USER\s+/i.test(l));
-    const last = users[users.length - 1];
-    if (!last) out.push({ line: lines.findIndex((l) => /^\s*FROM\s/i.test(l)) + 1, rule: DOCKER_ROOT, snippet: "" });
+    // USER is per build stage. The shipped image is the last stage: root unless it sets USER
+    // or is built FROM an earlier stage that did (a USER in a builder stage does not carry over).
+    const stages = [];
+    lines.forEach((l, i) => {
+      const f = DOCKER_FROM.exec(l);
+      if (f) stages.push({ base: f[1].toLowerCase(), alias: (f[2] || "").toLowerCase(), line: i, user: null });
+      else if (stages.length && /^\s*USER\s+/i.test(l)) stages[stages.length - 1].user = [l, i];
+    });
+    const final = stages[stages.length - 1];
+    let st = final;
+    for (let hop = 0; st && !st.user && hop < stages.length; hop++) { const cur = st; st = stages.slice(0, stages.indexOf(cur)).reverse().find((x) => x.alias && x.alias === cur.base); }
+    const last = st && st.user;
+    if (!last) out.push({ line: final.line + 1, rule: DOCKER_ROOT, snippet: "" });
     else if (/^\s*USER\s+(?:root|0)(?::\S+)?\s*$/i.test(last[0])) out.push({ line: last[1] + 1, rule: DOCKER_ROOT, snippet: last[0].trim() });
   }
   return out;
 }
+const DOCKER_FROM = /^\s*FROM\s+(?:--\S+\s+)*(\S+)(?:\s+AS\s+(\S+))?/i; // [1] image or stage, [2] this stage's alias
 const DOCKER_ROOT = { id: "docker.runs-as-root", title: "Container runs as root", sev: "medium", cwe: 250,
   why: "A process running as root inside the container makes any compromise or container escape far more damaging.",
   fix: "Create an unprivileged user and add `USER <name>` before the CMD/ENTRYPOINT." };
@@ -385,10 +404,12 @@ export function scanFile(path, text) {
   };
   let inBlock = false;
   const codeRules = CODE_RULES.filter((r) => r.langs.includes(lang));
+  const dockerStages = new Set(lang === "docker" ? lines.map((l) => (DOCKER_FROM.exec(l) || [])[2]).filter(Boolean).map((a) => a.toLowerCase()) : []);
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
     if (raw.length > SKIP_LINE || IGNORE.test(raw) || (i > 0 && IGNORE.test(lines[i - 1]) && /darknode-ignore-next-line/.test(lines[i - 1]))) continue;
     // Secrets: scan raw line (secrets are often inside strings/comments too).
+    const owned = new Set(); // values a specific rule reported on this line; the generic rule (last) skips them
     for (const rule of SECRET_RULES) {
       const m = secretHit(rule, raw, path);
       if (!m) continue;
@@ -399,17 +420,19 @@ export function scanFile(path, text) {
       if (rule.id === "secret.private-key" && !KEY_BODY.test(raw.slice(m.index)) && !KEY_BODY.test(lines[i + 1] || "")) continue; // a marker in a detector or a doc, no key
       if (rule.id === "secret.db-url" && PLACEHOLDER_PASS.test(val)) continue;
       if (rule.id === "secret.google-api-key" && /authDomain|firebaseapp\.com/.test(lines.slice(Math.max(0, i - 6), i + 7).join("\n"))) continue; // Firebase web config keys are public by design
-      if (rule.id === "secret.generic" && (/^[a-z]+(?:[-_.][a-z]+)+$/.test(val) || /^eyJ/.test(val) || SECRET_RULES.some((r) => r.id !== "secret.generic" && secretHit(r, val)))) continue; // a word, not a credential; or a specific rule owns this value
+      if (rule.id === "secret.generic" && (/^[a-z]+(?:[-_.][a-z]+)+$/.test(val) || /^eyJ/.test(val) || owned.has(val) || SECRET_RULES.some((r) => r.id !== "secret.generic" && secretHit(r, val)))) continue; // a word, not a credential; or a specific rule owns this value
       if (rule.id === "secret.generic" && /^\$(?:2[abxy]?|argon2(?:id|i|d)|scrypt|pbkdf2[\w-]*|[156])\$/.test(val)) continue; // a password HASH, not a secret
-      push(rule, i, m.index, raw.trim().replace(val, mask(val)), { secret: mask(val) });
+      owned.add(val);
+      push(rule, i, m.index, raw.trim().replace(val, () => mask(val)), { secret: mask(val) }); // a function: "$&" in a value must not paste the raw secret back
     }
     if (!codeRules.length) continue;
     // Code rules: skip block comments and strip trailing line comments.
-    let line = raw;
+    let line = raw, off = 0; // off: columns cut from the front (the tail of a block comment)
     if (lang === "js" || lang === "java" || lang === "go" || lang === "php" || lang === "cs") {
-      if (inBlock) { const e = line.indexOf("*/"); if (e < 0) continue; line = line.slice(e + 2); inBlock = false; }
+      if (inBlock) { const e = line.indexOf("*/"); if (e < 0) continue; line = line.slice(e + 2); off = e + 2; inBlock = false; }
       const s = line.indexOf("/*");
-      if (s >= 0 && line.indexOf("*/", s + 2) < 0 && !/["'`][^"'`]*\/\*/.test(line.slice(0, s + 2))) { inBlock = true; line = line.slice(0, s); }
+      // s < stripComment(...).length: a "/*" inside a // comment ("// serves /api/*") opens nothing
+      if (s >= 0 && line.indexOf("*/", s + 2) < 0 && !/["'`][^"'`]*\/\*/.test(line.slice(0, s + 2)) && s < stripComment(line, lang).length) { inBlock = true; line = line.slice(0, s); }
     }
     if (/^\s*(?:\/\/|#|\*)/.test(line) && !(lang === "php" && /^\s*#\[/.test(line))) continue;
     line = stripComment(line, lang);
@@ -420,7 +443,8 @@ export function scanFile(path, text) {
       const win = lines.slice(Math.max(0, i - rule.win), i + rule.win + 1).join("\n");
       if (rule.near && !rule.near.test(win)) continue;
       if (rule.unless && (rule.unless.test(line) || rule.unless.test(path))) continue;
-      push(rule, i, m.index, raw.trim());
+      if (rule.id === "docker.latest-tag" && dockerStages.has(DOCKER_FROM.exec(line)[1].toLowerCase())) continue; // FROM an earlier build stage, not an image
+      push(rule, i, m.index + off, raw.trim());
     }
   }
   for (const f of fileChecks(lang, lines)) push(f.rule, Math.max(0, f.line - 1), 0, f.snippet || lines[Math.max(0, f.line - 1)].trim());

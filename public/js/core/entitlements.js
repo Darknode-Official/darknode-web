@@ -47,7 +47,9 @@ export function tierFrom(source, isOwner) {
   if (typeof source === "string") return normTier(source);
   if (source.admin === true) return "enterprise";
   const ent = source.entitlements;
-  const raw = (ent && (ent.tier || ent)) || source.tier || source.plan;
+  // An entitlements OBJECT without a tier must fall through to source.tier, not be
+  // stringified into "[object Object]" (which normalised to free and dropped a real tier).
+  const raw = (ent && (typeof ent === "string" ? ent : ent.tier)) || source.tier || source.plan;
   return normTier(raw);
 }
 
@@ -58,15 +60,17 @@ export const rank = (tier) => {
 
 // Does `tier` unlock `feature`? Unknown features are treated as available (we never
 // invent a lock that isn't declared above).
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+
 export function can(tier, feature) {
-  const need = FEATURES[feature];
+  const need = own(FEATURES, feature) ? FEATURES[feature] : null;
   if (!need) return true;
   return rank(tier) >= rank(need);
 }
 
 // The minimum tier required for a feature (for "Upgrade to X" copy), or null.
 export function requiredTier(feature) {
-  return FEATURES[feature] || null;
+  return (own(FEATURES, feature) && FEATURES[feature]) || null;
 }
 
 // Numeric limit for a tier, −1 meaning unlimited. Unknown keys return −1.
@@ -82,6 +86,6 @@ export function limit(tier, key) {
 // tool an AI can run through the MCP server needs the same plan it needs in the Deck.
 export const PLAN_GROUP = { exposure: "pro", code: "pro", identity: "team", detect: "team", finsec: "team", risk: "enterprise", compliance: "enterprise" };
 export const PLAN_ITEM = { enterprise: "team", findings: "pro", inventory: "pro", reports: "pro", activity: "pro", monitors: "pro", phishtriage: "pro", dlp: "pro", leakprobe: "pro", team: "team" };
-export const tierFor = (id, group) => PLAN_ITEM[id] || PLAN_GROUP[group] || "free";
+export const tierFor = (id, group) => (own(PLAN_ITEM, id) && PLAN_ITEM[id]) || (own(PLAN_GROUP, group) && PLAN_GROUP[group]) || "free";
 
 export const planLabel = (tier) => PLAN_LABEL[normTier(tier)] || "Free";

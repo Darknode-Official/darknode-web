@@ -22,7 +22,7 @@ import {
   commonDebugRoutes, gradeRouteResponse, scoreExposure,
   BUNDLE_DETECTORS, BACKEND_DETECTORS,
   detectServices, mergeServices, parseFirebaseConfig, classifyKey,
-} from "/js/dataprotect/leakprobe-engine.js?v=20261013m";
+} from "/js/dataprotect/leakprobe-engine.js?v=20261029e";
 import { dnFetch } from "/js/net.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>

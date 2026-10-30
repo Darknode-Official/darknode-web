@@ -392,8 +392,9 @@ export function parseAggregateXml(text, name = "") {
     errors: kids(meta, "error").map(xmlText).filter(Boolean),
     policy: pub, records: [], rejected: 0, rejectReasons: [],
   };
-  if (!Number.isFinite(report.begin)) report.begin = null;
-  if (!Number.isFinite(report.end)) report.end = null;
+  // an epoch past year 9999 would make every date format throw (RangeError)
+  if (!Number.isFinite(report.begin) || report.begin < 0 || report.begin > 253402300799) report.begin = null;
+  if (!Number.isFinite(report.end) || report.end < 0 || report.end > 253402300799) report.end = null;
   for (const rec of kids(fb, "record")) {
     const row = kid(rec, "row"), pe = kid(row, "policy_evaluated"), ids = kid(rec, "identifiers"), ar = kid(rec, "auth_results");
     const count = toInt(ktxt(row, "count"));
@@ -410,8 +411,9 @@ export function parseAggregateXml(text, name = "") {
       disposition: lc(ktxt(pe, "disposition")) || "none",
       evalDkim: lc(ktxt(pe, "dkim")), evalSpf: lc(ktxt(pe, "spf")),
       reasons: kids(pe, "reason").map((r) => ({ type: lc(ktxt(r, "type")), comment: ktxt(r, "comment") })).filter((r) => r.type || r.comment),
-      dkim: kids(ar, "dkim").map((d) => ({ domain: normDomain(ktxt(d, "domain")), selector: ktxt(d, "selector"), result: lc(ktxt(d, "result")), human: ktxt(d, "human_result") })),
-      spf: kids(ar, "spf").map((s) => ({ domain: normDomain(ktxt(s, "domain")), scope: lc(ktxt(s, "scope")), result: lc(ktxt(s, "result")) })),
+      // no <auth_results> at all: null makes evaluateRecord fall back to policy_evaluated
+      dkim: !ar ? null : kids(ar, "dkim").map((d) => ({ domain: normDomain(ktxt(d, "domain")), selector: ktxt(d, "selector"), result: lc(ktxt(d, "result")), human: ktxt(d, "human_result") })),
+      spf: !ar ? null : kids(ar, "spf").map((s) => ({ domain: normDomain(ktxt(s, "domain")), scope: lc(ktxt(s, "scope")), result: lc(ktxt(s, "result")) })),
     });
   }
   return { report };

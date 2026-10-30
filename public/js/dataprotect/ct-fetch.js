@@ -34,14 +34,14 @@ export async function fetchCertRows(domain) {
   const host = String(domain || "").toLowerCase().replace(/\.$/, "");
   const dot = host.indexOf("."), wild = dot > 0 && host.indexOf(".", dot + 1) > 0 ? "*" + host.slice(dot) : null;
   const cover = (rows) => rows.filter((r) => certCovers(r.name_value || r.common_name, host));
-  let answered = false;
+  let answered = false, crtOk = false;
   // 1) crt.sh (richest, but flaky and often slower than 10 s: past 15 s the proxy waits upstream longer)
   for (const q of wild ? [host, wild] : [host]) {
     try {
       const r = await dnFetch("https://crt.sh/?output=json&exclude=expired&q=" + encodeURIComponent(q), { raw: true, timeout: 30000 });
       if (r.status && r.status < 500 && r.body && r.body.trim().startsWith("[")) {
         const a = JSON.parse(r.body);
-        answered = true;
+        answered = crtOk = true;
         const rows = Array.isArray(a) ? cover(a) : [];
         if (rows.length) return rows;
       } else if (!answered) break;
@@ -58,6 +58,14 @@ export async function fetchCertRows(domain) {
         answered = true;
         if (rows.length) return rows;
       }
+    } catch (_) {}
+  }
+  // Both logs list only unexpired certificates: a host whose only certificate has EXPIRED read as
+  // "no certificate found". Ask crt.sh's full history once (only reached when nothing current exists).
+  if (crtOk) for (const q of wild ? [host, wild] : [host]) {
+    try {
+      const r = await dnFetch("https://crt.sh/?output=json&q=" + encodeURIComponent(q), { raw: true, timeout: 30000 });
+      if (r.body && r.body.trim().startsWith("[")) { const rows = cover(JSON.parse(r.body)); if (rows.length) return rows; }
     } catch (_) {}
   }
   return answered ? [] : Object.assign([], { unreachable: true });

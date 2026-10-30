@@ -90,11 +90,11 @@ function parseASN1(bytes, start, end) {
   while (p < end) {
     const tagByte = bytes[p]; const cls = tagByte >> 6; const constructed = !!(tagByte & 0x20); let tagNum = tagByte & 0x1f; let hp = p + 1;
     if (tagNum === 0x1f) { tagNum = 0; let b; do { b = bytes[hp++]; tagNum = (tagNum << 7) | (b & 0x7f); } while (b & 0x80); }
-    if (hp > end) throw new Error("truncated header");
+    if (hp >= end) throw new Error("truncated header");
     let len = bytes[hp++];
     if (len & 0x80) { const n = len & 0x7f; if (n > 6) throw new Error("length too large"); len = 0; for (let i = 0; i < n; i++) len = len * 256 + bytes[hp++]; }
     const contentStart = hp; const contentEnd = hp + len;
-    if (contentEnd > end) throw new Error("length exceeds buffer");
+    if (!(contentEnd <= end)) throw new Error("length exceeds buffer");
     const node = { tagByte, cls, constructed, tagNum, start: p, headerLen: hp - p, length: len, contentStart, contentEnd, children: null };
     if (constructed) node.children = parseASN1(bytes, contentStart, contentEnd);
     nodes.push(node); p = contentEnd;
@@ -342,7 +342,10 @@ export const TOOLS = [
       try {
         const k = await subtle.importKey("spki", pemToDer(v.pem), { name: algName, hash: v.hash }, false, ["verify"]);
         const params = v.scheme === "PSS" ? { name: "RSA-PSS", saltLength: { "SHA-256": 32, "SHA-384": 48, "SHA-512": 64 }[v.hash] } : { name: algName };
-        const ok = await subtle.verify(params, k, sigBytes(v.sig), enc.encode(v.msg));
+        const sb = sigBytes(v.sig), data = enc.encode(v.msg);
+        let ok = await subtle.verify(params, k, sb, data);
+        // PSS signers differ on salt length: OpenSSL/Node default to the maximum, some use 0; try those too
+        if (!ok && v.scheme === "PSS") for (const s of [Math.ceil((k.algorithm.modulusLength - 1) / 8) - params.saltLength - 2, 0]) if (!ok && s >= 0) ok = await subtle.verify({ name: "RSA-PSS", saltLength: s }, k, sb, data);
         return ok ? "VALID — signature matches." : "INVALID — signature does not match.";
       } catch (e) { return { error: "Verify failed: " + e.message }; }
     } },
@@ -371,7 +374,8 @@ export const TOOLS = [
       const alg = jwkAlgImport(jwk); if (!alg) return { error: "Unsupported kty (expected RSA, EC or OKP)." };
       const isPriv = !!jwk.d; const usages = alg.name === "X25519" ? (isPriv ? ["deriveBits"] : []) : (isPriv ? ["sign"] : ["verify"]);
       try {
-        const k = await subtle.importKey("jwk", jwk, alg, true, usages);
+        const { alg: _a, use: _u, key_ops: _o, ...bare } = jwk; // "alg"/"use" describe how the key is used (RSA-OAEP, enc), not its format; WebCrypto rejects a mismatch
+        const k = await subtle.importKey("jwk", bare, alg, true, usages);
         const fmt = isPriv ? "pkcs8" : "spki"; const der = new Uint8Array(await subtle.exportKey(fmt, k));
         return derToPem(der, isPriv ? "PRIVATE KEY" : "PUBLIC KEY");
       } catch (e) { return { error: "Convert failed: " + e.message }; }
@@ -433,7 +437,7 @@ export const TOOLS = [
     run(v) {
       if (!v.data) return "";
       if (v.mode === "DER to PEM") { let der; try { der = anyToBytes(v.data); } catch (e) { return { error: "Input is not valid hex/base64." }; } if (!der.length) return { error: "No bytes decoded." }; return derToPem(der, (v.label || "DATA").toUpperCase()); }
-      const label = pemLabel(v.data); if (!label) return { error: "No PEM header found." }; const der = pemToDer(v.data); return `Label: ${label}\nDER (${der.length} bytes) hex:\n${bytesToHex(der)}\n\nBase64:\n${bytesToB64(der)}`;
+      const label = pemLabel(v.data); if (!label) return { error: "No PEM header found." }; let der; try { der = pemToDer(v.data); } catch (e) { return { error: "Base64 body is malformed." }; } return `Label: ${label}\nDER (${der.length} bytes) hex:\n${bytesToHex(der)}\n\nBase64:\n${bytesToB64(der)}`;
     } },
   { id: "cr-asn1-decode", name: "ASN.1 DER Decoder", cat: "crypto", desc: "Recursively decode ASN.1 DER (from hex, base64 or PEM) into a readable tag/length/value tree with OID names.", tags: ["asn1", "der", "decode", "tlv"], live: true,
     inputs: [{ k: "data", label: "DER (hex / base64 / PEM)", type: "textarea", rows: 6 }],
@@ -451,7 +455,7 @@ export const TOOLS = [
           if (!n.constructed) {
             const c = bytes.slice(n.contentStart, n.contentEnd);
             if (n.tagByte === 0x06) extra = decodeOID(bytes, n.contentStart, n.contentEnd) + (OID_NAMES[decodeOID(bytes, n.contentStart, n.contentEnd)] ? " (" + OID_NAMES[decodeOID(bytes, n.contentStart, n.contentEnd)] + ")" : "");
-            else if (n.tagByte === 0x02) { const bi = bytesToBig(c); extra = c.length <= 8 ? bi.toString() : "0x" + bytesToHex(c); }
+            else if (n.tagByte === 0x02) { const bi = c.length && c[0] & 0x80 ? bytesToBig(c) - (1n << BigInt(8 * c.length)) : bytesToBig(c); /* DER INTEGER is two's complement */ extra = c.length <= 8 ? bi.toString() : "0x" + bytesToHex(c); }
             else if (n.tagByte === 0x01) extra = c[0] ? "TRUE" : "FALSE";
             else if (n.tagByte === 0x05) extra = "";
             else if (n.tagByte === 0x13 || n.tagByte === 0x0c || n.tagByte === 0x16 || n.tagByte === 0x1a) extra = JSON.stringify(dec.decode(c));
@@ -509,7 +513,7 @@ export const TOOLS = [
       else if (v.type.startsWith("Symmetric")) { bits = n; note = n < 128 ? "Below 128-bit symmetric keys are not recommended." : "Symmetric key strength equals the key length."; }
       else { bits = Math.floor(n / 2); note = "Collision resistance is about half the digest size; preimage resistance is the full size."; }
       const verdict = bits >= 128 ? "STRONG (>=128-bit)" : bits >= 112 ? "ACCEPTABLE near-term (112-bit)" : "WEAK — do not use for new systems";
-      return `Algorithm:       ${v.type}\nSize:            ${n} bits\nSecurity level:  ~${bits}-bit\nVerdict:         ${verdict}\n\n${note}\n(Per NIST SP 800-57 Part 1 equivalent-strength guidance.)`;
+      return `Algorithm:       ${v.type}\nSize:            ${n} bits\nSecurity level:  ${bits ? "~" + bits : "<80"}-bit\nVerdict:         ${verdict}\n\n${note}\n(Per NIST SP 800-57 Part 1 equivalent-strength guidance.)`;
     } },
   { id: "cr-ec-curve-ref", name: "Elliptic Curve Reference", cat: "crypto", desc: "Key parameters for common curves: field/order size, security level, OID and typical use.", tags: ["ecc", "curve", "p-256", "secp256k1", "curve25519", "reference"], live: true,
     inputs: [{ k: "curve", label: "Curve", type: "select", opts: ["P-256 (secp256r1)", "P-384 (secp384r1)", "P-521 (secp521r1)", "secp256k1", "Curve25519 / Ed25519"], value: "P-256 (secp256r1)" }],
@@ -610,7 +614,7 @@ export const TOOLS = [
     run(v) { const a = parseBig(v.a), m = parseBig(v.m); if (a == null || m == null) return ""; if (m < 2n) return { error: "Modulus must be >= 2." }; const inv = modinv(a, m); if (inv == null) return { error: `No inverse: gcd(a, m) = ${gcdBig(a, m)} != 1.` }; return `${inv}\n\nCheck: ${((a % m + m) % m)} * ${inv} mod ${m} = ${(((a % m + m) % m) * inv) % m}`; } },
   { id: "cr-ext-gcd", name: "Extended Euclidean (Bezout)", cat: "crypto", desc: "Compute gcd(a,b) and integers x,y with a*x + b*y = gcd(a,b).", tags: ["gcd", "bezout", "euclid", "extended"], live: true,
     inputs: [{ k: "a", label: "a", type: "text" }, { k: "b", label: "b", type: "text" }],
-    run(v) { const a = parseBig(v.a), b = parseBig(v.b); if (a == null || b == null) return ""; const [g, x, y] = egcd(a, b); return `gcd = ${g}\nx = ${x}\ny = ${y}\n\n${a}*(${x}) + ${b}*(${y}) = ${a * x + b * y}`; } },
+    run(v) { const a = parseBig(v.a), b = parseBig(v.b); if (a == null || b == null) return ""; let [g, x, y] = egcd(a, b); if (g < 0n) { g = -g; x = -x; y = -y; } return `gcd = ${g}\nx = ${x}\ny = ${y}\n\n${a}*(${x}) + ${b}*(${y}) = ${a * x + b * y}`; } },
   { id: "cr-crt", name: "CRT Solver", cat: "crypto", desc: "Solve a system of congruences x = r_i (mod m_i) with the Chinese Remainder Theorem. Moduli need not be coprime if consistent.", tags: ["crt", "chinese remainder", "congruence"], live: false, button: "Solve",
     inputs: [{ k: "r", label: "Residues (comma-separated)", type: "text", value: "2, 3, 2" }, { k: "m", label: "Moduli (comma-separated)", type: "text", value: "3, 5, 7" }],
     run(v) {
@@ -682,7 +686,7 @@ export const TOOLS = [
     run(v) {
       const p = parseBig(v.p), q = parseBig(v.q), e = parseBig(v.e); if (p == null || q == null || e == null) return "";
       if (p < 2n || q < 2n) return { error: "p and q must be >= 2." };
-      const n = p * q, phi = (p - 1n) * (q - 1n), lam = (p - 1n) / gcdBig(p - 1n, q - 1n) * (q - 1n);
+      const n = p * q, phi = p === q ? p * (p - 1n) : (p - 1n) * (q - 1n), lam = p === q ? phi : (p - 1n) / gcdBig(p - 1n, q - 1n) * (q - 1n); // n = p^2: phi = p(p-1)
       const d = modinv(e, lam); const dphi = modinv(e, phi);
       if (d == null) return { error: "e is not invertible mod lambda(n): gcd(e, lambda) != 1." };
       return `n       = ${n}\nphi(n)  = ${phi}\nlambda  = ${lam}\nd (mod lambda) = ${d}\nd (mod phi)    = ${dphi}\n\n(Either d works for decryption; libraries use the lambda form.)`;
@@ -691,7 +695,8 @@ export const TOOLS = [
     inputs: [{ k: "p", label: "p", type: "text" }, { k: "q", label: "q", type: "text" }, { k: "e", label: "e", type: "text", value: "65537" }, { k: "c", label: "Ciphertext c", type: "textarea", rows: 2 }],
     run(v) {
       const p = parseBig(v.p), q = parseBig(v.q), e = parseBig(v.e), c = parseBig(v.c); if (p == null || q == null || e == null || c == null) return "";
-      const n = p * q, phi = (p - 1n) * (q - 1n); const d = modinv(e, phi); if (d == null) return { error: "gcd(e, phi) != 1." };
+      if (p < 2n || q < 2n) return { error: "p and q must be >= 2." };
+      const n = p * q, phi = p === q ? p * (p - 1n) : (p - 1n) * (q - 1n); const d = modinv(e, phi); if (d == null) return { error: "gcd(e, phi) != 1." }; // n = p^2: phi = p(p-1)
       const m = modpow(c, d, n); const bytes = bigToBytes(m); const t = textPreview(bytes);
       return `d = ${d}\nm = ${m}\nm (hex) = 0x${m.toString(16)}\nm (bytes) = ${bytesToHex(bytes)}${t != null ? "\nm (text)  = " + t : ""}`;
     } },
@@ -717,6 +722,7 @@ export const TOOLS = [
     run(v) {
       const n = parseBig(v.n), r = parseBig(v.r), s1 = parseBig(v.s1), s2 = parseBig(v.s2), h1 = parseBig(v.h1), h2 = parseBig(v.h2);
       if ([n, r, s1, s2, h1, h2].some((x) => x == null)) return "";
+      if (n < 2n) return { error: "Curve order n must be >= 2." };
       const sd = (((s1 - s2) % n) + n) % n; if (sd === 0n) return { error: "s1 == s2 mod n; cannot recover (need distinct signatures)." };
       const sdInv = modinv(sd, n); if (sdInv == null) return { error: "s1-s2 not invertible mod n." };
       const k = ((((h1 - h2) % n) + n) % n * sdInv) % n;
@@ -739,7 +745,7 @@ export const TOOLS = [
     } },
   { id: "cr-primality-test", name: "Primality Test", cat: "crypto", desc: "Miller-Rabin probable-primality test for big integers, with deterministic small-prime checks.", tags: ["prime", "miller-rabin", "primality", "bigint"], live: false, button: "Test",
     inputs: [{ k: "n", label: "n", type: "text" }, { k: "rounds", label: "Extra random rounds", type: "range", min: 1, max: 40, step: 1, value: 12 }],
-    run(v) { const n = parseBig(v.n); if (n == null) return ""; const rounds = parseInt(v.rounds, 10) || 8; const prime = isProbablePrime(n, rounds); return `${n} is ${prime ? "PROBABLY PRIME" : "COMPOSITE"}${prime ? ` (Miller-Rabin, ${rounds} extra rounds; error < 4^-rounds)` : ""}`; } },
+    run(v) { const n = parseBig(v.n); if (n == null) return ""; if (n < 2n) return `${n} is neither prime nor composite (primes are integers >= 2).`; const rounds = parseInt(v.rounds, 10) || 8; const prime = isProbablePrime(n, rounds); return `${n} is ${prime ? "PROBABLY PRIME" : "COMPOSITE"}${prime ? ` (Miller-Rabin, ${rounds} extra rounds; error < 4^-rounds)` : ""}`; } },
   { id: "cr-random-prime", name: "Random Prime Generator", cat: "crypto", desc: "Generate a random probable prime of a chosen bit length using crypto RNG and Miller-Rabin.", tags: ["prime", "generate", "random", "rsa"], live: false, button: "Generate",
     inputs: [{ k: "bits", label: "Bit length", type: "select", opts: ["16", "32", "64", "128", "256", "512"], value: "128" }],
     run(v) {
@@ -797,7 +803,9 @@ export const TOOLS = [
         for (let c = 0; c < period; c++) { const counts = {}; let N = 0; for (let i = c; i < s.length; i += period) { counts[s[i]] = (counts[s[i]] || 0) + 1; N++; } if (N < 2) continue; let sum = 0; for (const k in counts) sum += counts[k] * (counts[k] - 1); tot += sum / (N * (N - 1)); cols++; }
         rows.push([period, cols ? tot / cols : 0]);
       }
-      const ranked = rows.slice().sort((a, b) => Math.abs(b[1] - 0.0667) < Math.abs(a[1] - 0.0667) ? 1 : -1);
+      // multiples of the key length score as well as the key length itself, so the smallest English-like period wins
+      const near = (io) => Math.abs(io - 0.0667) < 0.012;
+      const ranked = rows.slice().sort((a, b) => near(b[1]) - near(a[1]) || (near(a[1]) ? a[0] - b[0] : Math.abs(a[1] - 0.0667) - Math.abs(b[1] - 0.0667)));
       return `Average IoC per candidate key length (English ~0.0667):\n${rows.map(([p, io]) => `  len ${String(p).padStart(2)}: ${io.toFixed(4)}${Math.abs(io - 0.0667) < 0.012 ? "  <-- likely" : ""}`).join("\n")}\n\nBest guesses: ${ranked.slice(0, 3).map((r) => r[0]).join(", ")}`;
     } },
   { id: "cr-single-byte-xor", name: "Single-Byte XOR Breaker", cat: "crypto", desc: "Brute-force all 256 single-byte XOR keys over a hex/base64 ciphertext and rank candidates by English likeness.", tags: ["xor", "brute force", "cryptopals", "cryptanalysis"], live: false, button: "Break",
@@ -831,7 +839,7 @@ export const TOOLS = [
       if (!v.data) return "";
       let bytes; try { bytes = v.fmt === "hex" ? hexToBytes(v.data) : b64ToBytes(v.data); } catch (e) { return { error: "Could not decode input." }; }
       if (bytes.length < 4) return { error: "Ciphertext too short." };
-      let ks = parseInt(v.keylen, 10) || 0;
+      let ks = Math.max(0, parseInt(v.keylen, 10) || 0);
       if (!ks) { let best = Infinity; for (let k = 2; k <= Math.min(40, bytes.length >> 2); k++) { const blocks = Math.min(6, Math.floor(bytes.length / k)); if (blocks < 2) continue; let tot = 0, pairs = 0; for (let i = 0; i < blocks - 1; i++) for (let j = i + 1; j < blocks; j++) { tot += hammingBits(bytes.slice(i * k, (i + 1) * k), bytes.slice(j * k, (j + 1) * k)) / k; pairs++; } const d = tot / pairs; if (d < best) { best = d; ks = k; } } }
       if (!ks) return { error: "Could not determine key length." };
       const key = new Uint8Array(ks);

@@ -691,7 +691,10 @@ function parseGrype(o, file) {
   const os = o.distro ? [o.distro.name, o.distro.version].filter(Boolean).join(" ") : "";
   for (const m of o.matches || []) {
     const v = m.vulnerability || {}, a = m.artifact || {};
-    const cv = (v.cvss || []).slice().sort((x, y) => cmp(str(y.version), str(x.version)))[0] || {};
+    // newest 3.x entry (a 4.0 entry must not hide it), else 2.x; a GHSA match carries its scores on the related CVE
+    const allCvss = [...(v.cvss || []), ...(m.relatedVulnerabilities || []).flatMap((r) => r.cvss || [])];
+    const byVer = (re) => allCvss.filter((x) => x && re.test(str(x.version))).sort((x, y) => cmp(str(y.version), str(x.version)))[0];
+    const cv = byVer(/^3/) || byVer(/^2/) || {};
     const related = (m.relatedVulnerabilities || []).map((r) => r.id);
     const fix = v.fix || {};
     records.push(...mkRecords({

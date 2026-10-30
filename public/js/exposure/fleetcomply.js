@@ -16,9 +16,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, FORMATS, KIND_LABEL, WEIGHTS, DETECTIONS, SEV_RANK,
   detectFile, findingsToCsv, devicesToCsv, softwareToCsv, worklistToCsv, coverageToCsv, summaryText, exampleDataset,
-} from "./fleetcomply-engine.js?v=20261026b";
+} from "./fleetcomply-engine.js?v=20261029e";
 
-const ENGINE = engineUrl("./fleetcomply-engine.js?v=20261026b", import.meta);
+const ENGINE = engineUrl("./fleetcomply-engine.js?v=20261029e", import.meta);
 const P = "flt";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

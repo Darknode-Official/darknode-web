@@ -112,8 +112,8 @@ function parseCookie(rawLine) {
       case "expires": attrs.expires = av; break;
       case "max-age":
         attrs.maxAge = av;
-        var n = parseInt(av, 10);
-        attrs.maxAgeNum = isNaN(n) ? null : n;
+        // RFC 6265 5.2.2: a Max-Age that is not an optional '-' plus digits is ignored
+        attrs.maxAgeNum = /^-?\d+$/.test(av) ? parseInt(av, 10) : null;
         break;
       case "secure": attrs.secure = true; break;
       case "httponly": attrs.httpOnly = true; break;
@@ -136,7 +136,7 @@ function parseCookie(rawLine) {
   // Session vs persistent + deletion detection.
   var expiresDate = attrs.expires ? new Date(attrs.expires) : null;
   var expiresValid = expiresDate && !isNaN(expiresDate.getTime());
-  var isSession = !attrs.expires && attrs.maxAge == null;
+  var isSession = !expiresValid && attrs.maxAgeNum == null; // browsers ignore an unparseable Expires or Max-Age
   var isDeletion = (attrs.maxAgeNum != null && attrs.maxAgeNum <= 0) ||
     (expiresValid && expiresDate.getTime() < Date.now());
 
@@ -189,7 +189,7 @@ var COOKIE_RULES = [
   },
   {
     id: "secure-missing",
-    test: function (c) { return !c.attrs.secure && c.attrs.sameSite !== "None" && !c.prefixHost && !c.prefixSecure; },
+    test: function (c) { return !c.attrs.secure && c.attrs.sameSite !== "None" && !c.prefixHost && !c.prefixSecure && !c.isDeletion; }, // a deletion carries no value worth protecting
     severity: "high",
     message: "Secure attribute missing — the cookie can be sent over plaintext HTTP.",
     fix: "Add Secure so the cookie is only transmitted over HTTPS."
@@ -204,7 +204,7 @@ var COOKIE_RULES = [
   // ── HttpOnly (one of these fires) ──
   {
     id: "httponly-missing",
-    test: function (c) { return !c.attrs.httpOnly; },
+    test: function (c) { return !c.attrs.httpOnly && !c.isDeletion; },
     severity: "medium",
     message: "HttpOnly missing — the cookie is readable by JavaScript (document.cookie).",
     fix: "Add HttpOnly unless this cookie is intentionally read by client-side scripts (e.g. a CSRF token mirror)."
@@ -219,7 +219,7 @@ var COOKIE_RULES = [
   // ── SameSite (one of these fires) ──
   {
     id: "samesite-absent",
-    test: function (c) { return c.attrs.sameSite == null; },
+    test: function (c) { return c.attrs.sameSite == null && !c.isDeletion; },
     severity: "medium",
     message: "SameSite not set — modern browsers default to Lax, but being explicit is safer and portable.",
     fix: "Set SameSite=Strict or Lax (or None for cross-site contexts, with Secure)."
@@ -564,7 +564,7 @@ export function renderCookieInspector(main) {
         '<tr><td>Domain</td><td>' + attrCell(a.domain != null, a.domain) + '</td></tr>' +
         '<tr><td>Path</td><td>' + attrCell(a.path != null, a.path) + '</td></tr>' +
         '<tr><td>Expires</td><td>' + expiresDisplay + '</td></tr>' +
-        '<tr><td>Max-Age</td><td>' + attrCell(a.maxAge != null, a.maxAge) + '</td></tr>' +
+        '<tr><td>Max-Age</td><td>' + (a.maxAge != null && c.attrs.maxAgeNum == null ? '<span class="ck-absent">' + esc(a.maxAge) + ' (not a number, ignored)</span>' : attrCell(a.maxAge != null, a.maxAge)) + '</td></tr>' +
         '<tr><td>Secure</td><td>' + (a.secure ? '<span class="ck-present">yes</span>' : '<span class="ck-absent">no</span>') + '</td></tr>' +
         '<tr><td>HttpOnly</td><td>' + (a.httpOnly ? '<span class="ck-present">yes</span>' : '<span class="ck-absent">no</span>') + '</td></tr>' +
         '<tr><td>SameSite</td><td>' + sameSiteDisplay + '</td></tr>' +

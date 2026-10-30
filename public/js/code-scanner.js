@@ -8,9 +8,9 @@
 // come from OSV.dev. Code is fetched straight from GitHub into this tab and scanned
 // here: nothing is uploaded to Darknode, and no AI is involved.
 
-import { scanFile, parseManifest, isManifest, depFinding, dedupeDeps, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261029c";
-import * as gh from "/js/codescan/github.js?v=20261018i";
-import { findingKey, serializeBaseline, diffFindings, baselineKeySet } from "/js/codescan/baseline.js?v=20261014a";
+import { scanFile, parseManifest, isManifest, depFinding, dedupeDeps, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261029e";
+import * as gh from "/js/codescan/github.js?v=20261029e";
+import { serializeBaseline, diffFindings, baselineKeySet, baselineKeyCounts } from "/js/codescan/baseline.js?v=20261029e";
 import { createWatch } from "/js/codescan/watch-ui.js?v=20261017f";
 import { acctKey } from "/js/core/account.js"; // per-account storage key
 
@@ -369,13 +369,13 @@ export function renderCodeScanner(main) {
   function recomputeDiff() {
     if (!st.baseline) { st.baseSet = null; st.diffCounts = null; st.fixedItems = []; return; }
     st.baseSet = baselineKeySet(st.baseline);
-    const d = diffFindings(st.baseSet, st.scan.findings);
+    const d = diffFindings(baselineKeyCounts(st.baseline), st.scan.findings);
+    st.newSet = new Set(d.newFindings); // per finding: of two identical copies only the extra one is new
     const fixed = new Set(d.fixedKeys);
     st.diffCounts = { new: d.newFindings.length, fixed: d.fixedKeys.length, unchanged: d.unchanged.length };
     st.fixedItems = (st.baseline.items || []).filter((it) => fixed.has(it.k));
   }
-  const keyOf = (f) => findingKey(f);
-  const isNew = (f) => !!st.baseSet && !st.baseSet.has(keyOf(f));
+  const isNew = (f) => !!st.baseSet && !!st.newSet && st.newSet.has(f);
 
   // Baselines are a local snapshot stored in THIS browser only — nothing is uploaded.
   async function saveBaseline(replace) {

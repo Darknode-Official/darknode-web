@@ -31,6 +31,7 @@ export async function dnFetch(url, opts = {}) {
   if (opts.redirect === "manual") qs.set("redirect", "manual");
   if (opts.ua) qs.set("ua", String(opts.ua));
   if (opts.max) qs.set("max", String(opts.max));
+  if (opts.origin) qs.set("origin", String(opts.origin));
   if (opts.timeout > 15000) qs.set("t", String(Math.ceil(opts.timeout / 1000) - 2)); // let the worker wait longer upstream, and answer before we give up
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), opts.timeout || 15000);

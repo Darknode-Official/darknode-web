@@ -13,9 +13,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, HIGH_CARDINALITY_DEFAULTS, ENCRYPTED_DNS_HOSTS, DOH_CANARY, detectFormat,
   findingsToCsv, tableToCsv, blocklistText, summaryText, exampleDataset,
-} from "./dnshunt-engine.js?v=20261026b";
+} from "./dnshunt-engine.js?v=20261029e";
 
-const ENGINE = engineUrl("./dnshunt-engine.js?v=20261026b", import.meta);
+const ENGINE = engineUrl("./dnshunt-engine.js?v=20261029e", import.meta);
 const P = "dnh";
 const FEED_URL = "/data/feeds/malicious-ips.json";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };

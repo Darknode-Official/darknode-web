@@ -1,4 +1,5 @@
 import { esc } from '/js/shared.js';
+import { registrableDomain } from '/js/dataprotect/phish-engine.js?v=20261029e';
 
 const SAMPLE_HEADERS = `Delivered-To: analyst@darknode.ai
 Received: by 2002:a05:6902:1024:b0:e0a:1234:5678 with SMTP id x4csp4012345qkl;
@@ -67,8 +68,28 @@ function parseHeaders(raw) {
 
 function extractField(headers, name) {
   var h = headers.find(function(x) { return x.name.toLowerCase() === name.toLowerCase(); });
-  return h ? h.value : '';
+  return h ? (/^(subject|from|to|reply-to)$/i.test(name) ? decodeWords(h.value) : h.value) : '';
 }
+
+// RFC 2047 encoded words (=?charset?B|Q?text?=), as mail clients show them
+function decodeWords(v) {
+  return v.replace(/=\?([^?\s]+)\?([BbQq])\?([^?\s]*)\?=(?:\s+(?==\?))?/g, function(m, cs, enc, txt) {
+    try {
+      var bin = /b/i.test(enc) ? atob(txt) : txt.replace(/_/g, ' ').replace(/=([0-9A-Fa-f]{2})/g, function(_, h) { return String.fromCharCode(parseInt(h, 16)); });
+      return new TextDecoder(cs.replace(/\*.*$/, '')).decode(Uint8Array.from(bin, function(c) { return c.charCodeAt(0); }));
+    } catch (_) { return m; }
+  });
+}
+
+// Domain of the actual address: the last <...> when there is one, so a display name
+// such as "ceo@example.com" <x@attacker.example> yields attacker.example
+function addrDomain(v) {
+  var a = String(v || ''), lt = a.lastIndexOf('<');
+  if (lt >= 0) a = a.slice(lt + 1, a.indexOf('>', lt) >= 0 ? a.indexOf('>', lt) : undefined);
+  var at = a.lastIndexOf('@');
+  return at >= 0 ? a.slice(at + 1).trim().replace(/[\s>"')]+.*$/, '').toLowerCase() : '';
+}
+const sameOrg = (a, b) => registrableDomain(a) === registrableDomain(b);
 
 function extractAllFields(headers, name) {
   return headers.filter(function(x) { return x.name.toLowerCase() === name.toLowerCase(); }).map(function(x) { return x.value; });
@@ -114,29 +135,38 @@ function detectSuspicious(headers, hops, auth) {
   var origIP = extractField(headers, 'X-Originating-IP');
 
   if (replyTo && from) {
-    var fromDomain = (from.match(/@([^>]+)>?/) || [])[1] || '';
-    var replyDomain = (replyTo.match(/@([^>]+)>?/) || [])[1] || '';
-    if (fromDomain && replyDomain && fromDomain.toLowerCase() !== replyDomain.toLowerCase()) {
+    var fromDomain = addrDomain(from);
+    var replyDomain = addrDomain(replyTo);
+    if (fromDomain && replyDomain && !sameOrg(fromDomain, replyDomain)) {
       flags.push({ severity: 'high', text: 'Reply-To domain (' + esc(replyDomain) + ') does not match From domain (' + esc(fromDomain) + '). Possible phishing.' });
     }
   }
+  if (from.lastIndexOf('<') > 0) {
+    var shown = (from.slice(0, from.lastIndexOf('<')).match(/[\w.+-]+@([\w-]+(?:\.[\w-]+)+)/) || [])[1];
+    var realD = addrDomain(from);
+    if (shown && realD && !sameOrg(shown, realD)) flags.push({ severity: 'high', text: 'The From name shows an address at ' + esc(shown.toLowerCase()) + ', but the email was sent from ' + esc(realD) + '. A common spoofing trick.' });
+  }
   if (returnPath && from) {
-    var fromD = (from.match(/@([^>]+)>?/) || [])[1] || '';
-    var rpD = (returnPath.match(/@([^>]+)>?/) || [])[1] || '';
-    if (fromD && rpD && fromD.toLowerCase() !== rpD.toLowerCase()) {
-      flags.push({ severity: 'high', text: 'Return-Path domain (' + esc(rpD) + ') differs from From domain (' + esc(fromD) + '). Likely spoofed.' });
+    var fromD = addrDomain(from);
+    var rpD = addrDomain(returnPath);
+    // a bulk-mail service's bounce domain is normal; it only matters when DMARC did not pass
+    if (fromD && rpD && !sameOrg(fromD, rpD) && auth.dmarc !== 'pass') {
+      flags.push({ severity: auth.dmarc === 'fail' ? 'high' : 'medium', text: 'Return-Path domain (' + esc(rpD) + ') differs from From domain (' + esc(fromD) + ') and DMARC did not pass. The visible sender may be forged.' });
     }
   }
   if (auth.spf === 'fail') flags.push({ severity: 'critical', text: 'SPF check FAILED. Sending server is not authorized for this domain.' });
-  if (auth.dmarc === 'fail') flags.push({ severity: 'critical', text: 'DMARC check FAILED. Domain policy indicates this email should be rejected.' });
+  if (auth.dmarc === 'fail') {
+    var pol = ((auth.dmarcDetail.match(/\bp=(\w+)/i) || [])[1] || '').toLowerCase();
+    flags.push({ severity: 'critical', text: 'DMARC check FAILED. ' + (pol === 'reject' ? 'The domain asks receivers to reject this email.' : pol === 'quarantine' ? 'The domain asks receivers to send this email to spam.' : pol === 'none' ? 'The domain only monitors (p=none), so it was not blocked.' : 'The From domain could not be verified.') });
+  }
   if (auth.dkim === 'fail') flags.push({ severity: 'high', text: 'DKIM signature FAILED. Email may have been altered in transit.' });
   if (/urgent|immediate|wire transfer|confidential|act now|verify your account|suspended/i.test(subject)) {
     flags.push({ severity: 'medium', text: 'Subject line contains urgency/social engineering language: "' + esc(subject.substring(0, 60)) + '"' });
   }
   if (msgId) {
-    var msgDomain = (msgId.match(/@([^>]+)/) || [])[1] || '';
-    var senderDomain = (from.match(/@([^>]+)>?/) || [])[1] || '';
-    if (msgDomain && senderDomain && msgDomain.toLowerCase() !== senderDomain.toLowerCase()) {
+    var msgDomain = addrDomain(msgId);
+    var senderDomain = addrDomain(from);
+    if (msgDomain && senderDomain && !sameOrg(msgDomain, senderDomain)) {
       flags.push({ severity: 'medium', text: 'Message-ID domain (' + esc(msgDomain) + ') does not match sender domain (' + esc(senderDomain) + ').' });
     }
   }

@@ -745,7 +745,7 @@ export function renderAPIFuzzer(container) {
   const FUZZ_DELAY = 250;
 
   function buildFuzzTarget(payload) {
-    // Replace the FUZZ marker; if none present, append to query string.
+    // Replace the FUZZ marker in the chosen target (startFuzzing checks it is there).
     const url = state.url || '';
     let body = state.body || '';
     let finalUrl = url;
@@ -768,13 +768,33 @@ export function renderAPIFuzzer(container) {
       return;
     }
     const payloads = all.slice(0, FUZZ_MAX);
+    const where = state.fuzzTarget === 'body' ? [state.body || ''] : state.fuzzTarget === 'header' ? state.headers.map(hd => hd.val || '') : [state.url];
+    if (!where.some(v => v.includes('FUZZ'))) {
+      state.fuzzResults = [];
+      state.manualError = 'Put the word FUZZ where each payload should go (in the ' + (state.fuzzTarget === 'body' ? 'body' : state.fuzzTarget === 'header' ? 'value of a header' : 'URL') + '); without it every request would be identical.';
+      state.tab = 'fuzzer';
+      render();
+      return;
+    }
 
     state.manualError = null;
     state.fuzzRunning = true;
     state.fuzzResults = [];
     render();
 
+    // Baseline from a harmless random value in the FUZZ slot (not from the first payload,
+    // which may itself be the request that breaks the server).
     let baseline = null;
+    try {
+      const calm = 'dn' + Math.random().toString(36).slice(2, 10);
+      const { finalUrl, body } = buildFuzzTarget(calm);
+      const hdrs = buildHeaders();
+      if (state.fuzzTarget === 'header') Object.keys(hdrs).forEach(k => { hdrs[k] = hdrs[k].split('FUZZ').join(calm); });
+      const t0 = performance.now();
+      const res = await fetch(finalUrl, { method: state.method, headers: hdrs, ...(!['GET', 'HEAD'].includes(state.method) && body ? { body } : {}) });
+      const text = await res.text();
+      baseline = { status: res.status, time: Math.round(performance.now() - t0), size: new TextEncoder().encode(text).length };
+    } catch (_) { /* unreachable or blocked: fall back to the first payload's response */ }
     for (let idx = 0; idx < payloads.length; idx++) {
       if (!state.fuzzRunning) break;
       const payload = payloads[idx];

@@ -333,7 +333,7 @@ export function reconcileRun(toolId, dataset, prevEntities, currentKeys, ctx = {
       const data = addHistory(d, { resolution: "fixed", verifiedBy: str(toolId), verifiedAt: now },
         [entry(now, uid, "status", st, "resolved"), ...(prevRes !== "fixed" ? [entry(now, uid, "resolution", prevRes, "fixed")] : [])]);
       fixed.push({ id: e.id, updates: { status: "resolved", data } });
-    } else if ((st === "resolved" || st === "closed") && d.resolution === "fixed" && present) {
+    } else if ((st === "resolved" || st === "closed") && d.resolution === "fixed" && present && !held.has(d.findingKey)) {
       const data = addHistory(d, { resolution: null, regressed: true, regressedAt: now },
         [entry(now, uid, "status", st, "open"), entry(now, uid, "resolution", "fixed", null)]);
       regressed.push({ id: e.id, updates: { status: "open", data } });

@@ -72,7 +72,7 @@ function parseIPv6(str) {
     const head = parts[0] ? parts[0].split(":") : [];
     const tail = parts[1] ? parts[1].split(":") : [];
     const missing = 8 - head.length - tail.length;
-    if (missing < 0) return null;
+    if (missing < 1) return null; // "::" stands for one or more zero groups
     groups = [...head, ...new Array(missing).fill("0"), ...tail];
   } else {
     groups = s.split(":");
@@ -127,11 +127,11 @@ const OUI = {
   "080027": "Oracle VirtualBox", "001C42": "Parallels",
   "525400": "QEMU / KVM (virtio)", "00155D": "Microsoft Hyper-V",
   "B827EB": "Raspberry Pi Foundation", "DCA632": "Raspberry Pi Foundation", "E45F01": "Raspberry Pi Foundation",
-  "001EC2": "Apple", "28CFE9": "Apple", "3C0754": "Apple", "8863DF": "Apple", "F01898": "Apple", "AC1F6B": "Apple",
-  "E4CE8F": "Samsung", "5C0A5B": "Samsung", "002637": "Samsung",
-  "CC46D6": "Cisco", "001BD4": "Cisco (Linksys)", "FCFC48": "Cisco",
-  "D89EF3": "Dell", "14FEB5": "Dell", "B083FE": "Dell",
-  "F8B156": "Hewlett Packard", "3CD92B": "Hewlett Packard",
+  "001EC2": "Apple", "28CFE9": "Apple", "3C0754": "Apple", "8863DF": "Apple", "F01898": "Apple", "E4CE8F": "Apple", "FCFC48": "Apple",
+  "5C0A5B": "Samsung", "002637": "Samsung",
+  "CC46D6": "Cisco", "001BD4": "Cisco (Linksys)", "AC1F6B": "Supermicro",
+  "D89EF3": "Dell", "14FEB5": "Dell", "B083FE": "Dell", "F8B156": "Dell",
+  "3CD92B": "Hewlett Packard",
   "0050BA": "D-Link", "00146C": "Netgear", "A040A0": "Netgear",
   "00E04C": "Realtek",
 };
@@ -267,9 +267,9 @@ export const TOOLS = [
       const mask = maskFromBits(c.bits);
       const base = (c.ipInt & mask) >>> 0;
       const blockSize = Math.pow(2, 32 - newBits);
-      const lines = [];
-      for (let i = 0; i < n; i++) lines.push(`${intToIp(base + i * blockSize)}/${newBits}`);
-      return lines.join("\n");
+      const lines = [], shown = Math.min(n, 4096); // a /0 split into /32s is 4 billion lines
+      for (let i = 0; i < shown; i++) lines.push(`${intToIp(base + i * blockSize)}/${newBits}`);
+      return lines.join("\n") + (n > shown ? `\n… (${n - shown} more /${newBits} subnets not shown)` : "");
     } },
 
   { id: "n-ipv6-eui64", name: "MAC → EUI-64 Interface ID", cat: "network", desc: "Derive the 64-bit modified-EUI-64 interface identifier from a MAC address.", tags: ["ipv6", "eui64", "mac"],
@@ -330,8 +330,9 @@ export const TOOLS = [
       const FLAGS = [["FIN", 0x01], ["SYN", 0x02], ["RST", 0x04], ["PSH", 0x08], ["ACK", 0x10], ["URG", 0x20], ["ECE", 0x40], ["CWR", 0x80]];
       if (!v.value) return "";
       if (v.mode === "Number → Flags") {
-        const n = parseInt(v.value, 10);
-        if (isNaN(n) || n < 0 || n > 255) return { error: "Enter a number 0-255." };
+        const sv = String(v.value).trim(); // Wireshark shows flags as hex (0x012)
+        const n = /^0x[0-9a-f]+$/i.test(sv) ? parseInt(sv, 16) : /^\d+$/.test(sv) ? parseInt(sv, 10) : NaN;
+        if (isNaN(n) || n < 0 || n > 255) return { error: "Enter a number 0-255 (decimal, or hex like 0x12)." };
         const set = FLAGS.filter(([, bit]) => (n & bit) !== 0).map(([name]) => name);
         return `Flags set: ${set.length ? set.join(", ") : "(none)"}\nBinary: ${n.toString(2).padStart(8, "0")}`;
       }
@@ -374,7 +375,7 @@ export const TOOLS = [
     run(v) {
       const ua = String(v.ua || ""); if (!ua) return "";
       let browser = "Unknown", bver = "";
-      const tests = [[/Edg\/([\d.]+)/, "Microsoft Edge"], [/OPR\/([\d.]+)/, "Opera"], [/CriOS\/([\d.]+)/, "Chrome (iOS)"], [/FxiOS\/([\d.]+)/, "Firefox (iOS)"], [/Chrome\/([\d.]+)/, "Chrome"], [/Firefox\/([\d.]+)/, "Firefox"], [/Version\/([\d.]+).*Safari/, "Safari"], [/Trident.*rv:([\d.]+)/, "Internet Explorer"], [/MSIE ([\d.]+)/, "Internet Explorer"]];
+      const tests = [[/Edg(?:A|iOS)?\/([\d.]+)/, "Microsoft Edge"], [/OPR\/([\d.]+)/, "Opera"], [/CriOS\/([\d.]+)/, "Chrome (iOS)"], [/FxiOS\/([\d.]+)/, "Firefox (iOS)"], [/Chrome\/([\d.]+)/, "Chrome"], [/Firefox\/([\d.]+)/, "Firefox"], [/Version\/([\d.]+).*Safari/, "Safari"], [/Trident.*rv:([\d.]+)/, "Internet Explorer"], [/MSIE ([\d.]+)/, "Internet Explorer"]];
       for (const [re, name] of tests) { const m = ua.match(re); if (m) { browser = name; bver = m[1]; break; } }
       let os = "Unknown";
       const osTests = [[/Windows NT 10\.0/, "Windows 10/11"], [/Windows NT 6\.3/, "Windows 8.1"], [/Windows NT 6\.2/, "Windows 8"], [/Windows NT 6\.1/, "Windows 7"], [/iPad.*OS ([\d_]+)/, "iPadOS"], [/iPhone OS ([\d_]+)/, "iOS"], [/Mac OS X ([\d_]+)/, "macOS"], [/Android ([\d.]+)/, "Android"], [/CrOS/, "ChromeOS"], [/Linux/, "Linux"]];
@@ -492,7 +493,8 @@ export const TOOLS = [
       const qualName = { "+": "Pass", "-": "Fail", "~": "SoftFail", "?": "Neutral" };
       for (const t of tokens) {
         if (/^(\+|-|~|\?)?all$/i.test(t)) { const q = qualName[t[0]] || "Pass"; lines.push(`all → ${q} (catch-all)`); allSeen = true; continue; }
-        const m = t.match(/^(\+|-|~|\?)?(ip4|ip6|a|mx|ptr|exists|include|redirect|exp)(:?.*)$/i);
+        const m = t.match(/^(\+|-|~|\?)?(ip4|ip6|a|mx|ptr|exists|include|redirect|exp)([:/=].*)?$/i);
+        if (m && (m[3] || "")[0] === "=" !== /^(redirect|exp)$/i.test(m[2])) { lines.push(`Unrecognized mechanism: "${t}"`); continue; } // = only after the redirect/exp modifiers
         if (m) { const q = qualName[m[1]] || "Pass"; lines.push(`${m[2]}${m[3] || ""} → ${q}`); }
         else lines.push(`Unrecognized mechanism: "${t}"`);
       }

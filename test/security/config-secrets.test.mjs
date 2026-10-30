@@ -20,6 +20,9 @@ group("codescan: unquoted secrets in config files", () => {
       "password: correcthorsebattery", "password_hash: " + V, "api_key: changeme", "password: <set-me-2>"])
       assert.deepEqual(ids("config.yml", line), [], line);
   });
+  test("a value a specific rule reports is not reported again as a generic credential", () => {
+    assert.deepEqual(ids("settings.py", 'aws_secret_access_key = "rNMIq8Vf2KxLp0Tz7WbYc3Hd9JsQe5Ua1GtAGi4k"'), ["secret.aws-secret-key"]);
+  });
   test("the unquoted form is not applied to source code", () => {
     assert.deepEqual(ids("src/a.js", "password = " + V), []);
     assert.deepEqual(ids("src/a.py", "api_key = " + V), []);

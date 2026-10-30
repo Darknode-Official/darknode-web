@@ -17,7 +17,7 @@
 //      See the co-location heuristic in analyze() below; it is never inflated to a
 //      reachability claim.
 
-import { taintScan } from "./codescan/taint-js.js?v=20261013a";
+import { taintScan } from "./codescan/taint-js.js?v=20261029e";
 
 // ---- Attack goals: the top level of every tree -----------------------------
 export const GOALS = {

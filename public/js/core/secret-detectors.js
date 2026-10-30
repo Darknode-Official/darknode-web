@@ -167,7 +167,7 @@ export const SECRET_DETECTORS = [
   },
   {
     id: 'jwt', name: 'JSON Web Token', severity: 'medium',
-    re: /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,
+    re: /\beyJ[A-Za-z0-9_-]{10,4000}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,
     advice: 'Treat the JWT as a live credential until it expires; do not share it.',
   },
   {
@@ -227,7 +227,7 @@ export const SECRET_DETECTORS = [
   },
   {
     id: 'azure-sas', name: 'Azure SAS token', severity: 'high',
-    re: /[?&]sv=\d{4}-\d{2}-\d{2}&[^\s"'<>]*?sig=[A-Za-z0-9%]{10,}/gi,
+    re: /[?&]sv=\d{4}-\d{2}-\d{2}&[^\s"'<>]{0,2000}?sig=[A-Za-z0-9%]{10,}/gi,
     mask: () => '[AZURE SAS TOKEN]',
     advice: 'Revoke the shared access signature; anyone with the URL has the granted access.',
   },
@@ -256,7 +256,7 @@ export const SECRET_DETECTORS = [
   },
   {
     id: 'discord-bot-token', name: 'Discord bot token', severity: 'high',
-    re: /\b[MNO][A-Za-z0-9_-]{23,}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,}/g,
+    re: /\b[MNO][A-Za-z0-9_-]{23,40}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,}/g,
     advice: 'Reset the bot token in the Discord developer portal.',
   },
   {
@@ -300,7 +300,8 @@ export const SECRET_DETECTORS = [
     // `name = "value"` where the name holds a credential word. Group 1 is the key name
     // (consumers decide how strictly it must match SECRET_KEY_WORDS), group 2 the value.
     id: 'pat-assignment', name: 'Password or secret in assignment', severity: 'high',
-    re: /(?<![A-Za-z0-9])([A-Za-z0-9_.-]*?(?:passw(?:or)?d|pwd|secret|token|api[_-]?key|apikey|access[_-]?(?:key|token)|auth[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*)["']?[\t ]*[:=][\t ]*["']([^"'\s]{6,})["']/gi,
+    // The key is the whole name run; a lookahead finds the credential word, so a long run backtracks linearly.
+    re: /(?<![A-Za-z0-9_.-])(?=[A-Za-z0-9_.-]*?(?:passw(?:or)?d|pwd|secret|token|api[_-]?key|apikey|access[_-]?(?:key|token)|auth[_-]?key|client[_-]?secret))([A-Za-z0-9_.-]+)["']?[\t ]*[:=][\t ]*["']([^"'\s]{6,})["']/gi,
     g: 2,
     validate: realValue,
     advice: 'Move the secret to a secrets manager or environment variable.',
@@ -312,7 +313,7 @@ export const SECRET_DETECTORS = [
     // or symbol, so a word or a plain number is not reported. Meant for config files:
     // in source code the same shape is usually a variable read, not a secret.
     id: 'config-assignment', name: 'Password or secret in a config file', severity: 'high',
-    re: /^[\t ]*(?:export[\t ]+)?([A-Za-z0-9_.-]*?(?:passw(?:or)?d|pwd|secret|token|api[_-]?key|apikey|access[_-]?(?:key|token)|auth[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*)[\t ]*[:=][\t ]*([^\s"'#$<{\[|>&*!%@`]\S{5,})(?:[\t ]+#.*)?[\t ]*$/gim,
+    re: /^[\t ]*(?:export[\t ]+)?(?=[A-Za-z0-9_.-]*?(?:passw(?:or)?d|pwd|secret|token|api[_-]?key|apikey|access[_-]?(?:key|token)|auth[_-]?key|client[_-]?secret))([A-Za-z0-9_.-]+)[\t ]*[:=][\t ]*([^\s"'#$<{\[|>&*!%@`]\S{5,})(?:[\t ]+#.*)?[\t ]*$/gim,
     g: 2,
     validate: (m) => realValue(m) && /[^A-Za-z]/.test(m) && !/^[\d.,_-]+$/.test(m),
     advice: 'Move the secret to a secrets manager or environment variable.',
@@ -364,4 +365,11 @@ export function findAll(d, text, opts = {}) {
 export function findFirst(d, text, accept) {
   for (const h of findAll(d, text)) if (!accept || accept(h)) return h;
   return null;
+}
+
+/** `text` with every validated detector hit replaced by `maskFn(value)` (default maskValue). */
+export function maskSecrets(text, maskFn = maskValue) {
+  let t = String(text == null ? '' : text);
+  for (const d of SECRET_DETECTORS) for (const h of findAll(d, t).reverse()) t = t.slice(0, h.start) + maskFn(h.value) + t.slice(h.end);
+  return t;
 }

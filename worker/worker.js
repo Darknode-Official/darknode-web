@@ -22,6 +22,7 @@ import { handleGraph } from "./graph.js";
 import { handleMonitor } from "./monitor.js";
 import { handleKeys, handleIngest } from "./ingest.js";
 import { hostAllowed } from "./net-guard.js";
+import { readCapped } from "./body-cap.js";
 import { handleIntel } from "./intel.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
@@ -225,12 +226,15 @@ async function handleFetch(request) {
   // Optional opt-in upstream timeout (seconds) for slow keyless sources (crt.sh often
   // needs 15-20 s); default stays 10 s, clamped to 28 s.
   let waitS = parseInt(u0.searchParams.get("t") || "", 10);
+  // Optional Origin request header, for CORS checks (does the site echo a foreign
+  // origin?). Server-side, so no cookies ride along; only "null" or scheme://host[:port].
+  let origin = u0.searchParams.get("origin") || "";
   if (request.method === "POST") {
     // Cap the request body BEFORE parsing — this control body is tiny ({url,...}),
     // so 64 KB is generous and stops an unbounded JSON parse (every other route
     // caps first). Oversize is rejected; a malformed small body is ignored as before.
-    const txt = await request.text();
-    if (txt.length > 65536) return new Response(JSON.stringify({ error: "Request body too large." }), { status: 413, headers: { "Content-Type": "application/json" } });
+    const txt = await readCapped(request, 65536);
+    if (txt === null) return json({ error: "Request body too large." }, 413);
     try {
       const b = JSON.parse(txt || "{}");
       if (b && b.url) target = b.url;
@@ -240,6 +244,7 @@ async function handleFetch(request) {
       if (b && b.ua) ua = String(b.ua);
       if (b && b.max) maxBytes = parseInt(b.max, 10);
       if (b && b.t) waitS = parseInt(b.t, 10);
+      if (b && b.origin) origin = String(b.origin);
     } catch (_) {}
   }
   const cap = Math.min(Math.max(Number.isFinite(maxBytes) ? maxBytes : 200000, 1), 4000000);
@@ -251,6 +256,7 @@ async function handleFetch(request) {
   const reqHeaders = ua
     ? { "User-Agent": ua, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.9" }
     : { "User-Agent": "DarknodeRecon/1.0 (+https://darknode.ai)", "Accept": "*/*" };
+  if (origin.length <= 256 && /^(null|https?:\/\/[a-z0-9.-]+(:\d{1,5})?)$/i.test(origin)) reqHeaders.Origin = origin;
   let current = target;
   const chain = [];
   for (let hop = 0; hop < 5; hop++) {
@@ -278,8 +284,10 @@ async function handleFetch(request) {
         if (bytes > readCap) { truncated = true; try { await reader.cancel(); } catch (_) {} break; }
       }
     } catch (_) {}
-    const text = raw ? body.slice(0, cap)
-      : (/json|xml|javascript|text|csv/.test(ct) ? body.slice(0, cap) : htmlToText(body).slice(0, cap));
+    const full = raw || /json|xml|javascript|text|csv/.test(ct) ? body : htmlToText(body);
+    // A body cut to `cap` is truncated too, not only one cut at the read ceiling.
+    if (full.length > cap) truncated = true;
+    const text = full.slice(0, cap);
     return json({ url: u.href, finalUrl: u.href, status: res.status, statusText: res.statusText || "", contentType: ct, headers, redirectChain: chain, body: text, bytes, truncated });
   }
   return json({ error: "too many redirects" }, 502);
@@ -487,8 +495,8 @@ async function handleSmart(request, env) {
   let body;
   // Cap the body before parsing (input is sliced to 6 KB + up to 6 history turns);
   // 256 KB is ample and matches the monitor route, so an unbounded parse can't run.
-  const smartTxt = await request.text();
-  if (smartTxt.length > 262144) return json({ error: "Request body too large." }, 413);
+  const smartTxt = await readCapped(request, 262144);
+  if (smartTxt === null) return json({ error: "Request body too large." }, 413);
   try { body = JSON.parse(smartTxt || "{}"); } catch (_) { return json({ error: "Invalid JSON body" }, 400); }
   const input = String((body && body.input) || "").slice(0, 6000).trim();
   if (!input) return json({ error: "Empty request" }, 400);
@@ -534,7 +542,14 @@ async function handleSmart(request, env) {
 }
 
 export default {
+  // A handler that throws (e.g. a JSON body of `null` on /api/intel) must not become
+  // Cloudflare's HTML 1101 page with no CORS headers: answer JSON 500, no stack.
   async fetch(request, env) {
+    try { return await route(request, env); } catch (_) { return json({ error: "Internal error." }, 500); }
+  },
+};
+
+async function route(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     // Reject disallowed browser origins, then apply a per-IP rate limit, before
     // any route reaches the upstream model (and spends the server-side key).
@@ -557,14 +572,14 @@ export default {
 
     let body;
     try {
-      const raw = await request.text();
-      if (raw.length > 1024 * 1024) return json({ error: "Request too large." }, 413); // parity with the other routes' body caps
+      const raw = await readCapped(request, 1024 * 1024);
+      if (raw === null) return json({ error: "Request too large." }, 413); // parity with the other routes' body caps
       body = JSON.parse(raw);
     } catch (_) { return json({ error: "Invalid JSON body" }, 400); }
     const { provider, model, messages } = body || {};
     if (!provider || !model || !messages) return json({ error: "Missing provider, model, or messages" }, 400);
 
-    const cfg = PROVIDERS[provider];
+    const cfg = Object.prototype.hasOwnProperty.call(PROVIDERS, provider) ? PROVIDERS[provider] : null;
     if (!cfg) return json({ error: "Unknown provider: " + provider }, 400);
 
     // Citations default ON (website); the desktop app sends cite:false.
@@ -615,5 +630,4 @@ export default {
     } catch (e) {
       return json({ error: e.message || String(e) }, 500);
     }
-  },
-};
+}

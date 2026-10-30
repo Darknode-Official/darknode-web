@@ -267,6 +267,10 @@ group("posture: email auth depth", () => {
     assert.equal(found.checks.find((c) => c.name === "DKIM").status, "pass");
     const none = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"], dkimSelectors: [{ selector: "s1", present: false }] });
     assert.equal(none.checks.find((c) => c.name === "DKIM").status, "na");
+    const rev = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"], dkimSelectors: [{ selector: "google", present: true, revoked: true }] });
+    const rc = rev.checks.find((c) => c.name === "DKIM");
+    assert.equal(rc.status, "na");
+    assert.ok(/revoked/.test(rc.detail));
   });
   test("MTA-STS enforce passes; testing warns; absent warns", () => {
     const pass = parseMtaSts(["v=STSv1; id=1"], "version: STSv1\nmode: enforce\nmax_age: 604800");
@@ -349,5 +353,22 @@ group("posture: CSP nonce/hash fallbacks and quoted HSTS max-age", () => {
   });
   test("HSTS max-age as a quoted-string (RFC 6797 6.1) is read", () => {
     assert.equal(parseHSTS('max-age="31536000"; includeSubDomains').maxAge, 31536000);
+  });
+});
+
+group("posture: a null MX domain is not told to protect inbound mail", () => {
+  const base = { spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject"], dkimSelectors: [], mtaStsTxts: [], tlsRptTxts: [] };
+  const st = (r, name) => r.checks.find((c) => c.name === name).status;
+  test("MTA-STS and TLS-RPT are not applicable when the only MX is '.'", () => {
+    const r = gradeEmail({ ...base, mxHosts: [""] });
+    assert.equal(st(r, "MTA-STS"), "na");
+    assert.equal(st(r, "TLS-RPT"), "na");
+  });
+  test("a real MX, an unknown MX or a failed MX lookup keeps the warnings", () => {
+    for (const mxHosts of [["mx.example.com"], undefined, Object.assign([], { failed: true })]) {
+      const r = gradeEmail({ ...base, mxHosts });
+      assert.equal(st(r, "MTA-STS"), "warn");
+      assert.equal(st(r, "TLS-RPT"), "warn");
+    }
   });
 });

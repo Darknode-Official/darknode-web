@@ -554,6 +554,9 @@ export function analyze(dataset, opts = {}, ctx) {
   }
   // SaaS accounts
   const appStats = new Map();
+  // Normalised keys of unmatched IdP users, built once: a per-account scan re-normalised every IdP user (quadratic).
+  const idpEmailKeys = new Set(), idpNameKeys = new Set();
+  for (const u of idpUnmatched) { if (u.upn) idpEmailKeys.add(normalizeEmail(u.upn)); if (u.id) idpEmailKeys.add(normalizeEmail(u.id)); idpNameKeys.add(normalizeName(u.name)); }
   for (const s of loaded.saas) {
     const st = appStats.get(s.app) || { app: s.app, vendor: s.vendor, file: s.file, total: 0, active: 0, leavers: [], orphans: [], external: [], waste: [], hasLastLogin: s.accounts.some((a) => a.hasLastLogin), hasLicense: s.accounts.some((a) => a.licensed != null) };
     appStats.set(s.app, st);
@@ -564,7 +567,7 @@ export function analyze(dataset, opts = {}, ctx) {
       if (m) { m.person.apps.push(rec); if (m.confidence === "review") m.person.flags.push(s.app + " match needs review"); }
       else {
         // not in HR. In the IdP?
-        const inIdp = idpUnmatched.some((u) => (a.emailKey && u.upn && normalizeEmail(u.upn) === a.emailKey) || (a.emailKey && u.id && normalizeEmail(u.id) === a.emailKey) || (a.nameKey && a.nameKey.includes(" ") && normalizeName(u.name) === a.nameKey));
+        const inIdp = (!!a.emailKey && idpEmailKeys.has(a.emailKey)) || (!!a.nameKey && a.nameKey.includes(" ") && idpNameKeys.has(a.nameKey));
         const svc = looksLikeServiceAccount({ id: a.login || a.email, email: a.email, name: a.name });
         const dom = emailDomain(a.email);
         const external = dom && companyDomains.length && !companyDomains.includes(dom);

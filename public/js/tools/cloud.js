@@ -159,7 +159,7 @@ export const TOOLS = [
       const txt = S(v.json).trim();
       if (!txt) return "";
       let pol; try { pol = JSON.parse(txt); } catch (e) { return { error: "Not valid JSON." }; }
-      let stmts = pol.Statement; if (!stmts) return { error: "No Statement found." };
+      let stmts = pol && pol.Statement; if (!stmts) return { error: "No Statement found." };
       if (!Array.isArray(stmts)) stmts = [stmts];
       const asArr = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
       const findings = [];
@@ -170,7 +170,7 @@ export const TOOLS = [
         const actions = asArr(st.Action).map(String);
         const resources = asArr(st.Resource).map(String);
         if (allow && actions.includes("*")) add("HIGH", 'Action "*" with Allow grants every action (admin).');
-        actions.forEach((a) => { if (a !== "*" && a.endsWith(":*")) add("MED", `Action "${a}" allows every action in that service.`); });
+        actions.forEach((a) => { if (allow && a !== "*" && a.endsWith(":*")) add("MED", `Action "${a}" allows every action in that service.`); });
         if (allow && (actions.includes("iam:*") || actions.some((a) => /^iam:(Create|Put|Attach|Update|PassRole)/i.test(a)))) add("HIGH", "Grants IAM write/PassRole — can lead to privilege escalation.");
         if (allow && resources.includes("*") && !actions.includes("*")) add("MED", 'Resource "*" with Allow — not scoped to specific resources.');
         if (allow && st.NotAction) add("HIGH", "Allow + NotAction grants everything EXCEPT the listed actions (very broad).");
@@ -192,7 +192,7 @@ export const TOOLS = [
       const txt = S(v.json).trim();
       if (!txt) return "";
       let pol; try { pol = JSON.parse(txt); } catch (e) { return { error: "Not valid JSON." }; }
-      let stmts = pol.Statement; if (!stmts) return { error: "No Statement found." };
+      let stmts = pol && pol.Statement; if (!stmts) return { error: "No Statement found." };
       if (!Array.isArray(stmts)) stmts = [stmts];
       const asArr = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
       const out = [];
@@ -301,7 +301,7 @@ export const TOOLS = [
       const txt = S(v.json).trim();
       if (!txt) return "";
       let pol; try { pol = JSON.parse(txt); } catch (e) { return { error: "Not valid JSON." }; }
-      let stmts = pol.Statement; if (!stmts) return { error: "No Statement found." };
+      let stmts = pol && pol.Statement; if (!stmts) return { error: "No Statement found." };
       if (!Array.isArray(stmts)) stmts = [stmts];
       const asArr = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
       const out = [];
@@ -363,8 +363,8 @@ export const TOOLS = [
       if (!u) return "";
       let m;
       if ((m = u.match(/^s3:\/\/([^/]+)\/?(.*)$/i))) return lines([`scheme     s3:// (CLI / SDK URI)`, `bucket     ${m[1]}`, `key        ${m[2] || "(none)"}`]);
-      if ((m = u.match(/^https?:\/\/([^.]+)\.s3[.-]([a-z0-9-]+)\.amazonaws\.com\/?(.*)$/i))) return lines([`style      virtual-hosted`, `bucket     ${m[1]}`, `region     ${m[2]}`, `key        ${(m[3] || "").split("?")[0] || "(none)"}`]);
-      if ((m = u.match(/^https?:\/\/([^.]+)\.s3\.amazonaws\.com\/?(.*)$/i))) return lines([`style      virtual-hosted (global/us-east-1)`, `bucket     ${m[1]}`, `key        ${(m[2] || "").split("?")[0] || "(none)"}`]);
+      if ((m = u.match(/^https?:\/\/([^/]+?)\.s3[.-]([a-z0-9-]+)\.amazonaws\.com\/?(.*)$/i))) return lines([`style      virtual-hosted`, `bucket     ${m[1]}`, `region     ${m[2]}`, `key        ${(m[3] || "").split("?")[0] || "(none)"}`]);
+      if ((m = u.match(/^https?:\/\/([^/]+?)\.s3\.amazonaws\.com\/?(.*)$/i))) return lines([`style      virtual-hosted (global/us-east-1)`, `bucket     ${m[1]}`, `key        ${(m[2] || "").split("?")[0] || "(none)"}`]);
       if ((m = u.match(/^https?:\/\/s3[.-]([a-z0-9-]+)\.amazonaws\.com\/([^/]+)\/?(.*)$/i))) return lines([`style      path-style`, `region     ${m[1]}`, `bucket     ${m[2]}`, `key        ${(m[3] || "").split("?")[0] || "(none)"}`]);
       if ((m = u.match(/^https?:\/\/s3\.amazonaws\.com\/([^/]+)\/?(.*)$/i))) return lines([`style      path-style (global/us-east-1)`, `bucket     ${m[1]}`, `key        ${(m[2] || "").split("?")[0] || "(none)"}`]);
       return { error: "Did not recognise this as an S3 URL." };
@@ -590,8 +590,10 @@ export const TOOLS = [
         const [proto, port, cidr] = parts;
         const world = cidr === "0.0.0.0/0" || cidr === "::/0";
         if (!world) return;
-        const pn = Number(port);
-        if (proto === "-1" || /all/i.test(proto)) findings.push(`line ${i + 1}: ALL ports open to internet — critical`);
+        const pn = Number(port); const rg = /^(\d+)-(\d+)$/.exec(port);
+        const inRange = rg ? Object.keys(RISKY_PORTS).filter((p) => +p >= +rg[1] && +p <= +rg[2]).map((p) => `${p} (${RISKY_PORTS[p]})`) : [];
+        if (proto === "-1" || /all/i.test(proto) || (rg && +rg[1] <= 1 && +rg[2] >= 65535)) findings.push(`line ${i + 1}: ALL ports open to internet — critical`);
+        else if (inRange.length) findings.push(`line ${i + 1}: ${proto} ${port} open to internet, includes ${inRange.join(", ")}`);
         else if (RISKY_PORTS[pn]) findings.push(`line ${i + 1}: ${proto} ${port} (${RISKY_PORTS[pn]}) open to internet`);
         else findings.push(`line ${i + 1}: ${proto} ${port} open to internet (verify intentional)`);
       });
@@ -707,7 +709,7 @@ export const TOOLS = [
       const txt = S(v.json).trim();
       if (!txt) return "";
       let k; try { k = JSON.parse(txt); } catch (e) { return { error: "Not valid JSON." }; }
-      if (k.type !== "service_account") return { error: 'JSON "type" is not "service_account".' };
+      if (!k || k.type !== "service_account") return { error: 'JSON "type" is not "service_account".' };
       return lines([
         `type            ${k.type}`,
         `project_id      ${k.project_id || "(missing)"}`,
@@ -799,7 +801,7 @@ export const TOOLS = [
       if (q.spr) out.push(`spr protocols          ${q.spr}`);
       if (q.sig) out.push(`sig signature          present (${q.sig.length} chars)`);
       if (q.se) { const exp = Date.parse(q.se); if (!isNaN(exp)) out.push(exp < Date.now() ? `\nNOTE: this SAS has EXPIRED.` : `\nValid until ${new Date(exp).toISOString()}.`); }
-      if (!q.spr || !/https/i.test(q.spr)) out.push(`WARNING: SAS does not restrict to https only (spr).`);
+      if (!q.spr || !/^https$/i.test(q.spr.trim())) out.push(`WARNING: SAS does not restrict to https only (spr).`);
       return out.join("\n");
     } },
 
@@ -853,9 +855,9 @@ export const TOOLS = [
       const out = [`Allows: ${verbs.join(", ")} on ${res.join(", ")} in apiGroup(s) ${groups.map((g) => g === '""' ? "core" : g).join(", ") || "core"}`];
       const w = [];
       if (verbs.includes("*") && res.includes("*")) w.push("verbs:* on resources:* is cluster-admin-equivalent within its scope.");
-      if (res.includes("secrets") && (verbs.includes("get") || verbs.includes("list") || verbs.includes("*"))) w.push("can read Secrets — may expose credentials/tokens.");
+      if ((res.includes("secrets") || res.includes("*")) && (verbs.includes("get") || verbs.includes("list") || verbs.includes("watch") || verbs.includes("*"))) w.push("can read Secrets — may expose credentials/tokens.");
       if (res.some((r) => r === "pods/exec" || r === "pods/attach")) w.push("pods/exec or pods/attach — can run commands in containers.");
-      if (res.includes("pods") && (verbs.includes("create") || verbs.includes("*"))) w.push("can create Pods — may mount secrets or escalate via a privileged pod.");
+      if ((res.includes("pods") || res.includes("*")) && (verbs.includes("create") || verbs.includes("*"))) w.push("can create Pods — may mount secrets or escalate via a privileged pod.");
       if (verbs.includes("escalate") || verbs.includes("bind")) w.push("verb escalate/bind on roles lets the subject grant themselves more permissions.");
       if (verbs.includes("impersonate")) w.push("impersonate lets the subject act as other users/groups/service accounts.");
       if (res.some((r) => r === "nodes" || r === "nodes/proxy")) w.push("node access can reach the kubelet and other pods' data.");
@@ -899,7 +901,7 @@ export const TOOLS = [
       if (!res.length || !verbs.length) return "";
       const ns = S(v.ns).trim() || "default";
       const rn = S(v.roleName).trim() || "role";
-      const yl = (arr) => arr.map((x) => (x === '""' ? '""' : x)).map((x) => `  - ${x}`).join("\n");
+      const yl = (arr) => arr.map((x) => (x === '""' ? '""' : x)).map((x) => `      - ${x}`).join("\n");
       const subjLine = v.subjectKind === "ServiceAccount" ? `  - kind: ServiceAccount\n    name: ${S(v.subject).trim()}\n    namespace: ${ns}` : `  - kind: ${v.subjectKind}\n    name: ${S(v.subject).trim()}\n    apiGroup: rbac.authorization.k8s.io`;
       return [
         `apiVersion: rbac.authorization.k8s.io/v1`,
@@ -975,6 +977,7 @@ export const TOOLS = [
     ],
     run(v) {
       const uid = S(v.uid).trim() || "1000";
+      if (!/^\d+$/.test(uid) || Number(uid) === 0) return { error: "runAsUser must be a non-zero numeric UID (runAsNonRoot rejects UID 0)." };
       const caps = v.netbind ? `    drop: ["ALL"]\n    add: ["NET_BIND_SERVICE"]` : `    drop: ["ALL"]`;
       return [
         `securityContext:`,
@@ -1062,8 +1065,8 @@ export const TOOLS = [
         return [
           `apiVersion: networking.k8s.io/v1`, `kind: NetworkPolicy`,
           `metadata:`, `  name: allow-${fv || "src"}-to-${tv || "dst"}`, `  namespace: ${ns}`,
-          `spec:`, `  podSelector:`, `    matchLabels:`, `      ${tk}: ${tv}`,
-          `  policyTypes: ["Ingress"]`, `  ingress:`, `    - from:`, `        - podSelector:`, `            matchLabels:`, `              ${fk}: ${fv}`,
+          `spec:`, `  podSelector:`, `    matchLabels:`, `      ${tk}: "${tv}"`,
+          `  policyTypes: ["Ingress"]`, `  ingress:`, `    - from:`, `        - podSelector:`, `            matchLabels:`, `              ${fk}: "${fv}"`,
           port ? `      ports:\n        - protocol: TCP\n          port: ${port}` : null,
         ].filter(Boolean).join("\n");
       }
@@ -1159,13 +1162,13 @@ export const TOOLS = [
       if (!txt.trim()) return "";
       const rows = txt.split(/\r?\n/);
       const findings = [];
-      let sawUser = false, lastFromLatest = false, sawHealthcheck = false;
+      let sawUser = false, lastFromLatest = false, sawHealthcheck = false; const stages = new Set();
       rows.forEach((raw, i) => {
         const ln = raw.trim(); if (!ln || ln.startsWith("#")) return;
         const n = i + 1;
         const instr = (ln.match(/^(\w+)/) || [, ""])[1].toUpperCase();
-        if (instr === "FROM") { lastFromLatest = /:latest\b/.test(ln) || !/:/.test(ln.replace(/\s+as\s+\w+/i, "").split(/\s+/)[1] || ""); if (lastFromLatest) findings.push(`[MED] line ${n}: FROM uses :latest or no tag — pin a specific version/digest.`); }
-        if (instr === "USER") { sawUser = true; if (/^user\s+(root|0)\s*$/i.test(ln)) findings.push(`[HIGH] line ${n}: USER root — run as an unprivileged user instead.`); }
+        if (instr === "FROM") { sawUser = false; const fw = ln.split(/\s+/).slice(1).filter((w) => !w.startsWith("--")); const img = fw[0] || ""; if (/^as$/i.test(fw[1] || "") && fw[2]) stages.add(fw[2].toLowerCase()); const lastSeg = img.slice(img.lastIndexOf("/") + 1); lastFromLatest = img.toLowerCase() !== "scratch" && !stages.has(img.toLowerCase()) && !img.includes("$") && (/:latest$/.test(img) || (!lastSeg.includes(":") && !img.includes("@"))); if (lastFromLatest) findings.push(`[MED] line ${n}: FROM uses :latest or no tag — pin a specific version/digest.`); }
+        if (instr === "USER") { sawUser = true; if (/^user\s+(root|0)(:\S*)?\s*$/i.test(ln)) findings.push(`[HIGH] line ${n}: USER root — run as an unprivileged user instead.`); }
         if (instr === "ADD" && !/^add\s+--/.test(ln.toLowerCase()) && !/^add\s+http/i.test(ln)) findings.push(`[LOW] line ${n}: prefer COPY over ADD unless you need URL fetch or auto-extract.`);
         if (/\b(curl|wget)\b[^\n|]*\|\s*(sudo\s+)?(sh|bash)/i.test(ln)) findings.push(`[HIGH] line ${n}: piping a download straight into a shell — unverified remote code execution.`);
         if (instr === "RUN" && /\bsudo\b/.test(ln)) findings.push(`[LOW] line ${n}: sudo inside RUN is usually unnecessary (build runs as root already).`);
@@ -1175,7 +1178,7 @@ export const TOOLS = [
         if (instr === "HEALTHCHECK") sawHealthcheck = true;
         if (instr === "EXPOSE" && /\b22\b/.test(ln)) findings.push(`[MED] line ${n}: EXPOSE 22 — running SSH inside a container is an anti-pattern.`);
       });
-      if (!sawUser) findings.push(`[MED] no USER instruction — the container will run as root by default.`);
+      if (!sawUser) findings.push(`[MED] no USER instruction in the final stage — the container will run as root by default.`);
       if (!sawHealthcheck) findings.push(`[LOW] no HEALTHCHECK instruction.`);
       return findings.length ? `${findings.length} finding(s):\n` + findings.join("\n") : "No obvious issues found (heuristic lint).";
     } },
@@ -1194,7 +1197,7 @@ export const TOOLS = [
         if (/^ipc:\s*["']?host/i.test(ln)) findings.push(`[MED] line ${n}: ipc: host shares the host IPC namespace.`);
         if (/\/var\/run\/docker\.sock/.test(ln)) findings.push(`[HIGH] line ${n}: mounting docker.sock gives full control of the Docker daemon (host root).`);
         if (/^\s*-?\s*SYS_ADMIN/i.test(ln) || /cap_add[^#]*SYS_ADMIN/i.test(ln)) findings.push(`[HIGH] line ${n}: cap_add SYS_ADMIN is nearly root.`);
-        if (/^image:\s*\S+:latest\s*$/i.test(ln)) findings.push(`[MED] line ${n}: image pinned to :latest — pin a specific version.`);
+        if (/^image:\s*["']?\S+:latest["']?\s*$/i.test(ln)) findings.push(`[MED] line ${n}: image pinned to :latest — pin a specific version.`);
         if (/^image:\s*[^:\s#]+\s*$/i.test(ln) && !/@sha256:/.test(ln)) findings.push(`[LOW] line ${n}: image has no tag — defaults to :latest.`);
         if (/0\.0\.0\.0:\d+/.test(ln)) findings.push(`[LOW] line ${n}: port bound to 0.0.0.0 — exposed on all interfaces.`);
       });
@@ -1215,8 +1218,10 @@ export const TOOLS = [
       if (has(/--cap-add[ =]?SYS_ADMIN/i)) out.push("[HIGH] --cap-add SYS_ADMIN: near-root capability.");
       const capAdds = c.match(/--cap-add[ =]\S+/gi) || [];
       capAdds.forEach((x) => { if (!/SYS_ADMIN/i.test(x)) out.push(`[MED] ${x}: capability added — confirm it is needed.`); });
-      if (has(/-v\s+\/:\//) || has(/-v\s+\/:\/host/)) out.push("[HIGH] mounts the host root filesystem into the container.");
-      if (has(/--user[ =]|-u\s+/)) out.push("[GOOD] runs as a specified user (not root).");
+      if (has(/(?:-v|--volume)[\s=]+["']?\/:\//)) out.push("[HIGH] mounts the host root filesystem into the container.");
+      const usr = c.match(/(?:--user[ =]|-u\s+)(\S+)/);
+      if (usr && /^(root|0)(:|$)/.test(usr[1].replace(/^["']|["']$/g, ""))) out.push(`[HIGH] user ${usr[1]}: explicitly runs as root.`);
+      else if (usr) out.push("[GOOD] runs as a specified user (not root).");
       if (has(/--read-only\b/)) out.push("[GOOD] --read-only root filesystem.");
       if (has(/--security-opt[ =]no-new-privileges/)) out.push("[GOOD] no-new-privileges set.");
       if (has(/--cap-drop[ =]?(all|ALL)/)) out.push("[GOOD] drops all capabilities.");
@@ -1373,7 +1378,7 @@ export const TOOLS = [
       const modules = [];
       let rest = a;
       let m;
-      while ((m = rest.match(/^module\.([A-Za-z0-9_-]+)\.(.*)$/))) { modules.push(m[1]); rest = m[2]; }
+      while ((m = rest.match(/^module\.([A-Za-z0-9_-]+(?:\[[^\]]+\])?)\.(.*)$/))) { modules.push(m[1]); rest = m[2]; }
       const rm = rest.match(/^(data\.)?([A-Za-z0-9_]+)\.([A-Za-z0-9_-]+)(?:\[(.+)\])?$/);
       if (!rm) return { error: "Did not recognise a resource address (type.name[...])." };
       const idx = rm[4] ? rm[4].replace(/^["']|["']$/g, "") : "";
@@ -1392,10 +1397,10 @@ export const TOOLS = [
       const t = S(v.text);
       if (!t.trim()) return "";
       const grab = (re) => { const s = new Set(); let m; while ((m = re.exec(t))) s.add(m[1]); return [...s].sort(); };
-      const vars = grab(/\bvar\.([A-Za-z0-9_]+)/g);
-      const locals = grab(/\blocal\.([A-Za-z0-9_]+)/g);
-      const data = grab(/\bdata\.([A-Za-z0-9_]+\.[A-Za-z0-9_]+)/g);
-      const mods = grab(/\bmodule\.([A-Za-z0-9_]+\.[A-Za-z0-9_]+)/g);
+      const vars = grab(/\bvar\.([A-Za-z0-9_-]+)/g);
+      const locals = grab(/\blocal\.([A-Za-z0-9_-]+)/g);
+      const data = grab(/\bdata\.([A-Za-z0-9_]+\.[A-Za-z0-9_-]+)/g);
+      const mods = grab(/\bmodule\.([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/g);
       const sec = [];
       if (vars.length) sec.push("var:\n  " + vars.join("\n  "));
       if (locals.length) sec.push("local:\n  " + locals.join("\n  "));

@@ -35,7 +35,7 @@ export function parseSPF(txts) {
 }
 
 export function parseDMARC(txts) {
-  const rec = (txts || []).find((t) => /^v=dmarc1\b/i.test(String(t).trim()));
+  const rec = (txts || []).find((t) => /^v\s*=\s*dmarc1\b/i.test(String(t).trim())); // RFC 7489 ABNF allows WSP around "="
   if (!rec) return { present: false };
   const s = String(rec);
   const m = s.match(/\bp\s*=\s*(none|quarantine|reject)\b/i);
@@ -46,7 +46,7 @@ export function parseDMARC(txts) {
   const adkim = s.match(/\badkim\s*=\s*([rs])\b/i);
   const aspf = s.match(/\baspf\s*=\s*([rs])\b/i);
   return {
-    present: true, record: rec, multiple: (txts || []).filter((t) => /^v=dmarc1\b/i.test(String(t).trim())).length > 1,
+    present: true, record: rec, multiple: (txts || []).filter((t) => /^v\s*=\s*dmarc1\b/i.test(String(t).trim())).length > 1,
     policy: m ? m[1].toLowerCase() : "none",
     sp: spM ? spM[1].toLowerCase() : null,
     pct: pct ? parseInt(pct[1], 10) : 100,
@@ -143,7 +143,7 @@ export function certDaysLeft(notAfter, now = Date.now()) {
   // LOCAL time, so the day count drifts by the viewer's UTC offset and can cross a band
   // boundary. Parse a zoneless ISO as UTC (matching netexposure-engine's convention); any
   // string carrying a Z/offset or other format falls through to the normal parser.
-  const m = String(notAfter).match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+  const m = String(notAfter).match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?)?$/);
   const t = m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)) : new Date(notAfter).getTime();
   if (isNaN(t)) return null;
   return Math.floor((t - now) / 86400000);
@@ -331,8 +331,9 @@ export function gradeHeaders(input) {
     }
   }
 
-  const server = h["server"] || h["x-powered-by"];
-  if (server && /\d/.test(server)) {
+  // either header can carry the version (Server: nginx + X-Powered-By: PHP/8.x)
+  const server = [h["server"], h["x-powered-by"]].find((v) => v && /\d/.test(v));
+  if (server) {
     checks.push({ name: "Version disclosure", status: "warn", detail: `Server banner reveals a version: ${String(server).slice(0, 40)}.`, advice: "Suppress version numbers in Server / X-Powered-By." });
   }
   return { key: "headers", label: "Security headers", weight: 25, checks };
@@ -352,6 +353,9 @@ export function gradeEmail(input) {
     checks.push({ name: "SPF", status: "fail", detail: "More than one SPF record is published: a permerror (RFC 7208 4.5), so SPF fails for all mail.", advice: "Merge them into a single v=spf1 record." });
   } else if (spf.qualifier === "-") {
     checks.push({ name: "SPF", status: "pass", detail: "SPF present with a hard fail (-all)." });
+  } else if (!spf.qualifier && /(?:^|\s)redirect=\S/i.test(spf.record)) {
+    // no all mechanism: the policy is the redirect= target's (RFC 7208 6.1), not an implicit ?all
+    checks.push({ name: "SPF", status: "warn", detail: `SPF delegates its policy with ${String(spf.record).match(/redirect=\S+/i)[0]}; the target record was not checked.`, advice: "Confirm the redirect target ends in -all." });
   } else {
     checks.push({ name: "SPF", status: "warn", detail: `SPF present but ends in ${spf.qualifier || "?"}all (not -all).`, advice: "Tighten SPF to -all once senders are enumerated." });
   }
@@ -404,16 +408,25 @@ export function gradeEmail(input) {
   // DKIM: we can only probe common selectors over DoH; absence is NOT proof of
   // no DKIM (selectors are arbitrary), so a miss is reported as unknown (na).
   const dkim = Array.isArray(input.dkimSelectors) ? input.dkimSelectors : [];
-  const found = dkim.filter((d) => d && d.present);
+  const found = dkim.filter((d) => d && d.present && !d.revoked);
+  const revoked = dkim.filter((d) => d && d.present && d.revoked);
   if (found.length) {
     checks.push({ name: "DKIM", status: "pass", detail: `DKIM key published on selector(s): ${found.map((d) => d.selector).slice(0, 6).join(", ")}.` });
+  } else if (revoked.length) {
+    checks.push({ name: "DKIM", status: "na", detail: `Only revoked DKIM records (empty p=) on selector(s): ${revoked.map((d) => d.selector).slice(0, 6).join(", ")}. They sign nothing, which is right for a domain that sends no mail.`, advice: "If this domain sends mail, publish a real DKIM public key on its selector." });
   } else if (dkim.length) {
     checks.push({ name: "DKIM", status: "na", detail: `No DKIM key on the ${dkim.length} common selector(s) probed (${dkim.map((d) => d.selector).slice(0, 8).join(", ")}). DKIM may still exist on a custom selector.`, advice: "Confirm your DKIM selector and publish a key if mail is not signed." });
   }
 
   // MTA-STS: enforces TLS for inbound SMTP.
   const mta = parseMtaSts(input.mtaStsTxts, input.mtaStsPolicy);
-  if (failed(input.mtaStsTxts)) {
+  // a null MX (RFC 7505: one MX of ".") declares that the domain accepts no mail, so inbound TLS policy has nothing to protect
+  const mx = Array.isArray(input.mxHosts) && !failed(input.mxHosts) ? input.mxHosts : null;
+  const nullMx = !!(mx && mx.length === 1 && mx[0] === "");
+  const NO_INBOUND = "The domain publishes a null MX (RFC 7505), so it accepts no mail and there is no inbound mail for this to protect.";
+  if (nullMx && !mta.present) {
+    checks.push({ name: "MTA-STS", status: "na", detail: NO_INBOUND });
+  } else if (failed(input.mtaStsTxts)) {
     checks.push({ name: "MTA-STS", status: "na", detail: "The DNS lookup for MTA-STS failed, so it could not be checked." });
   } else if (!mta.present) {
     checks.push({ name: "MTA-STS", status: "warn", detail: "No _mta-sts TXT record.", advice: "Publish MTA-STS (TXT + /.well-known/mta-sts.txt policy) to require TLS for inbound mail." });
@@ -427,7 +440,7 @@ export function gradeEmail(input) {
 
   // TLS-RPT: SMTP TLS failure reporting.
   const hasTlsRpt = (input.tlsRptTxts || []).some((t) => /^v=tlsrptv1\b/i.test(String(t).trim()));
-  checks.push(failed(input.tlsRptTxts) ? { name: "TLS-RPT", status: "na", detail: "The DNS lookup for TLS-RPT failed, so it could not be checked." } : hasTlsRpt
+  checks.push(nullMx && !hasTlsRpt ? { name: "TLS-RPT", status: "na", detail: NO_INBOUND } : failed(input.tlsRptTxts) ? { name: "TLS-RPT", status: "na", detail: "The DNS lookup for TLS-RPT failed, so it could not be checked." } : hasTlsRpt
     ? { name: "TLS-RPT", status: "pass", detail: "SMTP TLS reporting (_smtp._tls TXT) is configured." }
     : { name: "TLS-RPT", status: "warn", detail: "No TLS-RPT record.", advice: "Publish _smtp._tls TXT (v=TLSRPTv1; rua=…) to receive SMTP TLS failure reports." });
 
@@ -470,7 +483,8 @@ export function gradeTls(input) {
   // Key size / signature algorithm — only when a CT source supplied them.
   if (cert.keySize) {
     const k = parseInt(cert.keySize, 10);
-    checks.push(k && k < 2048
+    // 224/256/384/521 are EC curve (and Ed25519) sizes, strong at that length; only RSA/DSA need 2048
+    checks.push(k && k < 2048 && ![224, 256, 384, 521].includes(k)
       ? { name: "Key strength", status: "warn", detail: `Public key is ${k}-bit (RSA under 2048-bit is deprecated).`, advice: "Reissue with a 2048-bit+ RSA or an ECDSA P-256 key." }
       : { name: "Key strength", status: "pass", detail: `Public key size: ${cert.keySize}-bit.` });
   }

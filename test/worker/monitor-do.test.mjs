@@ -442,3 +442,27 @@ group("monitor DO/prototype safety", () => {
     assert.notEqual(up.json.monitor.id, "__proto__");
   });
 });
+
+group("monitor DO/alert window + viewer redaction", () => {
+  test("a cert inside the monitor's own warnDays (60) alerts at 40 days, not only inside the 21-day default", async () => {
+    const st = memState(); const mon = new MonitorDO(st);
+    await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 60 }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    const net = fakeNet(day(40));
+    const r = await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {} });
+    assert.equal(r.ran[0].found, 1);
+    assert.equal(r.ran[0].alerted, 1);
+  });
+  test("viewers see only the host of a webhook URL; writers see it whole", async () => {
+    const st = memState(); const mon = new MonitorDO(st);
+    await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"] }, channels: [{ type: "slack", url: "https://hooks.example.com/services/T0/B0/secretpart" }] } });
+    const v = await post(mon, { op: "list" }, "viewer");
+    assert.equal(v.json.monitors[0].channels[0].url, "https://hooks.example.com/…");
+    const o = await post(mon, { op: "list" }, "owner");
+    assert.ok(o.json.monitors[0].channels[0].url.endsWith("secretpart"));
+  });
+  test("an alert rule minSeverity of an Object.prototype name does not silence alerts", async () => {
+    const { sevRank } = await import("../../worker/monitor-core.js");
+    assert.equal(sevRank("constructor"), 0);
+    assert.equal(sevRank("HIGH"), 3);
+  });
+});

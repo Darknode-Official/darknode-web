@@ -15,15 +15,15 @@
 // ============================================================================
 
 import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261028c";
-import { testKey, canTest } from "/js/integrations/connect.js?v=20261029c";
-import { toolsFor } from "/js/integrations/intel-core.js?v=20261029c";
+import { testKey, canTest } from "/js/integrations/connect.js?v=20261029e";
+import { toolsFor } from "/js/integrations/intel-core.js?v=20261029e";
 // Live-data layer: the SSRF-guarded worker proxy. dnFetchJSON routes keyless public
 // feeds (CISA KEV, FIRST EPSS, ransomware.live, crt.sh, DoH, RDAP, RIPEstat) through
 // /api/fetch; it throws on failure and never fabricates. net.js is stateless.
 import { dnFetch, dnFetchJSON, proxyConfigured } from "/js/net.js";
 // Attack-surface data wrappers (crt.sh / DoH / RDAP / Team Cymru ASN / HTTP probe),
 // all through the proxy above. Data-only module; bump its ?v= when it changes.
-import * as surface from "/js/deck-surface.js?v=20261026b";
+import * as surface from "/js/deck-surface.js?v=20261029e";
 // Platform event bus (singleton — never version its import, or a second instance
 // would miss every event the rest of the app emits). Drives the live Activity
 // stream and the notifications bell.
@@ -299,6 +299,8 @@ function _ipScope(ip){
   if (o[0] === 127) return "Loopback";
   if (o[0] === 169 && o[1] === 254) return "Link-local (APIPA)";
   if (o[0] === 100 && o[1] >= 64 && o[1] <= 127) return "Carrier-grade NAT (RFC6598)";
+  if ((o[0] === 192 && o[1] === 0 && o[2] === 2) || (o[0] === 198 && o[1] === 51 && o[2] === 100) || (o[0] === 203 && o[1] === 0 && o[2] === 113)) return "Documentation (TEST-NET, RFC5737)";
+  if (o[0] === 198 && (o[1] === 18 || o[1] === 19)) return "Benchmarking (RFC2544)";
   if (o[0] >= 224) return "Multicast/Reserved";
   if (n === 0) return "\"This\" host (0.0.0.0)";
   return "Public";
@@ -325,11 +327,16 @@ const TK_CATS = [
 ];
 const TOOLKIT = [
   { id: "b64e", cat: "encode", name: "Base64 encode", desc: "UTF-8 text to Base64.", run: (s) => _b64e(s) },
-  { id: "b64d", cat: "encode", name: "Base64 decode", desc: "Base64 (or base64url) to text.", run: (s) => { try { return _b64d(s); } catch (_) { return _b64d(_b64urlToStd(s.trim())); } } },
+  { id: "b64d", cat: "encode", name: "Base64 decode", desc: "Base64 (or base64url) to text.", run: (s) => {
+      const t = s.replace(/\s+/g, ""); let bin;
+      try { bin = atob(t); } catch (_) { bin = atob(_b64urlToStd(t)); }
+      // Keys, certificates and other binary blobs are not UTF-8 text: show their bytes as hex.
+      try { return decodeURIComponent(escape(bin)); } catch (_) { return "Binary data (" + bin.length + " bytes, not UTF-8 text). Hex:\n" + [...bin].map((c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join(""); }
+    } },
   { id: "urle", cat: "encode", name: "URL encode", desc: "Percent-encode a component.", run: (s) => encodeURIComponent(s) },
   { id: "urld", cat: "encode", name: "URL decode", desc: "Decode percent-encoding.", run: (s) => decodeURIComponent(s.replace(/\+/g, " ")) },
   { id: "hexe", cat: "encode", name: "Hex encode", desc: "UTF-8 bytes to hex.", run: (s) => [..._te(s)].map((b) => b.toString(16).padStart(2, "0")).join("") },
-  { id: "hexd", cat: "encode", name: "Hex decode", desc: "Hex to UTF-8 text.", run: (s) => { const h = s.replace(/[^0-9a-f]/gi, ""); if (!h) return ""; if (h.length % 2) throw new Error("Hex needs an even number of digits."); return new TextDecoder().decode(new Uint8Array(h.match(/../g).map((x) => parseInt(x, 16)))); } },
+  { id: "hexd", cat: "encode", name: "Hex decode", desc: "Hex to UTF-8 text.", run: (s) => { const h = s.replace(/0x/gi, "").replace(/[^0-9a-f]/gi, ""); if (!h) return ""; if (h.length % 2) throw new Error("Hex needs an even number of digits."); return new TextDecoder().decode(new Uint8Array(h.match(/../g).map((x) => parseInt(x, 16)))); } },
   { id: "htmle", cat: "encode", name: "HTML entity encode", desc: "Escape &, <, >, \", '.", run: (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") },
   { id: "htmld", cat: "encode", name: "HTML entity decode", desc: "Decode HTML entities.", run: (s) => _htmlDecode(s) },
   { id: "rot13", cat: "encode", name: "ROT13", desc: "Classic letter rotation (its own inverse).", run: (s) => s.replace(/[a-z]/gi, (c) => { const base = c <= "Z" ? 65 : 97; return String.fromCharCode((c.charCodeAt(0) - base + 13) % 26 + base); }) },
@@ -369,7 +376,7 @@ const TOOLKIT = [
     } },
   { id: "jwt", cat: "parse", name: "JWT decoder", desc: "Decode header + payload (no signature check).", run: (s) => {
       const parts = s.trim().split("."); if (parts.length < 2) throw new Error("Not a JWT (needs header.payload.signature).");
-      const dec = (p) => JSON.stringify(JSON.parse(_b64d(_b64urlToStd(p))), null, 2);
+      const dec = (p) => { try { return JSON.stringify(JSON.parse(_b64d(_b64urlToStd(p))), null, 2); } catch (_) { throw new Error("Not a JWT: the header and payload must be base64url-encoded JSON."); } };
       let out = "HEADER:\n" + dec(parts[0]) + "\n\nPAYLOAD:\n" + dec(parts[1]);
       try { const pl = JSON.parse(_b64d(_b64urlToStd(parts[1]))); if (pl.exp) out += "\n\nexp: " + new Date(pl.exp * 1000).toISOString() + (pl.exp * 1000 < Date.now() ? "  (EXPIRED)" : "  (valid)"); if (pl.iat) out += "\niat: " + new Date(pl.iat * 1000).toISOString(); } catch (_) {}
       return out;
@@ -385,12 +392,15 @@ const TOOLKIT = [
       return `Epoch (s):  ${Math.floor(d.getTime() / 1000)}\nEpoch (ms): ${d.getTime()}\nISO 8601:   ${d.toISOString()}\nUTC:        ${d.toUTCString()}\nLocal:      ${d.toString()}`;
     } },
   { id: "urlp", cat: "parse", name: "URL parser", desc: "Break a URL into its parts + query params.", run: (s) => {
-      const u = new URL(s.trim());
+      // A bare host such as example.com/path has no scheme; read it as https. (example.com:8080
+      // parses with "example.com:" as the scheme, so a dotted scheme means one was missing.)
+      const raw = s.trim(); let u, assumed = false;
+      try { u = new URL(raw); if (u.protocol.includes(".")) throw 0; } catch (_) { u = new URL("https://" + raw); assumed = true; }
       const q = [...u.searchParams.entries()].map(([k, v]) => "  " + k + " = " + v).join("\n");
-      return `Protocol: ${u.protocol}\nHost:     ${u.hostname}\nPort:     ${u.port || "(default)"}\nPath:     ${u.pathname}\nQuery:    ${u.search || "(none)"}\nHash:     ${u.hash || "(none)"}\nOrigin:   ${u.origin}${q ? "\n\nParams:\n" + q : ""}`;
+      return `Protocol: ${u.protocol}${assumed ? " (assumed, none given)" : ""}\nHost:     ${u.hostname}\nPort:     ${u.port || "(default)"}\nPath:     ${u.pathname}\nQuery:    ${u.search || "(none)"}\nHash:     ${u.hash || "(none)"}\nOrigin:   ${u.origin}${q ? "\n\nParams:\n" + q : ""}`;
     } },
   { id: "case", cat: "text", name: "Case converter", desc: "Every common case at once.", run: (s) => {
-      const words = s.trim().split(/[\s_-]+/).filter(Boolean);
+      const words = s.trim().replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2").split(/[\s_-]+/).filter(Boolean); // camelCase and PascalCase split too
       const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
       return `UPPER:   ${s.toUpperCase()}\nlower:   ${s.toLowerCase()}\nTitle:   ${words.map(cap).join(" ")}\nSentence:${s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()}\nsnake:   ${words.map((w) => w.toLowerCase()).join("_")}\nkebab:   ${words.map((w) => w.toLowerCase()).join("-")}\ncamel:   ${words.map((w, i) => i ? cap(w) : w.toLowerCase()).join("")}\nPascal:  ${words.map(cap).join("")}`;
     } },
@@ -2042,7 +2052,7 @@ export function renderDeck(host, opts) {
   }
   // Native spaces; `open` = { tab, target } jumps straight to a tool (and runs it on target).
   function mountSpaceScene(id, open){
-    import("/js/deck/spaces.js?v=20261029c").then((m) => m.mountSpace(sceneEls[id], id, { open: open && open.tab ? open : null, openTool: (sec, label) => openTool(sec, label),
+    import("/js/deck/spaces.js?v=20261029e").then((m) => m.mountSpace(sceneEls[id], id, { open: open && open.tab ? open : null, openTool: (sec, label) => openTool(sec, label),
       // a tab change replaces the page's link (/personal/<tab>); only while this space is what's showing
       onTab: (tab) => { if (curScene === id && sceneWork.hidden) syncUrl(scenePath(id) + (tab && tab !== "home" ? "/" + tab : ""), true); }, confirm: (msg) => (window.dnConfirm ? window.dnConfirm(msg) : Promise.resolve(false)) })).catch(() => toast("Could not load this space"));
   }
@@ -2177,12 +2187,13 @@ export function renderDeck(host, opts) {
       ${tools.length ? `<div class="dk-itools"><div class="h">Assistant tools${connected ? "" : " once connected"}</div>${tools.map((t) => `<div class="r"><b>${esc(t.title)}</b><span>${esc(t.desc)}</span></div>`).join("")}</div>` : ""}
       <div class="act">
         ${actArea}
-        <button class="dk-b" data-act="open">Open ${esc(it.domain)}</button>
+        ${actArea.includes('data-act="account"') ? "" : `<button class="dk-b" data-act="open">Open ${esc(it.domain)}</button>`}
         ${it.kind === "ai" && connected ? `<button class="dk-b" data-act="use">Use in Darknode AI</button>` : ""}
       </div>
       <p class="dk-note">${note}</p>`;
     showDrawer();
-    drawerBody.querySelector('[data-act="open"]').onclick = () => window.open("https://" + it.domain, "_blank", "noopener");
+    const openBtn = drawerBody.querySelector('[data-act="open"]'); // the sign-in button already opens the same page
+    if (openBtn) openBtn.onclick = () => window.open("https://" + it.domain, "_blank", "noopener");
     const oauthBtn = drawerBody.querySelector('[data-act="oauth"]');
     if (oauthBtn) oauthBtn.onclick = () => {
       // Genuine browser account-link (OpenRouter PKCE). Full-page redirect to
@@ -2917,6 +2928,8 @@ export function renderDeck(host, opts) {
       const id = m.payload.id; if (id) { try { openEntityDrawer(String(id)); } catch (_) {} }
     } else if (m.type === BMSG.OPEN_TOOL) {
       const s = m.payload.sec; if (s && secLabel[s]) { if (m.payload.focus) pendingFocus.set(s, m.payload.focus); openTool(s, secLabel[s]); }
+    } else if (m.type === BMSG.PALETTE) {
+      if (!spot.classList.contains("on")) openSpot();
     } else if (m.type === BMSG.READY) {
       const fc = pendingFocus.get(sec);
       if (fc) { pendingFocus.delete(sec); const msg = makeBridge(BMSG.FOCUS, fc); if (msg) { try { e.source.postMessage(msg, location.origin); } catch (_) {} } }
@@ -3612,7 +3625,7 @@ export function renderDeck(host, opts) {
     const sel = el.querySelector("#dkCloudSel"), descEl = el.querySelector("#dkCloudDesc"), inEl = el.querySelector("#dkCloudIn"), outEl = el.querySelector("#dkCloudOut"), runBtn = el.querySelector("#dkCloudRun"), grid = el.querySelector("#dkCloudGrid");
     el.querySelector("#dkCloudRoadmap").onclick = () => { if (window.dnModal) window.dnModal({ title: "Cloud connectors — the plan", desc: "Phase 1 (now): paste-and-lint posture checks for IAM, S3, security groups, Dockerfiles, docker-compose and Kubernetes — 69 deterministic checks that run in your browser.\n\nPhase 2 (next): read-only AWS, Azure and GCP connectors using scoped, read-only credentials (e.g. an AWS SecurityAudit role). They will inventory assets and surface public buckets, over-broad IAM, open security groups and unencrypted storage against live configuration.\n\nPrinciple: read-only only, no write access, and findings are always from real configuration — never simulated.", submitText: "Got it", cancelText: "" }); else toast("Read-only cloud connectors are on the roadmap."); };
     el.querySelector("#dkCloudOpen").onclick = () => { const t = _cloudTools && _cloudTools.find((x) => x.id === sel.value); if (sel.value) openTool("tool-" + sel.value, t ? t.name : sel.value); };
-    import("/js/tools/cloud.js").then((m) => {
+    import("/js/tools/cloud.js?v=20261029e").then((m) => {
       _cloudTools = (m.TOOLS || []).filter((t) => t.cat === "cloud");
       const nEl = el.querySelector("#dkCloudN"); if (nEl) nEl.textContent = _cloudTools.length + " offline tools";
       const wb = CLOUD_WB.map((id) => _cloudTools.find((t) => t.id === id)).filter(Boolean);

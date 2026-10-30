@@ -14,9 +14,9 @@ import { findColumn } from "../ingest/parse.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, KINDS, KIND_LABELS, parseInput, findingsToCsv, policyMatrixCsv,
   noPhishingResistantCsv, exampleDataset, MATRIX_COLS,
-} from "./caaudit-engine.js?v=20261026b";
+} from "./caaudit-engine.js?v=20261029e";
 
-const ENGINE = engineUrl("./caaudit-engine.js?v=20261026b", import.meta);
+const ENGINE = engineUrl("./caaudit-engine.js?v=20261029e", import.meta);
 const P = "caa";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

@@ -1,6 +1,9 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // CORS Tester — test Cross-Origin Resource Sharing policies on any URL
 
+import { dnFetch } from '/js/net.js';
+import { registrableDomain } from '/js/dataprotect/phish-engine.js?v=20261029e';
+
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) {
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
 
@@ -12,18 +15,14 @@ export function renderCorsTester(container) {
 
   h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:16px;">';
   h += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
-  h += '<input id="cors-url" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="https://api.example.com/endpoint">';
-  h += '<select id="cors-method" style="background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:8px;">';
-  h += '<option value="GET">GET</option><option value="POST">POST</option><option value="PUT">PUT</option><option value="DELETE">DELETE</option><option value="OPTIONS">OPTIONS</option>';
-  h += '</select>';
+  h += '<input id="cors-url" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="https://api.example.com/endpoint" onkeydown="if(event.key===\'Enter\')_corsTest()">';
   h += '<button onclick="_corsTest()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Test</button>';
   h += '</div>';
 
   h += '<div style="display:flex;gap:8px;margin-bottom:8px;">';
-  h += '<input id="cors-origin" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:6px 10px;" placeholder="Custom Origin header (optional)">';
-  h += '<input id="cors-header" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:6px 10px;" placeholder="Header to test">';
+  h += '<input id="cors-origin" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:6px 10px;" placeholder="Extra Origin to try (optional)">';
   h += '</div>';
-  h += '<div style="color:#3a5a7a;font-size:9px;">Tests CORS preflight and actual request. Shows Access-Control-* response headers.</div>';
+  h += '<div style="color:#3a5a7a;font-size:9px;">Sends the request from the Darknode edge with several Origin headers (an unrelated site, null, look-alike names, plain http, the site itself) and checks which ones the server lets read its responses, and whether cookies are allowed.</div>';
   h += '</div>';
 
   h += '<div id="cors-results"></div>';
@@ -74,67 +73,98 @@ export function renderCorsTester(container) {
   container.innerHTML = h;
 };
 
+// One probe per Origin a misconfigured server tends to trust. sev is the severity when the
+// server echoes that origin back [with Access-Control-Allow-Credentials: true, without it].
+function corsProbes(u, extra) {
+  var host = u.hostname, org = registrableDomain(host) || host, port = u.port ? ':' + u.port : '';
+  var list = [
+    { kind: 'foreign', origin: 'https://darknode-cors-check.example', what: 'an unrelated website', sev: ['critical', 'medium'] },
+    { kind: 'null', origin: 'null', what: 'the null origin (sandboxed iframes, local files)', sev: ['high', 'low'] },
+    { kind: 'suffix', origin: 'https://' + host + '.darknode-cors-check.example', what: 'a look-alike that starts with your host name', sev: ['critical', 'medium'] },
+    { kind: 'prefix', origin: 'https://dncheck' + org, what: 'a look-alike that ends with your domain name', sev: ['critical', 'medium'] }
+  ];
+  if (u.protocol === 'https:') list.push({ kind: 'http', origin: 'http://' + host + port, what: 'your own site over plain http', sev: ['medium', 'low'] });
+  list.push({ kind: 'self', origin: u.protocol + '//' + host + port, what: 'the site itself', sev: ['info', 'info'] });
+  if (extra) list.push({ kind: 'custom', origin: extra, what: 'the origin you entered', sev: ['high', 'low'] });
+  return list;
+}
+
 window._corsTest = function() {
-  var url = (document.getElementById('cors-url') || {}).value;
-  var method = (document.getElementById('cors-method') || {}).value || 'GET';
+  var url = ((document.getElementById('cors-url') || {}).value || '').trim();
+  var extra = ((document.getElementById('cors-origin') || {}).value || '').trim().replace(/\/+$/, '');
   var results = document.getElementById('cors-results');
   if (!url || !results) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  var u;
+  try { u = new URL(url); } catch (_) { results.innerHTML = '<div style="color:#ff6644;font-size:11px;padding:12px;">That is not a valid URL.</div>'; return; }
+  if (extra && !/^(null|https?:\/\/[a-z0-9.-]+(:\d{1,5})?)$/i.test(extra)) { results.innerHTML = '<div style="color:#ff6644;font-size:11px;padding:12px;">The extra Origin must be null or scheme://host[:port], with no path.</div>'; return; }
 
-  results.innerHTML = '<div style="color:#ffaa00;font-size:11px;padding:16px;text-align:center;">Testing CORS for ' + esc(url) + '...</div>';
-
-  var startTime = performance.now();
-
-  // Test 1: no-cors mode (always succeeds but opaque)
-  // Test 2: cors mode (reveals CORS policy)
-  fetch(url, { method: method, mode: 'cors' })
-    .then(function(resp) {
-      var elapsed = Math.round(performance.now() - startTime);
-      var h = '';
-      h += '<div style="background:#0a1a0a;border:2px solid #00ff88;border-radius:8px;padding:16px;margin-bottom:12px;text-align:center;">';
-      h += '<div style="color:#00ff88;font-size:16px;font-weight:bold;">CORS ALLOWED</div>';
-      h += '<div style="color:#4a8a6a;font-size:10px;margin-top:4px;">Response received in ' + elapsed + 'ms — Status: ' + resp.status + '</div>';
-      h += '</div>';
-
-      // Show CORS headers
-      h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;">';
-      h += '<div style="color:#00aaff;font-size:12px;font-weight:bold;margin-bottom:10px;">RESPONSE HEADERS</div>';
-      var corsKeys = ['access-control-allow-origin', 'access-control-allow-methods', 'access-control-allow-headers',
-        'access-control-allow-credentials', 'access-control-max-age', 'access-control-expose-headers',
-        'content-type', 'server', 'x-powered-by', 'x-frame-options', 'content-security-policy',
-        'strict-transport-security', 'x-content-type-options', 'referrer-policy'];
-
-      resp.headers.forEach(function(value, key) {
-        var isCors = key.toLowerCase().indexOf('access-control') !== -1;
-        var keyColor = isCors ? '#00ff88' : '#00aaff';
-        h += '<div style="margin:3px 0;font-size:10px;word-break:break-all;">';
-        h += '<span style="color:' + keyColor + ';font-weight:' + (isCors ? 'bold' : 'normal') + ';">' + esc(key) + ':</span> ';
-        h += '<span style="color:#c8d6e5;">' + esc(value) + '</span>';
-        h += '</div>';
-      });
-
-      // Check for wildcard origin
-      var acao = resp.headers.get('access-control-allow-origin');
-      if (acao === '*') {
-        h += '<div style="margin-top:10px;padding:6px 10px;background:#ffaa0015;border:1px solid #ffaa0033;border-radius:4px;font-size:10px;color:#ffaa00;">&#9888; Wildcard origin (*) — any website can access this API. May be a security concern if sensitive data is returned.</div>';
+  results.innerHTML = '<div style="color:#ffaa00;font-size:11px;padding:16px;text-align:center;">Testing CORS for ' + esc(u.href) + '...</div>';
+  var probes = corsProbes(u, extra);
+  Promise.all(probes.map(function(p) {
+    return dnFetch(u.href, { raw: true, origin: p.origin, timeout: 15000 })
+      .then(function(r) { p.res = r; }, function(e) { p.err = String((e && e.message) || e); });
+  })).then(function() {
+    if (probes.every(function(p) { return p.err; })) {
+      results.innerHTML = '<div style="background:#1a0a0a;border:2px solid #ff4444;border-radius:8px;padding:16px;color:#ff6644;font-size:11px;">Could not reach the URL: ' + esc(probes[0].err) + '</div>';
+      return;
+    }
+    var rank = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
+    var colors = { critical: '#ff4444', high: '#ff8844', medium: '#ffaa00', low: '#00aaff', info: '#00cc88' };
+    var findings = [], worst = 'info', reflectedAny = false, vary = '';
+    probes.forEach(function(p) {
+      if (p.err) { p.verdict = 'no answer'; return; }
+      var hd = p.res.headers || {};
+      var acao = (hd['access-control-allow-origin'] || '').trim();
+      var creds = /^true$/i.test((hd['access-control-allow-credentials'] || '').trim());
+      vary = vary || hd['vary'] || '';
+      p.acao = acao; p.creds = creds;
+      if (acao && acao !== '*' && acao.toLowerCase() === p.origin.toLowerCase()) {
+        p.verdict = p.kind === 'self' ? 'allowed' : 'TRUSTED';
+        if (p.kind !== 'self') {
+          reflectedAny = true;
+          var sev = p.sev[creds ? 0 : 1];
+          findings.push({ sev: sev, text: 'Trusts ' + p.what + ' (' + p.origin + ')' + (creds ? ' with credentials: that site can read responses sent with your users’ cookies.' : ', without credentials: it can read responses that need no login.') });
+          if (rank[sev] > rank[worst]) worst = sev;
+        }
+      } else if (acao === '*') {
+        p.verdict = 'public (*)';
+      } else {
+        p.verdict = acao ? 'not trusted' : 'no CORS header';
       }
-
-      h += '</div>';
-      results.innerHTML = h;
-    })
-    .catch(function(err) {
-      var elapsed = Math.round(performance.now() - startTime);
-      var h = '';
-      h += '<div style="background:#1a0a0a;border:2px solid #ff4444;border-radius:8px;padding:16px;margin-bottom:12px;text-align:center;">';
-      h += '<div style="color:#ff4444;font-size:16px;font-weight:bold;">CORS BLOCKED</div>';
-      h += '<div style="color:#8a4a4a;font-size:10px;margin-top:4px;">Request failed after ' + elapsed + 'ms</div>';
-      h += '</div>';
-
-      h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;">';
-      h += '<div style="color:#ff6644;font-size:12px;font-weight:bold;margin-bottom:8px;">ERROR DETAILS</div>';
-      h += '<div style="font-size:11px;color:#c8d6e5;word-break:break-all;">' + esc(String(err.message || err)) + '</div>';
-      h += '<div style="margin-top:10px;color:#4a6a8a;font-size:10px;">This endpoint does not allow cross-origin requests from this domain, or the server is unreachable.</div>';
-      h += '</div>';
-
-      results.innerHTML = h;
     });
+    if (probes.some(function(p) { return p.acao === '*'; })) {
+      findings.push({ sev: 'info', text: 'Answers Access-Control-Allow-Origin: * — any site can read responses, but browsers never send cookies with a wildcard' + (probes.some(function(p) { return p.acao === '*' && p.creds; }) ? ' (the Allow-Credentials: true it also sends is ignored).' : '.') + ' Fine for public data.' });
+    }
+    if (reflectedAny && !/(^|,)\s*(origin|\*)\s*(,|$)/i.test(vary)) {
+      findings.push({ sev: 'low', text: 'The allowed origin changes per request but the response has no Vary: Origin, so a shared cache can serve one origin’s CORS answer to another.' });
+      if (rank.low > rank[worst]) worst = 'low';
+    }
+    if (!findings.length) findings.push({ sev: 'info', text: 'Only the site itself (or nobody) may read responses cross-origin. No CORS misconfiguration found for this URL.' });
+    findings.sort(function(a, b) { return rank[b.sev] - rank[a.sev]; });
+
+    var verdictText = { critical: 'CRITICAL MISCONFIGURATION', high: 'HIGH-RISK MISCONFIGURATION', medium: 'WEAK ORIGIN CHECK', low: 'MINOR ISSUE', info: 'NO MISCONFIGURATION FOUND' }[worst];
+    var c = colors[worst];
+    var first = probes.find(function(p) { return p.res; });
+    var h = '<div style="background:#0c1020;border:2px solid ' + c + ';border-radius:8px;padding:16px;margin-bottom:12px;text-align:center;">';
+    h += '<div style="color:' + c + ';font-size:16px;font-weight:bold;">' + verdictText + '</div>';
+    h += '<div style="color:#6a8aaa;font-size:10px;margin-top:4px;word-break:break-all;">' + esc(u.href) + ' — HTTP ' + esc(String(first.res.status)) + '</div></div>';
+
+    h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-bottom:12px;">';
+    h += '<div style="color:#00aaff;font-size:12px;font-weight:bold;margin-bottom:10px;">FINDINGS</div>';
+    findings.forEach(function(f) {
+      h += '<div style="margin:6px 0;font-size:11px;display:flex;gap:8px;align-items:flex-start;"><span style="color:' + colors[f.sev] + ';font-size:8px;padding:1px 4px;border:1px solid ' + colors[f.sev] + '55;border-radius:2px;flex-shrink:0;text-transform:uppercase;">' + f.sev + '</span><span>' + esc(f.text) + '</span></div>';
+    });
+    h += '</div>';
+
+    h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;overflow-x:auto;">';
+    h += '<div style="color:#00aaff;font-size:12px;font-weight:bold;margin-bottom:10px;">ORIGINS TRIED</div>';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:10px;"><tr style="color:#6a8aaa;text-align:left;"><th style="padding:4px;">Origin sent</th><th style="padding:4px;">Allow-Origin</th><th style="padding:4px;">Credentials</th><th style="padding:4px;">Result</th></tr>';
+    probes.forEach(function(p) {
+      var vc = p.verdict === 'TRUSTED' ? '#ff6644' : p.verdict === 'allowed' || p.verdict === 'public (*)' ? '#00cc88' : '#6a8aaa';
+      h += '<tr style="border-top:1px solid #1a2a44;"><td style="padding:4px;word-break:break-all;">' + esc(p.origin) + '</td><td style="padding:4px;word-break:break-all;">' + esc(p.err ? '' : (p.acao || '(none)')) + '</td><td style="padding:4px;">' + (p.err ? '' : p.creds ? 'true' : 'no') + '</td><td style="padding:4px;color:' + vc + ';">' + esc(p.err ? 'error: ' + p.err : p.verdict) + '</td></tr>';
+    });
+    h += '</table></div>';
+    results.innerHTML = h;
+  });
 };

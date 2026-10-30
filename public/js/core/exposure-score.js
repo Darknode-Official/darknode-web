@@ -91,7 +91,7 @@ export function exposureScore(findings, opts = {}) {
     const sev = str(e.severity);
     if (!OPEN.has(str(e.status) || "new")) continue;
     if (activeException(e, now)) continue;
-    const base = BASE[sev] || 0;
+    const base = Object.prototype.hasOwnProperty.call(BASE, sev) ? BASE[sev] : 0; // own-key: "constructor" would read a function and turn the whole score into NaN
     if (base === 0) continue;
     const kev = isKev(e, kevSet) ? 2 : 1;
     const exp = isExposed(e) ? 1.5 : 1;

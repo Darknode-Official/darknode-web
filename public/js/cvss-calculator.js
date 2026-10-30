@@ -532,6 +532,11 @@ export function renderCvssCalculator(main) {
       showLoadErr("Enter a CVSS:3.1 vector string.");
       return;
     }
+    var ver = /^\s*cvss:(\d\.\d)/i.exec(str);
+    if (ver && !/^3\.[01]$/.test(ver[1])) {
+      showLoadErr("This is a CVSS " + ver[1] + " vector. This calculator scores CVSS 3.1 (and 3.0) vectors only.");
+      return;
+    }
     var info = parseVectorInfo(str);
     if (info.matched < info.total) {
       showLoadErr("Not a complete CVSS:3.1 vector — recognised " +

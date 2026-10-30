@@ -6,6 +6,8 @@ var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, fu
 
 var _wsConnection = null;
 var _wsLog = [];
+var _wsTotal = 0;
+var WS_KEEP = 1000; // a busy stream (dozens of frames a second) would otherwise grow the page until the tab stalls
 
 export function renderWebSocketTester(container) {
   var h = '';
@@ -82,11 +84,14 @@ function _wsAddLog(type, data) {
   entry.onclick = function() {
     try { navigator.clipboard.writeText(data); entry.style.borderLeftColor = '#ffaa00'; setTimeout(function() { entry.style.borderLeftColor = color; }, 500); } catch (e) {}
   };
+  var atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40; // don't yank the view while someone reads older frames
   log.appendChild(entry);
-  log.scrollTop = log.scrollHeight;
+  if (atBottom) log.scrollTop = log.scrollHeight;
 
   _wsLog.push({ type: type, data: data, time: time });
-  if (count) count.textContent = _wsLog.length + ' frames';
+  _wsTotal++;
+  while (_wsLog.length > WS_KEEP) { _wsLog.shift(); if (log.firstChild) log.removeChild(log.firstChild); }
+  if (count) count.textContent = _wsTotal + ' frames' + (_wsTotal > WS_KEEP ? ' (last ' + WS_KEEP + ' shown)' : '');
 }
 
 window._wsConnect = function() {
@@ -141,7 +146,8 @@ window._wsDisconnect = function() {
 
 window._wsSend = function() {
   var msg = (document.getElementById('ws-message') || {}).value;
-  if (!msg || !_wsConnection || _wsConnection.readyState !== 1) {
+  if (!msg) return;
+  if (!_wsConnection || _wsConnection.readyState !== 1) {
     _wsAddLog('error', _wsConnection ? 'WebSocket not ready (state: ' + _wsConnection.readyState + ')' : 'Not connected');
     return;
   }
@@ -158,6 +164,8 @@ window._wsSendJSON = function() {
     if (_wsConnection && _wsConnection.readyState === 1) {
       _wsConnection.send(formatted);
       _wsAddLog('sent', formatted);
+    } else {
+      _wsAddLog('error', 'Not connected');
     }
   } catch (e) {
     _wsAddLog('error', 'Invalid JSON: ' + e.message);
@@ -168,6 +176,7 @@ window._wsClear = function() {
   var log = document.getElementById('ws-log');
   if (log) log.innerHTML = '';
   _wsLog = [];
+  _wsTotal = 0;
   var count = document.getElementById('ws-frame-count');
   if (count) count.textContent = '0 frames';
 };
