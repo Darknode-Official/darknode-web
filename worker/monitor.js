@@ -111,6 +111,7 @@ export class MonitorDO {
     catch (e) { await this._log("history", HISTORY_CAP, { id: m.id, at: t0, error: String(e.message || e) }); return { id: m.id, error: String(e.message || e) }; }
 
     // a domain whose lookup got no answer keeps its last finding as it was (checks.js held)
+    const skipped = (findings.unknown || []).length;
     const prevByKey = new Map((m.lastResults || []).map((f) => [f.key, f]));
     findings = [...findings, ...(findings.held || []).filter((k) => prevByKey.has(k) && !findings.some((f) => f.key === k)).map((k) => prevByKey.get(k))];
     const diff = diffFindings(m.lastResults || [], findings);
@@ -126,6 +127,9 @@ export class MonitorDO {
       if (m.type === "cert-expiry" && real) { ev.kind = "cert"; ev.daysToExpiry = findings.find((f) => f.key === ev.key)?.daysToExpiry; }
       // a new/worsened KEV-or-high-EPSS match alerts regardless of severity (onKev path)
       else if (m.type === "kev-epss" && real) ev.kind = "kev";
+      // after a first (baseline) run, any new or worsened DNS/email record is drift and alerts
+      // regardless of severity (onDrift); the baseline run itself obeys minSeverity
+      else if (m.type === "email-posture" && real && m.lastRunAt) ev.kind = "drift";
       const d = shouldAlert(ev, rules, t0);
       if (d.alert) alerted.push(ev); else if (d.suppressed) held.push(ev);
     }
@@ -182,7 +186,7 @@ export class MonitorDO {
       }
     } catch (e) { graphError = String(e.message || e); }
 
-    await this._log("history", HISTORY_CAP, { id: m.id, at: t0, found: findings.length, added: diff.added.length, changed: diff.changed.length, removed: diff.removed.length, alerted: alerted.length, held: held.length, delivered, graphSynced, graphError, ms: now() - t0 });
+    await this._log("history", HISTORY_CAP, { id: m.id, at: t0, found: findings.length, added: diff.added.length, changed: diff.changed.length, removed: diff.removed.length, alerted: alerted.length, held: held.length, ...(skipped ? { skipped } : {}), delivered, graphSynced, graphError, ms: now() - t0 });
     return { id: m.id, found: findings.length, alerted: alerted.length, delivered, graphSynced };
   }
 
