@@ -142,16 +142,17 @@ export const DETECTORS = [
     validate: (m, _whole, ctx) => {
       const o = m.split('.');
       if (o[0] === '0' || o[0] === '127') return false; // always skip these (current behavior)
-      const opts = (ctx && ctx.opts) || {};
-      if (!opts.excludePrivateIp) return true; // default: flag everything else
-      // opted in to noise reduction: ignore version strings and private ranges
+      // a version string or part of a longer dotted number is never an address
       if (ctx && typeof ctx.index === 'number' && typeof ctx.text === 'string') {
         const before = ctx.text.slice(Math.max(0, ctx.index - 12), ctx.index);
         const after = ctx.text.slice(ctx.index + m.length, ctx.index + m.length + 2);
         if (/\b(?:version|ver|rev|release|build)\s*$/i.test(before)) return false;
-        if (before.endsWith('.')) return false;      // continuation of a longer dotted number
+        if (/\.$/.test(before) && /\d\.$/.test(before)) return false; // continuation of a longer dotted number
         if (/^\.\d/.test(after)) return false;        // more octets follow → not an IPv4
       }
+      const opts = (ctx && ctx.opts) || {};
+      if (!opts.excludePrivateIp) return true; // default: flag everything else
+      // opted in to noise reduction: ignore private ranges
       const a = +o[0], b = +o[1];
       if (a === 10) return false;                       // 10.0.0.0/8
       if (a === 172 && b >= 16 && b <= 31) return false; // 172.16.0.0/12
