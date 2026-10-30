@@ -29,9 +29,10 @@ export function expiryBand(daysLeft) {
 export function issuerLabel(issuer) {
   if (!issuer) return "";
   const s = String(issuer);
-  const o = s.match(/O\s*=\s*"?([^",/]+)/i);
-  const cn = s.match(/CN\s*=\s*"?([^",/]+)/i);
-  return (o && o[1].trim()) || (cn && cn[1].trim()) || s.slice(0, 48);
+  // a quoted RDN value may hold a comma (O="Example, Inc.")
+  const o = s.match(/O\s*=\s*(?:"([^"]+)"|([^",/]+))/i);
+  const cn = s.match(/CN\s*=\s*(?:"([^"]+)"|([^",/]+))/i);
+  return (o && (o[1] || o[2]).trim()) || (cn && (cn[1] || cn[2]).trim()) || s.slice(0, 48);
 }
 
 // Normalise a pasted blob of hostnames (newline/comma/space separated) to a

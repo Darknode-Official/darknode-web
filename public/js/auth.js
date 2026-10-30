@@ -2142,7 +2142,7 @@ function renderApp(user) {
     else if (sec === "posture") { import("/js/dataprotect/posture.js?v=20261029c").then(m => live() && m.renderPosture(main)); }
     else if (sec === "tlsfleet") { import("/js/dataprotect/tlsfleet.js?v=20261029c").then(m => live() && m.renderTlsFleet(main)); }
     else if (sec === "phishtriage") { import("/js/dataprotect/phish.js?v=20261029c").then(m => live() && m.renderPhish(main)); }
-    else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261029c").then(m => live() && m.renderLeakprobe(main)); }
+    else if (sec === "leakprobe") { import("/js/dataprotect/leakprobe.js?v=20261029e").then(m => live() && m.renderLeakprobe(main)); }
     else if (sec === "caaudit") { import("/js/identity/caaudit.js?v=20261029c").then(m => live() && m.renderCaAudit(main)); }
     else if (sec === "privaudit") { import("/js/identity/privaudit.js?v=20261029c").then(m => live() && m.renderPrivAudit(main)); }
     else if (sec === "nhi") { import("/js/identity/nhi.js?v=20261029c").then(m => live() && m.renderNhi(main)); }

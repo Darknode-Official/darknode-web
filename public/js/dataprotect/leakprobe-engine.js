@@ -240,6 +240,10 @@ export function gradeCors(headers, origin) {
   if (acao === "*") {
     return { level: "warning", label: "Wildcard CORS", reason: "ACAO:* lets any origin read responses. Safe only if nothing here is sensitive or credentialed." };
   }
+  // ACAO: null is matched by sandboxed iframes and data: documents, which any site can create
+  if (String(acao).trim().toLowerCase() === "null" && acac) {
+    return { level: "warning", label: "null Origin allowed with credentials", reason: "ACAO: null with credentials can be reached from any site via a sandboxed iframe. Pin to an allowlist." };
+  }
   if (origin && acao.toLowerCase() === String(origin).toLowerCase() && acac) {
     return { level: "warning", label: "Origin reflected with credentials", reason: "The backend reflected our arbitrary Origin and allows credentials — effectively open CORS. Pin to an allowlist." };
   }
@@ -252,7 +256,7 @@ export function gradeErrorLeak(body) {
   const signals = [];
   const secrets = dlpScan(text).findings.filter((f) => f.kind === "secret");
   if (secrets.length) signals.push({ kind: "secret", detail: secrets.length + " secret-shaped value(s) in the response", severity: "critical" });
-  if (/(?:\/[\w.-]+){2,}\.(?:js|ts|mjs|py|rb|go|php|java):\d+/.test(text) || /\bat\s+[\w$.<>]+\s+\(.+:\d+:\d+\)/.test(text)) {
+  if (/(?:\/[\w.-]+){2,64}\.(?:js|ts|mjs|py|rb|go|php|java):\d+/.test(text) || /\bat\s+[\w$.<>]+\s+\(.+:\d+:\d+\)/.test(text)) {
     signals.push({ kind: "stack", detail: "Stack trace / source line numbers exposed", severity: "high" });
   }
   if (/(?:\/(?:home|usr|var|opt|root|app|srv)\/[\w./-]+)/.test(text)) {
@@ -360,7 +364,7 @@ export function classifyKey(finding) {
     case "google-oauth": return SECRET("Google OAuth client secret");
     case "github-token": case "github-pat-fine": return SECRET("GitHub");
     case "slack-token": case "slack-webhook": return SECRET("Slack");
-    case "stripe-key": return /^sk_/.test(v) ? SECRET("Stripe", "Stripe SECRET key — critical if client-side.") : PUBLIC("Stripe", "Stripe publishable key (pk_) — public by design.");
+    case "stripe-key": return /^[sr]k_/.test(v) ? SECRET("Stripe", "Stripe SECRET or restricted key — critical if client-side.") : PUBLIC("Stripe", "Stripe publishable key (pk_) — public by design.");
     case "twilio-key": return SECRET("Twilio");
     case "sendgrid-key": return SECRET("SendGrid");
     case "private-key": return SECRET("Private key", "A private key block. Must never be client-side.");
@@ -393,7 +397,9 @@ export function gradeRouteResponse(route, status, body) {
   // An SPA that returns index.html for everything is not a leak.
   if (/<!doctype html>/i.test(text.slice(0, 200)) && /<div id="?(?:root|app|view)"?/i.test(text)) return { hit: false };
   const secrets = dlpScan(text).findings.filter((f) => f.kind === "secret");
-  const envish = /\b(KEY|TOKEN|SECRET|PASSWORD|DATABASE_URL|API_KEY)\b\s*[:=]/.test(text);
+  // plus .env lines: DB_PASSWORD=..., SESSION_SECRET=... (the word is part of a longer name)
+  const envish = /\b(KEY|TOKEN|SECRET|PASSWORD|DATABASE_URL|API_KEY)\b\s*[:=]/.test(text) ||
+    /^[ \t]*(?:export[ \t]+)?[A-Z][A-Z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD|PASSWD|DATABASE_URL)[A-Z0-9_]*[ \t]*=[ \t]*\S/m.test(text);
   const gitish = /^ref:\s|\[core\]|repositoryformatversion/m.test(text);
   if (secrets.length || envish || gitish) {
     return { hit: true, severity: secrets.length ? "critical" : "high", detail: secrets.length ? (secrets.length + " secret(s) returned") : (gitish ? "Git metadata served" : "Config/env content served"), route };

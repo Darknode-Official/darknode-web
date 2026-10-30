@@ -35,7 +35,7 @@ export function parseSPF(txts) {
 }
 
 export function parseDMARC(txts) {
-  const rec = (txts || []).find((t) => /^v=dmarc1\b/i.test(String(t).trim()));
+  const rec = (txts || []).find((t) => /^v\s*=\s*dmarc1\b/i.test(String(t).trim())); // RFC 7489 ABNF allows WSP around "="
   if (!rec) return { present: false };
   const s = String(rec);
   const m = s.match(/\bp\s*=\s*(none|quarantine|reject)\b/i);
@@ -46,7 +46,7 @@ export function parseDMARC(txts) {
   const adkim = s.match(/\badkim\s*=\s*([rs])\b/i);
   const aspf = s.match(/\baspf\s*=\s*([rs])\b/i);
   return {
-    present: true, record: rec, multiple: (txts || []).filter((t) => /^v=dmarc1\b/i.test(String(t).trim())).length > 1,
+    present: true, record: rec, multiple: (txts || []).filter((t) => /^v\s*=\s*dmarc1\b/i.test(String(t).trim())).length > 1,
     policy: m ? m[1].toLowerCase() : "none",
     sp: spM ? spM[1].toLowerCase() : null,
     pct: pct ? parseInt(pct[1], 10) : 100,
@@ -143,7 +143,7 @@ export function certDaysLeft(notAfter, now = Date.now()) {
   // LOCAL time, so the day count drifts by the viewer's UTC offset and can cross a band
   // boundary. Parse a zoneless ISO as UTC (matching netexposure-engine's convention); any
   // string carrying a Z/offset or other format falls through to the normal parser.
-  const m = String(notAfter).match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+  const m = String(notAfter).match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?)?$/);
   const t = m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)) : new Date(notAfter).getTime();
   if (isNaN(t)) return null;
   return Math.floor((t - now) / 86400000);
@@ -331,8 +331,9 @@ export function gradeHeaders(input) {
     }
   }
 
-  const server = h["server"] || h["x-powered-by"];
-  if (server && /\d/.test(server)) {
+  // either header can carry the version (Server: nginx + X-Powered-By: PHP/8.x)
+  const server = [h["server"], h["x-powered-by"]].find((v) => v && /\d/.test(v));
+  if (server) {
     checks.push({ name: "Version disclosure", status: "warn", detail: `Server banner reveals a version: ${String(server).slice(0, 40)}.`, advice: "Suppress version numbers in Server / X-Powered-By." });
   }
   return { key: "headers", label: "Security headers", weight: 25, checks };
@@ -352,6 +353,9 @@ export function gradeEmail(input) {
     checks.push({ name: "SPF", status: "fail", detail: "More than one SPF record is published: a permerror (RFC 7208 4.5), so SPF fails for all mail.", advice: "Merge them into a single v=spf1 record." });
   } else if (spf.qualifier === "-") {
     checks.push({ name: "SPF", status: "pass", detail: "SPF present with a hard fail (-all)." });
+  } else if (!spf.qualifier && /(?:^|\s)redirect=\S/i.test(spf.record)) {
+    // no all mechanism: the policy is the redirect= target's (RFC 7208 6.1), not an implicit ?all
+    checks.push({ name: "SPF", status: "warn", detail: `SPF delegates its policy with ${String(spf.record).match(/redirect=\S+/i)[0]}; the target record was not checked.`, advice: "Confirm the redirect target ends in -all." });
   } else {
     checks.push({ name: "SPF", status: "warn", detail: `SPF present but ends in ${spf.qualifier || "?"}all (not -all).`, advice: "Tighten SPF to -all once senders are enumerated." });
   }
@@ -479,7 +483,8 @@ export function gradeTls(input) {
   // Key size / signature algorithm — only when a CT source supplied them.
   if (cert.keySize) {
     const k = parseInt(cert.keySize, 10);
-    checks.push(k && k < 2048
+    // 224/256/384/521 are EC curve (and Ed25519) sizes, strong at that length; only RSA/DSA need 2048
+    checks.push(k && k < 2048 && ![224, 256, 384, 521].includes(k)
       ? { name: "Key strength", status: "warn", detail: `Public key is ${k}-bit (RSA under 2048-bit is deprecated).`, advice: "Reissue with a 2048-bit+ RSA or an ECDSA P-256 key." }
       : { name: "Key strength", status: "pass", detail: `Public key size: ${cert.keySize}-bit.` });
   }

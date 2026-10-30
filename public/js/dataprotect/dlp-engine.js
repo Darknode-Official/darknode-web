@@ -132,7 +132,7 @@ export const DETECTORS = [
   },
   {
     id: 'email', label: 'Email address', kind: 'pii', severity: 'low',
-    re: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
+    re: /\b[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,}\b/g, // RFC 5321 length caps keep a long @-less run linear (was quadratic)
     validate: (m) => !/\.(png|jpg|jpeg|gif|svg|webp|css|js|json|html)$/i.test(m),
     advice: 'Email addresses are personal data under GDPR/CCPA.',
   },

@@ -73,6 +73,9 @@ const TWO_LEVEL = new Set([
   "co.id", "or.id", "web.id", "go.id", "ac.id",
   "com.vn", "net.vn", "org.vn", "gov.vn", "edu.vn",
   "com.sa", "net.sa", "org.sa", "gov.sa", "edu.sa",
+  // Africa / Middle East / South Asia / rest of Latin America / Austria / Thailand
+  "com.eg", "com.ng", "co.ke", "co.tz", "co.ug", "com.gh", "co.ae", "com.qa", "com.kw", "com.pk", "com.bd", "com.np", "com.lk",
+  "co.th", "in.th", "ac.th", "go.th", "or.th", "co.at", "or.at", "com.pe", "com.ve", "co.ve", "com.ec", "com.uy", "com.bo", "com.py",
 ]);
 
 // Known URL-shortener hosts (unfurl recommended).
@@ -280,9 +283,10 @@ export function extractIOCs(text) {
   const uniq = (arr) => Array.from(new Set(arr));
   const urls = uniq((t.match(/\bhttps?:\/\/[^\s"'<>)\]]+/gi) || []).map((u) => u.replace(/[.,;]+$/, "")));
   const ips = uniq((t.match(/\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g) || []).filter((ip) => ip.split(".")[0] !== "0"));
-  const emails = uniq((t.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g) || []));
+  // length caps (RFC 5321 local part, 127 labels) keep long @-less / dotted runs linear, not quadratic
+  const emails = uniq((t.match(/\b[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,}\b/g) || []));
   const hostsFromUrls = urls.map((u) => { try { return new URL(u).hostname.toLowerCase(); } catch (_) { return null; } }).filter(Boolean);
-  const bareDomains = uniq((t.match(/\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b/gi) || []).map((d) => d.toLowerCase()));
+  const bareDomains = uniq((t.match(/\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.){1,127}[a-z]{2,}\b/gi) || []).map((d) => d.toLowerCase()));
   const domains = uniq(hostsFromUrls.concat(bareDomains).filter((d) => !/\.(png|jpg|jpeg|gif|svg|css|js|json|html|webp)$/i.test(d)));
   const hashes = uniq((t.match(/\b[a-f0-9]{64}\b|\b[a-f0-9]{40}\b|\b[a-f0-9]{32}\b/gi) || []));
   return { urls, domains, ips, emails, hashes };
@@ -306,7 +310,7 @@ const FILE_EXT = /\.(png|jpg|jpeg|gif|svg|css|js|json|html?|webp|txt|pdf|docx?|x
 export function defangText(text) {
   const dots = (s) => s.replace(/\./g, "[.]");
   return refangText(text).replace(
-    /\bhttps?:\/\/[^\s"'<>)\]]+|\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b|\b(?:\d{1,3}\.){3}\d{1,3}\b|\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}\b/gi,
+    /\bhttps?:\/\/[^\s"'<>)\]]+|\b[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,}\b|\b(?:\d{1,3}\.){3}\d{1,3}\b|\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.){1,127}[a-z]{2,}\b/gi,
     (m) => {
       if (/^https?:\/\//i.test(m)) {
         const i = m.indexOf("://") + 3, rest = m.slice(i), cut = rest.search(/[\/?#]/), host = cut < 0 ? rest : rest.slice(0, cut);
