@@ -74,7 +74,7 @@ function hexEncode(str) {
   return out;
 }
 function hexDecode(str) {
-  const clean = str.replace(/\s+/g, "").replace(/\\x/gi, "").replace(/^0x/i, "");
+  const clean = str.replace(/(^|[\s,])0x/gi, "$1").replace(/[\s,]+/g, "").replace(/\\x/gi, "");
   if (clean.length % 2 !== 0) return "Error: Odd number of hex characters";
   const bytes = [];
   for (let i = 0; i < clean.length; i += 2) {
@@ -106,8 +106,8 @@ function binaryToText(bin) {
   const bytes = [];
   for (const t of tokens) {
     const n = parseInt(t, 2);
-    if (isNaN(n)) return "Error: Invalid binary value \"" + t + "\"";
-    bytes.push(n & 0xFF);
+    if (!/^[01]{1,8}$/.test(t) || n > 255) return "Error: Invalid binary byte \"" + t + "\"";
+    bytes.push(n);
   }
   return new TextDecoder().decode(new Uint8Array(bytes));
 }
@@ -119,8 +119,8 @@ function octalToText(oct) {
   const bytes = [];
   for (const t of tokens) {
     const n = parseInt(t, 8);
-    if (isNaN(n)) return "Error: Invalid octal value \"" + t + "\"";
-    bytes.push(n & 0xFF);
+    if (!/^[0-7]{1,3}$/.test(t) || n > 255) return "Error: Invalid octal byte \"" + t + "\"";
+    bytes.push(n);
   }
   return new TextDecoder().decode(new Uint8Array(bytes));
 }
@@ -132,8 +132,8 @@ function decimalToText(dec) {
   const bytes = [];
   for (const t of tokens) {
     const n = parseInt(t, 10);
-    if (isNaN(n)) return "Error: Invalid decimal value \"" + t + "\"";
-    bytes.push(n & 0xFF);
+    if (!/^\d{1,3}$/.test(t) || n > 255) return "Error: Invalid decimal byte \"" + t + "\"";
+    bytes.push(n);
   }
   return new TextDecoder().decode(new Uint8Array(bytes));
 }
@@ -224,7 +224,7 @@ const MORSE_MAP = {
   ";":" -.-.-.","=":" -...-","+":" .-.-.","-":" -....-","_":" ..--.-","\"":".-..-.",
   "$":" ...-..-","@":" .--.-."," ":" / "
 };
-const MORSE_REV = {};
+const MORSE_REV = Object.create(null);
 for (const [k, v] of Object.entries(MORSE_MAP)) MORSE_REV[v.trim()] = k;
 
 function textToMorse(str) {
@@ -250,7 +250,7 @@ function textToNATO(str) {
   return str.toUpperCase().split("").map(ch => NATO_MAP[ch] || ch).join(" ");
 }
 function natoToText(nato) {
-  const rev = {};
+  const rev = Object.create(null);
   for (const [k, v] of Object.entries(NATO_MAP)) rev[v.toLowerCase()] = k;
   return nato.split(/\s+/).map(w => {
     const lw = w.toLowerCase();
@@ -270,7 +270,8 @@ function unicodeEscape(str) {
 }
 function unicodeUnescape(str) {
   return str.replace(/\\u\{([0-9a-fA-F]+)\}|\\u([0-9a-fA-F]{4})/g, (_, g1, g2) => {
-    return String.fromCodePoint(parseInt(g1 || g2, 16));
+    const cp = parseInt(g1 || g2, 16);
+    return cp <= 0x10FFFF ? String.fromCodePoint(cp) : _;
   });
 }
 function punycode(str) {
@@ -302,13 +303,15 @@ function decodeJWT(token) {
   const payload = b64urlDecode(parts[1]);
   const signature = parts[2];
   const claims = {};
+  // Out-of-range numeric claims (exp: 1e20) made toISOString() throw and killed the decode.
+  const iso = (v) => { const d = new Date(Number(v) * 1000); return isNaN(d.getTime()) ? "invalid (" + String(v) + ")" : d.toISOString(); };
   if (payload && typeof payload === "object") {
-    if (payload.iat) claims.issuedAt = new Date(payload.iat * 1000).toISOString();
+    if (payload.iat) claims.issuedAt = iso(payload.iat);
     if (payload.exp) {
-      claims.expiresAt = new Date(payload.exp * 1000).toISOString();
+      claims.expiresAt = iso(payload.exp);
       claims.isExpired = Date.now() / 1000 > payload.exp;
     }
-    if (payload.nbf) claims.notBefore = new Date(payload.nbf * 1000).toISOString();
+    if (payload.nbf) claims.notBefore = iso(payload.nbf);
     if (payload.iss) claims.issuer = payload.iss;
     if (payload.sub) claims.subject = payload.sub;
     if (payload.aud) claims.audience = payload.aud;
@@ -355,6 +358,7 @@ const ASN1_TAGS = {
 function parseASN1(hexStr) {
   const bytes = [];
   const clean = hexStr.replace(/\s+/g, "").replace(/^0x/i, "");
+  if (!/^(?:[0-9a-fA-F]{2})*$/.test(clean)) return [{ depth: 0, tag: "??", tagName: "PARSE ERROR", length: 0, valueHex: "", valueStr: "input is not an even-length hex string", constructed: false }];
   for (let i = 0; i < clean.length; i += 2) {
     bytes.push(parseInt(clean.substr(i, 2), 16));
   }
@@ -365,12 +369,16 @@ function parseASN1(hexStr) {
     const tagName = ASN1_TAGS[tag] || (tag & 0x20 ? "CONSTRUCTED [" + (tag & 0x1f) + "]" : "PRIMITIVE [" + (tag & 0x1f) + "]");
     const constructed = !!(tag & 0x20);
     offset++;
+    if (offset >= bytes.length) throw new Error("truncated: missing length at offset " + offset);
     let len = bytes[offset]; offset++;
     if (len & 0x80) {
       const numBytes = len & 0x7f;
+      if (numBytes > 4 || offset + numBytes > bytes.length) throw new Error("unsupported or truncated long-form length at offset " + (offset - 1));
       len = 0;
-      for (let i = 0; i < numBytes; i++) { len = (len << 8) | bytes[offset]; offset++; }
+      for (let i = 0; i < numBytes; i++) { len = len * 256 + bytes[offset]; offset++; }
     }
+    // A length running past the buffer used to spin forever in the child loop below.
+    if (offset + len > bytes.length) throw new Error("length " + len + " at offset " + offset + " exceeds the " + bytes.length + "-byte input");
     const valueBytes = bytes.slice(offset, offset + len);
     const valueHex = valueBytes.map(b => b.toString(16).padStart(2, "0")).join(" ");
     let valueStr = "";
@@ -379,7 +387,9 @@ function parseASN1(hexStr) {
       for (const b of valueBytes) n = (n << 8n) | BigInt(b);
       if (valueBytes.length && (valueBytes[0] & 0x80)) n -= (1n << BigInt(8 * valueBytes.length));
       valueStr = n.toString();
-    } else if (tag === 0x13 || tag === 0x16 || tag === 0x0c || tag === 0x1a) {
+    } else if (tag === 0x0c) {
+      valueStr = new TextDecoder().decode(new Uint8Array(valueBytes));
+    } else if (tag === 0x13 || tag === 0x16 || tag === 0x1a) {
       valueStr = valueBytes.map(b => String.fromCharCode(b)).join("");
     } else if (tag === 0x06) {
       const subs = [];
@@ -782,11 +792,11 @@ export function renderEncodingSuite(container) {
     const result = decodeJWT(token);
     if (result.error) { out.innerHTML = '<div class="enc-output" style="color:#f44336;">' + result.error + '</div>'; return; }
     let html = '<div style="margin-top:16px;">';
-    html += '<div class="enc-jwt-section"><div class="enc-jwt-header" style="color:#f44336;">Header</div><div class="enc-jwt-json" style="border-color:rgba(244,67,54,0.3);">' + JSON.stringify(result.header, null, 2) + '</div></div>';
-    html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header" style="color:#7c5cff;">Payload</div><div class="enc-jwt-json" style="border-color:rgba(124,92,255,0.3);">' + JSON.stringify(result.payload, null, 2) + '</div></div>';
-    html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header" style="color:#00d4ff;">Signature</div><div class="enc-jwt-json" style="border-color:rgba(0,212,255,0.3);">' + result.signatureBase64Url + '</div></div>';
+    html += '<div class="enc-jwt-section"><div class="enc-jwt-header" style="color:#f44336;">Header</div><div class="enc-jwt-json" style="border-color:rgba(244,67,54,0.3);">' + htmlEncode(JSON.stringify(result.header, null, 2) || "") + '</div></div>';
+    html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header" style="color:#7c5cff;">Payload</div><div class="enc-jwt-json" style="border-color:rgba(124,92,255,0.3);">' + htmlEncode(JSON.stringify(result.payload, null, 2) || "") + '</div></div>';
+    html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header" style="color:#00d4ff;">Signature</div><div class="enc-jwt-json" style="border-color:rgba(0,212,255,0.3);">' + htmlEncode(result.signatureBase64Url) + '</div></div>';
     if (Object.keys(result.claims).length) {
-      html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header">Parsed Claims</div><div class="enc-jwt-json">' + JSON.stringify(result.claims, null, 2) + '</div></div>';
+      html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header">Parsed Claims</div><div class="enc-jwt-json">' + htmlEncode(JSON.stringify(result.claims, null, 2)) + '</div></div>';
     }
     html += '</div>';
     out.innerHTML = html;
