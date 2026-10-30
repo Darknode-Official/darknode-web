@@ -275,12 +275,13 @@ function* iterCsvRows(text, delimiter) {
 
 // Trimmed, de-duplicated header keys ("a", "a_2", "a_3").
 function headerKeys(row) {
-  const seen = {}, out = [];
+  const seen = {}, last = {}, out = [];
   for (const h of row) {
     const base = String(h).trim();
-    let k = base, n = 1;
+    // resume after the last suffix tried for this name: restarting at _2 each time made 8000 repeats quadratic
+    let k = base, n = Object.prototype.hasOwnProperty.call(last, base) ? last[base] : 1;
     while (Object.prototype.hasOwnProperty.call(seen, k)) k = `${base}_${++n}`; // a,a,a_2 -> a, a_2, a_2_2 (never a repeat)
-    seen[k] = 1; out.push(k);
+    seen[k] = 1; last[base] = n; out.push(k);
   }
   return out;
 }
@@ -639,9 +640,9 @@ function stripComment(s) {
     const c = s[i];
     if (q) { if (c === q) q = null; continue; }
     if ((c === '"' || c === "'") && (i === 0 || /[\s:,\[{-]/.test(s[i - 1]))) { q = c; continue; }
-    if (c === "#" && (i === 0 || /\s/.test(s[i - 1]))) return s.slice(0, i).replace(/\s+$/, "");
+    if (c === "#" && (i === 0 || /\s/.test(s[i - 1]))) return s.slice(0, i).trimEnd();
   }
-  return s.replace(/\s+$/, "");
+  return s.trimEnd(); // same \s set as /\s+$/, which was quadratic on a long run of inner whitespace
 }
 
 function closingQuote(s, from) {

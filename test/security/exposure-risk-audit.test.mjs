@@ -6,6 +6,7 @@ import { test, assert, group } from "../harness.mjs";
 import { analyze as riskAnalyze } from "../../public/js/risk/riskreg-engine.js";
 import { csvToRecords, daysUntil } from "../../public/js/risk/vendorrisk-engine.js";
 import { parseCounts, parseTime } from "../../public/js/risk/breachclock-engine.js";
+import { parseCsv, parseYamlSubset } from "../../public/js/ingest/parse.js";
 
 const R = (min, ml, max) => ({ min, ml, max });
 const risk = (o) => ({ owner: "test@darknode.ai", status: "assessed", category: "cyber", currency: "USD", lef: R(1, 1, 1), lastReviewed: "2026-09-01", reviewDate: "2026-12-01", ...o });
@@ -38,5 +39,17 @@ group("exposure-risk audit", () => {
     assert.equal(parseTime("2026-02-30T10:00Z"), null);
     assert.equal(parseTime("2026-04-31 10:00-04:00"), null);
     assert.equal(parseTime("2028-02-29T10:00Z"), Date.parse("2028-02-29T10:00:00Z"));
+  });
+});
+
+group("shared ingest parser stays linear", () => {
+  test("8000 repeated CSV headers are renamed quickly and uniquely", () => {
+    const t = Date.now(), r = parseCsv(Array(8000).fill("a").join(",") + "\n" + Array(8000).fill("1").join(","));
+    const keys = Object.keys((r.rows || r)[0]);
+    assert.ok(Date.now() - t < 500 && keys.length === 8000 && keys[1] === "a_2" && keys[7999] === "a_8000");
+  });
+  test("a YAML value with a long run of inner spaces parses quickly", () => {
+    const t = Date.now(), y = parseYamlSubset("k: x" + " ".repeat(60000) + "y   # note\n");
+    assert.ok(Date.now() - t < 500 && y.k.endsWith("y") && y.k.length === 60002);
   });
 });
