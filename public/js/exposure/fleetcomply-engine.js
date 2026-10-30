@@ -945,11 +945,13 @@ export function analyze(dataset, opts = {}, ctx) {
   }
   const allowBehind = num(o.patchAgeBuilds, 1);
   let comparable = 0;
+  // "14.6" and "14.6.0" are one release: trailing zero parts are dropped from the key
+  const pk = (t) => { const a = t.slice(); while (a.length > 1 && a[a.length - 1] === 0) a.pop(); return a.join("."); };
   for (const [line, ds] of lines) {
-    const vers = uniqSorted(ds.map((d) => d.patchTuple.join("."))).sort((a, b) => cmpVer(b, a));
+    const vers = uniqSorted(ds.map((d) => pk(d.patchTuple))).sort((a, b) => cmpVer(b, a));
     if (vers.length < 2) continue;
     comparable++;
-    for (const d of ds) { const behind = vers.indexOf(d.patchTuple.join(".")); if (behind > allowBehind) fail("patch_behind", d, line + ": " + d.patchVer + " is " + behind + " release(s) behind " + (d.family.startsWith("windows") ? vers[0].replace(/^/, "rev ") : vers[0]) + " seen in the fleet"); }
+    for (const d of ds) { const behind = vers.indexOf(pk(d.patchTuple)); if (behind > allowBehind) fail("patch_behind", d, line + ": " + d.patchVer + " is " + behind + " release(s) behind " + (d.family.startsWith("windows") ? vers[0].replace(/^/, "rev ") : vers[0]) + " seen in the fleet"); }
   }
   for (const d of devices) if (d.autoUpdates === false) fail("patch_behind", d, "automatic OS updates disabled (Workstation Audit)");
   if (!comparable && !devices.some((d) => d.autoUpdates === false)) skip("patch_behind", "no OS line with two or more distinct comparable versions (needs Windows build.revision or macOS / iOS versions)");

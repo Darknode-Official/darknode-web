@@ -15,8 +15,8 @@
 // ============================================================================
 
 import { startOpenRouterConnect } from "/js/openrouter-connect.js?v=20261028c";
-import { testKey, canTest } from "/js/integrations/connect.js?v=20261029c";
-import { toolsFor } from "/js/integrations/intel-core.js?v=20261029c";
+import { testKey, canTest } from "/js/integrations/connect.js?v=20261029e";
+import { toolsFor } from "/js/integrations/intel-core.js?v=20261029e";
 // Live-data layer: the SSRF-guarded worker proxy. dnFetchJSON routes keyless public
 // feeds (CISA KEV, FIRST EPSS, ransomware.live, crt.sh, DoH, RDAP, RIPEstat) through
 // /api/fetch; it throws on failure and never fabricates. net.js is stateless.

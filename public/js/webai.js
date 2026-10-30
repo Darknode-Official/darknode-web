@@ -1,5 +1,5 @@
 // Darknode AI — unified multi-provider assistant.
-import { availableTools, runTool } from "/js/integrations/connect.js?v=20261029c";
+import { availableTools, runTool } from "/js/integrations/connect.js?v=20261029e";
 // Built-in keys power the free tier. Users can override in Settings → API Keys.
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
