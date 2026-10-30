@@ -2177,12 +2177,13 @@ export function renderDeck(host, opts) {
       ${tools.length ? `<div class="dk-itools"><div class="h">Assistant tools${connected ? "" : " once connected"}</div>${tools.map((t) => `<div class="r"><b>${esc(t.title)}</b><span>${esc(t.desc)}</span></div>`).join("")}</div>` : ""}
       <div class="act">
         ${actArea}
-        <button class="dk-b" data-act="open">Open ${esc(it.domain)}</button>
+        ${actArea.includes('data-act="account"') ? "" : `<button class="dk-b" data-act="open">Open ${esc(it.domain)}</button>`}
         ${it.kind === "ai" && connected ? `<button class="dk-b" data-act="use">Use in Darknode AI</button>` : ""}
       </div>
       <p class="dk-note">${note}</p>`;
     showDrawer();
-    drawerBody.querySelector('[data-act="open"]').onclick = () => window.open("https://" + it.domain, "_blank", "noopener");
+    const openBtn = drawerBody.querySelector('[data-act="open"]'); // the sign-in button already opens the same page
+    if (openBtn) openBtn.onclick = () => window.open("https://" + it.domain, "_blank", "noopener");
     const oauthBtn = drawerBody.querySelector('[data-act="oauth"]');
     if (oauthBtn) oauthBtn.onclick = () => {
       // Genuine browser account-link (OpenRouter PKCE). Full-page redirect to
