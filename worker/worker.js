@@ -225,6 +225,9 @@ async function handleFetch(request) {
   // Optional opt-in upstream timeout (seconds) for slow keyless sources (crt.sh often
   // needs 15-20 s); default stays 10 s, clamped to 28 s.
   let waitS = parseInt(u0.searchParams.get("t") || "", 10);
+  // Optional Origin request header, for CORS checks (does the site echo a foreign
+  // origin?). Server-side, so no cookies ride along; only "null" or scheme://host[:port].
+  let origin = u0.searchParams.get("origin") || "";
   if (request.method === "POST") {
     // Cap the request body BEFORE parsing — this control body is tiny ({url,...}),
     // so 64 KB is generous and stops an unbounded JSON parse (every other route
@@ -240,6 +243,7 @@ async function handleFetch(request) {
       if (b && b.ua) ua = String(b.ua);
       if (b && b.max) maxBytes = parseInt(b.max, 10);
       if (b && b.t) waitS = parseInt(b.t, 10);
+      if (b && b.origin) origin = String(b.origin);
     } catch (_) {}
   }
   const cap = Math.min(Math.max(Number.isFinite(maxBytes) ? maxBytes : 200000, 1), 4000000);
@@ -251,6 +255,7 @@ async function handleFetch(request) {
   const reqHeaders = ua
     ? { "User-Agent": ua, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.9" }
     : { "User-Agent": "DarknodeRecon/1.0 (+https://darknode.ai)", "Accept": "*/*" };
+  if (origin.length <= 256 && /^(null|https?:\/\/[a-z0-9.-]+(:\d{1,5})?)$/i.test(origin)) reqHeaders.Origin = origin;
   let current = target;
   const chain = [];
   for (let hop = 0; hop < 5; hop++) {
