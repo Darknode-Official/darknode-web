@@ -21,8 +21,10 @@ const now = () => Date.now();
 const uid = () => "m_" + Math.random().toString(36).slice(2, 10) + now().toString(36);
 
 // Redact channel secrets before anything leaves the DO.
-const safeChannel = (c) => ({ type: c.type, url: c.url, hasSecret: !!c.secret });
-const safeMonitor = (m) => ({ ...m, channels: (m.channels || []).map(safeChannel), lastResults: undefined, graphMeta: undefined, lastResultCount: (m.lastResults || []).length });
+// A Slack/Discord/Teams webhook URL is itself the credential: viewers see only its host.
+const hideUrl = (u) => { try { const x = new URL(u); return x.origin + (x.pathname.length > 1 || x.search ? "/…" : ""); } catch (_) { return "…"; } };
+const safeChannel = (c, full = true) => ({ type: c.type, url: full ? c.url : hideUrl(c.url), hasSecret: !!c.secret });
+const safeMonitor = (m, full = true) => ({ ...m, channels: (m.channels || []).map((c) => safeChannel(c, full)), lastResults: undefined, graphMeta: undefined, lastResultCount: (m.lastResults || []).length });
 
 export class MonitorDO {
   constructor(state, env) { this.state = state; this.storage = state.storage; this.env = env; }
@@ -118,6 +120,9 @@ export class MonitorDO {
     const diff = diffFindings(m.lastResults || [], findings);
     const events = diffToEvents(diff, m.id, t0);
     const rules = { ...defaultAlertRules(), ...(m.rules || {}) };
+    // the cert monitor only reports certificates inside ITS warn window (the Deck form sets it):
+    // alerting on the 21-day default meant a 40-day finding under warnDays 60 never alerted
+    if (m.type === "cert-expiry" && m.config && Number(m.config.warnDays) > 0 && !(m.rules && m.rules.certExpiryDays != null)) rules.certExpiryDays = Number(m.config.warnDays);
     const alerted = [];
     const held = [];
     for (const ev of events) {
@@ -241,7 +246,8 @@ export class MonitorDO {
 
     if (op === "list") {
       const mons = await this._monitors();
-      return reply({ monitors: Object.values(mons).map(safeMonitor), history: (await this.storage.get("history")) || [], deliveries: (await this.storage.get("deliveries")) || [] });
+      const deliveries = (await this.storage.get("deliveries")) || [];
+      return reply({ monitors: Object.values(mons).map((x) => safeMonitor(x, canWrite)), history: (await this.storage.get("history")) || [], deliveries: canWrite ? deliveries : deliveries.map((d) => ({ ...d, url: hideUrl(d.url) })) });
     }
     if (!canWrite) return reply({ error: "Your role (" + role + ") cannot change monitors." }, 403);
 

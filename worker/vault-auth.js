@@ -7,15 +7,21 @@
 const JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
 const SKEW = 300; // seconds of clock tolerance on iat / auth_time
 
-let _jwks = null, _jwksExp = 0;
+let _jwks = null, _jwksExp = 0, _jwksAt = 0;
+const REFETCH_MS = 60 * 1000; // an unknown kid may refetch the key set at most this often
 
-async function googleKeys(fetchImpl = fetch) {
+// `force` refetches a fresh-but-stale set (a kid we have not seen), rate-limited so a stream
+// of junk kids cannot turn every request into a Google round trip.
+async function googleKeys(fetchImpl = fetch, force = false) {
   const now = Date.now();
-  if (_jwks && now < _jwksExp) return _jwks;
+  if (_jwks && now < _jwksExp && !(force && now - _jwksAt >= REFETCH_MS)) return _jwks;
   const r = await fetchImpl(JWKS_URL);
   if (!r.ok) throw new Error("could not load signing keys (" + r.status + ")");
   const m = /max-age=(\d+)/.exec(r.headers.get("cache-control") || "");
-  _jwks = (await r.json()).keys || [];
+  const keys = ((await r.json()) || {}).keys;
+  // never cache an empty/malformed set: that locked out every sign-in for up to max-age (24h)
+  if (!Array.isArray(keys) || !keys.length) throw new Error("could not load signing keys (empty key set)");
+  _jwks = keys; _jwksAt = now;
   _jwksExp = now + (m ? Math.min(+m[1], 86400) : 3600) * 1000;
   return _jwks;
 }
@@ -38,8 +44,10 @@ export async function verifyIdToken(token, projectId, opts = {}) {
   let header, claims;
   try { header = b64uJson(parts[0]); claims = b64uJson(parts[1]); } catch (_) { throw new Error("malformed token"); }
   if (header.alg !== "RS256" || !header.kid) throw new Error("wrong algorithm");
+  if (!projectId) throw new Error("no project id"); // an unset project must never match a token with no aud/iss
   const keys = opts.keys || await googleKeys(opts.fetch);
-  const jwk = keys.find((k) => k.kid === header.kid);
+  let jwk = keys.find((k) => k.kid === header.kid);
+  if (!jwk && !opts.keys) jwk = (await googleKeys(opts.fetch, true)).find((k) => k.kid === header.kid); // Google rotated before our cache expired
   if (!jwk) throw new Error("unknown signing key");
   const key = await crypto.subtle.importKey("jwk", { kty: jwk.kty, n: jwk.n, e: jwk.e, alg: "RS256", ext: true },
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);

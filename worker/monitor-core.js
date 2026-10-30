@@ -4,7 +4,7 @@
 // is unit-testable without a deploy.
 
 const SEV_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
-export const sevRank = (s) => SEV_RANK[String(s || "").toLowerCase()] || 0;
+export const sevRank = (s) => { const k = String(s || "").toLowerCase(); return Object.hasOwn(SEV_RANK, k) ? SEV_RANK[k] : 0; }; // own keys: "constructor" returned a function and silenced every alert
 
 // Fields whose change on an existing finding is worth an alert.
 const WATCH_FIELDS = ["severity", "status", "title"];
