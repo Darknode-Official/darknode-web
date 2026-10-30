@@ -2100,7 +2100,7 @@ function renderApp(user) {
     else if (sec === "apifuzzer") { import("/js/api-fuzzer.js?v=20261029e").then(m => live() && m.renderAPIFuzzer(main)); }
     else if (sec === "privesc") { import("/js/privesc-toolkit.js?v=20260928m").then(m => live() && m.renderPrivescToolkit(main)); }
     else if (sec === "reverseshell") { import("/js/reverse-shell.js?v=20260928m").then(m => live() && m.renderReverseShell(main)); }
-    else if (sec === "xsslab") { import("/js/xss-lab.js?v=20260928m").then(m => live() && m.renderXSSLab(main)); }
+    else if (sec === "xsslab") { import("/js/xss-lab.js?v=20261029e").then(m => live() && m.renderXSSLab(main)); }
     else if (sec === "investigation") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Investigation Workspace...</p>"; const _s=sec; import("/js/investigation.js?v=20261029c").then(m => { if(curSec!==_s)return; m.renderInvestigation(main); _prevCleanup = m.cleanupInvestigation; }); }
     else if (sec === "secgraph") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Security Graph...</p>"; import("/js/security-graph-ui.js?v=20261014f").then(m => live() && m.renderSecurityGraphUI(main)); }
 

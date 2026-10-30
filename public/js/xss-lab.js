@@ -206,7 +206,7 @@ const XL_CONTEXTS = {
   attr_double: { name: 'Attribute (Double)', desc: 'Inside double-quoted attribute', example: '<input value="USER_INPUT">' },
   attr_single: { name: 'Attribute (Single)', desc: 'Inside single-quoted attribute', example: "<input value='USER_INPUT'>" },
   js_string: { name: 'JS String', desc: 'Inside JavaScript string literal', example: "var x = 'USER_INPUT';" },
-  url_param: { name: 'URL Parameter', desc: 'Inside href or src URL', example: '<a href="https://site.com?q=USER_INPUT">' },
+  url_param: { name: 'URL Parameter', desc: 'As the href or src URL', example: '<a href="USER_INPUT">' },
   css_value: { name: 'CSS Value', desc: 'Inside CSS property value', example: '<div style="color: USER_INPUT">' },
 };
 
@@ -241,20 +241,23 @@ function analyzeContext(input, contextKey) {
     if (/<svg[^>]*onload/i.test(input)) results.push('SVG with onload event');
     if (/on\w+\s*=/i.test(input)) results.push('Event handler attribute detected');
     if (/<iframe/i.test(input)) results.push('IFrame injection attempt');
+    if (/<(object|embed|base)\b/i.test(input)) results.push('<object>, <embed> or <base> can load or redirect scripts');
+    if (/(href|src|action|formaction)\s*=\s*["']?\s*javascript:/i.test(input)) results.push('javascript: URL in a link or form — runs when used');
   } else if (contextKey === 'attr_double' || contextKey === 'attr_single') {
     const quote = contextKey === 'attr_double' ? '"' : "'";
     if (input.includes(quote)) results.push(`Contains ${quote} — can break out of attribute`);
     if (/on\w+\s*=/i.test(input)) results.push('Event handler injection after breakout');
-    if (/>/.test(input)) results.push('Can close tag and inject new elements');
+    if (input.includes(quote) && />/.test(input)) results.push('Can close tag and inject new elements'); // inside the quotes > is just text
   } else if (contextKey === 'js_string') {
-    if (input.includes("'") || input.includes('"')) results.push('Quote characters can break string');
+    if (input.includes("'")) results.push("' closes the single-quoted string");
     if (input.includes('\\')) results.push('Backslash can escape the closing quote');
     if (/\$\{/.test(input)) results.push('Template literal injection');
-    if (input.includes('</script>')) results.push('Can close script block');
+    if (/<\/script/i.test(input)) results.push('Can close script block');
   } else if (contextKey === 'url_param') {
     if (/^javascript:/i.test(lower)) results.push('javascript: protocol — direct execution');
     if (/^data:/i.test(lower)) results.push('data: protocol — can embed HTML/JS');
     if (input.includes('#')) results.push('Fragment can be used for DOM-based XSS');
+    if (input.includes('"')) results.push('" closes the href attribute');
   } else if (contextKey === 'css_value') {
     if (/expression\s*\(/i.test(input)) results.push('CSS expression() — IE JS execution');
     if (/url\s*\(/i.test(input)) results.push('url() can load external resources');
@@ -456,9 +459,9 @@ export function renderXSSLab(container) {
     panel.innerHTML = `
       <div class="xl-card">
         <h3>Interactive Sandbox <span class="xl-badge danger">SAFE MODE</span></h3>
-        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 12px">Payloads are displayed as text only — nothing is executed. This shows how input appears in different contexts.</p>
+        <p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 12px">Payloads are displayed as text only — nothing is executed. This shows what a page that inserts the input without encoding would emit in each context.</p>
         <label style="font-size:13px;color:var(--txt-2,#aebfdd);display:block;margin-bottom:6px">Input Payload</label>
-        <textarea class="xl-textarea" id="${id}-sb-input" placeholder="Type or paste a payload...">&lt;img src=x onerror=alert(1)&gt;</textarea>
+        <textarea class="xl-textarea" id="${id}-sb-input" placeholder="Type or paste a payload, e.g. <img src=x onerror=alert(1)>"></textarea>
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
           <button class="xl-btn" id="${id}-sb-analyze">Analyze</button>
           <button class="xl-btn secondary" id="${id}-sb-clear">Clear</button>
@@ -472,12 +475,13 @@ export function renderXSSLab(container) {
       const resultsEl = wrap.querySelector(`#${id}-sb-results`);
 
       const contexts = [
-        { key: 'html_body', label: 'HTML Body', render: `<div>${esc(input)}</div>` },
-        { key: 'attr_double', label: 'Attribute (Double-Quoted)', render: `<input value="${esc(input)}">` },
-        { key: 'attr_single', label: "Attribute (Single-Quoted)", render: `<input value='${esc(input)}'>` },
-        { key: 'js_string', label: 'JavaScript String', render: `var x = '${esc(jsEscape(input))}';` },
-        { key: 'url_param', label: 'URL Parameter', render: `<a href="https://example.com?q=${esc(urlEncode(input))}">` },
-        { key: 'css_value', label: 'CSS Value', render: `<div style="content: '${esc(input)}'">` },
+        // the unencoded output a vulnerable page would produce (shown as text below)
+        { key: 'html_body', label: 'HTML Body', render: `<div>${input}</div>` },
+        { key: 'attr_double', label: 'Attribute (Double-Quoted)', render: `<input value="${input}">` },
+        { key: 'attr_single', label: "Attribute (Single-Quoted)", render: `<input value='${input}'>` },
+        { key: 'js_string', label: 'JavaScript String', render: `var x = '${input}';` },
+        { key: 'url_param', label: 'URL (link target)', render: `<a href="${input}">` },
+        { key: 'css_value', label: 'CSS Value', render: `<div style="content: '${input}'">` },
       ];
 
       resultsEl.innerHTML = `<div class="xl-card"><h3>Context Analysis Results</h3>
