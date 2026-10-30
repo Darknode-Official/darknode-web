@@ -93,8 +93,13 @@ export function renderCspEvaluator(container) {
     return directives;
   }
 
-  function assessSource(src, directive) {
+  function assessSource(src, directive, vals) {
     var s = src.toLowerCase();
+    var nh = (vals || []).some(function(v) { return /^'(nonce-|sha(256|384|512)-)/i.test(v); });
+    if (nh && (directive === 'script-src' || directive === 'default-src')) {
+      if (s === "'unsafe-inline'") return { level: 'low', msg: "Ignored by browsers because a nonce or hash is present (a fallback for very old browsers)" };
+      if ((vals || []).some(function(v) { return v.toLowerCase() === "'strict-dynamic'"; }) && (s === '*' || /^[a-z][a-z0-9+.-]*:$/.test(s) || /^(https?:\/\/)?[*a-z0-9.-]+\.[a-z]{2,}/.test(s))) return { level: 'low', msg: "Ignored by browsers because 'strict-dynamic' is used with a nonce or hash" };
+    }
     if (DANGEROUS_SOURCES[s]) {
       var info = DANGEROUS_SOURCES[s];
       if (s === 'data:' && directive !== 'script-src' && directive !== 'object-src') return { level: 'low', msg: 'data: URI — acceptable in ' + directive };
@@ -112,12 +117,16 @@ export function renderCspEvaluator(container) {
     var scriptSrc = dirs['script-src'] || dirs['default-src'] || [];
     var ss = scriptSrc.map(function(s) { return s.toLowerCase(); });
 
+    // A nonce or hash makes browsers ignore 'unsafe-inline' (it is only a fallback for CSP1 browsers), and
+    // 'strict-dynamic' with one of them also ignores host and scheme sources (*, https:, data:, allowlists).
+    var nonceOrHash = ss.some(function(s) { return /^'(nonce-|sha(256|384|512)-)/.test(s); });
+    var strictDyn = nonceOrHash && ss.indexOf("'strict-dynamic'") >= 0;
     if (!dirs['default-src']) { score -= 15; issues.push({ sev: 'high', msg: 'Missing default-src — no fallback policy' }); }
-    if (ss.indexOf("'unsafe-inline'") >= 0) { score -= 25; issues.push({ sev: 'critical', msg: "script-src allows 'unsafe-inline' — XSS protection nullified" }); }
+    if (ss.indexOf("'unsafe-inline'") >= 0 && !nonceOrHash) { score -= 25; issues.push({ sev: 'critical', msg: "script-src allows 'unsafe-inline' — XSS protection nullified" }); }
     if (ss.indexOf("'unsafe-eval'") >= 0) { score -= 20; issues.push({ sev: 'critical', msg: "script-src allows 'unsafe-eval' — code injection possible" }); }
-    if (ss.indexOf('*') >= 0) { score -= 20; issues.push({ sev: 'critical', msg: 'script-src allows * wildcard — any source can execute scripts' }); }
-    if (ss.indexOf('data:') >= 0) { score -= 15; issues.push({ sev: 'high', msg: 'script-src allows data: — XSS via data: URIs' }); }
-    if (ss.indexOf('https:') >= 0) { score -= 10; issues.push({ sev: 'high', msg: 'script-src allows any HTTPS source — too broad' }); }
+    if (ss.indexOf('*') >= 0 && !strictDyn) { score -= 20; issues.push({ sev: 'critical', msg: 'script-src allows * wildcard — any source can execute scripts' }); }
+    if (ss.indexOf('data:') >= 0 && !strictDyn) { score -= 15; issues.push({ sev: 'high', msg: 'script-src allows data: — XSS via data: URIs' }); }
+    if (ss.indexOf('https:') >= 0 && !strictDyn) { score -= 10; issues.push({ sev: 'high', msg: 'script-src allows any HTTPS source — too broad' }); }
 
     if (!dirs['frame-ancestors']) { score -= 10; issues.push({ sev: 'high', msg: 'Missing frame-ancestors — no clickjacking protection' }); }
     var objSrc = dirs['object-src'] || dirs['default-src'] || [];
@@ -141,7 +150,8 @@ export function renderCspEvaluator(container) {
     var scriptSrc = dirs['script-src'] || dirs['default-src'] || [];
     var ss = scriptSrc.map(function(s) { return s.toLowerCase(); });
 
-    scriptSrc.forEach(function(src) {
+    var ignoresHosts = ss.indexOf("'strict-dynamic'") >= 0 && ss.some(function(s) { return /^'(nonce-|sha(256|384|512)-)/.test(s); }); // allowlisted hosts are ignored, so their JSONP endpoints are unreachable
+    if (!ignoresHosts) scriptSrc.forEach(function(src) {
       JSONP_BYPASS_DOMAINS.forEach(function(domain) {
         if (src.toLowerCase().indexOf(domain) >= 0) {
           bypasses.push({ sev: 'high', title: 'JSONP Bypass via ' + domain, desc: 'This CDN/API domain hosts JSONP endpoints that can be abused to execute arbitrary JS. An attacker can load a JSONP callback to run code within the CSP.' });
@@ -223,7 +233,7 @@ export function renderCspEvaluator(container) {
       h += '<div style="color:var(--mut,#7a93b8);font-size:9px;margin-bottom:6px;">' + esc(info.desc) + '</div>';
       h += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
       vals.forEach(function(v) {
-        var assessment = assessSource(v, dir);
+        var assessment = assessSource(v, dir, vals);
         var vc = '#16a34a';
         if (assessment) {
           vc = assessment.level === 'critical' ? '#dc2626' : assessment.level === 'high' ? '#ea580c' : assessment.level === 'medium' ? '#d97706' : '#16a34a';
