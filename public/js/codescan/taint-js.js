@@ -94,14 +94,23 @@ const isP = (t, v) => !!t && t.t === "p" && t.v === v;
 const OPEN = { "(": ")", "[": "]", "{": "}" };
 const KEYWORDS = new Set(["if", "for", "while", "switch", "catch", "with", "return", "typeof", "new", "function", "await", "async", "yield", "throw", "case", "else", "do", "in", "of", "instanceof", "delete", "void", "const", "let", "var", "class", "extends", "import", "export", "default", "this", "super", "null", "undefined", "true", "false"]);
 
+// Work budget for one taintScan: every scan of a token range pays its length. Nested or
+// unbalanced brackets (a truncated file, TSX the tokenizer misreads) made the analysis
+// cubic, so a 40 KB file could hold the tab for minutes; past the budget the scan stops
+// and keeps the flows it has already proven.
+const OUT_OF_BUDGET = { budget: true };
+let budget = Infinity;
+const spend = (n) => { if ((budget -= n) < 0) throw OUT_OF_BUDGET; };
+
 function matchClose(T, i) {
   const o = T[i].v, c = OPEN[o];
   let d = 0;
   for (let j = i; j < T.length; j++) {
     if (T[j].t !== "p") continue;
     if (T[j].v === o) d++;
-    else if (T[j].v === c && --d === 0) return j;
+    else if (T[j].v === c && --d === 0) { spend(j - i); return j; }
   }
+  spend(T.length - i);
   return T.length - 1;
 }
 function matchOpen(T, i) {
@@ -110,8 +119,9 @@ function matchOpen(T, i) {
   for (let j = i; j >= 0; j--) {
     if (T[j].t !== "p") continue;
     if (T[j].v === c) d++;
-    else if (T[j].v === o && --d === 0) return j;
+    else if (T[j].v === o && --d === 0) { spend(i - j); return j; }
   }
+  spend(i);
   return 0;
 }
 
@@ -149,6 +159,7 @@ const isMember = (T, i) => isP(T[i - 1], ".") || isP(T[i - 1], "?.");
 
 // Split call arguments: [open, close] of the parens → array of [a, b) ranges.
 function args(T, open, close) {
+  spend(close - open);
   const out = [];
   let a = open + 1, d = 0;
   for (let j = open + 1; j < close; j++) {
@@ -217,7 +228,8 @@ const ALL = ["code", "cmd", "sql", "nosql", "xss", "redirect", "path", "ssrf", "
 const SANITIZERS = [
   [/^(?:parseInt|parseFloat|Number|Boolean|BigInt|Math\.\w+|isNaN|isFinite|Number\.\w+|Date\.parse|crypto\.\w+|uuid\w*)$/, ALL],
   [/^(?:escapeHtml|escapeHTML|htmlEscape|escape|esc|encodeHTML|encodeHtml|he\.(?:encode|escape)|DOMPurify\.sanitize|\w+\.sanitize|sanitizeHtml|sanitizeHTML|xss|filterXSS|validator\.escape|_\.escape|lodash\.escape)$/, ["xss"]],
-  [/^(?:encodeURIComponent|querystring\.escape|qs\.escape)$/, ["xss", "cmd", "path", "redirect", "ssrf", "code"]],
+  // Not "code": letters, digits and ( ) ' . ! ~ * pass through unencoded, so eval(encodeURIComponent(x)) still runs alert(1).
+  [/^(?:encodeURIComponent|querystring\.escape|qs\.escape)$/, ["xss", "cmd", "path", "redirect", "ssrf"]],
   [/^(?:\w+\.escape|sqlstring\.escape|SqlString\.escape|\w+\.escapeId|\w+\.escapeLiteral|\w+\.escapeIdentifier|format\.literal|pgFormat)$/, ["sql"]],
   [/^(?:shellescape|shellEscape|escapeShellArg|shellQuote\.quote|quote)$/, ["cmd"]],
   [/^(?:path\.basename|basename|sanitizeFilename|sanitize)$/, ["path"]],
@@ -229,6 +241,8 @@ const sanitizerKinds = (path) => { for (const [re, kinds] of SANITIZERS) if (re.
 const SCALAR_RESULT = /\.(?:includes|has|test|indexOf|lastIndexOf|startsWith|endsWith|some|every|localeCompare|findIndex|isArray)$/;
 // x.replace(/[^a-z0-9_-]/g, "") keeps only safe characters.
 const ALLOWLIST_STRIP = /^\/\[\^(?:[A-Za-z0-9_]|\\[wd-]|[a-zA-Z0-9]-[a-zA-Z0-9]|-)*\]\+?\/[gimsuy]*g[gimsuy]*$/;
+// Existence probes: `if (!fs.existsSync(p)) return` proves the file is there, not that p is safe.
+const FS_PROBE = /(?:^|\.)(?:exists|existsSync|access|accessSync|stat|statSync|lstat|lstatSync)$/;
 const VALIDATOR = /^(?:is[A-Z]\w*|validate\w*|\w+\.is[A-Z]\w*|\w+\.validate\w*|\w+\.test|\w+\.includes|\w+\.has|\w+\.match|Number\.isInteger|Number\.isSafeInteger|Array\.isArray)$/;
 
 // ── Sinks ──────────────────────────────────────────────────────────────────────
@@ -358,15 +372,19 @@ export function taintScan(text, opts = {}) {
   const ctx = scanContext(src);
   const findings = [];
   const seen = new Set();
-  const fns = collectFunctions(T);
-  const summaries = new Map();
-  // Two rounds so a function that calls another one sees its callee's summary.
-  for (let round = 0; round < 2; round++) for (const f of fns) {
-    const sum = { sinks: [], retParams: new Set(), retSrc: null, params: f.params };
-    walk(T, f.bodyOpen + 1, f.bodyClose, { ctx, summaries, mode: "summary", sum, params: f.params, findings, seen });
-    summaries.set(f.name, sum);
-  }
-  walk(T, 0, T.length, { ctx, summaries, mode: "main", findings, seen });
+  budget = opts.budget || 500 * T.length + 2e6; // real files spend under 40 per token
+  try {
+    const fns = collectFunctions(T);
+    const summaries = new Map();
+    // Two rounds so a function that calls another one sees its callee's summary.
+    for (let round = 0; round < 2; round++) for (const f of fns) {
+      const sum = { sinks: [], retParams: new Set(), retSrc: null, params: f.params };
+      walk(T, f.bodyOpen + 1, f.bodyClose, { ctx, summaries, mode: "summary", sum, params: f.params, findings, seen });
+      summaries.set(f.name, sum);
+    }
+    walk(T, 0, T.length, { ctx, summaries, mode: "main", findings, seen });
+  } catch (e) { if (e !== OUT_OF_BUDGET) throw e; }
+  finally { budget = Infinity; }
   return findings.sort((a, b) => a.line - b.line || a.col - b.col);
 }
 
@@ -374,7 +392,7 @@ function scanContext(src) {
   const ctx = { cpModules: new Set(), cpNames: new Set(), fsModules: new Set(["fs"]), fsNames: new Set(), jquery: /\$\(|jQuery/.test(src),
     messages: /addEventListener\s*\(\s*["'`]message["'`]|\bonmessage\s*=/.test(src),
     lambda: /exports\.handler\s*=|export\s+(?:const|async\s+function|function)\s+handler\b/.test(src) };
-  const modRe = /(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*=\s*(?:await\s+)?(?:require|import)\s*\(\s*["'`](?:node:)?([\w./@-]+)["'`]\s*\)(\.promises)?|import\s+(?:\*\s+as\s+([\w$]+)|([\w$]+)(?:\s*,\s*(\{[^}]*\}))?|(\{[^}]*\}))\s+from\s+["'`](?:node:)?([\w./@-]+)["'`]/g;
+  const modRe = /(?:const|let|var)\s+(\{[^}]{0,2000}\}|[\w$]+)\s*=\s*(?:await\s+)?(?:require|import)\s*\(\s*["'`](?:node:)?([\w./@-]+)["'`]\s*\)(\.promises)?|import\s+(?:\*\s+as\s+([\w$]+)|([\w$]+)(?:\s*,\s*(\{[^}]{0,2000}\}))?|(\{[^}]{0,2000}\}))\s+from\s+["'`](?:node:)?([\w./@-]+)["'`]/g;
   for (const m of src.matchAll(modRe)) {
     const mod = m[2] || m[8];
     const binding = m[1] || m[4] || m[5];
@@ -425,6 +443,7 @@ function fnFrom(T, name, params, k) {
 // Evaluates T[a, b) and returns the taint record that reaches its value, or null.
 function evalRange(T, a, b, env, st) {
   if (a >= b) return null;
+  spend(b - a);
   let d = 0, q = -1, cmp = false;
   for (let j = a; j < b; j++) {
     const v = T[j].t === "p" ? T[j].v : T[j].t === "id" && (T[j].v === "instanceof" || T[j].v === "in") ? T[j].v : "";
@@ -537,6 +556,7 @@ function callbackResult(T, x, y, recv, env, st) {
 }
 
 function walk(T, a, b, st) {
+  spend(b - a);
   const env = st.parentEnv || new Env();
   const depth0 = env.stack.length; // restored at the end, so a shared parent env stays balanced
   const popAt = new Map();
@@ -725,7 +745,7 @@ function guard(T, j, env, pendingParams) {
   let p = T[a] && T[a].t === "id" ? pathAt(T, a) : null;
   let callOpen = p && p.end;
   if (T[a] && T[a].t === "re" && isP(T[a + 1], ".") && T[a + 2] && T[a + 2].v === "test") { p = { path: "re.test", end: a + 3 }; callOpen = a + 3; }
-  if (!p || !isP(T[callOpen], "(") || (!neg && !VALIDATOR.test(p.path))) return;
+  if (!p || !isP(T[callOpen], "(") || (!neg && !VALIDATOR.test(p.path)) || (neg && FS_PROBE.test(p.path))) return;
   const cl = matchClose(T, callOpen);
   const as = args(T, callOpen, cl);
   const target = as.length === 1 && T[as[0][0]].t === "id" ? pathAt(T, as[0][0]) : null;

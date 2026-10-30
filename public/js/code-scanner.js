@@ -9,7 +9,7 @@
 // here: nothing is uploaded to Darknode, and no AI is involved.
 
 import { scanFile, parseManifest, isManifest, depFinding, dedupeDeps, repoScore, toSarif, SEV_ORDER, langOf } from "/js/codescan/rules.js?v=20261029e";
-import * as gh from "/js/codescan/github.js?v=20261018i";
+import * as gh from "/js/codescan/github.js?v=20261029e";
 import { findingKey, serializeBaseline, diffFindings, baselineKeySet } from "/js/codescan/baseline.js?v=20261014a";
 import { createWatch } from "/js/codescan/watch-ui.js?v=20261017f";
 import { acctKey } from "/js/core/account.js"; // per-account storage key
