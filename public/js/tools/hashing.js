@@ -134,6 +134,7 @@ const HASH_PREFIXES = [
   [/^0x0100[0-9a-fA-F]{88}$/, "MSSQL 2005+", "132", "mssql05", "-"],
   [/^0x0200[0-9a-fA-F]+$/, "MSSQL 2012+", "1731", "mssql12", "-"],
   [/^sha1\$[^$]+\$[0-9a-f]{40}$/, "Django SHA-1", "124", "django", "-"],
+  [/^\*[0-9a-fA-F]{40}$/, "MySQL4.1/5", "300", "mysql-sha1", "SHA1(SHA1(pass)); hashcat takes it without the leading *"],
   [/^[0-9a-f]{32}:[0-9a-fA-F]+$/i, "md5($salt.$pass) or md5($pass.$salt)", "10/20", "-", "salted MD5 (hash:salt) — set the salt + mode below"],
 ];
 
@@ -470,6 +471,7 @@ export const TOOLS = [
       if (!v.ulid) return "";
       const s = v.ulid.trim().toUpperCase();
       if (!/^[0-9A-HJKMNP-TV-Z]{26}$/.test(s)) return { error: "Not a valid ULID (26 Crockford-base32 characters)." };
+      if (s[0] > "7") return { error: "Not a valid ULID: the first character must be 0-7 (the 48-bit timestamp would overflow)." };
       const ALPHA = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
       let ms = 0; for (const c of s.slice(0, 10)) ms = ms * 32 + ALPHA.indexOf(c);
       if (!Number.isFinite(ms) || ms > 8.64e15) return { error: "Timestamp out of range." };

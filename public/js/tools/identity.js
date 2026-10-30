@@ -463,8 +463,10 @@ export const TOOLS = [
       if (!S(v.secret).trim()) return "";
       const key = b32decode(v.secret);
       if (!key || !key.length) return { error: "Secret is not valid Base32 (A-Z, 2-7)." };
-      const counter = BigInt(Math.trunc(Number(v.counter) || 0));
+      const cs = S(v.counter).trim();
+      const counter = /^\d+$/.test(cs) ? BigInt(cs) : BigInt(Math.trunc(Number(cs) || 0)); // digits parsed exactly: Number() rounds past 2^53
       if (counter < 0n) return { error: "Counter must be zero or positive." };
+      if (counter > 0xffffffffffffffffn) return { error: "Counter must fit in 64 bits (max 18446744073709551615)." };
       const digits = parseInt(v.digits, 10);
       const h = await hmacBytes(v.algo, key, u64be(counter));
       const off = h[h.length - 1] & 0x0f;
@@ -481,9 +483,10 @@ export const TOOLS = [
       const m = uri.match(/^otpauth:\/\/(totp|hotp)\/([^?]*)(?:\?(.*))?$/i);
       if (!m) return { error: "Not an otpauth:// URI (expected otpauth://totp/... or hotp)." };
       const type = m[1].toLowerCase();
-      let label = decodeURIComponent(m[2] || "");
+      const dec = (x) => { try { return decodeURIComponent(x); } catch (e) { return x; } }; // a stray % is kept literally
+      let label = dec(m[2] || "");
       const params = {};
-      S(m[3]).split("&").forEach((kv) => { if (!kv) return; const i = kv.indexOf("="); const k = decodeURIComponent(kv.slice(0, i < 0 ? kv.length : i)); const val = i < 0 ? "" : decodeURIComponent(kv.slice(i + 1)); params[k] = val; });
+      S(m[3]).split("&").forEach((kv) => { if (!kv) return; const i = kv.indexOf("="); const k = dec(kv.slice(0, i < 0 ? kv.length : i)); const val = i < 0 ? "" : dec(kv.slice(i + 1)); params[k] = val; });
       let issuer = params.issuer || "", account = label;
       if (label.includes(":")) { const p = label.split(":"); issuer = issuer || p[0].trim(); account = p.slice(1).join(":").trim(); }
       const out = [["type", type], ["issuer", issuer || "(none)"], ["account", account || "(none)"], ["secret", params.secret || "(missing!)"], ["algorithm", params.algorithm || "SHA1 (default)"], ["digits", params.digits || "6 (default)"]];
@@ -606,6 +609,7 @@ export const TOOLS = [
       if (rest[idx] && /^v=\d+$/.test(rest[idx])) { version = rest[idx].slice(2); idx++; }
       // optional params: contains '='
       if (rest[idx] && rest[idx].includes("=")) { params = rest[idx]; idx++; }
+      else if (rest[idx] && /^\d+$/.test(rest[idx]) && rest.length > idx + 1) { params = "rounds=" + rest[idx]; idx++; } // passlib $pbkdf2-sha256$29000$salt$hash
       if (rest[idx] !== undefined) { salt = rest[idx]; idx++; }
       if (rest[idx] !== undefined) { digest = rest[idx]; idx++; }
       if (version) out.push(["version", version + (version === "19" ? " (0x13)" : "")]);
@@ -659,7 +663,7 @@ export const TOOLS = [
       else if (pw === "*" ) state = "login disabled (no valid hash, '*')";
       else if (pw === "!" || pw === "!!") state = "locked / no password set";
       else if (pw[0] === "!") state = "LOCKED (hash present but prefixed with '!')";
-      const day = (n) => { const d = parseInt(n, 10); return isNaN(d) ? n : `${d} (${new Date(d * 86400000).toISOString().slice(0, 10)})`; };
+      const day = (n) => { const d = parseInt(n, 10); return isNaN(d) || Math.abs(d) > 1e8 ? n : `${d} (${new Date(d * 86400000).toISOString().slice(0, 10)})`; };
       const names = ["username", "password", "last change (days since epoch)", "min age (days)", "max age (days)", "warn (days)", "inactive (days)", "expire (days since epoch)", "reserved"];
       const out = [];
       f.forEach((val, i) => { let shown = val === "" ? "(empty)" : val; if (i === 2 || i === 7) shown = val === "" ? "(empty)" : day(val); out.push([names[i] || `field ${i}`, shown]); });
@@ -701,6 +705,8 @@ export const TOOLS = [
       else if (/^\$2[aby]?\$/.test(hash)) scheme = "bcrypt - htpasswd -B (strongest)";
       else if (/^\{SHA\}/.test(hash)) scheme = "SHA-1 (base64) - htpasswd -s (weak, unsalted)";
       else if (/^\$1\$/.test(hash)) scheme = "md5crypt ($1$)";
+      else if (/^\$5\$/.test(hash)) scheme = "sha256crypt ($5$) - htpasswd -2";
+      else if (/^\$6\$/.test(hash)) scheme = "sha512crypt ($6$) - htpasswd -5";
       else if (/^[./0-9A-Za-z]{13}$/.test(hash)) scheme = "crypt DES (13 chars) - htpasswd -d (very weak)";
       else scheme = "plaintext or unrecognised - htpasswd -p?";
       return table([["user", user], ["hash", hash.length > 50 ? hash.slice(0, 50) + "..." : hash], ["scheme", scheme]]);
@@ -1003,10 +1009,9 @@ export const TOOLS = [
   { id: "id-authdata-flags", name: "WebAuthn Authenticator Data Flags", cat: "identity", desc: "Decode the WebAuthn authenticatorData flags byte (UP/UV/BE/BS/AT/ED). Accepts a single hex byte or full authData hex.", tags: ["webauthn", "fido2", "flags", "authenticatordata"],
     inputs: [{ k: "hex", label: "Flags byte or authData (hex)", type: "text", placeholder: "45" }],
     run(v, H) {
-      const h = S(v.hex).replace(/[^0-9a-fA-F]/g, "");
+      const h = S(v.hex).trim();
       if (!h) return "";
-      if (h.length % 2) return { error: "Hex has an odd number of digits." };
-      const b = H.fromHex(h);
+      let b; try { b = H.fromHex(h); } catch (e) { return { error: e.message }; } // strict: 0x45 is fine, base64 is not silently half-read as hex
       let flags, src;
       if (b.length === 1) { flags = b[0]; src = "single byte"; }
       else if (b.length >= 37) { flags = b[32]; src = "byte 33 of authenticatorData (after 32-byte rpIdHash)"; }
@@ -1271,7 +1276,7 @@ export const TOOLS = [
   { id: "id-objectguid-decode", name: "AD objectGUID Decoder", cat: "identity", desc: "Decode a 16-byte Active Directory objectGUID (hex) into its canonical GUID string, applying AD's mixed byte order.", tags: ["ad", "objectguid", "guid", "binary", "hex"],
     inputs: [{ k: "hex", label: "objectGUID (hex, 16 bytes)", type: "text", placeholder: "d1 3c 2e 4b ... (32 hex digits)" }],
     run(v, H) {
-      const h = S(v.hex).replace(/[^0-9a-fA-F]/g, "");
+      const h = S(v.hex).replace(/^\s*0x/i, "").replace(/[^0-9a-fA-F]/g, "");
       if (!h) return "";
       if (h.length !== 32) return { error: `Need exactly 16 bytes (32 hex digits), got ${Math.floor(h.length / 2)} bytes.` };
       const b = H.fromHex(h);
