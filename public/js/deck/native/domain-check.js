@@ -65,7 +65,7 @@ export function mount(el, { space, mode }) {
     const inp = el.querySelector("#nsDcIn"), btn = el.querySelector("#nsDcGo"), out = el.querySelector("#nsDcOut");
     const run = async () => {
       if (btn.disabled) return; // a check is running: Enter or a deep link must not start a second one that races it
-      const d = cleanDomain(inp.value);
+      const d = cleanDomain(inp.value.trim().replace(/^\*\./, "")); // *.example.com, as copied from a certificate, is checked as example.com (as in the portfolio)
       if (!validDomain(d)) { toast("Enter a domain like yourdomain.com"); return; }
       btn.disabled = true; out.innerHTML = `<div class="ns-card"><span class="ns-spin"></span>Running live checks against <b>${esc(d)}</b>...</div>`;
       let why = "";
@@ -76,7 +76,7 @@ export function mount(el, { space, mode }) {
       recordRun(space, { tool: "domain", target: d, summary: "Grade " + res.grade + " (" + res.counts.fail + " failing)", level: level(res), score: res.score, grade: res.grade });
     };
     btn.onclick = run; inp.onkeydown = (e) => { if (e.key === "Enter") run(); };
-    return { run: (d) => { inp.value = d; run(); } };
+    return { run: (d) => { if (btn.disabled) return; inp.value = d; run(); } }; // busy: the box must keep showing the domain being checked
   }
 
   el.innerHTML = `
@@ -109,9 +109,9 @@ export function mount(el, { space, mode }) {
   };
   go.onclick = async () => {
     // same normalisation as the single check (www. dropped), so a pasted www.x.com grades x.com
-    const all = [...new Set(parseDomains(ta.value).map(cleanDomain))], list = all.slice(0, 50);
+    const all = [...new Set(parseDomains(ta.value).map(cleanDomain).filter(validDomain))], list = all.slice(0, 50); // www.com is "com" once www. is dropped: not a domain to grade
     if (!list.length) { toast("Add at least one domain"); return; }
-    const junk = [...new Set(ta.value.split(/[\n,;]+/).map((t) => t.trim()).filter((t) => t && !parseDomains(t).length))];
+    const junk = [...new Set(ta.value.split(/[\n,;]+/).map((t) => t.trim()).filter((t) => t && !parseDomains(t).map(cleanDomain).some(validDomain)))];
     const skipped = (all.length > 50 ? "Checking the first 50; " + (all.length - 50) + " more are over the limit. " : "") + (junk.length ? "Skipped " + junk.length + " that " + (junk.length === 1 ? "is" : "are") + " not a domain name: " + junk.slice(0, 5).join(", ") + (junk.length > 5 ? ", ..." : "") + ". " : "");
     writeList(space, "domains", all); det.innerHTML = ""; // the whole list stays saved, not just the part checked
     go.disabled = true; csv.disabled = true;

@@ -18,9 +18,9 @@ export const GRADE_C = { A: "#2f9e56", B: "#4c9a2a", C: "#b58100", D: "#d9480f",
 export function ago(ts) {
   const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
   if (s < 60) return "just now";
-  if (s < 3600) return Math.round(s / 60) + " min ago";
-  if (s < 86400) return Math.round(s / 3600) + " h ago";
-  return Math.round(s / 86400) + " d ago";
+  if (s < 3600) return Math.floor(s / 60) + " min ago"; // floor: 59.9 min is "59 min", not "60 min ago"
+  if (s < 86400) return Math.floor(s / 3600) + " h ago";
+  return Math.floor(s / 86400) + " d ago";
 }
 
 export function download(name, text, type = "application/json") {
@@ -93,7 +93,7 @@ export async function readFiles(fileList, { maxBytes = 2 * 1024 * 1024, maxFiles
     // before the filter could fill up with them and never read the project's own files
     if (out.length >= maxFiles) { skipped.push(path); continue; }
     if (f.size > maxBytes) { skipped.push(path); continue; }
-    const text = await f.text();
+    let text; try { text = await f.text(); } catch (_) { skipped.push(path); continue; } // one unreadable file (moved, locked) must not abort the whole pick
     if (/\u0000/.test(text.slice(0, 4000))) { skipped.push(path); continue; }
     out.push({ path, text });
   }

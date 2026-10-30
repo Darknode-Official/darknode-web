@@ -14,6 +14,18 @@ const URL_VERDICT = {
 const lvl = (sev) => (sev === "critical" || sev === "high" ? "bad" : sev === "medium" ? "warn" : "good");
 const emailSev = (v) => ({ "high-risk": "critical", suspicious: "high", caution: "medium" }[v.level] || "info");
 
+// The link may sit inside a pasted sentence ("Click here https://..."): pick the link, not the first word.
+// data:/javascript: links and bare IP hosts count as links too, or "Go to 10.0.0.1/login" checked "Go".
+export function pickLink(raw) {
+  const open = (t, a, b) => t.endsWith(b) && t.split(a).length < t.split(b).length;
+  const trim = (t) => { // a closing ) or ] that belongs to the link (wiki/Foo_(bar), http://[::1]) is kept
+    for (let p; p !== t;) { p = t; t = t.replace(/^[<(["']+|[>"',;.]+$/g, ""); if (open(t, "(", ")") || open(t, "[", "]")) t = t.slice(0, -1); }
+    return t;
+  };
+  const toks = String(raw || "").trim().split(/\s+/).map(trim);
+  return toks.find((t) => /^(?:[a-z][a-z0-9+.-]*:\/\/|hxxps?:)/i.test(t)) || toks.find((t) => /^(?:data|javascript|vbscript):/i.test(t)) || toks.find((t) => /[a-z0-9-]\.[a-z]{2,}|^\d{1,3}(?:\.\d{1,3}){3}(?:[:/]|$)/i.test(refangText(t))) || toks[0];
+}
+
 export function mount(el, { space, mode }) {
   const queue = mode === "queue";
   el.innerHTML = `
@@ -51,9 +63,7 @@ export function mount(el, { space, mode }) {
     // a full email source pasted in Link mode: triage the email, not its first link
     if (m === "url" && /^from:/im.test(raw) && /^(received|return-path|delivered-to|authentication-results|message-id|subject):/im.test(raw)) { el.querySelector('#nsPhMode button[data-m="email"]').click(); toast("That is an email source: checking it as an email"); }
     if (m === "url") {
-      // the link may sit inside a pasted sentence ("Click here https://..."): analyse the link, not the first word
-      const toks = raw.split(/\s+/).map((t) => t.replace(/^[<("']+|[>)"',;.]+$/g, ""));
-      const u = analyzeUrl(toks.find((t) => /^(?:[a-z][a-z0-9+.-]*:\/\/|hxxps?:)/i.test(t)) || toks.find((t) => /[a-z0-9-]\.[a-z]{2,}/i.test(refangText(t))) || toks[0]);
+      const u = analyzeUrl(pickLink(raw));
       const [label, c] = URL_VERDICT[u.severity] || URL_VERDICT.info;
       out.innerHTML = `<div class="ns-card" style="border-left:6px solid ${c}">
         <div style="font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${c}">Verdict</div>
