@@ -1,4 +1,5 @@
 import { acctKey } from "/js/core/account.js"; // per-account storage key
+import { dnFetch } from "/js/net.js";
 // API Tester — HTTP API security testing tool (client-side fetch)
 // Decode a base64url JWT segment to its parsed JSON, handling padding and
 // UTF-8 claims (atob yields a Latin-1 byte string; decode it as UTF-8 so
@@ -399,9 +400,11 @@ export function renderAPITester(main) {
         var out = content.querySelector("#at-sec-result");
         out.innerHTML = '<div style="color:var(--mut)">Checking...</div>';
         try {
-          var resp = await fetch(url, { method: "HEAD", mode: "cors" });
+          // through the edge proxy: a cross-origin fetch in the browser can't read these headers
+          var resp = await dnFetch(/^https?:\/\//i.test(url) ? url : "https://" + url, { raw: true });
+          var hdrs = resp.headers || {};
           var results = SECURITY_HEADERS.map(function(h) {
-            var val = resp.headers.get(h.name);
+            var val = hdrs[h.name.toLowerCase()];
             return { name: h.name, present: !!val, value: val || "Not set", importance: h.importance };
           });
           var score = results.filter(function(r) { return r.present; }).length;

@@ -2040,7 +2040,7 @@ function renderApp(user) {
     else if (sec === "addressintel") { import("/js/address-intel.js?v=20261029c").then(m => live() && m.renderAddressIntel(main)); }
     else if (sec === "incidents") { import("/js/incident-tracker.js?v=20261029c").then(m => live() && m.renderIncidentTracker(main)); }
     else if (sec === "firewall") { import("/js/firewall-builder.js?v=20261028c").then(m => live() && m.renderFirewallBuilder(main)); }
-    else if (sec === "apitester") { import("/js/api-tester.js?v=20261028c").then(m => live() && m.renderAPITester(main)); }
+    else if (sec === "apitester") { import("/js/api-tester.js?v=20261029e").then(m => live() && m.renderAPITester(main)); }
     else if (sec === "compliance") { import("/js/compliance-checker.js?v=20261028c").then(m => live() && m.renderComplianceChecker(main)); }
     else if (sec === "attacksim") { import("/js/attack-simulator.js").then(m => live() && m.renderAttackSimulator(main)); }
     else if (sec === "dns") { import("/js/dns-enum.js?v=20261028a").then(m => live() && m.renderDNSEnum(main)); }
