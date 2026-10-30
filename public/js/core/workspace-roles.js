@@ -24,7 +24,9 @@ export const CAN = {
   setRole: ["owner"],                                          // only an owner mints owners/admins
 };
 
-export const canDo = (role, op) => !!(CAN[op] && CAN[op].includes(role));
+// Own-key lookup: an op named after an Object.prototype member ("toString", "constructor")
+// would otherwise read the inherited function and throw on .includes.
+export const canDo = (role, op) => Object.prototype.hasOwnProperty.call(CAN, op) && CAN[op].includes(role);
 
 export const ROLE_HELP = {
   owner: "Full control: members, roles, rename, and everything an analyst can do. Cannot change their own role.",

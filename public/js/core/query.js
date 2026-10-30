@@ -70,9 +70,16 @@ export function predicate(spec) {
     const cond = spec[field];
     if (cond !== null && typeof cond === "object" && !Array.isArray(cond)) {
       for (const op of Object.keys(cond)) {
-        const fn = OPS[op];
+        // Own-key: an op like "constructor" would otherwise resolve to an inherited function
+        // and silently match every record instead of throwing.
+        const fn = Object.prototype.hasOwnProperty.call(OPS, op) ? OPS[op] : null;
         if (!fn) throw new Error(`query: unknown operator "${op}"`);
         const target = cond[op];
+        if (op === "regex") { // compile once per query, not once per record
+          let re = null; try { re = new RegExp(target, "i"); } catch (_) {}
+          clauses.push((rec) => !!re && re.test(String(get(rec, field) ?? "")));
+          continue;
+        }
         clauses.push((rec) => fn(get(rec, field), target));
       }
     } else {
@@ -91,8 +98,9 @@ const nums = (records, field) => records
 export const count = (records) => records.length;
 export const sum = (records, field) => nums(records, field).reduce((a, b) => a + b, 0);
 export const avg = (records, field) => { const n = nums(records, field); return n.length ? sum(n) / n.length : 0; };
-export const min = (records, field) => { const n = nums(records, field); return n.length ? Math.min(...n) : undefined; };
-export const max = (records, field) => { const n = nums(records, field); return n.length ? Math.max(...n) : undefined; };
+// reduce, not Math.min(...n): spreading a large array overflows the call stack (RangeError).
+export const min = (records, field) => { const n = nums(records, field); return n.length ? n.reduce((a, b) => (b < a ? b : a)) : undefined; };
+export const max = (records, field) => { const n = nums(records, field); return n.length ? n.reduce((a, b) => (b > a ? b : a)) : undefined; };
 
 /** Linear-interpolated percentile (p in 0..100) over a numeric field. */
 export function percentile(records, field, p) {
@@ -147,7 +155,7 @@ export function aggregate(records, by, specs) {
     const row = { key, count: recs.length };
     for (const name of Object.keys(specs || {})) {
       const s = specs[name];
-      const fn = AGG_FNS[s.fn];
+      const fn = Object.prototype.hasOwnProperty.call(AGG_FNS, s.fn) ? AGG_FNS[s.fn] : null;
       if (!fn) throw new Error(`query: unknown aggregate "${s.fn}"`);
       row[name] = s.fn === "percentile" ? fn(recs, s.field, s.p) : fn(recs, s.field);
     }
@@ -177,11 +185,13 @@ export class Query {
     return this;
   }
 
-  /** Sort by a field path or comparator. dir "asc" (default) or "desc". */
+  /** Sort by a field path or comparator. dir "asc" (default) or "desc". Nullish values
+   *  sink to the end either way, and ties keep their input order (stable). */
   sort(by, dir = "asc") {
-    const cmp = typeof by === "function" ? by : (a, b) => compare(get(a, by), get(b, by));
+    const desc = dir === "desc";
+    const cmp = typeof by === "function" ? (desc ? (a, b) => by(b, a) : by)
+      : (a, b) => { const x = get(a, by), y = get(b, by); return desc && x != null && y != null ? compare(y, x) : compare(x, y); };
     this._records.sort(cmp);
-    if (dir === "desc") this._records.reverse();
     return this;
   }
 
