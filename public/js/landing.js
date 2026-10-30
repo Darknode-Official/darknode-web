@@ -560,7 +560,7 @@ export function renderLanding(view, actions) {
           </div>
           <div class="nx-arch-connector"></div>
           <div class="nx-arch-layer nx-arch-l5">
-            <div class="nx-arch-footer-band">82 modules &mdash; 720,000+ lines of code across the Darknode ecosystem</div>
+            <div class="nx-arch-footer-band">88 modules &mdash; 720,000+ lines of code across the Darknode ecosystem</div>
           </div>
         </div>
 
@@ -1017,7 +1017,7 @@ testing methodology for 10.10.14.7:
             </thead>
             <tbody>
               <tr><td>Price</td><td class="cmp-dn"><span class="cmp-highlight">Open-core &mdash; free to self-host</span></td></tr>
-              <tr><td>AI assistant</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Nexus &mdash; 82 modules, 6 engines (bring your own key or run Ollama locally)</td></tr>
+              <tr><td>AI assistant</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Nexus &mdash; 88 modules, 6 engines (bring your own key or run Ollama locally)</td></tr>
               <tr><td>Private and self-hosted</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Runs on your infrastructure, works offline and air-gapped</td></tr>
               <tr><td>Scanning engines</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Code, cloud, dependencies, secrets, forensics</td></tr>
               <tr><td>Interactive labs</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Cyber Range</td></tr>

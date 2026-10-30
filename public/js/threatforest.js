@@ -367,7 +367,7 @@ async function runAI(p) {
   try {
     const r = await fetch(proxyUrl(), {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider: "gemini", model: "gemini-flash-latest", messages: [{ role: "system", content: sys }, { role: "user", content: user }] }),
+      body: JSON.stringify({ provider: "gemini", model: "gemini-3.5-flash", messages: [{ role: "system", content: sys }, { role: "user", content: user }] }),
     });
     if (!r.ok || !r.body) throw new Error("AI service " + r.status);
     const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";

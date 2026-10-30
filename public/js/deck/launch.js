@@ -14,8 +14,8 @@ let _deckOff = null; // teardown of the mounted Deck, so relaunching never stack
 // pieces, and onSignOut makes the Deck the primary UI (no console exit).
 export async function openDeck(user, extra = {}) {
   const [{ renderDeck }, nav] = await Promise.all([
-    import("/js/deck-ui.js?v=20261029c"),
-    import("/js/console-nav.js?v=20261019f"),
+    import("/js/deck-ui.js?v=20261029d"),
+    import("/js/console-nav.js?v=20261029d"),
   ]);
   // Workspace identity (A1): load the owner's workspace profile so the Deck header,
   // Plans and reports show it instead of a hardcoded label. Non-fatal if it fails.

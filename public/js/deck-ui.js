@@ -4873,7 +4873,7 @@ export function renderDeck(host, opts) {
   // KPIs, nav scenes and badges come from the EXPLAIN registry; tools fall back to the
   // console's plain-English section help.
   let secHelp = null;
-  import("/js/section-help.js?v=20261029c").then((m) => { secHelp = m.SECTION_HELP; }).catch(() => {});
+  import("/js/section-help.js?v=20261029d").then((m) => { secHelp = m.SECTION_HELP; }).catch(() => {});
   const toolExplain = (sec, label) => {
     const h = secHelp && secHelp[sec]; if (!h) return null;
     return { title: label || secLabel[sec] || sec, body: [h.what, h.when].filter(Boolean).join(" "), src: h.note || "" };

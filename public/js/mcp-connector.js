@@ -9,7 +9,7 @@
 // calls. Everything it produces is computed locally from the live tool catalog
 // and shown in copyable code boxes.
 
-import { NAV } from "/js/console-nav.js?v=20261019f";
+import { NAV } from "/js/console-nav.js?v=20261029d";
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -137,7 +137,7 @@ export function renderMcpConnector(main) {
   // Default selection: a small, representative starter set so the generated
   // config is useful immediately without overwhelming the client.
   const DEFAULT = new Set(
-    ["prometheus", "citadel", "cvesearch", "regexlab", "encoding", "hashsuite", "dossier"]
+    ["citadel", "cvesearch", "regexlab", "encoding", "hashsuite", "dossier"]
       .filter((s) => tools.some((t) => t.sec === s))
   );
   if (!DEFAULT.size && tools.length) tools.slice(0, 6).forEach((t) => DEFAULT.add(t.sec));

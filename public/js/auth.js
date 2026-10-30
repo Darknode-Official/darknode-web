@@ -33,7 +33,7 @@ import "/js/net.js?v=20261011a";
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs, RETIRED } from "/js/console-nav.js?v=20261019f";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs, RETIRED } from "/js/console-nav.js?v=20261029d";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
@@ -59,7 +59,7 @@ import { startTour, tourDone } from "/js/tour.js";
 import { isDesktop, has as desktopHas, syncTitlebar } from "/js/core/desktop.js";
 if (isDesktop()) syncTitlebar();
 let _landing = null;
-async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261029c"); return _landing; }
+async function loadLanding() { if (!_landing) _landing = await import("/js/landing.js?v=20261029d"); return _landing; }
 // No-account identities (Test Mode / app guest) get a RANDOM, per-session uid, not a
 // fixed shared one. The old fixed "test-user"/"app-guest" uids put every such session
 // into one shared dnk:<uid>:* key namespace, so two people could land on the same
@@ -94,8 +94,6 @@ function _claimWorkspacePointer(uid) {
 const SIDE_DESC = {
   home: "Your home base — activity, stats and quick links. Start here.",
   // Mission Control
-  prometheus: "Live threat-intelligence feed — new CVEs and vulnerabilities as they break.",
-  sentineleye: "A 3D world map of live cyber threats, aircraft, satellites and attacks.",
   hydra: "Automated recon and vulnerability scanning across many targets at once.",
   aegis: "Command center for planning and coordinating your security work.",
   vanguard: "Threat hunting with attack kill-chain visualization.",
@@ -1195,7 +1193,7 @@ function renderHome(main, user, isOwner, show) {
   const sStats = _dashSessionStats();
   const catCounts = CATEGORIES.map((c) => ({ c, n: CATALOG.filter((t) => t.cat === c).length })).sort((a, b) => b.n - a.n);
   const maxCat = catCounts.length ? catCounts[0].n : 1;
-  const flagships = [["Prometheus", "prometheus"], ["Sentinel Eye", "sentineleye"], ["PHANTOM", "phantom"], ["CITADEL", "citadel"], ["ORACLE", "oracle"], ["SPECTRE", "spectre"], ["CRUCIBLE", "crucible"], ["NAVARCH", "navarch"], ["AEGIS", "aegis"], ["VANGUARD", "vanguard"], ["HYDRA", "hydra"], ["Investigation", "investigation"]];
+  const flagships = [["PHANTOM", "phantom"], ["CITADEL", "citadel"], ["ORACLE", "oracle"], ["SPECTRE", "spectre"], ["CRUCIBLE", "crucible"], ["NAVARCH", "navarch"], ["AEGIS", "aegis"], ["VANGUARD", "vanguard"], ["HYDRA", "hydra"], ["Investigation", "investigation"]];
 
   const timeAgo = (ts) => {
     const diff = Date.now() - ts;
@@ -1683,7 +1681,7 @@ function renderDesktopHome(user) {
     return;
   }
   view.innerHTML = "";
-  import("/js/deck/launch.js?v=20261029c")
+  import("/js/deck/launch.js?v=20261029d")
     .then((m) => m.openDeck(user, { isOwner: true, onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
@@ -1713,7 +1711,7 @@ function renderDeckHome(user) {
   const raw = location.pathname.replace(/^\/(console(\/|$))?/, "").replace(/\/$/, "");
   let startSec = !raw ? null : raw.startsWith("tool-") ? raw : raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
   if (startSec === "home" || (startSec === "admin" && !_isAdmin)) startSec = null;
-  import("/js/deck/launch.js?v=20261029c")
+  import("/js/deck/launch.js?v=20261029d")
     .then((m) => m.openDeck(user, {
       isOwner: _isAdmin,
       startSec: startSec || undefined,
@@ -1830,7 +1828,7 @@ function renderApp(user) {
             </div>
             <div class="app-foot-col">
               <h4>Monitoring</h4>
-              <a data-goto="home">Dashboard</a><a data-goto="sentineleye">Global Threat Map</a><a data-goto="vanguard">Attack Surface Scanner</a><a data-goto="cvesearch">CVE Search</a><a data-goto="crucible">Cyber Exercise Range</a>
+              <a data-goto="home">Dashboard</a><a data-goto="vanguard">Attack Surface Scanner</a><a data-goto="cvesearch">CVE Search</a><a data-goto="crucible">Cyber Exercise Range</a>
             </div>
             <div class="app-foot-col">
               <h4>Command Centers</h4>
@@ -1912,7 +1910,7 @@ function renderApp(user) {
       const o = box.querySelector(".sec-intro-show"); if (o) o.onclick = () => { set(false); const b = box.querySelector(".sec-intro-x"); if (b) b.focus(); };
     };
     if (_secHelp) paint(_secHelp);
-    else import("/js/section-help.js?v=20261029c").then((m) => { _secHelp = m.SECTION_HELP; paint(_secHelp); }).catch(() => {});
+    else import("/js/section-help.js?v=20261029d").then((m) => { _secHelp = m.SECTION_HELP; paint(_secHelp); }).catch(() => {});
   }
   // URL path <-> section mapping
   // The console's own links live under /console (the bare /<page> links belong to the Deck);
@@ -2015,7 +2013,7 @@ function renderApp(user) {
     requestAnimationFrame(() => { main.style.minHeight = ""; });
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261029c").then(m => live() && m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261029d").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderTargets(main)); }
@@ -2051,8 +2049,6 @@ function renderApp(user) {
     else if (sec === "wirelesslab") { import("/js/wireless-lab.js?v=20261013m").then(m => live() && m.renderWirelessLab(main)); }
     else if (sec === "pentestconsole") { import("/js/pentest-console.js?v=20261013b").then(m => live() && m.renderPentestConsole(main)); }
     else if (sec === "cyberrange") { import("/js/cyber-range.js").then(m => live() && m.renderCyberRange(main)); }
-    else if (sec === "prometheus") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/prometheus-web.js?v=20261028c").then(m => { if(curSec!==_s)return; m.renderPrometheus(main); _prevCleanup = m.cleanupPrometheus; }); }
-    else if (sec === "sentineleye") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; if(!document.querySelector('script[src^="/js/threat-api.js"]')){var s1=document.createElement("script");s1.src="/js/threat-api.js?v=20261007a";document.head.appendChild(s1)}if(!document.querySelector('script[src="/js/threat-map.js"]')){var s2=document.createElement("script");s2.src="/js/threat-map.js";document.head.appendChild(s2)} const _s=sec; import("/js/sentinel-eye.js?v=20261029c").then(m => { if(curSec!==_s)return; m.renderSentinelEye(main); _prevCleanup = m.cleanupSentinelEye; }); }
     else if (sec === "exploitdev") { import("/js/exploit-writer.js").then(m => live() && m.renderExploitWriter(main)); }
     else if (sec === "secdash") { import("/js/security-dashboard.js?v=20261028c").then(m => live() && m.renderSecurityDashboard(main)); }
     else if (sec === "cracklab") { import("/js/password-cracking-lab.js").then(m => live() && m.renderPasswordCrackingLab(main)); }
@@ -2065,7 +2061,7 @@ function renderApp(user) {
     else if (sec === "spectre") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/spectre.js?v=20261028a").then(m => { if(curSec!==_s)return; m.renderSpectre(main); _prevCleanup = m.cleanupSpectre; }); }
     else if (sec === "crucible") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/crucible.js?v=20260924w").then(m => { if(curSec!==_s)return; m.renderCrucible(main); _prevCleanup = m.cleanupCrucible; }); }
     else if (sec === "navarch") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/navarch.js?v=20261014g").then(m => { if(curSec!==_s)return; m.renderNavarch(main); _prevCleanup = m.cleanupNavarch; }); }
-    else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261017d").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
+    else if (sec === "threatforest") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading…</p>"; const _s=sec; import("/js/threatforest.js?v=20261029d").then(m => { if(curSec!==_s)return; m.renderThreatforest(main); _prevCleanup = m.cleanupThreatforest; }); }
     else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261029c").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
     else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261029c").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js?v=20261013b").then(m => live() && m.renderCspEvaluator(main)); }
@@ -2093,7 +2089,7 @@ function renderApp(user) {
     else if (sec === "sigma") { import("/js/sigma-builder.js?v=20261029c").then(m => live() && m.renderSigmaBuilder(main)); }
     else if (sec === "iocenrich") { import("/js/ioc-enrichment.js?v=20261028a").then(m => live() && m.renderIocEnrichment(main)); }
     else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => live() && m.renderEmbedSDK(main)); }
-    else if (sec === "mcpconnect") { import("/js/mcp-connector.js?v=20261029c").then(m => live() && m.renderMcpConnector(main)); }
+    else if (sec === "mcpconnect") { import("/js/mcp-connector.js?v=20261029d").then(m => live() && m.renderMcpConnector(main)); }
     else if (sec === "cvsscalc") { import("/js/cvss-calculator.js?v=20261028c").then(m => live() && m.renderCvssCalculator(main)); }
     else if (sec === "yarabuilder") { import("/js/yara-builder.js").then(m => live() && m.renderYaraBuilder(main)); }
     else if (sec === "emailauth") { import("/js/email-auth.js").then(m => live() && m.renderEmailAuth(main)); }
@@ -2176,7 +2172,7 @@ function renderApp(user) {
     else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261029c").then(m => live() && m.renderPentestReg(main)); }
     else if (sec === "setup") renderSetup(main, more);
     else if (sec === "settings") renderSettingsPage(main, user, isOwner, more);
-    else if (sec === "admin") { import("/js/admin.js?v=20261029c").then(m => live() && m.renderAdmin(main, user)); }
+    else if (sec === "admin") { import("/js/admin.js?v=20261029d").then(m => live() && m.renderAdmin(main, user)); }
     else if (sec === "contact") renderContact(main);
     else if (sec === "education") { main.innerHTML = `<div class="panel" style="max-width:800px;margin:40px auto"><div class="panel-h">About Darknode Education</div><div style="padding:18px;line-height:1.8;font-size:.9rem"><p><strong>Darknode is a cybersecurity education platform</strong> designed for students, educators, and security professionals to learn information security through hands-on practice in a safe, controlled environment.</p><p style="margin-top:16px"><strong>Our Mission:</strong> To make cybersecurity education accessible, interactive, and practical. Most tools run in your browser or on your own machine. Some features do send data out: AI chat goes through Darknode's server to the AI provider, some lookup pages query public services (for example NVD, crt.sh and DNS-over-HTTPS resolvers), and saved items and account data are stored in Google Firebase. Each page that contacts an outside service does so only when you run it.</p><p style="margin-top:16px"><strong>Who Uses Darknode:</strong></p><ul style="margin:8px 0 0 20px;line-height:2"><li>Computer science and cybersecurity students</li><li>IT professionals studying for certifications (CompTIA Security+, CISSP, CEH, OSCP)</li><li>University professors and instructors teaching security courses</li><li>Security operations center (SOC) analysts in training</li><li>Career changers learning cybersecurity fundamentals</li></ul><p style="margin-top:16px"><strong>Educational Standards:</strong> Our curriculum aligns with NIST NICE Framework, NSA CAE-CD requirements, and CompTIA Security+ objectives. All practice environments are isolated, legal, and designed for authorized educational use only.</p><p style="margin-top:16px"><strong>Responsible Use:</strong> Darknode tools are designed exclusively for educational purposes and authorized security testing. Users must comply with all applicable laws and obtain proper authorization before testing any system they do not own.</p><p style="margin-top:16px;color:var(--mut);font-size:.82rem">Darknode is a product of Darknode-Official. For questions about our educational programs, visit darknode.ai.</p></div></div>`; }
     else if (sec === "toolbox") { import("/js/mini-tools.js?v=20261029c").then(m => live() && m.renderToolbox(main, { onOpen: (id) => show("tool-" + id) })); }
@@ -2654,7 +2650,7 @@ function renderApp(user) {
   let frame = null; try { frame = JSON.parse(localStorage.getItem(FRAME)); } catch (_) {}
   let lastSec; try { lastSec = localStorage.getItem("sw_last_sec"); } catch (_) {}
   const pathSec = location.pathname !== "/" && location.pathname !== CONSOLE_BASE ? pathToSec(location.pathname) : null;
-  const HEAVY = new Set(["sentineleye","prometheus","hydra","aegis","vanguard","phantom","citadel","oracle","spectre","crucible","navarch","beta"]);
+  const HEAVY = new Set(["hydra","aegis","vanguard","phantom","citadel","oracle","spectre","crucible","navarch","beta"]);
   const startSec = pathSec || (frame && frame.sec) || lastSec || "home";
   // A restored/deep-linked `tool-<id>` sec must still exist in the manifest; mini-tools
   // get removed (e.g. the 2026-10 off-theme cull), and a stale sw_last_sec / bookmark
@@ -2663,8 +2659,8 @@ function renderApp(user) {
   const validToolSec = !startSec || startSec.indexOf("tool-") !== 0 || _MINI_TOOLS.some((t) => t.id === startSec.slice(5));
   // HEAVY dashboards are skipped on a cold restore (last-section / saved-frame) to avoid
   // loading heavy WebGL unprompted — but an explicit deep-link (pathSec, e.g. the app embed
-  // opening /prometheus) is a direct request for that tool, so honor it.
-  const okSec = startSec && startSec !== "setup" && validToolSec && (startSec !== "admin" || isOwner) && (pathSec === startSec || !HEAVY.has(startSec));
+  // opening /citadel) is a direct request for that tool, so honor it.
+  const okSec = startSec && startSec !== "setup" && validToolSec && !RETIRED.has(startSec) && (startSec !== "admin" || isOwner) && (pathSec === startSec || !HEAVY.has(startSec));
   // The console is the signed-in UI; the Deck is an owner-only command center launched
   // from Admin (admin.js).
   // Inside the Deck a frame is one tool: falling back to the console home there shows the old
@@ -2710,7 +2706,7 @@ function highlightMatch(text, query) {
 }
 function openPalette() {
   if (document.getElementById("cmdk")) return;
-  const sections = [["home", "Dashboard"], ["investigation", "Investigation Workspace"], ["secgraph", "Security Graph"], ["ai", "AI Chat"], ["math", "Quelvra Math"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Search Launcher"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Learn Hub"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["education", "Education"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["prometheus", "PROMETHEUS"], ["sentineleye", "SENTINEL EYE"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["phantom", "PHANTOM"], ["citadel", "CITADEL"], ["oracle", "ORACLE"], ["spectre", "SPECTRE"], ["crucible", "CRUCIBLE"], ["navarch", "NAVARCH"], ["beta", "Beta Lab"], ["secdash", "Security Dashboard"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["netmap", "Network Mapper"], ["exploitdev", "Security Research Lab"], ["cracklab", "Password Security Lab"], ["osint", "OSINT Dashboard"], ["crosswalk", "GenAI Crosswalk"], ["cyberbriefing", "Cyber Briefing"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["reconplanner", "Recon Planner"], ["apifuzzer", "API Fuzzer"], ["privesc", "Privilege Analysis"], ["reverseshell", "Remote Access Testing"], ["xsslab", "Web Security Lab"], ["cvetimeline", "CVE Timeline"], ["dataviz", "Data Visualization"], ["forensicstoolkit", "Forensics Toolkit"], ["hashsuite", "Hash Suite"], ["networktools", "Network Tools"], ["packetanalyzer", "Packet Analyzer"], ["payloadgen", "Test Script Generator"], ["vulndb", "Vulnerability DB"], ["asnexplorer", "ASN Explorer"], ["breachlookup", "Breach Lookup"], ["corstester", "CORS Tester"], ["cvesearch", "CVE Search"], ["darknetradar", "Darknet Radar"], ["headeranalyzer", "Header Analyzer"], ["identitymatrix", "Identity Matrix"], ["networkscanner", "Network Scanner"], ["sslinspector", "SSL Inspector"], ["techfingerprint", "Tech Fingerprint"], ["websockettester", "WebSocket Tester"]].filter(([sec]) => !RETIRED.has(sec));
+  const sections = [["home", "Dashboard"], ["investigation", "Investigation Workspace"], ["secgraph", "Security Graph"], ["ai", "AI Chat"], ["math", "Quelvra Math"], ["tools", "Scanner Suite"], ["saved", "Saved"], ["payloads", "Payload Forge"], ["exploitdb", "Exploit Search Launcher"], ["ghdb", "Google Dorking"], ["targets", "Practice Targets"], ["cheats", "Cheat Sheets"], ["snippets", "Snippet Vault"], ["refs", "Reference Library"], ["privatecloud", "Private Cloud"], ["report", "Report Generator"], ["learn", "Learn Hub"], ["setup", "Local Setup"], ["coder", "Nexus Agent"], ["downloads", "Darknode OS"], ["dlguide", "Download Guide"], ["api", "API"], ["docs", "Docs"], ["education", "Education"], ["settings", "Settings"], ["admin", "Admin"], ["vanguard", "VANGUARD"], ["hydra", "HYDRA Engine"], ["aegis", "AEGIS Ops Center"], ["phantom", "PHANTOM"], ["citadel", "CITADEL"], ["oracle", "ORACLE"], ["spectre", "SPECTRE"], ["crucible", "CRUCIBLE"], ["navarch", "NAVARCH"], ["beta", "Beta Lab"], ["secdash", "Security Dashboard"], ["cspevaluator", "CSP Evaluator"], ["wayback", "Wayback Machine"], ["urldissect", "URL Dissector"], ["favicon", "Favicon Hasher"], ["cyberrange", "Cyber Range"], ["netmap", "Network Mapper"], ["exploitdev", "Security Research Lab"], ["cracklab", "Password Security Lab"], ["osint", "OSINT Dashboard"], ["crosswalk", "GenAI Crosswalk"], ["cyberbriefing", "Cyber Briefing"], ["incidentcost", "Incident Cost Calculator"], ["fedcompliance", "Federal Compliance"], ["adversaryplaybook", "Adversary Playbook"], ["emailheader", "Email Header Analyzer"], ["reconplanner", "Recon Planner"], ["apifuzzer", "API Fuzzer"], ["privesc", "Privilege Analysis"], ["reverseshell", "Remote Access Testing"], ["xsslab", "Web Security Lab"], ["cvetimeline", "CVE Timeline"], ["dataviz", "Data Visualization"], ["forensicstoolkit", "Forensics Toolkit"], ["hashsuite", "Hash Suite"], ["networktools", "Network Tools"], ["packetanalyzer", "Packet Analyzer"], ["payloadgen", "Test Script Generator"], ["vulndb", "Vulnerability DB"], ["asnexplorer", "ASN Explorer"], ["breachlookup", "Breach Lookup"], ["corstester", "CORS Tester"], ["cvesearch", "CVE Search"], ["darknetradar", "Darknet Radar"], ["headeranalyzer", "Header Analyzer"], ["identitymatrix", "Identity Matrix"], ["networkscanner", "Network Scanner"], ["sslinspector", "SSL Inspector"], ["techfingerprint", "Tech Fingerprint"], ["websockettester", "WebSocket Tester"]].filter(([sec]) => !RETIRED.has(sec));
   const actions = [
     { type: "action", id: "cycle-style", name: "Toggle light / dark", desc: "Switch the console between light and dark", action: cycleStyle },
     { type: "action", id: "toggle-dark", name: "Toggle light / dark", desc: "Switch light and dark mode", action: () => { const cur = document.documentElement.getAttribute("data-theme") || "dark"; applyTheme(cur === "dark" ? "light" : "dark"); } },
@@ -2800,7 +2796,7 @@ function tourSteps(isOwner) {
 async function accessAllowed(user) {
   if (_isAdmin) return true;
   try {
-    const { getWhitelist } = await import("/js/admin.js?v=20261029c");
+    const { getWhitelist } = await import("/js/admin.js?v=20261029d");
     const cfg = await getWhitelist();
     const banned = ((cfg && cfg.banned) || []).map((e) => String(e).toLowerCase());
     if (banned.includes((user.email || "").toLowerCase())) return false;

@@ -6,7 +6,7 @@
 // iframed into another site. Framing is same-origin only (X-Frame-Options: SAMEORIGIN), and a
 // signed-in Firebase session is inherited by same-origin iframes. This tool builds the markup.
 
-import { NAV } from "/js/console-nav.js?v=20261019f";
+import { NAV } from "/js/console-nav.js?v=20261029d";
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

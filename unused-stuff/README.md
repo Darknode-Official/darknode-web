@@ -87,3 +87,11 @@ removed (902 -> 792). The removed tool ids still open their replacements through
 
 These are plain copies, so to bring a tool back, copy it into `public/` and re-register its
 route. The git history also has every version, e.g. `git show c705d792:public/js/<file>`.
+
+## retired-fiction/
+
+Retired 2026-10-29. Neither tool could be opened from the Deck any more, and both were mostly
+themed fiction rather than real tools: PROMETHEUS made up confidence and risk numbers with
+`Math.random()`, and Sentinel Eye showed a "TOP SECRET" banner over simulated SIGINT and
+aircraft. Their routes (`prometheus`, `sentineleye`) were removed from `public/js/auth.js`
+and `public/js/console-nav.js`. Files are kept at their original names under `js/`.

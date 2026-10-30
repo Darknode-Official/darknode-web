@@ -228,14 +228,14 @@ Windows: whoami /priv | wmic service get pathname (unquoted paths) | cmdkey /lis
 // them (a pinned 2.x line broke exactly this way). Only flash-tier is free on
 // the built-in key, so those are the tiers we expose, branded as Darknode.
 const DARKNODE_MODELS = [
-  { id: "gemini-flash-latest", name: "Darknode Core", provider: "gemini", group: "Darknode AI", sub: "recommended" },
+  { id: "gemini-flash-latest", name: "Darknode Core", provider: "gemini", group: "Darknode AI", sub: "auto-updating" },
   { id: "gemini-3.8-flash", name: "Darknode Max", provider: "gemini", group: "Darknode AI", sub: "newest" },
-  { id: "gemini-3.5-flash", name: "Darknode Pro", provider: "gemini", group: "Darknode AI", sub: "stable" },
+  { id: "gemini-3.5-flash", name: "Darknode Pro", provider: "gemini", group: "Darknode AI", sub: "recommended" },
   { id: "gemini-flash-lite-latest", name: "Darknode Swift", provider: "gemini", group: "Darknode AI", sub: "fastest" },
 ];
 
 // The platform default every user gets until they pick something else.
-const DEFAULT_MODEL_ID = "gemini-flash-latest";
+const DEFAULT_MODEL_ID = "gemini-3.5-flash";
 
 // Darknode AI (above) is the only built-in model group: free, no setup, served by
 // the proxy (Gemini-backed). There is no static "bring your own key" list any more —

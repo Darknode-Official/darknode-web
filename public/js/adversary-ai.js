@@ -351,7 +351,7 @@ export function renderAdversaryAI(main) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           provider: 'gemini',
-          model: 'gemini-flash-latest',
+          model: 'gemini-3.5-flash',
           messages: [{ role: 'system', content: ADV_SYS }, { role: 'user', content: prompt }],
         }),
       });

@@ -342,6 +342,9 @@ const SSE_HEADERS = { "Content-Type": "text/event-stream", "Cache-Control": "no-
 // One upstream call. For Gemini, tries with Google Search grounding first and
 // transparently retries without it if the key/tier rejects the tool (400/403),
 // and retries transient 429/503 a couple of times.
+// model id -> time until which it is skipped after hanging (per isolate, best effort)
+const STALLED = new Map();
+
 async function callUpstream(cfg, env, model, messages, key, opts = {}) {
   const isGemini = cfg.format === "gemini";
   const url = cfg.url(env, model, key);
@@ -448,7 +451,7 @@ async function handleDarknode(cfg, env, model, messages, opts) {
   }
   const gKey = env.GEMINI_KEY || env.GEMINI_KEY_2;
   if (!gKey) return json({ error: "Darknode GPU model is offline and no Gemini fallback key is configured (set GEMINI_KEY)." }, 503);
-  const gModel = env.GEMINI_FALLBACK_MODEL || "gemini-flash-latest";
+  const gModel = env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash";
   let { upstream, isGemini } = await callUpstream(PROVIDERS.gemini, env, gModel, msgs, gKey, { search: geminiSearchOn(env, msgs) });
   if (!upstream.ok && [401, 403, 429].includes(upstream.status) && env.GEMINI_KEY_2 && gKey !== env.GEMINI_KEY_2) {
     try { ({ upstream, isGemini } = await callUpstream(PROVIDERS.gemini, env, gModel, msgs, env.GEMINI_KEY_2, { search: geminiSearchOn(env, msgs) })); } catch (_) {}
@@ -499,7 +502,7 @@ async function handleSmart(request, env) {
   const req = { systemInstruction: { parts: [{ text: SMART_SYS }] }, contents, generationConfig: { temperature: 0.2, responseMimeType: "application/json", maxOutputTokens: 8192 } };
   // Primary model, then fallbacks when one is overloaded, missing or unreachable.
   // Overload (503) and quota (429) are per model, so move down the chain on either.
-  const models = [...new Set([env.SMART_MODEL || "gemini-flash-latest", "gemini-3.5-flash",
+  const models = [...new Set([env.SMART_MODEL || "gemini-3.5-flash", "gemini-flash-latest",
     env.SMART_FALLBACK_MODEL || "gemini-flash-lite-latest", "gemini-3.1-flash-lite"])];
   let r = null, last = null;
   // Walk keys x models: a per-model fault (404 retired / 429 quota / 503 overload)
@@ -585,7 +588,12 @@ export default {
       // fast for the common case, grounded when recency matters. GEMINI_SEARCH="1"
       // forces it on, "0" off.
       const search = provider === "gemini" && geminiSearchOn(env, msgs);
-      let { upstream, isGemini } = await callUpstream(cfg, env, model, msgs, key, { search });
+      // A model that just hung (504 below) is skipped for a few minutes in this isolate,
+      // so only the first chat after it stalls pays the 12s wait.
+      let { upstream, isGemini } = provider === "gemini" && (STALLED.get(model) || 0) > Date.now()
+        ? { upstream: new Response("{}", { status: 504 }), isGemini: true }
+        : await callUpstream(cfg, env, model, msgs, key, { search });
+      if (provider === "gemini" && upstream.status === 504) STALLED.set(model, Date.now() + 5 * 60 * 1000);
       // A spent or rejected primary Google key (quota 429, 401/403, or a model not yet
       // rolled out to that key's project: 404) retries the same model once on the
       // backup key (GEMINI_KEY_2 secret) before any model downgrade.
@@ -594,11 +602,11 @@ export default {
         try { ({ upstream, isGemini } = await callUpstream(cfg, env, model, msgs, key, { search })); } catch (_) {}
       }
       // A chosen Gemini model can be retired (404), rate-limited (429) or overloaded
-      // (503). Rather than fail the chat, transparently retry on the fast lite alias
-      // — the most available tier — so "Darknode Core" never dead-ends while
-      // "Darknode Swift" would have answered.
-      if (provider === "gemini" && !upstream.ok && (upstream.status === 404 || upstream.status === 429 || upstream.status === 503 || upstream.status === 504)) {
-        const fb = "gemini-flash-lite-latest";
+      // (503) or hung (504). Rather than fail the chat, retry on the full stable Flash
+      // model, then the fast lite alias (the most available tier), so "Darknode Core"
+      // never dead-ends while another tier would have answered.
+      for (const fb of ["gemini-3.5-flash", "gemini-flash-lite-latest"]) {
+        if (provider !== "gemini" || upstream.ok || ![404, 429, 503, 504].includes(upstream.status)) break;
         if (fb !== model) { try { ({ upstream, isGemini } = await callUpstream(cfg, env, fb, msgs, key, { search })); } catch (_) {} }
       }
       if (!upstream.ok) { const t = await upstream.text().catch(() => ""); return json({ error: "Upstream " + upstream.status + ": " + t.slice(0, 300) }, upstream.status); }

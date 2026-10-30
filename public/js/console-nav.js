@@ -16,7 +16,7 @@ const G = (id, name, color, items) => ({ id, name, color, items: items.map(([sec
 // routing, favorites, recents and global search keep working unchanged.
 export const NAV = [
   // Flagship dashboards and command centers — the marquee tools, reachable at the top.
-  G("flagships", "Command Centers", "blue", [["prometheus","SOC Exercise Console","live"],["sentineleye","Global Threat Map","live"],["vanguard","Attack Surface Scanner"],["hydra","Attack Path Simulator"],["aegis","Operations Center"],["phantom","Network Traffic Analyzer","live"],["citadel","SOC Console","live"],["oracle","Threat Intel Workbench","live"],["spectre","Cloud Posture Manager","live"],["crucible","Cyber Exercise Range","live"],["navarch","Maritime Cyber Defense","live"],["threatforest","Attack Tree Builder","live"],["secdash","Security Dashboard"]]),
+  G("flagships", "Command Centers", "blue", [["vanguard","Attack Surface Scanner"],["hydra","Attack Path Simulator"],["aegis","Operations Center"],["phantom","Network Traffic Analyzer","live"],["citadel","SOC Console","live"],["oracle","Threat Intel Workbench","live"],["spectre","Cloud Posture Manager","live"],["crucible","Cyber Exercise Range","live"],["navarch","Maritime Cyber Defense","live"],["threatforest","Attack Tree Builder","live"],["secdash","Security Dashboard"]]),
   // Protect the money: cyber-financial fusion — ledger-integrity screens + intrusion correlation.
   // Find things: reconnaissance + OSINT (formerly Reconnaissance and OSINT).
   G("reconosint", "Recon & OSINT", "cyan", [["addressintel","Address Intel"],["asnexplorer","ASN Explorer"],["dns","DNS Toolkit"],["ghdb","Google Dorking"],["netmap","Network Mapper"],["reconplanner","Recon Planner"],["subdomains","Subdomain Enum"],["tools","Scanner Suite"],["wayback","Wayback Machine"],["corstester","CORS Tester"],["favicon","Favicon Hasher"],["headeranalyzer","Header Analyzer"],["osint","OSINT Dashboard"],["techfingerprint","Tech Fingerprint"],["dossier","Target Dossier","new"],["emailauth","Email Auth Analyzer","new"],["cookieinspect","Cookie Security Analyzer","new"],["posture","Posture Scorecard","new"]]),
@@ -50,7 +50,7 @@ for (const [cat, meta] of Object.entries(TOOL_CATS)) {
 // company (search-dork launchers, shell/payload generators, pretext templates, and
 // duplicate cheat sheets). The modules stay on disk so old links still route, but
 // nothing in the menus, directory or search points at them any more.
-export const RETIRED = new Set(["ghdb", "reverseshell", "socialeng", "payloads", "payloadgen", "payloadstudio",
+export const RETIRED = new Set(["prometheus", "sentineleye", "ghdb", "reverseshell", "socialeng", "payloads", "payloadgen", "payloadstudio",
   ...["w-revshell", "w-bindshell", "w-msfvenom", "w-google-dork", "w-xss-payload-gen", "w-wordlist-mangler",
     "sx-xss-mutator", "sx-unicode-bypass", "leetspeak", "sx-xss-cheatsheet", "sx-ua-list", "sx-path-wordlist"].map((id) => "tool-" + id)]);
 for (const g of NAV) g.items = g.items.filter((i) => !RETIRED.has(i.sec));
@@ -74,7 +74,7 @@ const badgeHTML = (sec) => { const b = BADGE_OF.get(sec); return b ? ` <span cla
 const load = (k) => { try { const v = JSON.parse(localStorage.getItem(k) || "[]"); return Array.isArray(v) ? v.filter((s) => LABELS.has(s)) : []; } catch (_) { return []; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} };
 const FAV_KEY = "sw_favs", RECENT_KEY = "sw_recent";
-const DEFAULT_FAVS = ["prometheus", "citadel", "ai", "cvesearch", "learn"];
+const DEFAULT_FAVS = ["citadel", "ai", "cvesearch", "learn"];
 const favTouched = () => { try { return localStorage.getItem(FAV_KEY) !== null; } catch (_) { return false; } };
 const favs = () => { const f = load(FAV_KEY); return f.length || favTouched() ? f : DEFAULT_FAVS; };
 export const recentSecs = () => load(RECENT_KEY);
