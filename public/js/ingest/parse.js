@@ -248,7 +248,7 @@ function* iterCsvRows(text, delimiter) {
   if (s.charCodeAt(0) === 0xfeff) s = s.slice(1);
   const d = delimiter || sniffDelimiter(s);
   const n = s.length;
-  let i = 0, row = [], field = "", quoted = false, any = false, sawQuote = false;
+  let i = 0, row = [], field = "", quoted = false, any = false, sawQuote = false, fstart = true;
   while (i < n) {
     const c = s[i];
     if (quoted) {
@@ -258,24 +258,26 @@ function* iterCsvRows(text, delimiter) {
       }
       field += c; i++; continue;
     }
-    if (c === '"') { quoted = true; any = true; sawQuote = true; i++; continue; }
-    if (c === d) { row.push(field); field = ""; any = true; i++; continue; }
+    // A quote opens a quoted field only at the field's start; mid-field (5" rack) it is literal,
+    // or it would swallow every following row up to the next quote.
+    if (c === '"' && fstart) { quoted = true; any = true; sawQuote = true; fstart = false; i++; continue; }
+    if (c === d) { row.push(field); field = ""; any = true; fstart = true; i++; continue; }
     if (c === "\r" || c === "\n") { // CRLF, LF, or a lone CR (classic Mac line endings) ends the record
       if (c === "\r" && s[i + 1] === "\n") i++;
       row.push(field); field = ""; i++;
       // Skip a truly blank line, but keep a row of explicitly-quoted empty fields ("","")
       // — the quote marks it as a real record, unlike a bare `,` or an empty line.
       if (any || row.length > 1 || row[0] !== "") { if (sawQuote || row.some((f) => f !== "")) yield row; }
-      row = []; any = false; sawQuote = false; continue;
+      row = []; any = false; sawQuote = false; fstart = true; continue;
     }
-    field += c; any = true; i++;
+    field += c; any = true; fstart = false; i++;
   }
   if (any || field !== "" || row.length) { row.push(field); if (sawQuote || row.some((f) => f !== "")) yield row; }
 }
 
 // Trimmed, de-duplicated header keys ("a", "a_2", "a_3").
 function headerKeys(row) {
-  const seen = {}, last = {}, out = [];
+  const seen = Object.create(null), last = Object.create(null), out = []; // a "__proto__" header must count as seen
   for (const h of row) {
     const base = String(h).trim();
     // resume after the last suffix tried for this name: restarting at _2 each time made 8000 repeats quadratic

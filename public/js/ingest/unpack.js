@@ -62,15 +62,29 @@ export function canUnpack() {
   return { zip: true, gzip, deflateRaw };
 }
 
-async function decompress(bytes, format) {
+// With `max`, stops reading (and cancels the stream) once the output passes `max` bytes and
+// returns null, so a few-KB gzip/deflate bomb never materialises gigabytes in memory.
+async function decompress(bytes, format, max) {
   if (typeof DecompressionStream === "undefined") throw new Error(`DecompressionStream unavailable (${format})`);
   const u = toU8(bytes);
   const ds = new DecompressionStream(format);
   const stream = new Blob([u]).stream().pipeThrough(ds);
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  if (!(max >= 0)) return new Uint8Array(await new Response(stream).arrayBuffer());
+  const reader = stream.getReader(), chunks = [];
+  let n = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    n += value.length;
+    if (n > max) { try { await reader.cancel(); } catch (_) {} return null; }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(n);
+  for (let i = 0, o = 0; i < chunks.length; o += chunks[i].length, i++) out.set(chunks[i], o);
+  return out;
 }
-export function gunzip(bytes) { return decompress(bytes, "gzip"); }
-export function inflateRaw(bytes) { return decompress(bytes, "deflate-raw"); }
+export function gunzip(bytes, max) { return decompress(bytes, "gzip", max); }
+export function inflateRaw(bytes, max) { return decompress(bytes, "deflate-raw", max); }
 
 /** Normalize a zip member name into a safe path (no abs, no .., fwd slashes). */
 export function sanitizePath(name) {
@@ -86,7 +100,8 @@ function entry(name, bytes, fromArchive) {
 function caps(o = {}) {
   return {
     maxEntries: o.maxEntries ?? 500, maxEntryBytes: o.maxEntryBytes ?? (64 << 20),
-    maxTotalBytes: o.maxTotalBytes ?? (256 << 20), maxRatio: o.maxRatio ?? 200,
+    // never below one entry's cap: a caller allowing 512 MB files must not lose a 300 MB .gz to the total
+    maxTotalBytes: o.maxTotalBytes ?? Math.max(256 << 20, o.maxEntryBytes ?? 0), maxRatio: o.maxRatio ?? 200,
   };
 }
 
@@ -106,7 +121,9 @@ export async function* unzip(bytes, opts = {}) {
   if (u32(cdOff) === SIG_EOCD64) throw new Error("zip64 archives are not supported");
 
   const skipped = [];
-  let p = cdOff, yielded = 0, total = 0;
+  // Counters are shared with nested archives (see unpack) so the caps bound the whole input.
+  const b = opts._budget || { entries: 0, total: 0 };
+  let p = cdOff;
   for (let i = 0; i < count; i++) {
     if (p + 46 > u.length || u32(p) !== SIG_CENTRAL) throw new Error("corrupt zip: bad central directory entry");
     const flags = u16(p + 8), method = u16(p + 10), csize = u32(p + 20), usize = u32(p + 24);
@@ -120,9 +137,9 @@ export async function* unzip(bytes, opts = {}) {
     if (csize === 0xffffffff || usize === 0xffffffff || loff === 0xffffffff) throw new Error("zip64 archives are not supported");
     if (method !== 0 && method !== 8) throw new Error(`unsupported compression method ${method} (${name})`);
     if (csize > 0 && usize / csize > c.maxRatio && usize > 10 * 1024 * 1024) throw new Error(`suspicious compression ratio in ${name} (possible zip bomb)`);
-    if (yielded >= c.maxEntries) { skipped.push({ name, reason: `over ${c.maxEntries} entries` }); continue; }
+    if (b.entries >= c.maxEntries) { skipped.push({ name, reason: `over ${c.maxEntries} entries` }); continue; }
     if (usize > c.maxEntryBytes) { skipped.push({ name, reason: `entry over ${fmtBytes(c.maxEntryBytes)}` }); continue; }
-    if (total + usize > c.maxTotalBytes) { skipped.push({ name, reason: `total over ${fmtBytes(c.maxTotalBytes)}` }); continue; }
+    if (b.total + usize > c.maxTotalBytes) { skipped.push({ name, reason: `total over ${fmtBytes(c.maxTotalBytes)}` }); continue; }
 
     if (loff + 30 > u.length || u32(loff) !== SIG_LOCAL) throw new Error(`corrupt zip: bad local header for ${name}`);
     const dataStart = loff + 30 + u16(loff + 26) + u16(loff + 28);
@@ -131,10 +148,11 @@ export async function* unzip(bytes, opts = {}) {
     let out;
     if (method === 0) out = raw;
     else {
-      out = await inflateRaw(raw);
-      if (out.length > c.maxEntryBytes) { skipped.push({ name, reason: `entry over ${fmtBytes(c.maxEntryBytes)}` }); continue; }
+      // The header's usize is attacker-controlled; cap the real inflated size instead.
+      out = await inflateRaw(raw, Math.min(c.maxEntryBytes, c.maxTotalBytes - b.total));
+      if (!out) { skipped.push({ name, reason: `entry over ${fmtBytes(c.maxEntryBytes)} or total over ${fmtBytes(c.maxTotalBytes)}` }); continue; }
     }
-    yielded++; total += out.length;
+    b.entries++; b.total += out.length;
     yield entry(name, out, from);
   }
   return { skipped };
@@ -152,21 +170,26 @@ export async function* unpack(bytes, opts = {}) {
   const u = toU8(bytes), name = opts.name || "", depth = opts._depth || 0, c = caps(opts);
   const kind = magic(u);
   const skipped = [];
+  const budget = opts._budget || { entries: 0, total: 0 };
   if (kind === "gzip") {
-    const out = await gunzip(u);
-    if (out.length > c.maxEntryBytes) { skipped.push({ name: stripGz(name), reason: `entry over ${fmtBytes(c.maxEntryBytes)}` }); return { skipped }; }
+    if (budget.entries >= c.maxEntries) { skipped.push({ name: stripGz(name), reason: `over ${c.maxEntries} entries` }); return { skipped }; }
+    const out = await gunzip(u, Math.min(c.maxEntryBytes, c.maxTotalBytes - budget.total));
+    if (!out) { skipped.push({ name: stripGz(name), reason: `entry over ${fmtBytes(c.maxEntryBytes)} or total over ${fmtBytes(c.maxTotalBytes)}` }); return { skipped }; }
+    budget.entries++; budget.total += out.length;
     yield entry(stripGz(name), out, name || "data.gz");
     return { skipped };
   }
   if (kind === "zip") {
-    const inner = unzip(u, { ...c, name: name || "archive.zip" });
+    const inner = unzip(u, { ...c, name: name || "archive.zip", _budget: budget });
     for (;;) {
       const r = await inner.next();
       if (r.done) { skipped.push(...(r.value && r.value.skipped || [])); break; }
       const e = r.value;
       const innerKind = depth < 1 && isArchiveName(e.name) ? magic(e.bytes) : null;
       if (innerKind) {
-        const sub = unpack(e.bytes, { ...c, name: e.name, _depth: depth + 1 });
+        // The nested archive is replaced by its members: refund its slot, charge theirs.
+        budget.entries--; budget.total -= e.bytes.length;
+        const sub = unpack(e.bytes, { ...c, name: e.name, _depth: depth + 1, _budget: budget });
         for (;;) {
           const s = await sub.next();
           if (s.done) { skipped.push(...(s.value && s.value.skipped || [])); break; }

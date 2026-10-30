@@ -142,7 +142,7 @@ export class Ledger {
   openAccount({ id, name, type, noOverdraft }) {
     if (!id) throw new Error("account id required");
     if (this.accounts.has(id)) throw new Error("account exists: " + id);
-    const normal = NORMAL[type];
+    const normal = Object.prototype.hasOwnProperty.call(NORMAL, type) ? NORMAL[type] : null; // "constructor" is not a type
     if (!normal) throw new Error("unknown account type: " + type);
     const acct = { id, name: name || id, type, normal, noOverdraft: type === "asset" || type === "omnibus" || !!noOverdraft };
     this.accounts.set(id, acct);
