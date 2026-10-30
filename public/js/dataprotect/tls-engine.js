@@ -42,7 +42,7 @@ export function parseDomains(raw) {
   for (let tok of String(raw || "").split(/[\s,;]+/)) {
     if (!tok) continue;
     // same forms the single domain box takes: mailto:/an email address, ?query/#hash, a trailing dot, IDN
-    tok = tok.replace(/^mailto:/i, "").replace(/^[a-z]+:\/\//i, "").replace(/[/?#].*$/, "").replace(/^[^@]*@/, "").replace(/:\d+$/, "").replace(/\.$/, "").toLowerCase();
+    tok = tok.replace(/^mailto:/i, "").replace(/^[a-z]+:\/\//i, "").replace(/[/?#].*$/, "").replace(/^[^@]*@/, "").replace(/:\d+$/, "").replace(/\.$/, "").replace(/^\*\./, "").toLowerCase(); // *.example.com, as copied from a certificate, is checked as example.com
     if (/[^\x00-\x7f]/.test(tok)) { try { tok = new URL("http://" + tok).hostname; } catch (_) { continue; } }
     if (!/^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(tok)) continue;
     if (seen.has(tok)) continue;

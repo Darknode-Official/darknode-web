@@ -72,3 +72,9 @@ group("tls-fleet: entries and fleet", () => {
     assert.equal(s.list[0].domain, "exp.com"); // worst first
   });
 });
+
+group("tls-fleet: wildcard names copied from a certificate", () => {
+  test("*.example.com is checked as example.com and deduped against it; a bare * is not a domain", () => {
+    assert.deepEqual(parseDomains("*.wikipedia.org\nwikipedia.org\n*.\n*foo.com\nhttps://*.example.com/x"), ["wikipedia.org", "example.com"]);
+  });
+});
