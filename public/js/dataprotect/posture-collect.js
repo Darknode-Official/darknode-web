@@ -3,7 +3,7 @@
 // input object scorePosture() grades; throws (with the reason, e.g. the name does not
 // resolve) when the host answers neither HTTP nor HTTPS.
 
-import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261029c";
+import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261029e";
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
 import { dnFetch } from "/js/net.js";
 import { registrableDomain } from "/js/dataprotect/phish-engine.js?v=20261029e";
@@ -19,11 +19,18 @@ export const validDomain = (d) => /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z
 
 // Public DoH TXT (Cloudflare, Google fallback). Returns array of TXT strings.
 export async function dohTXT(name) {
-  const decode = (j) => ((j && j.Answer) || []).filter((a) => a.type === 16 || a.type === "TXT")
-    .map((a) => String(a.data || "").replace(/^"|"$/g, "").replace(/"\s*"/g, ""));
+  return dohQuery(name, "TXT", 16, (d) => d.replace(/^"|"$/g, "").replace(/"\s*"/g, ""));
+}
+// MX exchanges, lowercased without the trailing dot; a null MX (RFC 7505, "0 .") comes back as "".
+export async function dohMX(name) {
+  return dohQuery(name, "MX", 15, (d) => d.trim().split(/\s+/).pop().toLowerCase().replace(/\.$/, ""));
+}
+async function dohQuery(name, type, code, map) {
+  const decode = (j) => ((j && j.Answer) || []).filter((a) => a.type === code || a.type === type)
+    .map((a) => map(String(a.data || "")));
   const urls = [
-    "https://cloudflare-dns.com/dns-query?type=TXT&name=" + encodeURIComponent(name),
-    "https://dns.google/resolve?type=TXT&name=" + encodeURIComponent(name),
+    "https://cloudflare-dns.com/dns-query?type=" + type + "&name=" + encodeURIComponent(name),
+    "https://dns.google/resolve?type=" + type + "&name=" + encodeURIComponent(name),
   ];
   for (const u of urls) {
     try {
@@ -101,7 +108,7 @@ async function fetchMtaSts(domain) {
 }
 
 export async function collectPosture(domain) {
-  const [httpsP, httpP, spfP, dmarcP, certP, stxtP, dkimP, mtaP, tlsRptP] = await Promise.allSettled([
+  const [httpsP, httpP, spfP, dmarcP, certP, stxtP, dkimP, mtaP, tlsRptP, mxP] = await Promise.allSettled([
     dnFetch("https://" + domain, { timeout: 14000 }),
     dnFetch("http://" + domain, { timeout: 12000 }),
     dohTXT(domain),
@@ -111,6 +118,7 @@ export async function collectPosture(domain) {
     probeDkim(domain),
     fetchMtaSts(domain),
     dohTXT("_smtp._tls." + domain),
+    dohMX(domain),
   ]);
   const val = (p) => (p.status === "fulfilled" ? p.value : null);
   const https = val(httpsP), http = val(httpP);
@@ -137,6 +145,7 @@ export async function collectPosture(domain) {
     dkimSelectors: val(dkimP) || [],
     mtaStsTxts: (val(mtaP) && val(mtaP).txts) || [], mtaStsPolicy: (val(mtaP) && val(mtaP).policy) || null,
     tlsRptTxts: val(tlsRptP) || [],
+    mxHosts: val(mxP) || Object.assign([], { failed: true }),
     cert: val(certP) && !val(certP).unreachable ? val(certP) : null,
     certUnreachable: certP.status === "rejected" || !!(val(certP) && val(certP).unreachable),
     securityTxt: val(stxtP) || { present: false },

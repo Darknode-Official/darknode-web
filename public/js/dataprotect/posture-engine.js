@@ -416,7 +416,13 @@ export function gradeEmail(input) {
 
   // MTA-STS: enforces TLS for inbound SMTP.
   const mta = parseMtaSts(input.mtaStsTxts, input.mtaStsPolicy);
-  if (failed(input.mtaStsTxts)) {
+  // a null MX (RFC 7505: one MX of ".") declares that the domain accepts no mail, so inbound TLS policy has nothing to protect
+  const mx = Array.isArray(input.mxHosts) && !failed(input.mxHosts) ? input.mxHosts : null;
+  const nullMx = !!(mx && mx.length === 1 && mx[0] === "");
+  const NO_INBOUND = "The domain publishes a null MX (RFC 7505), so it accepts no mail and there is no inbound mail for this to protect.";
+  if (nullMx && !mta.present) {
+    checks.push({ name: "MTA-STS", status: "na", detail: NO_INBOUND });
+  } else if (failed(input.mtaStsTxts)) {
     checks.push({ name: "MTA-STS", status: "na", detail: "The DNS lookup for MTA-STS failed, so it could not be checked." });
   } else if (!mta.present) {
     checks.push({ name: "MTA-STS", status: "warn", detail: "No _mta-sts TXT record.", advice: "Publish MTA-STS (TXT + /.well-known/mta-sts.txt policy) to require TLS for inbound mail." });
@@ -430,7 +436,7 @@ export function gradeEmail(input) {
 
   // TLS-RPT: SMTP TLS failure reporting.
   const hasTlsRpt = (input.tlsRptTxts || []).some((t) => /^v=tlsrptv1\b/i.test(String(t).trim()));
-  checks.push(failed(input.tlsRptTxts) ? { name: "TLS-RPT", status: "na", detail: "The DNS lookup for TLS-RPT failed, so it could not be checked." } : hasTlsRpt
+  checks.push(nullMx && !hasTlsRpt ? { name: "TLS-RPT", status: "na", detail: NO_INBOUND } : failed(input.tlsRptTxts) ? { name: "TLS-RPT", status: "na", detail: "The DNS lookup for TLS-RPT failed, so it could not be checked." } : hasTlsRpt
     ? { name: "TLS-RPT", status: "pass", detail: "SMTP TLS reporting (_smtp._tls TXT) is configured." }
     : { name: "TLS-RPT", status: "warn", detail: "No TLS-RPT record.", advice: "Publish _smtp._tls TXT (v=TLSRPTv1; rua=…) to receive SMTP TLS failure reports." });
 
