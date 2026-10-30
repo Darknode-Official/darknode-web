@@ -93,3 +93,19 @@ group("dataprotect audit", () => {
     assert.ok(t.findings.some((f) => /Reply-To domain/.test(f.t)));
   });
 });
+
+group("phish-engine: non-web links, posture cleanDomain", () => {
+  test("javascript:/data:/file: links get their own verdict, not 'Unparseable URL'", async () => {
+    const { analyzeUrl } = await import("../../public/js/dataprotect/phish-engine.js");
+    assert.equal(analyzeUrl("javascript:alert(1)").severity, "critical");
+    assert.equal(analyzeUrl("data:text/html;base64,PGgxPg==").severity, "high");
+    assert.equal(analyzeUrl("file:///etc/passwd").severity, "medium");
+    assert.ok(!analyzeUrl("data:text/html,x").reasons.some((r) => /Unparseable/.test(r.t)));
+    assert.equal(analyzeUrl("https://example.com/").severity, "info");
+  });
+  test("cleanDomain keeps the host after the LAST @", async () => {
+    const { cleanDomain } = await import("../../public/js/dataprotect/posture-collect.js");
+    assert.equal(cleanDomain("https://test@darknode.ai@example.com/"), "example.com");
+    assert.equal(cleanDomain("test@darknode.ai"), "darknode.ai");
+  });
+});

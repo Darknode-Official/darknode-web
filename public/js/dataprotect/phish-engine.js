@@ -159,6 +159,17 @@ export function analyzeUrl(raw) {
   const out = { input: raw, host: "", scheme: "", reasons: [], severity: "info" };
   let u;
   let s = refangText(String(raw || "").trim()); // a defanged IOC (hxxps://evil[.]com) is analysed as the link it stands for
+  // links that are not web pages: these used to fall through to "Unparseable URL" (medium)
+  const odd = /^\s*(javascript|vbscript|data|file):/i.exec(s);
+  if (odd) {
+    const k = odd[1].toLowerCase();
+    out.scheme = k;
+    out.reasons.push(k === "data" ? { w: 5, t: "The whole page is packed into the link itself (data: URL), a way to hide a phishing page from link scanners." }
+      : k === "file" ? { w: 3, t: "The link opens a file on your computer or a network share, not a web page." }
+      : { w: 7, t: "The link runs script code (" + k + ":) when clicked instead of opening a page." });
+    out.severity = sevFromWeight(sumWeight(out.reasons));
+    return out;
+  }
   const hadScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(s);
   if (!hadScheme) s = "http://" + s; // tolerate scheme-less
   try { u = new URL(s); } catch (_) { out.reasons.push({ w: 3, t: "Unparseable URL." }); out.severity = "medium"; return out; }
