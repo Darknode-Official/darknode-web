@@ -2,7 +2,7 @@
 // stable, line-independent finding keys and NEW / UNCHANGED / FIXED classification.
 
 import { test, assert, group } from "../harness.mjs";
-import { findingKey, serializeBaseline, diffFindings, baselineKeySet } from "../../public/js/codescan/baseline.js";
+import { findingKey, serializeBaseline, diffFindings, baselineKeySet, baselineKeyCounts } from "../../public/js/codescan/baseline.js";
 
 // A representative code finding (shape mirrors scanFile output + the path added in scanAll).
 const codeFinding = (over = {}) => ({
@@ -116,5 +116,29 @@ group("codescan baseline: serialization", () => {
     assert.equal(baselineKeySet(null).size, 0);
     assert.equal(baselineKeySet({}).size, 0);
     assert.equal(baselineKeySet({ items: "nope" }).size, 0);
+  });
+});
+
+group("codescan baseline: identical copies", () => {
+  const f = (line) => ({ path: "src/a.js", ruleId: "js.eval", kind: "code", snippet: "eval(x)", line, sev: "high" });
+  test("a pasted second copy of a finding is NEW, the original is unchanged", () => {
+    const base = serializeBaseline([f(3)], {});
+    const cur = [f(3), f(40)];
+    const d = diffFindings(baselineKeyCounts(base), cur);
+    assert.equal(d.unchanged.length, 1);
+    assert.equal(d.newFindings.length, 1);
+    assert.equal(d.newFindings[0], cur[1]);
+  });
+  test("removing one of two copies lists the key as fixed", () => {
+    const base = serializeBaseline([f(3), f(40)], {});
+    assert.equal(base.items[0].n, 2);
+    const d = diffFindings(baselineKeyCounts(base), [f(3)]);
+    assert.equal(d.fixedKeys.length, 1);
+    assert.equal(d.newFindings.length, 0);
+  });
+  test("a baseline saved before counts existed still diffs (n missing = 1), and a Set still works", () => {
+    const base = serializeBaseline([f(3)], {}); delete base.items[0].n;
+    assert.equal(diffFindings(baselineKeyCounts(base), [f(3)]).newFindings.length, 0);
+    assert.equal(diffFindings(baselineKeySet(base), [f(3), f(9)]).newFindings.length, 0);
   });
 });
