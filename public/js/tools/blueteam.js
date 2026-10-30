@@ -5,6 +5,7 @@
 
 const S = (v) => (v == null ? "" : String(v));
 const lines = (s) => S(s).split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+const xml = (s) => S(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 // searchable reference table: rows = array of string arrays, q = filter text
 const ref = (rows, q) => {
   const s = S(q).toLowerCase().trim();
@@ -129,7 +130,7 @@ export const TOOLS = [
     run(v) {
       const parts = [];
       if (v.index) parts.push(`index=${v.index}`);
-      if (v.sourcetype) parts.push(`sourcetype="${v.sourcetype}"`);
+      if (v.sourcetype) parts.push(`sourcetype="${S(v.sourcetype).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
       if (v.earliest) parts.push(`earliest=${v.earliest}`);
       for (const f of lines(v.filters)) parts.push(f);
       let q = parts.join(" ");
@@ -202,11 +203,11 @@ export const TOOLS = [
       const t = S(v.template);
       while ((m = re.exec(t))) {
         const lit = t.slice(last, m.index);
-        if (lit) segs.push(`"${lit.replace(/"/g, '\\"')}"`);
+        if (lit) segs.push(`"${lit.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
         segs.push(m[1]); fields.push(m[1]); last = re.lastIndex;
       }
       const tail = t.slice(last);
-      if (tail) segs.push(`"${tail.replace(/"/g, '\\"')}"`);
+      if (tail) segs.push(`"${tail.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
       if (!fields.length) return { error: "Add at least one {field} placeholder." };
       return `| parse ${v.column || "RawData"} with ${segs.join(" ")}\n\nExtracted: ${fields.join(", ")}`;
     } },
@@ -315,8 +316,9 @@ export const TOOLS = [
     ],
     run(v) {
       const opts = [];
-      if (v.msg) opts.push(`msg:"${v.msg}"`);
-      if (v.content) opts.push(`content:"${v.content}"`, `nocase`);
+      // inside rule options ; " and \ end or escape the value: msg takes backslash escapes, content takes |hex| bytes (| itself opens hex)
+      if (v.msg) opts.push(`msg:"${S(v.msg).replace(/[\\";]/g, "\\$&")}"`);
+      if (v.content) opts.push(`content:"${S(v.content).replace(/[\\";|]/g, (c) => "|" + c.charCodeAt(0).toString(16).toUpperCase() + "|")}"`, `nocase`);
       opts.push(`classtype:policy-violation`);
       opts.push(`sid:${v.sid || 1000001}`, `rev:1`);
       return `${v.action} ${v.proto} ${v.src} ${v.srcport} ${v.dir} ${v.dst} ${v.dstport} (${opts.join("; ")};)`;
@@ -347,11 +349,12 @@ export const TOOLS = [
     } },
 
   { id: "bt-grok-build", name: "Grok Pattern Builder", cat: "blueteam", desc: "Assemble a Logstash grok pattern from PATTERN:field tokens and literal text.", tags: ["grok", "logstash", "parse"],
-    inputs: [{ k: "tokens", label: "Tokens (one 'PATTERN field' or 'lit:text' per line)", type: "textarea", rows: 5, value: "IPORHOST client\nlit: - \nUSER user\nlit:  [\nTIMESTAMP_ISO8601 ts\nlit:] \nWORD method" }],
+    inputs: [{ k: "tokens", label: "Tokens (one 'PATTERN field' or 'lit:text' per line)", type: "textarea", rows: 5, value: "IPORHOST client\nlit: - \nUSER user\nlit: [\nTIMESTAMP_ISO8601 ts\nlit:] \nWORD method" }],
     run(v) {
       const out = [];
-      for (const l of lines(v.tokens)) {
-        if (/^lit:/i.test(l)) { out.push(l.slice(4)); continue; }
+      for (const raw of S(v.tokens).split(/\r?\n/)) {
+        const l = raw.trim(); if (!l) continue;
+        if (/^lit:/i.test(l)) { out.push(raw.replace(/^\s*lit:/i, "")); continue; } // keep the literal's trailing spaces
         const [pat, field] = l.split(/\s+/);
         if (!Object.hasOwn(GROK, pat)) return { error: `Unknown grok pattern: ${pat} (see Grok Pattern Reference).` };
         out.push(field ? `%{${pat}:${field}}` : `%{${pat}}`);
@@ -432,8 +435,8 @@ export const TOOLS = [
     ],
     run(v) {
       const lvl = Math.max(0, Math.min(16, parseInt(v.level, 10) || 0));
-      const inner = [v.ifSid ? `    <if_sid>${v.ifSid}</if_sid>` : null, v.match ? `    <match>${v.match}</match>` : null, `    <description>${v.desc || "Custom rule"}</description>`].filter(Boolean).join("\n");
-      return [`<group name="${v.group || "local"}">`, `  <rule id="${v.id || 100100}" level="${lvl}">`, inner, `  </rule>`, `</group>`].join("\n");
+      const inner = [v.ifSid ? `    <if_sid>${xml(v.ifSid)}</if_sid>` : null, v.match ? `    <match>${xml(v.match)}</match>` : null, `    <description>${xml(v.desc || "Custom rule")}</description>`].filter(Boolean).join("\n");
+      return [`<group name="${xml(v.group || "local")}">`, `  <rule id="${xml(v.id || 100100)}" level="${lvl}">`, inner, `  </rule>`, `</group>`].join("\n");
     } },
 
   { id: "bt-eql-build", name: "Elastic EQL Query Builder", cat: "blueteam", desc: "Build an Elastic EQL event query (optionally a sequence) from category and conditions.", tags: ["eql", "elastic", "detection"],
@@ -793,7 +796,7 @@ export const TOOLS = [
         `  <EventFiltering>`,
         `    <RuleGroup name="" groupRelation="or">`,
         `      <${v.event} onmatch="${v.onmatch}">`,
-        `        <${v.field} condition="${v.condition}">${v.value}</${v.field}>`,
+        `        <${v.field} condition="${v.condition}">${xml(v.value)}</${v.field}>`,
         `      </${v.event}>`,
         `    </RuleGroup>`,
         `  </EventFiltering>`,
@@ -833,10 +836,11 @@ export const TOOLS = [
       if (!v.rule) return { error: "Set a rule name." };
       const tags = (v.tags || "").split(",").map((x) => x.trim()).filter(Boolean);
       return [
-        `- rule: ${v.rule}`,
-        `  desc: ${v.desc || ""}`,
-        `  condition: ${v.condition || "evt.type=execve"}`,
-        `  output: "${(v.output || "").replace(/"/g, '\\"')}"`,
+        // JSON strings are valid YAML double-quoted scalars, so ": ", " #", quotes and backslashes survive
+        `- rule: ${JSON.stringify(S(v.rule))}`,
+        `  desc: ${JSON.stringify(S(v.desc))}`,
+        `  condition: ${JSON.stringify(S(v.condition || "evt.type=execve").replace(/\s*\r?\n\s*/g, " "))}`,
+        `  output: ${JSON.stringify(S(v.output))}`,
         `  priority: ${v.priority}`,
         tags.length ? `  tags: [${tags.join(", ")}]` : null,
       ].filter((x) => x != null).join("\n");
@@ -879,11 +883,14 @@ export const TOOLS = [
       { k: "fields", label: "Fields (for pick, comma-sep)", type: "text", value: "ts, msg, src" },
     ],
     run(v) {
-      const f = v.field || "field";
-      if (v.op === "select by field") return `jq 'select(.${f} == "${v.value}")'`;
-      if (v.op === "pick fields") { const fs = (v.fields || "").split(",").map((x) => x.trim()).filter(Boolean); return `jq '{${fs.map((x) => `${x}: .${x}`).join(", ")}}'`; }
-      if (v.op === "count by field") return `jq -s 'group_by(.${f}) | map({key: .[0].${f}, count: length}) | sort_by(-.count)'`;
-      return `jq '.${f}[]'`;
+      // a.b paths; segments that are not plain identifiers (event-type, @timestamp) need ."..." or jq parses them as maths
+      const path = (x) => x.split(".").map((p) => (/^[A-Za-z_][A-Za-z0-9_]*$/.test(p) ? "." + p : "." + JSON.stringify(p))).join("");
+      const sh = (prog, flags = "") => `jq ${flags}'${prog.replace(/'/g, "'\\''")}'`; // single-quoted for the shell
+      const f = path(v.field || "field");
+      if (v.op === "select by field") return sh(`select(${f} == ${JSON.stringify(S(v.value))})`);
+      if (v.op === "pick fields") { const fs = (v.fields || "").split(",").map((x) => x.trim()).filter(Boolean); return sh(`{${fs.map((x) => `${/^[A-Za-z_][A-Za-z0-9_]*$/.test(x) ? x : JSON.stringify(x)}: ${path(x)}`).join(", ")}}`); }
+      if (v.op === "count by field") return sh(`group_by(${f}) | map({key: .[0]${f}, count: length}) | sort_by(-.count)`, "-s ");
+      return sh(`${f}[]`);
     } },
 
   // ======================= FIREWALL REFERENCES =======================
@@ -991,7 +998,7 @@ export const TOOLS = [
         `Time to refill a full bucket from empty: ${(burst / rps).toFixed(2)} s`,
         ``,
         `nginx example:`,
-        `  limit_req_zone $binary_remote_addr zone=api:10m rate=${rps >= 1 ? Math.round(rps) + "r/s" : Math.round(rps * 60) + "r/m"};`,
+        `  limit_req_zone $binary_remote_addr zone=api:10m rate=${Number.isInteger(rps) ? rps + "r/s" : Math.max(1, Math.round(rps * 60)) + "r/m"};${rps * 60 < 0.5 ? "  # nginx's slowest rate is 1r/m; enforce slower limits in the application" : ""}`,
         `  limit_req zone=api burst=${burst} nodelay;`,
       ].join("\n");
     } },

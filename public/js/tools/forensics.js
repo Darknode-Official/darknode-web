@@ -5,6 +5,8 @@
 // Analyst/defender side. Pure, deterministic, client-side. See _schema.md.
 
 const S = (v) => (v == null ? "" : String(v));
+// quote a user-supplied path for a shell command line: bare when safe, "..." for spaces (works in sh, cmd and PowerShell), else POSIX '...'
+const shq = (v) => { const s = S(v); if (/^[\w@%+=:,./\\-]+$/.test(s)) return s; if (!/["$`!]|\\$/.test(s)) return `"${s}"`; return "'" + s.replace(/'/g, "'\\''") + "'"; };
 
 // ---- byte / int helpers (for hex-driven parsers) ----
 function hexBytes(s) {
@@ -475,6 +477,7 @@ export const TOOLS = [
   { id: "fx-gps-time", name: "GPS Week/TOW to UTC", cat: "forensics", desc: "Convert a GPS week number and time-of-week (seconds) into a UTC date. GPS has no leap seconds; subtract the current GPS-UTC offset (18 since 2017).", tags: ["gps", "week", "tow", "leap"],
     inputs: [{ k: "week", label: "GPS week number", type: "text", placeholder: "2300" }, { k: "tow", label: "Time of week (seconds)", type: "text", placeholder: "259200" }, { k: "leap", label: "GPS-UTC leap seconds", type: "text", value: "18" }],
     run(v) {
+      if (!S(v.week).trim()) return "";
       const w = Number(v.week), tow = Number(v.tow || 0), leap = Number(v.leap || 0);
       if (!isFinite(w)) return { error: "Enter a GPS week number." };
       const unixMs = GPS_EPOCH_MS + (w * 604800 + tow - leap) * 1000;
@@ -501,7 +504,7 @@ export const TOOLS = [
       if (b === -9223372036854775808n || b === 9223372036854775807n) return "This value means 'never' (no expiry).";
       let ns100 = b < 0n ? -b : b;
       if (ns100 > 9223372036854775808n) return { error: "Out of range: AD intervals are signed 64-bit integers." };
-      let totalSec = Number(ns100) / 1e7;
+      let totalSec = Math.round(Number(ns100) / 1e7); // round once so 59.9999999 s carries into the minute
       const days = Math.floor(totalSec / 86400); totalSec -= days * 86400;
       const h = Math.floor(totalSec / 3600); totalSec -= h * 3600;
       const m = Math.floor(totalSec / 60); const s = Math.round(totalSec - m * 60);
@@ -546,6 +549,9 @@ export const TOOLS = [
         const tok = sp < 0 ? l : l.slice(0, sp);
         const label = sp < 0 ? "" : l.slice(sp + 1).trim();
         let ms = null;
+        // an ISO / "YYYY-MM-DD HH:MM:SS" timestamp followed by a label: the date-time is the first one or two tokens
+        const dm = l.match(/^(\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?)?(?:[Zz]|[+-]\d{2}:?\d{2})?)(?:\s+(.*))?$/);
+        if (dm && parseDate(dm[1]) != null) { rows.push({ ms: parseDate(dm[1]), iso: new Date(parseDate(dm[1])).toISOString(), label: (dm[2] || "").trim() }); continue; }
         if (/^\d+$/.test(tok)) { const n = Number(tok); ms = tok.length <= 11 ? n * 1000 : tok.length <= 14 ? n : tok.length <= 17 ? n / 1000 : n / 1e6; }
         else { const p = parseDate(l) ?? Date.parse(l); if (!isNaN(p)) ms = p; }
         if (ms == null || !isFinite(ms) || isNaN(new Date(ms).getTime())) rows.push({ ms: null, raw: l });
@@ -908,7 +914,7 @@ export const TOOLS = [
     inputs: [{ k: "header", label: "Authentication-Results header", type: "textarea", rows: 5, placeholder: "Authentication-Results: mx.example.com; spf=pass smtp.mailfrom=example.org; dkim=pass header.d=example.org; dmarc=pass" }],
     run(v) {
       const t = String(v.header || "").replace(/\r?\n[ \t]+/g, " ").trim(); if (!t) return "";
-      const body = t.replace(/^(arc-)?authentication-results:\s*/i, "");
+      const body = t.replace(/^(arc-)?authentication-results:\s*/i, "").replace(/^i=\d+\s*;\s*/i, ""); // ARC-Authentication-Results starts with the instance tag i=N
       const out = [];
       for (const method of ["spf", "dkim", "dmarc", "arc", "compauth"]) {
         const re = new RegExp(`\\b${method}=([a-z]+)([^;]*)`, "i"); const m = body.match(re);
@@ -973,7 +979,8 @@ export const TOOLS = [
       let l = String(v.line || "").trim(); if (!l) return "";
       const out = [];
       const pm = l.match(/^<(\d{1,3})>/); if (pm) { const pri = parseInt(pm[1], 10); out.push(`PRI: ${pri}  (facility ${pri >> 3} = ${SYSLOG_FAC[pri >> 3] || "?"}, severity ${pri & 7} = ${SYSLOG_SEV[pri & 7] || "?"})`); l = l.slice(pm[0].length); }
-      const v5 = l.match(/^(\d)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(?:(\S+)\s+)?(.*)$/);
+      // STRUCTURED-DATA is "-" or one or more [id param="value" ...] elements (quoted values may hold spaces, \" and \])
+      const v5 = l.match(/^(\d)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(-|(?:\[(?:[^\]"\\]|\\.|"(?:[^"\\]|\\.)*")*\])+)(?:\s+(.*))?$/) || l.match(/^(\d)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(?:(\S+)\s+)?(.*)$/);
       if (v5 && v5[1] === "1") { out.push("Format: RFC 5424", `Timestamp: ${v5[2]}`, `Host: ${v5[3]}`, `App: ${v5[4]}`, `PID: ${v5[5]}`, `MsgID: ${v5[6]}`, `Message: ${v5[8] || ""}`); return out.join("\n"); }
       const v3 = l.match(/^([A-Z][a-z]{2}\s+\d+\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+([^:\[\s]+)(?:\[(\d+)\])?:?\s*(.*)$/);
       if (v3) { out.push("Format: RFC 3164 (BSD)", `Timestamp: ${v3[1]}`, `Host: ${v3[2]}`, `Tag: ${v3[3]}`, `PID: ${v3[4] || "(none)"}`, `Message: ${v3[5]}`); return out.join("\n"); }
@@ -994,6 +1001,7 @@ export const TOOLS = [
     run(v) {
       const t = String(v.json || "").trim(); if (!t) return "";
       let o; try { o = JSON.parse(t); } catch (e) { return { error: "Not valid JSON." }; }
+      if (!o || typeof o !== "object") return { error: "Expected a JSON object (one journald entry)." };
       const out = [];
       if (o.__REALTIME_TIMESTAMP) { const us = Number(o.__REALTIME_TIMESTAMP); const d = new Date(us / 1000); out.push(`Time: ${isNaN(d.getTime()) ? o.__REALTIME_TIMESTAMP : d.toISOString()} (realtime)`); }
       if (o.PRIORITY != null) { const p = parseInt(o.PRIORITY, 10); out.push(`Priority: ${p} = ${SYSLOG_SEV[p] || "?"}`); }
@@ -1006,7 +1014,8 @@ export const TOOLS = [
     inputs: [{ k: "line", label: "Access log line", type: "textarea", rows: 3, placeholder: '198.51.100.7 - - [01/Jan/2024:10:00:00 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "curl/8.0"' }],
     run(v) {
       const l = String(v.line || "").trim(); if (!l) return "";
-      const m = l.match(/^(\S+)\s+(\S+)\s+(\S+)\s+\[([^\]]+)\]\s+"([^"]*)"\s+(\d{3})\s+(\S+)(?:\s+"([^"]*)"\s+"([^"]*)")?/);
+      // Apache/nginx write a quote inside a quoted field as \" (e.g. in the User-Agent)
+      const m = l.match(/^(\S+)\s+(\S+)\s+(\S+)\s+\[([^\]]+)\]\s+"((?:[^"\\]|\\.)*)"\s+(\d{3})\s+(\S+)(?:\s+"((?:[^"\\]|\\.)*)"\s+"((?:[^"\\]|\\.)*)")?/);
       if (!m) return { error: "Line does not match Common/Combined Log Format." };
       const req = m[5].split(/\s+/);
       return [`Client IP:  ${m[1]}`, `Ident/User: ${m[2]} / ${m[3]}`, `Time:       ${m[4]}`, `Method:     ${req[0] || "?"}`, `Path:       ${req[1] || "?"}`, `Protocol:   ${req[2] || "?"}`, `Status:     ${m[6]}`, `Size:       ${m[7]} bytes`, `Referer:    ${m[8] || "(not logged)"}`, `User-Agent: ${m[9] || "(not logged)"}`].join("\n");
@@ -1051,11 +1060,12 @@ export const TOOLS = [
       for (let i = 0; i < body.length; i++) { if (body[i] === "\\" && i + 1 < body.length) { cur += body[i] + body[i + 1]; i++; } else if (body[i] === "|" && parts.length < 7) { parts.push(cur); cur = ""; } else cur += body[i]; }
       parts.push(cur);
       if (parts.length < 7) return { error: "CEF header incomplete (need 7 pipe-separated fields)." };
-      const [ver, vendor, product, pver, sig, name, sev] = parts;
+      const [ver, vendor, product, pver, sig, name, sev] = parts.slice(0, 7).map((p) => p.replace(/\\([\\|])/g, "$1")); // header escapes: \| and \\
       const ext = parts[7] || "";
       const pairs = [];
+      const unesc = (s) => s.replace(/\\([\\=nr])/g, (_, c) => (c === "n" ? "\n" : c === "r" ? "\r" : c)); // extension escapes: \= \\ \n \r
       const re = /([A-Za-z][A-Za-z0-9]*)=((?:[^\\]|\\.)*?)(?=\s+[A-Za-z][A-Za-z0-9]*=|$)/g; let mm;
-      while ((mm = re.exec(ext)) !== null) pairs.push(`  ${mm[1]} = ${mm[2].trim()}`);
+      while ((mm = re.exec(ext)) !== null) pairs.push(`  ${mm[1]} = ${unesc(mm[2].trim())}`);
       return [`CEF version:   ${ver}`, `Device vendor: ${vendor}`, `Device product:${product}`, `Device version:${pver}`, `Signature ID:  ${sig}`, `Name:          ${name}`, `Severity:      ${sev}`, ``, `Extensions:`, pairs.length ? pairs.join("\n") : "  (none)"].join("\n");
     } },
 
@@ -1066,9 +1076,10 @@ export const TOOLS = [
       const idx = l.indexOf("LEEF:"); if (idx < 0) return { error: "No LEEF: prefix found." };
       const parts = l.slice(idx + 5).split("|");
       const ver = parts[0];
-      let delim = "\t", headerCount = 4;
-      if (ver.startsWith("2")) { headerCount = 5; if (parts[5] != null && parts[5].length) { let d = parts[5]; if (/^0x[0-9a-f]+$/i.test(d)) d = String.fromCharCode(parseInt(d, 16)); delim = d; } }
-      const ext = parts.slice(headerCount + (ver.startsWith("2") ? 1 : 0)).join("|");
+      let delim = "\t";
+      if (ver.startsWith("2") && parts[5] != null && parts[5].length) { let d = parts[5]; if (/^0?x[0-9a-f]+$/i.test(d)) d = String.fromCharCode(parseInt(d.replace(/^0?x/i, ""), 16)); delim = d; }
+      // header: version|vendor|product|version|eventID (LEEF 2.0 adds |delimiter); attributes follow
+      const ext = parts.slice(ver.startsWith("2") ? 6 : 5).join("|");
       const pairs = ext.split(delim).filter(Boolean).map((p) => { const e = p.indexOf("="); return e < 0 ? "  " + p : `  ${p.slice(0, e)} = ${p.slice(e + 1)}`; });
       return [`LEEF version:  ${ver}`, `Vendor:        ${parts[1] || ""}`, `Product:       ${parts[2] || ""}`, `Version:       ${parts[3] || ""}`, `Event ID:      ${parts[4] || ""}`, ver.startsWith("2") ? `Delimiter:     ${JSON.stringify(delim)}` : "", ``, `Attributes:`, pairs.length ? pairs.join("\n") : "  (none)"].filter((x) => x !== "").join("\n");
     } },
@@ -1078,6 +1089,8 @@ export const TOOLS = [
     run(v) {
       const t = String(v.json || "").trim(); if (!t) return "";
       let o; try { o = JSON.parse(t); } catch (e) { return { error: "Not valid JSON." }; }
+      if (o && Array.isArray(o.Records) && o.Records.length) o = o.Records[0]; // a CloudTrail log file wraps records in {"Records":[...]}
+      if (!o || typeof o !== "object") return { error: "Expected a JSON object (one CloudTrail record)." };
       const ui = o.userIdentity || {};
       const out = [
         `Event time:   ${o.eventTime || "?"}`,
@@ -1202,7 +1215,8 @@ export const TOOLS = [
         return `Decimal: ${dec.toFixed(6)} (${v.ref})`;
       }
       const dec = Number(v.dec); if (!isFinite(dec)) return v.dec ? { error: "Enter a decimal number." } : "";
-      const abs = Math.abs(dec); const d = Math.floor(abs); const mF = (abs - d) * 60; const m = Math.floor(mF); const s = (mF - m) * 60;
+      // work in thousandths of an arc-second so rounding carries (never 59' 60.000")
+      const tot = Math.round(Math.abs(dec) * 3600000); const d = Math.floor(tot / 3600000); const m = Math.floor((tot % 3600000) / 60000); const s = (tot % 60000) / 1000;
       const ref = v.axis === "Latitude" ? (dec < 0 ? "S" : "N") : (dec < 0 ? "W" : "E");
       return `${d} deg ${m}' ${s.toFixed(3)}" ${ref}`;
     } },
@@ -1235,7 +1249,7 @@ export const TOOLS = [
       { k: "profile", label: "Profile (Vol2 only)", type: "text", placeholder: "Win7SP1x64" },
     ],
     run(v) {
-      const img = v.image || "<image>";
+      const img = v.image ? shq(v.image) : "<image>";
       const map3 = { "Process list": "windows.pslist.PsList", "Process tree": "windows.pstree.PsTree", "Command line": "windows.cmdline.CmdLine", "Network connections": "windows.netscan.NetScan", "Loaded DLLs": "windows.dlllist.DllList", "Injected code (malfind)": "windows.malfind.Malfind", "Handles": "windows.handles.Handles", "Registry hive list": "windows.registry.hivelist.HiveList", "Hashdump (SAM)": "windows.hashdump.Hashdump", "File scan": "windows.filescan.FileScan", "Services": "windows.svcscan.SvcScan" };
       const map2 = { "Process list": "pslist", "Process tree": "pstree", "Command line": "cmdline", "Network connections": "netscan", "Loaded DLLs": "dlllist", "Injected code (malfind)": "malfind", "Handles": "handles", "Registry hive list": "hivelist", "Hashdump (SAM)": "hashdump", "File scan": "filescan", "Services": "svcscan" };
       if (v.ver === "Volatility 3") return `vol -f ${img} ${map3[v.plugin]}`;
@@ -1252,7 +1266,7 @@ export const TOOLS = [
       { k: "tz", label: "Timezone", type: "text", value: "UTC" },
     ],
     run(v) {
-      const store = v.store || "timeline.plaso", src = v.source || "<source>";
+      const store = v.store ? shq(v.store) : "timeline.plaso", src = v.source ? shq(v.source) : "<source>";
       if (v.step === "Collect (log2timeline)") return `log2timeline.py --storage-file ${store} --timezone ${v.tz || "UTC"} ${src}`;
       if (v.step === "Output (psort)") return `psort.py -o ${v.out} -w timeline.${v.out === "l2tcsv" ? "csv" : "txt"} ${store}`;
       return `psteal.py --source ${src} -o ${v.out} -w timeline.${v.out === "l2tcsv" ? "csv" : "txt"} --timezone ${v.tz || "UTC"}`;
@@ -1267,7 +1281,7 @@ export const TOOLS = [
       { k: "hash", label: "Hash while imaging", type: "select", opts: ["none", "md5", "sha256", "md5,sha256"], value: "sha256" },
     ],
     run(v) {
-      const src = v.src || "/dev/<src>", dst = v.dst || "<image>";
+      const src = v.src ? shq(v.src) : "/dev/<src>", dst = v.dst ? shq(v.dst) : "<image>";
       if (v.tool === "dcfldd") { let c = `dcfldd if=${src} of=${dst} bs=${v.bs || "4M"}`; if (v.hash !== "none") c += ` hash=${v.hash} hashlog=${dst}.hashlog`; return c + `\n\n(dcfldd shows progress and logs hashes automatically.)`; }
       let c = `dd if=${src} of=${dst} bs=${v.bs || "4M"} conv=noerror,sync status=progress`;
       const post = v.hash === "none" ? "" : "\n\nThen verify:\n" + v.hash.split(",").map((h) => `${h}sum ${dst}`).join("\n");
@@ -1282,7 +1296,7 @@ export const TOOLS = [
       { k: "inode", label: "Inode (icat/istat)", type: "text", placeholder: "64-128-1" },
     ],
     run(v) {
-      const img = v.image || "<image>"; const off = v.offset ? ` -o ${v.offset}` : "";
+      const img = v.image ? shq(v.image) : "<image>"; const off = v.offset ? ` -o ${v.offset}` : "";
       switch (v.tool) {
         case "mmls (partitions)": return `mmls ${img}`;
         case "fsstat (fs details)": return `fsstat${off} ${img}`;
