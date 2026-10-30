@@ -23,7 +23,7 @@ import { toolsFor } from "/js/integrations/intel-core.js?v=20261029c";
 import { dnFetch, dnFetchJSON, proxyConfigured } from "/js/net.js";
 // Attack-surface data wrappers (crt.sh / DoH / RDAP / Team Cymru ASN / HTTP probe),
 // all through the proxy above. Data-only module; bump its ?v= when it changes.
-import * as surface from "/js/deck-surface.js?v=20261026b";
+import * as surface from "/js/deck-surface.js?v=20261029e";
 // Platform event bus (singleton — never version its import, or a second instance
 // would miss every event the rest of the app emits). Drives the live Activity
 // stream and the notifications bell.

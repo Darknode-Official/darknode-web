@@ -2,7 +2,7 @@
 // Native Certificate Watch: the newest publicly logged certificate for each domain
 // (certificate transparency via ct-fetch), banded by days to expiry with tls-engine.
 
-import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
+import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261029e";
 import { buildEntry, summarizeFleet, parseDomains, BANDS } from "/js/dataprotect/tls-engine.js?v=20261029e";
 import { tlsFleetFindings, tlsFleetHeld } from "/js/dataprotect/dp-sink.js";
 import { attachSinkButton } from "/js/core/sink.js";

@@ -24,21 +24,27 @@ function fromCertspotter(arr) {
 // marked .unreachable when neither log answered (as opposed to answering with no rows).
 export async function fetchCertRows(domain, f) {
   const d = encodeURIComponent(domain);
-  let answered = false;
+  let answered = false, crtOk = false;
   try {
     const r = await f("https://crt.sh/?output=json&exclude=expired&q=" + d, { headers: { accept: "application/json" } });
-    if (r.ok) { const a = await r.json().catch(() => null); if (Array.isArray(a)) answered = true; if (Array.isArray(a) && a.length) return a; }
+    if (r.ok) { const a = await r.json().catch(() => null); if (Array.isArray(a)) answered = crtOk = true; if (Array.isArray(a) && a.length) return a; }
   } catch (_) {}
   try {
     const url = "https://api.certspotter.com/v1/issuances?include_subdomains=false&expand=issuer&expand=not_before&expand=not_after&expand=dns_names&domain=" + d;
     const r = await f(url, { headers: { accept: "application/json" } });
     if (r.ok) { const a = await r.json().catch(() => null); if (Array.isArray(a)) answered = true; const rows = fromCertspotter(a); if (rows.length) return rows; }
   } catch (_) {}
+  // Both sources list only unexpired certificates, so a domain whose certificate has EXPIRED came
+  // back empty and the monitor raised nothing for its most critical case. Ask crt.sh's full history.
+  if (crtOk) try {
+    const r = await f("https://crt.sh/?output=json&q=" + d, { headers: { accept: "application/json" } });
+    if (r.ok) { const a = await r.json().catch(() => null); if (Array.isArray(a) && a.length) return a; }
+  } catch (_) {}
   return answered ? [] : Object.assign([], { unreachable: true });
 }
 
 // "https://site.com/path", user@host, host:port, *.site and a trailing root dot -> the hostname
-export const hostOnly = (d) => String(d || "").trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/[/?#].*$/, "").replace(/^[^@]*@/, "").replace(/:\d+$/, "").replace(/^\*\./, "").replace(/\.$/, "");
+export const hostOnly = (d) => String(d || "").trim().toLowerCase().replace(/^[a-z][a-z0-9+.-]*:\/\//, "").replace(/[/?#].*$/, "").replace(/^.*@/, "").replace(/:\d+$/, "").replace(/^\*\./, "").replace(/\.$/, "");
 
 const sev = (days, warnDays) => {
   if (days == null) return null;          // no data -> no finding (never a fake pass/fail)

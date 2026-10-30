@@ -4,7 +4,7 @@
 // resolve) when the host answers neither HTTP nor HTTPS.
 
 import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261029e";
-import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
+import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261029e";
 import { dnFetch } from "/js/net.js";
 import { registrableDomain } from "/js/dataprotect/phish-engine.js?v=20261029e";
 
