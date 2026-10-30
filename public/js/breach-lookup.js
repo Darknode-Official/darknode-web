@@ -199,7 +199,7 @@ async function _blLoad() {
     return;
   }
   try {
-    var raw = await dnFetchJSON(HIBP_BREACHES_URL, { timeout: 25000 });
+    var raw = await dnFetchJSON(HIBP_BREACHES_URL, { timeout: 25000, max: 4000000 }); // the full catalog is over 1 MB
     if (!Array.isArray(raw)) throw new Error('HIBP returned an unexpected response.');
     BREACHES = raw.map(_blMap).filter(function(b) { return b.company; });
     _blRenderDashboard();

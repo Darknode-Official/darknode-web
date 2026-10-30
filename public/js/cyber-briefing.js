@@ -123,7 +123,7 @@ function epssPct(v) {
 // DATA ASSEMBLY (all real)
 // ═══════════════════════════════════════════════════════════════════════════════
 async function assembleBriefing() {
-  const kevData = await dnFetchJSON(KEV_URL, { timeout: 25000 });
+  const kevData = await dnFetchJSON(KEV_URL, { timeout: 25000, max: 4000000 });
   const allKev = (kevData && kevData.vulnerabilities) || [];
   const cutoff = daysAgoISODate(30);
   let recentKev = allKev.filter(v => String(v.dateAdded || "") >= cutoff);
