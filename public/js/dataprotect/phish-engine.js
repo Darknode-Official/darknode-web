@@ -202,15 +202,19 @@ export function analyzeUrl(raw) {
   if (fakeAt > 0) out.reasons.push({ w: 2, t: `The address reads as if it ends at "${labels.slice(0, fakeAt + 1).join(".")}", but the real domain is "${reg}".` });
   if (look.homograph) out.reasons.push({ w: 4, t: `Its letters imitate "${look.brand}": "${look.shown}" reads as "${look.reads}".` });
   else if (look.impersonation) out.reasons.push({ w: 4, t: `Brand "${look.brand}" appears in a subdomain but the registered domain is "${reg}".` });
+  else if (look.leet) out.reasons.push({ w: 4, t: `"${reg}" spells "${look.brand}" with digits in place of letters, a deliberate lookalike.` });
   else if (look.inName) out.reasons.push({ w: 2, t: `The domain "${reg}" has the brand name "${look.brand}" in it but is a different domain from the brand's own; check who owns it.` });
   else if (look.oddTld) out.reasons.push({ w: 3, t: `"${reg}" uses the brand name "${look.brand}" on .${look.oddTld}, which is not where that brand's sites live (they use .com or a country domain); check who owns it.` });
   else if (look.near) out.reasons.push({ w: 3, t: `Domain stem "${look.stem}" is a near-miss (edit distance ${look.distance}) of brand "${look.brand}".` });
 
+  // a brand's own address in the path or query (evil.example/https://paypal.com/) makes the link read as the brand's
+  if (!look.exact) { const inPath = BRANDS.find((b) => b.length >= 4 && new RegExp("(^|[^a-z0-9-])" + b + "\\.(com|net|org)\\b").test(decodeSafe(out.path).toLowerCase())); if (inPath) out.reasons.push({ w: 1, t: `The path mentions "${inPath}" but the link goes to "${reg}".` }); }
   out.severity = sevFromWeight(sumWeight(out.reasons));
   out.lookalike = look;
   return out;
 }
 
+function decodeSafe(s) { try { return decodeURIComponent(s || ""); } catch (_) { return String(s || ""); } }
 function sumWeight(reasons) { return reasons.reduce((a, r) => a + r.w, 0); }
 function sevFromWeight(w) { return w >= 7 ? "critical" : w >= 4 ? "high" : w >= 2 ? "medium" : w >= 1 ? "low" : "info"; }
 
@@ -247,6 +251,9 @@ function asciiLookalike(host) {
     if (labels.includes(b) || sub.some((l) => l.split("-").some((t) => isBrand(t, b))))
       return { brand: b, stem, impersonation: true, near: false, distance: 0 };
   }
+  // the brand with digits swapped in for letters (paypa1, g00gle, micr0soft): a deliberate imitation
+  const leet = BRANDS.find((b) => b.length >= 4 && leetIs(stem, b));
+  if (leet) return { brand: leet, stem, impersonation: false, near: true, leet: true, distance: levenshtein(stem, leet) };
   // near-miss typosquat on the stem
   let best = null;
   for (const b of BRANDS) {
@@ -260,7 +267,7 @@ function asciiLookalike(host) {
   if (best) return { ...best, impersonation: false, near: true };
   // the registered name carries the brand as a hyphen-part (paypal-secure.com, m1crosoft-help.com)
   const part = stem.includes("-") && BRANDS.find((b) => stem.split("-").some((t) => t === b || leetIs(t, b)));
-  if (part) return { brand: part, stem, impersonation: false, near: true, inName: true, distance: 0 };
+  if (part) return { brand: part, stem, impersonation: false, near: true, inName: true, leet: stem.split("-").some((t) => leetIs(t, part)), distance: 0 };
   return { brand: null, stem, impersonation: false, near: false, distance: null };
 }
 
@@ -431,6 +438,7 @@ export function triageEmail(raw) {
   const fromLook = fromReg ? lookalike(fromDomain) : { near: false, impersonation: false };
   if (fromLook.impersonation) add(4, `From domain impersonates brand "${fromLook.brand}" in a subdomain.`);
   else if (fromLook.homograph) add(4, `From domain imitates brand "${fromLook.brand}": "${fromLook.shown}" reads as "${fromLook.reads}".`);
+  else if (fromLook.leet) add(4, `From domain ${fromReg} spells "${fromLook.brand}" with digits in place of letters.`);
   else if (fromLook.inName) add(3, `From domain ${fromReg} has the brand name "${fromLook.brand}" in it but is a different domain from the brand's own.`);
   else if (fromLook.oddTld) add(3, `From domain ${fromReg} uses the brand name "${fromLook.brand}" on .${fromLook.oddTld}, not the brand's own domain.`);
   else if (fromLook.near) add(3, `From domain is a near-miss of brand "${fromLook.brand}".`);

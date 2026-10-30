@@ -6,7 +6,7 @@
 import { newestCert } from "/js/dataprotect/posture-engine.js?v=20261029c";
 import { fetchCertRows } from "/js/dataprotect/ct-fetch.js?v=20261026a";
 import { dnFetch } from "/js/net.js";
-import { registrableDomain } from "/js/dataprotect/phish-engine.js?v=20261029c";
+import { registrableDomain } from "/js/dataprotect/phish-engine.js?v=20261029e";
 
 export function cleanDomain(raw) {
   let d = String(raw || "").trim();

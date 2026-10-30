@@ -301,3 +301,27 @@ group("phish: From address inside the display name", () => {
     assert.ok(r.findings.some((f) => /Display name mentions "paypal"/.test(f.t)));
   });
 });
+
+group("phish: digit-swapped brands and brand addresses in the path", () => {
+  test("a brand spelled with digits for letters is high, whole or as a hyphen part", () => {
+    for (const u of ["https://paypa1.com/", "https://g00gle.com", "https://micr0soft-support.com"]) {
+      const r = analyzeUrl(u);
+      assert.equal(r.severity, "high", u);
+      assert.ok(r.reasons.some((x) => /digits in place of letters/.test(x.t)), u);
+    }
+  });
+  test("ordinary domains with digits are not called a brand lookalike", () => {
+    const r = analyzeUrl("https://hello123.com");
+    assert.ok(!r.reasons.some((x) => /digits in place of letters/.test(x.t)));
+  });
+  test("a brand's address in the path of another site is a low signal; the brand's own site is not", () => {
+    const r = analyzeUrl("https://evil.example/login?next=https%3A%2F%2Fpaypal.com");
+    assert.equal(r.severity, "low");
+    assert.ok(r.reasons.some((x) => /path mentions "paypal"/.test(x.t)));
+    assert.equal(analyzeUrl("https://www.paypal.com/signin?return=paypal.com").reasons.length, 0);
+  });
+  test("a digit-swapped sending domain is flagged in email triage", () => {
+    const r = triageEmail("From: Support <help@paypa1.com>\nTo: test@darknode.ai\nSubject: Account notice\n\nhello");
+    assert.ok(r.findings.some((f) => /digits in place of letters/.test(f.t)));
+  });
+});
