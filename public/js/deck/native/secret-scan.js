@@ -2,7 +2,8 @@
 // Native Secret & Code Scan: codescan/rules.js over pasted code or a dropped project
 // folder, entirely in the browser. Secrets are shown masked; nothing is uploaded.
 
-import { scanFile, SEV_ORDER } from "/js/codescan/rules.js?v=20261029e";
+import { scanFile, SEV_ORDER, mask } from "/js/codescan/rules.js?v=20261029e";
+import { maskSecrets } from "/js/core/secret-detectors.js";
 import { esc, toast, sevPill, recordRun, readFiles, download } from "./ui.js";
 
 const rank = (s) => (s in SEV_ORDER ? SEV_ORDER[s] : 99);
@@ -30,7 +31,8 @@ export function mount(el, { space, mode }) {
   const run = (list, skipped, label) => {
     const hits = [];
     let placeholders = 0;
-    for (const f of list) { const r = scanFile(f.path, f.text); placeholders += r.placeholders || 0; for (const h of r) hits.push({ ...h, path: f.path }); }
+    // scanFile masks only the first copy of the value it reports; hide repeats and second tokens too
+    for (const f of list) { const r = scanFile(f.path, f.text); placeholders += r.placeholders || 0; for (const h of r) hits.push({ ...h, snippet: maskSecrets(h.snippet, mask), path: f.path }); }
     hits.sort((a, b) => rank(a.sev) - rank(b.sev) || (a.kind === "secret" ? -1 : 1));
     const secrets = hits.filter((h) => h.kind === "secret"), code = hits.filter((h) => h.kind !== "secret");
     const crit = hits.filter((h) => h.sev === "critical" || h.sev === "high").length;
