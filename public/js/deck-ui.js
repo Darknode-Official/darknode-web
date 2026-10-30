@@ -299,6 +299,8 @@ function _ipScope(ip){
   if (o[0] === 127) return "Loopback";
   if (o[0] === 169 && o[1] === 254) return "Link-local (APIPA)";
   if (o[0] === 100 && o[1] >= 64 && o[1] <= 127) return "Carrier-grade NAT (RFC6598)";
+  if ((o[0] === 192 && o[1] === 0 && o[2] === 2) || (o[0] === 198 && o[1] === 51 && o[2] === 100) || (o[0] === 203 && o[1] === 0 && o[2] === 113)) return "Documentation (TEST-NET, RFC5737)";
+  if (o[0] === 198 && (o[1] === 18 || o[1] === 19)) return "Benchmarking (RFC2544)";
   if (o[0] >= 224) return "Multicast/Reserved";
   if (n === 0) return "\"This\" host (0.0.0.0)";
   return "Public";
@@ -325,11 +327,16 @@ const TK_CATS = [
 ];
 const TOOLKIT = [
   { id: "b64e", cat: "encode", name: "Base64 encode", desc: "UTF-8 text to Base64.", run: (s) => _b64e(s) },
-  { id: "b64d", cat: "encode", name: "Base64 decode", desc: "Base64 (or base64url) to text.", run: (s) => { try { return _b64d(s); } catch (_) { return _b64d(_b64urlToStd(s.trim())); } } },
+  { id: "b64d", cat: "encode", name: "Base64 decode", desc: "Base64 (or base64url) to text.", run: (s) => {
+      const t = s.replace(/\s+/g, ""); let bin;
+      try { bin = atob(t); } catch (_) { bin = atob(_b64urlToStd(t)); }
+      // Keys, certificates and other binary blobs are not UTF-8 text: show their bytes as hex.
+      try { return decodeURIComponent(escape(bin)); } catch (_) { return "Binary data (" + bin.length + " bytes, not UTF-8 text). Hex:\n" + [...bin].map((c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join(""); }
+    } },
   { id: "urle", cat: "encode", name: "URL encode", desc: "Percent-encode a component.", run: (s) => encodeURIComponent(s) },
   { id: "urld", cat: "encode", name: "URL decode", desc: "Decode percent-encoding.", run: (s) => decodeURIComponent(s.replace(/\+/g, " ")) },
   { id: "hexe", cat: "encode", name: "Hex encode", desc: "UTF-8 bytes to hex.", run: (s) => [..._te(s)].map((b) => b.toString(16).padStart(2, "0")).join("") },
-  { id: "hexd", cat: "encode", name: "Hex decode", desc: "Hex to UTF-8 text.", run: (s) => { const h = s.replace(/[^0-9a-f]/gi, ""); if (!h) return ""; if (h.length % 2) throw new Error("Hex needs an even number of digits."); return new TextDecoder().decode(new Uint8Array(h.match(/../g).map((x) => parseInt(x, 16)))); } },
+  { id: "hexd", cat: "encode", name: "Hex decode", desc: "Hex to UTF-8 text.", run: (s) => { const h = s.replace(/0x/gi, "").replace(/[^0-9a-f]/gi, ""); if (!h) return ""; if (h.length % 2) throw new Error("Hex needs an even number of digits."); return new TextDecoder().decode(new Uint8Array(h.match(/../g).map((x) => parseInt(x, 16)))); } },
   { id: "htmle", cat: "encode", name: "HTML entity encode", desc: "Escape &, <, >, \", '.", run: (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") },
   { id: "htmld", cat: "encode", name: "HTML entity decode", desc: "Decode HTML entities.", run: (s) => _htmlDecode(s) },
   { id: "rot13", cat: "encode", name: "ROT13", desc: "Classic letter rotation (its own inverse).", run: (s) => s.replace(/[a-z]/gi, (c) => { const base = c <= "Z" ? 65 : 97; return String.fromCharCode((c.charCodeAt(0) - base + 13) % 26 + base); }) },
@@ -369,7 +376,7 @@ const TOOLKIT = [
     } },
   { id: "jwt", cat: "parse", name: "JWT decoder", desc: "Decode header + payload (no signature check).", run: (s) => {
       const parts = s.trim().split("."); if (parts.length < 2) throw new Error("Not a JWT (needs header.payload.signature).");
-      const dec = (p) => JSON.stringify(JSON.parse(_b64d(_b64urlToStd(p))), null, 2);
+      const dec = (p) => { try { return JSON.stringify(JSON.parse(_b64d(_b64urlToStd(p))), null, 2); } catch (_) { throw new Error("Not a JWT: the header and payload must be base64url-encoded JSON."); } };
       let out = "HEADER:\n" + dec(parts[0]) + "\n\nPAYLOAD:\n" + dec(parts[1]);
       try { const pl = JSON.parse(_b64d(_b64urlToStd(parts[1]))); if (pl.exp) out += "\n\nexp: " + new Date(pl.exp * 1000).toISOString() + (pl.exp * 1000 < Date.now() ? "  (EXPIRED)" : "  (valid)"); if (pl.iat) out += "\niat: " + new Date(pl.iat * 1000).toISOString(); } catch (_) {}
       return out;
@@ -385,12 +392,15 @@ const TOOLKIT = [
       return `Epoch (s):  ${Math.floor(d.getTime() / 1000)}\nEpoch (ms): ${d.getTime()}\nISO 8601:   ${d.toISOString()}\nUTC:        ${d.toUTCString()}\nLocal:      ${d.toString()}`;
     } },
   { id: "urlp", cat: "parse", name: "URL parser", desc: "Break a URL into its parts + query params.", run: (s) => {
-      const u = new URL(s.trim());
+      // A bare host such as example.com/path has no scheme; read it as https. (example.com:8080
+      // parses with "example.com:" as the scheme, so a dotted scheme means one was missing.)
+      const raw = s.trim(); let u, assumed = false;
+      try { u = new URL(raw); if (u.protocol.includes(".")) throw 0; } catch (_) { u = new URL("https://" + raw); assumed = true; }
       const q = [...u.searchParams.entries()].map(([k, v]) => "  " + k + " = " + v).join("\n");
-      return `Protocol: ${u.protocol}\nHost:     ${u.hostname}\nPort:     ${u.port || "(default)"}\nPath:     ${u.pathname}\nQuery:    ${u.search || "(none)"}\nHash:     ${u.hash || "(none)"}\nOrigin:   ${u.origin}${q ? "\n\nParams:\n" + q : ""}`;
+      return `Protocol: ${u.protocol}${assumed ? " (assumed, none given)" : ""}\nHost:     ${u.hostname}\nPort:     ${u.port || "(default)"}\nPath:     ${u.pathname}\nQuery:    ${u.search || "(none)"}\nHash:     ${u.hash || "(none)"}\nOrigin:   ${u.origin}${q ? "\n\nParams:\n" + q : ""}`;
     } },
   { id: "case", cat: "text", name: "Case converter", desc: "Every common case at once.", run: (s) => {
-      const words = s.trim().split(/[\s_-]+/).filter(Boolean);
+      const words = s.trim().replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2").split(/[\s_-]+/).filter(Boolean); // camelCase and PascalCase split too
       const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
       return `UPPER:   ${s.toUpperCase()}\nlower:   ${s.toLowerCase()}\nTitle:   ${words.map(cap).join(" ")}\nSentence:${s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()}\nsnake:   ${words.map((w) => w.toLowerCase()).join("_")}\nkebab:   ${words.map((w) => w.toLowerCase()).join("-")}\ncamel:   ${words.map((w, i) => i ? cap(w) : w.toLowerCase()).join("")}\nPascal:  ${words.map(cap).join("")}`;
     } },
