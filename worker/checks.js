@@ -307,7 +307,7 @@ export const CHECKS = {
 };
 
 export function runCheck(type, cfg, deps) {
-  const fn = CHECKS[type];
+  const fn = Object.prototype.hasOwnProperty.call(CHECKS, type) ? CHECKS[type] : null; // "toString" etc. are not checks
   if (!fn) return Promise.resolve([]);
   return fn(cfg, deps);
 }

@@ -283,8 +283,10 @@ async function handleFetch(request) {
         if (bytes > readCap) { truncated = true; try { await reader.cancel(); } catch (_) {} break; }
       }
     } catch (_) {}
-    const text = raw ? body.slice(0, cap)
-      : (/json|xml|javascript|text|csv/.test(ct) ? body.slice(0, cap) : htmlToText(body).slice(0, cap));
+    const full = raw || /json|xml|javascript|text|csv/.test(ct) ? body : htmlToText(body);
+    // A body cut to `cap` is truncated too, not only one cut at the read ceiling.
+    if (full.length > cap) truncated = true;
+    const text = full.slice(0, cap);
     return json({ url: u.href, finalUrl: u.href, status: res.status, statusText: res.statusText || "", contentType: ct, headers, redirectChain: chain, body: text, bytes, truncated });
   }
   return json({ error: "too many redirects" }, 502);
@@ -539,7 +541,14 @@ async function handleSmart(request, env) {
 }
 
 export default {
+  // A handler that throws (e.g. a JSON body of `null` on /api/intel) must not become
+  // Cloudflare's HTML 1101 page with no CORS headers: answer JSON 500, no stack.
   async fetch(request, env) {
+    try { return await route(request, env); } catch (_) { return json({ error: "Internal error." }, 500); }
+  },
+};
+
+async function route(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     // Reject disallowed browser origins, then apply a per-IP rate limit, before
     // any route reaches the upstream model (and spends the server-side key).
@@ -569,7 +578,7 @@ export default {
     const { provider, model, messages } = body || {};
     if (!provider || !model || !messages) return json({ error: "Missing provider, model, or messages" }, 400);
 
-    const cfg = PROVIDERS[provider];
+    const cfg = Object.prototype.hasOwnProperty.call(PROVIDERS, provider) ? PROVIDERS[provider] : null;
     if (!cfg) return json({ error: "Unknown provider: " + provider }, 400);
 
     // Citations default ON (website); the desktop app sends cite:false.
@@ -620,5 +629,4 @@ export default {
     } catch (e) {
       return json({ error: e.message || String(e) }, 500);
     }
-  },
-};
+}
