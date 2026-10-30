@@ -183,6 +183,8 @@ export function parseBool(v) {
   return null;
 }
 
+const ENTRA_INTERRUPT_CODES = new Set(["50058", "50074", "50076", "50079", "50097", "50125", "50129", "50140", "50158"]);
+
 // true = successful authentication, false = failed authentication, null = not an
 // authentication outcome (logout, token refresh, "interrupted", unknown).
 export function parseOutcome(v) {
@@ -196,6 +198,8 @@ export function parseOutcome(v) {
   if (s === "user.session.start" || s === "user.authentication.sso") return true; // only used when no outcome column
   if (s === "login_failure" || s === "failure" || s === "failed" || s === "fail" || s === "deny" || s === "denied" || s === "blocked" || s === "locked_out" || s === "lockedout") return false;
   if (s === "interrupted" || s === "logout" || s === "login_verification" || s === "login_challenge" || s === "account_disabled_password_leak" || s === "account_disabled_generic" || s === "skipped" || s === "unknown") return null;
+  // Entra interrupts (MFA/KMSI/device prompts after a correct password): the portal CSV says "Interrupted", Graph JSON only the code.
+  if (ENTRA_INTERRUPT_CODES.has(s)) return null;
   if (/^\d+$/.test(s)) return false; // non-zero Entra error code
   if (/fail|denied|invalid|error|reject/.test(s)) return false;
   if (/success/.test(s)) return true;
@@ -204,7 +208,8 @@ export function parseOutcome(v) {
 
 // Entra "Multifactor authentication result" free text + "Authentication requirement".
 export function parseMfa(result, requirement) {
-  const req = String(requirement == null ? "" : requirement).toLowerCase();
+  // The portal CSV writes "Single-factor authentication"; Graph writes "singleFactorAuthentication".
+  const req = String(requirement == null ? "" : requirement).toLowerCase().replace(/[^a-z]/g, "");
   if (req.includes("multifactor")) return true;
   if (req.includes("singlefactor")) return false;
   const b = parseBool(result);

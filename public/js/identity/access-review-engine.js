@@ -262,7 +262,7 @@ export function parseHRStatus(v, hint) {
   const h = String(hint == null ? "" : hint).trim().toLowerCase();
   if (/contract|contingent|vendor|temp|consultant|intern/.test(h) && !/terminat|inactive/.test(s)) return "contractor";
   if (!s) return "unknown";
-  if (/terminat|^term$|inactive|separat|ended|^left$|resign|retir|dismiss|offboard|^t$|^i$|former|exited|^ex$|departed|^false$|^no$|^0$/.test(s)) return "terminated";
+  if (/terminat|^term$|inactive|not active|leaver|deceased|separat|ended|^left$|resign|retir|dismiss|offboard|^t$|^i$|former|exited|^ex$|departed|^false$|^no$|^0$/.test(s)) return "terminated";
   if (/leave|^loa$|parental|sabbatical|furlough|suspend/.test(s)) return "leave";
   if (/contract|contingent|vendor|temp|consultant|intern/.test(s)) return "contractor";
   if (/active|^a$|employed|current|hired|regular|^true$|^yes$|^1$|fulltime|parttime|full-time|part-time/.test(s)) return "active";
@@ -644,6 +644,7 @@ export function analyze(hr, dir, options = {}) {
   const now = opts.now || Date.now();
   const rec = reconcile(hr, dir, opts);
   const findings = [];
+  const rowSev = new Map(); // row -> highest finding severity (a per-row scan of all findings is quadratic)
   const cov = dir.coverage;
   const acctRef = (a) => ({ id: a.id, email: a.email, name: a.name });
   const empRef = (e) => (e ? { employeeId: e.employeeId, name: e.name, email: e.email, status: e.status, endDate: fmtDate(e.endDate), dept: e.dept } : null);
@@ -663,7 +664,7 @@ export function analyze(hr, dir, options = {}) {
       controls: def.controls,
     };
     findings.push(f);
-    if (row) row.findings.push(type);
+    if (row) { row.findings.push(type); const m = rowSev.get(row); if (!m || SEVERITY_RANK[f.severity] > SEVERITY_RANK[m]) rowSev.set(row, f.severity); }
     return f;
   }
 
@@ -850,11 +851,7 @@ export function analyze(hr, dir, options = {}) {
     else if (row.needsConfirmation || t.has("service_account")) d = "Confirm match";
     if (row.needsConfirmation && d === "Keep") d = "Confirm match";
     row.disposition = d;
-    row.maxSeverity = row.findings.reduce((m, ty) => {
-      const f = findings.find((x) => x.type === ty && x.account && x.account.id === row.key);
-      const s = f ? f.severity : FINDING_TYPES[ty].severity;
-      return !m || SEVERITY_RANK[s] > SEVERITY_RANK[m] ? s : m;
-    }, null);
+    row.maxSeverity = rowSev.get(row) || null;
   }
 
   findings.sort((x, y) => SEVERITY_RANK[y.severity] - SEVERITY_RANK[x.severity] || x.type.localeCompare(y.type) || String(x.account ? x.account.id : "").localeCompare(String(y.account ? y.account.id : "")));

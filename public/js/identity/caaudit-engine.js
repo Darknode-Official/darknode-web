@@ -518,13 +518,15 @@ export function analyze(dataset, opts = {}, ctx) {
     const row = (p) => entraPolicyRow(p);
 
     // 1. MFA for all users
-    const mfaAll = enabled.filter((p) => p.allUsers && p.requiresMfa && !p.blocks);
-    const mfaAllReport = reportOnly.filter((p) => p.allUsers && p.requiresMfa && !p.blocks);
+    // All users AND All cloud apps: an all-users policy scoped to one app or a user action
+    // (e.g. "register security info") leaves every other app without MFA.
+    const mfaAll = enabled.filter((p) => p.allUsers && p.allApps && p.requiresMfa && !p.blocks);
+    const mfaAllReport = reportOnly.filter((p) => p.allUsers && p.allApps && p.requiresMfa && !p.blocks);
     const mfaAny = entraPolicies.filter((p) => p.requiresMfa && !p.blocks);
     if (!mfaAll.length) {
       push({
         id: "no_mfa_all_users", title: "No enforced Conditional Access policy requires MFA for all users", severity: "critical", confidence: "likely", category: "mfa",
-        description: entraPolicies.length + " polic" + (entraPolicies.length === 1 ? "y" : "ies") + " loaded; none that is enabled targets All users with an MFA grant or authentication strength." +
+        description: entraPolicies.length + " polic" + (entraPolicies.length === 1 ? "y" : "ies") + " loaded; none that is enabled targets All users and All cloud apps with an MFA grant or authentication strength." +
           (mfaAllReport.length ? " " + mfaAllReport.length + " all-users MFA polic" + (mfaAllReport.length === 1 ? "y is" : "ies are") + " in report-only mode (" + mfaAllReport.map((p) => p.name).join(", ") + ")." : "") +
           " Per-user MFA or Security Defaults are not visible in this export; confirm them before closing.",
         recommendation: "Create an enabled policy: Users = All users (exclude only break-glass accounts), Cloud apps = All, Grant = Require authentication strength (phishing-resistant preferred) or Require MFA.",
@@ -534,13 +536,13 @@ export function analyze(dataset, opts = {}, ctx) {
     }
     // 2. Legacy authentication
     const legacyBlock = enabled.filter((p) => p.blocks && p.targetsLegacy);
-    const legacyAll = legacyBlock.filter((p) => p.allUsers);
+    const legacyAll = legacyBlock.filter((p) => p.allUsers && p.allApps);
     const legacyReport = reportOnly.filter((p) => p.blocks && p.targetsLegacy);
     if (!legacyAll.length) {
       push({
         id: "legacy_auth_not_blocked", title: "Legacy authentication is not blocked for all users", severity: "high", confidence: "likely", category: "legacy-auth",
         description: legacyBlock.length
-          ? "Only " + legacyBlock.map((p) => p.name).join(", ") + " block" + (legacyBlock.length === 1 ? "s" : "") + " Exchange ActiveSync / other clients, and " + (legacyBlock.length === 1 ? "it" : "they") + " do" + (legacyBlock.length === 1 ? "es" : "") + " not target All users."
+          ? "Only " + legacyBlock.map((p) => p.name).join(", ") + " block" + (legacyBlock.length === 1 ? "s" : "") + " Exchange ActiveSync / other clients, and " + (legacyBlock.length === 1 ? "it" : "they") + " do" + (legacyBlock.length === 1 ? "es" : "") + " not target All users and All cloud apps."
           : "No enabled policy has Client apps = Exchange ActiveSync clients + Other clients with Grant = Block." +
             (legacyReport.length ? " Report-only: " + legacyReport.map((p) => p.name).join(", ") + "." : "") +
             " Basic authentication may still be disabled tenant-wide in Exchange Online; that setting is outside this export.",

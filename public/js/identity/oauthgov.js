@@ -15,9 +15,9 @@ import { download, toJson, fileStamp } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, FORMATS, SOURCE_LABEL, SCOPE_RISK, SCOPE_CLASSES, RISK_RANK, DETECTIONS,
   parseInput, findingsToCsv, appsToCsv, revokeToCsv, summaryText, exampleDataset,
-} from "./oauthgov-engine.js?v=20261026b";
+} from "./oauthgov-engine.js?v=20261029e";
 
-const ENGINE = engineUrl("./oauthgov-engine.js?v=20261026b", import.meta);
+const ENGINE = engineUrl("./oauthgov-engine.js?v=20261029e", import.meta);
 const P = "oag";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -209,7 +209,7 @@ export function renderOauthGov(main) {
     if (!generic.length) { box.innerHTML = ""; return; }
     const headers = [...new Set(generic.flatMap((f) => f.headers))];
     const keys = Object.keys(COLUMNS);
-    box.innerHTML = '<div class="' + P + '-card" style="margin:12px 0 0"><h2>Column mapping</h2><p class="' + P + '-note">' + generic.map((f) => f.name).join(", ") + ": the layout was not recognised with high confidence. Map the columns the engine should read; unmapped columns disable the checks that need them.</p>" +
+    box.innerHTML = '<div class="' + P + '-card" style="margin:12px 0 0"><h2>Column mapping</h2><p class="' + P + '-note">' + esc(generic.map((f) => f.name).join(", ")) + ": the layout was not recognised with high confidence. Map the columns the engine should read; unmapped columns disable the checks that need them.</p>" +
       '<div class="' + P + '-ctl">' + keys.map((k) => '<div class="' + P + '-field"><label>' + esc(k) + '</label><select data-col="' + esc(k) + '"><option value="">(not present)</option>' +
         headers.map((h) => '<option value="' + esc(h) + '"' + (columnMap[k] === h || (!columnMap[k] && COLUMNS[k].some((a) => a.toLowerCase().replace(/[^a-z0-9]/g, "") === h.toLowerCase().replace(/[^a-z0-9]/g, ""))) ? " selected" : "") + ">" + esc(h) + "</option>").join("") + "</select></div>").join("") + "</div></div>";
     box.querySelectorAll("[data-col]").forEach((sel) => { if (sel.value) columnMap[sel.dataset.col] = sel.value; sel.addEventListener("change", () => { if (sel.value) columnMap[sel.dataset.col] = sel.value; else delete columnMap[sel.dataset.col]; }); });

@@ -290,6 +290,11 @@ function entraAssignmentType(typeValue, endValue, hintEligible) {
   if (t) return "Permanent";
   return e && e !== "permanent" && parseDate(endValue) != null ? "Active" : "Permanent";
 }
+/** "Service principal" / "servicePrincipal" / "ServicePrincipal" -> one canonical spelling. */
+function entraObjectType(v) {
+  const k = low(v).replace(/[^a-z]/g, "");
+  return k === "serviceprincipal" ? "ServicePrincipal" : k === "group" ? "Group" : k === "user" ? "User" : (str(v) || "User");
+}
 function entraTier(role) {
   const l = low(role);
   if (ENTRA_TIER0.has(l)) return 0;
@@ -307,7 +312,7 @@ function normEntraCsv(headers, rows, cols, file) {
     if (!principal) continue;
     out.push({
       _source: "entra", _file: file, principal, displayName: dn || upn, objectId: oid || null,
-      objectType: str(r[cols.objectType]) || "User", role, roleId: null,
+      objectType: entraObjectType(r[cols.objectType]), role, roleId: null,
       assignmentType: entraAssignmentType(r[cols.assignmentType], r[cols.endDate], false),
       scope: str(r[cols.scope]) || "/", startDate: iso(parseDate(r[cols.startDate])), endDate: iso(parseDate(r[cols.endDate])),
     });
@@ -332,7 +337,7 @@ function normEntraJson(doc, file) {
     const typeVal = eligible ? "Eligible" : it.assignmentType === "Activated" ? "Active" : it.endDateTime ? "Active" : "Permanent";
     out.push({
       _source: "entra", _file: file, principal, displayName: str(p.displayName) || principal, objectId: str(it.principalId) || null,
-      objectType: otype === "serviceprincipal" ? "ServicePrincipal" : otype === "group" ? "Group" : otype === "user" ? "User" : (str(p.objectType) || "User"),
+      objectType: otype === "serviceprincipal" ? "ServicePrincipal" : otype === "group" ? "Group" : otype === "user" ? "User" : entraObjectType(p.objectType),
       role, roleId: str(it.roleDefinitionId) || null, assignmentType: typeVal,
       scope: str(it.directoryScopeId) || "/", startDate: iso(parseDate(it.startDateTime)), endDate: iso(parseDate(it.endDateTime)),
     });
@@ -583,7 +588,7 @@ function latestTimestamp(rows) {
   const take = (v) => { const t = parseDate(v); if (t != null && (max == null || t > max)) max = t; };
   for (const r of rows) {
     for (const k of Object.keys(r)) {
-      if (k[0] === "_") continue;
+      if (k[0] === "_" || k === "endDate") continue; // PIM end dates are future expiries, not observations
       const v = r[k];
       if (typeof v === "string" && /\d{4}/.test(v) && /date|time|used|rotated|login|created|start|end/i.test(k)) take(v);
     }

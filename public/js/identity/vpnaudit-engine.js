@@ -1123,8 +1123,10 @@ export function robustZ(x, values) {
 function net24(ip) {
   const p = ipToInt(ip);
   if (!p) return null;
-  if (p.v === 4) return ip.split(".").slice(0, 3).join(".") + ".0/24";
-  return ip.split(":").slice(0, 3).join(":") + "::/48";
+  // From the parsed value, not the text: "2001:db8::9" and "2001:db8:0:1::5" are one /48, and
+  // "::ffff:198.51.100.7" is the same /24 as "198.51.100.7".
+  if (p.v === 4) return [24n, 16n, 8n].map((s) => String((p.n >> s) & 255n)).join(".") + ".0/24";
+  return [112n, 96n, 80n].map((s) => ((p.n >> s) & 0xffffn).toString(16)).join(":") + "::/48";
 }
 
 // ---------------------------------------------------------------------------

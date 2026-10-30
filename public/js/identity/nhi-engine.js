@@ -569,7 +569,7 @@ export function parseInput(input, opts = {}) {
     } catch (e) { skipped.push({ check: "parse:" + name, reason: "parser error: " + (e && e.message || e) }); }
     if (det.source === "generic" && !out.length) skipped.push({ check: "parse:" + name, reason: det.mapping && det.mapping.principal ? "no rows with a principal value" : "no principal column found; map columns to use this file" });
     entry.records = out.length;
-    rows.push(...out);
+    for (const r of out) rows.push(r); // spread push overflows the stack past ~120k rows
     detected.push(entry);
   });
   const headers = [...new Set(rows.flatMap((r) => Object.keys(r)))];
@@ -630,7 +630,8 @@ export function analyze(dataset, opts = {}, ctx) {
 
   // Principals: merge rows per source|principal, attach bindings.
   const pmap = new Map();
-  const pkey = (r) => r.source + "|" + r.principal;
+  // Entra display names are not unique (two "Sync Service" registrations are common); key by appId.
+  const pkey = (r) => r.source + "|" + (r.source === "entra" && r.principalId ? r.principalId : r.principal);
   for (const p of prins) {
     const k = pkey(p);
     const cur = pmap.get(k) || { source: p.source, principal: p.principal, principalId: null, principalType: p.principalType, enabled: true, owner: null, created: null, meta: {}, credentials: 0, oldestDays: null, roles: [] };
@@ -745,7 +746,7 @@ export function analyze(dataset, opts = {}, ctx) {
   if (overdue.some((c) => c.source === "aws")) ctl.push(C.cisAws114);
   if (overdue.some((c) => c.source === "gcp")) ctl.push(C.cisGcp17);
   emit("key_overdue", { title: "Active credential older than " + o.maxKeyAgeDays + " days", severity: "high", confidence: "confirmed", category: "rotation",
-    description: overdue.length + " active key(s)/secret(s)/token(s) exceed the " + o.maxKeyAgeDays + "-day cryptoperiod (oldest " + Math.max(...overdue.map((c) => c.ageDays || 0), 0) + " days). The longer a static secret lives, the more copies exist in CI logs, laptops and backups.",
+    description: overdue.length + " active key(s)/secret(s)/token(s) exceed the " + o.maxKeyAgeDays + "-day cryptoperiod (oldest " + overdue.reduce((m, c) => Math.max(m, c.ageDays || 0), 0) + " days). The longer a static secret lives, the more copies exist in CI logs, laptops and backups.",
     recommendation: "Rotate on the calendar dates below; prefer workload identity federation or managed identities so the secret disappears entirely.", controls: ctl }, overdue);
 
   // Usage.
@@ -758,7 +759,7 @@ export function analyze(dataset, opts = {}, ctx) {
     description: neverUsed.length + " active credential(s) older than " + o.unusedDays + " days have never authenticated. They serve no workload and are pure attack surface.",
     recommendation: "Disable now, delete after a grace period; if the credential is genuinely needed, document the owner and consumer.", controls: usageCtl(neverUsed) }, neverUsed);
   emit("key_unused", { title: "Credential unused for more than " + o.unusedDays + " days", severity: "medium", confidence: "confirmed", category: "usage",
-    description: unused.length + " active credential(s) have not been used in over " + o.unusedDays + " days (longest " + Math.max(...unused.map((c) => c.unusedDays || 0), 0) + " days).",
+    description: unused.length + " active credential(s) have not been used in over " + o.unusedDays + " days (longest " + unused.reduce((m, c) => Math.max(m, c.unusedDays || 0), 0) + " days).",
     recommendation: "Disable the credential; if nothing breaks within the grace period, delete it.", controls: usageCtl(unused) }, unused);
   for (const s of noUsageSources) if (!usageSources.has(s)) skipped.push({ check: "key_never_used/key_unused", reason: s + " export carries no last-used data" });
 
@@ -793,14 +794,15 @@ export function analyze(dataset, opts = {}, ctx) {
   const longCerts = enriched.filter((c) => (c.kind === "certificate" || c.kind === "signing_cert") && c.created && c.expires && c.expires !== "never" && days(toTime(c.expires) - toTime(c.created)) > o.maxCertDays);
   for (const c of longCerts) flag(c, "cert>" + o.maxCertDays + "d", 10);
   emit("cert_validity_too_long", { title: "Certificate valid for more than " + o.maxCertDays + " days", severity: "medium", confidence: "confirmed", category: "rotation",
-    description: longCerts.length + " certificate(s) have a validity period over " + o.maxCertDays + " days (longest " + Math.max(...longCerts.map((c) => days(toTime(c.expires) - toTime(c.created))), 0) + " days). Long-lived certificates widen the window in which a stolen private key stays useful.",
+    description: longCerts.length + " certificate(s) have a validity period over " + o.maxCertDays + " days (longest " + longCerts.reduce((m, c) => Math.max(m, days(toTime(c.expires) - toTime(c.created))), 0) + " days). Long-lived certificates widen the window in which a stolen private key stays useful.",
     recommendation: "Re-issue with a validity of at most " + o.maxCertDays + " days and put the renewal on the calendar.", controls: [C.cabf, C.crypto] }, longCerts);
   if (enriched.some((c) => c.source === "entra" && c.meta.portalStatus)) skipped.push({ check: "cert_validity_too_long", reason: "Entra portal CSV has no credential dates" });
 
   // Entra app governance.
   const entraP = [...pmap.values()].filter((p) => p.source === "entra" && (p.principalType === "application" || p.principalType === "service-principal"));
   const ownerless = entraP.filter((p) => !p.owner && p.meta.ownersKnown);
-  const ownerlessCreds = enriched.filter((c) => c.source === "entra" && ownerless.some((p) => p.principal === c.principal));
+  const ownerlessKeys = new Set(ownerless.map(pkey));
+  const ownerlessCreds = enriched.filter((c) => c.source === "entra" && ownerlessKeys.has(pkey(c)));
   for (const c of ownerlessCreds) flag(c, "no-owner", 10);
   const ownerlessRows = ownerless.map((p) => ({ rec: "credential", source: p.source, principal: p.principal, principalType: p.principalType, kind: "app", credential: p.principalId || p.principal, created: p.created, lastUsed: null, expires: null, ageDays: p.created && now ? days(now - toTime(p.created)) : null, unusedDays: null, expiresInDays: null, status: "unknown", owner: "unassigned", scope: p.meta.appRoles ? p.meta.appRoles + " app role(s)" : null, score: 0, flags: ["no-owner"], meta: {}, active: true }));
   emit("entra_app_no_owner", { title: "App registration without an owner", severity: "medium", confidence: "confirmed", category: "ownership",
@@ -808,7 +810,7 @@ export function analyze(dataset, opts = {}, ctx) {
     recommendation: "Assign at least two owners (a team group where possible) and record the business owner in the app notes.", controls: [C.ac2, C.iso516, C.soc63] }, ownerlessRows);
   if (entraP.length && entraP.every((p) => !p.meta.ownersKnown)) skipped.push({ check: "entra_app_no_owner", reason: "no owners data in the Entra export (add GET /applications/{id}/owners as owners[])" });
   const secretsByApp = new Map();
-  for (const c of active) if (c.source === "entra" && c.kind === "client_secret" && !(c.expiresInDays != null && c.expiresInDays <= 0)) { const l = secretsByApp.get(c.principal) || []; l.push(c); secretsByApp.set(c.principal, l); }
+  for (const c of active) if (c.source === "entra" && c.kind === "client_secret" && !(c.expiresInDays != null && c.expiresInDays <= 0)) { const l = secretsByApp.get(pkey(c)) || []; l.push(c); secretsByApp.set(pkey(c), l); }
   const multi = [...secretsByApp.values()].filter((l) => l.length >= 2).flat();
   for (const c of multi) flag(c, "multi-secret", 5);
   emit("entra_app_multiple_secrets", { title: "App registration with multiple live client secrets", severity: "low", confidence: "confirmed", category: "hygiene",
@@ -835,7 +837,8 @@ export function analyze(dataset, opts = {}, ctx) {
   const k8sP = [...pmap.values()].filter((p) => p.source === "k8s");
   const clusterAdmin = k8sP.filter((p) => p.roles.some((r) => /^cluster-admin /.test(r)));
   const caRows = clusterAdmin.map((p) => ({ source: "k8s", principal: p.principal, kind: "service_account", credential: p.principal, created: p.created, lastUsed: null, expires: null, ageDays: null, unusedDays: null, expiresInDays: null, status: "unknown", owner: p.owner || "unassigned", scope: p.roles.join("; "), score: 0, flags: ["cluster-admin"], meta: {} }));
-  for (const c of enriched) if (c.source === "k8s" && clusterAdmin.some((p) => p.principal === c.principal)) flag(c, "cluster-admin", 20);
+  const clusterAdminSet = new Set(clusterAdmin.map((p) => p.principal));
+  for (const c of enriched) if (c.source === "k8s" && clusterAdminSet.has(c.principal)) flag(c, "cluster-admin", 20);
   emit("k8s_sa_cluster_admin", { title: "Service account bound to cluster-admin", severity: "high", confidence: "confirmed", category: "privilege",
     description: clusterAdmin.length + " Kubernetes service account(s) are subjects of a cluster-admin binding. Any pod that mounts their token owns the cluster.",
     recommendation: "Replace with a least-privilege ClusterRole or namespaced Role; keep cluster-admin for break-glass humans only.", controls: [C.cisK8s511, C.ac6, C.t1528] }, caRows);

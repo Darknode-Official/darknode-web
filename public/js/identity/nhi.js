@@ -12,9 +12,9 @@ import { attachSinkButton } from "../core/sink.js";
 import { download, toJson, fileStamp, toIcs } from "../core/export.js";
 import {
   DEFAULTS, TOOL_ID, COLUMNS, parseInput, findingsToCsv, credentialsToCsv, calendarToCsv, calendarToEvents, exampleDataset,
-} from "./nhi-engine.js?v=20261026b";
+} from "./nhi-engine.js?v=20261029e";
 
-const ENGINE = engineUrl("./nhi-engine.js?v=20261026b", import.meta);
+const ENGINE = engineUrl("./nhi-engine.js?v=20261029e", import.meta);
 const P = "nhi";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -171,7 +171,7 @@ export function renderNhi(main) {
 
   const $ = (id) => main.querySelector("#" + P + "-" + id);
   let files = [], parsed = null, result = null, isExample = false;
-  const mapping = {};
+  const mapping = Object.create(null); // keyed by file name: a file named __proto__ must not reach Object.prototype
   let invSort = { key: "score", asc: false }, fndSort = { key: "severity", asc: true }, invFilter = { source: "", status: "", q: "" }, invShowAll = false;
 
   const reparse = () => {

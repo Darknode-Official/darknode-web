@@ -12,9 +12,9 @@ import { runInWorker, engineUrl } from "../ingest/worker.js";
 import { summarize } from "../core/sink-map.js";
 import { attachSinkButton } from "../core/sink.js";
 import { download, toJson, fileStamp } from "../core/export.js";
-import { DEFAULTS, TOOL_ID, KINDS, parseInput, findingsToCsv, worklistCsv, slaCsv, exampleDataset } from "./jml-engine.js?v=20261026b";
+import { DEFAULTS, TOOL_ID, KINDS, parseInput, findingsToCsv, worklistCsv, slaCsv, exampleDataset } from "./jml-engine.js?v=20261029e";
 
-const ENGINE = engineUrl("./jml-engine.js?v=20261026b", import.meta);
+const ENGINE = engineUrl("./jml-engine.js?v=20261029e", import.meta);
 const P = "jml";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

@@ -29,6 +29,8 @@ export const VERSION = "1.0.0";
 
 export const MS_GRAPH_APP_ID = "00000003-0000-0000-c000-000000000000";
 export const MS_FIRST_PARTY_TENANT = "f8cdef31-a31e-4b4a-93e4-5f571e91255a";
+// Microsoft first-party apps are owned by the Microsoft Services tenant or the Microsoft corporate tenant.
+const MS_FIRST_PARTY_TENANTS = new Set([MS_FIRST_PARTY_TENANT, "72f988bf-86f1-41af-91ab-2d7cd011db47"]);
 
 export const RISK_RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 const RISK_UP = { low: "medium", medium: "high", high: "critical", critical: "critical", info: "info" };
@@ -551,7 +553,7 @@ export function buildInventory(rows, o, progress) {
         a.name = a.name || str(r.displayName); a.appId = a.appId || appId; a.objectId = a.objectId || oid;
         const vp = r.verifiedPublisher && typeof r.verifiedPublisher === "object" ? r.verifiedPublisher : null;
         const owner = lc(r.appOwnerOrganizationId);
-        a.firstParty = a.firstParty || owner === MS_FIRST_PARTY_TENANT || (Array.isArray(r.tags) && r.tags.includes("WindowsAzureActiveDirectoryIntegratedApp") && owner === MS_FIRST_PARTY_TENANT);
+        a.firstParty = a.firstParty || MS_FIRST_PARTY_TENANTS.has(owner);
         if (owner && o.tenantId && owner === lc(o.tenantId)) { a.notes.add("owned by your tenant"); a.ownTenant = true; }
         if (vp && (vp.verifiedPublisherId || vp.displayName)) { a.publisherVerified = true; a.publisher = str(vp.displayName) || a.publisher; }
         else if ("verifiedPublisher" in r || "publisherName" in r) { if (a.publisherVerified !== true) a.publisherVerified = false; }
