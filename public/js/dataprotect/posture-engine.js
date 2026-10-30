@@ -404,9 +404,12 @@ export function gradeEmail(input) {
   // DKIM: we can only probe common selectors over DoH; absence is NOT proof of
   // no DKIM (selectors are arbitrary), so a miss is reported as unknown (na).
   const dkim = Array.isArray(input.dkimSelectors) ? input.dkimSelectors : [];
-  const found = dkim.filter((d) => d && d.present);
+  const found = dkim.filter((d) => d && d.present && !d.revoked);
+  const revoked = dkim.filter((d) => d && d.present && d.revoked);
   if (found.length) {
     checks.push({ name: "DKIM", status: "pass", detail: `DKIM key published on selector(s): ${found.map((d) => d.selector).slice(0, 6).join(", ")}.` });
+  } else if (revoked.length) {
+    checks.push({ name: "DKIM", status: "na", detail: `Only revoked DKIM records (empty p=) on selector(s): ${revoked.map((d) => d.selector).slice(0, 6).join(", ")}. They sign nothing, which is right for a domain that sends no mail.`, advice: "If this domain sends mail, publish a real DKIM public key on its selector." });
   } else if (dkim.length) {
     checks.push({ name: "DKIM", status: "na", detail: `No DKIM key on the ${dkim.length} common selector(s) probed (${dkim.map((d) => d.selector).slice(0, 8).join(", ")}). DKIM may still exist on a custom selector.`, advice: "Confirm your DKIM selector and publish a key if mail is not signed." });
   }

@@ -267,6 +267,10 @@ group("posture: email auth depth", () => {
     assert.equal(found.checks.find((c) => c.name === "DKIM").status, "pass");
     const none = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"], dkimSelectors: [{ selector: "s1", present: false }] });
     assert.equal(none.checks.find((c) => c.name === "DKIM").status, "na");
+    const rev = gradeEmail({ spfTxts: ["v=spf1 -all"], dmarcTxts: ["v=DMARC1; p=reject; rua=mailto:a@b.com"], dkimSelectors: [{ selector: "google", present: true, revoked: true }] });
+    const rc = rev.checks.find((c) => c.name === "DKIM");
+    assert.equal(rc.status, "na");
+    assert.ok(/revoked/.test(rc.detail));
   });
   test("MTA-STS enforce passes; testing warns; absent warns", () => {
     const pass = parseMtaSts(["v=STSv1; id=1"], "version: STSv1\nmode: enforce\nmax_age: 604800");

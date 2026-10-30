@@ -78,8 +78,9 @@ async function probeDkim(domain) {
   const out = await Promise.all(DKIM_SELECTORS.map(async (selector) => {
     try {
       const txts = await dohTXT(selector + "._domainkey." + domain);
-      const present = txts.some((t) => /v\s*=\s*dkim1|(^|;)\s*k\s*=|(^|;)\s*p\s*=/i.test(String(t)));
-      return { selector, present };
+      const recs = txts.filter((t) => /v\s*=\s*dkim1|(^|;)\s*k\s*=|(^|;)\s*p\s*=/i.test(String(t)));
+      // an empty p= is a revoked key (RFC 6376 3.6.1): it signs nothing
+      return { selector, present: recs.length > 0, revoked: recs.length > 0 && recs.every((t) => /(^|;)\s*p\s*=\s*(;|$)/i.test(String(t))) };
     } catch (_) { return { selector, present: false }; }
   }));
   return out;
