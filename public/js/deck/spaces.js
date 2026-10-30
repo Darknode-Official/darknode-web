@@ -152,6 +152,12 @@ export function mountSpace(el, id, ctx = {}) {
       st.cur = t.id; try { localStorage.setItem(LS, t.id); } catch (_) {}
       if (ctx.onTab) ctx.onTab(t.id); // the host keeps the address bar on this tab
       el.querySelectorAll(".ns-tab").forEach((b) => { const on = b.dataset.tab === t.id; b.classList.toggle("on", on); b.setAttribute("aria-selected", String(on)); });
+      { // on a phone the strip scrolls sideways: keep the active tab in view, re-checked when its size settles (font load, rotation)
+        const nav = el.querySelector(".ns-tabs"), ab = nav && nav.querySelector(".ns-tab.on");
+        const inView = () => { if (nav.scrollWidth > nav.clientWidth) { const nr = nav.getBoundingClientRect(), br = ab.getBoundingClientRect(); if (br.left < nr.left || br.right > nr.right) nav.scrollLeft += br.left - nr.left - (nr.width - br.width) / 2; } };
+        if (st.tabRO) st.tabRO.disconnect();
+        if (ab && typeof ResizeObserver === "function") { st.tabRO = new ResizeObserver(() => inView()); st.tabRO.observe(ab); st.tabRO.observe(nav); } else if (ab) inView();
+      }
       el.querySelectorAll("[data-pane]").forEach((p) => { p.hidden = p.dataset.pane !== t.id; });
       const pane = el.querySelector(`[data-pane="${t.id}"]`);
       if (t.id === "home") { pane.innerHTML = homeHTML(id, S); return; }
