@@ -317,7 +317,7 @@ export function parseRetention(v) {
     if (dd) out.days = dd;
     return out;
   }
-  m = /(\d+(?:\.\d+)?)\s*(years?|yrs?|y|months?|mos?|m|weeks?|wks?|w|days?|d)\b/.exec(low);
+  m = /(?<![\d.])(\d+(?:\.\d+)?)\s*(years?|yrs?|y|months?|mos?|m|weeks?|wks?|w|days?|d)\b/.exec(low); // lookbehind: one scan per digit run, not per digit
   if (!m) return out;
   const n = +m[1], u = m[2][0];
   if (u === "y") out.months = Math.round(n * 12);

@@ -355,8 +355,9 @@ function allows(rule, group, resource, verbs) {
   const g = arr(rule.apiGroups), rs = arr(rule.resources), vs = arr(rule.verbs);
   if (!rs.length) return false;
   if (!(g.includes("*") || g.includes(group))) return false;
-  const base = resource.split("/")[0];
-  if (!(rs.includes("*") || rs.includes(resource) || (resource.includes("/") && rs.includes(base + "/*")))) return false;
+  // RBAC ResourceMatches: "*", the exact "res/sub", or "*/sub". "pods/*" is NOT a wildcard.
+  const sub = resource.includes("/") ? resource.slice(resource.indexOf("/") + 1) : "";
+  if (!(rs.includes("*") || rs.includes(resource) || (sub && rs.includes("*/" + sub)))) return false;
   return vs.includes("*") || verbs.some((v) => vs.includes(v));
 }
 
@@ -471,6 +472,8 @@ export function resolveWorkloads(objects) {
     const containers = [
       ...arr(t.spec.initContainers).map((c, i) => ({ c, path: t.base + ".initContainers[" + i + "]", init: true })),
       ...arr(t.spec.containers).map((c, i) => ({ c, path: t.base + ".containers[" + i + "]", init: false })),
+      // `kubectl debug` containers (often privileged): no resources/probes allowed, so treated like init.
+      ...arr(t.spec.ephemeralContainers).map((c, i) => ({ c, path: t.base + ".ephemeralContainers[" + i + "]", init: true })),
     ];
     const ns = str(o.metadata.namespace) || "default";
     const replicas = o.kind === "DaemonSet" ? (get(o, "status.desiredNumberScheduled") ?? null) : o.kind === "Pod" || o.kind === "Job" || o.kind === "CronJob" ? 1 : (get(o, "spec.replicas") ?? 1);

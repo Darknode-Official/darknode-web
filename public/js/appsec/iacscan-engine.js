@@ -1749,7 +1749,21 @@ const DF = ["Dockerfile"];
 const ins = (c) => c.p.instructions || [];
 const lastStage = (c) => { const all = ins(c); const s = all.length ? all[all.length - 1].stage : 0; return all.filter((x) => x.stage === s); };
 const insHits = (c, cmd, re, detail) => ins(c).filter((x) => x.cmd === cmd && re.test(x.args)).map((x) => c.H(detail(x), null, "confirmed", null, x.line));
-const PIPE_SH = /\b(curl|wget)\b[^|;&]*\|\s*(sudo\s+)?(-?\w*\/)?(ba|z|da|k)?sh\b|\b(curl|wget)\b[^|;&]*\|\s*(sudo\s+)?(python\d?|perl|ruby|node)\b|\b(ba)?sh\s+-c\s+["']?\$\((curl|wget)\b|\bsh\s+<\(\s*(curl|wget)/i;
+// Piece-wise instead of one regex: `\b(curl|wget)\b[^|;&]*\|` retried from every curl
+// in a long RUN line was quadratic (a 140 KB line took seconds).
+const PIPE_TO = /^\s*(sudo\s+)?((-?\w*\/)?(ba|z|da|k)?sh|python\d?|perl|ruby|node)\b/i;
+const PIPE_SH = { test: (v) => {
+  const s = String(v);
+  if (/\b(ba)?sh\s+-c\s+["']?\$\((curl|wget)\b|\bsh\s+<\(\s*(curl|wget)/i.test(s)) return true;
+  const parts = s.split(/([|;&])/);
+  for (let i = 0; i + 2 < parts.length; i += 2) if (parts[i + 1] === "|" && /\b(curl|wget)\b/i.test(parts[i]) && PIPE_TO.test(parts[i + 2])) return true;
+  return false;
+} };
+
+// "<tool> ... <flag>" within one command, tested per command (one regex was quadratic on long RUN lines).
+const after = (p, tool, flag) => { const i = p.search(tool); return i >= 0 && flag.test(p.slice(i)); };
+const TLS_OFF = { test: (v) => String(v).split(/[;&|]/).some((p) => after(p, /\bcurl\b/, /\s(-k|--insecure)\b/) || after(p, /\bwget\b/, /--no-check-certificate/) || after(p, /\bapk\b/, /--allow-untrusted/) || after(p, /\bpip3?\b/, /--trusted-host/))
+  || /--allow-unauthenticated|npm\s+config\s+set\s+strict-ssl\s+false|GIT_SSL_NO_VERIFY/.test(String(v)) };
 
 rule("DKR-001", "medium", "docker", DF, "Image has no USER instruction (runs as root)",
   [[CD, "4.1"], [N, "AC-6"], [M, "T1611"]], "Create an unprivileged user and add USER <name> in the final stage.",
@@ -1759,7 +1773,7 @@ rule("DKR-002", "high", "docker", DF, "Final USER is root",
   (c) => { const u = lastStage(c).filter((x) => x.cmd === "USER").pop(); return u && /^(root|0)(:|$)/.test(u.args.trim()) ? [c.H("USER " + u.args, null, "confirmed", null, u.line)] : []; });
 rule("DKR-003", "low", "docker", DF, "ADD used instead of COPY",
   [[CD, "4.9"], [N, "CM-7"]], "Use COPY for local files; fetch remote content in a RUN step with checksum verification.",
-  (c) => ins(c).filter((x) => x.cmd === "ADD" && !/^(--[\w-]+(=\S+)?\s+)*\S+\.(tar|tar\.gz|tgz|tar\.bz2|tar\.xz)\s/i.test(x.args + " ")).map((x) => c.H("ADD " + x.args, null, /https?:\/\//.test(x.args) ? "confirmed" : "likely", null, x.line)));
+  (c) => ins(c).filter((x) => x.cmd === "ADD" && !/^(--[\w-]+(=\S+)?\s+)*(?![a-z][\w+.-]*:\/\/)\S+\.(tar|tar\.gz|tgz|tar\.bz2|tar\.xz)\s/i.test(x.args + " ")).map((x) => c.H("ADD " + x.args, null, /https?:\/\//.test(x.args) ? "confirmed" : "likely", null, x.line)));
 rule("DKR-004", "high", "docker", DF, "Remote script piped into a shell",
   [[CS, "section 3 (Dependencies)"], [N, "SR-3"], [N, "SI-7"], [M, "T1059.004"]], "Download to a file, verify a pinned checksum or signature, then execute; better, use a package manager.",
   (c) => insHits(c, "RUN", PIPE_SH, (x) => "RUN " + x.args));
@@ -1803,7 +1817,7 @@ rule("DKR-013", "low", "docker", DF, "apt-get update in its own RUN layer",
   (c) => insHits(c, "RUN", /^(?!.*\binstall\b).*\bapt(-get)?\s+update\b/, (x) => "RUN " + x.args));
 rule("DKR-014", "medium", "docker", DF, "TLS or signature verification disabled during build",
   [[N, "SI-7"], [N, "SC-8"], [M, "T1195.002"]], "Remove --insecure / -k / --no-check-certificate / --allow-untrusted / --trusted-host and fix the trust store instead.",
-  (c) => insHits(c, "RUN", /\bcurl\b[^;&|]*\s(-k|--insecure)\b|\bwget\b[^;&|]*--no-check-certificate|\bapk\b[^;&|]*--allow-untrusted|--allow-unauthenticated|\bpip3?\b[^;&|]*--trusted-host|npm\s+config\s+set\s+strict-ssl\s+false|GIT_SSL_NO_VERIFY/, (x) => "RUN " + x.args));
+  (c) => insHits(c, "RUN", TLS_OFF, (x) => "RUN " + x.args));
 const exposed = (x) => x.args.split(/\s+/).map((t) => /^(\d+)(?:-(\d+))?(?:\/(?:tcp|udp|sctp))?$/i.exec(t)).filter(Boolean).map((m) => ({ from: Number(m[1]), to: Number(m[2] || m[1]) }));
 const exposeHits = (ports) => (c) => ins(c).filter((x) => x.cmd === "EXPOSE").flatMap((x) => {
   const names = [...new Set(exposed(x).flatMap((e) => Object.keys(ports).filter((p) => e.from <= Number(p) && Number(p) <= e.to).map((p) => p + " " + ports[p])))];

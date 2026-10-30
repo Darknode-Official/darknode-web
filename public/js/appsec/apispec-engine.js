@@ -270,7 +270,17 @@ export function expandYamlAnchors(text) {
         if (/^(- +)?<<:\s*$/.test(prefix.trim() + " ") || /<<:[ ]+$/.test(prefix)) {
           const dash = /^- +/.exec(prefix);
           const col = ind.length + (dash ? dash[0].length : 0);
-          if (a.block) a.block.forEach((x, k) => out.push(k === 0 && dash ? ind + dash[0] + x : x ? " ".repeat(col) + x : ""));
+          if (!a.block) continue;
+          // Keys written in the mapping override merged ones (YAML merge spec) and the
+          // parser keeps the last duplicate, so splice the merged block in at the start
+          // of the mapping rather than after keys already written above it.
+          let at = out.length, lead = "";
+          if (!dash) {
+            while (at > 0 && (!out[at - 1].trim() || indentOf(out[at - 1]) >= col)) at--;
+            const d = at > 0 ? /^( *- +)/.exec(out[at - 1]) : null;
+            if (d && d[1].length === col) { at--; lead = d[1]; out[at] = " ".repeat(col) + out[at].slice(col); }
+          }
+          out.splice(at, 0, ...a.block.map((x, k) => (k === 0 && (dash || lead) ? (lead || ind + dash[0]) + x : x ? " ".repeat(col) + x : "")));
           continue;
         }
         if (a.inline != null) { out.push(ind + prefix + a.inline); continue; }
