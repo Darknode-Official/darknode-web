@@ -2093,7 +2093,7 @@ function renderApp(user) {
     else if (sec === "cvsscalc") { import("/js/cvss-calculator.js?v=20261028c").then(m => live() && m.renderCvssCalculator(main)); }
     else if (sec === "yarabuilder") { import("/js/yara-builder.js").then(m => live() && m.renderYaraBuilder(main)); }
     else if (sec === "emailauth") { import("/js/email-auth.js").then(m => live() && m.renderEmailAuth(main)); }
-    else if (sec === "cookieinspect") { import("/js/cookie-inspector.js").then(m => live() && m.renderCookieInspector(main)); }
+    else if (sec === "cookieinspect") { import("/js/cookie-inspector.js?v=20261029e").then(m => live() && m.renderCookieInspector(main)); }
     else if (sec === "securitytxt") { import("/js/security-txt.js?v=20261021a").then(m => live() && m.renderSecurityTxt(main)); }
     else if (sec === "codescan") { import("/js/code-scanner.js?v=20261029c").then(m => live() && m.renderCodeScanner(main)); }
     else if (sec === "reconplanner") { import("/js/recon-planner.js?v=20261013b").then(m => live() && m.renderReconPlanner(main)); }
