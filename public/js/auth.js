@@ -2026,9 +2026,9 @@ function renderApp(user) {
     else if (sec === "snippets") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderSnippets(main)); }
     else if (sec === "refs") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderRefs(main)); }
     else if (sec === "engines") { import("/js/arsenal.js?v=20261029c").then(m => live() && m.renderEngines(main)); }
-    else if (sec === "packetcraft") { import("/js/packet-crafter.js").then(m => live() && m.renderPacketCrafter(main)); }
+    else if (sec === "packetcraft") { import("/js/packet-crafter.js?v=20261030b").then(m => live() && m.renderPacketCrafter(main)); }
     else if (sec === "binanalyze") { import("/js/binary-analyzer.js?v=20260927b").then(m => live() && m.renderBinaryAnalyzer(main)); }
-    else if (sec === "netmap") { import("/js/network-mapper.js?v=20261013m").then(m => live() && m.renderNetworkMapper(main)); }
+    else if (sec === "netmap") { import("/js/network-mapper.js?v=20261030b").then(m => live() && m.renderNetworkMapper(main)); }
     else if (sec === "loganalyze") { import("/js/log-analyzer.js").then(m => live() && m.renderLogAnalyzer(main)); }
     else if (sec === "credaudit") { import("/js/credential-auditor.js?v=20261029a").then(m => live() && m.renderCredentialAuditor(main)); }
     else if (sec === "memforensics") { import("/js/memory-forensics.js?v=20260924b").then(m => live() && m.renderMemoryForensics(main)); }
@@ -2069,8 +2069,8 @@ function renderApp(user) {
     else if (sec === "urldissect") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading URL Dissector...</p>"; import("/js/url-dissector.js").then(m => live() && m.renderUrlDissector(main)); }
     else if (sec === "favicon") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Favicon Hasher...</p>"; import("/js/favicon-hasher.js?v=20261013b").then(m => live() && m.renderFaviconHasher(main)); }
     else if (sec === "adversary") { import("/js/adversary-ai.js").then(m => live() && m.renderAdversaryAI(main)); }
-    else if (sec === "huntlab") { import("/js/threat-hunt-lab.js").then(m => live() && m.renderThreatHuntLab(main)); }
-    else if (sec === "deception") { import("/js/deception-architect.js").then(m => live() && m.renderDeceptionArchitect(main)); }
+    else if (sec === "huntlab") { import("/js/threat-hunt-lab.js?v=20261030b").then(m => live() && m.renderThreatHuntLab(main)); }
+    else if (sec === "deception") { import("/js/deception-architect.js?v=20261030b").then(m => live() && m.renderDeceptionArchitect(main)); }
     else if (sec === "malclass") { import("/js/malware-classifier.js").then(m => live() && m.renderMalwareClassifier(main)); }
     else if (sec === "zerotrust") { import("/js/zero-trust-designer.js?v=20261028c").then(m => live() && m.renderZeroTrustDesigner(main)); }
     else if (sec === "secquiz") { import("/js/security-awareness-quiz.js?v=20261029c").then(m => live() && m.renderSecurityQuiz(main)); }
@@ -2111,7 +2111,7 @@ function renderApp(user) {
     else if (sec === "networktools") { import("/js/network-tools.js").then(m => live() && m.renderNetworkTools(main)); }
     else if (sec === "packetanalyzer") { import("/js/packet-analyzer.js?v=20261029c").then(m => live() && m.renderPacketAnalyzer(main)); }
     else if (sec === "payloadgen") { import("/js/payload-gen.js?v=20260924b").then(m => live() && m.renderPayloadGen(main)); }
-    else if (sec === "vulndb") { import("/js/vulnerability-db.js?v=20260924b").then(m => live() && m.renderVulnerabilityDB(main)); }
+    else if (sec === "vulndb") { import("/js/vulnerability-db.js?v=20261030b").then(m => live() && m.renderVulnerabilityDB(main)); }
     else if (sec === "asnexplorer") { import("/js/asn-explorer.js?v=20261029c").then(m => live() && m.renderAsnExplorer(main)); }
     else if (sec === "breachlookup") { import("/js/breach-lookup.js").then(m => live() && m.renderBreachLookup(main)); }
     else if (sec === "corstester") { import("/js/cors-tester.js?v=20261029e").then(m => live() && m.renderCorsTester(main)); }

@@ -378,7 +378,9 @@ function ipv6ToBytes(addr) {
 }
 
 function domainToBytes(domain) {
-  const labels = domain.split(".");
+  // Empty labels (trailing dot of an FQDN, "a..b") would emit a premature
+  // zero-length root label and truncate the name, so they are skipped.
+  const labels = domain.split(".").filter(Boolean);
   const bytes = [];
   for (const label of labels) {
     bytes.push(label.length);
@@ -388,10 +390,10 @@ function domainToBytes(domain) {
   return bytes;
 }
 
+// Payloads go on the wire as UTF-8; masking charCodeAt to 8 bits mangled
+// any non-ASCII text (e.g. U+20AC became 0xAC).
 function stringToBytes(str) {
-  const bytes = [];
-  for (let i = 0; i < str.length; i++) bytes.push(str.charCodeAt(i) & 0xFF);
-  return bytes;
+  return Array.from(new TextEncoder().encode(str));
 }
 
 function u16(val) { return [(val >> 8) & 0xFF, val & 0xFF]; }
@@ -432,7 +434,7 @@ function buildPacketBytes(pkt) {
     bytes.push(...u16(pkt.ipv4.id || 0));
     const flagsAndOffset = ((pkt.ipv4.flags || 0) << 13) | (pkt.ipv4.frag_offset || 0);
     bytes.push(...u16(flagsAndOffset));
-    bytes.push(pkt.ipv4.ttl || 64);
+    bytes.push(pkt.ipv4.ttl != null ? pkt.ipv4.ttl & 0xFF : 64);
     bytes.push(pkt.ipv4.protocol || 6);
     bytes.push(0, 0); // checksum placeholder
     bytes.push(...ipToBytes(pkt.ipv4.src || "0.0.0.0"));
@@ -447,7 +449,7 @@ function buildPacketBytes(pkt) {
       bytes.push(...u32(pkt.tcp.ack || 0));
       const offsetAndFlags = ((pkt.tcp.offset || 5) << 12) | (pkt.tcp.flags || 0);
       bytes.push(...u16(offsetAndFlags));
-      bytes.push(...u16(pkt.tcp.window || 65535));
+      bytes.push(...u16(pkt.tcp.window != null ? pkt.tcp.window : 65535));
       bytes.push(0, 0); // checksum placeholder
       bytes.push(...u16(pkt.tcp.urg || 0));
       if (pkt.payload) bytes.push(...stringToBytes(pkt.payload));
@@ -582,7 +584,7 @@ function toScapy(pkt) {
     parts.push('ARP(op=' + (pkt.arp.opcode || 1) + ', hwsrc="' + (pkt.arp.sender_mac || "00:00:00:00:00:00") + '", psrc="' + (pkt.arp.sender_ip || "0.0.0.0") + '", hwdst="' + (pkt.arp.target_mac || "00:00:00:00:00:00") + '", pdst="' + (pkt.arp.target_ip || "0.0.0.0") + '")');
   }
   if (pkt.ipv4) {
-    parts.push('IP(src="' + (pkt.ipv4.src || "0.0.0.0") + '", dst="' + (pkt.ipv4.dst || "0.0.0.0") + '", ttl=' + (pkt.ipv4.ttl || 64) + ', id=' + (pkt.ipv4.id || 0) + ')');
+    parts.push('IP(src="' + (pkt.ipv4.src || "0.0.0.0") + '", dst="' + (pkt.ipv4.dst || "0.0.0.0") + '", ttl=' + (pkt.ipv4.ttl != null ? pkt.ipv4.ttl : 64) + ', id=' + (pkt.ipv4.id || 0) + ')');
   }
   if (pkt.tcp) {
     const flagStr = [];
@@ -592,7 +594,7 @@ function toScapy(pkt) {
     if (pkt.tcp.flags & 0x004) flagStr.push("R");
     if (pkt.tcp.flags & 0x008) flagStr.push("P");
     if (pkt.tcp.flags & 0x020) flagStr.push("U");
-    parts.push('TCP(sport=' + (pkt.tcp.src_port || 0) + ', dport=' + (pkt.tcp.dst_port || 0) + ', seq=' + (pkt.tcp.seq || 0) + ', ack=' + (pkt.tcp.ack || 0) + ', flags="' + flagStr.join("") + '", window=' + (pkt.tcp.window || 65535) + ')');
+    parts.push('TCP(sport=' + (pkt.tcp.src_port || 0) + ', dport=' + (pkt.tcp.dst_port || 0) + ', seq=' + (pkt.tcp.seq || 0) + ', ack=' + (pkt.tcp.ack || 0) + ', flags="' + flagStr.join("") + '", window=' + (pkt.tcp.window != null ? pkt.tcp.window : 65535) + ')');
   }
   if (pkt.udp) {
     parts.push('UDP(sport=' + (pkt.udp.src_port || 0) + ', dport=' + (pkt.udp.dst_port || 0) + ')');
@@ -802,6 +804,7 @@ export function renderPacketCrafter(main) {
   let activeTab = "builder";
   let activeRefProto = "ethernet";
   let selectedExport = "hex";
+  let mtuValue = 1500;
 
   function getLayerName() {
     if (pkt.arp) return "ARP";
@@ -812,7 +815,9 @@ export function renderPacketCrafter(main) {
     return "Raw";
   }
 
-  function detectAttacks() {
+  function detectAttacks(bytes) {
+    // Ping of Death / Tiny Fragment read total_length, which was never set.
+    if (pkt.ipv4 && bytes) pkt.ipv4.total_length = bytes.length - (pkt.ethernet ? 14 : 0);
     const matched = [];
     for (const sig of ATTACK_SIGNATURES) {
       try { if (sig.check(pkt)) matched.push(sig); } catch (_) {}
@@ -822,7 +827,7 @@ export function renderPacketCrafter(main) {
 
   function render() {
     const bytes = buildPacketBytes(pkt);
-    const attacks = detectAttacks();
+    const attacks = detectAttacks(bytes);
 
     // Tab buttons
     let html = '<div class="pc-wrap">';
@@ -1177,7 +1182,7 @@ export function renderPacketCrafter(main) {
 
   function renderMTU() {
     var totalLen = pkt.ipv4 ? (buildPacketBytes(pkt).length - (pkt.ethernet ? 14 : 0)) : 0;
-    var mtu = 1500;
+    var mtu = mtuValue;
     var frags = totalLen ? mtuCalc(totalLen, mtu) : [];
     var html = '<div class="pc-mtu">';
     html += '<h3>MTU / Fragmentation Calculator</h3>';
@@ -1205,7 +1210,7 @@ export function renderPacketCrafter(main) {
     if (!pkt.tcp) {
       html += '<div class="muted">Select TCP protocol to analyze sequence numbers.</div>';
     } else {
-      var payloadLen = pkt.payload ? pkt.payload.length : 0;
+      var payloadLen = pkt.payload ? stringToBytes(pkt.payload).length : 0;
       var analysis = seqAnalysis(pkt.tcp.seq, payloadLen || 1, pkt.tcp.window);
       html += '<table class="pc-table"><tbody>';
       html += '<tr><td>ISN (Initial Sequence Number)</td><td><code>' + analysis.isn + '</code> (0x' + analysis.isn.toString(16).toUpperCase() + ')</td></tr>';
@@ -1399,6 +1404,10 @@ export function renderPacketCrafter(main) {
         el = main.querySelector("#pc-icmp-seq"); if (el) pkt.icmp.seq = parseInt(el.value) || 0;
       }
 
+      // MTU calculator input (was rendered but never read)
+      el = main.querySelector("#pc-mtu-val");
+      if (el) { var mv = parseInt(el.value, 10); if (mv >= 68 && mv <= 65535 && mv !== mtuValue) { mtuValue = mv; render(); return; } }
+
       // Payload
       el = main.querySelector("#pc-payload"); if (el) pkt.payload = el.value || undefined;
       if (!pkt.payload) delete pkt.payload;
@@ -1462,3 +1471,6 @@ export function renderPacketCrafter(main) {
 
   render();
 }
+
+// Pure helpers exported for tests.
+export { ipChecksum, tcpChecksum, udpChecksum, domainToBytes, stringToBytes, buildPacketBytes, mtuCalc };

@@ -316,6 +316,25 @@ const KNOWN_BAD_DOMAINS = ['update-cdn.xyz', 'invoice-portal.net', 'cdn-static-a
 const SUSPICIOUS_UAS = ['curl/', 'wget/', 'python-requests/', 'Go-http-client', 'Nmap/', 'sqlmap/', 'Nikto/', 'Masscan/'];
 const SUSPICIOUS_PROCESSES = ['mimikatz', 'psexec', 'procdump', 'lazagne', 'bloodhound', 'rubeus', 'certutil.*urlcache', 'mshta.*http', 'bitsadmin.*transfer', 'ntdsutil.*ifm', 'vssadmin.*delete', 'wmic.*shadowcopy', 'bcdedit.*recovery'];
 
+// RFC 1918 private ranges. The old /^172\.(1[6-9]|2|3[01])\./ test matched
+// public 172.2.x.x and missed private 172.20-29.x.x.
+function isRfc1918(ip) {
+  return /^10\.|^172\.(1[6-9]|2[0-9]|3[01])\.|^192\.168\./.test(ip);
+}
+
+// Decode base64 / base64url to readable text. atob() alone returns a Latin-1
+// byte string, so UTF-8 came out as mojibake and PowerShell -EncodedCommand
+// (UTF-16LE) came out interleaved with NULs.
+function decodeB64(b64) {
+  var bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/').replace(/\s+/g, ''));
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  var zeros = 0;
+  for (var j = 1; j < bytes.length; j += 2) if (bytes[j] === 0) zeros++;
+  if (bytes.length >= 4 && zeros >= Math.floor(bytes.length / 2) * 0.9) return new TextDecoder('utf-16le').decode(bytes);
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch (_) { return bin; }
+}
+
 // ============================================================================
 // RENDER
 // ============================================================================
@@ -324,6 +343,7 @@ export function renderThreatHuntLab(main) {
   var markedLines = {};
   var foundIOCs = {};
   var hintsUsed = 0;
+  var revealed = false;
   var searchTerm = '';
   var scores = {};
   try { scores = JSON.parse(localStorage.getItem('thl_scores') || '{}'); } catch (_) {}
@@ -386,6 +406,7 @@ export function renderThreatHuntLab(main) {
         markedLines = {};
         foundIOCs = {};
         hintsUsed = 0;
+        revealed = false;
         searchTerm = '';
         render();
       };
@@ -451,7 +472,13 @@ export function renderThreatHuntLab(main) {
 
     // Wire events
     container.querySelector('#thl-back').onclick = function() { currentScenario = null; render(); };
-    container.querySelector('#thl-search').oninput = function(e) { searchTerm = e.target.value; renderChallenge(container); };
+    container.querySelector('#thl-search').oninput = function(e) {
+      searchTerm = e.target.value;
+      var caret = e.target.selectionStart;
+      renderChallenge(container);
+      var box = container.querySelector('#thl-search');
+      if (box) { box.focus(); box.setSelectionRange(caret, caret); }
+    };
 
     container.querySelector('#thl-logs').onclick = function(e) {
       var line = e.target.closest('.thl-log-line');
@@ -483,7 +510,7 @@ export function renderThreatHuntLab(main) {
         }
       });
       var newScore = Math.max(0, Math.round((Object.keys(foundIOCs).length / totalIOCs) * 100 - hintsUsed * 10));
-      if (Object.keys(foundIOCs).length === totalIOCs) {
+      if (Object.keys(foundIOCs).length === totalIOCs && !revealed) {
         if (!scores[s.id] || newScore > scores[s.id]) {
           scores[s.id] = newScore;
           try { localStorage.setItem('thl_scores', JSON.stringify(scores)); } catch (_) {}
@@ -493,6 +520,7 @@ export function renderThreatHuntLab(main) {
     };
 
     container.querySelector('#thl-solve').onclick = function() {
+      revealed = true;
       s.iocs.forEach(function(_, idx) { foundIOCs[idx] = true; });
       window.showToast(s.explanation, 'info');
       renderChallenge(container);
@@ -503,7 +531,7 @@ export function renderThreatHuntLab(main) {
       var result = container.querySelector('#thl-ip-result');
       if (!ip) { result.textContent = ''; return; }
       if (KNOWN_BAD_IPS.indexOf(ip) !== -1) result.innerHTML = '<span style="color:#ff1744;font-weight:600">MALICIOUS</span> — known bad IP in threat database';
-      else if (ip.match(/^10\.|^172\.(1[6-9]|2|3[01])\.|^192\.168\./)) result.innerHTML = '<span style="color:var(--acc)">INTERNAL</span> — RFC 1918 private address';
+      else if (isRfc1918(ip)) result.innerHTML = '<span style="color:var(--acc)">INTERNAL</span> — RFC 1918 private address';
       else result.innerHTML = '<span style="color:#ffd600">UNKNOWN</span> — not in local threat database';
     };
 
@@ -511,11 +539,12 @@ export function renderThreatHuntLab(main) {
       var b64 = e.target.value.trim();
       var result = container.querySelector('#thl-b64-result');
       if (!b64) { result.textContent = ''; return; }
-      try { result.textContent = atob(b64); } catch (_) {
-        try { result.textContent = decodeURIComponent(escape(atob(b64.replace(/-/g, '+').replace(/_/g, '/')))); } catch (__) { result.textContent = '(invalid base64)'; }
-      }
+      try { result.textContent = decodeB64(b64); } catch (_) { result.textContent = '(invalid base64)'; }
     };
   }
 
   render();
 }
+
+// Pure helpers exported for tests.
+export { isRfc1918, decodeB64 };

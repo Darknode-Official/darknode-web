@@ -487,9 +487,18 @@ export function renderDeceptionArchitect(main) {
 
     container.querySelector('#roi-calc').onclick = function() {
       var cost = parseFloat(container.querySelector('#roi-industry').value) * 1000000;
-      var budget = parseFloat(container.querySelector('#roi-budget').value) || 50000;
-      var prob = (parseFloat(container.querySelector('#roi-prob').value) || 25) / 100;
-      var detect = (parseFloat(container.querySelector('#roi-detect').value) || 35) / 100;
+      // Read inputs as typed: the old `|| default` swapped a real 0 (or any
+      // out-of-range value) for the default and reported ROI on numbers the
+      // user never entered.
+      var budget = parseFloat(container.querySelector('#roi-budget').value);
+      var prob = parseFloat(container.querySelector('#roi-prob').value);
+      var detect = parseFloat(container.querySelector('#roi-detect').value);
+      if (!(budget > 0) || !(prob >= 0 && prob <= 100) || !(detect >= 0 && detect <= 100)) {
+        container.querySelector('#roi-result').innerHTML = '<p style="font-size:.8rem;color:#ff1744">Enter a budget above 0 and percentages between 0 and 100.</p>';
+        return;
+      }
+      prob /= 100;
+      detect /= 100;
 
       var expectedLoss = cost * prob;
       var reducedLoss = cost * prob * (1 - detect);

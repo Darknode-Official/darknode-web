@@ -195,10 +195,11 @@ const PROTOCOL_FLOWS = {
 
 // ─── Subnet calculator ────────────────────────────────────────────────────
 function calcSubnet(cidr) {
-  var parts = cidr.split("/");
+  var parts = String(cidr).trim().split("/");
   var ip = parts[0];
-  var prefix = parseInt(parts[1]) || 24;
-  if (prefix < 0 || prefix > 32) prefix = 24;
+  if (!isIPv4(ip)) throw new Error("Invalid IPv4 address");
+  var prefix = parts.length > 1 ? (/^\d{1,2}$/.test(parts[1]) ? parseInt(parts[1], 10) : NaN) : 32;
+  if (!(prefix >= 0 && prefix <= 32)) throw new Error("Invalid prefix length");
   var ipNum = ipToNum(ip);
   var mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
   var network = (ipNum & mask) >>> 0;
@@ -214,6 +215,11 @@ function calcSubnet(cidr) {
   };
 }
 
+function isIPv4(ip) {
+  var m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(String(ip));
+  return !!m && m.slice(1).every(function(o) { return +o <= 255; });
+}
+
 function ipToNum(ip) {
   var parts = ip.split(".").map(Number);
   return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
@@ -227,9 +233,9 @@ function numToIp(num) {
 function vlsmCalc(baseNetwork, subnets) {
   var sorted = subnets.slice().sort(function(a, b) { return b.hosts - a.hosts; });
   var results = [];
-  var currentIp = ipToNum(baseNetwork.split("/")[0]);
-  var basePrefix = parseInt(baseNetwork.split("/")[1]) || 24;
-  var baseEnd = (currentIp + Math.pow(2, 32 - basePrefix)) >>> 0;
+  var base = calcSubnet(baseNetwork);
+  var currentIp = ipToNum(base.network);
+  var baseEnd = currentIp + Math.pow(2, 32 - base.prefix);
   for (var i = 0; i < sorted.length; i++) {
     var needed = sorted[i].hosts + 2;
     var bits = Math.ceil(Math.log2(needed));
@@ -237,13 +243,13 @@ function vlsmCalc(baseNetwork, subnets) {
     var prefix = 32 - bits;
     var subnetSize = Math.pow(2, bits);
     var alignment = subnetSize;
-    if (currentIp % alignment !== 0) currentIp = (Math.ceil(currentIp / alignment) * alignment) >>> 0;
+    if (currentIp % alignment !== 0) currentIp = Math.ceil(currentIp / alignment) * alignment;
     if ((currentIp + subnetSize) > baseEnd) { results.push({ name: sorted[i].name, error: "Not enough address space" }); continue; }
     results.push({ name: sorted[i].name, requestedHosts: sorted[i].hosts, network: numToIp(currentIp), prefix: prefix,
       cidr: numToIp(currentIp) + "/" + prefix, broadcast: numToIp((currentIp + subnetSize - 1) >>> 0),
       firstHost: numToIp((currentIp + 1) >>> 0), lastHost: numToIp((currentIp + subnetSize - 2) >>> 0),
       usableHosts: subnetSize - 2, waste: subnetSize - 2 - sorted[i].hosts });
-    currentIp = (currentIp + subnetSize) >>> 0;
+    currentIp = currentIp + subnetSize;
   }
   return results;
 }
@@ -275,7 +281,7 @@ function parseNmapOutput(text) {
     var block = blocks[b];
     var firstLine = block.split("\n")[0];
     var ip2 = "", hostname2 = "";
-    var ipMatch = firstLine.match(/([\d.]+)/);
+    var ipMatch = firstLine.match(/\b(\d{1,3}(?:\.\d{1,3}){3})\b/);
     if (ipMatch) ip2 = ipMatch[1];
     var hnMatch = firstLine.match(/^([^\s(]+)/);
     if (hnMatch && hnMatch[1] !== ip2) hostname2 = hnMatch[1];
@@ -329,13 +335,26 @@ function parseACL(text) {
     if (m) {
       rules.push({ action: m[1].toLowerCase(), protocol: m[2].toLowerCase(), src: m[3].replace(/host\s+/i, ""), dst: m[4].replace(/host\s+/i, ""), port: m[5] ? parseInt(m[5]) : null, raw: line });
     } else {
-      var im = line.match(/-A\s+(\w+).*?(?:-s\s+([\d./]+))?.*?(?:-d\s+([\d./]+))?.*?(?:-p\s+(\w+))?.*?(?:--dport\s+(\d+))?.*?-j\s+(\w+)/i);
-      if (im) {
-        rules.push({ action: im[6].toLowerCase() === "accept" ? "permit" : "deny", protocol: im[4] || "any", src: im[2] || "any", dst: im[3] || "any", port: im[5] ? parseInt(im[5]) : null, chain: im[1], raw: line });
-      }
+      var im = parseIptables(line);
+      if (im) rules.push(im);
     }
   }
   return rules;
+}
+
+function parseIptables(line) {
+  var tok = line.split(/\s+/), r = { chain: null, src: "any", dst: "any", protocol: "any", port: null, target: null };
+  for (var i = 0; i < tok.length - 1; i++) {
+    var t = tok[i], v = tok[i + 1];
+    if (t === "-A" || t === "--append") r.chain = v;
+    else if ((t === "-s" || t === "--source") && /^[\d./]+$/.test(v)) r.src = v;
+    else if ((t === "-d" || t === "--destination") && /^[\d./]+$/.test(v)) r.dst = v;
+    else if ((t === "-p" || t === "--protocol") && /^\w+$/.test(v)) r.protocol = v;
+    else if (t === "--dport" && /^\d+$/.test(v)) r.port = parseInt(v, 10);
+    else if ((t === "-j" || t === "--jump") && /^\w+$/.test(v)) r.target = v;
+  }
+  if (!r.chain || !r.target) return null;
+  return { action: r.target.toLowerCase() === "accept" ? "permit" : "deny", protocol: r.protocol, src: r.src, dst: r.dst, port: r.port, chain: r.chain, raw: line };
 }
 
 // ─── Canvas-based network diagram ──────────────────────────────────────────
@@ -376,6 +395,7 @@ export function renderNetworkMapper(main) {
   var nodes = [], edges = [], activeTab = "map", selectedNode = null;
   var canvasState = { panX: 20, panY: 20, zoom: 1, dragging: null, panning: false, lastX: 0, lastY: 0 };
   var subnetInput = "192.168.1.0/24";
+  var vlsmBase = "";
   var vlsmInput = [{ name: "Servers", hosts: 50 }, { name: "Workstations", hosts: 200 }, { name: "Management", hosts: 10 }];
   var aclInput = "", nmapInput = "", selectedFlow = "TCP 3-Way Handshake";
 
@@ -491,13 +511,14 @@ export function renderNetworkMapper(main) {
 
   function renderVLSMTab() {
     var html = '<div class="nm-vlsm"><h3>VLSM Calculator</h3>';
-    html += '<div class="nm-vlsm-input"><label class="pc-label">Base Network</label><input class="pc-input" id="nm-vlsm-base" placeholder="e.g. 192.168.1.0/24">';
+    html += '<div class="nm-vlsm-input"><label class="pc-label">Base Network</label><input class="pc-input" id="nm-vlsm-base" value="' + esc(vlsmBase) + '" placeholder="e.g. 192.168.1.0/24">';
     html += '<h4>Subnets</h4><div id="nm-vlsm-list">';
     for (var i = 0; i < vlsmInput.length; i++) {
       html += '<div class="nm-vlsm-row"><input class="pc-input" value="' + esc(vlsmInput[i].name) + '" data-idx="' + i + '" data-field="name"><input class="pc-input" type="number" value="' + vlsmInput[i].hosts + '" data-idx="' + i + '" data-field="hosts" min="1" style="width:80px"><button class="btn nm-vlsm-del" data-idx="' + i + '">X</button></div>';
     }
     html += '</div><button class="btn" id="nm-vlsm-add">+ Add Subnet</button></div>';
-    var results = vlsmCalc("192.168.1.0/24", vlsmInput);
+    var results = [];
+    try { if (vlsmBase.trim()) results = vlsmCalc(vlsmBase, vlsmInput); } catch (_) { html += '<div class="pc-ck-fail" style="margin:12px 0">Enter a valid base network in CIDR form.</div>'; }
     if (results.length) {
       html += '<table class="pc-table"><thead><tr><th>Name</th><th>Needed</th><th>CIDR</th><th>Usable</th><th>Broadcast</th><th>Waste</th></tr></thead><tbody>';
       for (var r = 0; r < results.length; r++) {
@@ -571,7 +592,7 @@ export function renderNetworkMapper(main) {
           html += '<tr class="' + cls + '"><td>' + (r + 1) + '</td><td><strong>' + rule.action.toUpperCase() + '</strong></td><td>' + esc(rule.protocol) + '</td><td><code>' + esc(rule.src) + '</code></td><td><code>' + esc(rule.dst) + '</code></td><td>' + (rule.port || "any") + '</td></tr>';
         }
         html += '</tbody></table>';
-        var hasDefaultDeny = rules.length > 0 && (rules[rules.length - 1].action === "deny" || rules[rules.length - 1].action === "drop") && rules[rules.length - 1].src === "any";
+        var hasDefaultDeny = rules.length > 0 && /^(deny|drop|reject)$/.test(rules[rules.length - 1].action) && rules[rules.length - 1].src === "any";
         html += '<div class="nm-acl-summary">' + (hasDefaultDeny ? '<span class="pc-ck-ok">Default deny (good)</span>' : '<span class="pc-ck-fail">No default deny!</span>') + '</div>';
       }
     }
@@ -648,6 +669,14 @@ export function renderNetworkMapper(main) {
     if (aclParse) aclParse.onclick = function() { var ta = main.querySelector("#nm-acl-input"); if (ta) { aclInput = ta.value; render(); } };
     var flowBtns = main.querySelectorAll("[data-flow]");
     for (var fb = 0; fb < flowBtns.length; fb++) flowBtns[fb].onclick = function(e) { selectedFlow = e.target.dataset.flow; render(); };
+    var vlsmBaseEl = main.querySelector("#nm-vlsm-base");
+    if (vlsmBaseEl) vlsmBaseEl.onchange = function() { vlsmBase = vlsmBaseEl.value; render(); };
+    var vlsmFields = main.querySelectorAll("#nm-vlsm-list [data-field]");
+    for (var vf = 0; vf < vlsmFields.length; vf++) vlsmFields[vf].onchange = function(e) {
+      var row = vlsmInput[parseInt(e.target.dataset.idx, 10)]; if (!row) return;
+      if (e.target.dataset.field === "hosts") { var h = parseInt(e.target.value, 10); row.hosts = h >= 1 ? h : 1; } else row.name = e.target.value;
+      render();
+    };
     var vlsmAdd = main.querySelector("#nm-vlsm-add");
     if (vlsmAdd) vlsmAdd.onclick = function() { vlsmInput.push({ name: "Subnet-" + (vlsmInput.length + 1), hosts: 50 }); render(); };
     var vlsmDels = main.querySelectorAll(".nm-vlsm-del");
@@ -675,3 +704,6 @@ export function renderNetworkMapper(main) {
 
   render();
 }
+
+// Pure helpers exported for tests.
+export { calcSubnet, vlsmCalc, parseNmapOutput, parseACL };
