@@ -389,6 +389,7 @@ export function scanFile(path, text) {
     const raw = lines[i];
     if (raw.length > SKIP_LINE || IGNORE.test(raw) || (i > 0 && IGNORE.test(lines[i - 1]) && /darknode-ignore-next-line/.test(lines[i - 1]))) continue;
     // Secrets: scan raw line (secrets are often inside strings/comments too).
+    const owned = new Set(); // values a specific rule reported on this line; the generic rule (last) skips them
     for (const rule of SECRET_RULES) {
       const m = secretHit(rule, raw, path);
       if (!m) continue;
@@ -399,8 +400,9 @@ export function scanFile(path, text) {
       if (rule.id === "secret.private-key" && !KEY_BODY.test(raw.slice(m.index)) && !KEY_BODY.test(lines[i + 1] || "")) continue; // a marker in a detector or a doc, no key
       if (rule.id === "secret.db-url" && PLACEHOLDER_PASS.test(val)) continue;
       if (rule.id === "secret.google-api-key" && /authDomain|firebaseapp\.com/.test(lines.slice(Math.max(0, i - 6), i + 7).join("\n"))) continue; // Firebase web config keys are public by design
-      if (rule.id === "secret.generic" && (/^[a-z]+(?:[-_.][a-z]+)+$/.test(val) || /^eyJ/.test(val) || SECRET_RULES.some((r) => r.id !== "secret.generic" && secretHit(r, val)))) continue; // a word, not a credential; or a specific rule owns this value
+      if (rule.id === "secret.generic" && (/^[a-z]+(?:[-_.][a-z]+)+$/.test(val) || /^eyJ/.test(val) || owned.has(val) || SECRET_RULES.some((r) => r.id !== "secret.generic" && secretHit(r, val)))) continue; // a word, not a credential; or a specific rule owns this value
       if (rule.id === "secret.generic" && /^\$(?:2[abxy]?|argon2(?:id|i|d)|scrypt|pbkdf2[\w-]*|[156])\$/.test(val)) continue; // a password HASH, not a secret
+      owned.add(val);
       push(rule, i, m.index, raw.trim().replace(val, mask(val)), { secret: mask(val) });
     }
     if (!codeRules.length) continue;
