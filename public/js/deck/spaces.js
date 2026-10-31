@@ -77,7 +77,7 @@ function homeHTML(id, S) {
     kpis = kpi(dom ? esc(dom.grade || "-") : "-", dom ? "Domain grade: " + dom.target : "Domain not checked yet", dom ? LVL_C[dom.level] : "#8a93a6")
       + kpi(cert ? (cert.counts && (cert.counts.expired + cert.counts.urgent + cert.counts.soon)) || 0 : "-", cert ? "Certificates expiring within 30 days" : "Certificates not checked", cert ? LVL_C[cert.level] : "#8a93a6")
       + kpi(sec ? (sec.counts && sec.counts.secrets) || 0 : "-", sec ? "Secrets in last code scan" : "Code not scanned yet", sec ? LVL_C[sec.level] : "#8a93a6")
-      + kpi(phish.length, "Links and emails checked" + (risky ? ", " + risky + " flagged" : ""), risky ? "#b00020" : "#2552c6");
+      + kpi(phish.length, "Links and emails checked" + (risky ? ", " + risky + " flagged" : ""), risky ? "#b00020" : phish.length ? "#2f9e56" : "#8a93a6");
   } else {
     // the latest grade of each domain in the saved portfolio: re-runs, and domains since
     // removed from the list (or graded under an old spelling like www.), must not skew the KPIs
