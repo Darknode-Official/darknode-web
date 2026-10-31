@@ -1,8 +1,30 @@
 {
- "updated": "2026-10-30T11:27:59.694Z",
+ "updated": "2026-10-31T10:59:05.665Z",
  "source": "CISA KEV",
  "count": 500,
  "data": [
+  {
+   "cve": "CVE-2026-118527",
+   "vendor": "Ivanti",
+   "product": "Connect Secure",
+   "name": "Ivanti Connect Secure Generation of Predictable Numbers or Identifiers Vulnerability",
+   "description": "Ivanti Connect Secure contains a generation of predictable numbers or identifiers vulnerability that allows a remote authenticated attacker to upload files with attacker-controlled content to a known location on disk. This vulnerability can be chained with CVE-2026-104935 and CVE-2026-111357.",
+   "dateAdded": "2026-10-30",
+   "dueDate": "2026-11-13",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-111357",
+   "vendor": "Ivanti",
+   "product": "Connect Secure",
+   "name": "Ivanti Connect Secure Missing Authentication for Critical Function Vulnerability",
+   "description": "Ivanti Connect Secure contains a missing authentication for critical function vulnerability that could allow a local authenticated attacker to escalate their privileges. This vulnerability can be chained with CVE-2026-104935 and CVE-2026-118527.",
+   "dateAdded": "2026-10-30",
+   "dueDate": "2026-11-02",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
   {
    "cve": "CVE-2026-97229",
    "vendor": "GitLab",
@@ -5479,28 +5501,6 @@
    "dateAdded": "2025-02-11",
    "dueDate": "2025-03-04",
    "action": "The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization if a current mitigation is unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-21418",
-   "vendor": "Microsoft",
-   "product": "Windows",
-   "name": "Microsoft Windows Ancillary Function Driver for WinSock Heap-Based Buffer Overflow Vulnerability",
-   "description": "Microsoft Windows Ancillary Function Driver for WinSock contains a heap-based buffer overflow vulnerability that allows for privilege escalation, enabling a local attacker to gain SYSTEM privileges.",
-   "dateAdded": "2025-02-11",
-   "dueDate": "2025-03-04",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-21391",
-   "vendor": "Microsoft",
-   "product": "Windows",
-   "name": "Microsoft Windows Storage Link Following Vulnerability",
-   "description": "Microsoft Windows Storage contains a link following vulnerability that could allow for privilege escalation. This vulnerability could allow an attacker to delete data including data that results in the service being unavailable.",
-   "dateAdded": "2025-02-11",
-   "dueDate": "2025-03-04",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
    "ransomware": "Unknown"
   }
  ]
