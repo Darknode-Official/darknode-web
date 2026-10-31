@@ -27,6 +27,8 @@ const EMAILJS = {
 // EmailJS posts to https://api.emailjs.com, which is NOT in the CSP connect-src in
 // firebase.json, so every send is blocked in the browser today. Flip this to true only
 // after adding that origin to connect-src (both hosting sites) and deploying the headers.
+// Before enabling: the code is checked in the browser and Firestore rules forbid a client
+// setting codeVerified, so verification must move server-side (Worker + Admin SDK) first.
 const EMAILJS_CSP_ALLOWED = false;
 const _set = (v) => !!v && !v.startsWith("YOUR_");
 

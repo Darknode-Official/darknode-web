@@ -77,6 +77,14 @@ await t("pairing codes cannot be read", assertFails(A.doc("pairings/ABCDEFGHJKLM
 await t("bob cannot delete alice's code", assertFails(B.doc("pairings/ABCDEFGHJKLMNPQR").delete()));
 await t("alice may cancel her own code", assertSucceeds(A.doc("pairings/ABCDEFGHJKLMNPQR").delete()));
 
+// ---- users/{uid}: no self-granted privilege fields ----
+await t("alice creates her own user doc", assertSucceeds(A.doc("users/alice").set({ email: "alice@test.darknode.ai", name: "Alice" })));
+await t("alice may update ordinary fields", assertSucceeds(A.doc("users/alice").set({ name: "A" }, { merge: true })));
+for (const f of ["status", "codeVerified", "tier", "plan", "admin"])
+  await t(`alice cannot set ${f} on her own doc`, assertFails(A.doc("users/alice").set({ [f]: f === "status" ? "allowed" : true }, { merge: true })));
+await t("bob cannot create a user doc with status", assertFails(B.doc("users/bob").set({ email: "bob@test.darknode.ai", status: "allowed" })));
+await t("the owner may set status", assertSucceeds(ADM.doc("users/alice").set({ status: "allowed" }, { merge: true })));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
