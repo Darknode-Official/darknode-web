@@ -92,7 +92,7 @@ export function renderWaybackRecon(container) {
   function classifyUrl(url) {
     var tags = [];
     var path = url.replace(/^https?:\/\/[^/]+/i, '').toLowerCase();
-    INTERESTING.forEach(function(f) { if (path.indexOf(f.toLowerCase()) !== -1) tags.push('SENSITIVE'); });
+    if (INTERESTING.some(function(f) { return path.indexOf(f.toLowerCase()) !== -1; })) tags.push('SENSITIVE'); // one tag, however many names match
     if (BACKUP_PATTERNS.test(path)) tags.push('BACKUP');
     if (API_DOCS.test(path)) tags.push('API-DOC');
     if (CONFIG_FILES.test(path)) tags.push('CONFIG');
@@ -318,14 +318,17 @@ export function renderWaybackRecon(container) {
         data += '"' + r.original.replace(/"/g, '""') + '",' + formatTs(r.timestamp) + ',' + r.statuscode + ',' + (r.mimetype || '') + ',' + (r.digest || '') + ',' + tags + '\n';
       });
     }
-    try {
-      navigator.clipboard.writeText(data);
-      statusEl.textContent = fmt.toUpperCase() + ' copied to clipboard (' + Math.round(data.length / 1024) + ' KB)';
-      statusEl.style.color = '#16a34a';
-    } catch (e) {
-      statusEl.textContent = 'Copy failed: ' + e.message;
+    var fail = function(e) {
+      statusEl.textContent = 'Copy failed: ' + (e && e.message ? e.message : 'clipboard unavailable');
       statusEl.style.color = '#dc2626';
-    }
+    };
+    // writeText resolves or rejects later: report the copy only once it has happened
+    try {
+      navigator.clipboard.writeText(data).then(function() {
+        statusEl.textContent = fmt.toUpperCase() + ' copied to clipboard (' + Math.round(data.length / 1024) + ' KB)';
+        statusEl.style.color = '#16a34a';
+      }, fail);
+    } catch (e) { fail(e); }
   }
 
   async function scan() {

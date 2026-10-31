@@ -2044,7 +2044,7 @@ function renderApp(user) {
     else if (sec === "compliance") { import("/js/compliance-checker.js?v=20261028c").then(m => live() && m.renderComplianceChecker(main)); }
     else if (sec === "attacksim") { import("/js/attack-simulator.js").then(m => live() && m.renderAttackSimulator(main)); }
     else if (sec === "dns") { import("/js/dns-enum.js?v=20261028a").then(m => live() && m.renderDNSEnum(main)); }
-    else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20261017d").then(m => live() && m.renderSubdomainFinder(main)); }
+    else if (sec === "subdomains") { import("/js/subdomain-finder.js?v=20261030c").then(m => live() && m.renderSubdomainFinder(main)); }
     else if (sec === "mobilesec") { import("/js/mobile-security-lab.js").then(m => live() && m.renderMobileSecurityLab(main)); }
     else if (sec === "wirelesslab") { import("/js/wireless-lab.js?v=20261013m").then(m => live() && m.renderWirelessLab(main)); }
     else if (sec === "pentestconsole") { import("/js/pentest-console.js?v=20261013b").then(m => live() && m.renderPentestConsole(main)); }
@@ -2065,9 +2065,9 @@ function renderApp(user) {
     else if (sec === "beta") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Beta Lab...</p>"; const _s=sec; import("/js/beta-lab.js?v=20261029c").then(m => { if(curSec!==_s)return; m.renderBetaLab(main); _prevCleanup = m.cleanupBetaLab; }); }
     else if (sec === "crosswalk") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading GenAI Security Crosswalk...</p>"; const _s=sec; import("/js/crosswalk.js?v=20261029c").then(m => { if(curSec!==_s)return; m.renderCrosswalk(main); _prevCleanup = m.cleanupCrosswalk; }); }
     else if (sec === "cspevaluator") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading CSP Evaluator...</p>"; import("/js/csp-evaluator.js?v=20261029e").then(m => live() && m.renderCspEvaluator(main)); }
-    else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js").then(m => live() && m.renderWaybackRecon(main)); }
+    else if (sec === "wayback") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Wayback Recon...</p>"; import("/js/wayback-recon.js?v=20261030c").then(m => live() && m.renderWaybackRecon(main)); }
     else if (sec === "urldissect") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading URL Dissector...</p>"; import("/js/url-dissector.js").then(m => live() && m.renderUrlDissector(main)); }
-    else if (sec === "favicon") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Favicon Hasher...</p>"; import("/js/favicon-hasher.js?v=20261013b").then(m => live() && m.renderFaviconHasher(main)); }
+    else if (sec === "favicon") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Favicon Hasher...</p>"; import("/js/favicon-hasher.js?v=20261030c").then(m => live() && m.renderFaviconHasher(main)); }
     else if (sec === "adversary") { import("/js/adversary-ai.js").then(m => live() && m.renderAdversaryAI(main)); }
     else if (sec === "huntlab") { import("/js/threat-hunt-lab.js?v=20261030b").then(m => live() && m.renderThreatHuntLab(main)); }
     else if (sec === "deception") { import("/js/deception-architect.js?v=20261030b").then(m => live() && m.renderDeceptionArchitect(main)); }
@@ -2112,7 +2112,7 @@ function renderApp(user) {
     else if (sec === "packetanalyzer") { import("/js/packet-analyzer.js?v=20261029c").then(m => live() && m.renderPacketAnalyzer(main)); }
     else if (sec === "payloadgen") { import("/js/payload-gen.js?v=20260924b").then(m => live() && m.renderPayloadGen(main)); }
     else if (sec === "vulndb") { import("/js/vulnerability-db.js?v=20261030b").then(m => live() && m.renderVulnerabilityDB(main)); }
-    else if (sec === "asnexplorer") { import("/js/asn-explorer.js?v=20261029c").then(m => live() && m.renderAsnExplorer(main)); }
+    else if (sec === "asnexplorer") { import("/js/asn-explorer.js?v=20261030c").then(m => live() && m.renderAsnExplorer(main)); }
     else if (sec === "breachlookup") { import("/js/breach-lookup.js").then(m => live() && m.renderBreachLookup(main)); }
     else if (sec === "corstester") { import("/js/cors-tester.js?v=20261029e").then(m => live() && m.renderCorsTester(main)); }
     else if (sec === "cvesearch") { import("/js/cve-search.js?v=20261028a").then(m => live() && m.renderCveSearch(main)); }
@@ -2120,7 +2120,7 @@ function renderApp(user) {
     else if (sec === "headeranalyzer") { import("/js/header-analyzer.js?v=20261013b").then(m => live() && m.renderHeaderAnalyzer(main)); }
     else if (sec === "identitymatrix") { import("/js/identity-matrix.js?v=20260924b").then(m => live() && m.renderIdentityMatrix(main)); }
     else if (sec === "networkscanner") { import("/js/network-scanner.js").then(m => live() && m.renderNetworkScanner(main)); }
-    else if (sec === "sslinspector") { import("/js/ssl-inspector.js?v=20261017d").then(m => live() && m.renderSSLInspector(main)); }
+    else if (sec === "sslinspector") { import("/js/ssl-inspector.js?v=20261030c").then(m => live() && m.renderSSLInspector(main)); }
     else if (sec === "techfingerprint") { import("/js/tech-fingerprint.js").then(m => live() && m.renderTechFingerprint(main)); }
     else if (sec === "websockettester") { import("/js/websocket-tester.js?v=20261029e").then(m => live() && m.renderWebSocketTester(main)); }
     else if (sec === "learn") { main.innerHTML = "<p class=\"muted\" style=\"text-align:center;padding:40px\">Loading Learn Hub...</p>"; loadLearnHub().then(m => live() && m.renderLearnHub(main)); }

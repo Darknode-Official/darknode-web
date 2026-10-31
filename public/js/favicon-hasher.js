@@ -309,7 +309,8 @@ export function renderFaviconHasher(container) {
     fetchBtn.disabled = true;
 
     var paths = ['/favicon.ico', '/favicon.png', '/apple-touch-icon.png'];
-    var baseUrl = url.replace(/\/+$/, '');
+    var baseUrl;
+    try { baseUrl = new URL(url).origin; } catch (e) { baseUrl = url.replace(/\/+$/, ''); } // favicons live at the site root, not under a page path
     var fetched = false;
 
     for (var i = 0; i < paths.length; i++) {

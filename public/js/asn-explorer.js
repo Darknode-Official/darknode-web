@@ -114,6 +114,7 @@ window._asnLookup = function() {
   if (!input || !results) return;
   input = input.trim().replace(/^AS/i, '');
   if (!/^\d+$/.test(input)) { _asnSearch(); return; }
+  input = input.replace(/^0+(?=\d)/, ''); // AS044477 is AS44477
 
   results.innerHTML = '<div class="asn-busy">Looking up AS' + esc(input) + '...</div>';
 

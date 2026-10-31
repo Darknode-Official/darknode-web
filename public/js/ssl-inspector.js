@@ -80,7 +80,7 @@ function _sslSearch() {
   var input = document.getElementById('ssl-domain');
   var results = document.getElementById('ssl-results');
   if (!input || !results) return;
-  var domain = input.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  var domain = input.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:\d+$/, '');
   if (!domain || domain.indexOf('.') < 1) {
     results.innerHTML = '<div style="color:#ff4444;padding:20px;text-align:center;">Enter a valid domain name</div>';
     return;
@@ -99,7 +99,7 @@ function _sslSearch() {
         var names = (_sslData.certs[i].name_value || '').split('\n');
         for (var n = 0; n < names.length; n++) {
           var nm = names[n].trim().toLowerCase().replace(/^\*\./, '');
-          if (nm && nm.indexOf(domain) !== -1 && nm !== domain) {
+          if (nm && nm.slice(-(domain.length + 1)) === '.' + domain) { // a SAN such as myexample.com or example.com.evil.net is not a subdomain
             subMap[nm] = (subMap[nm] || 0) + 1;
           }
         }
@@ -191,7 +191,7 @@ function _sslRenderSubdomains(el) {
   for (var i = 0; i < subs.length; i++) {
     var s = subs[i];
     var wildcard = s.name.indexOf('*.') === 0;
-    h += '<div style="background:#0a1018;border:1px solid #1a2a44;border-radius:3px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="navigator.clipboard.writeText(\'' + esc(s.name) + '\');this.style.borderColor=\'#00ff88\';var el=this;setTimeout(function(){el.style.borderColor=\'#1a2a44\';},500);">';
+    h += '<div style="background:#0a1018;border:1px solid #1a2a44;border-radius:3px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="navigator.clipboard.writeText(' + esc(JSON.stringify(s.name)) + ');this.style.borderColor=\'#00ff88\';var el=this;setTimeout(function(){el.style.borderColor=\'#1a2a44\';},500);">';
     h += '<span style="color:' + (wildcard ? '#ffaa00' : '#c8d6e5') + ';font-size:11px;">' + (wildcard ? '<span style="color:#ffaa00;">*</span> ' : '') + esc(s.name) + '</span>';
     h += '<span style="color:#556;font-size:9px;">' + s.certCount + ' cert' + (s.certCount > 1 ? 's' : '') + '</span>';
     h += '</div>';

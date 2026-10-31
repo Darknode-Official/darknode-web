@@ -175,7 +175,21 @@ function generatePermutations(domain) {
   if (parts.length > 2) {
     results.push({ type: 'Missing dot', domain: parts[0] + parts[1] + '.' + parts.slice(2).join('.') });
   }
-  return results.slice(0, 300);
+  // homoglyphs such as @ ( ! | $ and edits next to a dot or hyphen yield names DNS cannot hold
+  return results.filter(function (r) { return HOSTNAME_RE.test(r.domain); }).slice(0, 300);
+}
+var HOSTNAME_RE = /^(?!-)[a-z0-9-]{1,63}(?<!-)(?:\.(?!-)[a-z0-9-]{1,63}(?<!-))+$/i;
+
+// Service whose CNAME target this is: a dotted suffix must match on a label boundary
+// (myweb.apple.com is not Firebase's web.app), a dotless one starts a label (s3-website-...).
+function takeoverMatches(cname) {
+  cname = cname.replace(/\.$/, '');
+  return TAKEOVER_FINGERPRINTS.filter(function (fp) {
+    return fp.cname.some(function (c) {
+      return c.indexOf('.') >= 0 ? (cname === c || cname.slice(-(c.length + 1)) === '.' + c)
+        : cname.split('.').some(function (l) { return l.indexOf(c) === 0; });
+    });
+  });
 }
 
 // Real enumeration — no fabricated data.
@@ -366,7 +380,7 @@ export function renderSubdomainFinder(main) {
     main.querySelector('#sf-scan').onclick = function() {
       var raw = main.querySelector('#sf-domain').value.trim().toLowerCase();
       var domain = raw.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^\*?\.?/, '');
-      if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain)) {
+      if (!domain || !/^[a-z0-9.-]+\.(?:[a-z]{2,}|xn--[a-z0-9-]+)$/.test(domain)) {
         main.querySelector('#sf-results').innerHTML = '<p style="color:#f59e0b">Enter a valid domain, e.g. example.com</p>';
         return;
       }
@@ -472,9 +486,7 @@ export function renderSubdomainFinder(main) {
       var cname = main.querySelector('#sf-takeover-cname').value.trim().toLowerCase();
       if (!cname) return;
       var resultDiv = main.querySelector('#sf-takeover-result');
-      var matched = TAKEOVER_FINGERPRINTS.filter(function(fp) {
-        return fp.cname.some(function(c) { return cname.indexOf(c) !== -1; });
-      });
+      var matched = takeoverMatches(cname);
       if (!matched.length) {
         resultDiv.innerHTML = '<div style="padding:10px;background:var(--card);border:1px solid var(--line);border-radius:6px;color:var(--mut)">No matching service fingerprint found for: ' + esc(cname) + '</div>';
       } else {
