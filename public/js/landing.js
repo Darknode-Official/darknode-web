@@ -169,39 +169,29 @@ export function renderLanding(view, actions) {
         <div class="feature-rows">
           <div class="feature-row">
             <div class="feature-text">
-              <h3>Scan code, cloud, and dependencies — one command away</h3>
-              <p>Static analysis, dependency and SBOM checks, secret detection, and cloud-config review — pre-configured and ready to run. Search, filter, and launch from the web or CLI.</p>
+              <h3>Scan code, cloud and dependencies</h3>
+              <p>Static analysis, dependency and SBOM checks, secret detection and cloud-config review run in the Deck, ready to use. The CLI adds checks from your own terminal: port scans of hosts you are allowed to test, plus dependency and environment-variable audits.</p>
             </div>
             <div class="feature-visual">
               <div class="term-window">
-                <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode</span></div>
-                <pre class="tw-body"><span class="c-pl">$</span> darknode scan 10.10.14.7\n<span class="c-ok">22</span>  ssh    OpenSSH 9.6\n<span class="c-ok">80</span>  http   nginx 1.24\n<span class="c-ok">443</span> https\n<span class="c-acc">[+]</span> 3 open ports</pre>
+                <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode (example)</span></div>
+                <pre class="tw-body"><span class="c-pl">$</span> darknode scan 192.0.2.10 top
+<span class="c-mut">PORT   SERVICE   BANNER</span>
+<span class="c-ok">22</span>     ssh       SSH-2.0-OpenSSH_9.6
+<span class="c-ok">443</span>    https
+<span class="c-acc">&#9679;</span> 2 open ports on 192.0.2.10</pre>
               </div>
             </div>
           </div>
           <div class="feature-row reverse">
             <div class="feature-text">
               <h3>Deterministic engines, with AI only to explain</h3>
-              <p>The engines that find and rank risk are deterministic — no model decides severity. Nexus, the optional assistant, only reads the findings to explain them and draft remediation. Run it on local models or your own key. We never see your data.</p>
+              <p>The engines that find and rank risk are deterministic — no model decides severity. Nexus, the optional assistant, only reads the findings to explain them and draft remediation. Run it on a local model and nothing leaves your machine, or use your own key.</p>
             </div>
             <div class="feature-visual">
               <div class="term-window">
                 <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
                 <pre class="tw-body"><span class="c-pl">$</span> nexus "explain CVE-2021-44228"\n\n<span class="c-acc">Nexus:</span> Log4Shell is a critical RCE\nin Apache Log4j. It exploits\nJNDI lookup string injection...\n\n<span class="c-mut">engine: ollama (local, free)</span></pre>
-              </div>
-            </div>
-          </div>
-          <div class="feature-row">
-            <div class="feature-text">
-              <h3>Safe sandboxes to validate your controls</h3>
-              <p>Launch DVWA, Juice Shop, WebGoat, and more with one click. They run locally in Docker — legal, safe, isolated. Validate detections, train your team, and reset in a controlled environment.</p>
-            </div>
-            <div class="feature-visual">
-              <div class="lab-grid">
-                <div class="lab-card"><span class="lab-status on"></span>DVWA<span class="lab-port">:8080</span></div>
-                <div class="lab-card"><span class="lab-status on"></span>Juice Shop<span class="lab-port">:3000</span></div>
-                <div class="lab-card"><span class="lab-status off"></span>WebGoat<span class="lab-port">:8081</span></div>
-                <div class="lab-card"><span class="lab-status off"></span>HackTheBox<span class="lab-port">:—</span></div>
               </div>
             </div>
           </div>
@@ -1328,7 +1318,7 @@ testing methodology for 10.10.14.7:
         <div class="land-footer-left">
           <span class="land-footer-brand">Darknode</span>
           <p style="font-size:.72rem;color:inherit;opacity:.5;margin:0 0 4px">Security and data-integrity platform for companies &mdash; scan your code, cloud, dependencies, and records. For authorized use on systems you own or are permitted to assess.</p>
-          <span class="land-footer-copy">&copy; 2026 Darknode-Official. All rights reserved.</span>
+          <span class="land-footer-copy">&copy; 2026 Darknode. All rights reserved.</span>
         </div>
         <div class="land-footer-links">
           <a href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
