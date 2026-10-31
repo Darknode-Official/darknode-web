@@ -130,7 +130,7 @@ function formatSQL(sql) {
 function parseEnv(text) {
   // As the dotenv package reads it: optional export, KEY=value or KEY: value, a # comment after an
   // unquoted value, quoted values (double quotes may span lines and expand \n), and the last value wins.
-  const LINE = /^\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?$/mg;
+  const LINE = /^[^\S\n\r\u2028\u2029]*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?$/mg;
   const src = String(text).replace(/\r\n?/g, "\n");
   const out = {};
   const dupes = [];

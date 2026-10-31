@@ -56,3 +56,26 @@ group("Trailing-whitespace trims stay linear", () => {
       assert.ok(!/\.replace\(\/\\s[+*]\$\//.test(readFileSync(new URL(J + f, import.meta.url), "utf8")), f);
   });
 });
+
+// /^\s*X/m: from every line start \s* ran across the whole blank-line run that follows, so a file
+// of 30k newlines took about 3s in Firewall audit and 1.2s in network exposure and IaC scan.
+group("Multiline ^\\s* anchors stay inside the line", () => {
+  for (const [f, fn, wrap] of [["infra/firewall-audit-engine.js", "parseConfig"], ["appsec/iacscan-engine.js", "parseInput", true], ["exposure/netexposure-engine.js", "parseSslCert"], ["core/lockfiles.js", "detectFormat"], ["ops/pentestreg-engine.js", "parseInput"]]) {
+    test(f + " " + fn + " on 200k newlines", async () => {
+      const m = await import(J + f);
+      const s = "\n".repeat(200000) + "x";
+      assert.ok(timed(() => { try { m[fn](wrap ? [{ name: "f", text: s }] : s); } catch (_) {} }) < 1500);
+    });
+  }
+  test("detection still sees an indented keyword after blank lines", async () => {
+    const n = await import(J + "exposure/netexposure-engine.js");
+    assert.equal(n.parseSslCert("\n\n   Subject: CN=a.test\n  Issuer: CN=ca\n").subject, "CN=a.test");
+    const fw = await import(J + "infra/firewall-audit-engine.js");
+    assert.equal(fw.detectFormat("\n\n  table inet filter {\n  chain input {\n type filter hook input\n").format, "nft");
+  });
+  test("no multiline /^\\s* left in live parsers", async () => {
+    const { readFileSync } = await import("node:fs");
+    for (const f of ["core/lockfiles.js", "exposure/netexposure-engine.js", "infra/firewall-audit-engine.js", "appsec/iacscan-engine.js", "ops/pentestreg-engine.js", "dataprotect/phish.js", "tools/dev.js", "tools/coding.js"])
+      assert.ok(!/\/\^\\s\*(?:[^/\\\n\[]|\\.|\[(?:[^\]\\\n]|\\.)*\])*\/[gisuy]*m/.test(readFileSync(new URL(J + f, import.meta.url), "utf8")), f);
+  });
+});

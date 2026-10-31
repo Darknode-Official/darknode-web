@@ -129,7 +129,7 @@ export function renderPhish(main) {
 
   function detectMode(text) {
     if (MODE !== "auto") return MODE;
-    if (parseEmailHeaders(text).hasHeaders || /^\s*received\s*:/im.test(text)) return "email";
+    if (parseEmailHeaders(text).hasHeaders || /^[^\S\n\r\u2028\u2029]*received\s*:/im.test(text)) return "email";
     return "url";
   }
 

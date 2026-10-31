@@ -167,9 +167,9 @@ export function classify(name, text) {
   if (b === "chart.yaml" || b === "chart.lock") return res("helm-chart", "high", "Helm chart metadata, not a workload; render with `helm template`");
   if (!inWorkflows && /(^|[^$])\{\{-?\s*(\.Values|\.Release|\.Chart|\.Capabilities|include\s|template\s|if\s|range\s|with\s|toYaml|\/\*)/.test(head) && /\.(ya?ml|tpl)$/.test(b)) return res("helm-template", "high", "unrendered Helm template; run `helm template` and scan the output");
   if (b === "dockerfile" || b === "containerfile" || /^dockerfile[.-]/.test(b) || ext === ".dockerfile") {
-    return res("dockerfile", /^\s*(FROM|ARG)\s/im.test(head) ? "high" : "medium", "Dockerfile");
+    return res("dockerfile", /^[^\S\n\r\u2028\u2029]*(FROM|ARG)\s/im.test(head) ? "high" : "medium", "Dockerfile");
   }
-  if (ext === ".tf") return res("terraform", /^\s*(resource|data|module|provider|variable|terraform|locals|output)\b/m.test(head) ? "high" : "medium", "Terraform HCL");
+  if (ext === ".tf") return res("terraform", /^[^\S\n\r\u2028\u2029]*(resource|data|module|provider|variable|terraform|locals|output)\b/m.test(head) ? "high" : "medium", "Terraform HCL");
   if (ext === ".tfvars") return res("tfvars", "high", "Terraform variable values; secret-scanned only");
   if (ext === ".tfstate" || /\.tfstate\.backup$/.test(b)) return res("tfstate", "high", "Terraform state JSON");
 
@@ -198,8 +198,8 @@ export function classify(name, text) {
     if (/^jobs\s*:/m.test(head) && /^["']?on["']?\s*:/m.test(head)) return res("github-actions", "medium", "workflow-shaped YAML outside .github/workflows");
     return res("yaml", "low", "YAML without a recognised IaC shape; secret-scanned only");
   }
-  if (!ext && /^\s*FROM\s+\S/m.test(head) && /^\s*(RUN|COPY|CMD|ENTRYPOINT|USER|EXPOSE)\b/m.test(head)) return res("dockerfile", "medium", "Dockerfile-shaped content");
-  if (/^\s*(resource|data|module|provider)\s+"[^"]+"/m.test(head)) return res("terraform", "medium", "HCL-shaped content");
+  if (!ext && /^[^\S\n\r\u2028\u2029]*FROM\s+\S/m.test(head) && /^[^\S\n\r\u2028\u2029]*(RUN|COPY|CMD|ENTRYPOINT|USER|EXPOSE)\b/m.test(head)) return res("dockerfile", "medium", "Dockerfile-shaped content");
+  if (/^[^\S\n\r\u2028\u2029]*(resource|data|module|provider)\s+"[^"]+"/m.test(head)) return res("terraform", "medium", "HCL-shaped content");
   return res("text", "low", "not an IaC format; secret-scanned only");
 }
 

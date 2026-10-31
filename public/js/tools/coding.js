@@ -1709,12 +1709,12 @@ export const TOOLS = [
       s = s.replace(/```[\s\S]*?```/g, (b) => b.replace(/```[^\n]*\n?/g, "").replace(/```/g, ""));
       s = s.replace(/^\s{0,3}#{1,6}\s+/gm, "");
       s = s.replace(/^\s{0,3}>\s?/gm, "");
-      s = s.replace(/^\s*([-*+]|\d+\.)\s+/gm, "");
+      s = s.replace(/^[^\S\n\r\u2028\u2029]*([-*+]|\d+\.)\s+/gm, "");
       s = s.replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1");
       s = s.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
       s = s.replace(/(\*\*|__)(.*?)\1/g, "$2").replace(/(\*|_)(.*?)\1/g, "$2");
       s = s.replace(/`([^`]*)`/g, "$1");
-      s = s.replace(/^\s*([-*_])\1{2,}\s*$/gm, "");
+      s = s.replace(/^[^\S\n\r\u2028\u2029]*([-*_])\1{2,}\s*$/gm, "");
       return s.replace(/\n{3,}/g, "\n\n").trim() + "\n";
     },
   },

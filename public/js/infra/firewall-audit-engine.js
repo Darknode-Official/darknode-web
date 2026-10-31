@@ -1210,13 +1210,13 @@ export function detectFormat(text) {
   if (!s.trim()) return null;
   const score = {};
   const add = (f, re, w = 1) => { const m = s.match(re); if (m) score[f] = (score[f] || 0) + w * Math.min(m.length, 20); };
-  add("iptables", /^\s*(?:ip6?tables\s+(?:-t \w+\s+)?)?(-A|-I|-P|-N)\s+\S+/gm, 2); add("iptables", /^:\w+\s+(ACCEPT|DROP|REJECT|-)\s/gm, 3); add("iptables", /^\*filter/gm, 5); add("iptables", /^COMMIT/gm, 2);
-  add("nft", /^\s*table\s+(inet|ip|ip6|bridge)\s+\w+\s*\{/gm, 8); add("nft", /^\s*chain\s+\w+\s*\{/gm, 4); add("nft", /type\s+filter\s+hook/g, 5);
+  add("iptables", /^[^\S\n\r\u2028\u2029]*(?:ip6?tables\s+(?:-t \w+\s+)?)?(-A|-I|-P|-N)\s+\S+/gm, 2); add("iptables", /^:\w+\s+(ACCEPT|DROP|REJECT|-)\s/gm, 3); add("iptables", /^\*filter/gm, 5); add("iptables", /^COMMIT/gm, 2);
+  add("nft", /^[^\S\n\r\u2028\u2029]*table\s+(inet|ip|ip6|bridge)\s+\w+\s*\{/gm, 8); add("nft", /^[^\S\n\r\u2028\u2029]*chain\s+\w+\s*\{/gm, 4); add("nft", /type\s+filter\s+hook/g, 5);
   add("cisco", /^access-list\s+\S+\s+(extended|standard|remark|permit|deny)\b/gm, 3); add("cisco", /^ip access-list (extended|standard)/gm, 6); add("cisco", /^object(-group)? (network|service)/gm, 3); add("cisco", /^access-group\s/gm, 4);
   add("pfsense-xml", /<filter>/g, 8); add("pfsense-xml", /<rule>[\s\S]{0,400}?<type>(pass|block|reject)<\/type>/g, 4); add("pfsense-xml", /<pfsense>|<opnsense>/g, 10);
   const head = s.split(/\r?\n/).slice(0, 3).join("\n");
   if (/action/i.test(head) && /interface/i.test(head) && /source/i.test(head) && /destination/i.test(head) && /[,;\t]/.test(head)) score["pfsense-csv"] = (score["pfsense-csv"] || 0) + 12;
-  add("fortigate", /^\s*config firewall (policy|address|service)/gm, 8); add("fortigate", /^\s*set (srcintf|dstintf|srcaddr|dstaddr)\b/gm, 2);
+  add("fortigate", /^[^\S\n\r\u2028\u2029]*config firewall (policy|address|service)/gm, 8); add("fortigate", /^[^\S\n\r\u2028\u2029]*set (srcintf|dstintf|srcaddr|dstaddr)\b/gm, 2);
   add("windows-netsh", /^Rule Name:/gm, 4); add("windows-netsh", /^(LocalIP|RemoteIP|LocalPort|Direction):/gm, 1);
   if (/displayname|rule name|^"?name"?/i.test(head) && /direction/i.test(head) && /action/i.test(head) && /[,;\t]/.test(head) && !/source/i.test(head)) score["windows-csv"] = (score["windows-csv"] || 0) + 12;
   let best = null, bestScore = 0;

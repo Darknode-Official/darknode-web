@@ -391,7 +391,7 @@ export function parseSslCert(output, obj) {
   }
   const t = String(output || "");
   const g = (re) => ((t.match(re) || [])[1] || "").trim();
-  c.subject = g(/^\s*Subject:\s*(.+)$/m); c.issuer = g(/^\s*Issuer:\s*(.+)$/m);
+  c.subject = g(/^[^\S\n\r\u2028\u2029]*Subject:\s*(.+)$/m); c.issuer = g(/^[^\S\n\r\u2028\u2029]*Issuer:\s*(.+)$/m);
   c.keyType = g(/Public Key type:\s*(\S+)/); c.keyBits = g(/Public Key bits:\s*(\d+)/); c.sigAlg = g(/Signature Algorithm:\s*(\S+)/);
   c.notBefore = g(/Not valid before:\s*(\S+)/); c.notAfter = g(/Not valid after:\s*(\S+)/); c.sha1 = g(/SHA-1:\s*([0-9a-f ]+)/i);
   const san = g(/Subject Alternative Name:\s*(.+)$/m);
@@ -526,8 +526,8 @@ function applyScript(rec, id, output, obj) {
   else if (lid === "http-title") { const t = obj && typeof obj === "object" && obj.title ? obj.title : out.split("\n").map((x) => x.trim()).find(Boolean) || ""; rec.banners.title = clip(t.replace(/^Site doesn't have a title.*$/i, ""), 300); }
   else if (lid === "http-server-header") { applyServerHeader(rec, Array.isArray(obj) && obj.length ? obj.join(" ") : out.trim()); }
   else if (lid === "http-headers") {
-    const s = out.match(/^\s*Server:\s*(.+)$/im); if (s && !rec.banners.server) applyServerHeader(rec, s[1]);
-    const p = out.match(/^\s*X-Powered-By:\s*(.+)$/im); if (p) rec.banners.poweredBy = clip(p[1].trim(), 200);
+    const s = out.match(/^[^\S\n\r\u2028\u2029]*Server:\s*(.+)$/im); if (s && !rec.banners.server) applyServerHeader(rec, s[1]);
+    const p = out.match(/^[^\S\n\r\u2028\u2029]*X-Powered-By:\s*(.+)$/im); if (p) rec.banners.poweredBy = clip(p[1].trim(), 200);
   }
   else if (lid === "ssh2-enum-algos") { rec.ssh = parseSsh2EnumAlgos(out); if (rec.ssh.weak.length) addFinding(rec, "ssh-weak-algos", rec.ssh.weak.join(", ")); }
   else if (lid === "sshv1") { if (/supports SSHv1/i.test(out)) addFinding(rec, "ssh-protocol-1", out.trim()); }
@@ -538,7 +538,7 @@ function applyScript(rec, id, output, obj) {
   else if (lid === "dns-recursion") { if (/Recursion appears to be enabled/i.test(out)) addFinding(rec, "dns-recursion", out.trim()); }
   else if (lid === "ntp-monlist") { if (out.trim() && !/error|failed|no response/i.test(out)) addFinding(rec, "ntp-monlist", out.trim().split("\n")[0]); }
   else if (/^snmp-/.test(lid)) { if (out.trim() && !/^\s*(error|failed)/i.test(out)) addFinding(rec, "snmp-community", id + ": " + out.trim().split("\n")[0]); }
-  else if (lid === "ldap-search") { if (/^\s*dn:/im.test(out)) addFinding(rec, "ldap-anon", "ldap-search returned " + (out.match(/^\s*dn:/gim) || []).length + " entries without credentials"); }
+  else if (lid === "ldap-search") { if (/^[^\S\n\r\u2028\u2029]*dn:/im.test(out)) addFinding(rec, "ldap-anon", "ldap-search returned " + (out.match(/^[^\S\n\r\u2028\u2029]*dn:/gim) || []).length + " entries without credentials"); }
   else if (lid === "rdp-enum-encryption") { const r = parseRdpEnum(out); if (r.nativeRdp) addFinding(rec, "rdp-no-nla", "Native RDP security layer accepted"); if (r.weakRc4) addFinding(rec, "rdp-weak-enc", "40/56-bit RC4 encryption accepted"); }
   else if (lid === "smb-protocols") { const p = parseSmbProtocols(out); if (p.smbv1) addFinding(rec, "smbv1", p.dialects.join(", ")); }
   else if (lid === "smb2-security-mode" || lid === "smb-security-mode") { if (parseSmbSigning(out).signingRequired === false) addFinding(rec, "smb-signing-not-required", out.trim().replace(/\s+/g, " ")); }
@@ -693,7 +693,7 @@ export function parseNmapXml(text, file = "nmap.xml", ctx) {
     for (const sc of kids(kid(h, "hostscript"), "script")) {
       const id = sc.attrs.id || "", out = sc.attrs.output || "";
       host.hostScripts[id] = clip(out);
-      if (id === "smb-os-discovery") { const m = out.match(/^\s*OS:\s*(.+)$/m); host.smbOs = m ? m[1].trim() : host.smbOs; const fq = out.match(/FQDN:\s*(\S+)/); if (fq) addHostname(host, fq[1], "smb"); }
+      if (id === "smb-os-discovery") { const m = out.match(/^[^\S\n\r\u2028\u2029]*OS:\s*(.+)$/m); host.smbOs = m ? m[1].trim() : host.smbOs; const fq = out.match(/FQDN:\s*(\S+)/); if (fq) addHostname(host, fq[1], "smb"); }
       if (HOST_SMB_SCRIPTS.test(id)) host.pendingHostFindings.push({ id, out, obj: tableObj(sc) });
     }
   }
@@ -874,7 +874,7 @@ export function parseNessus(text, file = "scan.nessus", ctx) {
       const out = (kid(it, "plugin_output") || {}).text || "";
       if (pid === "10107") { const m = out.match(/web server type is\s*:\s*\n+\s*(.+)/i); if (m) applyServerHeader(rec, m[1].trim()); }
       else if (pid === "10267") { const m = out.match(/SSH version\s*:\s*(\S.*)/i); if (m) { rec.banners.ssh = m[1].trim(); const b = parseSshBanner(m[1]); if (b) { rec.product = b.product; rec.version = b.version; } } }
-      else if (pid === "10881") { if (/^\s*-\s*1\.(33|5|99)/m.test(out)) addFinding(rec, "ssh-protocol-1", "SSH protocol 1 offered (" + out.replace(/\s+/g, " ").trim() + ")"); }
+      else if (pid === "10881") { if (/^[^\S\n\r\u2028\u2029]*-\s*1\.(33|5|99)/m.test(out)) addFinding(rec, "ssh-protocol-1", "SSH protocol 1 offered (" + out.replace(/\s+/g, " ").trim() + ")"); }
       else if (pid === "56984") { rec.tls.versions = uniq([...rec.tls.versions, ...(out.match(/SSLv[23]|TLSv1\.[0-3]/g) || [])]); }
       else if (pid === "10863") { const c = parseNessusCert(out); if (c) rec.tls.cert = c; }
       else if (pid === "57608") addFinding(rec, "smb-signing-not-required", "Nessus 57608: SMB signing not required");
