@@ -260,7 +260,7 @@ export function renderMobileSecurityLab(main) {
           '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">' +
           ADB_COMMANDS[cat].map(function(c) {
             return '<tr style="border-bottom:1px solid var(--line)">' +
-              '<td style="padding:6px 8px;font-family:var(--mono,monospace);font-size:.75rem;cursor:pointer;color:var(--acc)" onclick="navigator.clipboard.writeText(this.textContent).then(()=>{this.style.color=\'var(--ok)\';setTimeout(()=>this.style.color=\'\',500)})">' + esc(c.cmd) + '</td>' +
+              '<td style="padding:6px 8px;font-family:var(--mono,monospace);font-size:.75rem;cursor:pointer;color:var(--acc)" data-on-click="dnCopyText(this)">' + esc(c.cmd) + '</td>' +
               '<td style="padding:6px 8px;color:var(--mut)">' + esc(c.desc) + '</td></tr>';
           }).join('') +
           '</table></div>';
@@ -276,7 +276,7 @@ export function renderMobileSecurityLab(main) {
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
           '<span style="font-weight:600">' + esc(s.name) + '</span>' +
           '<span style="flex:1"></span>' +
-          '<button class="btn sm" onclick="navigator.clipboard.writeText(this.parentElement.parentElement.querySelector(\'pre\').textContent).then(()=>{this.textContent=\'Copied!\';setTimeout(()=>this.textContent=\'Copy\',1000)})">Copy</button>' +
+          '<button class="btn sm" data-on-click="dnCopyPre(this)">Copy</button>' +
           '</div>' +
           '<p style="color:var(--mut);font-size:.78rem;margin:0 0 8px">' + esc(s.desc) + '</p>' +
           '<pre style="background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px;font-size:.75rem;overflow-x:auto;white-space:pre;color:var(--acc)">' + esc(s.code) + '</pre>' +

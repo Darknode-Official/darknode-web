@@ -64,9 +64,9 @@ group("ssl-inspector", () => {
   });
   test("a quote in a certificate name cannot break out of the copy handler", async () => {
     const { html } = await search("example.com");
-    const attr = [...html.matchAll(/onclick="(navigator\.clipboard\.writeText\([^"]*)"/g)].map((m) => m[1]).find((a) => a.includes("alert"));
+    const attr = [...html.matchAll(/data-on-click="(dnCopy\([^"]*)"/g)].map((m) => m[1]).find((a) => a.includes("alert"));
     const decoded = attr.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
-    assert.ok(decoded.startsWith("navigator.clipboard.writeText(" + JSON.stringify("x');alert(1);('.example.com") + ");"), decoded);
+    assert.equal(decoded, "dnCopy(" + JSON.stringify("x');alert(1);('.example.com") + ", this)");
   });
 });
 

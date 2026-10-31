@@ -284,8 +284,8 @@ export function renderVanguard(container) {
   h += '<div style="display:flex;gap:8px;align-items:center;">';
   h += '<div style="color:' + c.mut + ';font-size:11px;letter-spacing:1px;flex-shrink:0;">TARGET:</div>';
   h += '<input id="vg-target" style="flex:1;background:' + c.inputBg + ';border:1px solid ' + c.inputBorder + ';border-radius:6px;color:' + c.inputColor + ';font-family:' + c.font + ';font-size:14px;padding:10px 14px;outline:none;" placeholder="example.com" spellcheck="false" autocomplete="off">';
-  h += '<button onclick="_vgLaunchRecon()" id="vg-launch-btn" style="background:' + c.btnBg + ';color:' + c.btnColor + ';border:1px solid ' + c.btnBorder + ';padding:10px 24px;font-family:' + c.font + ';font-size:12px;font-weight:' + (isPro ? '500' : 'bold') + ';cursor:pointer;border-radius:4px;letter-spacing:' + (isPro ? '.02em' : '2px') + ';transition:all 0.2s;">' + (isPro ? 'Launch Recon' : 'LAUNCH RECON') + '</button>';
-  h += '<button onclick="_vgAbort()" style="background:' + c.abortBg + ';color:' + c.abortColor + ';border:1px solid ' + c.abortBorder + ';padding:10px 16px;font-family:' + c.font + ';font-size:11px;cursor:pointer;border-radius:4px;letter-spacing:' + (isPro ? '.02em' : '1px') + ';">' + (isPro ? 'Abort' : 'ABORT') + '</button>';
+  h += '<button data-on-click="_vgLaunchRecon()" id="vg-launch-btn" style="background:' + c.btnBg + ';color:' + c.btnColor + ';border:1px solid ' + c.btnBorder + ';padding:10px 24px;font-family:' + c.font + ';font-size:12px;font-weight:' + (isPro ? '500' : 'bold') + ';cursor:pointer;border-radius:4px;letter-spacing:' + (isPro ? '.02em' : '2px') + ';transition:all 0.2s;">' + (isPro ? 'Launch Recon' : 'LAUNCH RECON') + '</button>';
+  h += '<button data-on-click="_vgAbort()" style="background:' + c.abortBg + ';color:' + c.abortColor + ';border:1px solid ' + c.abortBorder + ';padding:10px 16px;font-family:' + c.font + ';font-size:11px;cursor:pointer;border-radius:4px;letter-spacing:' + (isPro ? '.02em' : '1px') + ';">' + (isPro ? 'Abort' : 'ABORT') + '</button>';
   h += '</div>';
 
   // Authorization reminder
@@ -1623,10 +1623,10 @@ function _vgRenderIntel() {
   h += '<div id="vg-intel">';
   h += '<div class="vg-intel-head">INTELLIGENCE ANALYSIS</div>';
   h += '<div class="vg-tabbar">';
-  h += '<button class="vg-tab on" data-tab="riskmatrix" onclick="_vgIntelTab(\'riskmatrix\')">Host Risk Matrix</button>';
-  h += '<button class="vg-tab" data-tab="takeover" onclick="_vgIntelTab(\'takeover\')">Takeover / Dangling DNS</button>';
-  h += '<button class="vg-tab" data-tab="techagg" onclick="_vgIntelTab(\'techagg\')">Tech Fingerprint Aggregation</button>';
-  h += '<button class="vg-tab" data-tab="assetmap" onclick="_vgIntelTab(\'assetmap\')">Asset Relationship Map</button>';
+  h += '<button class="vg-tab on" data-tab="riskmatrix" data-on-click="_vgIntelTab(\'riskmatrix\')">Host Risk Matrix</button>';
+  h += '<button class="vg-tab" data-tab="takeover" data-on-click="_vgIntelTab(\'takeover\')">Takeover / Dangling DNS</button>';
+  h += '<button class="vg-tab" data-tab="techagg" data-on-click="_vgIntelTab(\'techagg\')">Tech Fingerprint Aggregation</button>';
+  h += '<button class="vg-tab" data-tab="assetmap" data-on-click="_vgIntelTab(\'assetmap\')">Asset Relationship Map</button>';
   h += '</div>';
 
   // --- Panel 1: Host Risk Matrix ---
@@ -1635,7 +1635,7 @@ function _vgRenderIntel() {
     h += '<div class="vg-empty">No live hosts with readable headers. Host probing may have been blocked by the browser (CSP) - run VANGUARD from the Darknode CLI for full host scoring.</div>';
   } else {
     h += '<div class="vg-panel-bar"><div class="vg-sub">' + risk.length + ' live host(s) ranked by computed exposure risk (security headers, TLS, banner disclosure, correlated CVEs and host findings).</div>';
-    h += '<button class="vg-mini-btn" onclick="_vgSendRiskToGraph()">Send Hosts to Security Graph</button></div>';
+    h += '<button class="vg-mini-btn" data-on-click="_vgSendRiskToGraph()">Send Hosts to Security Graph</button></div>';
     risk.forEach(function(r) {
       var col = _vgBandVar(r.band);
       h += '<div class="vg-riskrow">';
@@ -1868,14 +1868,14 @@ function _vgRenderPhaseResults() {
   // Report export
   if (_vgState.results.report) {
     h += '<div style="margin-top:12px;display:flex;gap:8px;">';
-    h += '<button onclick="_vgCopyReport()" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Copy Full Report (HTML)</button>';
-    h += '<button onclick="_vgExportJSON()" style="background:#2563eb15;color:#2563eb;border:1px solid #2563eb33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export JSON</button>';
-    h += '<button onclick="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export Log</button>';
+    h += '<button data-on-click="_vgCopyReport()" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Copy Full Report (HTML)</button>';
+    h += '<button data-on-click="_vgExportJSON()" style="background:#2563eb15;color:#2563eb;border:1px solid #2563eb33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export JSON</button>';
+    h += '<button data-on-click="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export Log</button>';
     h += '</div>';
   } else {
     h += '<div style="margin-top:12px;display:flex;gap:8px;">';
-    h += '<button onclick="_vgExportJSON()" style="background:#2563eb15;color:#2563eb;border:1px solid #2563eb33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export JSON</button>';
-    h += '<button onclick="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export Log</button>';
+    h += '<button data-on-click="_vgExportJSON()" style="background:#2563eb15;color:#2563eb;border:1px solid #2563eb33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export JSON</button>';
+    h += '<button data-on-click="_vgExportLog()" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff33;padding:8px 16px;font-family:var(--font-mono);font-size:10px;cursor:pointer;border-radius:4px;">Export Log</button>';
     h += '</div>';
   }
 

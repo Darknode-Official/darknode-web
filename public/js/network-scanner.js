@@ -44,8 +44,8 @@ export function renderNetworkScanner(container) {
   // Input
   h += '<div class="card">';
   h += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
-  h += '<input id="ns-target" style="flex:1;" placeholder="Domain or IPv4 address" onkeydown="if(event.key===\'Enter\')_nsLookup()">';
-  h += '<button class="btn" onclick="_nsLookup()">Look up</button>';
+  h += '<input id="ns-target" style="flex:1;" placeholder="Domain or IPv4 address" data-on-keydown="if(event.key===\'Enter\')_nsLookup()">';
+  h += '<button class="btn" data-on-click="_nsLookup()">Look up</button>';
   h += '</div>';
   h += '<div style="color:var(--mut);font-size:12px;">Port data comes from Shodan InternetDB and reflects its most recent public scan, not a scan run now. Browsers cannot open raw TCP connections, so no ports are probed from this page.</div>';
   h += '</div>';

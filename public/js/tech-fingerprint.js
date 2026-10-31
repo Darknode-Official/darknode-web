@@ -82,7 +82,7 @@ export function renderTechFingerprint(container) {
   h += '<div class="card">';
   h += '<div style="display:flex;gap:8px;">';
   h += '<input id="tf-url" style="flex:1;" placeholder="https://example.com">';
-  h += '<button class="btn" onclick="_tfScan()">Fingerprint</button>';
+  h += '<button class="btn" data-on-click="_tfScan()">Fingerprint</button>';
   h += '</div>';
   h += '<div style="color:var(--mut);font-size:12px;margin-top:8px;">Fetches the target server-side through the Darknode SSRF-guarded proxy and fingerprints technologies from the real response headers and HTML body. Public hosts only.</div>';
   h += '</div>';

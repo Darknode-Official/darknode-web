@@ -1243,7 +1243,7 @@ export function renderPhantom(main) {
 
     function layerHTML(name, color, fields) {
       return '<li class="ph-tree-node">' +
-        '<div class="ph-tree-head" style="background:' + color + '20;border-left:3px solid ' + color + '" onclick="this.nextElementSibling.hidden=!this.nextElementSibling.hidden;this.querySelector(\'.ph-tree-arrow\').classList.toggle(\'open\')">' +
+        '<div class="ph-tree-head" style="background:' + color + '20;border-left:3px solid ' + color + '" data-on-click="dnToggleNext(this, \'.ph-tree-arrow\')">' +
           '<span class="ph-tree-arrow open">&#9654;</span>' +
           '<span style="color:' + color + ';font-weight:700">' + esc(name) + '</span>' +
         '</div>' +

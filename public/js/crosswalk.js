@@ -369,7 +369,7 @@ export async function renderCrosswalk(main) {
     return `<div class="cw-ctrl"><span class="cw-cid">${esc(m.c || "—")}</span><span class="cw-cn">${esc(m.n || "")}</span><span class="cw-meta">${tags.join("")}</span></div>`;
   }
   function fwBlock(f, maps, open) {
-    return `<div class="cw-fw${open ? " open" : ""}"><div class="cw-fwh"><span class="cw-caret">▶</span><span class="cw-fwn">${esc(f)}</span>${fwVer[f] ? `<span class="cw-fwv">${esc(fwVer[f])}</span>` : ""}<span class="cw-pill">${maps.length}</span>${fwUrl[f] ? `<a class="cw-link" href="${esc(fwUrl[f])}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗</a>` : ""}</div><div class="cw-ctrls">${maps.map(ctrlRow).join("")}</div></div>`;
+    return `<div class="cw-fw${open ? " open" : ""}"><div class="cw-fwh"><span class="cw-caret">▶</span><span class="cw-fwn">${esc(f)}</span>${fwVer[f] ? `<span class="cw-fwv">${esc(fwVer[f])}</span>` : ""}<span class="cw-pill">${maps.length}</span>${fwUrl[f] ? `<a class="cw-link" href="${esc(fwUrl[f])}" target="_blank" rel="noopener" data-on-click="event.stopPropagation()">↗</a>` : ""}</div><div class="cw-ctrls">${maps.map(ctrlRow).join("")}</div></div>`;
   }
   function riskBlock(g, open) {
     const meta = LIST_META[g.risk.list] || {};

@@ -380,7 +380,7 @@
           // Field-driven: render only attributes actually present on the point.
           // For resolved IPs these are real ip-api fields (IP, country, city,
           // ISP, org, AS). Nothing is invented.
-          var h = '<div style="position:absolute;top:6px;right:10px;color:var(--mut,#7a93b8);cursor:pointer;font-size:16px;" onclick="document.getElementById(\'tm-popup\').style.display=\'none\'">x</div>';
+          var h = '<div style="position:absolute;top:6px;right:10px;color:var(--mut,#7a93b8);cursor:pointer;font-size:16px;" data-on-click="dnHideId(\'tm-popup\')">x</div>';
           h += '<div style="color:' + color + ';font-weight:bold;font-size:13px;letter-spacing:1px;margin-bottom:6px;padding-right:20px;">' + _esc(actor.name || actor.id || 'Point') + '</div>';
           function row(label, val) {
             if (val === undefined || val === null || val === '') return '';

@@ -62,8 +62,8 @@ export function renderAsnExplorer(container) {
   h += '<div class="asn-bar">';
   h += '<div style="display:flex;gap:8px;">';
   h += '<input id="asn-input" class="asn-input" placeholder="ASN or org name">';
-  h += '<button onclick="_asnLookup()" class="asn-btn">Lookup</button>';
-  h += '<button onclick="_asnSearch()" class="asn-btn warn">Search</button>';
+  h += '<button data-on-click="_asnLookup()" class="asn-btn">Lookup</button>';
+  h += '<button data-on-click="_asnSearch()" class="asn-btn warn">Search</button>';
   h += '</div>';
   h += '<div class="asn-note">Data from RIPEstat (stat.ripe.net) — free, no API key required</div>';
   h += '</div>';
@@ -77,7 +77,7 @@ export function renderAsnExplorer(container) {
   var bpKeys = Object.keys(_asnBulletproof);
   for (var b = 0; b < bpKeys.length; b++) {
     var asn = bpKeys[b];
-    h += '<div class="asn-bp-item" onclick="_asnLookupDirect(' + esc(asn) + ')">';
+    h += '<div class="asn-bp-item" data-on-click="_asnLookupDirect(' + esc(asn) + ')">';
     h += '<span class="asn-bp-asn">AS' + esc(asn) + '</span>';
     h += '<span class="asn-bp-desc">' + esc(_asnBulletproof[asn]) + '</span>';
     h += '</div>';
@@ -171,7 +171,7 @@ window._asnSearch = function() {
         var isBP = _asnBulletproof[a.asn];
         var repColor = isBP ? 'var(--bad)' : 'var(--mut)';
         var repText = isBP ? 'On list' : 'Not listed';
-        h += '<tr style="border-bottom:1px solid var(--line,#283a5a);cursor:pointer;" onclick="_asnLookupDirect(' + a.asn + ')">';
+        h += '<tr style="border-bottom:1px solid var(--line,#283a5a);cursor:pointer;" data-on-click="_asnLookupDirect(' + a.asn + ')">';
         h += '<td class="asn-td-asn">AS' + a.asn + '</td>';
         h += '<td class="asn-td">' + esc(a.name || a.description || '') + '</td>';
         h += '<td style="padding:6px;"><span style="color:' + repColor + ';font-size:12px;padding:1px 6px;border:1px solid ' + repColor + ';border-radius:2px;">' + repText + '</span></td>';
@@ -276,7 +276,7 @@ function _asnRenderResults(el, asn, asnData, prefixData, peerData) {
         var peer = upstream[u];
         var peerBP = _asnBulletproof[peer.asn];
         var peerColor = peerBP ? '#dc2626' : '#2563eb'; // hex: alpha suffix appended below
-        h += '<span style="background:' + peerColor + '10;border:1px solid ' + peerColor + '33;border-radius:4px;padding:2px 6px;font-size:12px;color:' + peerColor + ';cursor:pointer;font-family:var(--font-mono);" onclick="_asnLookupDirect(' + peer.asn + ')" title="' + esc(peer.name || '') + '">AS' + peer.asn + '</span>';
+        h += '<span style="background:' + peerColor + '10;border:1px solid ' + peerColor + '33;border-radius:4px;padding:2px 6px;font-size:12px;color:' + peerColor + ';cursor:pointer;font-family:var(--font-mono);" data-on-click="_asnLookupDirect(' + peer.asn + ')" title="' + esc(peer.name || '') + '">AS' + peer.asn + '</span>';
       }
       if (upstream.length > 40) h += '<span style="color:var(--mut,#7a93b8);font-size:12px;padding:2px 6px;">+' + (upstream.length - 40) + ' more</span>';
       h += '</div>';

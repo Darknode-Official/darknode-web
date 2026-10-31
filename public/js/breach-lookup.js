@@ -157,12 +157,12 @@ function _blRenderDashboard() {
 
   // Filters
   h += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">';
-  h += '<input id="bl-search" type="text" placeholder="Company or domain" oninput="_blDoFilter()" style="flex:1;min-width:200px;">';
-  h += '<select id="bl-year" onchange="_blDoFilter()">';
+  h += '<input id="bl-search" type="text" placeholder="Company or domain" data-on-input="_blDoFilter()" style="flex:1;min-width:200px;">';
+  h += '<select id="bl-year" data-on-change="_blDoFilter()">';
   h += '<option value="all">All years</option>';
   for (var y = sortedYears.length - 1; y >= 0; y--) { h += '<option value="' + esc(sortedYears[y]) + '">' + esc(sortedYears[y]) + '</option>'; }
   h += '</select>';
-  h += '<select id="bl-data" onchange="_blDoFilter()">';
+  h += '<select id="bl-data" data-on-change="_blDoFilter()">';
   h += '<option value="all">All data types</option>';
   Object.keys(dataClasses).sort().forEach(function(d) { h += '<option value="' + esc(d) + '">' + esc(d) + '</option>'; });
   h += '</select>';

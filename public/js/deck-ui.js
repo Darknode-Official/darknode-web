@@ -162,7 +162,7 @@ const faviconURL = (domain) => `https://www.google.com/s2/favicons?domain=${doma
 // logo chip: live favicon with monogram fallback on error
 function logoHTML(it, cls){
   return `<img class="${cls} logo" src="${faviconURL(it.fav || it.domain)}" alt="" loading="lazy" referrerpolicy="no-referrer"
-    onerror="this.outerHTML='<span class=\\'${cls} mono\\' style=\\'--a:${it.accent}\\'>${esc(monogram(it.name))}</span>'">`;
+    data-fb-cls="${esc(cls)}" data-fb-a="${esc(it.accent || "")}" data-fb-t="${esc(monogram(it.name))}" data-on-error="dnLogoFallback(this)">`;
 }
 
 // Every tool gets a meaningful line-icon, routed from its label/category by

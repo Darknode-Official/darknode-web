@@ -19,8 +19,8 @@ export function renderWebSocketTester(container) {
   h += '<div class="card">';
   h += '<div style="display:flex;gap:8px;margin-bottom:8px;">';
   h += '<input id="ws-url" style="flex:1;" placeholder="wss://echo.websocket.org">';
-  h += '<button class="btn" id="ws-connect-btn" onclick="_wsConnect()">Connect</button>';
-  h += '<button class="btn ghost" onclick="_wsDisconnect()">Close</button>';
+  h += '<button class="btn" id="ws-connect-btn" data-on-click="_wsConnect()">Connect</button>';
+  h += '<button class="btn ghost" data-on-click="_wsDisconnect()">Close</button>';
   h += '</div>';
   h += '<div id="ws-status" style="font-size:12px;color:var(--bad);">Disconnected</div>';
   h += '</div>';
@@ -30,9 +30,9 @@ export function renderWebSocketTester(container) {
   h += '<div style="display:flex;gap:8px;">';
   h += '<textarea id="ws-message" style="flex:1;font-family:monospace;font-size:12px;resize:vertical;height:60px;" placeholder="Message to send..."></textarea>';
   h += '<div style="display:flex;flex-direction:column;gap:4px;">';
-  h += '<button class="btn sm" onclick="_wsSend()">Send</button>';
-  h += '<button class="btn ghost sm" onclick="_wsSendJSON()">JSON</button>';
-  h += '<button class="btn ghost sm" onclick="_wsClear()">Clear</button>';
+  h += '<button class="btn sm" data-on-click="_wsSend()">Send</button>';
+  h += '<button class="btn ghost sm" data-on-click="_wsSendJSON()">JSON</button>';
+  h += '<button class="btn ghost sm" data-on-click="_wsClear()">Clear</button>';
   h += '</div></div></div>';
 
   // Log
@@ -55,7 +55,7 @@ export function renderWebSocketTester(container) {
     { url: 'wss://stream.binance.com:9443/ws/ethusdt@trade', label: 'Binance ETH' }
   ];
   for (var ep = 0; ep < endpoints.length; ep++) {
-    h += '<button onclick="document.getElementById(\'ws-url\').value=\'' + esc(endpoints[ep].url) + '\'" class="btn ghost sm">' + esc(endpoints[ep].label) + '</button>';
+    h += '<button data-on-click="dnSetValue(\'ws-url\', \'' + esc(endpoints[ep].url) + '\')" class="btn ghost sm">' + esc(endpoints[ep].label) + '</button>';
   }
   h += '</div></div>';
 
