@@ -650,7 +650,7 @@ function showLanding() {
     <div class="nav-dd" data-dd="products">
       <button class="nav-dd-btn">Products <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
       <div class="nav-dd-menu">
-        <a class="nav-dd-item" href="/get-started" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></span><span><strong>Web App</strong><span class="nav-dd-desc">Tools and labs in your browser</span></span></a>
+        <a class="nav-dd-item" href="/get-started" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></span><span><strong>Web App</strong><span class="nav-dd-desc">The Deck security workspace in your browser</span></span></a>
         <a class="nav-dd-item" href="/quelvra/"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h6M7 9v6M14 9h6M14 15h6"/><rect x="2" y="3" width="20" height="18" rx="3"/></svg></span><span><strong>Quelvra Math</strong><span class="nav-dd-desc">Verified math engine, works offline</span></span></a>
         <a class="nav-dd-item" href="https://github.com/Darknode-Official/darknode-cli" target="_blank" rel="noopener"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span><span><strong>CLI</strong><span class="nav-dd-desc">Install from GitHub</span></span></a><!-- NPM_SUSPENDED: restore "Install via npm" when the npm account is back -->
         <a class="nav-dd-item" href="https://github.com/Darknode-Official/darknode-os" target="_blank" rel="noopener"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/></svg></span><span><strong>Linux VM</strong><span class="nav-dd-desc">Pre-built Darknode OS</span></span></a>
@@ -659,10 +659,9 @@ function showLanding() {
     <div class="nav-dd" data-dd="features">
       <button class="nav-dd-btn">Features <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
       <div class="nav-dd-menu">
-        <a class="nav-dd-item" href="/features" data-nav="section" data-section="features"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span><strong>Overview</strong><span class="nav-dd-desc">Everything you need to learn security</span></span></a>
-        <a class="nav-dd-item" href="/arsenal" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span><strong>Tools</strong><span class="nav-dd-desc">140+ tools plus 780 quick utilities</span></span></a>
+        <a class="nav-dd-item" href="/features" data-nav="section" data-section="features"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span><strong>Overview</strong><span class="nav-dd-desc">What Darknode checks, and how</span></span></a>
+        <a class="nav-dd-item" href="/arsenal" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span><strong>Tools</strong><span class="nav-dd-desc">Analysis tools for code, cloud, email and identity</span></span></a>
         <a class="nav-dd-item" href="/ai" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span><span><strong>Darknode AI</strong><span class="nav-dd-desc">AI-powered security agent</span></span></a>
-        <a class="nav-dd-item" href="/cyberrange" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3h6v4l4 8H5l4-8V3z"/><path d="M5 15h14v2a4 4 0 01-4 4H9a4 4 0 01-4-4v-2z"/></svg></span><span><strong>Practice Labs</strong><span class="nav-dd-desc">Hands-on CTF challenges</span></span></a>
       </div>
     </div>
     <div class="nav-dd" data-dd="resources">
@@ -694,7 +693,8 @@ function showLanding() {
       document.querySelectorAll(".nav-dd.open").forEach(d => d.classList.remove("open"));
       const nav = item.dataset.nav;
       if (nav === "auth") {
-        history.pushState(null, "", item.getAttribute("href"));
+        // Don't push the item's path: after sign-in the Deck reads the URL as a tool to
+        // open, and these marketing paths aren't tools ("That page was not found.").
         renderAuth("signup");
       } else if (nav === "section") {
         window.location.href = item.getAttribute("href");
@@ -791,8 +791,6 @@ function renderAuth(mode = "signin") {
         </div>
         <p id="err" class="auth-err"></p>
         <div class="auth-test"><a id="testMode">Test Mode (no account)</a></div>
-        <div class="auth-test"><a id="betaAsk">Request a tool for our Beta Lab</a></div>
-        <div id="betaAskPanel" hidden style="margin-top:14px;text-align:left"></div>
       </section>
       <div class="auth-footer">darknode.ai &mdash; cybersecurity platform</div>
     </div>`;
@@ -871,14 +869,6 @@ function renderAuth(mode = "signin") {
   };
   const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
   if (isDesktop()) { const b = document.getElementById("authBack"); if (b) b.remove(); } else on("authBack", showLanding);
-  on("betaAsk", async () => {
-    const panel = document.getElementById("betaAskPanel");
-    if (!panel) return;
-    if (!panel.hidden) { panel.hidden = true; return; }
-    panel.hidden = false;
-    try { const m = await import("/js/beta-lab.js?v=20261029c"); m.mountRequestForm(panel, { user: null }); }
-    catch (_) { panel.textContent = "Beta Lab is unavailable right now."; }
-  });
   on("toSignup", () => renderAuth("signup"));
   on("toSignin", () => renderAuth("signin"));
   on("forgot", async () => {
@@ -1058,7 +1048,9 @@ function applyLogo(key) {
   if (!LOGO_VARIANTS[key]) return;
   try { localStorage.setItem("sw_logo", key); } catch (_) {}
   const mark = document.querySelector(".brand-mark");
-  if (mark) { mark.src = "data:image/svg+xml," + encodeURIComponent(logoSvg(key).replace(/currentColor/g, "#F2F5F9")); }
+  // Ink follows the header: dark strokes on the white Professional header, light on dark ones.
+  const ink = /^(dark|classic)$/.test(document.documentElement.getAttribute("data-style") || "") ? "#F2F5F9" : "#101722";
+  if (mark) { mark.src = "data:image/svg+xml," + encodeURIComponent(logoSvg(key).replace(/currentColor/g, ink)); }
   let fav = document.querySelector('link[rel="icon"]');
   if (!fav) { fav = document.createElement("link"); fav.rel = "icon"; document.head.appendChild(fav); }
   fav.href = "data:image/svg+xml," + encodeURIComponent(logoFavSvg(key));
@@ -1646,26 +1638,6 @@ claude mcp add darknode -- node ~/darknode-cli/darknode.js mcp</code></pre>
   }
   main.querySelector(".set-nav").onclick = (e) => { const b = e.target.closest(".set-tab"); if (b) showSetTab(b.dataset.stab); };
   wireSetPanel();
-}
-
-// Gamer "ACCESS GRANTED" neon-portal transition, played once on a FRESH sign-in
-// (never on a session-restore page load). Renders the app under the overlay
-// mid-animation so it's ready as the portal clears. Falls straight through when
-// the visitor prefers reduced motion.
-function playAccessGranted(name, cb) {
-  try {
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches) { cb(); return; }
-  } catch (_) {}
-  const safe = String(name || "").replace(/[<>&"']/g, "").slice(0, 24);
-  const o = document.createElement("div");
-  o.id = "xfer";
-  o.innerHTML = '<div class="xgrid"></div><div class="xring"></div><div class="xring b"></div>'
-    + '<div class="xmsg"><div class="xgranted">Welcome Operator</div><div class="xwho">'
-    + (safe ? safe : "Access Granted") + '</div></div><div class="xflash"></div>';
-  document.body.appendChild(o);
-  let ran = false; const go = () => { if (ran) return; ran = true; try { cb(); } catch (_) {} };
-  setTimeout(go, 720);                    // build the app beneath the portal
-  setTimeout(() => { try { o.remove(); } catch (_) {} }, 1800); // remove after it fades
 }
 
 // Which account the app is currently rendered for (see the onAuthStateChanged guard),
@@ -2862,7 +2834,7 @@ onAuthStateChanged(auth, async (user) => {
   // license verification
   const _hn = [0x64,0x61,0x72,0x6b,0x6e,0x6f,0x64,0x65,0x2e,0x61,0x69].map(c=>String.fromCharCode(c)).join("");
   if(location.hostname!==_hn&&location.hostname!=="www."+_hn&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"&&!/^sentinel-b4194(-6173e)?--[a-z0-9-]+\.web\.app$/.test(location.hostname)){document.body.innerHTML="";return}
-  let fresh = false; try { fresh = sessionStorage.getItem("sw_fresh_signin") === "1"; if (fresh) sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
+  try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
   if (!user) {
     // Embedded tool frame (/<sec>?embed=1 inside the Deck): the parent tab is signed in,
     // but this child frame's own Firebase persistence can resolve to null (the default
@@ -3065,9 +3037,8 @@ onAuthStateChanged(auth, async (user) => {
       </div>`;
     document.getElementById("tosAgree").onclick = async () => {
       await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosVersion: TOS_VERSION, tosAcceptedAt: serverTimestamp() }, { merge: true });
-      const enter = () => { try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {} renderApp(user); loadAnnouncement(); };
-      if (fresh) playAccessGranted(user.displayName || ((user.email || "").split("@")[0]), enter);
-      else enter();
+      try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {}
+      renderApp(user); loadAnnouncement();
     };
     document.getElementById("tosDecline").onclick = async () => {
       await signOut(auth);
@@ -3075,9 +3046,6 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // Fresh sign-in (flag captured up top)? Play the gamer "Access Granted" portal,
-  // then reveal the app. A session-restore page load has no flag → boots straight in.
-  const enter = () => { try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {} renderApp(user); loadAnnouncement(); };
-  if (fresh) playAccessGranted(user.displayName || ((user.email || "").split("@")[0]), enter);
-  else enter();
+  try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {}
+  renderApp(user); loadAnnouncement();
 });
