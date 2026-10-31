@@ -121,11 +121,11 @@ export const TOOLS = [
 
   { id: "bt-spl-builder", name: "Splunk SPL Query Builder", cat: "blueteam", desc: "Build a Splunk search from index/sourcetype, field filters, time range and a stats-by clause.", tags: ["splunk", "spl", "siem"],
     inputs: [
-      { k: "index", label: "index", type: "text", value: "wineventlog" },
-      { k: "sourcetype", label: "sourcetype", type: "text", value: "WinEventLog:Security" },
-      { k: "earliest", label: "earliest", type: "text", value: "-24h" },
-      { k: "filters", label: "Field filters (one 'field=value' per line)", type: "textarea", rows: 3, value: "EventCode=4625\nAccount_Name=*" },
-      { k: "statsBy", label: "stats count by (field, optional)", type: "text", value: "Account_Name, src_ip" },
+      { k: "index", label: "index", type: "text", placeholder: "wineventlog" },
+      { k: "sourcetype", label: "sourcetype", type: "text", placeholder: "WinEventLog:Security" },
+      { k: "earliest", label: "earliest", type: "text", placeholder: "-24h" },
+      { k: "filters", label: "Field filters (one 'field=value' per line)", type: "textarea", rows: 3, placeholder: "EventCode=4625" },
+      { k: "statsBy", label: "stats count by (field, optional)", type: "text", placeholder: "Account_Name, src_ip" },
     ],
     run(v) {
       const parts = [];
@@ -140,8 +140,8 @@ export const TOOLS = [
 
   { id: "bt-spl-rex-build", name: "Splunk rex Extraction Builder", cat: "blueteam", desc: "Turn a regex with named groups into a Splunk `| rex` field-extraction command.", tags: ["splunk", "rex", "extract"],
     inputs: [
-      { k: "field", label: "Source field", type: "text", value: "_raw" },
-      { k: "regex", label: "Regex with (?<name>...) groups", type: "textarea", rows: 2, value: "user=(?<user>\\w+)\\s+src=(?<src_ip>\\d+\\.\\d+\\.\\d+\\.\\d+)" },
+      { k: "field", label: "Source field", type: "text", placeholder: "_raw" },
+      { k: "regex", label: "Regex with (?<name>...) groups", type: "textarea", rows: 2, placeholder: "user=(?<user>\\w+)\\s+src=(?<src_ip>\\S+)" },
     ],
     run(v) {
       if (!v.regex) return "";
@@ -175,10 +175,10 @@ export const TOOLS = [
 
   { id: "bt-kql-builder", name: "KQL Query Builder (Sentinel/Defender)", cat: "blueteam", desc: "Build a Microsoft Sentinel / Defender KQL query from a table, filters, time window and summarize.", tags: ["kql", "sentinel", "defender", "kusto"],
     inputs: [
-      { k: "table", label: "Table", type: "text", value: "DeviceProcessEvents" },
-      { k: "timespan", label: "Time window (ago)", type: "text", value: "24h" },
-      { k: "where", label: "where conditions (one per line)", type: "textarea", rows: 3, value: 'FileName =~ "cmd.exe"\nProcessCommandLine has "whoami"' },
-      { k: "summarize", label: "summarize ... by (optional)", type: "text", value: "count() by DeviceName, AccountName" },
+      { k: "table", label: "Table", type: "text", placeholder: "DeviceProcessEvents" },
+      { k: "timespan", label: "Time window (ago)", type: "text", placeholder: "24h" },
+      { k: "where", label: "where conditions (one per line)", type: "textarea", rows: 3, placeholder: 'FileName =~ "cmd.exe"' },
+      { k: "summarize", label: "summarize ... by (optional)", type: "text", placeholder: "count() by DeviceName" },
       { k: "project", label: "project fields (optional)", type: "text" },
     ],
     run(v) {
@@ -193,8 +193,8 @@ export const TOOLS = [
 
   { id: "bt-kql-parse-build", name: "KQL parse Statement Builder", cat: "blueteam", desc: "Build a KQL `parse` operator from a sample line with {field} placeholders.", tags: ["kql", "parse", "extract"],
     inputs: [
-      { k: "column", label: "Source column", type: "text", value: "RawData" },
-      { k: "template", label: "Template with {field} placeholders", type: "text", value: "user={user} ip={src_ip} action={action}" },
+      { k: "column", label: "Source column", type: "text", placeholder: "RawData" },
+      { k: "template", label: "Template with {field} placeholders", type: "text", placeholder: "user={user} ip={src_ip}" },
     ],
     run(v) {
       if (!v.template) return "";
@@ -261,12 +261,12 @@ export const TOOLS = [
 
   { id: "bt-osquery-pack", name: "osquery Pack Snippet Builder", cat: "blueteam", desc: "Build an osquery query-pack JSON entry from a name, SQL, interval and platform.", tags: ["osquery", "pack", "json"],
     inputs: [
-      { k: "name", label: "Query name", type: "text", value: "listening_ports" },
-      { k: "query", label: "SQL query", type: "textarea", rows: 2, value: "SELECT pid, address, port, protocol FROM listening_ports;" },
+      { k: "name", label: "Query name", type: "text", placeholder: "listening_ports" },
+      { k: "query", label: "SQL query", type: "textarea", rows: 2, placeholder: "SELECT pid, address, port, protocol FROM listening_ports;" },
       { k: "interval", label: "Interval (seconds)", type: "text", value: "300" },
       { k: "platform", label: "Platform", type: "select", opts: ["all", "linux", "darwin", "windows", "posix"], value: "all" },
       { k: "snapshot", label: "Snapshot (vs differential)", type: "checkbox", value: false },
-      { k: "desc", label: "Description", type: "text", value: "Current listening network ports" },
+      { k: "desc", label: "Description", type: "text", placeholder: "Current listening network ports" },
     ],
     run(v) {
       if (!v.name || !v.query) return { error: "Set a name and query." };
@@ -310,9 +310,9 @@ export const TOOLS = [
       { k: "dir", label: "Direction", type: "select", opts: ["->", "<>"], value: "->" },
       { k: "dst", label: "Dest", type: "text", value: "$HOME_NET" },
       { k: "dstport", label: "Dst port", type: "text", value: "any" },
-      { k: "msg", label: "msg", type: "text", value: "ET POLICY Suspicious whoami in URI" },
-      { k: "content", label: "content (optional)", type: "text", value: "whoami" },
-      { k: "sid", label: "sid", type: "text", value: "1000001" },
+      { k: "msg", label: "msg", type: "text", placeholder: "ET POLICY Suspicious whoami in URI" },
+      { k: "content", label: "content (optional)", type: "text", placeholder: "whoami" },
+      { k: "sid", label: "sid", type: "text", placeholder: "1000001" },
     ],
     run(v) {
       const opts = [];
@@ -349,7 +349,7 @@ export const TOOLS = [
     } },
 
   { id: "bt-grok-build", name: "Grok Pattern Builder", cat: "blueteam", desc: "Assemble a Logstash grok pattern from PATTERN:field tokens and literal text.", tags: ["grok", "logstash", "parse"],
-    inputs: [{ k: "tokens", label: "Tokens (one 'PATTERN field' or 'lit:text' per line)", type: "textarea", rows: 5, value: "IPORHOST client\nlit: - \nUSER user\nlit: [\nTIMESTAMP_ISO8601 ts\nlit:] \nWORD method" }],
+    inputs: [{ k: "tokens", label: "Tokens (one 'PATTERN field' or 'lit:text' per line)", type: "textarea", rows: 5, placeholder: "IPORHOST client\nlit: - \nUSER user\nWORD method" }],
     run(v) {
       const out = [];
       for (const raw of S(v.tokens).split(/\r?\n/)) {
@@ -365,8 +365,8 @@ export const TOOLS = [
 
   { id: "bt-grok-test", name: "Grok Pattern Tester", cat: "blueteam", desc: "Test a grok pattern against a sample log line and show the captured fields as JSON.", tags: ["grok", "test", "logstash"],
     inputs: [
-      { k: "pattern", label: "Grok pattern", type: "textarea", rows: 2, value: "%{IPV4:client} - %{USER:user} \\[%{TIMESTAMP_ISO8601:ts}\\] %{WORD:method}" },
-      { k: "sample", label: "Sample line", type: "text", value: "192.0.2.10 - alice [2026-10-03T12:30:00Z] GET" },
+      { k: "pattern", label: "Grok pattern", type: "textarea", rows: 2, placeholder: "%{IPV4:client} %{WORD:method}" },
+      { k: "sample", label: "Sample line", type: "text", placeholder: "192.0.2.10 GET" },
     ],
     run(v) {
       if (!v.pattern || !v.sample) return "";
@@ -389,10 +389,10 @@ export const TOOLS = [
 
   { id: "bt-logstash-filter", name: "Logstash Filter Block Builder", cat: "blueteam", desc: "Build a Logstash filter{} block with grok, date and mutate stages.", tags: ["logstash", "grok", "pipeline"],
     inputs: [
-      { k: "match", label: "grok match pattern", type: "textarea", rows: 2, value: "%{IPV4:client} %{WORD:method} %{NOTSPACE:request}" },
-      { k: "field", label: "Source field", type: "text", value: "message" },
-      { k: "dateField", label: "Date field to parse (optional)", type: "text", value: "ts" },
-      { k: "remove", label: "mutate remove_field (comma-sep, optional)", type: "text", value: "message" },
+      { k: "match", label: "grok match pattern", type: "textarea", rows: 2, placeholder: "%{IPV4:client} %{WORD:method}" },
+      { k: "field", label: "Source field", type: "text", placeholder: "message" },
+      { k: "dateField", label: "Date field to parse (optional)", type: "text", placeholder: "ts" },
+      { k: "remove", label: "mutate remove_field (comma-sep, optional)", type: "text", placeholder: "message" },
     ],
     run(v) {
       if (!v.match) return "";
@@ -406,8 +406,8 @@ export const TOOLS = [
 
   { id: "bt-log-field-extract", name: "Log Field Extractor", cat: "blueteam", desc: "Apply a regex with named groups to each log line and output the captured fields as JSON.", tags: ["regex", "extract", "log", "parse"],
     inputs: [
-      { k: "regex", label: "Regex with (?<name>...) groups", type: "textarea", rows: 2, value: "^(?<ip>\\S+) \\S+ (?<user>\\S+) \\[(?<ts>[^\\]]+)\\]" },
-      { k: "text", label: "Log lines", type: "textarea", rows: 5, value: '198.51.100.7 - bob [03/Oct/2026:10:00:00 +0000]\n198.51.100.9 - eve [03/Oct/2026:10:00:05 +0000]' },
+      { k: "regex", label: "Regex with (?<name>...) groups", type: "textarea", rows: 2, placeholder: "^(?<ip>\\S+) \\S+ (?<user>\\S+)" },
+      { k: "text", label: "Log lines", type: "textarea", rows: 5, placeholder: '198.51.100.7 - bob [03/Oct/2026:10:00:00 +0000]' },
     ],
     run(v) {
       if (!v.regex || !v.text) return "";
@@ -426,12 +426,12 @@ export const TOOLS = [
 
   { id: "bt-wazuh-rule", name: "Wazuh / OSSEC Rule Scaffold", cat: "blueteam", desc: "Generate a Wazuh/OSSEC decoder-matching rule XML block.", tags: ["wazuh", "ossec", "rule", "xml"],
     inputs: [
-      { k: "group", label: "Group name", type: "text", value: "local,authentication" },
-      { k: "id", label: "Rule id (>=100000 for custom)", type: "text", value: "100100" },
-      { k: "level", label: "Level (0-16)", type: "text", value: "10" },
-      { k: "ifSid", label: "if_sid (parent rule, optional)", type: "text", value: "5716" },
-      { k: "match", label: "match / field value", type: "text", value: "authentication failure" },
-      { k: "desc", label: "Description", type: "text", value: "Repeated SSH authentication failure" },
+      { k: "group", label: "Group name", type: "text", placeholder: "local,authentication" },
+      { k: "id", label: "Rule id (>=100000 for custom)", type: "text", placeholder: "100100" },
+      { k: "level", label: "Level (0-16)", type: "text", placeholder: "10" },
+      { k: "ifSid", label: "if_sid (parent rule, optional)", type: "text", placeholder: "5716" },
+      { k: "match", label: "match / field value", type: "text", placeholder: "authentication failure" },
+      { k: "desc", label: "Description", type: "text", placeholder: "Repeated SSH authentication failure" },
     ],
     run(v) {
       const lvl = Math.max(0, Math.min(16, parseInt(v.level, 10) || 0));
@@ -442,7 +442,7 @@ export const TOOLS = [
   { id: "bt-eql-build", name: "Elastic EQL Query Builder", cat: "blueteam", desc: "Build an Elastic EQL event query (optionally a sequence) from category and conditions.", tags: ["eql", "elastic", "detection"],
     inputs: [
       { k: "category", label: "Event category", type: "select", opts: ["process", "network", "file", "registry", "authentication", "any"], value: "process" },
-      { k: "conds", label: "Conditions (one per line)", type: "textarea", rows: 3, value: 'process.name == "cmd.exe"\nprocess.args : "*whoami*"' },
+      { k: "conds", label: "Conditions (one per line)", type: "textarea", rows: 3, placeholder: 'process.name == "cmd.exe"' },
       { k: "sequence", label: "Wrap as a 2-event sequence", type: "checkbox", value: false },
     ],
     run(v) {
@@ -457,10 +457,10 @@ export const TOOLS = [
 
   { id: "bt-es-dsl-build", name: "Elasticsearch Query DSL Builder", cat: "blueteam", desc: "Build an Elasticsearch bool query (must/filter/should) plus an optional range filter.", tags: ["elasticsearch", "dsl", "query"],
     inputs: [
-      { k: "must", label: "must match (one 'field:value' per line)", type: "textarea", rows: 2, value: "event.action:logon-failed" },
-      { k: "should", label: "should match (optional)", type: "textarea", rows: 2, value: "" },
-      { k: "rangeField", label: "range field (optional)", type: "text", value: "@timestamp" },
-      { k: "gte", label: "range gte", type: "text", value: "now-24h" },
+      { k: "must", label: "must match (one 'field:value' per line)", type: "textarea", rows: 2, placeholder: "event.action:logon-failed" },
+      { k: "should", label: "should match (optional)", type: "textarea", rows: 2, placeholder: "event.outcome:failure" },
+      { k: "rangeField", label: "range field (optional)", type: "text", placeholder: "@timestamp" },
+      { k: "gte", label: "range gte", type: "text", placeholder: "now-24h" },
     ],
     run(v) {
       const term = (l) => { const i = l.indexOf(":"); const f = l.slice(0, i), val = l.slice(i + 1); return { match: { [f]: val } }; };
@@ -480,13 +480,13 @@ export const TOOLS = [
 
   { id: "bt-cef-build", name: "CEF Log Builder", cat: "blueteam", desc: "Build a well-formed ArcSight CEF log line from header fields and extension pairs.", tags: ["cef", "arcsight", "build"],
     inputs: [
-      { k: "vendor", label: "Device Vendor", type: "text", value: "Darknode" },
-      { k: "product", label: "Device Product", type: "text", value: "Sensor" },
-      { k: "version", label: "Device Version", type: "text", value: "1.0" },
-      { k: "sig", label: "Signature ID", type: "text", value: "100" },
-      { k: "name", label: "Name", type: "text", value: "Port scan detected" },
-      { k: "severity", label: "Severity (0-10)", type: "text", value: "6" },
-      { k: "ext", label: "Extension (one 'key=value' per line)", type: "textarea", rows: 3, value: "src=192.0.2.5\ndst=198.51.100.8\nspt=44321" },
+      { k: "vendor", label: "Device Vendor", type: "text", placeholder: "Darknode" },
+      { k: "product", label: "Device Product", type: "text", placeholder: "Sensor" },
+      { k: "version", label: "Device Version", type: "text", placeholder: "1.0" },
+      { k: "sig", label: "Signature ID", type: "text", placeholder: "100" },
+      { k: "name", label: "Name", type: "text", placeholder: "Port scan detected" },
+      { k: "severity", label: "Severity (0-10)", type: "text", placeholder: "6" },
+      { k: "ext", label: "Extension (one 'key=value' per line)", type: "textarea", rows: 3, placeholder: "src=192.0.2.5\ndst=198.51.100.8" },
     ],
     run(v) {
       const esc = (s) => S(s).replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
@@ -505,7 +505,7 @@ export const TOOLS = [
     } },
 
   { id: "bt-logfmt-parse", name: "logfmt Parser", cat: "blueteam", desc: "Parse a logfmt line (key=value, quoted values supported) into JSON.", tags: ["logfmt", "parse", "json"],
-    inputs: [{ k: "line", label: "logfmt line", type: "textarea", rows: 2, value: 'level=error msg="connection refused" src=192.0.2.9 attempt=3 ok=false' }],
+    inputs: [{ k: "line", label: "logfmt line", type: "textarea", rows: 2, placeholder: 'level=error msg="connection refused" src=192.0.2.9' }],
     run(v) {
       const raw = S(v.line).trim();
       if (!raw) return "";
@@ -519,8 +519,8 @@ export const TOOLS = [
 
   { id: "bt-iis-log-parse", name: "IIS W3C Log Parser", cat: "blueteam", desc: "Map an IIS W3C extended log line to its fields using the #Fields header.", tags: ["iis", "w3c", "parse"],
     inputs: [
-      { k: "fields", label: "#Fields line", type: "text", value: "date time s-ip cs-method cs-uri-stem cs-uri-query s-port cs-username c-ip cs(User-Agent) sc-status sc-substatus sc-win32-status time-taken" },
-      { k: "line", label: "Log line", type: "text", value: "2026-10-03 13:55:36 192.0.2.5 GET /login - 443 - 198.51.100.7 Mozilla/5.0 401 0 0 15" },
+      { k: "fields", label: "#Fields line", type: "text", placeholder: "date time cs-method cs-uri-stem sc-status ..." },
+      { k: "line", label: "Log line", type: "text", placeholder: "2026-10-03 13:55:36 GET /login 401 ..." },
     ],
     run(v) {
       let fields = S(v.fields).replace(/^#Fields:\s*/i, "").trim().split(/\s+/).filter(Boolean);
@@ -531,7 +531,7 @@ export const TOOLS = [
     } },
 
   { id: "bt-vpcflow-parse", name: "AWS VPC Flow Log Parser", cat: "blueteam", desc: "Parse an AWS VPC Flow Log v2 (default-format) record into named fields.", tags: ["aws", "vpcflow", "parse", "network"],
-    inputs: [{ k: "line", label: "Flow log record", type: "text", value: "2 123456789012 eni-0abc12 192.0.2.5 198.51.100.8 44321 443 6 20 4000 1696339200 1696339260 ACCEPT OK" }],
+    inputs: [{ k: "line", label: "Flow log record", type: "text", placeholder: "2 123456789012 eni-0abc12 192.0.2.5 198.51.100.8 ..." }],
     run(v) {
       const names = ["version", "account-id", "interface-id", "srcaddr", "dstaddr", "srcport", "dstport", "protocol", "packets", "bytes", "start", "end", "action", "log-status"];
       const vals = S(v.line).trim().split(/\s+/);
@@ -547,7 +547,7 @@ export const TOOLS = [
 
   // ======================= SCORING / SEVERITY =======================
   { id: "bt-cvss4-parse", name: "CVSS v4.0 Vector Parser", cat: "blueteam", desc: "Parse and validate a CVSS v4.0 vector, expand each metric, and give its nomenclature (does not compute the numeric score).", tags: ["cvss", "cvss4", "vector", "parse"],
-    inputs: [{ k: "vector", label: "CVSS v4.0 vector", type: "textarea", rows: 2, value: "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N" }],
+    inputs: [{ k: "vector", label: "CVSS v4.0 vector", type: "textarea", rows: 2, placeholder: "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N" }],
     run(v) {
       const raw = S(v.vector).trim();
       if (!raw) return "";
@@ -624,7 +624,7 @@ export const TOOLS = [
   { id: "bt-severity-normalize", name: "Severity Normalizer", cat: "blueteam", desc: "Normalize a CVSS score, qualitative label or syslog severity onto a single 0-4 (Informational-Critical) scale.", tags: ["severity", "normalize", "triage"],
     inputs: [
       { k: "scale", label: "Input scale", type: "select", opts: ["CVSS (0-10)", "Qualitative (none/low/medium/high/critical)", "Syslog severity (0-7)"], value: "CVSS (0-10)" },
-      { k: "value", label: "Value", type: "text", value: "8.1" },
+      { k: "value", label: "Value", type: "text", placeholder: "8.1" },
     ],
     run(v) {
       const LVL = ["Informational", "Low", "Medium", "High", "Critical"];
@@ -647,8 +647,8 @@ export const TOOLS = [
 
   { id: "bt-epss-explain", name: "EPSS Score Explainer", cat: "blueteam", desc: "Interpret an EPSS probability and percentile and explain how they differ from CVSS severity.", tags: ["epss", "exploit", "prioritization"],
     inputs: [
-      { k: "score", label: "EPSS score (0-1)", type: "text", value: "0.42" },
-      { k: "percentile", label: "EPSS percentile (0-100, optional)", type: "text", value: "96" },
+      { k: "score", label: "EPSS score (0-1)", type: "text", placeholder: "0.42" },
+      { k: "percentile", label: "EPSS percentile (0-100, optional)", type: "text", placeholder: "96" },
     ],
     run(v) {
       const s = num(v.score);
@@ -786,11 +786,12 @@ export const TOOLS = [
     inputs: [
       { k: "event", label: "Event type", type: "select", opts: ["ProcessCreate", "NetworkConnect", "FileCreate", "RegistryEvent", "ImageLoad", "DnsQuery"], value: "ProcessCreate" },
       { k: "onmatch", label: "onmatch", type: "select", opts: ["include", "exclude"], value: "include" },
-      { k: "field", label: "Field", type: "text", value: "Image" },
+      { k: "field", label: "Field", type: "text", placeholder: "Image" },
       { k: "condition", label: "Condition", type: "select", opts: ["is", "is not", "contains", "contains any", "begin with", "end with", "image", "excludes"], value: "end with" },
-      { k: "value", label: "Value", type: "text", value: "\\powershell.exe" },
+      { k: "value", label: "Value", type: "text", placeholder: "\\powershell.exe" },
     ],
     run(v) {
+      if (!v.field) return "";
       return [
         `<Sysmon schemaversion="4.90">`,
         `  <EventFiltering>`,
@@ -808,11 +809,11 @@ export const TOOLS = [
   { id: "bt-auditd-rule", name: "Linux auditd Rule Builder", cat: "blueteam", desc: "Build a Linux auditd rule: a file watch or a syscall audit rule with a key.", tags: ["auditd", "linux", "rule"],
     inputs: [
       { k: "mode", label: "Mode", type: "select", opts: ["File watch", "Syscall"], value: "File watch" },
-      { k: "path", label: "Path (watch)", type: "text", value: "/etc/passwd" },
-      { k: "perms", label: "Permissions (watch: r/w/x/a)", type: "text", value: "wa" },
-      { k: "syscall", label: "Syscall (syscall mode)", type: "text", value: "execve" },
+      { k: "path", label: "Path (watch)", type: "text", placeholder: "/etc/passwd" },
+      { k: "perms", label: "Permissions (watch: r/w/x/a)", type: "text", placeholder: "wa" },
+      { k: "syscall", label: "Syscall (syscall mode)", type: "text", placeholder: "execve" },
       { k: "arch", label: "Arch (syscall mode)", type: "select", opts: ["b64", "b32"], value: "b64" },
-      { k: "key", label: "Key", type: "text", value: "identity" },
+      { k: "key", label: "Key", type: "text", placeholder: "identity" },
     ],
     run(v) {
       if (v.mode === "File watch") {
@@ -825,12 +826,12 @@ export const TOOLS = [
 
   { id: "bt-falco-rule", name: "Falco Rule Scaffold", cat: "blueteam", desc: "Generate a Falco runtime-security rule YAML with condition, output and priority.", tags: ["falco", "runtime", "rule", "yaml"],
     inputs: [
-      { k: "rule", label: "Rule name", type: "text", value: "Shell in container" },
-      { k: "desc", label: "Description", type: "text", value: "A shell was spawned inside a container" },
-      { k: "condition", label: "Condition", type: "textarea", rows: 2, value: "spawned_process and container and shell_procs" },
-      { k: "output", label: "Output", type: "text", value: "Shell in container (user=%user.name container=%container.name cmd=%proc.cmdline)" },
+      { k: "rule", label: "Rule name", type: "text", placeholder: "Shell in container" },
+      { k: "desc", label: "Description", type: "text", placeholder: "A shell was spawned inside a container" },
+      { k: "condition", label: "Condition", type: "textarea", rows: 2, placeholder: "spawned_process and container and shell_procs" },
+      { k: "output", label: "Output", type: "text", placeholder: "Shell in container (user=%user.name cmd=%proc.cmdline)" },
       { k: "priority", label: "Priority", type: "select", opts: ["EMERGENCY", "ALERT", "CRITICAL", "ERROR", "WARNING", "NOTICE", "INFORMATIONAL", "DEBUG"], value: "WARNING" },
-      { k: "tags", label: "Tags (comma-sep)", type: "text", value: "container, shell, mitre_execution" },
+      { k: "tags", label: "Tags (comma-sep)", type: "text", placeholder: "container, shell, mitre_execution" },
     ],
     run(v) {
       if (!v.rule) return { error: "Set a rule name." };
@@ -878,9 +879,9 @@ export const TOOLS = [
   { id: "bt-jq-build", name: "jq Filter Builder", cat: "blueteam", desc: "Build a jq filter for JSON log analysis (select, pick fields, count).", tags: ["jq", "json", "log"],
     inputs: [
       { k: "op", label: "Operation", type: "select", opts: ["select by field", "pick fields", "count by field", "flatten array"], value: "select by field" },
-      { k: "field", label: "Field", type: "text", value: "level" },
-      { k: "value", label: "Value (for select)", type: "text", value: "error" },
-      { k: "fields", label: "Fields (for pick, comma-sep)", type: "text", value: "ts, msg, src" },
+      { k: "field", label: "Field", type: "text", placeholder: "level" },
+      { k: "value", label: "Value (for select)", type: "text", placeholder: "error" },
+      { k: "fields", label: "Fields (for pick, comma-sep)", type: "text", placeholder: "ts, msg, src" },
     ],
     run(v) {
       // a.b paths; segments that are not plain identifiers (event-type, @timestamp) need ."..." or jq parses them as maths
@@ -921,8 +922,8 @@ export const TOOLS = [
     inputs: [
       { k: "chain", label: "Chain", type: "select", opts: ["INPUT", "OUTPUT", "FORWARD"], value: "INPUT" },
       { k: "proto", label: "Protocol", type: "select", opts: ["tcp", "udp", "icmp", "all"], value: "tcp" },
-      { k: "src", label: "Source (CIDR, optional)", type: "text", value: "203.0.113.0/24" },
-      { k: "dport", label: "Dest port (optional)", type: "text", value: "22" },
+      { k: "src", label: "Source (CIDR, optional)", type: "text", placeholder: "203.0.113.0/24" },
+      { k: "dport", label: "Dest port (optional)", type: "text", placeholder: "22" },
       { k: "state", label: "Stateful match", type: "checkbox", value: true },
       { k: "target", label: "Target", type: "select", opts: ["ACCEPT", "DROP", "REJECT", "LOG"], value: "DROP" },
     ],
@@ -982,9 +983,9 @@ export const TOOLS = [
 
   { id: "bt-ratelimit-calc", name: "Rate-Limit / Token-Bucket Calculator", cat: "blueteam", desc: "Convert a request allowance into sustained RPS and token-bucket parameters, with an nginx example.", tags: ["ratelimit", "token bucket", "calculator"],
     inputs: [
-      { k: "limit", label: "Requests allowed", type: "text", value: "100" },
-      { k: "window", label: "Per window (seconds)", type: "text", value: "60" },
-      { k: "burst", label: "Burst capacity (optional)", type: "text", value: "20" },
+      { k: "limit", label: "Requests allowed", type: "text", placeholder: "100" },
+      { k: "window", label: "Per window (seconds)", type: "text", placeholder: "60" },
+      { k: "burst", label: "Burst capacity (optional)", type: "text", placeholder: "20" },
     ],
     run(v) {
       const limit = num(v.limit), win = num(v.window);
@@ -1005,10 +1006,10 @@ export const TOOLS = [
 
   { id: "bt-log-volume", name: "Log Volume / SIEM Sizing Calculator", cat: "blueteam", desc: "Estimate EPS, daily ingest and retained storage from event volume and average event size.", tags: ["siem", "eps", "sizing", "calculator"],
     inputs: [
-      { k: "perDay", label: "Events per day", type: "text", value: "50000000" },
-      { k: "avgBytes", label: "Avg event size (bytes)", type: "text", value: "500" },
-      { k: "retention", label: "Retention (days)", type: "text", value: "90" },
-      { k: "compress", label: "Compression (%)", type: "text", value: "70" },
+      { k: "perDay", label: "Events per day", type: "text", placeholder: "50000000" },
+      { k: "avgBytes", label: "Avg event size (bytes)", type: "text", placeholder: "500" },
+      { k: "retention", label: "Retention (days)", type: "text", placeholder: "90" },
+      { k: "compress", label: "Compression (%)", type: "text", placeholder: "70" },
     ],
     run(v) {
       const perDay = num(v.perDay), avg = num(v.avgBytes), ret = num(v.retention), comp = Math.min(99, Math.max(0, num(v.compress) || 0));
@@ -1027,10 +1028,10 @@ export const TOOLS = [
 
   { id: "bt-base-rate", name: "Alert Base-Rate Calculator", cat: "blueteam", desc: "Show how prevalence, detection rate and false-positive rate drive alert precision (the base-rate fallacy).", tags: ["base rate", "precision", "fp", "calculator"],
     inputs: [
-      { k: "perDay", label: "Events per day", type: "text", value: "1000000" },
-      { k: "prevalence", label: "Malicious fraction (0-1)", type: "text", value: "0.0001" },
-      { k: "sens", label: "Detection rate / recall (%)", type: "text", value: "95" },
-      { k: "fpr", label: "False-positive rate (%)", type: "text", value: "1" },
+      { k: "perDay", label: "Events per day", type: "text", placeholder: "1000000" },
+      { k: "prevalence", label: "Malicious fraction (0-1)", type: "text", placeholder: "0.0001" },
+      { k: "sens", label: "Detection rate / recall (%)", type: "text", placeholder: "95" },
+      { k: "fpr", label: "False-positive rate (%)", type: "text", placeholder: "1" },
     ],
     run(v) {
       const n = num(v.perDay), prev = num(v.prevalence), sens = num(v.sens) / 100, fpr = num(v.fpr) / 100;
@@ -1053,10 +1054,10 @@ export const TOOLS = [
 
   { id: "bt-detection-metrics", name: "Detection Metrics Calculator", cat: "blueteam", desc: "Compute precision, recall, specificity, FPR, accuracy and F1 from a confusion matrix.", tags: ["metrics", "precision", "recall", "f1"],
     inputs: [
-      { k: "tp", label: "True positives", type: "text", value: "80" },
-      { k: "fp", label: "False positives", type: "text", value: "20" },
-      { k: "fn", label: "False negatives", type: "text", value: "10" },
-      { k: "tn", label: "True negatives", type: "text", value: "890" },
+      { k: "tp", label: "True positives", type: "text", placeholder: "80" },
+      { k: "fp", label: "False positives", type: "text", placeholder: "20" },
+      { k: "fn", label: "False negatives", type: "text", placeholder: "10" },
+      { k: "tn", label: "True negatives", type: "text", placeholder: "890" },
     ],
     run(v) {
       const tp = num(v.tp), fp = num(v.fp), fn = num(v.fn), tn = num(v.tn);
@@ -1081,7 +1082,7 @@ export const TOOLS = [
   // ======================= ALERTING / COVERAGE / TRIAGE =======================
   { id: "bt-alert-dedup-key", name: "Alert Dedup / Grouping Key Builder", cat: "blueteam", desc: "Build a stable dedup/correlation key by joining selected fields, with an optional hash.", tags: ["alert", "dedup", "correlation"],
     inputs: [
-      { k: "fields", label: "Key fields (one 'name=value' or value per line)", type: "textarea", rows: 4, value: "rule=ssh-bruteforce\nsrc=198.51.100.7\ndst=192.0.2.5" },
+      { k: "fields", label: "Key fields (one 'name=value' or value per line)", type: "textarea", rows: 4, placeholder: "rule=ssh-bruteforce\nsrc=198.51.100.7\ndst=192.0.2.5" },
       { k: "sep", label: "Separator", type: "text", value: "|" },
       { k: "hash", label: "Also show SHA-1 of the key", type: "checkbox", value: true },
     ],
@@ -1096,7 +1097,7 @@ export const TOOLS = [
     } },
 
   { id: "bt-coverage-matrix", name: "ATT&CK Coverage Matrix Helper", cat: "blueteam", desc: "Tally your detections per MITRE ATT&CK tactic and highlight tactics with no coverage.", tags: ["attack", "coverage", "detection"],
-    inputs: [{ k: "entries", label: "Entries (one 'Tactic | rule name' per line)", type: "textarea", rows: 6, value: "Initial Access | phishing-attachment\nExecution | suspicious-powershell\nExecution | wmic-exec\nPersistence | new-service\nExfiltration | large-dns-txt" }],
+    inputs: [{ k: "entries", label: "Entries (one 'Tactic | rule name' per line)", type: "textarea", rows: 6, placeholder: "Initial Access | phishing-attachment\nExecution | suspicious-powershell\nPersistence | new-service" }],
     run(v) {
       const TACTICS = ["Reconnaissance", "Resource Development", "Initial Access", "Execution", "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access", "Discovery", "Lateral Movement", "Collection", "Command and Control", "Exfiltration", "Impact"];
       const counts = Object.fromEntries(TACTICS.map((t) => [t, 0]));
@@ -1153,13 +1154,13 @@ export const TOOLS = [
 
   { id: "bt-detection-doc", name: "Detection Rule Documentation Template", cat: "blueteam", desc: "Produce a structured markdown documentation/runbook block for a detection rule.", tags: ["detection", "documentation", "runbook"],
     inputs: [
-      { k: "name", label: "Detection name", type: "text", value: "Encoded PowerShell execution" },
-      { k: "source", label: "Data source", type: "text", value: "Sysmon EID 1 / Security 4688" },
-      { k: "logic", label: "Logic summary", type: "textarea", rows: 2, value: "Process powershell.exe with -EncodedCommand / -enc in the command line." },
+      { k: "name", label: "Detection name", type: "text", placeholder: "Encoded PowerShell execution" },
+      { k: "source", label: "Data source", type: "text", placeholder: "Sysmon EID 1 / Security 4688" },
+      { k: "logic", label: "Logic summary", type: "textarea", rows: 2, placeholder: "Process powershell.exe with -EncodedCommand / -enc in the command line." },
       { k: "severity", label: "Severity", type: "select", opts: ["Low", "Medium", "High", "Critical"], value: "High" },
-      { k: "mitre", label: "ATT&CK technique(s)", type: "text", value: "T1059.001 (PowerShell)" },
-      { k: "fp", label: "Known false positives", type: "text", value: "Some admin tooling uses -enc legitimately." },
-      { k: "response", label: "Response steps", type: "text", value: "Decode the command, inspect, isolate host if malicious." },
+      { k: "mitre", label: "ATT&CK technique(s)", type: "text", placeholder: "T1059.001 (PowerShell)" },
+      { k: "fp", label: "Known false positives", type: "text", placeholder: "Some admin tooling uses -enc legitimately." },
+      { k: "response", label: "Response steps", type: "text", placeholder: "Decode the command, inspect, isolate host if malicious." },
     ],
     run(v) {
       if (!v.name) return { error: "Set a detection name." };

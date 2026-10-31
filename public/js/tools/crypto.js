@@ -591,8 +591,9 @@ export const TOOLS = [
 
   // ================= Diffie-Hellman / modular arithmetic =================
   { id: "cr-dh-toy", name: "Diffie-Hellman Calculator", cat: "crypto", desc: "Toy finite-field Diffie-Hellman: from prime p, generator g and two private exponents, compute publics and the shared secret.", tags: ["diffie-hellman", "dh", "key exchange"], live: false, button: "Compute",
-    inputs: [{ k: "p", label: "Prime p", type: "text", value: "23" }, { k: "g", label: "Generator g", type: "text", value: "5" }, { k: "a", label: "Alice private a", type: "text", value: "6" }, { k: "b", label: "Bob private b", type: "text", value: "15" }],
+    inputs: [{ k: "p", label: "Prime p", type: "text", placeholder: "23" }, { k: "g", label: "Generator g", type: "text", placeholder: "5" }, { k: "a", label: "Alice private a", type: "text", placeholder: "6" }, { k: "b", label: "Bob private b", type: "text", placeholder: "15" }],
     run(v) {
+      if (!S(v.p) && !S(v.g) && !S(v.a) && !S(v.b)) return "";
       const p = parseBig(v.p), g = parseBig(v.g), a = parseBig(v.a), b = parseBig(v.b);
       if (p == null || g == null || a == null || b == null) return { error: "All of p, g, a, b must be integers (decimal or 0x hex)." };
       if (p < 2n) return { error: "p must be >= 2." };
@@ -616,7 +617,7 @@ export const TOOLS = [
     inputs: [{ k: "a", label: "a", type: "text" }, { k: "b", label: "b", type: "text" }],
     run(v) { const a = parseBig(v.a), b = parseBig(v.b); if (a == null || b == null) return ""; let [g, x, y] = egcd(a, b); if (g < 0n) { g = -g; x = -x; y = -y; } return `gcd = ${g}\nx = ${x}\ny = ${y}\n\n${a}*(${x}) + ${b}*(${y}) = ${a * x + b * y}`; } },
   { id: "cr-crt", name: "CRT Solver", cat: "crypto", desc: "Solve a system of congruences x = r_i (mod m_i) with the Chinese Remainder Theorem. Moduli need not be coprime if consistent.", tags: ["crt", "chinese remainder", "congruence"], live: false, button: "Solve",
-    inputs: [{ k: "r", label: "Residues (comma-separated)", type: "text", value: "2, 3, 2" }, { k: "m", label: "Moduli (comma-separated)", type: "text", value: "3, 5, 7" }],
+    inputs: [{ k: "r", label: "Residues (comma-separated)", type: "text", placeholder: "2, 3, 2" }, { k: "m", label: "Moduli (comma-separated)", type: "text", placeholder: "3, 5, 7" }],
     run(v) {
       const rs = S(v.r).split(",").map((x) => parseBig(x)), ms = S(v.m).split(",").map((x) => parseBig(x));
       if (rs.length !== ms.length || rs.some((x) => x == null) || ms.some((x) => x == null)) return { error: "Give the same count of integer residues and moduli." };
@@ -630,10 +631,10 @@ export const TOOLS = [
       return `x = ${x}  (mod ${mod})\n\nhex: 0x${x.toString(16)}`;
     } },
   { id: "cr-gf256-mul", name: "GF(2^8) Multiply", cat: "crypto", desc: "Multiply two bytes in the Rijndael finite field GF(2^8) with the AES polynomial 0x11B.", tags: ["gf256", "galois", "aes", "field"], live: true,
-    inputs: [{ k: "a", label: "a (hex byte)", type: "text", value: "57" }, { k: "b", label: "b (hex byte)", type: "text", value: "83" }],
-    run(v) { const a = parseInt(cleanHex(v.a), 16), b = parseInt(cleanHex(v.b), 16); if (isNaN(a) || isNaN(b) || a > 255 || b > 255) return { error: "Enter two bytes in hex (00..FF)." }; const p = gfMul(a, b); return `0x${a.toString(16).padStart(2, "0")} * 0x${b.toString(16).padStart(2, "0")} = 0x${p.toString(16).padStart(2, "0")} (${p}) in GF(2^8) mod 0x11B`; } },
+    inputs: [{ k: "a", label: "a (hex byte)", type: "text", placeholder: "57" }, { k: "b", label: "b (hex byte)", type: "text", placeholder: "83" }],
+    run(v) { if (!cleanHex(v.a) && !cleanHex(v.b)) return ""; const a = parseInt(cleanHex(v.a), 16), b = parseInt(cleanHex(v.b), 16); if (isNaN(a) || isNaN(b) || a > 255 || b > 255) return { error: "Enter two bytes in hex (00..FF)." }; const p = gfMul(a, b); return `0x${a.toString(16).padStart(2, "0")} * 0x${b.toString(16).padStart(2, "0")} = 0x${p.toString(16).padStart(2, "0")} (${p}) in GF(2^8) mod 0x11B`; } },
   { id: "cr-mod-sqrt", name: "Modular Square Root (Tonelli-Shanks)", cat: "crypto", desc: "Find x with x^2 = a (mod p) for an odd prime p, or report that a is a non-residue.", tags: ["sqrt", "tonelli", "shanks", "quadratic residue"], live: false, button: "Solve",
-    inputs: [{ k: "a", label: "a", type: "text", value: "5" }, { k: "p", label: "Prime p", type: "text", value: "41" }],
+    inputs: [{ k: "a", label: "a", type: "text", placeholder: "5" }, { k: "p", label: "Prime p", type: "text", placeholder: "41" }],
     run(v) {
       const a0 = parseBig(v.a), p = parseBig(v.p); if (a0 == null || p == null) return "";
       if (p < 2n || !isProbablePrime(p, 6)) return { error: "p must be an odd prime." };
@@ -647,7 +648,7 @@ export const TOOLS = [
       return `x = ${r}  (also ${p - r})`;
     } },
   { id: "cr-jacobi", name: "Legendre / Jacobi Symbol", cat: "crypto", desc: "Compute the Jacobi symbol (a/n) for odd n>0 (equals the Legendre symbol when n is prime): tells quadratic-residue status.", tags: ["jacobi", "legendre", "quadratic residue", "number theory"], live: true,
-    inputs: [{ k: "a", label: "a", type: "text", value: "5" }, { k: "n", label: "n (odd)", type: "text", value: "21" }],
+    inputs: [{ k: "a", label: "a", type: "text", placeholder: "5" }, { k: "n", label: "n (odd)", type: "text", placeholder: "21" }],
     run(v) {
       let a = parseBig(v.a), n = parseBig(v.n); if (a == null || n == null) return "";
       if (n <= 0n || (n & 1n) === 0n) return { error: "n must be odd and positive." };
