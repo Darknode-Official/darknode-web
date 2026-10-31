@@ -15,8 +15,8 @@ export function renderCorsTester(container) {
 
   h += '<div class="card">';
   h += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
-  h += '<input id="cors-url" style="flex:1;" placeholder="https://api.example.com/endpoint" onkeydown="if(event.key===\'Enter\')_corsTest()">';
-  h += '<button class="btn" onclick="_corsTest()">Test</button>';
+  h += '<input id="cors-url" style="flex:1;" placeholder="https://api.example.com/endpoint" data-on-keydown="if(event.key===\'Enter\')_corsTest()">';
+  h += '<button class="btn" data-on-click="_corsTest()">Test</button>';
   h += '</div>';
 
   h += '<div style="display:flex;gap:8px;margin-bottom:8px;">';
@@ -43,7 +43,7 @@ export function renderCorsTester(container) {
   ];
   for (var i = 0; i < quickTests.length; i++) {
     var qt = quickTests[i];
-    h += '<button onclick="document.getElementById(\'cors-url\').value=\'' + esc(qt.url) + '\';_corsTest()" class="btn ghost sm">' + esc(qt.label) + '</button>';
+    h += '<button data-on-click="dnSetValue(\'cors-url\', \'' + esc(qt.url) + '\');_corsTest()" class="btn ghost sm">' + esc(qt.label) + '</button>';
   }
   h += '</div></div>';
 

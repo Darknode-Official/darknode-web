@@ -2369,8 +2369,8 @@ function renderApp(user) {
   userSlot.innerHTML = `
     <button class="style-toggle" id="styleToggle" data-style="${currentStyle()}" title="${currentStyle() === "dark" ? "Switch to light" : "Switch to dark"}" aria-label="${currentStyle() === "dark" ? "Switch to light theme" : "Switch to dark theme"}"><svg class="ic-sun" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="3.2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M13 3l-1.4 1.4M4.4 11.6L3 13" stroke-linecap="round"/></svg><svg class="ic-moon" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 9.5A5.5 5.5 0 016.5 2.5a5.5 5.5 0 107 7z" stroke-linejoin="round"/></svg></button>
     <button class="cmdk-btn" id="cmdkBtn" title="Search (Ctrl+K)"><span>Search</span><kbd>Ctrl K</kbd></button>
-    <button class="tb-help-btn" id="helpBtn" title="Help &amp; support" aria-label="Help and support" onclick="window.__openHelp&&window.__openHelp()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>Help</span></button>
-    <span id="cli-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#71717a;margin:0 10px;cursor:pointer;vertical-align:middle;transition:background .3s" title="CLI not connected" onclick="window.dnPrompt('Connect Darknode CLI',{desc:'Paste the auth token shown in your terminal after you run the Darknode CLI. It links this browser to your local tools and models.',placeholder:'darknode auth token'}).then(function(t){if(t&&window._bridge)window._bridge.connect(t.trim()).then(function(r){var d=document.getElementById('cli-dot');if(d){d.style.background='#22c55e';d.title='CLI connected: '+(r.hostname||'local')}showToast('Connected to '+(r.hostname||'CLI')+' — '+((r.tools||[]).length)+' tools, '+((r.ollama||[]).length)+' AI models','success')}).catch(function(e){showToast('Failed: '+e.message,'error')})})"></span>
+    <button class="tb-help-btn" id="helpBtn" title="Help &amp; support" aria-label="Help and support" data-on-click="__openHelp()"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>Help</span></button>
+    <span id="cli-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#71717a;margin:0 10px;cursor:pointer;vertical-align:middle;transition:background .3s" title="CLI not connected"></span>
     <div class="tb-item">
       <button class="icon-btn" id="moreBtn" title="More" aria-label="More" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu">&#8943;</button>
       <div class="menu" id="moreMenu" hidden>
@@ -2631,6 +2631,15 @@ function renderApp(user) {
     // connection-refused errors). The CLI dot still connects on demand via click.
     mod.bridge.addEventListener('connect', function() { if (dot) { dot.style.background = '#22c55e'; dot.title = 'CLI connected: ' + mod.bridge.hostname; } });
     mod.bridge.addEventListener('disconnect', function() { if (dot) { dot.style.background = '#71717a'; dot.title = 'CLI disconnected'; } });
+    if (dot) dot.addEventListener('click', function() {
+      window.dnPrompt('Connect Darknode CLI', { desc: 'Paste the auth token shown in your terminal after you run the Darknode CLI. It links this browser to your local tools and models.', placeholder: 'darknode auth token' }).then(function(t) {
+        if (!t || !window._bridge) return;
+        window._bridge.connect(t.trim()).then(function(r) {
+          dot.style.background = '#22c55e'; dot.title = 'CLI connected: ' + (r.hostname || 'local');
+          showToast('Connected to ' + (r.hostname || 'CLI') + ' — ' + ((r.tools || []).length) + ' tools, ' + ((r.ollama || []).length) + ' AI models', 'success');
+        }).catch(function(e) { showToast('Failed: ' + e.message, 'error'); });
+      });
+    });
   }).catch(function() {});
 
   // ---- breadcrumb navigation ----

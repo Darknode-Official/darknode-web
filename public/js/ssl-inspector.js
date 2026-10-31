@@ -17,8 +17,8 @@ export function renderSSLInspector(container) {
 
   // Search bar
   h += '<div style="display:flex;gap:8px;margin-bottom:16px;">';
-  h += '<input id="ssl-domain" type="text" placeholder="Domain" style="flex:1;" onkeydown="if(event.key===\'Enter\')_sslSearch()">';
-  h += '<button class="btn" onclick="_sslSearch()">Search</button>';
+  h += '<input id="ssl-domain" type="text" placeholder="Domain" style="flex:1;" data-on-keydown="if(event.key===\'Enter\')_sslSearch()">';
+  h += '<button class="btn" data-on-click="_sslSearch()">Search</button>';
   h += '</div>';
 
   // Tabs
@@ -160,7 +160,7 @@ function _sslRenderSubdomains(el) {
   var h = '';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
   h += '<div style="color:var(--txt);font-size:14px;font-weight:600;">' + subs.length + ' unique subdomains discovered</div>';
-  h += '<button class="btn ghost sm" onclick="_sslCopySubdomains()">Copy all</button>';
+  h += '<button class="btn ghost sm" data-on-click="_sslCopySubdomains()">Copy all</button>';
   h += '</div>';
 
   if (subs.length === 0) {
@@ -173,7 +173,7 @@ function _sslRenderSubdomains(el) {
   for (var i = 0; i < subs.length; i++) {
     var s = subs[i];
     var wildcard = s.name.indexOf('*.') === 0;
-    h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:3px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="navigator.clipboard.writeText(' + esc(JSON.stringify(s.name)) + ');this.style.borderColor=\'var(--ok)\';var el=this;setTimeout(function(){el.style.borderColor=\'var(--line)\';},500);">';
+    h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:3px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" data-on-click="dnCopy(' + esc(JSON.stringify(s.name)) + ', this)">';
     h += '<span style="color:' + (wildcard ? 'var(--warn)' : 'var(--txt)') + ';font-size:12px;">' + (wildcard ? '<span style="color:var(--warn);">*</span> ' : '') + esc(s.name) + '</span>';
     h += '<span style="color:var(--mut);font-size:12px;">' + s.certCount + ' cert' + (s.certCount > 1 ? 's' : '') + '</span>';
     h += '</div>';
@@ -185,7 +185,7 @@ function _sslRenderSubdomains(el) {
 function _sslCopySubdomains() {
   var text = _sslData.subdomains.map(function(s) { return s.name; }).join('\n');
   navigator.clipboard.writeText(text).then(function() {
-    var btn = document.querySelector('[onclick="_sslCopySubdomains()"]');
+    var btn = document.querySelector('[data-on-click="_sslCopySubdomains()"]');
     if (btn) { btn.textContent = 'Copied'; setTimeout(function() { btn.textContent = 'Copy all'; }, 1500); }
   });
 }
@@ -280,7 +280,7 @@ function _sslCertStats() {
 }
 
 function _sslGraphBtnHTML() {
-  return '<button class="btn ghost sm" onclick="_sslToGraph(this)">Send to Security Graph</button>';
+  return '<button class="btn ghost sm" data-on-click="_sslToGraph(this)">Send to Security Graph</button>';
 }
 
 // Live crt.sh data: root DOMAIN, currently valid certificates (newest 50) as CERTIFICATE

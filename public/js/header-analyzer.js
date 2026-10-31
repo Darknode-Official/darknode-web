@@ -275,7 +275,7 @@ function _haRender(resultsEl, info) {
 
     // Raw headers dump
     h += '<div style="margin-top:16px;">';
-    h += '<div style="color:var(--mut);font-size:13px;margin-bottom:6px;cursor:pointer;" onclick="var el=document.getElementById(\'ha-raw\');el.hidden=!el.hidden;">All response headers (show / hide)</div>';
+    h += '<div style="color:var(--mut);font-size:13px;margin-bottom:6px;cursor:pointer;" data-on-click="dnToggleHidden(\'ha-raw\')">All response headers (show / hide)</div>';
     h += '<div id="ha-raw" hidden style="background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:10px;max-height:300px;overflow-y:auto;">';
     var hdrKeys = Object.keys(headers).sort();
     for (var hi = 0; hi < hdrKeys.length; hi++) {
@@ -303,8 +303,8 @@ export function renderHeaderAnalyzer(container) {
     '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +
     '<input id="ha-input" type="text" placeholder="https://example.com" ' +
     'style="flex:1;min-width:200px;" ' +
-    'onkeydown="if(event.key===\'Enter\')_haAnalyze(this.value)">' +
-    '<button class="btn" onclick="_haAnalyze(document.getElementById(\'ha-input\').value)">Analyze</button>' +
+    'data-on-keydown="if(event.key===\'Enter\')_haAnalyze(this.value)">' +
+    '<button class="btn" data-on-click="_haAnalyze(dnVal(\'ha-input\'))">Analyze</button>' +
     (agentReady ? '<button class="btn ghost" id="ha-agent" title="Run curl -sI on this machine through the Darknode local agent">Fetch via local agent</button>' : '') +
     '</div>' +
 

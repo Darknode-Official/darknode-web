@@ -24,7 +24,7 @@ export function renderUrlDissector(container) {
     h += '<div class="seg" style="margin-bottom:16px;flex-wrap:wrap;">';
     tabs.forEach(function(t) {
       var act = t === activeTab;
-      h += '<button class="' + (act ? 'on' : '') + '" onclick="window._udTab(\'' + t + '\')">' + t.charAt(0) + t.slice(1).toLowerCase() + '</button>';
+      h += '<button class="' + (act ? 'on' : '') + '" data-on-click="window._udTab(\'' + t + '\')">' + t.charAt(0) + t.slice(1).toLowerCase() + '</button>';
     });
     h += '</div>';
     h += '<div class="card">';
@@ -48,7 +48,7 @@ export function renderUrlDissector(container) {
   }
 
   function btn(label, onclick, color) {
-    return '<button class="btn' + (color ? ' ghost' : '') + '" onclick="' + onclick + '">' + label + '</button>';
+    return '<button class="btn' + (color ? ' ghost' : '') + '" data-on-click="' + onclick + '">' + label + '</button>';
   }
 
   function badge(text, color) {
@@ -57,7 +57,7 @@ export function renderUrlDissector(container) {
 
   // ── ANALYZE ──
   function renderAnalyze() {
-    var h = '<div style="margin-bottom:12px;" onkeydown="if(event.key===\'Enter\'&&event.target.id===\'ud-url\'){event.preventDefault();window._udAnalyze();}">' + inp('ud-url', 'https://example.com/path?key=value#frag') + '</div>';
+    var h = '<div style="margin-bottom:12px;" data-on-keydown="if(event.key===\'Enter\'&&event.target.id===\'ud-url\'){event.preventDefault();window._udAnalyze();}">' + inp('ud-url', 'https://example.com/path?key=value#frag') + '</div>';
     h += '<div style="margin-bottom:16px;">' + btn('Dissect', 'window._udAnalyze()') + '</div>';
     h += '<div id="ud-result"></div>';
     return h;
@@ -254,7 +254,7 @@ export function renderUrlDissector(container) {
       var flags = r.suspicions.length;
       var risk = flags === 0 ? 'no flags' : flags <= 2 ? 'low' : flags <= 4 ? 'medium' : 'high';
       var rc = risk === 'no flags' ? S.green : risk === 'low' ? S.yellow : risk === 'medium' ? S.orange : S.red;
-      h += '<tr style="border-bottom:1px solid ' + S.border + ';cursor:pointer;" onclick="window._udBatchDetail(' + i + ')">';
+      h += '<tr style="border-bottom:1px solid ' + S.border + ';cursor:pointer;" data-on-click="window._udBatchDetail(' + i + ')">';
       h += '<td style="padding:5px;color:' + S.dim + ';">' + (i + 1) + '</td>';
       h += '<td style="padding:5px;color:' + S.accent + ';max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.parts.hostname || r.raw.substring(0, 30)) + '</td>';
       h += '<td style="padding:5px;color:' + S.text + ';max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.parts.pathname || '/') + '</td>';
@@ -392,7 +392,7 @@ export function renderUrlDissector(container) {
 
     var url = proto + '//' + host + (port ? ':' + port : '') + (path || '/') + (query || '') + (frag || '');
 
-    var h = '<div style="background:var(--card2);border:1px solid ' + S.accent + '44;border-radius:4px;padding:10px;font-size:12px;word-break:break-all;color:' + S.accent + ';cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(url) + '</div>';
+    var h = '<div style="background:var(--card2);border:1px solid ' + S.accent + '44;border-radius:4px;padding:10px;font-size:12px;word-break:break-all;color:' + S.accent + ';cursor:pointer;" data-on-click="dnCopyText(this)">' + esc(url) + '</div>';
     h += '<div style="font-size:12px;color:' + S.dim + ';margin-top:4px;">Click to copy</div>';
     var el = document.getElementById('ud-build-result');
     if (el) el.innerHTML = h;
@@ -430,7 +430,7 @@ export function renderUrlDissector(container) {
     var lines = raw.split('\n').filter(function(l) { return l.trim(); });
     var result = lines.map(function(l) { return defangUrl(l.trim()); }).join('\n');
     var el = document.getElementById('ud-defang-result');
-    if (el) el.innerHTML = '<div style="background:var(--card2);border:1px solid ' + S.green + '44;border-radius:4px;padding:10px;font-size:12px;color:' + S.green + ';white-space:pre-wrap;word-break:break-all;cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(result) + '</div><div style="font-size:12px;color:' + S.dim + ';margin-top:4px;">Click to copy</div>';
+    if (el) el.innerHTML = '<div style="background:var(--card2);border:1px solid ' + S.green + '44;border-radius:4px;padding:10px;font-size:12px;color:' + S.green + ';white-space:pre-wrap;word-break:break-all;cursor:pointer;" data-on-click="dnCopyText(this)">' + esc(result) + '</div><div style="font-size:12px;color:' + S.dim + ';margin-top:4px;">Click to copy</div>';
   };
 
   window._udRefang = function() {
@@ -438,7 +438,7 @@ export function renderUrlDissector(container) {
     var lines = raw.split('\n').filter(function(l) { return l.trim(); });
     var result = lines.map(function(l) { return refangUrl(l.trim()); }).join('\n');
     var el = document.getElementById('ud-defang-result');
-    if (el) el.innerHTML = '<div style="background:var(--card2);border:1px solid ' + S.orange + '44;border-radius:4px;padding:10px;font-size:12px;color:' + S.orange + ';white-space:pre-wrap;word-break:break-all;cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(result) + '</div><div style="font-size:12px;color:' + S.dim + ';margin-top:4px;">Click to copy. Caution: these URLs are clickable again</div>';
+    if (el) el.innerHTML = '<div style="background:var(--card2);border:1px solid ' + S.orange + '44;border-radius:4px;padding:10px;font-size:12px;color:' + S.orange + ';white-space:pre-wrap;word-break:break-all;cursor:pointer;" data-on-click="dnCopyText(this)">' + esc(result) + '</div><div style="font-size:12px;color:' + S.dim + ';margin-top:4px;">Click to copy. Caution: these URLs are clickable again</div>';
   };
 
   window._udTab = function(t) { activeTab = t; render(); };

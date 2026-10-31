@@ -179,7 +179,7 @@ export function renderFaviconHasher(container) {
       h += '<div style="background:#080c18;border:1px solid #1a2a44;border-radius:8px;padding:16px;margin-bottom:12px;">';
       h += '<div style="display:flex;gap:16px;align-items:flex-start;">';
       h += '<div style="flex-shrink:0;width:64px;height:64px;background:#060a14;border:1px solid #1a3050;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;">';
-      h += '<img src="' + r.blobUrl + '" style="max-width:56px;max-height:56px;image-rendering:pixelated;" onerror="this.style.display=\'none\'">';
+      h += '<img src="' + r.blobUrl + '" style="max-width:56px;max-height:56px;image-rendering:pixelated;" data-on-error="dnHide(this)">';
       h += '</div>';
       h += '<div style="flex:1;min-width:0;">';
       h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
@@ -195,7 +195,7 @@ export function renderFaviconHasher(container) {
 
       h += '<div style="display:grid;grid-template-columns:140px 1fr;gap:4px 12px;font-size:10px;">';
       h += '<span style="color:#ff6644;font-weight:bold;">SHODAN HASH</span>';
-      h += '<span style="color:#ff6644;cursor:pointer;" onclick="navigator.clipboard.writeText(\'' + r.shodanHash + '\')" title="Click to copy">' + r.shodanHash + '</span>';
+      h += '<span style="color:#ff6644;cursor:pointer;" data-on-click="dnCopy(\'' + r.shodanHash + '\', this)" title="Click to copy">' + r.shodanHash + '</span>';
       h += '<span style="color:#4a6a8a;">RAW MURMUR3</span><span style="color:#8ab4d4;">' + r.rawMurmur + '</span>';
       h += '<span style="color:#4a6a8a;">SHA-256</span><span style="color:#8ab4d4;word-break:break-all;">' + r.sha256 + '</span>';
       h += '<span style="color:#4a6a8a;">MD5</span><span style="color:#8ab4d4;">' + r.md5 + '</span>';
@@ -205,7 +205,7 @@ export function renderFaviconHasher(container) {
       h += '<div style="color:#4a6a8a;font-size:9px;letter-spacing:1px;margin-bottom:4px;">SHODAN QUERY</div>';
       h += '<div style="display:flex;gap:8px;align-items:center;">';
       h += '<code style="color:#ffaa00;font-size:12px;flex:1;">http.favicon.hash:' + r.shodanHash + '</code>';
-      h += '<button onclick="navigator.clipboard.writeText(\'http.favicon.hash:' + r.shodanHash + '\')" style="background:#ffaa0015;border:1px solid #ffaa0033;color:#ffaa00;font-size:9px;padding:3px 8px;cursor:pointer;border-radius:4px;font-family:monospace;">Copy</button>';
+      h += '<button data-on-click="dnCopy(\'http.favicon.hash:' + r.shodanHash + '\', this)" style="background:#ffaa0015;border:1px solid #ffaa0033;color:#ffaa00;font-size:9px;padding:3px 8px;cursor:pointer;border-radius:4px;font-family:monospace;">Copy</button>';
       h += '</div>';
       h += '</div>';
 
