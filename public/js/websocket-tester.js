@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
-// WebSocket Tester — test WebSocket connections, send messages, monitor frames
+// WebSocket Tester — test WebSocket connections, send messages, log received frames
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) {
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
@@ -13,7 +13,7 @@ export function renderWebSocketTester(container) {
   var h = '';
   h += '<div>';
   h += '<div class="pg-head"><div><h1 class="pg-h1">WebSocket Tester</h1>';
-  h += '<p class="muted pg-sub">Connect to any WebSocket endpoint, send messages and monitor traffic.</p></div></div>';
+  h += '<p class="muted pg-sub">Connect to a WebSocket endpoint from this browser, send messages and log what comes back.</p></div></div>';
 
   // Connection
   h += '<div class="card">';
@@ -22,7 +22,7 @@ export function renderWebSocketTester(container) {
   h += '<button class="btn" id="ws-connect-btn" onclick="_wsConnect()">Connect</button>';
   h += '<button class="btn ghost" onclick="_wsDisconnect()">Close</button>';
   h += '</div>';
-  h += '<div id="ws-status" style="font-size:12px;color:var(--bad);">DISCONNECTED</div>';
+  h += '<div id="ws-status" style="font-size:12px;color:var(--bad);">Disconnected</div>';
   h += '</div>';
 
   // Send
@@ -39,7 +39,7 @@ export function renderWebSocketTester(container) {
   h += '<div class="card">';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
   h += '<div style="color:var(--txt);font-size:14px;font-weight:600;">Message log</div>';
-  h += '<div id="ws-frame-count" style="color:var(--mut);font-size:12px;">0 frames</div>';
+  h += '<div id="ws-frame-count" style="color:var(--mut);font-size:12px;">0 log entries</div>';
   h += '</div>';
   h += '<div id="ws-log" style="background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:8px;max-height:400px;overflow-y:auto;font-size:12px;line-height:1.6;"></div>';
   h += '</div>';
@@ -79,10 +79,10 @@ function _wsAddLog(type, data) {
   var entry = document.createElement('div');
   entry.style.cssText = 'margin:2px 0;padding:3px 6px;border-left:2px solid ' + color + ';background:' + color + '08;border-radius:0 3px 3px 0;cursor:pointer;';
   entry.innerHTML = '<span style="color:var(--mut);margin-right:6px;">' + time + '</span>' +
-    '<span style="color:' + color + ';margin-right:6px;">' + icon + ' ' + type.toUpperCase() + '</span>' +
+    '<span style="color:' + color + ';margin-right:6px;">' + icon + ' ' + type + '</span>' +
     '<span style="color:var(--txt);word-break:break-all;' + (isJSON ? 'font-style:italic;' : '') + '">' + esc(truncated) + '</span>';
   entry.onclick = function() {
-    try { navigator.clipboard.writeText(data); entry.style.borderLeftColor = '#ffaa00'; setTimeout(function() { entry.style.borderLeftColor = color; }, 500); } catch (e) {}
+    try { navigator.clipboard.writeText(data); entry.style.borderLeftColor = 'var(--warn)'; setTimeout(function() { entry.style.borderLeftColor = color; }, 500); } catch (e) {}
   };
   var atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40; // don't yank the view while someone reads older frames
   log.appendChild(entry);
@@ -91,7 +91,7 @@ function _wsAddLog(type, data) {
   _wsLog.push({ type: type, data: data, time: time });
   _wsTotal++;
   while (_wsLog.length > WS_KEEP) { _wsLog.shift(); if (log.firstChild) log.removeChild(log.firstChild); }
-  if (count) count.textContent = _wsTotal + ' frames' + (_wsTotal > WS_KEEP ? ' (last ' + WS_KEEP + ' shown)' : '');
+  if (count) count.textContent = _wsTotal + ' log entries' + (_wsTotal > WS_KEEP ? ' (last ' + WS_KEEP + ' shown)' : '');
 }
 
 window._wsConnect = function() {
@@ -101,19 +101,19 @@ window._wsConnect = function() {
 
   if (_wsConnection) {
     // Detach first: the old socket's late onclose would otherwise null out
-    // the new connection and mark it DISCONNECTED.
+    // the new connection and mark it disconnected.
     _wsConnection.onopen = _wsConnection.onmessage = _wsConnection.onclose = _wsConnection.onerror = null;
     try { _wsConnection.close(); } catch (e) {}
   }
 
-  if (status) { status.textContent = 'CONNECTING...'; status.style.color = '#ffaa00'; }
+  if (status) { status.textContent = 'Connecting...'; status.style.color = 'var(--warn)'; }
   _wsAddLog('info', 'Connecting to ' + url + '...');
 
   try {
     _wsConnection = new WebSocket(url);
 
     _wsConnection.onopen = function() {
-      if (status) { status.textContent = 'CONNECTED'; status.style.color = '#00ff88'; }
+      if (status) { status.textContent = 'Connected'; status.style.color = 'var(--ok)'; }
       _wsAddLog('info', 'Connection established');
     };
 
@@ -122,17 +122,17 @@ window._wsConnect = function() {
     };
 
     _wsConnection.onclose = function(e) {
-      if (status) { status.textContent = 'DISCONNECTED (code: ' + e.code + ')'; status.style.color = '#ff4444'; }
+      if (status) { status.textContent = 'Disconnected (code ' + e.code + ')'; status.style.color = 'var(--bad)'; }
       _wsAddLog('info', 'Connection closed — code: ' + e.code + (e.reason ? ' reason: ' + e.reason : ''));
       _wsConnection = null;
     };
 
     _wsConnection.onerror = function() {
-      if (status) { status.textContent = 'ERROR'; status.style.color = '#ff4444'; }
+      if (status) { status.textContent = 'Error'; status.style.color = 'var(--bad)'; }
       _wsAddLog('error', 'WebSocket error — connection failed or was rejected');
     };
   } catch (err) {
-    if (status) { status.textContent = 'FAILED'; status.style.color = '#ff4444'; }
+    if (status) { status.textContent = 'Failed'; status.style.color = 'var(--bad)'; }
     _wsAddLog('error', 'Failed to create WebSocket: ' + String(err.message || err));
   }
 };
@@ -178,5 +178,5 @@ window._wsClear = function() {
   _wsLog = [];
   _wsTotal = 0;
   var count = document.getElementById('ws-frame-count');
-  if (count) count.textContent = '0 frames';
+  if (count) count.textContent = '0 log entries';
 };

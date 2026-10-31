@@ -154,14 +154,14 @@ body.app .svc-menu .svc-card .side-item.active{color:var(--txt)!important;font-w
 .mt-head{display:flex;align-items:center;gap:12px;margin:4px 0 14px}
 .mt-back{background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--txt-2,var(--mut));font:inherit;font-size:.82rem;padding:6px 12px;cursor:pointer}
 .mt-back:hover{border-color:var(--acc);color:var(--txt)}
-.mt-crumb{display:inline-flex;align-items:center;gap:7px;font-size:.76rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
+.mt-crumb{display:inline-flex;align-items:center;gap:7px;font-size:.8rem;font-weight:600;color:var(--mut)}
 .mt-title{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:0 0 4px;color:var(--txt)}
 .mt-desc{color:var(--mut);font-size:.92rem;margin:0 0 18px;max-width:70ch;line-height:1.5}
 /* plain-English help: what it does, when to use it, a worked example */
 .mt-about{display:grid;gap:8px;margin:0 0 16px;max-width:78ch}
 .mt-about p{margin:0;font-size:.95rem;line-height:1.55;color:var(--txt)}
 .mt-about .mt-when{color:var(--mut)}
-.mt-k{display:block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
+.mt-k{display:block;font-size:.75rem;font-weight:600;color:var(--mut);margin-bottom:2px}
 .mt-ex{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:12px 14px;margin:0 0 18px}
 .mt-ex[hidden]{display:none}
 .mt-ex-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
@@ -200,11 +200,11 @@ body.app .svc-menu .svc-card .side-item.active{color:var(--txt)!important;font-w
 .mt-run{background:var(--acc);color:var(--on-acc,#fff);border:0;border-radius:9px;font:inherit;font-weight:700;font-size:.88rem;padding:10px 18px;cursor:pointer}
 .mt-run:hover{background:color-mix(in srgb,var(--acc) 86%,#000)}
 .mt-outwrap{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;background:var(--card2);overflow:hidden;min-height:180px}
-.mt-outbar{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--line);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.mt-outbar{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--line);font-size:.8rem;font-weight:600;color:var(--mut)}
 .mt-copy{background:transparent;border:1px solid var(--line);border-radius:7px;color:var(--txt-2,var(--mut));font:inherit;font-size:.72rem;padding:4px 12px;cursor:pointer}
 .mt-copy:hover{border-color:var(--acc);color:var(--txt)}
 .mt-out{margin:0;padding:14px;font-family:var(--font-mono,ui-monospace,monospace);font-size:.85rem;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow:auto;flex:1;color:var(--txt)}
-.mt-out.err{color:#ef4444}
+.mt-out.err{color:var(--bad)}
 .mt-empty{color:var(--mut);text-align:center;padding:40px}
 
 /* ---- Toolbox hub ---- */
@@ -215,8 +215,8 @@ body.app .svc-menu .svc-card .side-item.active{color:var(--txt)!important;font-w
 .mt-hub-search input:focus{border-color:var(--acc);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 40%,transparent)}
 .mt-hub-cat{margin-bottom:26px}
 .mt-hub-cat[hidden]{display:none}
-.mt-hub-ch{display:flex;align-items:center;gap:9px;font-size:.78rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--txt-2,var(--txt));margin:0 0 12px;padding-left:2px;border-left:3px solid var(--gc,var(--acc));padding:2px 0 2px 10px}
-.mt-hub-n{font-family:var(--font-mono,monospace);font-weight:700;font-size:.66rem;color:var(--gc,var(--acc));background:color-mix(in srgb,var(--gc,var(--acc)) 15%,transparent);border-radius:9px;padding:2px 7px}
+.mt-hub-ch{display:flex;align-items:center;gap:9px;font-size:.9rem;font-weight:700;color:var(--txt-2,var(--txt));margin:0 0 12px;padding-left:2px;border-left:3px solid var(--gc,var(--acc));padding:2px 0 2px 10px}
+.mt-hub-n{font-family:var(--font-mono,monospace);font-weight:700;font-size:.75rem;color:var(--gc,var(--acc));background:color-mix(in srgb,var(--gc,var(--acc)) 15%,transparent);border-radius:9px;padding:2px 7px}
 .mt-hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
 .mt-card{display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .12s,transform .12s,box-shadow .12s}
 .mt-card[hidden]{display:none}
@@ -243,5 +243,5 @@ body.app .svc-menu .svc-card .side-item.active{color:var(--txt)!important;font-w
 /* Toolbox: each category shows its first 8 tools until "Show all"; a search shows every hit. */
 .mt-hub-body:not(.q) .mt-hub-cat:not(.all) .mt-card:nth-child(n+9){display:none}
 .mt-hub-body.q .mt-more{display:none}
-.mt-more{margin-left:auto;font-family:inherit;font-weight:600;font-size:.72rem;line-height:1;letter-spacing:0;text-transform:none;color:var(--acc);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer}
+.mt-more{margin-left:auto;font-family:inherit;font-weight:600;font-size:.75rem;line-height:1;letter-spacing:0;text-transform:none;color:var(--acc);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer}
 .mt-more:hover{border-color:var(--acc)}

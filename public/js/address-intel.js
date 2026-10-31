@@ -62,11 +62,11 @@ function reverseIP(ip) {
 }
 
 function riskColor(score) {
-  if (score < 20) return "#2ecc71";
-  if (score < 40) return "#f1c40f";
-  if (score < 60) return "#e67e22";
-  if (score < 80) return "#e74c3c";
-  return "#c0392b";
+  if (score < 20) return "var(--ok)";
+  if (score < 40) return "var(--warn)";
+  if (score < 60) return "var(--warn)";
+  if (score < 80) return "var(--bad)";
+  return "var(--bad)";
 }
 
 function riskLabel(score) {
@@ -450,10 +450,11 @@ function renderSummaryCard(input, type, risk) {
       '<div class="ai-summary-address">' + esc(input) + '</div>' +
       '<div class="ai-summary-meta">' +
         '<span class="ai-type-badge ai-type-' + type.toLowerCase() + '">' + esc(type) + '</span>' +
-        '<span class="ai-summary-time">Scanned: ' + esc(new Date().toLocaleString()) + '</span>' +
+        '<span class="ai-summary-time">Looked up: ' + esc(new Date().toLocaleString()) + '</span>' +
       '</div>' +
-      '<div class="ai-summary-risk">Risk: <strong style="color:' + (risk.score >= 0 ? riskColor(risk.score) : "var(--mut)") + '">' + esc(risk.label) + '</strong></div>' +
+      '<div class="ai-summary-risk">Composite score: <strong style="color:' + (risk.score >= 0 ? riskColor(risk.score) : "var(--mut)") + '">' + esc(risk.label) + '</strong></div>' +
       (tagsHTML ? '<div class="ai-tags-row">' + tagsHTML + '</div>' : '') +
+      '<div class="ai-summary-time" style="margin-top:6px;">A weighted sum of the source results below. It is a triage aid, not a verdict from any one source.</div>' +
     '</div>' +
     '<div class="ai-summary-right">' + scoreHTML + '</div>' +
   '</div>';
@@ -548,7 +549,7 @@ function renderReputationPanel(results) {
   if (results.greynoise) {
     var gn = results.greynoise;
     var gnClass = (gn.classification || "unknown").toLowerCase();
-    var gnColor = gnClass === "malicious" ? "#e74c3c" : (gnClass === "benign" ? "#2ecc71" : "var(--mut)");
+    var gnColor = gnClass === "malicious" ? "var(--bad)" : (gnClass === "benign" ? "var(--ok)" : "var(--mut)");
     html += '<div class="ai-kv-grid">' +
       '<div class="ai-kv"><span class="ai-kv-label">Classification</span><span class="ai-kv-value" style="color:' + gnColor + ';font-weight:600">' + esc(gn.classification || "Unknown") + '</span></div>' +
       renderKV("Noise", gn.noise ? "Yes (Internet scanner)" : "No") +
@@ -567,7 +568,7 @@ function renderReputationPanel(results) {
   html += '<div class="ai-subsection-title">AbuseIPDB</div>';
   if (results.abuseipdb && results.abuseipdb.data) {
     var ab = results.abuseipdb.data;
-    var abColor = ab.abuseConfidenceScore > 50 ? "#e74c3c" : (ab.abuseConfidenceScore > 20 ? "#e67e22" : "#2ecc71");
+    var abColor = ab.abuseConfidenceScore > 50 ? "var(--bad)" : (ab.abuseConfidenceScore > 20 ? "var(--warn)" : "var(--ok)");
     html += '<div class="ai-kv-grid">' +
       '<div class="ai-kv"><span class="ai-kv-label">Abuse Confidence</span><span class="ai-kv-value" style="color:' + abColor + ';font-weight:600">' + esc(ab.abuseConfidenceScore) + '%</span></div>' +
       renderKV("Total Reports", ab.totalReports) +
@@ -595,7 +596,7 @@ function renderReputationPanel(results) {
     var vtSus = vtStats.suspicious || 0;
     var vtHarm = vtStats.harmless || 0;
     var vtUnd = vtStats.undetected || 0;
-    var vtColor = vtMal > 5 ? "#e74c3c" : (vtMal > 0 ? "#e67e22" : "#2ecc71");
+    var vtColor = vtMal > 5 ? "var(--bad)" : (vtMal > 0 ? "var(--warn)" : "var(--ok)");
     html += '<div class="ai-kv-grid">' +
       '<div class="ai-kv"><span class="ai-kv-label">Detections</span><span class="ai-kv-value" style="color:' + vtColor + ';font-weight:600">' + vtMal + ' malicious, ' + vtSus + ' suspicious</span></div>' +
       renderKV("Harmless", vtHarm) +
@@ -614,7 +615,7 @@ function renderReputationPanel(results) {
   if (results.ipsum || results.ipsum_err) {
     html += '<div class="ai-subsection-title">IPsum Blocklists <span class="ai-snap-note">(' + esc(snapshotLabel(results.ipsum)) + ')</span></div>';
     if (results.ipsum_err) html += panelUnavailable(results.ipsum_err);
-    else if (results.ipsum.hit) html += '<div class="ai-kv-grid"><div class="ai-kv"><span class="ai-kv-label">Listed on</span><span class="ai-kv-value" style="color:#e74c3c;font-weight:600">' + esc(results.ipsum.hit.score) + ' blocklist' + (results.ipsum.hit.score === 1 ? "" : "s") + '</span></div></div>';
+    else if (results.ipsum.hit) html += '<div class="ai-kv-grid"><div class="ai-kv"><span class="ai-kv-label">Listed on</span><span class="ai-kv-value" style="color:var(--bad);font-weight:600">' + esc(results.ipsum.hit.score) + ' blocklist' + (results.ipsum.hit.score === 1 ? "" : "s") + '</span></div></div>';
     else html += panelUnavailable("Not on any blocklist in the saved IPsum snapshot (" + results.ipsum.snapshot.count + " entries)");
   }
 
@@ -650,7 +651,7 @@ function renderReputationPanel(results) {
       html += '<table class="ai-table"><thead><tr><th>URL</th><th>Status</th><th>Threat</th><th>Date Added</th><th>Tags</th></tr></thead><tbody>';
       for (var u = 0; u < results.urlhaus.urls.length && u < 20; u++) {
         var uh = results.urlhaus.urls[u];
-        var uhStatusClass = uh.url_status === "online" ? "color:#e74c3c;font-weight:600" : "";
+        var uhStatusClass = uh.url_status === "online" ? "color:var(--bad);font-weight:600" : "";
         html += '<tr>' +
           '<td>' + esc(truncate(uh.url || "", 80)) + '</td>' +
           '<td style="' + uhStatusClass + '">' + esc(uh.url_status || "") + '</td>' +
@@ -905,17 +906,17 @@ function runInvestigation(input, type, container) {
   // Build panels structure
   var panelOrder = [];
   if (ip) {
-    panelOrder.push({ id: "geo", title: "Geolocation", border: "#3498db" });
-    panelOrder.push({ id: "network", title: "Network & Ports", border: "#9b59b6" });
+    panelOrder.push({ id: "geo", title: "Geolocation", border: "var(--acc)" });
+    panelOrder.push({ id: "network", title: "Network and ports", border: "var(--acc-2)" });
   }
-  panelOrder.push({ id: "reputation", title: "Reputation & Abuse", border: "#e74c3c" });
-  if (ip) panelOrder.push({ id: "community", title: "Community Reports", border: "#f39c12" });
+  panelOrder.push({ id: "reputation", title: "Reputation and abuse", border: "var(--bad)" });
+  if (ip) panelOrder.push({ id: "community", title: "Community reports", border: "var(--warn)" });
   if (domain) {
-    panelOrder.push({ id: "dns", title: "DNS Records", border: "#2ecc71" });
-    panelOrder.push({ id: "certs", title: "Certificates & Subdomains", border: "#f39c12" });
+    panelOrder.push({ id: "dns", title: "DNS records", border: "var(--ok)" });
+    panelOrder.push({ id: "certs", title: "Certificates and subdomains", border: "var(--warn)" });
   }
-  panelOrder.push({ id: "threat", title: "Threat Intelligence", border: "#e74c3c" });
-  panelOrder.push({ id: "raw", title: "Raw API Responses", border: "var(--line)" });
+  panelOrder.push({ id: "threat", title: "Threat intelligence", border: "var(--bad)" });
+  panelOrder.push({ id: "raw", title: "Raw API responses", border: "var(--line)" });
 
   // Render skeleton
   var html = '<div id="ai-summary-mount"></div>';
@@ -1209,7 +1210,7 @@ function runBulk(text, container, btn) {
     seen[l] = true; return true;
   });
   if (!ips.length) {
-    container.innerHTML = '<div class="ai-panel" style="border-left-color:#e74c3c"><div class="ai-panel-body" style="color:var(--ai-mut)">No valid IPv4 addresses found. Enter one per line.</div></div>';
+    container.innerHTML = '<div class="ai-panel" style="border-left-color:var(--bad)"><div class="ai-panel-body" style="color:var(--ai-mut)">No valid IPv4 addresses found. Enter one per line.</div></div>';
     return;
   }
   var capped = ips.length > 20;
@@ -1235,8 +1236,8 @@ function runBulk(text, container, btn) {
         '<td>' + esc(r.geo ? (g.country_code || "--") : "lookup failed") + '</td><td>' + esc(g.city || "--") + '</td>' +
         '<td>' + esc(truncate(g.org || "--", 40)) + '</td><td>' + esc(g.asn || "--") + '</td>' +
         '<td>' + (host ? '<span class="ai-tag ai-tag-warn">Hosting</span> ' + esc(host) : "--") + '</td>' +
-        '<td' + (bl ? ' style="color:#e74c3c;font-weight:600"' : "") + '>' + (r.ipsum ? (bl || "0") : "n/a") + '</td>' +
-        '<td' + (tf ? ' style="color:#e74c3c;font-weight:600"' : "") + '>' + (r.tf ? (tf ? tf + " IOC" + (tf > 1 ? "s" : "") : "none") : "n/a") + '</td>' +
+        '<td' + (bl ? ' style="color:var(--bad);font-weight:600"' : "") + '>' + (r.ipsum ? (bl || "0") : "n/a") + '</td>' +
+        '<td' + (tf ? ' style="color:var(--bad);font-weight:600"' : "") + '>' + (r.tf ? (tf ? tf + " IOC" + (tf > 1 ? "s" : "") : "none") : "n/a") + '</td>' +
         '<td><button class="ai-history-item ai-bulk-open" data-ip="' + esc(r.ip) + '">Investigate</button></td></tr>';
     });
     html += '</tbody></table><div class="ai-snap-note">Blocklist and ThreatFox columns read saved snapshot files, not live services. A hosting network is context, not a verdict.</div></div></div>';
@@ -1255,9 +1256,9 @@ function runBulk(text, container, btn) {
 // ---- CSS ----
 
 var STYLE = '<style>' +
-  ':root{--ai-bg:#0a0e17;--ai-card:#111827;--ai-card2:#1a2235;--ai-line:#1e293b;--ai-txt:#e2e8f0;--ai-mut:#64748b;--ai-acc:#00d4ff;--ai-acc2:#7c3aed;--ai-mono:"SF Mono","Fira Code","Cascadia Code",monospace}' +
+  '.ai-container{--ai-bg:var(--card);--ai-card:var(--card);--ai-card2:var(--card2);--ai-line:var(--line);--ai-txt:var(--txt);--ai-mut:var(--mut);--ai-acc:var(--acc);--ai-acc2:var(--acc-2);--ai-mono:var(--font-mono)}' +
 
-  '.ai-container{max-width:1100px;margin:0 auto;padding:24px 16px;font-family:system-ui,-apple-system,sans-serif;color:var(--ai-txt)}' +
+  '.ai-container{color:var(--ai-txt)}' +
 
   '.ai-header{text-align:center;margin-bottom:32px}' +
   '.ai-title{font-size:1.6rem;font-weight:700;margin:0 0 6px;color:var(--ai-txt)}' +
@@ -1269,9 +1270,9 @@ var STYLE = '<style>' +
   '.ai-input{width:100%;padding:12px 16px;padding-right:80px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:8px;color:var(--ai-txt);font-size:.95rem;font-family:var(--ai-mono);outline:none;transition:border-color .2s;box-sizing:border-box}' +
   '.ai-input:focus{border-color:var(--ai-acc)}' +
   '.ai-input::placeholder{color:var(--ai-mut)}' +
-  '.ai-type-indicator{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:4px;font-family:var(--ai-mono);text-transform:uppercase;background:rgba(0,212,255,.1);color:var(--ai-acc);display:none}' +
+  '.ai-type-indicator{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;padding:3px 8px;border-radius:4px;font-family:var(--ai-mono);background:var(--ai-card);color:var(--ai-acc);display:none}' +
   '.ai-type-indicator.ai-active{display:block}' +
-  '.ai-btn-investigate{padding:12px 28px;background:linear-gradient(135deg,var(--ai-acc),var(--ai-acc2));border:none;border-radius:4px;color:#fff;font-size:.9rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .2s}' +
+  '.ai-btn-investigate{padding:12px 28px;background:var(--ai-acc);border:none;border-radius:4px;color:#fff;font-size:.9rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity .2s}' +
   '.ai-btn-investigate:hover{opacity:.85}' +
   '.ai-btn-investigate:disabled{opacity:.4;cursor:not-allowed}' +
   '.ai-btn-sec{padding:12px 16px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:4px;color:var(--ai-txt);font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap}' +
@@ -1286,13 +1287,13 @@ var STYLE = '<style>' +
   '.ai-report-form .ai-api-key-save{margin-top:0}' +
 
   '.ai-history-section{margin-top:16px}' +
-  '.ai-history-title{font-size:.78rem;color:var(--ai-mut);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}' +
+  '.ai-history-title{font-size:.78rem;color:var(--ai-mut);margin-bottom:8px;}' +
   '.ai-history-list{display:flex;flex-wrap:wrap;gap:6px}' +
   '.ai-history-item{padding:4px 10px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:4px;font-size:.75rem;color:var(--ai-mut);cursor:pointer;font-family:var(--ai-mono);transition:border-color .2s,color .2s}' +
   '.ai-history-item:hover{border-color:var(--ai-acc);color:var(--ai-acc)}' +
   '.ai-history-type{color:var(--ai-acc);margin-right:4px;font-weight:600}' +
-  '.ai-history-clear{padding:4px 10px;background:transparent;border:1px solid var(--ai-line);border-radius:4px;font-size:.72rem;color:var(--ai-mut);cursor:pointer;transition:color .2s}' +
-  '.ai-history-clear:hover{color:#e74c3c;border-color:#e74c3c}' +
+  '.ai-history-clear{padding:4px 10px;background:transparent;border:1px solid var(--ai-line);border-radius:4px;font-size:12px;color:var(--ai-mut);cursor:pointer;transition:color .2s}' +
+  '.ai-history-clear:hover{color:var(--bad);border-color:var(--bad)}' +
 
   '.ai-api-keys-section{margin-top:16px}' +
   '.ai-api-keys-toggle{font-size:.78rem;color:var(--ai-acc);cursor:pointer;background:none;border:none;padding:0;text-decoration:underline;font-family:inherit}' +
@@ -1301,7 +1302,7 @@ var STYLE = '<style>' +
   '.ai-api-key-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}' +
   '.ai-api-key-label{font-size:.78rem;color:var(--ai-mut);min-width:100px;font-weight:600}' +
   '.ai-api-key-input{flex:1;padding:6px 10px;background:var(--ai-bg);border:1px solid var(--ai-line);border-radius:4px;color:var(--ai-txt);font-size:.78rem;font-family:var(--ai-mono)}' +
-  '.ai-api-key-save{padding:6px 16px;background:var(--ai-acc);border:none;border-radius:4px;color:#000;font-size:.78rem;font-weight:600;cursor:pointer;margin-top:4px}' +
+  '.ai-api-key-save{padding:6px 16px;background:var(--ai-acc);border:none;border-radius:4px;color:#fff;font-size:.78rem;font-weight:600;cursor:pointer;margin-top:4px}' +
 
   '.ai-results{margin-top:8px}' +
 
@@ -1309,10 +1310,10 @@ var STYLE = '<style>' +
   '.ai-summary-left{flex:1}' +
   '.ai-summary-address{font-size:1.2rem;font-weight:700;font-family:var(--ai-mono);color:var(--ai-txt);word-break:break-all}' +
   '.ai-summary-meta{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}' +
-  '.ai-type-badge{font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:4px;text-transform:uppercase;font-family:var(--ai-mono)}' +
-  '.ai-type-ip{background:rgba(52,152,219,.15);color:#3498db}' +
-  '.ai-type-domain{background:rgba(46,204,113,.15);color:#2ecc71}' +
-  '.ai-type-url{background:rgba(155,89,182,.15);color:#9b59b6}' +
+  '.ai-type-badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:4px;font-family:var(--ai-mono)}' +
+  '.ai-type-ip{border:1px solid var(--ai-line);color:var(--ai-acc)}' +
+  '.ai-type-domain{border:1px solid var(--ai-line);color:var(--ok)}' +
+  '.ai-type-url{border:1px solid var(--ai-line);color:var(--ai-acc2)}' +
   '.ai-summary-time{font-size:.75rem;color:var(--ai-mut)}' +
   '.ai-summary-risk{margin-top:8px;font-size:.85rem;color:var(--ai-mut)}' +
   '.ai-summary-right{flex-shrink:0}' +
@@ -1320,17 +1321,17 @@ var STYLE = '<style>' +
   '.ai-score-gauge{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative}' +
   '.ai-score-inner{width:76px;height:76px;border-radius:50%;background:var(--ai-card);display:flex;flex-direction:column;align-items:center;justify-content:center}' +
   '.ai-score-num{font-size:1.6rem;font-weight:800;line-height:1}' +
-  '.ai-score-of{font-size:.6rem;color:var(--ai-mut);margin-top:2px}' +
+  '.ai-score-of{font-size:12px;color:var(--ai-mut);margin-top:2px}' +
   '.ai-score-unknown .ai-score-num{color:var(--ai-mut);font-size:1.8rem}' +
 
   '.ai-tags-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}' +
-  '.ai-tag{font-size:.68rem;padding:2px 8px;border-radius:3px;font-family:var(--ai-mono);font-weight:600;text-transform:uppercase}' +
-  '.ai-tag-danger{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.25)}' +
-  '.ai-tag-safe{background:rgba(46,204,113,.15);color:#2ecc71;border:1px solid rgba(46,204,113,.25)}' +
-  '.ai-tag-warn{background:rgba(241,196,15,.15);color:#f1c40f;border:1px solid rgba(241,196,15,.25)}' +
+  '.ai-tag{font-size:12px;padding:2px 8px;border-radius:3px;font-family:var(--ai-mono);font-weight:600;}' +
+  '.ai-tag-danger{color:var(--bad);border:1px solid var(--bad)}' +
+  '.ai-tag-safe{border:1px solid var(--ai-line);color:var(--ok);border:1px solid rgba(46,204,113,.25)}' +
+  '.ai-tag-warn{color:var(--warn);border:1px solid var(--warn)}' +
 
   '.ai-panel{background:var(--ai-card);border:1px solid var(--ai-line);border-radius:10px;margin-bottom:16px;overflow:hidden;border-left:3px solid var(--ai-acc)}' +
-  '.ai-panel-header{padding:14px 18px;font-size:.88rem;font-weight:700;color:var(--ai-txt);border-bottom:1px solid var(--ai-line);background:rgba(0,0,0,.15)}' +
+  '.ai-panel-header{padding:14px 18px;font-size:14px;font-weight:600;color:var(--ai-txt);border-bottom:1px solid var(--ai-line);background:var(--ai-card2)}' +
   '.ai-panel-content{padding:0}' +
   '.ai-panel-body{padding:16px 18px}' +
 
@@ -1343,26 +1344,26 @@ var STYLE = '<style>' +
   '.ai-panel-unavail{padding:16px 18px;font-size:.82rem;color:var(--ai-mut);font-style:italic}' +
 
   '.ai-kv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:2px}' +
-  '.ai-kv{display:flex;justify-content:space-between;padding:6px 10px;border-radius:4px;background:rgba(0,0,0,.12)}' +
+  '.ai-kv{display:flex;justify-content:space-between;padding:6px 10px;border-radius:4px;background:var(--ai-card2)}' +
   '.ai-kv-label{font-size:.78rem;color:var(--ai-mut);font-weight:500}' +
   '.ai-kv-value{font-size:.78rem;color:var(--ai-txt);font-family:var(--ai-mono);text-align:right;word-break:break-all;max-width:60%}' +
 
-  '.ai-subsection-title{font-size:.8rem;font-weight:700;color:var(--ai-acc);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--ai-line);text-transform:uppercase;letter-spacing:.4px}' +
+  '.ai-subsection-title{font-size:14px;font-weight:600;color:var(--ai-txt);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--ai-line);}' +
   '.ai-subsection-title:first-child{margin-top:0}' +
-  '.ai-snap-note{font-weight:500;text-transform:none;letter-spacing:0;color:var(--ai-mut,#8a8f98);font-size:.72rem}' +
+  '.ai-snap-note{font-weight:500;text-transform:none;letter-spacing:0;color:var(--ai-mut);font-size:12px}' +
 
   '.ai-table{width:100%;border-collapse:collapse;font-size:.76rem;margin-bottom:8px}' +
-  '.ai-table thead th{text-align:left;padding:8px 10px;color:var(--ai-mut);font-weight:600;border-bottom:1px solid var(--ai-line);font-size:.72rem;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}' +
-  '.ai-table tbody td{padding:6px 10px;border-bottom:1px solid rgba(30,41,59,.5);color:var(--ai-txt);font-family:var(--ai-mono);vertical-align:top}' +
-  '.ai-table tbody tr:hover{background:rgba(0,212,255,.03)}' +
-  '.ai-banner-cell{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ai-mut);font-size:.72rem}' +
+  '.ai-table thead th{text-align:left;padding:8px 10px;color:var(--ai-mut);font-weight:600;border-bottom:1px solid var(--ai-line);font-size:12px;white-space:nowrap}' +
+  '.ai-table tbody td{padding:6px 10px;border-bottom:1px solid var(--ai-line);color:var(--ai-txt);font-family:var(--ai-mono);vertical-align:top}' +
+  '.ai-table tbody tr:hover{background:var(--ai-card2)}' +
+  '.ai-banner-cell{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ai-mut);font-size:12px}' +
   '.ai-table-wrap{overflow-x:auto}' +
 
   '.ai-vuln-list{display:flex;flex-wrap:wrap;gap:5px}' +
-  '.ai-vuln-badge{font-size:.7rem;padding:3px 8px;background:rgba(231,76,60,.12);color:#e74c3c;border:1px solid rgba(231,76,60,.2);border-radius:4px;font-family:var(--ai-mono);font-weight:600}' +
+  '.ai-vuln-badge{font-size:12px;padding:3px 8px;color:var(--bad);border:1px solid var(--bad);border-radius:4px;font-family:var(--ai-mono);font-weight:600}' +
 
   '.ai-subdomain-list{display:flex;flex-wrap:wrap;gap:5px}' +
-  '.ai-subdomain-badge{font-size:.72rem;padding:3px 10px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:4px;font-family:var(--ai-mono);color:var(--ai-txt)}' +
+  '.ai-subdomain-badge{font-size:12px;padding:3px 10px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:4px;font-family:var(--ai-mono);color:var(--ai-txt)}' +
   '.ai-subdomain-more{color:var(--ai-mut);font-style:italic}' +
 
   '.ai-no-records{font-size:.78rem;color:var(--ai-mut);padding:4px 0;font-style:italic}' +
@@ -1370,23 +1371,23 @@ var STYLE = '<style>' +
 
   '.ai-map-placeholder{margin-top:12px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:8px;padding:20px;text-align:center}' +
   '.ai-map-coords{font-size:1rem;font-family:var(--ai-mono);color:var(--ai-acc);font-weight:600}' +
-  '.ai-map-label{font-size:.72rem;color:var(--ai-mut);margin-top:4px}' +
+  '.ai-map-label{font-size:12px;color:var(--ai-mut);margin-top:4px}' +
 
   '.ai-malware-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}' +
-  '.ai-malware-card{background:var(--ai-card2);border:1px solid rgba(231,76,60,.2);border-radius:6px;padding:10px 14px}' +
-  '.ai-malware-name{font-size:.82rem;font-weight:700;color:#e74c3c;font-family:var(--ai-mono)}' +
-  '.ai-malware-meta{font-size:.72rem;color:var(--ai-mut);margin-top:2px}' +
+  '.ai-malware-card{background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:6px;padding:10px 14px}' +
+  '.ai-malware-name{font-size:.82rem;font-weight:700;color:var(--bad);font-family:var(--ai-mono)}' +
+  '.ai-malware-meta{font-size:12px;color:var(--ai-mut);margin-top:2px}' +
 
   '.ai-threat-summary{display:flex;flex-wrap:wrap;gap:8px}' +
   '.ai-threat-item{display:flex;align-items:center;gap:8px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:6px;padding:6px 12px}' +
   '.ai-threat-type{font-size:.78rem;font-weight:600;color:var(--ai-txt)}' +
-  '.ai-threat-count{font-size:.72rem;color:var(--ai-mut)}' +
+  '.ai-threat-count{font-size:12px;color:var(--ai-mut)}' +
 
   '.ai-raw-section{margin-bottom:4px}' +
   '.ai-raw-toggle{display:block;width:100%;text-align:left;padding:8px 12px;background:var(--ai-card2);border:1px solid var(--ai-line);border-radius:4px;color:var(--ai-txt);font-size:.78rem;font-weight:600;font-family:var(--ai-mono);cursor:pointer;transition:background .2s}' +
-  '.ai-raw-toggle:hover{background:rgba(0,212,255,.05)}' +
+  '.ai-raw-toggle:hover{background:var(--ai-card)}' +
   '.ai-raw-arrow{float:right;color:var(--ai-mut)}' +
-  '.ai-raw-content{margin:0;padding:12px;background:var(--ai-bg);border:1px solid var(--ai-line);border-top:none;border-radius:0 0 4px 4px;font-size:.72rem;color:var(--ai-mut);font-family:var(--ai-mono);max-height:300px;overflow:auto;white-space:pre-wrap;word-break:break-all}' +
+  '.ai-raw-content{margin:0;padding:12px;background:var(--ai-bg);border:1px solid var(--ai-line);border-top:none;border-radius:0 0 4px 4px;font-size:12px;color:var(--ai-mut);font-family:var(--ai-mono);max-height:300px;overflow:auto;white-space:pre-wrap;word-break:break-all}' +
 
   '@media(max-width:640px){' +
     '.ai-input-row{flex-direction:column}' +
@@ -1394,7 +1395,7 @@ var STYLE = '<style>' +
     '.ai-summary-card{flex-direction:column;text-align:center}' +
     '.ai-summary-meta{justify-content:center}' +
     '.ai-kv-grid{grid-template-columns:1fr}' +
-    '.ai-table{font-size:.7rem}' +
+    '.ai-table{font-size:12px}' +
   '}' +
 '</style>';
 
@@ -1403,10 +1404,8 @@ var STYLE = '<style>' +
 export function renderAddressIntel(main) {
   main.innerHTML = STYLE +
     '<div class="ai-container">' +
-      '<div class="ai-header">' +
-        '<h1 class="ai-title">Address Intelligence</h1>' +
-        '<p class="ai-subtitle">Investigate any IP address, domain, or URL against real threat intelligence sources</p>' +
-      '</div>' +
+      '<div class="pg-head"><div><h1 class="pg-h1">Address Intelligence</h1>' +
+        '<p class="muted pg-sub">Look up an IP address, domain or URL across public sources: geolocation, DNS, certificates, GreyNoise, and AbuseIPDB, Shodan and VirusTotal when you add your own keys.</p></div></div>' +
       '<div class="ai-input-section">' +
         '<div class="ai-input-row">' +
           '<div class="ai-input-wrap">' +
@@ -1424,12 +1423,12 @@ export function renderAddressIntel(main) {
         '</div>' +
         '<div id="ai-history-mount"></div>' +
         '<div class="ai-api-keys-section">' +
-          '<button class="ai-api-keys-toggle" id="ai-keys-toggle">Configure API Keys (optional, enables more sources)</button>' +
+          '<button class="ai-api-keys-toggle" id="ai-keys-toggle">Configure API keys (optional, enables more sources)</button>' +
           '<div class="ai-api-keys-panel" id="ai-keys-panel">' +
             '<div class="ai-api-key-row"><span class="ai-api-key-label">AbuseIPDB</span><input class="ai-api-key-input" id="ai-key-abuseipdb" type="password" placeholder="API key"></div>' +
             '<div class="ai-api-key-row"><span class="ai-api-key-label">Shodan</span><input class="ai-api-key-input" id="ai-key-shodan" type="password" placeholder="API key"></div>' +
             '<div class="ai-api-key-row"><span class="ai-api-key-label">VirusTotal</span><input class="ai-api-key-input" id="ai-key-virustotal" type="password" placeholder="API key"></div>' +
-            '<button class="ai-api-key-save" id="ai-keys-save">Save Keys</button>' +
+            '<button class="ai-api-key-save" id="ai-keys-save">Save keys</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1470,13 +1469,13 @@ export function renderAddressIntel(main) {
     var type = detectInputType(val);
     if (!type) {
       document.getElementById("ai-results").innerHTML =
-        '<div class="ai-panel" style="border-left-color:#e74c3c"><div class="ai-panel-header">Invalid Input</div>' +
+        '<div class="ai-panel" style="border-left-color:var(--bad)"><div class="ai-panel-header">Invalid input</div>' +
         '<div class="ai-panel-body" style="color:var(--ai-mut)">Could not detect input type. Enter a valid IPv4 address, domain name, or URL (starting with http:// or https://).</div></div>';
       return;
     }
     var btn = document.getElementById("ai-btn-go");
     btn.disabled = true;
-    btn.textContent = "Scanning...";
+    btn.textContent = "Looking up...";
     setTimeout(function() { btn.disabled = false; btn.textContent = "Investigate"; }, 16000);
     runInvestigation(val, type, document.getElementById("ai-results"));
     renderHistory();
@@ -1493,7 +1492,7 @@ export function renderAddressIntel(main) {
       if (detectInputType(d.ip)) document.getElementById("ai-btn-go").click();
       else document.getElementById("ai-results").innerHTML = '<div class="ai-panel"><div class="ai-panel-body">Your public address is ' + esc(d.ip) + ' (IPv6 is not supported by the full investigation).</div></div>';
     }).catch(function(e) {
-      document.getElementById("ai-results").innerHTML = '<div class="ai-panel" style="border-left-color:#e74c3c"><div class="ai-panel-body">Could not detect your IP: ' + esc(e.message) + '</div></div>';
+      document.getElementById("ai-results").innerHTML = '<div class="ai-panel" style="border-left-color:var(--bad)"><div class="ai-panel-body">Could not detect your IP: ' + esc(e.message) + '</div></div>';
     }).finally(function() { b.disabled = false; b.textContent = "My IP"; });
   });
 
@@ -1530,7 +1529,7 @@ export function renderAddressIntel(main) {
     try { if (window.dnKeys) window.dnKeys.setJSON(API_KEYS_KEY, keys); } catch(e) {}
     var saveBtn = document.getElementById("ai-keys-save");
     saveBtn.textContent = "Saved";
-    setTimeout(function() { saveBtn.textContent = "Save Keys"; }, 1500);
+    setTimeout(function() { saveBtn.textContent = "Save keys"; }, 1500);
   });
 
   // Raw data toggle delegation

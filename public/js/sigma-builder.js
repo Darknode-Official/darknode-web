@@ -273,7 +273,7 @@ var SG_CSS =
   '.sg-col{display:flex;flex-direction:column;gap:14px;min-width:0}' +
   '.sg-field{margin-bottom:10px}' +
   '.sg-field:last-child{margin-bottom:0}' +
-  '.sg-lbl{display:block;font-size:.74rem;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}' +
+  '.sg-lbl{display:block;font-size:.75rem;color:var(--mut);margin-bottom:4px}' +
   '.sg-in,.sg-ta,.sg-sel{width:100%;box-sizing:border-box;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:4px;padding:8px 10px;font-size:.85rem;font-family:inherit}' +
   '.sg-in:focus,.sg-ta:focus,.sg-sel:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 15%,transparent)}' +
   '.sg-ta{resize:vertical;min-height:60px;line-height:1.5}' +
@@ -293,7 +293,7 @@ var SG_CSS =
   '.sg-attack label{display:flex;align-items:flex-start;gap:8px;font-size:.8rem;padding:5px 7px;border:1px solid var(--line);border-radius:4px;cursor:pointer;background:var(--card2)}' +
   '.sg-attack label:hover{border-color:var(--acc)}' +
   '.sg-attack input{width:auto;margin:2px 0 0}' +
-  '.sg-attack .sg-tid{color:var(--acc);font-family:var(--font-mono);font-size:.74rem}' +
+  '.sg-attack .sg-tid{color:var(--acc);font-family:var(--font-mono);font-size:.75rem}' +
   '.sg-attack .sg-tname{color:var(--txt-2);display:block;font-size:.75rem}' +
   '.sg-yaml{font-family:var(--font-mono);font-size:.8rem;line-height:1.55;white-space:pre;overflow:auto;background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:14px;max-height:560px;color:var(--txt);tab-size:4}' +
   '.sg-actions{display:flex;flex-wrap:wrap;gap:8px}' +
@@ -305,13 +305,13 @@ var SG_CSS =
   '.sg-menu.open{display:block}' +
   '.sg-menu button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--txt);padding:8px 10px;border-radius:4px;cursor:pointer;font-size:.82rem;font-family:inherit}' +
   '.sg-menu button:hover{background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc)}' +
-  '.sg-hint{font-size:.74rem;color:var(--mut);margin-top:4px}' +
+  '.sg-hint{font-size:.75rem;color:var(--mut);margin-top:4px}' +
   '.sg-sticky{position:sticky;top:12px}' +
   '.sg-logs{font-family:var(--font-mono);font-size:.78rem;min-height:120px;white-space:pre}' +
   '.sg-result{margin-top:12px;font-size:.82rem}' +
   '.sg-result:empty{display:none}' +
   '.sg-none{padding:8px 11px;border-radius:4px;border:1px solid var(--line);background:var(--card2);color:var(--mut)}' +
-  '.sg-lv{font-family:var(--font-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;padding:1px 6px;border-radius:3px;margin-left:6px;border:1px solid var(--line)}' +
+  '.sg-lv{font-family:var(--font-mono);font-size:.75rem;padding:1px 6px;border-radius:3px;margin-left:6px;border:1px solid var(--line)}' +
   '.sg-lv-critical{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 50%,var(--line))}' +
   '.sg-lv-high{color:var(--bad)}' +
   '.sg-lv-medium{color:var(--warn,#d08a2a)}' +
@@ -319,8 +319,8 @@ var SG_CSS =
   '.sg-skip{color:var(--mut);font-size:.76rem}' +
   '.sg-matches{margin-top:10px;display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}' +
   '.sg-match{display:flex;gap:8px;align-items:baseline;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--card2)}' +
-  '.sg-mix{color:var(--acc);font-family:var(--font-mono);font-size:.74rem;flex:none}' +
-  '.sg-mev{font-family:var(--font-mono);font-size:.74rem;color:var(--txt-2);word-break:break-all;overflow:hidden}' +
+  '.sg-mix{color:var(--acc);font-family:var(--font-mono);font-size:.75rem;flex:none}' +
+  '.sg-mev{font-family:var(--font-mono);font-size:.75rem;color:var(--txt-2);word-break:break-all;overflow:hidden}' +
   '</style>';
 
 // ── render ──
@@ -387,7 +387,7 @@ export function renderSigmaBuilder(main) {
     '</div>' +
 
     '<div class="panel">' +
-    '<div class="panel-h"><h2 class="pg-h2">Log Source</h2></div>' +
+    '<div class="panel-h"><h2 class="pg-h2">Log source</h2></div>' +
     '<div class="sg-row3" style="padding:0">' +
     '<div class="sg-field"><label class="sg-lbl" for="sg-ls-product">Product</label><select class="sg-sel" id="sg-ls-product">' +
     PRODUCTS.map(function (s) { return '<option value="' + s + '">' + (s ? esc(s) : "(none)") + '</option>'; }).join("") + '</select></div>' +
@@ -409,7 +409,7 @@ export function renderSigmaBuilder(main) {
     '</div>' +
 
     '<div class="panel">' +
-    '<div class="panel-h"><h2 class="pg-h2">MITRE ATT&amp;CK Tags</h2></div>' +
+    '<div class="panel-h"><h2 class="pg-h2">MITRE ATT&amp;CK tags</h2></div>' +
     '<div class="sg-attack" id="sg-attack"></div>' +
     '</div>' +
 

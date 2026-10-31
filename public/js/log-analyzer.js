@@ -2702,15 +2702,15 @@ function renderWindowsEventsTab(container) {
     if (cat) filtered = filtered.filter(e => e.category === cat);
     if (sev) filtered = filtered.filter(e => e.severity === sev);
 
-    const sevColors = { critical: '#f44', high: '#f80', medium: '#fa0', info: '#4af' };
+    const sevColors = { critical: 'var(--bad)', high: 'var(--bad)', medium: 'var(--warn)', info: 'var(--acc)' };
     let html = `<p class="muted">Showing ${filtered.length} of ${WINDOWS_EVENTS.length} events</p>`;
     html += '<div style="max-height:500px;overflow-y:auto">';
     for (const e of filtered) {
-      html += `<div class="card" style="margin:4px 0;padding:8px 12px;border-left:3px solid ${sevColors[e.severity] || '#888'}">
-        <strong style="color:${sevColors[e.severity] || '#ccc'}">${e.id}</strong>
+      html += `<div class="card" style="margin:4px 0;padding:8px 12px;border-left:3px solid ${sevColors[e.severity] || 'var(--line)'}">
+        <strong style="color:${sevColors[e.severity] || 'var(--txt)'}">${e.id}</strong>
         <span class="muted" style="margin-left:8px">[${e.category}]</span>
         <span style="margin-left:8px">${escapeHTML(e.description)}</span>
-        <span class="muted" style="margin-left:8px;font-size:0.8em">${e.source} - ${e.severity}</span>
+        <span class="muted" style="margin-left:8px;font-size:12px">${e.source} - ${e.severity}</span>
       </div>`;
     }
     html += '</div>';
@@ -3166,10 +3166,10 @@ function renderSigmaTab(container) {
     );
     if (level) filtered = filtered.filter(r => r.level === level);
 
-    const levColors = { critical: '#f44', high: '#f80', medium: '#fa0', low: '#4af' };
+    const levColors = { critical: 'var(--bad)', high: 'var(--bad)', medium: 'var(--warn)', low: 'var(--acc)' };
     let html = `<p class="muted">Showing ${filtered.length} of ${SIGMA_RULES.length} rules</p>`;
     for (const r of filtered) {
-      html += `<div class="card" style="margin:8px 0;padding:12px;border-left:3px solid ${levColors[r.level] || '#888'}">
+      html += `<div class="card" style="margin:8px 0;padding:12px;border-left:3px solid ${levColors[r.level] || 'var(--line)'}">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <strong>${escapeHTML(r.title)}</strong>
           <span class="muted">${r.id} | ${r.level.toUpperCase()}</span>
@@ -3178,8 +3178,8 @@ function renderSigmaTab(container) {
         <div style="margin:4px 0"><strong>Log Source:</strong> ${escapeHTML(r.logsource)}</div>
         <div style="margin:4px 0"><strong>Detection:</strong> ${escapeHTML(r.detection)}</div>
         <div style="margin:4px 0"><strong>False Positives:</strong> ${escapeHTML(r.falsepositives)}</div>
-        <div style="margin:4px 0"><strong>Example:</strong> <code class="mono" style="font-size:0.85em">${escapeHTML(r.example)}</code></div>
-        <div style="margin:4px 0">${r.tags.map(t => `<span style="display:inline-block;padding:1px 6px;margin:2px;background:#333;border-radius:3px;font-size:0.8em">${escapeHTML(t)}</span>`).join('')}</div>
+        <div style="margin:4px 0"><strong>Example:</strong> <code class="mono" style="font-size:12px">${escapeHTML(r.example)}</code></div>
+        <div style="margin:4px 0">${r.tags.map(t => `<span style="display:inline-block;padding:1px 6px;margin:2px;background:var(--card2);border:1px solid var(--line);border-radius:3px;font-size:12px">${escapeHTML(t)}</span>`).join('')}</div>
       </div>`;
     }
     container.querySelector('#la-sigma-results').innerHTML = html;
@@ -3224,7 +3224,7 @@ function renderYARATab(container) {
         listHTML += `<div class="card" style="margin:8px 0;padding:12px">
           <strong>${escapeHTML(r.name)}</strong>
           <p class="muted" style="margin:4px 0">${escapeHTML(r.description)}</p>
-          <pre class="cmd-block" style="margin:4px 0;font-size:0.85em;max-height:300px;overflow-y:auto">${escapeHTML(r.rule)}</pre>
+          <pre class="cmd-block" style="margin:4px 0;font-size:12px;max-height:300px;overflow-y:auto">${escapeHTML(r.rule)}</pre>
         </div>`;
       }
       content.querySelector('#la-yara-list').innerHTML = listHTML || '<p class="muted">No rules match.</p>';
@@ -3270,7 +3270,7 @@ $hex1 = { 4D 5A 90 00 }'></textarea>
         <div style="margin:12px 0">
           <label><strong>Condition:</strong></label>
           <input class="tk-f" id="yb-condition" placeholder="any of them" value="any of them">
-          <p class="muted" style="font-size:0.85em;margin:4px 0">Examples: "any of them", "2 of ($s*)", "all of them", "$s1 and ($s2 or $s3)", "uint16(0) == 0x5A4D and any of them"</p>
+          <p class="muted" style="font-size:12px;margin:4px 0">Examples: "any of them", "2 of ($s*)", "all of them", "$s1 and ($s2 or $s3)", "uint16(0) == 0x5A4D and any of them"</p>
         </div>
         <div class="tk-btns">
           <button class="btn sm" id="yb-generate">Generate Rule</button>
@@ -3319,7 +3319,7 @@ $hex1 = { 4D 5A 90 00 }'></textarea>
   }
 
   subtabs.onclick = (e) => {
-    const btn = e.target.closest('.tab');
+    const btn = e.target.closest('button[data-tab]');
     if (!btn) return;
     subtabs.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
@@ -3358,7 +3358,7 @@ function renderSplunkTab(container) {
       html += `<div class="card" style="margin:8px 0;padding:12px">
         <div style="display:flex;justify-content:space-between"><strong>${escapeHTML(q.title)}</strong><span class="muted">${q.category}</span></div>
         <p class="muted" style="margin:4px 0">${escapeHTML(q.description)}</p>
-        <pre class="cmd-block" style="margin:4px 0;font-size:0.85em;white-space:pre-wrap;word-break:break-all">${escapeHTML(q.query)}</pre>
+        <pre class="cmd-block" style="margin:4px 0;font-size:12px;white-space:pre-wrap;word-break:break-all">${escapeHTML(q.query)}</pre>
       </div>`;
     }
     container.querySelector('#la-splunk-list').innerHTML = html;
@@ -3398,9 +3398,9 @@ function renderELKTab(container) {
         <div style="display:flex;justify-content:space-between"><strong>${escapeHTML(q.title)}</strong><span class="muted">${q.category}</span></div>
         <p class="muted" style="margin:4px 0">${escapeHTML(q.description)}</p>
         <div style="margin:4px 0"><strong>Elasticsearch Query:</strong></div>
-        <pre class="cmd-block" style="margin:4px 0;font-size:0.85em;white-space:pre-wrap;word-break:break-all">${escapeHTML(q.query)}</pre>
+        <pre class="cmd-block" style="margin:4px 0;font-size:12px;white-space:pre-wrap;word-break:break-all">${escapeHTML(q.query)}</pre>
         <div style="margin:4px 0"><strong>KQL:</strong></div>
-        <pre class="cmd-block" style="margin:4px 0;font-size:0.85em;white-space:pre-wrap">${escapeHTML(q.kql)}</pre>
+        <pre class="cmd-block" style="margin:4px 0;font-size:12px;white-space:pre-wrap">${escapeHTML(q.kql)}</pre>
       </div>`;
     }
     container.querySelector('#la-elk-list').innerHTML = html;
@@ -3456,10 +3456,10 @@ const TABS = [
 
 export function renderLogAnalyzer(main) {
   main.innerHTML = `
-    <h1 class="pg-h1">Log Analyzer</h1>
-    <p class="pg-sub">Security log analysis toolkit -- parse, search, detect anomalies, and extract IOCs from any log format.</p>
-    <div class="tab-bar" id="la-tabs" style="flex-wrap:wrap">
-      ${TABS.map((t, i) => `<button class="tab${i === 0 ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+    <div class="pg-head"><div><h1 class="pg-h1">Log Analyzer</h1>
+    <p class="muted pg-sub">Parse, search and pattern-match pasted logs and extract IOCs. Everything runs locally in your browser; detection, query and event-ID tabs are reference libraries.</p></div></div>
+    <div class="seg" id="la-tabs" style="flex-wrap:wrap">
+      ${TABS.map((t, i) => `<button class="${i === 0 ? 'on' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
     </div>
     <div id="la-content" style="margin-top:12px"></div>
   `;
@@ -3468,7 +3468,7 @@ export function renderLogAnalyzer(main) {
   const content = main.querySelector('#la-content');
 
   function switchTab(tabId) {
-    tabBar.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+    tabBar.querySelectorAll('button[data-tab]').forEach(t => t.classList.toggle('on', t.dataset.tab === tabId));
     const tab = TABS.find(t => t.id === tabId);
     if (tab) {
       content.innerHTML = '';
@@ -3477,7 +3477,7 @@ export function renderLogAnalyzer(main) {
   }
 
   tabBar.onclick = (e) => {
-    const btn = e.target.closest('.tab');
+    const btn = e.target.closest('button[data-tab]');
     if (btn) switchTab(btn.dataset.tab);
   };
 

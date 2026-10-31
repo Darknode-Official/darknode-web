@@ -58,11 +58,11 @@ function _imEntropy(str) {
 }
 
 function _imEntropyRating(bits) {
-  if (bits >= 5.5) return { label: 'EXCELLENT', color: '#00cc66' };
-  if (bits >= 4.5) return { label: 'GOOD', color: '#44aaff' };
-  if (bits >= 3.5) return { label: 'FAIR', color: '#ffaa22' };
-  if (bits >= 2.5) return { label: 'WEAK', color: '#ff6644' };
-  return { label: 'INSECURE', color: '#ff2244' };
+  if (bits >= 5.5) return { label: 'Excellent', color: 'var(--ok)' };
+  if (bits >= 4.5) return { label: 'Good', color: 'var(--acc)' };
+  if (bits >= 3.5) return { label: 'Fair', color: 'var(--warn)' };
+  if (bits >= 2.5) return { label: 'Weak', color: 'var(--bad)' };
+  return { label: 'Insecure', color: 'var(--bad)' };
 }
 
 // ── RBAC Model Data ─────────────────────────────────────────────────────────
@@ -112,11 +112,11 @@ export function renderIdentityMatrix(container) {
 
   // Header
   h += '<div class="pg-head"><div><h1 class="pg-h1">Identity Matrix</h1>';
-  h += '<p class="muted pg-sub">Identity and access management analyzer: JWT decoder, RBAC model, privilege escalation paths, OAuth flows and token entropy.</p></div></div>';
+  h += '<p class="muted pg-sub">Identity and access management analyzer: Decode JWTs and estimate token entropy locally in your browser, with reference material on RBAC, privilege escalation patterns and OAuth flows.</p></div></div>';
 
   // Tabs
   h += '<div id="im-tabs" class="seg" style="margin-bottom:16px;flex-wrap:wrap;">';
-  var tabs = ['JWT Decoder', 'RBAC Model', 'Priv Escalation', 'OAuth Flows', 'Token Entropy'];
+  var tabs = ['JWT decoder', 'RBAC reference', 'Escalation patterns', 'OAuth flows', 'Token entropy'];
   for (var ti = 0; ti < tabs.length; ti++) {
     var isActive = ti === 0;
     h += '<button class="im-tab' + (isActive ? ' on' : '') + '" data-im-tab="' + ti + '">' + esc(tabs[ti]) + '</button>';
@@ -127,7 +127,7 @@ export function renderIdentityMatrix(container) {
   h += '<div id="im-panel-0" class="im-panel">';
   h += '<div style="margin-bottom:12px;">';
   h += '<label style="color:var(--mut);font-size:12px;display:block;margin-bottom:4px;">Paste a JWT</label>';
-  h += '<textarea id="im-jwt-input" rows="4" style="width:100%;font-family:monospace;font-size:12px;resize:vertical;box-sizing:border-box;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>';
+  h += '<textarea id="im-jwt-input" rows="4" style="width:100%;font-family:monospace;font-size:12px;resize:vertical;box-sizing:border-box;" placeholder="eyJhbGciOi..."></textarea>';
   h += '<button class="btn" id="im-jwt-decode" style="margin-top:6px;">Decode</button>';
   h += '</div>';
   h += '<div id="im-jwt-result" style="min-height:80px;"></div>';
@@ -135,12 +135,12 @@ export function renderIdentityMatrix(container) {
 
   // ── Tab 1: RBAC Model ──
   h += '<div id="im-panel-1" class="im-panel" style="display:none;">';
-  h += '<h3 style="color:var(--txt);font-size:14px;margin:0 0 10px;">Role-based access control model</h3>';
+  h += '<h3 style="color:var(--txt);font-size:14px;margin:0 0 4px;">Example role-based access control model</h3><p class="muted" style="font-size:12px;margin:0 0 10px;">A reference role hierarchy for a typical web application. It is an example, not read from your systems.</p>';
   h += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
   h += '<tr style="color:var(--mut);text-align:left;"><th style="padding:6px 8px;">Role</th><th style="padding:6px 8px;">Level</th><th style="padding:6px 8px;">Inherits</th><th style="padding:6px 8px;">Permissions</th></tr>';
   for (var ri = 0; ri < _imRoles.length; ri++) {
     var r = _imRoles[ri];
-    var levelColor = r.level >= 80 ? '#ff4444' : (r.level >= 50 ? '#ffaa22' : '#44aaff');
+    var levelColor = r.level >= 80 ? 'var(--bad)' : (r.level >= 50 ? 'var(--warn)' : 'var(--acc)');
     h += '<tr style="border-bottom:1px solid var(--line);">';
     h += '<td style="padding:6px 8px;"><span style="color:' + levelColor + ';font-weight:bold;">' + esc(r.name) + '</span><br><span style="color:var(--mut);font-size:12px;">' + esc(r.description) + '</span></td>';
     h += '<td style="padding:6px 8px;color:' + levelColor + ';">' + r.level + '</td>';
@@ -152,14 +152,14 @@ export function renderIdentityMatrix(container) {
 
   // ── Tab 2: Privilege Escalation ──
   h += '<div id="im-panel-2" class="im-panel" style="display:none;">';
-  h += '<h3 style="color:var(--txt);font-size:14px;margin:0 0 10px;">Privilege escalation paths</h3>';
+  h += '<h3 style="color:var(--txt);font-size:14px;margin:0 0 4px;">Common privilege escalation patterns</h3><p class="muted" style="font-size:12px;margin:0 0 10px;">Reference examples mapped to the example roles above and to MITRE ATT&amp;CK. They are not findings about your systems.</p>';
   for (var ei = 0; ei < _imEscPaths.length; ei++) {
     var ep = _imEscPaths[ei];
-    var epColor = ep.severity === 'critical' ? '#ff2244' : (ep.severity === 'high' ? '#ff6644' : '#ffaa22');
+    var epColor = ep.severity === 'medium' ? 'var(--warn)' : 'var(--bad)';
     h += '<div style="background:var(--card2);border-left:3px solid ' + epColor + ';padding:10px 14px;margin-bottom:8px;border-radius:0 4px 4px 0;">';
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
     h += '<span style="color:var(--txt);font-size:12px;">' + esc(ep.from) + ' <span style="color:' + epColor + ';">&rarr;</span> ' + esc(ep.to) + '</span>';
-    h += '<span style="color:' + epColor + ';font-size:12px;border:1px solid ' + epColor + ';padding:1px 6px;border-radius:2px;">' + esc(ep.severity.toUpperCase()) + '</span>';
+    h += '<span style="color:' + epColor + ';font-size:12px;border:1px solid ' + epColor + ';padding:1px 6px;border-radius:2px;">' + esc(ep.severity) + '</span>';
     h += '</div>';
     h += '<div style="font-size:12px;color:var(--txt-2);line-height:1.5;">' + esc(ep.vector) + '</div>';
     h += '<div style="font-size:12px;color:var(--mut);margin-top:4px;">MITRE ATT&CK: ' + esc(ep.mitre) + '</div>';
@@ -173,8 +173,8 @@ export function renderIdentityMatrix(container) {
   for (var oi = 0; oi < _imOAuthFlows.length; oi++) {
     var of_ = _imOAuthFlows[oi];
     var deprecated = of_.name.indexOf('DEPRECATED') > -1;
-    h += '<div style="background:var(--card2);padding:12px 16px;margin-bottom:10px;border-radius:4px;border:1px solid ' + (deprecated ? '#3a1a1a' : '#1a2a3a') + ';">';
-    h += '<div style="color:' + (deprecated ? '#ff4444' : '#00d4ff') + ';font-size:14px;font-weight:bold;margin-bottom:6px;">' + esc(of_.name) + '</div>';
+    h += '<div style="background:var(--card2);padding:12px 16px;margin-bottom:10px;border-radius:4px;border:1px solid ' + (deprecated ? 'var(--bad)' : 'var(--line)') + ';">';
+    h += '<div style="color:' + (deprecated ? 'var(--bad)' : 'var(--txt)') + ';font-size:14px;font-weight:bold;margin-bottom:6px;">' + esc(of_.name) + '</div>';
     h += '<div style="font-size:12px;color:var(--mut);margin-bottom:6px;">grant_type: ' + esc(of_.grantType) + ' | PKCE: ' + esc(of_.pkce) + ' | Best for: ' + esc(of_.bestFor) + '</div>';
     h += '<div style="font-size:12px;color:var(--txt-2);margin-bottom:4px;">Security: ' + esc(of_.security) + '</div>';
     h += '<div style="font-size:12px;color:var(--mut);line-height:1.7;margin-top:6px;">';
@@ -187,7 +187,7 @@ export function renderIdentityMatrix(container) {
 
   // ── Tab 4: Token Entropy ──
   h += '<div id="im-panel-4" class="im-panel" style="display:none;">';
-  h += '<h3 style="color:var(--txt);font-size:14px;margin:0 0 10px;">Session token entropy analyzer</h3>';
+  h += '<h3 style="color:var(--txt);font-size:14px;margin:0 0 4px;">Session token entropy analyzer</h3><p class="muted" style="font-size:12px;margin:0 0 10px;">Shannon entropy of the characters in the value you paste. It is an estimate: a token from a weak generator can still look random.</p>';
   h += '<div style="margin-bottom:12px;">';
   h += '<label style="color:var(--mut);font-size:12px;display:block;margin-bottom:4px;">Paste a session token, API key or cookie value</label>';
   h += '<textarea id="im-entropy-input" rows="3" style="width:100%;font-family:monospace;font-size:12px;resize:vertical;box-sizing:border-box;" placeholder="eyJhbGciOiJSUzI1NiIs..."></textarea>';
@@ -238,7 +238,7 @@ export function renderIdentityMatrix(container) {
       rh += '</div>';
       rh += '</div>';
       if (decoded.expiresIn) {
-        var expColor = decoded.isExpired ? '#ff2244' : '#00cc66';
+        var expColor = decoded.isExpired ? 'var(--bad)' : 'var(--ok)';
         rh += '<div style="margin-top:8px;padding:8px 12px;background:var(--card2);border:1px solid ' + expColor + ';border-radius:4px;font-size:12px;color:' + expColor + ';">';
         rh += (decoded.isExpired ? 'Token expired' : 'Token valid') + ' | ' + esc(decoded.expiresIn);
         rh += '</div>';
@@ -274,9 +274,9 @@ export function renderIdentityMatrix(container) {
       rh += 'Token length: <span style="color:var(--acc);">' + token.length + ' chars</span><br>';
       rh += 'Unique characters: <span style="color:var(--acc);">' + uniqueChars + '</span><br>';
       rh += 'Character space: <span style="color:var(--acc);">' + (uniqueChars <= 16 ? 'Hex' : (uniqueChars <= 36 ? 'Alphanumeric' : (uniqueChars <= 64 ? 'Base64' : 'Extended'))) + '</span><br>';
-      rh += 'Brute force complexity: <span style="color:var(--acc);">2^' + totalEntropy.toFixed(0) + ' ≈ 10^' + (totalEntropy * 0.301).toFixed(0) + '</span><br>';
-      var bruteTime = totalEntropy > 128 ? 'Heat death of universe' : (totalEntropy > 80 ? 'Billions of years' : (totalEntropy > 64 ? 'Centuries' : (totalEntropy > 48 ? 'Years' : (totalEntropy > 32 ? 'Days' : 'Seconds'))));
-      rh += 'Time to brute-force (1B/s): <span style="color:' + (totalEntropy > 64 ? '#00cc66' : '#ff4444') + ';">' + bruteTime + '</span>';
+      rh += 'Estimated brute-force complexity: <span style="color:var(--acc);">2^' + totalEntropy.toFixed(0) + ' ≈ 10^' + (totalEntropy * 0.301).toFixed(0) + '</span><br>';
+      var bruteTime = totalEntropy > 128 ? 'Longer than the age of the universe' : (totalEntropy > 80 ? 'Billions of years' : (totalEntropy > 64 ? 'Centuries' : (totalEntropy > 48 ? 'Years' : (totalEntropy > 32 ? 'Days' : 'Seconds'))));
+      rh += 'Estimated time to brute-force (1B/s): <span style="color:' + (totalEntropy > 64 ? 'var(--ok)' : 'var(--bad)') + ';">' + bruteTime + '</span>';
       rh += '</div></div>';
       result.innerHTML = rh;
     });

@@ -126,19 +126,19 @@ export function renderZeroTrustDesigner(main) {
 
   function render() {
     var tabs = [
-      { id: 'assess', label: 'Maturity Assessment' },
-      { id: 'gaps', label: 'Gap Analysis' },
-      { id: 'roadmap', label: 'Implementation Roadmap' },
-      { id: 'vendors', label: 'Vendor Comparison' },
-      { id: 'policies', label: 'Policy Generator' },
+      { id: 'assess', label: 'Maturity assessment' },
+      { id: 'gaps', label: 'Gap analysis' },
+      { id: 'roadmap', label: 'Roadmap' },
+      { id: 'vendors', label: 'Vendor reference' },
+      { id: 'policies', label: 'Policy templates' },
       { id: 'reference', label: 'NIST 800-207' },
     ];
 
     main.innerHTML =
-      '<h1 class="pg-h1">Zero Trust Architecture Designer</h1>' +
-      '<p class="muted pg-sub">Assess your zero trust maturity across 5 pillars, identify gaps, and build an implementation roadmap. Based on CISA Zero Trust Maturity Model.</p>' +
-      '<div class="tab-bar" style="overflow-x:auto;flex-wrap:nowrap">' +
-        tabs.map(function(t) { return '<button class="tab' + (activeTab === t.id ? ' active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>'; }).join('') +
+      '<div class="pg-head"><div><h1 class="pg-h1">Zero Trust Architecture Designer</h1>' +
+      '<p class="muted pg-sub">Self-assess zero trust maturity across the five pillars of the CISA Zero Trust Maturity Model, see your gaps and plan a phased roadmap. Scores come only from your answers and are saved in this browser.</p></div></div>' +
+      '<div class="tab-bar seg" style="overflow-x:auto;flex-wrap:wrap">' +
+        tabs.map(function(t) { return '<button class="tab' + (activeTab === t.id ? ' active on' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>'; }).join('') +
       '</div>' +
       '<div id="zt-content" style="margin-top:12px"></div>';
 
@@ -157,7 +157,7 @@ export function renderZeroTrustDesigner(main) {
   }
 
   function renderAssessTab(container) {
-    var html = '<p class="muted" style="margin-bottom:16px">Answer each question honestly to assess your current zero trust maturity. Progress is saved automatically.</p>';
+    var html = '<p class="muted" style="margin-bottom:16px">Pick the answer that best matches your environment today. Answers are saved in this browser.</p>';
     ZT_PILLARS.forEach(function(pillar) {
       var pillarScores = assessment[pillar.id] || {};
       var totalScore = 0;
@@ -168,9 +168,9 @@ export function renderZeroTrustDesigner(main) {
 
       html += '<div style="background:var(--card);border:1px solid var(--line);border-left:3px solid ' + pillar.color + ';border-radius:6px;padding:16px;margin-bottom:12px">' +
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
-          '<div style="font-weight:700;font-size:1rem;color:' + pillar.color + '">' + esc(pillar.name) + '</div>' +
+          '<div style="font-weight:600;font-size:1rem;color:var(--txt)">' + esc(pillar.name) + '</div>' +
           '<div style="flex:1;background:var(--line);height:6px;border-radius:3px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:' + pillar.color + ';border-radius:3px;transition:width .3s"></div></div>' +
-          '<div style="font-size:.8rem;font-weight:600;color:' + pillar.color + '">' + pct + '% — ' + level + '</div>' +
+          '<div style="font-size:.8rem;font-weight:600;color:var(--txt)">' + pct + '% — ' + level + '</div>' +
         '</div>';
 
       pillar.questions.forEach(function(q, qi) {
@@ -180,7 +180,7 @@ export function renderZeroTrustDesigner(main) {
           '<div style="display:flex;gap:4px;flex-wrap:wrap">';
         q.labels.forEach(function(label, li) {
           var isSelected = current === li;
-          html += '<button class="zt-opt" data-pillar="' + pillar.id + '" data-qi="' + qi + '" data-val="' + li + '" style="padding:4px 10px;font-size:.72rem;border-radius:4px;cursor:pointer;border:1px solid ' + (isSelected ? pillar.color : 'var(--line)') + ';background:' + (isSelected ? pillar.color + '22' : 'transparent') + ';color:' + (isSelected ? pillar.color : 'var(--mut)') + '">' + esc(label) + '</button>';
+          html += '<button class="zt-opt" data-pillar="' + pillar.id + '" data-qi="' + qi + '" data-val="' + li + '" style="padding:4px 10px;font-size:.75rem;border-radius:4px;cursor:pointer;border:1px solid ' + (isSelected ? pillar.color : 'var(--line)') + ';background:' + (isSelected ? pillar.color + '22' : 'transparent') + ';color:' + (isSelected ? 'var(--txt)' : 'var(--mut)') + '">' + esc(label) + '</button>';
         });
         html += '</div></div>';
       });
@@ -202,7 +202,7 @@ export function renderZeroTrustDesigner(main) {
   }
 
   function renderGapsTab(container) {
-    var html = '<h2 class="pg-h2">Gap Analysis</h2>' +
+    var html = '<h2 class="pg-h2">Gap analysis</h2>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px">';
 
     var overallScore = 0;
@@ -216,17 +216,17 @@ export function renderZeroTrustDesigner(main) {
       overallMax += maxScore;
       var pct = Math.round(totalScore / maxScore * 100);
       html += '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;text-align:center">' +
-        '<div style="font-size:2rem;font-weight:800;color:' + pillar.color + '">' + pct + '%</div>' +
+        '<div style="font-size:2rem;font-weight:700;color:var(--txt)">' + pct + '%</div>' +
         '<div style="font-size:.78rem;color:var(--mut)">' + esc(pillar.name) + '</div></div>';
     });
     var overallPct = overallMax > 0 ? Math.round(overallScore / overallMax * 100) : 0;
     html += '</div>' +
       '<div style="background:var(--card);border:1px solid var(--acc);border-radius:6px;padding:16px;margin-bottom:16px;text-align:center">' +
         '<div style="font-size:2.5rem;font-weight:800;color:var(--acc)">' + overallPct + '%</div>' +
-        '<div style="font-size:.85rem;color:var(--mut)">Overall Zero Trust Maturity</div>' +
+        '<div style="font-size:.85rem;color:var(--mut)">Overall self-assessed zero trust maturity</div>' +
       '</div>';
 
-    html += '<h3 style="margin:16px 0 8px">Weakest Areas (Priority Gaps)</h3>';
+    html += '<h3 style="margin:16px 0 8px">Weakest areas (priority gaps)</h3>';
     var gaps = [];
     ZT_PILLARS.forEach(function(pillar) {
       var pillarScores = assessment[pillar.id] || {};
@@ -249,10 +249,10 @@ export function renderZeroTrustDesigner(main) {
         '</tr></thead><tbody>';
       gaps.slice(0, 15).forEach(function(g) {
         html += '<tr style="border-bottom:1px solid var(--line)">' +
-          '<td style="padding:8px;color:' + g.color + ';font-weight:600">' + esc(g.pillar) + '</td>' +
+          '<td style="padding:8px;font-weight:600">' + esc(g.pillar) + '</td>' +
           '<td style="padding:8px">' + esc(g.question) + '</td>' +
-          '<td style="padding:8px;color:#ff9100">' + esc(g.current) + '</td>' +
-          '<td style="padding:8px;color:#00e676">' + esc(g.target) + '</td>' +
+          '<td style="padding:8px;color:var(--warn)">' + esc(g.current) + '</td>' +
+          '<td style="padding:8px;color:var(--ok)">' + esc(g.target) + '</td>' +
         '</tr>';
       });
       html += '</tbody></table></div>';
@@ -264,15 +264,15 @@ export function renderZeroTrustDesigner(main) {
   }
 
   function renderRoadmapTab(container) {
-    var html = '<h2 class="pg-h2">Implementation Roadmap</h2>' +
-      '<p class="muted" style="margin-bottom:16px">Phased approach to zero trust — quick wins first, then build the foundation.</p>';
+    var html = '<h2 class="pg-h2">Implementation roadmap</h2>' +
+      '<p class="muted" style="margin-bottom:16px">A general phased approach: quick wins first, then the foundation. Cost ranges are rough typical estimates, not quotes.</p>';
 
     ZT_ROADMAP.forEach(function(phase) {
       html += '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:12px">' +
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
-          '<div style="background:var(--acc);color:var(--bg);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem">' + phase.phase + '</div>' +
+          '<div style="background:var(--acc);color:var(--bg);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem">' + phase.phase + '</div>' +
           '<div><div style="font-weight:600;font-size:.95rem">' + esc(phase.title) + '</div>' +
-          '<div style="font-size:.72rem;color:var(--mut)">Est. cost: ' + esc(phase.cost) + ' | Impact: ' + esc(phase.impact) + '</div></div>' +
+          '<div style="font-size:.75rem;color:var(--mut)">Typical cost: ' + esc(phase.cost) + ' | Impact: ' + esc(phase.impact) + '</div></div>' +
         '</div>' +
         '<ul style="margin:0;padding-left:20px;font-size:.82rem;line-height:1.8">' +
         phase.items.map(function(item) { return '<li>' + esc(item) + '</li>'; }).join('') +
@@ -283,8 +283,8 @@ export function renderZeroTrustDesigner(main) {
   }
 
   function renderVendorsTab(container) {
-    var html = '<h2 class="pg-h2">Zero Trust Vendor Comparison</h2>' +
-      '<p class="muted" style="margin-bottom:16px">' + ZT_VENDORS.length + ' vendors compared by capability, pillar coverage, and market tier.</p>' +
+    var html = '<h2 class="pg-h2">Zero trust vendor reference</h2>' +
+      '<p class="muted" style="margin-bottom:16px">' + ZT_VENDORS.length + ' vendors listed by the pillars they mainly address. Reference only, not a ranking or endorsement; confirm current capabilities with each vendor.</p>' +
       '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">' +
       '<thead><tr style="border-bottom:2px solid var(--line)">' +
         '<th style="padding:8px;text-align:left">Vendor</th>' +
@@ -298,10 +298,10 @@ export function renderZeroTrustDesigner(main) {
         '<td style="padding:8px;font-weight:600">' + esc(v.name) + '</td>' +
         '<td style="padding:8px">' + v.pillars.map(function(p) {
           var pillar = ZT_PILLARS.find(function(pp) { return pp.id === p; });
-          return '<span style="background:' + (pillar ? pillar.color : 'var(--acc)') + '22;color:' + (pillar ? pillar.color : 'var(--acc)') + ';padding:2px 6px;border-radius:3px;font-size:.68rem;margin-right:4px">' + esc(p) + '</span>';
+          return '<span style="background:' + (pillar ? pillar.color : 'var(--acc)') + '22;color:' + (pillar ? pillar.color : 'var(--acc)') + ';padding:2px 6px;border-radius:3px;font-size:.75rem;margin-right:4px">' + esc(p) + '</span>';
         }).join('') + '</td>' +
         '<td style="padding:8px;color:var(--mut)">' + esc(v.strengths) + '</td>' +
-        '<td style="padding:8px"><span style="font-size:.7rem;padding:2px 6px;border:1px solid var(--line);border-radius:3px">' + esc(v.tier) + '</span></td>' +
+        '<td style="padding:8px"><span style="font-size:.75rem;padding:2px 6px;border:1px solid var(--line);border-radius:3px">' + esc(v.tier) + '</span></td>' +
       '</tr>';
     });
     html += '</tbody></table></div>';
@@ -309,8 +309,8 @@ export function renderZeroTrustDesigner(main) {
   }
 
   function renderPoliciesTab(container) {
-    var html = '<h2 class="pg-h2">Policy Generator</h2>' +
-      '<p class="muted" style="margin-bottom:16px">Generate zero trust access policies based on your maturity level.</p>';
+    var html = '<h2 class="pg-h2">Policy templates</h2>' +
+      '<p class="muted" style="margin-bottom:16px">Starting-point zero trust policy templates. They are the same for every assessment; adapt them to your organization before use.</p>';
 
     var policies = [
       { name: 'Remote Access Policy', content: 'POLICY: Remote Access\nEffective: ' + new Date().toISOString().split('T')[0] + '\n\n1. All remote access MUST use ZTNA (Zero Trust Network Access)\n2. VPN access is DEPRECATED and will be decommissioned\n3. Each application requires individual authentication\n4. Device health compliance is REQUIRED before access\n5. Session duration: 8 hours maximum, re-authentication required\n6. MFA is MANDATORY for all remote sessions\n7. Unmanaged devices receive read-only access via browser isolation\n8. All remote sessions are logged and monitored\n9. Geographic restrictions: access only from approved countries\n10. Anomalous access patterns trigger step-up authentication' },
@@ -324,9 +324,9 @@ export function renderZeroTrustDesigner(main) {
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
           '<div style="font-weight:600">' + esc(p.name) + '</div>' +
           '<span style="flex:1"></span>' +
-          '<button class="btn sm zt-copy-pol" data-policy="' + esc(p.name) + '">Copy</button>' +
+          '<button class="btn ghost sm zt-copy-pol" data-policy="' + esc(p.name) + '">Copy</button>' +
         '</div>' +
-        '<pre style="background:rgba(0,0,0,.2);padding:10px;border-radius:4px;font-size:.72rem;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin:0">' + esc(p.content) + '</pre>' +
+        '<pre style="background:rgba(0,0,0,.2);padding:10px;border-radius:4px;font-size:.75rem;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin:0">' + esc(p.content) + '</pre>' +
       '</div>';
     });
 
@@ -353,14 +353,14 @@ export function renderZeroTrustDesigner(main) {
     container.innerHTML = '<h2 class="pg-h2">NIST SP 800-207: Zero Trust Architecture</h2>' +
       '<p class="muted" style="margin-bottom:16px">The foundational standard for zero trust. Published by NIST in August 2020.</p>' +
       '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:16px">' +
-        '<div style="font-weight:600;margin-bottom:10px">7 Tenets of Zero Trust</div>' +
+        '<div style="font-weight:600;margin-bottom:10px">Seven tenets of zero trust</div>' +
         '<ol style="margin:0;padding-left:20px;font-size:.82rem;line-height:1.8">' +
           tenets.map(function(t) { return '<li style="margin-bottom:4px">' + esc(t) + '</li>'; }).join('') +
         '</ol>' +
       '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
         '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px">' +
-          '<div style="font-weight:600;color:var(--acc);margin-bottom:8px">Core Components</div>' +
+          '<div style="font-weight:600;color:var(--acc);margin-bottom:8px">Core components</div>' +
           '<ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.7">' +
             '<li><strong>Policy Engine (PE)</strong> — makes access decisions</li>' +
             '<li><strong>Policy Administrator (PA)</strong> — executes decisions</li>' +
@@ -371,7 +371,7 @@ export function renderZeroTrustDesigner(main) {
           '</ul>' +
         '</div>' +
         '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px">' +
-          '<div style="font-weight:600;color:var(--acc);margin-bottom:8px">Deployment Models</div>' +
+          '<div style="font-weight:600;color:var(--acc);margin-bottom:8px">Deployment approaches</div>' +
           '<ul style="margin:0;padding-left:16px;font-size:.8rem;line-height:1.7">' +
             '<li><strong>Enhanced Identity Governance</strong> — identity-centric</li>' +
             '<li><strong>Micro-segmentation</strong> — network-centric</li>' +

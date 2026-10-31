@@ -969,31 +969,26 @@ function renderSummary(layers) {
 export function renderPacketAnalyzer(container) {
   const CSS = `
     <style>
-    .pka{font-family:var(--mono,'JetBrains Mono',monospace);color:var(--txt,#e0e6ed);max-width:1200px;margin:0 auto;padding:24px}
-    .pka h2{font-family:var(--font-display,system-ui);font-weight:700;font-size:1.4rem;margin:0 0 16px;color:var(--acc,#00d4ff)}
-    .pka-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-    .pka-tab{padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.85rem;border:1px solid var(--border,#1e2a3a);background:var(--bg2,#0d1520);color:var(--mut,#8892a4);transition:all .15s}
-    .pka-tab.active{background:var(--acc,#00d4ff);color:#000;border-color:var(--acc)}
-    .pka-input{width:100%;min-height:120px;background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);border-radius:8px;color:var(--txt);font-family:inherit;font-size:.85rem;padding:12px;resize:vertical;margin-bottom:12px}
+    .pka{font-family:var(--mono,'JetBrains Mono',monospace);color:var(--txt)}
+    .pka .pg-head{font-family:var(--font,system-ui)}
+    #pka-views[hidden]{display:none}
+    .pka-input{width:100%;min-height:120px;background:var(--card2);border:1px solid var(--line);border-radius:8px;color:var(--txt);font-family:inherit;font-size:.85rem;padding:12px;resize:vertical;margin-bottom:12px}
     .pka-input:focus{outline:none;border-color:var(--acc,#00d4ff)}
-    .pka-btn{padding:6px 16px;border-radius:6px;border:none;background:var(--acc,#00d4ff);color:#000;font-weight:600;cursor:pointer;font-size:.85rem;margin-right:8px}
-    .pka-btn:hover{opacity:.85}
-    .pka-btn.ghost{background:transparent;border:1px solid var(--border,#1e2a3a);color:var(--txt)}
     .pka-samples{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-    .pka-sample{font-size:.75rem;padding:4px 10px;border-radius:4px;background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);cursor:pointer;color:var(--mut)}
+    .pka-sample{font-size:.75rem;padding:4px 10px;border-radius:4px;background:var(--card2);border:1px solid var(--line);cursor:pointer;color:var(--mut)}
     .pka-sample:hover{border-color:var(--acc);color:var(--acc)}
-    .pka-summary{padding:8px 12px;background:var(--bg2,#0d1520);border-radius:6px;margin-bottom:16px;font-size:.85rem;color:var(--acc)}
+    .pka-summary{padding:8px 12px;background:var(--card2);border-radius:6px;margin-bottom:16px;font-size:.85rem;color:var(--acc)}
     .pka-split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     @media(max-width:768px){.pka-split{grid-template-columns:minmax(0,1fr)}}
-    .pka-hex{background:var(--bg2,#0d1520);border-radius:8px;padding:12px;overflow-x:auto;font-size:.78rem;line-height:1.6;white-space:pre;border:1px solid var(--border,#1e2a3a)}
+    .pka-hex{background:var(--card2);border-radius:8px;padding:12px;overflow-x:auto;font-size:.78rem;line-height:1.6;white-space:pre;border:1px solid var(--line)}
     .pk-addr{color:var(--mut,#556677)}
-    .pk-ascii{color:#7c5cff}
+    .pk-ascii{color:var(--acc-2,var(--acc))}
     .pk-hl{background:rgba(0,212,255,.2);color:var(--acc,#00d4ff);border-radius:2px}
-    .pka-tree{background:var(--bg2,#0d1520);border-radius:8px;padding:12px;overflow-y:auto;max-height:500px;border:1px solid var(--border,#1e2a3a)}
+    .pka-tree{background:var(--card2);border-radius:8px;padding:12px;overflow-y:auto;max-height:500px;border:1px solid var(--line)}
     .pk-layer{margin-bottom:4px}
     .pk-layer-head{padding:4px 8px;cursor:pointer;border-radius:4px;font-size:.85rem}
     .pk-layer-head:hover{background:rgba(0,212,255,.08)}
-    .pk-arrow{display:inline-block;transition:transform .15s;font-size:.7rem;margin-right:4px}
+    .pk-arrow{display:inline-block;transition:transform .15s;font-size:.75rem;margin-right:4px}
     .pk-layer-head.open .pk-arrow{transform:rotate(90deg)}
     .pk-dim{color:var(--mut,#556677);font-size:.75rem}
     .pk-fields{padding-left:24px}
@@ -1001,20 +996,20 @@ export function renderPacketAnalyzer(container) {
     .pk-field:hover{background:rgba(0,212,255,.06)}
     .pk-fname{color:var(--mut,#8892a4)}
     .pk-fval{color:var(--txt)}
-    .pka-error{color:#ff4444;padding:8px 12px;background:rgba(255,68,68,.08);border-radius:6px;margin-bottom:12px;font-size:.85rem}
+    .pka-error{color:var(--bad);padding:8px 12px;background:rgba(255,68,68,.08);border-radius:6px;margin-bottom:12px;font-size:.85rem}
     .pka-stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;padding:8px 12px;font-size:.8rem;color:var(--mut)}
     .pka-stats span{color:var(--txt)}
     .pka-cap{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-    .pka-chip{font-size:.75rem;padding:4px 10px;border-radius:4px;background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);cursor:pointer;color:var(--txt);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .pka-chip{font-size:.75rem;padding:4px 10px;border-radius:4px;background:var(--card2);border:1px solid var(--line);cursor:pointer;color:var(--txt);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .pka-chip.active{border-color:var(--acc,#00d4ff);color:var(--acc,#00d4ff)}
-    .pka-card{background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);border-radius:8px;padding:12px;margin-bottom:12px}
+    .pka-card{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px}
     .pka-lbl{font-size:.8rem;font-weight:600;margin-bottom:8px;color:var(--mut)}
-    .pka-conv{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--border,#1e2a3a);font-size:.8rem;overflow-wrap:anywhere}
+    .pka-conv{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line);font-size:.8rem;overflow-wrap:anywhere}
     .pka-conv:last-child{border-bottom:none}
     .pka-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
-    .pka-kpi{background:var(--bg2,#0d1520);border:1px solid var(--border,#1e2a3a);border-radius:8px;padding:12px;text-align:center}
+    .pka-kpi{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:center}
     .pka-kpi b{display:block;font-size:1.3rem;color:var(--acc,#00d4ff)}
-    .pka-kpi span{font-size:.72rem;color:var(--mut)}
+    .pka-kpi span{font-size:.75rem;color:var(--mut)}
     .pka-bar{display:grid;grid-template-columns:minmax(80px,140px) 1fr 70px;gap:10px;align-items:center;margin-bottom:8px;font-size:.78rem}
     .pka-bar-n{text-align:right;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .pka-track{height:16px;background:rgba(127,127,127,.12);border-radius:4px;overflow:hidden}
@@ -1024,18 +1019,18 @@ export function renderPacketAnalyzer(container) {
   `;
   container.innerHTML = CSS + `
     <div class="pka">
-      <h2>Packet Analyzer</h2>
-      <p style="color:var(--mut);font-size:.9rem;margin-bottom:16px">Paste raw hex bytes to dissect network packets into protocol layers. Supports Ethernet, IPv4/IPv6, TCP, UDP, ICMP, DNS, HTTP, TLS, ARP, DHCP.</p>
+      <div class="pg-head"><div><h1 class="pg-h1">Packet Analyzer</h1>
+      <p class="muted pg-sub">Paste raw hex bytes to dissect a packet into protocol layers locally. Supports Ethernet, IPv4/IPv6, TCP, UDP, ICMP, DNS, HTTP, TLS, ARP and DHCP. The sample buttons load built-in example packets.</p></div></div>
       <div class="pka-samples" id="pka-samples"></div>
-      <textarea class="pka-input" id="pka-input" placeholder="Paste hex bytes here (e.g. aabbccddeeff 001122334455 0800 4500...)"></textarea>
-      <div style="margin-bottom:16px">
-        <button class="pka-btn" id="pka-parse">Dissect Packet</button>
-        <button class="pka-btn ghost" id="pka-clear">Clear</button>
-        <button class="pka-btn ghost" id="pka-addall" title="Dissect every sample into the capture list">Add all samples</button>
+      <textarea class="pka-input" id="pka-input" placeholder="Paste hex bytes, e.g. aabbccddeeff 0011..."></textarea>
+      <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="pka-parse">Dissect packet</button>
+        <button class="btn ghost" id="pka-clear">Clear</button>
+        <button class="btn ghost" id="pka-addall" title="Dissect every sample into the capture list">Add all samples</button>
       </div>
       <div class="pka-cap" id="pka-cap" hidden></div>
-      <div class="pka-tabs" id="pka-views" role="tablist" hidden>
-        <button class="pka-tab active" data-view="packet" role="tab" aria-selected="true">Packet</button>
+      <div class="seg" id="pka-views" role="tablist" style="margin-bottom:16px" hidden>
+        <button class="pka-tab on" data-view="packet" role="tab" aria-selected="true">Packet</button>
         <button class="pka-tab" data-view="conv" role="tab" aria-selected="false">Conversations</button>
         <button class="pka-tab" data-view="stats" role="tab" aria-selected="false">Statistics</button>
       </div>
@@ -1047,11 +1042,11 @@ export function renderPacketAnalyzer(container) {
       <div id="pka-stats"></div>
       <div class="pka-split">
         <div>
-          <div style="font-size:.85rem;font-weight:600;margin-bottom:8px;color:var(--mut)">Hex Dump</div>
+          <div style="font-size:.85rem;font-weight:600;margin-bottom:8px;color:var(--mut)">Hex dump</div>
           <div class="pka-hex" id="pka-hex"></div>
         </div>
         <div>
-          <div style="font-size:.85rem;font-weight:600;margin-bottom:8px;color:var(--mut)">Protocol Tree</div>
+          <div style="font-size:.85rem;font-weight:600;margin-bottom:8px;color:var(--mut)">Protocol tree</div>
           <div class="pka-tree" id="pka-tree"></div>
         </div>
       </div>
@@ -1106,7 +1101,7 @@ export function renderPacketAnalyzer(container) {
   }
   function setView(v) {
     view = v;
-    viewsEl.querySelectorAll(".pka-tab").forEach((b) => { const on = b.dataset.view === v; b.classList.toggle("active", on); b.setAttribute("aria-selected", String(on)); });
+    viewsEl.querySelectorAll(".pka-tab").forEach((b) => { const on = b.dataset.view === v; b.classList.toggle("on", on); b.setAttribute("aria-selected", String(on)); });
     container.querySelector("#pka-view-packet").hidden = v !== "packet";
     container.querySelector("#pka-view-conv").hidden = v !== "conv";
     container.querySelector("#pka-view-stats").hidden = v !== "stats";

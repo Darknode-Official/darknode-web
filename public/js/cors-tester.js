@@ -51,16 +51,16 @@ export function renderCorsTester(container) {
   h += '<div class="card" style="margin-top:12px;">';
   h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin-bottom:10px;">CORS headers reference</div>';
   var corsHeaders = [
-    { header: 'Access-Control-Allow-Origin', desc: 'Which origins can access (e.g. *, https://example.com)', importance: 'REQUIRED' },
-    { header: 'Access-Control-Allow-Methods', desc: 'Which HTTP methods are allowed (GET, POST, etc.)', importance: 'PREFLIGHT' },
-    { header: 'Access-Control-Allow-Headers', desc: 'Which request headers are allowed', importance: 'PREFLIGHT' },
-    { header: 'Access-Control-Allow-Credentials', desc: 'Whether cookies/auth can be sent cross-origin', importance: 'OPTIONAL' },
-    { header: 'Access-Control-Max-Age', desc: 'How long to cache preflight response (seconds)', importance: 'OPTIONAL' },
-    { header: 'Access-Control-Expose-Headers', desc: 'Which response headers JS can read', importance: 'OPTIONAL' }
+    { header: 'Access-Control-Allow-Origin', desc: 'Which origins can access (e.g. *, https://example.com)', importance: 'Required' },
+    { header: 'Access-Control-Allow-Methods', desc: 'Which HTTP methods are allowed (GET, POST, etc.)', importance: 'Preflight' },
+    { header: 'Access-Control-Allow-Headers', desc: 'Which request headers are allowed', importance: 'Preflight' },
+    { header: 'Access-Control-Allow-Credentials', desc: 'Whether cookies/auth can be sent cross-origin', importance: 'Optional' },
+    { header: 'Access-Control-Max-Age', desc: 'How long to cache preflight response (seconds)', importance: 'Optional' },
+    { header: 'Access-Control-Expose-Headers', desc: 'Which response headers JS can read', importance: 'Optional' }
   ];
   for (var ch = 0; ch < corsHeaders.length; ch++) {
     var hdr = corsHeaders[ch];
-    var impColor = hdr.importance === 'REQUIRED' ? '#ff4444' : hdr.importance === 'PREFLIGHT' ? '#ffaa00' : '#00cc88';
+    var impColor = hdr.importance === 'Required' ? '#ff4444' : hdr.importance === 'Preflight' ? '#ffaa00' : '#00cc88';
     h += '<div style="margin:4px 0;font-size:12px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:flex-start;">';
     h += '<span style="color:' + impColor + ';font-size:12px;padding:1px 4px;background:' + impColor + '15;border:1px solid ' + impColor + '33;border-radius:2px;flex-shrink:0;">' + hdr.importance + '</span>';
     h += '<span style="color:var(--acc);min-width:min(240px,100%);flex-shrink:0;">' + esc(hdr.header) + '</span>';
@@ -120,7 +120,7 @@ window._corsTest = function() {
       vary = vary || hd['vary'] || '';
       p.acao = acao; p.creds = creds;
       if (acao && acao !== '*' && acao.toLowerCase() === p.origin.toLowerCase()) {
-        p.verdict = p.kind === 'self' ? 'allowed' : 'TRUSTED';
+        p.verdict = p.kind === 'self' ? 'allowed' : 'trusted';
         if (p.kind !== 'self') {
           reflectedAny = true;
           var sev = p.sev[creds ? 0 : 1];
@@ -143,7 +143,7 @@ window._corsTest = function() {
     if (!findings.length) findings.push({ sev: 'info', text: 'Only the site itself (or nobody) may read responses cross-origin. No CORS misconfiguration found for this URL.' });
     findings.sort(function(a, b) { return rank[b.sev] - rank[a.sev]; });
 
-    var verdictText = { critical: 'CRITICAL MISCONFIGURATION', high: 'HIGH-RISK MISCONFIGURATION', medium: 'WEAK ORIGIN CHECK', low: 'MINOR ISSUE', info: 'NO MISCONFIGURATION FOUND' }[worst];
+    var verdictText = { critical: 'Critical misconfiguration', high: 'High-risk misconfiguration', medium: 'Weak origin check', low: 'Minor issue', info: 'No misconfiguration found' }[worst];
     var c = colors[worst];
     var first = probes.find(function(p) { return p.res; });
     var h = '<div style="background:var(--card2);border:2px solid ' + c + ';border-radius:8px;padding:16px;margin-bottom:12px;text-align:center;">';
@@ -161,7 +161,7 @@ window._corsTest = function() {
     h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin-bottom:10px;">Origins tried</div>';
     h += '<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr style="color:var(--mut);text-align:left;"><th style="padding:4px;">Origin sent</th><th style="padding:4px;">Allow-Origin</th><th style="padding:4px;">Credentials</th><th style="padding:4px;">Result</th></tr>';
     probes.forEach(function(p) {
-      var vc = p.verdict === 'TRUSTED' ? '#ff6644' : p.verdict === 'allowed' || p.verdict === 'public (*)' ? '#00cc88' : '#6a8aaa';
+      var vc = p.verdict === 'trusted' ? 'var(--bad)' : p.verdict === 'allowed' || p.verdict === 'public (*)' ? 'var(--ok)' : 'var(--mut)';
       h += '<tr style="border-top:1px solid var(--line);"><td style="padding:4px;word-break:break-all;">' + esc(p.origin) + '</td><td style="padding:4px;word-break:break-all;">' + esc(p.err ? '' : (p.acao || '(none)')) + '</td><td style="padding:4px;">' + (p.err ? '' : p.creds ? 'true' : 'no') + '</td><td style="padding:4px;color:' + vc + ';">' + esc(p.err ? 'error: ' + p.err : p.verdict) + '</td></tr>';
     });
     h += '</table></div>';

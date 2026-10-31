@@ -279,9 +279,9 @@ function analyzePassword(pw) {
   const lower = pw.toLowerCase();
   if (COMMON_PASSWORDS.includes(lower)) {
     result.isCommon = true;
-    result.issues.push("Found in common password list — extremely weak");
+    result.issues.push("Found in the built-in common-password list — extremely weak");
     result.nistCompliant = false;
-    result.nistIssues.push("Appears in breach/common password list");
+    result.nistIssues.push("Appears in the built-in common-password list");
   }
   const deleet = deleetspeak(lower);
   if (deleet !== lower && COMMON_PASSWORDS.includes(deleet)) {
@@ -980,11 +980,11 @@ function ciscoType7Decode(encoded) {
 function renderPasswordTab(container) {
   container.innerHTML =
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">Password Strength Analyzer</h3>' +
+      '<h3 class="ca-sh">Password strength analyzer</h3>' +
       '<p class="ca-desc">All analysis runs locally in your browser. Nothing is sent anywhere.</p>' +
       '<div class="ca-input-row">' +
         '<input type="text" id="ca-pw-input" class="ca-input" placeholder="Password to check" autocomplete="off" spellcheck="false">' +
-        '<button class="ca-btn" id="ca-pw-btn">Analyze</button>' +
+        '<button class="btn" id="ca-pw-btn">Analyze</button>' +
       '</div>' +
       '<div id="ca-pw-result" class="ca-result"></div>' +
     '</div>';
@@ -995,7 +995,7 @@ function renderPasswordTab(container) {
     var pw = input.value;
     if (!pw) { result.innerHTML = '<p class="ca-muted">Enter a password above.</p>'; return; }
     var a = analyzePassword(pw);
-    var scoreColor = a.score >= 80 ? "#4caf50" : a.score >= 60 ? "#ff9800" : a.score >= 40 ? "#f44336" : "#d32f2f";
+    var scoreColor = a.score >= 80 ? "var(--ok)" : a.score >= 60 ? "var(--warn)" : "var(--bad)";
     var html =
       '<div class="ca-score-bar">' +
         '<div class="ca-score-fill" style="width:' + a.score + '%;background:' + scoreColor + '"></div>' +
@@ -1013,7 +1013,7 @@ function renderPasswordTab(container) {
       html += '</div>';
     }
     html += '<div class="ca-compliance ' + (a.nistCompliant ? "ca-pass" : "ca-fail") + '">' +
-      '<strong>NIST SP 800-63B:</strong> ' + (a.nistCompliant ? "Compliant" : "Non-compliant") + '</div>';
+      '<strong>NIST SP 800-63B:</strong> ' + (a.nistCompliant ? "No issues in the local checks (length and built-in common-password list)" : "Non-compliant") + '</div>';
     if (a.nistIssues.length) {
       html += '<ul class="ca-issues">';
       for (var ni of a.nistIssues) html += '<li>' + esc(ni) + '</li>';
@@ -1030,13 +1030,14 @@ function renderPasswordTab(container) {
       html += '</ul>';
     }
     if (a.patterns.length) {
-      html += '<h4 class="ca-sh2">Detected Patterns</h4><ul class="ca-patterns">';
+      html += '<h4 class="ca-sh2">Detected patterns</h4><ul class="ca-patterns">';
       for (var p of a.patterns) html += '<li>' + esc(p) + '</li>';
       html += '</ul>';
     }
-    html += '<h4 class="ca-sh2">Time to Crack (brute force)</h4>' +
+    html += '<h4 class="ca-sh2">Estimated brute-force time</h4>' +
+      '<p class="ca-desc">Average time to exhaust half the character space at approximate published hash rates. Real attacks start with wordlists and rules, so patterned passwords fall much faster.</p>' +
       '<div class="ca-table-wrap"><table class="ca-table">' +
-      '<thead><tr><th>Algorithm</th><th>Single GPU</th><th>GPU Cluster</th><th>ASIC</th></tr></thead><tbody>';
+      '<thead><tr><th>Algorithm</th><th>Single GPU</th><th>GPU cluster</th><th>ASIC</th></tr></thead><tbody>';
     for (var algo in a.timeToCrack) {
       var t = a.timeToCrack[algo];
       html += '<tr><td>' + esc(algo) + '</td><td>' + esc(t.single_gpu) + '</td><td>' + esc(t.gpu_cluster) + '</td><td>' + esc(t.asic) + '</td></tr>';
@@ -1051,20 +1052,20 @@ function renderPasswordTab(container) {
 function renderHashTab(container) {
   container.innerHTML =
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">Hash Identifier</h3>' +
+      '<h3 class="ca-sh">Hash identifier</h3>' +
       '<p class="ca-desc">Paste a hash to auto-detect its type, hashcat mode, and john format.</p>' +
       '<div class="ca-input-row">' +
-        '<input type="text" id="ca-hash-input" class="ca-input" placeholder="Paste hash here..." autocomplete="off" spellcheck="false">' +
-        '<button class="ca-btn" id="ca-hash-btn">Identify</button>' +
+        '<input type="text" id="ca-hash-input" class="ca-input" placeholder="Hash" autocomplete="off" spellcheck="false">' +
+        '<button class="btn" id="ca-hash-btn">Identify</button>' +
       '</div>' +
       '<div id="ca-hash-result" class="ca-result"></div>' +
     '</div>' +
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">Hash Generator</h3>' +
+      '<h3 class="ca-sh">Hash generator</h3>' +
       '<p class="ca-desc">Generate hashes for a given input using SubtleCrypto + custom implementations.</p>' +
       '<div class="ca-input-row">' +
-        '<input type="text" id="ca-gen-input" class="ca-input" placeholder="Text to hash..." autocomplete="off">' +
-        '<button class="ca-btn" id="ca-gen-btn">Generate</button>' +
+        '<input type="text" id="ca-gen-input" class="ca-input" placeholder="Text to hash" autocomplete="off">' +
+        '<button class="btn" id="ca-gen-btn">Generate</button>' +
       '</div>' +
       '<div id="ca-gen-result" class="ca-result"></div>' +
     '</div>';
@@ -1104,10 +1105,10 @@ function renderHashTab(container) {
 function renderJWTTab(container) {
   container.innerHTML =
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">JWT Decoder</h3>' +
+      '<h3 class="ca-sh">JWT decoder</h3>' +
       '<p class="ca-desc">Paste a JSON Web Token to decode its header and payload. Checks for common vulnerabilities.</p>' +
       '<textarea id="ca-jwt-input" class="ca-textarea" rows="4" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c" spellcheck="false"></textarea>' +
-      '<button class="ca-btn" id="ca-jwt-btn">Decode</button>' +
+      '<button class="btn" id="ca-jwt-btn">Decode</button>' +
       '<div id="ca-jwt-result" class="ca-result"></div>' +
     '</div>';
   container.querySelector("#ca-jwt-btn").onclick = function() {
@@ -1133,15 +1134,15 @@ function renderJWTTab(container) {
     html += '</tbody></table></div>';
     // Security review — severity-ranked, deterministic, local-only (no signature verification).
     var findings = jwtFindings(decoded);
-    var SEVC = { critical: "#b00020", high: "#d9480f", medium: "#b58100", low: "#3b7dd8", info: "#667085" };
+    var SEVC = { critical: "var(--bad)", high: "var(--bad)", medium: "var(--warn)", low: "var(--acc)", info: "var(--mut)" };
     html += '<div class="ca-section" style="margin-top:14px">' +
-      '<h4 style="margin:0 0 8px">Security review <span style="color:#667085;font-weight:400">(' + findings.length + ')</span></h4>';
+      '<h4 style="margin:0 0 8px">Security review <span style="color:var(--mut);font-weight:400">(' + findings.length + ')</span></h4>';
     if (!findings.length) {
       html += '<p class="ca-muted">No design-level issues flagged. This does not verify the signature — the signing key is not known here.</p>';
     } else {
       for (var fi of findings) {
         html += '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(128,128,128,.18)">' +
-          '<span style="flex:0 0 auto;align-self:flex-start;font:600 11px/1.6 ui-monospace,monospace;letter-spacing:.04em;text-transform:uppercase;color:#fff;background:' + SEVC[fi.level] + ';border-radius:4px;padding:1px 7px">' + esc(fi.level) + '</span>' +
+          '<span style="flex:0 0 auto;align-self:flex-start;font:600 12px/1.6 ui-monospace,monospace;color:#fff;background:' + SEVC[fi.level] + ';border-radius:4px;padding:1px 7px">' + esc(fi.level) + '</span>' +
           '<span><strong>' + esc(fi.title) + '</strong><br><span class="ca-muted">' + esc(fi.detail) + '</span></span></div>';
       }
       html += '<p class="ca-muted" style="margin-top:8px;font-size:12px">Signature is not verified here (the key is unknown) — these are checks on the token\'s own contents.</p>';
@@ -1154,7 +1155,7 @@ function renderJWTTab(container) {
 function renderTOTPTab(container) {
   container.innerHTML =
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">TOTP Generator</h3>' +
+      '<h3 class="ca-sh">TOTP generator</h3>' +
       '<p class="ca-desc">Enter a Base32 secret to generate time-based one-time passwords (RFC 6238).</p>' +
       '<div class="ca-input-row">' +
         '<input type="text" id="ca-totp-secret" class="ca-input" placeholder="Base32 secret (e.g. JBSWY3DPEHPK3PXP)" autocomplete="off" spellcheck="false">' +
@@ -1185,7 +1186,7 @@ function renderTOTPTab(container) {
     }
     container.querySelector(".ca-totp-code").textContent = result.otp;
     container.querySelector(".ca-totp-timer").textContent = result.remaining + "s remaining";
-    container.querySelector(".ca-totp-timer").style.color = result.remaining <= 5 ? "#f44336" : "";
+    container.querySelector(".ca-totp-timer").style.color = result.remaining <= 5 ? "var(--bad)" : "";
   }
   container.querySelector("#ca-totp-secret").oninput = function() {
     if (interval) clearInterval(interval);
@@ -1199,10 +1200,10 @@ function renderTOTPTab(container) {
 function renderCertTab(container) {
   container.innerHTML =
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">Certificate Decoder</h3>' +
+      '<h3 class="ca-sh">Certificate decoder</h3>' +
       '<p class="ca-desc">Paste a PEM-encoded X.509 certificate to decode its fields.</p>' +
       '<textarea id="ca-cert-input" class="ca-textarea" rows="8" placeholder="-----BEGIN CERTIFICATE-----\nMIIE...\n-----END CERTIFICATE-----" spellcheck="false"></textarea>' +
-      '<button class="ca-btn" id="ca-cert-btn">Decode</button>' +
+      '<button class="btn" id="ca-cert-btn">Decode</button>' +
       '<div id="ca-cert-result" class="ca-result"></div>' +
     '</div>';
   container.querySelector("#ca-cert-btn").onclick = function() {
@@ -1242,12 +1243,12 @@ function renderCertTab(container) {
 function renderEncoderTab(container) {
   container.innerHTML =
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">Encoder / Decoder</h3>' +
+      '<h3 class="ca-sh">Encoder and decoder</h3>' +
       '<p class="ca-desc">Base64, Hex, URL, HTML, ROT13, Binary, and more.</p>' +
       '<div class="ca-input-row">' +
-        '<textarea id="ca-enc-input" class="ca-textarea" rows="3" placeholder="Enter text to encode/decode..." spellcheck="false"></textarea>' +
+        '<textarea id="ca-enc-input" class="ca-textarea" rows="3" placeholder="Text to encode or decode" spellcheck="false"></textarea>' +
       '</div>' +
-      '<button class="ca-btn" id="ca-enc-btn">Convert</button>' +
+      '<button class="btn" id="ca-enc-btn">Convert</button>' +
       '<div id="ca-enc-result" class="ca-result"></div>' +
     '</div>';
   container.querySelector("#ca-enc-btn").onclick = function() {
@@ -1267,10 +1268,10 @@ function renderEncoderTab(container) {
 function renderKeyScanTab(container) {
   container.innerHTML =
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">API Key / Secret Scanner</h3>' +
+      '<h3 class="ca-sh">API key and secret scanner</h3>' +
       '<p class="ca-desc">Paste code, config files, or .env contents to detect exposed credentials. Checks for 40+ provider patterns.</p>' +
-      '<textarea id="ca-key-input" class="ca-textarea" rows="8" placeholder="Paste code, config, or .env file contents here..." spellcheck="false"></textarea>' +
-      '<button class="ca-btn" id="ca-key-btn">Scan</button>' +
+      '<textarea id="ca-key-input" class="ca-textarea" rows="8" placeholder="Code, config, or .env contents" spellcheck="false"></textarea>' +
+      '<button class="btn" id="ca-key-btn">Scan</button>' +
       '<div id="ca-key-result" class="ca-result"></div>' +
     '</div>';
   container.querySelector("#ca-key-btn").onclick = function() {
@@ -1299,18 +1300,18 @@ function renderKeyScanTab(container) {
 function renderCredFormatTab(container) {
   container.innerHTML =
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">Credential Format Analyzer</h3>' +
+      '<h3 class="ca-sh">Credential format analyzer</h3>' +
       '<p class="ca-desc">Paste credential dumps, shadow file entries, SAM dumps, or htpasswd entries to identify the format.</p>' +
       '<textarea id="ca-cred-input" class="ca-textarea" rows="8" placeholder="root:$6$rounds=5000$salt$hash...\nadmin:1001:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::" spellcheck="false"></textarea>' +
-      '<button class="ca-btn" id="ca-cred-btn">Analyze</button>' +
+      '<button class="btn" id="ca-cred-btn">Analyze</button>' +
       '<div id="ca-cred-result" class="ca-result"></div>' +
     '</div>' +
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">Cisco Type 7 Decoder</h3>' +
+      '<h3 class="ca-sh">Cisco Type 7 decoder</h3>' +
       '<p class="ca-desc">Decode Cisco Type 7 reversible passwords.</p>' +
       '<div class="ca-input-row">' +
         '<input type="text" id="ca-cisco-input" class="ca-input" placeholder="e.g. 070C285F4D06" autocomplete="off">' +
-        '<button class="ca-btn" id="ca-cisco-btn">Decode</button>' +
+        '<button class="btn" id="ca-cisco-btn">Decode</button>' +
       '</div>' +
       '<div id="ca-cisco-result" class="ca-result"></div>' +
     '</div>';
@@ -1355,7 +1356,7 @@ var POLICY_PRESETS = {
 function renderPolicyTab(container) {
   container.innerHTML =
     '<div class="ca-section">' +
-      '<h3 class="ca-sh">Password Policy Builder</h3>' +
+      '<h3 class="ca-sh">Password policy builder</h3>' +
       '<p class="ca-desc">Configure a password policy and generate a validation regex + compliance document.</p>' +
       '<div class="ca-policy-form">' +
         '<label class="ca-pol-row"><span>Start from preset:</span><select id="ca-pol-preset" class="ca-input"><option value="">Custom</option>' +
@@ -1377,7 +1378,7 @@ function renderPolicyTab(container) {
         '<label class="ca-pol-row"><span>Lockout minutes:</span><input type="number" id="ca-pol-lockmin" value="15" min="1" max="1440" class="ca-input-sm"></label>' +
         '<label class="ca-pol-row"><span>Expiry days (0=never):</span><input type="number" id="ca-pol-expiry" value="0" min="0" max="365" class="ca-input-sm"></label>' +
       '</div>' +
-      '<button class="ca-btn" id="ca-pol-btn">Generate Policy</button>' +
+      '<button class="btn" id="ca-pol-btn">Generate Policy</button>' +
       '<div id="ca-pol-result" class="ca-result"></div>' +
     '</div>';
   container.querySelector("#ca-pol-preset").onchange = function() {
@@ -1412,11 +1413,11 @@ function renderPolicyTab(container) {
     var html = '<h4 class="ca-sh2">Rules</h4><ul>';
     for (var r of policy.rules) html += '<li>' + esc(r) + '</li>';
     html += '</ul>';
-    html += '<h4 class="ca-sh2">Validation Regex</h4><pre class="ca-pre">' + esc(policy.regex) + '</pre>';
-    html += '<h4 class="ca-sh2">Policy Document</h4><pre class="ca-pre" style="white-space:pre-wrap">' + esc(policy.document) + '</pre>';
-    html += '<h4 class="ca-sh2">Test Password</h4>' +
-      '<div class="ca-input-row"><input type="text" id="ca-pol-test" class="ca-input" placeholder="Test a password against this policy..." autocomplete="off">' +
-      '<button class="ca-btn" id="ca-pol-test-btn">Test</button></div>' +
+    html += '<h4 class="ca-sh2">Validation regex</h4><pre class="ca-pre">' + esc(policy.regex) + '</pre>';
+    html += '<h4 class="ca-sh2">Policy document</h4><pre class="ca-pre" style="white-space:pre-wrap">' + esc(policy.document) + '</pre>';
+    html += '<h4 class="ca-sh2">Test password</h4>' +
+      '<div class="ca-input-row"><input type="text" id="ca-pol-test" class="ca-input" placeholder="Password to test" autocomplete="off">' +
+      '<button class="btn" id="ca-pol-test-btn">Test</button></div>' +
       '<div id="ca-pol-test-result"></div>';
     resultEl.innerHTML = html;
     container.querySelector("#ca-pol-test-btn").onclick = function() {
@@ -1438,20 +1439,15 @@ function renderPolicyTab(container) {
 
 // ─── CSS ───
 var CA_CSS = '<style>' +
-  '.ca-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line,#333);padding-bottom:8px}' +
-  '.ca-tab{padding:6px 14px;border:1px solid var(--line,#333);background:var(--card,#1a1a1a);color:var(--txt,#eee);cursor:pointer;font-size:.82rem;border-radius:4px 4px 0 0;transition:all .15s}' +
-  '.ca-tab:hover{background:var(--bg,#111)}' +
-  '.ca-tab.on{background:var(--acc,#ffc107);color:#111;border-color:var(--acc,#ffc107);font-weight:600}' +
+  '.ca-tabs{flex-wrap:wrap;margin-bottom:16px}' +
   '.ca-section{margin-bottom:24px}' +
-  '.ca-sh{font-size:1.1rem;margin:0 0 6px;color:var(--txt,#eee)}' +
-  '.ca-sh2{font-size:.95rem;margin:16px 0 6px;color:var(--txt,#eee)}' +
+  '.ca-sh{font-size:14px;font-weight:600;margin:0 0 6px;color:var(--txt)}' +
+  '.ca-sh2{font-size:14px;font-weight:600;margin:16px 0 6px;color:var(--txt)}' +
   '.ca-desc{color:var(--mut,#888);font-size:.82rem;margin:0 0 12px}' +
   '.ca-input-row{display:flex;gap:8px;margin-bottom:8px}' +
   '.ca-input{flex:1;padding:8px 12px;background:var(--bg,#111);border:1px solid var(--line,#333);color:var(--txt,#eee);border-radius:4px;font-family:monospace;font-size:.85rem}' +
   '.ca-input-sm{width:80px;padding:6px 8px;background:var(--bg,#111);border:1px solid var(--line,#333);color:var(--txt,#eee);border-radius:4px;font-size:.85rem}' +
   '.ca-textarea{width:100%;padding:8px 12px;background:var(--bg,#111);border:1px solid var(--line,#333);color:var(--txt,#eee);border-radius:4px;font-family:monospace;font-size:.82rem;resize:vertical;box-sizing:border-box;margin-bottom:8px}' +
-  '.ca-btn{padding:8px 18px;background:var(--acc,#ffc107);color:#111;border:none;border-radius:4px;cursor:pointer;font-weight:600;font-size:.85rem;white-space:nowrap}' +
-  '.ca-btn:hover{opacity:.9}' +
   '.ca-result{margin-top:12px}' +
   '.ca-muted{color:var(--mut,#888);font-size:.85rem}' +
   '.ca-score-bar{width:100%;height:8px;background:var(--line,#333);border-radius:4px;overflow:hidden;margin-bottom:6px}' +
@@ -1459,17 +1455,17 @@ var CA_CSS = '<style>' +
   '.ca-score-label{font-size:1.1rem;font-weight:700;margin-bottom:12px}' +
   '.ca-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:12px}' +
   '.ca-stat{background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:10px;border-radius:4px;text-align:center}' +
-  '.ca-stat-n{display:block;font-size:1.3rem;font-weight:700;color:var(--acc,#ffc107);font-variant-numeric:tabular-nums}' +
-  '.ca-stat-l{display:block;font-size:.72rem;color:var(--mut,#888);margin-top:2px}' +
+  '.ca-stat-n{display:block;font-size:1.3rem;font-weight:700;color:var(--acc);font-variant-numeric:tabular-nums}' +
+  '.ca-stat-l{display:block;font-size:12px;color:var(--mut,#888);margin-top:2px}' +
   '.ca-tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}' +
   '.ca-tag{padding:2px 10px;background:var(--bg,#111);border:1px solid var(--line,#333);border-radius:3px;font-size:.75rem;color:var(--mut,#888)}' +
   '.ca-compliance{padding:8px 12px;border-radius:4px;font-size:.85rem;margin-bottom:8px}' +
-  '.ca-pass{padding:8px 12px;background:rgba(76,175,80,.12);border:1px solid rgba(76,175,80,.3);border-radius:4px;color:#4caf50;font-size:.85rem;margin-bottom:8px}' +
-  '.ca-fail{padding:8px 12px;background:rgba(244,67,54,.12);border:1px solid rgba(244,67,54,.3);border-radius:4px;color:#f44336;font-size:.85rem;margin-bottom:8px}' +
-  '.ca-warn{padding:8px 12px;background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3);border-radius:4px;color:#ff9800;font-size:.85rem;margin-bottom:8px}' +
-  '.ca-err{padding:8px 12px;background:rgba(244,67,54,.12);border:1px solid rgba(244,67,54,.3);border-radius:4px;color:#f44336;font-size:.85rem}' +
+  '.ca-pass{padding:8px 12px;background:color-mix(in srgb,var(--ok) 12%,transparent);border:1px solid color-mix(in srgb,var(--ok) 30%,transparent);border-radius:4px;color:var(--ok);font-size:.85rem;margin-bottom:8px}' +
+  '.ca-fail{padding:8px 12px;background:color-mix(in srgb,var(--bad) 12%,transparent);border:1px solid color-mix(in srgb,var(--bad) 30%,transparent);border-radius:4px;color:var(--bad);font-size:.85rem;margin-bottom:8px}' +
+  '.ca-warn{padding:8px 12px;background:color-mix(in srgb,var(--warn) 12%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);border-radius:4px;color:var(--warn);font-size:.85rem;margin-bottom:8px}' +
+  '.ca-err{padding:8px 12px;background:color-mix(in srgb,var(--bad) 12%,transparent);border:1px solid color-mix(in srgb,var(--bad) 30%,transparent);border-radius:4px;color:var(--bad);font-size:.85rem}' +
   '.ca-issues,.ca-strengths,.ca-patterns{margin:4px 0 12px 16px;font-size:.85rem}' +
-  '.ca-issue-item{color:#f44336}.ca-strength-item{color:#4caf50}' +
+  '.ca-issue-item{color:var(--bad)}.ca-strength-item{color:var(--ok)}' +
   '.ca-table-wrap{overflow-x:auto;margin-bottom:12px}' +
   '.ca-table{width:100%;border-collapse:collapse;font-size:.82rem}' +
   '.ca-table th,.ca-table td{padding:6px 10px;border:1px solid var(--line,#333);text-align:left}' +
@@ -1481,7 +1477,7 @@ var CA_CSS = '<style>' +
   '.ca-jwt-parts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}' +
   '.ca-jwt-part h4{margin:0 0 4px;font-size:.85rem;color:var(--mut,#888)}' +
   '.ca-totp-display{text-align:center;padding:24px;background:var(--card,#1a1a1a);border:1px solid var(--line,#333);border-radius:4px;margin-top:12px}' +
-  '.ca-totp-code{font-size:2.5rem;font-weight:700;font-family:monospace;letter-spacing:.3em;color:var(--acc,#ffc107);margin-bottom:8px}' +
+  '.ca-totp-code{font-size:2.5rem;font-weight:700;font-family:monospace;letter-spacing:.3em;color:var(--acc);margin-bottom:8px}' +
   '.ca-totp-timer{font-size:.85rem;color:var(--mut,#888)}' +
   '.ca-totp-settings{display:flex;gap:16px;margin-bottom:8px;font-size:.85rem;color:var(--mut,#888)}' +
   '.ca-totp-settings select{background:var(--bg,#111);color:var(--txt,#eee);border:1px solid var(--line,#333);padding:2px 6px;border-radius:3px}' +
@@ -1489,12 +1485,12 @@ var CA_CSS = '<style>' +
   '.ca-pol-row{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--txt,#eee)}' +
   '.ca-pol-row span{min-width:140px}' +
   '.ca-pol-check{font-size:.85rem;color:var(--txt,#eee);display:flex;align-items:center;gap:6px}' +
-  '.ca-sev{padding:2px 8px;border-radius:3px;font-size:.72rem;font-weight:600;text-transform:uppercase}' +
-  '.ca-sev-crit{background:rgba(244,67,54,.2);color:#f44336}' +
-  '.ca-sev-high{background:rgba(255,87,34,.2);color:#ff5722}' +
-  '.ca-sev-med{background:rgba(255,152,0,.2);color:#ff9800}' +
-  '.ca-sev-low{background:rgba(76,175,80,.15);color:#4caf50}' +
-  '@media(max-width:600px){.ca-jwt-parts{grid-template-columns:1fr}.ca-grid{grid-template-columns:repeat(2,1fr)}.ca-tabs{gap:2px}.ca-tab{font-size:.75rem;padding:4px 8px}}' +
+  '.ca-sev{padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600}' +
+  '.ca-sev-crit{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}' +
+  '.ca-sev-high{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}' +
+  '.ca-sev-med{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}' +
+  '.ca-sev-low{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}' +
+  '@media(max-width:600px){.ca-jwt-parts{grid-template-columns:1fr}.ca-grid{grid-template-columns:repeat(2,1fr)}}' +
   '</style>';
 
 // ─── Main render ───
@@ -1505,27 +1501,27 @@ var TABS = [
   { id: "totp", label: "TOTP", render: renderTOTPTab },
   { id: "cert", label: "Certificate", render: renderCertTab },
   { id: "encoder", label: "Encoder", render: renderEncoderTab },
-  { id: "keyscan", label: "Key Scanner", render: renderKeyScanTab },
+  { id: "keyscan", label: "Key scanner", render: renderKeyScanTab },
   { id: "credformat", label: "Credentials", render: renderCredFormatTab },
   { id: "policy", label: "Policy", render: renderPolicyTab },
 ];
 
 export function renderCredentialAuditor(main) {
   main.innerHTML = CA_CSS +
-    '<h1 class="pg-h1">Credential Auditor</h1>' +
-    '<p class="muted pg-sub">Password analysis, hash identification, JWT decode, TOTP, certificate decode, API key scanning. Everything runs locally — nothing leaves your browser.</p>' +
-    '<div class="ca-tabs" id="ca-tabs">' +
-      TABS.map(function(t) { return '<button class="ca-tab' + (t.id === "password" ? " on" : "") + '" data-tab="' + t.id + '">' + t.label + '</button>'; }).join("") +
+    '<div class="pg-head"><div><h1 class="pg-h1">Credential Auditor</h1>' +
+    '<p class="muted pg-sub">Password analysis, hash identification, JWT decode, TOTP, certificate decode, API key scanning. Everything runs locally — nothing leaves your browser.</p></div></div>' +
+    '<div class="seg ca-tabs" id="ca-tabs">' +
+      TABS.map(function(t) { return '<button class="ca-tb' + (t.id === "password" ? " on" : "") + '" data-tab="' + t.id + '">' + t.label + '</button>'; }).join("") +
     '</div>' +
     '<div id="ca-panel"></div>';
   var panel = main.querySelector("#ca-panel");
   var current = "password";
   renderPasswordTab(panel);
   main.querySelector("#ca-tabs").onclick = function(e) {
-    var btn = e.target.closest(".ca-tab");
+    var btn = e.target.closest(".ca-tb");
     if (!btn) return;
     current = btn.dataset.tab;
-    main.querySelectorAll(".ca-tab").forEach(function(b) { b.classList.toggle("on", b === btn); });
+    main.querySelectorAll(".ca-tb").forEach(function(b) { b.classList.toggle("on", b === btn); });
     var tab = TABS.find(function(t) { return t.id === current; });
     if (tab) tab.render(panel);
   };

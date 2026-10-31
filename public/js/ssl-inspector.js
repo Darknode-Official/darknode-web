@@ -1,5 +1,5 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
-// SSL Inspector — Certificate Transparency search, subdomain discovery, chain analysis
+// SSL Inspector — Certificate Transparency search, subdomain discovery, issuance analysis
 // Uses crt.sh public API (no key required, CORS-friendly JSON output)
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
@@ -137,8 +137,8 @@ function _sslRenderCerts(el) {
     var c = certs[i];
     var notAfter = new Date(c.not_after || '');
     var expired = notAfter < now;
-    var statusColor = expired ? '#ff4444' : '#00ff88';
-    var statusText = expired ? 'EXPIRED' : 'VALID';
+    var statusColor = expired ? 'var(--bad)' : 'var(--ok)';
+    var statusText = expired ? 'Expired' : 'Unexpired';
     var rowBg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
 
     h += '<tr style="border-bottom:1px solid var(--line);background:' + rowBg + ';">';
@@ -173,8 +173,8 @@ function _sslRenderSubdomains(el) {
   for (var i = 0; i < subs.length; i++) {
     var s = subs[i];
     var wildcard = s.name.indexOf('*.') === 0;
-    h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:3px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="navigator.clipboard.writeText(' + esc(JSON.stringify(s.name)) + ');this.style.borderColor=\'#00ff88\';var el=this;setTimeout(function(){el.style.borderColor=\'#1a2a44\';},500);">';
-    h += '<span style="color:' + (wildcard ? '#ffaa00' : '#c8d6e5') + ';font-size:12px;">' + (wildcard ? '<span style="color:var(--warn);">*</span> ' : '') + esc(s.name) + '</span>';
+    h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:3px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="navigator.clipboard.writeText(' + esc(JSON.stringify(s.name)) + ');this.style.borderColor=\'var(--ok)\';var el=this;setTimeout(function(){el.style.borderColor=\'var(--line)\';},500);">';
+    h += '<span style="color:' + (wildcard ? 'var(--warn)' : 'var(--txt)') + ';font-size:12px;">' + (wildcard ? '<span style="color:var(--warn);">*</span> ' : '') + esc(s.name) + '</span>';
     h += '<span style="color:var(--mut);font-size:12px;">' + s.certCount + ' cert' + (s.certCount > 1 ? 's' : '') + '</span>';
     h += '</div>';
   }
@@ -254,7 +254,8 @@ function _sslRenderTimeline(el) {
 // Findings derived from CT log statistics (shared by the Analysis tab and the graph export).
 function _sslFindings(st) {
   var findings = [];
-  if (st.expired > st.total * 0.5) findings.push({ severity: 'HIGH', title: 'Poor certificate lifecycle management', msg: 'Over 50% of certificates are expired — poor certificate lifecycle management' });
+  // CT logs keep every certificate ever issued, so most entries are expired by design; only flag a domain with no unexpired certificate at all.
+  if (st.total > 0 && st.expired === st.total) findings.push({ severity: 'MEDIUM', title: 'No unexpired certificate in CT logs', msg: 'Every certificate logged for this domain has passed its expiry date. Check whether the site still serves TLS with a current certificate.' });
   if (st.wildcards > 5) findings.push({ severity: 'MEDIUM', title: 'Excessive wildcard certificates', msg: st.wildcards + ' wildcard certificates found — increases attack surface if private keys are compromised' });
   if (st.issuers > 5) findings.push({ severity: 'LOW', title: 'Many certificate issuers', msg: 'Multiple certificate issuers (' + st.issuers + ') — consider consolidating for easier management' });
   if (st.recent30d > 10) findings.push({ severity: 'INFO', title: 'High certificate churn', msg: st.recent30d + ' certificates issued in last 30 days — high certificate churn may indicate automation or rapid deployment' });
@@ -342,7 +343,7 @@ function _sslRenderAnalysis(el) {
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px;">';
   var stats = [
     { label: 'Total certs', value: certs.length, color: '#00d4ff' },
-    { label: 'Valid', value: valid, color: '#00ff88' },
+    { label: 'Unexpired', value: valid, color: '#00ff88' },
     { label: 'Expired', value: expired, color: '#ff4444' },
     { label: 'Wildcards', value: wildcards, color: '#ffaa00' },
     { label: 'Last 30 days', value: recent30d, color: '#aa66ff' },
@@ -366,7 +367,7 @@ function _sslRenderAnalysis(el) {
   var findings = _sslFindings({ total: certs.length, expired: expired, wildcards: wildcards, issuers: Object.keys(uniqueIssuers).length, recent30d: recent30d });
   if (findings.length === 0) findings.push({ severity: 'INFO', msg: 'No significant issues detected in certificate transparency data' });
 
-  var sevColors = { HIGH: '#ff4444', MEDIUM: '#ff8800', LOW: '#ffcc00', INFO: '#00aaff' };
+  var sevColors = { HIGH: 'var(--bad)', MEDIUM: 'var(--warn)', LOW: 'var(--warn)', INFO: 'var(--acc)' };
   for (var fi = 0; fi < findings.length; fi++) {
     var f = findings[fi];
     h += '<div style="background:var(--card2);border-left:3px solid ' + sevColors[f.severity] + ';padding:8px 12px;margin:6px 0;border-radius:0 4px 4px 0;">';

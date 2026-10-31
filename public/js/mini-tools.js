@@ -105,16 +105,16 @@ export function renderMiniTool(main, id, opts = {}) {
   main.innerHTML = `
     <div class="mt-shell" data-color="${esc(cat.color)}">
       <div class="mt-head">
-        <button class="mt-back" id="mtBack" type="button">&larr; All tools</button>
+        <button class="btn ghost sm" id="mtBack" type="button">&larr; All tools</button>
         <div class="mt-crumb"><span class="svc-dot"></span>${esc(cat.name)}</div>
       </div>
-      <h1 class="mt-title">${esc(t.name)}</h1>
+      <div class="pg-head"><div><h1 class="pg-h1">${esc(t.name)}</h1>${help ? "" : `<p class="muted pg-sub">${esc(t.desc || "")}</p>`}</div></div>
       ${help ? `<div class="mt-about">
         <p class="mt-what"><span class="mt-k">What it does</span>${esc(help.what)}</p>
         ${help.when ? `<p class="mt-when"><span class="mt-k">Use it when</span>${esc(help.when)}</p>` : ""}
-      </div>` : `<p class="mt-desc">${esc(t.desc || "")}</p>`}
+      </div>` : ""}
       ${exShown.length ? `<div class="mt-ex" id="mtEx">
-        <div class="mt-ex-head"><span class="mt-k">Example</span><button class="mt-ex-try" id="mtTry" type="button">Try this example</button></div>
+        <div class="mt-ex-head"><span class="mt-k">Example</span><button class="btn ghost sm" id="mtTry" type="button">Try this example</button></div>
         <div class="mt-ex-grid">
           <div class="mt-ex-in">${exShown.map((f) => `<div class="mt-ex-row"><span class="mt-ex-l">${esc(f.label || f.k)}</span><code class="mt-ex-v">${esc(shownValue(f, exVals[f.k]))}</code></div>`).join("")}</div>
           <div class="mt-ex-arrow" aria-hidden="true">gives</div>
@@ -124,10 +124,10 @@ export function renderMiniTool(main, id, opts = {}) {
       <div class="mt-body">
         <form class="mt-form" id="mtForm" autocomplete="off">
           ${(t.inputs || []).map(inputHTML).join("")}
-          ${t.button === false ? "" : `<div class="mt-actions"><button class="mt-run" id="mtRun" type="submit">${esc(t.button || "Run")}</button></div>`}
+          ${t.button === false ? "" : `<div class="mt-actions"><button class="btn" id="mtRun" type="submit">${esc(t.button || "Run")}</button></div>`}
         </form>
         <div class="mt-outwrap">
-          <div class="mt-outbar"><span>Output</span><button class="mt-copy" id="mtCopy" type="button">Copy</button></div>
+          <div class="mt-outbar"><span>Output</span><button class="btn ghost sm" id="mtCopy" type="button">Copy</button></div>
           <pre class="mt-out" id="mtOut" aria-live="polite"></pre>
         </div>
       </div>
@@ -203,10 +203,10 @@ export function renderToolbox(main, opts = {}) {
   TOOLS.forEach((t) => { (byCat[t.cat] = byCat[t.cat] || []).push(t); });
   main.innerHTML = `
     <div class="mt-hub">
-      <div class="mt-hub-head">
-        <h1 class="pg-h2" style="margin:0">Toolbox</h1>
-        <span class="muted">${TOOLS.length} small tools that each do one job. Pick one to see what it does, with a worked example. Everything runs in your browser.</span>
-      </div>
+      <div class="pg-head"><div>
+        <h1 class="pg-h1">Toolbox</h1>
+        <p class="muted pg-sub">${TOOLS.length} small tools that each do one job. Pick one to see what it does, with a worked example. Everything runs in your browser.</p>
+      </div></div>
       <div class="mt-hub-search"><input id="mtSearch" type="search" placeholder="Search tools" autocomplete="off" spellcheck="false"></div>
       <div class="mt-hub-body" id="mtHubBody">
         ${cats.filter((c) => byCat[c] && byCat[c].length).map((c) => {

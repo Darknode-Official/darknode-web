@@ -417,14 +417,14 @@ var YR_CSS =
   '.yr-col{display:flex;flex-direction:column;gap:14px;min-width:0}' +
   '.yr-field{margin-bottom:10px}' +
   '.yr-field:last-child{margin-bottom:0}' +
-  '.yr-lbl{display:block;font-size:.74rem;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}' +
+  '.yr-lbl{display:block;font-size:.75rem;color:var(--mut);margin-bottom:4px}' +
   '.yr-in,.yr-ta,.yr-sel{width:100%;box-sizing:border-box;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:4px;padding:8px 10px;font-size:.85rem;font-family:inherit}' +
   '.yr-in:focus,.yr-ta:focus,.yr-sel:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 15%,transparent)}' +
   '.yr-ta{resize:vertical;min-height:60px;line-height:1.5}' +
   '.yr-mono{font-family:var(--font-mono)}' +
   '.yr-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}' +
   '@media(max-width:520px){.yr-row2{grid-template-columns:1fr}}' +
-  '.yr-warn{font-size:.74rem;color:var(--bad);margin-top:4px;display:none}' +
+  '.yr-warn{font-size:.75rem;color:var(--bad);margin-top:4px;display:none}' +
   '.yr-warn.show{display:block}' +
   '.yr-str-block{border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px;background:color-mix(in srgb,var(--card2) 50%,var(--card))}' +
   '.yr-str-head{display:grid;grid-template-columns:140px 120px 1fr auto;gap:8px;align-items:center;margin-bottom:8px}' +
@@ -446,7 +446,7 @@ var YR_CSS =
   '.yr-valid{margin-top:12px;font-size:.82rem}' +
   '.yr-prob{padding:7px 10px;border-radius:4px;margin-bottom:6px;border:1px solid color-mix(in srgb,var(--bad) 45%,var(--line));background:color-mix(in srgb,var(--bad) 10%,transparent);color:var(--txt)}' +
   '.yr-prob.warn{border-color:color-mix(in srgb,var(--warn,#d29922) 50%,var(--line));background:color-mix(in srgb,var(--warn,#d29922) 10%,transparent)}' +
-  '.yr-sev{display:inline-block;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-right:6px;color:var(--bad)}' +
+  '.yr-sev{display:inline-block;font-size:.75rem;font-weight:600;margin-right:6px;color:var(--bad)}' +
   '.yr-prob.warn .yr-sev{color:var(--warn,#d29922)}' +
   '.yr-ok{padding:8px 11px;border-radius:4px;border:1px solid color-mix(in srgb,var(--ok,#3fb950) 45%,var(--line));background:color-mix(in srgb,var(--ok,#3fb950) 10%,transparent);color:var(--txt)}' +
   '.yr-sub-menu{position:relative;display:inline-block}' +
@@ -454,7 +454,7 @@ var YR_CSS =
   '.yr-menu.open{display:block}' +
   '.yr-menu button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--txt);padding:8px 10px;border-radius:4px;cursor:pointer;font-size:.82rem;font-family:inherit}' +
   '.yr-menu button:hover{background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--acc)}' +
-  '.yr-hint{font-size:.74rem;color:var(--mut);margin-top:4px}' +
+  '.yr-hint{font-size:.75rem;color:var(--mut);margin-top:4px}' +
   '.yr-sticky{position:sticky;top:12px}' +
   '</style>';
 
@@ -492,7 +492,7 @@ export function renderYaraBuilder(main) {
     '<div class="yr-col">' +
 
     '<div class="panel">' +
-    '<div class="panel-h"><h2 class="pg-h2">Rule &amp; Metadata</h2>' +
+    '<div class="panel-h"><h2 class="pg-h2">Rule &amp; metadata</h2>' +
     '<div class="yr-actions">' +
     '<button class="btn ghost yr-mini" id="yr-reset" type="button">Reset</button>' +
     '<div class="yr-sub-menu"><button class="btn ghost yr-mini" id="yr-example-btn" type="button">Load example</button>' +

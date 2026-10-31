@@ -194,7 +194,7 @@ function scoreIOC(type, value) {
   if (type === 'cve') {
     var year = parseInt((v.match(/CVE-(\d{4})/i) || [])[1], 10);
     var now = new Date().getFullYear();
-    if (year && now - year <= 1) return { level: 'High', reason: 'Recent CVE (' + year + ') - likely still exploitable' };
+    if (year && now - year <= 1) return { level: 'High', reason: 'Recent CVE (' + year + ') - check patch and exploitation status' };
     return { level: 'Medium', reason: 'Vulnerability identifier - check patch status' };
   }
   if (type === 'btc') {
@@ -430,16 +430,16 @@ export function renderIocEnrichment(main) {
     '.iocx .iocx-stats{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}' +
     '.iocx .iocx-stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:92px;flex:1}' +
     '.iocx .iocx-stat b{display:block;font-size:1.4rem;font-weight:800;color:var(--acc);line-height:1.1}' +
-    '.iocx .iocx-stat span{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}' +
+    '.iocx .iocx-stat span{font-size:.75rem;color:var(--mut)}' +
     '.iocx .iocx-tblwrap{overflow-x:auto}' +
     '.iocx .iocx-val{font-family:var(--font-mono);font-size:.78rem;word-break:break-all;color:var(--txt)}' +
-    '.iocx .iocx-ty{font-family:var(--font-mono);font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;background:var(--acc-soft);color:var(--acc);white-space:nowrap}' +
-    '.iocx .iocx-badge{font-size:.64rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;white-space:nowrap;border:1px solid transparent}' +
+    '.iocx .iocx-ty{font-family:var(--font-mono);font-size:.75rem;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--acc-soft);color:var(--acc);white-space:nowrap}' +
+    '.iocx .iocx-badge{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;border:1px solid transparent}' +
     '.iocx .iocx-badge.high{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,var(--line));background:color-mix(in srgb,var(--bad) 12%,transparent)}' +
     '.iocx .iocx-badge.medium{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 12%,transparent)}' +
     '.iocx .iocx-badge.low{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,var(--line));background:color-mix(in srgb,var(--ok) 12%,transparent)}' +
-    '.iocx .iocx-reason{font-size:.72rem;color:var(--txt-2,var(--mut));line-height:1.45}' +
-    '.iocx .iocx-note{font-size:.72rem;color:var(--txt-2,var(--mut));line-height:1.45}' +
+    '.iocx .iocx-reason{font-size:.75rem;color:var(--txt-2,var(--mut));line-height:1.45}' +
+    '.iocx .iocx-note{font-size:.75rem;color:var(--txt-2,var(--mut));line-height:1.45}' +
     '.iocx .iocx-note.hit{color:var(--bad);font-weight:600}' +
     '.iocx .iocx-empty{padding:34px 16px;text-align:center;color:var(--mut);font-size:.85rem}' +
     '.iocx .iocx-prog{font-size:.75rem;color:var(--mut)}' +
@@ -562,7 +562,7 @@ export function renderIocEnrichment(main) {
 
     // input
     html += '<div class="panel">' +
-      '<div class="panel-h"><h2 class="pg-h2">Source Text</h2></div>' +
+      '<div class="panel-h"><h2 class="pg-h2">Source text</h2></div>' +
       '<textarea class="iocx-ta" id="iocx-input" placeholder="Paste logs, email headers, threat reports or OSINT. Defanged indicators (hxxp, 1[.]2[.]3[.]4, evil(dot)com, user[at]domain) are refanged automatically.">' + esc(state.raw) + '</textarea>' +
       '<div class="iocx-controls">' +
         '<button class="btn primary" id="iocx-extract">Extract and Classify</button>' +
@@ -595,7 +595,7 @@ export function renderIocEnrichment(main) {
         '<div class="iocx-tblwrap">' +
           '<table class="data-table"><thead><tr>' +
             '<th style="width:28px"><input type="checkbox" class="iocx-chk" id="iocx-head-chk"' + (sel === total && total ? ' checked' : '') + '></th>' +
-            '<th>Type</th><th>Indicator</th><th>Risk</th><th>Heuristic Reason</th><th>Enrichment</th>' +
+            '<th>Type</th><th>Indicator</th><th>Heuristic risk</th><th>Reason</th><th>Enrichment</th>' +
           '</tr></thead><tbody>';
 
       state.records.forEach(function (r, i) {

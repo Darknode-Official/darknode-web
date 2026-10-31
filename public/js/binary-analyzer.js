@@ -949,8 +949,8 @@ export function renderBinaryAnalyzer(main) {
   var hashes = null;
 
   function render() {
-    var html = '<h1 class="pg-h1">Binary Analyzer</h1>';
-    html += '<p class="muted pg-sub">Upload any file for deep analysis — hex view, PE/ELF parsing, string extraction, entropy, disassembly, IoC extraction, and YARA rule generation. All processing runs locally in your browser.</p>';
+    var html = '<div class="pg-head"><div><h1 class="pg-h1">Binary Analyzer</h1>';
+    html += '<p class="muted pg-sub">Static file analysis: hex view, PE/ELF parsing, strings, entropy, a partial x86 disassembler, IoC extraction and a draft YARA rule. All processing runs locally in your browser.</p></div></div>';
 
     if (!fileData) {
       html += '<div class="ba-upload" id="ba-drop">';
@@ -1172,7 +1172,7 @@ export function renderBinaryAnalyzer(main) {
       chunks.push({ offset: i, entropy: e });
     }
     var html = '<div class="ba-ent">';
-    html += '<h3>Overall Entropy: <span style="color:' + entropyColor(overall) + '">' + overall.toFixed(4) + '</span> — ' + entropyLabel(overall) + '</h3>';
+    html += '<h3>Overall entropy: <span style="color:' + entropyColor(overall) + '">' + overall.toFixed(4) + '</span> — ' + entropyLabel(overall) + '</h3>';
     html += '<div class="ba-ent-bar">';
     for (var j = 0; j < chunks.length; j++) {
       var width = (100 / chunks.length).toFixed(2);
@@ -1327,7 +1327,7 @@ export function renderBinaryAnalyzer(main) {
         html += '</div>';
 
         if (suspFound.length) {
-          html += '<h3>Suspicious API References (' + suspFound.length + ')</h3>';
+          html += '<h3>Suspicious API references (' + suspFound.length + ')</h3>';
           html += '<table class="pc-table"><thead><tr><th>API</th><th>Risk</th><th>Description</th><th>Offset</th></tr></thead><tbody>';
           for (var sf = 0; sf < suspFound.length; sf++) {
             var s2 = suspFound[sf];
@@ -1372,6 +1372,7 @@ export function renderBinaryAnalyzer(main) {
     html += '<label class="pc-label">Base Address (hex)</label><input class="pc-input" id="ba-dis-base" value="0x' + baseAddr.toString(16) + '">';
     html += '<button class="btn" id="ba-dis-go">Disassemble</button>';
     html += '</div>';
+    html += '<p class="muted" style="font-size:12px;margin:6px 0">Linear sweep over a subset of common x86 opcodes; bytes it does not decode are shown as db. Use a full disassembler for anything beyond triage.</p>';
     html += '<table class="pc-table ba-dis-table"><thead><tr><th>Address</th><th>Bytes</th><th>Mnemonic</th><th>Operands</th></tr></thead><tbody>';
     for (var i = 0; i < instrs.length; i++) {
       var ins = instrs[i];
@@ -1442,7 +1443,7 @@ export function renderBinaryAnalyzer(main) {
       }
     }
     var html = '<div class="ba-packers">';
-    html += '<h3>Packer/Protector Detection</h3>';
+    html += '<h3>Packer and protector signatures</h3>';
     if (detected.length) {
       html += '<div class="ba-packer-warn">Packer/protector signatures detected — the binary may be obfuscated.</div>';
       for (var d = 0; d < detected.length; d++) {
@@ -1468,7 +1469,7 @@ export function renderBinaryAnalyzer(main) {
     var strings = extractStrings(fileData, 6);
     var rule = generateYARA(fileName || "unknown", strings, fileData);
     var html = '<div class="ba-yara">';
-    html += '<h3>Auto-Generated YARA Rule</h3>';
+    html += '<h3>Draft YARA rule</h3>';
     html += '<pre class="pc-hex ba-yara-code">' + esc(rule) + '</pre>';
     html += '<button class="btn" id="ba-yara-copy">Copy Rule</button>';
     html += '<div class="ba-yara-note">This rule is auto-generated from unique strings and byte patterns found in the file. Review and refine before using in production — auto-generated rules may have high false-positive rates. For best results, manually select the most distinctive strings and patterns.</div>';

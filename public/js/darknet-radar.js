@@ -108,7 +108,7 @@ function _drRenderKev(vulns) {
   for (var i = 0; i < max; i++) {
     var k = sorted[i];
     var ransom = k.knownRansomwareCampaignUse === 'Known';
-    var color = ransom ? '#ff2244' : '#ffaa22';
+    var color = ransom ? 'var(--bad)' : 'var(--warn)';
     h += '<div style="background:var(--card2);padding:10px 14px;margin-bottom:6px;border-radius:4px;border-left:3px solid ' + color + ';">';
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:6px;">';
     h += '<span style="color:' + color + ';font-family:monospace;font-size:12px;font-weight:bold;">' + esc(k.cveID || '') + '</span>';
@@ -171,9 +171,9 @@ export function renderDarknetRadar(container) {
   if (!el) return;
 
   var tabs = [
-    { key: 'victims', label: 'Ransomware Victims' },
-    { key: 'groups', label: 'Ransomware Groups' },
-    { key: 'kev', label: 'Known Exploited Vulns' }
+    { key: 'victims', label: 'Ransomware victims' },
+    { key: 'groups', label: 'Ransomware groups' },
+    { key: 'kev', label: 'Known exploited vulns' }
   ];
 
   var h = '';
@@ -181,7 +181,7 @@ export function renderDarknetRadar(container) {
 
   // Header
   h += '<div class="pg-head"><div><h1 class="pg-h1">Darknet Radar</h1>';
-  h += '<p class="muted pg-sub">Live extortion-leak and known-exploited-vulnerability intelligence. Source: ransomware.live, CISA KEV.</p></div></div>';
+  h += '<p class="muted pg-sub">Recent ransomware leak-site posts and known exploited vulnerabilities, fetched on open from ransomware.live and the CISA KEV catalog.</p></div></div>';
 
   // Tabs
   h += '<div id="dr-tabs" class="seg" style="margin-bottom:16px;flex-wrap:wrap;">';
