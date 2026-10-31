@@ -647,9 +647,11 @@ async function handleClientError(request, rid) {
   return new Response(null, { status: 204, headers: CORS });
 }
 
-const STARTED = Date.now();
+// Set on the first request: Workers return 0 from Date.now() at module load.
+let STARTED = 0;
 
 async function route(request, env, rid) {
+    if (!STARTED) STARTED = Date.now();
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     // Reject disallowed browser origins before anything else, so a hostile page
     // cannot ride a visitor's browser to spend the server-side keys.
