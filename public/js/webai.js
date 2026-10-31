@@ -359,7 +359,9 @@ async function streamProxy(provider, model, messages, onToken, signal, opts = {}
   if (r.status === 404) throw new Error("The free AI service isn't available here yet. Add your own API key in Settings → API Keys, or run the app with the AI proxy deployed.");
   if (r.status === 401 || r.status === 403) throw new Error("The free Darknode AI service is temporarily unavailable (its key needs renewing). Add your own API key in Settings → API Keys to keep using AI, or try again later.");
   if (r.status === 429) throw new Error("Rate limit reached — wait a moment or switch to a different model.");
-  if (!r.ok) { const e = await r.text().catch(() => ""); let msg = e; try { msg = JSON.parse(e).error || e; } catch (_) {} throw new Error("AI service " + r.status + (msg ? ": " + String(msg).slice(0, 200) : "")); }
+  // The Worker answers errors as {error: "<plain sentence>"}; show just that. Anything
+  // else (an HTML error page from the edge, say) gets a generic line, never raw markup.
+  if (!r.ok) { let msg = ""; try { msg = (await r.json()).error || ""; } catch (_) {} throw new Error(msg ? String(msg).slice(0, 200) : "The AI service returned an error (HTTP " + r.status + "). Try again in a moment."); }
   if (!r.body) throw new Error("No streaming body");
   const reader = r.body.getReader(), dec = new TextDecoder(); let buf = "";
   for (;;) { const { done, value } = await reader.read(); if (done) break; buf += dec.decode(value, { stream: true }); let nl; while ((nl = buf.indexOf("\n")) >= 0) { const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1); if (!line.startsWith("data: ")) continue; const payload = line.slice(6); if (payload === "[DONE]") return; try { const j = JSON.parse(payload); const delta = j.choices && j.choices[0] && j.choices[0].delta; if (delta && delta.content) onToken(delta.content); } catch (_) {} } }
