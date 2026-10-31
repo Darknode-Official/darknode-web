@@ -1094,67 +1094,45 @@ testing methodology for 10.10.14.7:
         <div class="sec-label">Pricing</div>
         <h2 class="sec-title" id="pricing-title">Free to start. Upgrade when you're ready.</h2>
         <p class="sec-sub">Bring your own AI key on any plan. Paid plans unlock platform features, not AI access.</p>
-        <div class="billing-toggle">
-          <label id="bill-monthly" class="active">Monthly</label>
-          <button class="billing-switch" id="billing-switch" type="button" aria-label="Toggle annual billing"></button>
-          <label id="bill-annual">Annual</label>
-          <span class="billing-save">Save up to 33%</span>
-        </div>
         <div class="pricing-grid" id="pricing-grid">
           <div class="price-card">
             <div class="price-tier">Free</div>
-            <div class="price-amount">$0<span class="price-period">/self-hosted</span></div>
-            <p class="price-desc">The full open-core platform. No limits, no trials, no paywalls.</p>
+            <div class="price-amount">$0<span class="price-period">/forever</span></div>
+            <p class="price-desc">The full browser toolbox for solo practitioners and evaluation.</p>
             <ul class="price-features">
-              <li>Every scanning and analysis tool (no limits)</li>
-              <li>Nexus AI assistant (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
-              <li>Security knowledge base: 1,400+ topics and references</li>
-              <li>CLI, desktop app, and Darknode OS</li>
-              <li>Live threat intelligence feeds</li>
-              <li>Unlimited scans and analysis</li>
-              <li>Community support on GitHub</li>
+              <li>Every browser-based security tool</li>
+              <li>Personal space: domain, link, secret and data checks</li>
+              <li>Local-only security graph &amp; cases</li>
+              <li>Darknode AI assistant</li>
+              <li>1 workspace, 1 seat</li>
             </ul>
             <button class="btn lg" id="price-free">Get started free</button>
           </div>
           <div class="price-card featured">
             <div class="price-badge">Recommended</div>
             <div class="price-tier">Pro</div>
-            <div class="price-amount price-monthly" data-monthly="$12" data-annual="$99">$12<span class="price-period">/month</span></div>
-            <div class="price-amount price-annual" data-monthly="$12" data-annual="$99">$99<span class="price-period">/year</span> <span class="price-saved">Save $45</span></div>
+            <div class="price-amount">$29<span class="price-period">/user/month</span></div>
             <p class="price-desc">Built for working security professionals.</p>
             <ul class="price-features compact">
               <li>Everything in Free, plus:</li>
-              <li>Automated scan scheduling (daily/weekly/monthly)</li>
-              <li>Vulnerability tracker with severity trends</li>
-              <li>Threat watchlist with real-time alerts</li>
-              <li>AI-powered security report writer</li>
-              <li>AI code auditor</li>
-              <li>Custom scan profiles and templates</li>
-              <li>Credential leak monitoring</li>
-              <li>Nexus Overnight Mode (background analysis)</li>
-              <li>Priority API rate limits (5x)</li>
-              <li>Early access to new tools</li>
-              <li>Email support (24h response)</li>
+              <li>Exposure and Application Security tools, findings and reports</li>
+              <li>Unlimited saved findings &amp; reports</li>
+              <li>Priority Darknode AI &mdash; faster, higher limits</li>
+              <li>Cloud sync across devices</li>
+              <li>Email support</li>
             </ul>
             <button class="btn lg ghost" id="price-pro">Join waitlist</button>
           </div>
           <div class="price-card">
             <div class="price-tier">Team</div>
-            <div class="price-amount price-monthly" data-monthly="$25" data-annual="$199">$25<span class="price-period">/user/month</span></div>
-            <div class="price-amount price-annual" data-monthly="$25" data-annual="$199">$199<span class="price-period">/user/year</span> <span class="price-saved">Save $101</span></div>
+            <div class="price-amount">$79<span class="price-period">/user/month</span></div>
             <p class="price-desc">Shared findings and workflow for a security team.</p>
             <ul class="price-features compact">
               <li>Everything in Pro, plus:</li>
-              <li>Shared workspace and findings</li>
-              <li>Asset inventory and shared scan history</li>
-              <li>Team activity feed</li>
-              <li>Role-based permissions</li>
-              <li>Branded security reports (custom logo)</li>
-              <li>Engagement and project management</li>
-              <li>Findings deduplication and tracking</li>
-              <li>Export to Jira, GitHub, Linear, CSV</li>
-              <li>Plugin system and SDK</li>
-              <li>Priority chat support (4h response)</li>
+              <li>Organization space, Identity, Security Operations, Fraud &amp; Abuse</li>
+              <li>Shared team workspaces &amp; roles</li>
+              <li>Integrations (ticketing, chat webhooks)</li>
+              <li>Activity &amp; audit log</li>
             </ul>
             <button class="btn lg ghost" id="price-team">Join waitlist</button>
           </div>
@@ -1164,20 +1142,16 @@ testing methodology for 10.10.14.7:
             <p class="price-desc">Control, compliance, and scale for organizations.</p>
             <ul class="price-features compact">
               <li>Everything in Team, plus:</li>
-              <li>SSO and SAML authentication</li>
-              <li>Data isolation and tenant separation</li>
-              <li>Role-based access control (RBAC)</li>
-              <li>Audit logging and compliance exports (SOC2, PCI-DSS, HIPAA)</li>
-              <li>Self-hosted and air-gapped deployment</li>
-              <li>Custom Darknode OS builds (org-branded)</li>
-              <li>Admin dashboard and analytics</li>
-              <li>Dedicated account manager</li>
-              <li>Volume licensing and invoicing</li>
+              <li>Risk &amp; Resilience and Compliance tools</li>
+              <li>Self-hosted / private deployment</li>
+              <li>SSO &amp; MFA (on the roadmap), custom roles</li>
+              <li>Compliance pack &amp; DPA</li>
+              <li>Dedicated support</li>
             </ul>
             <button class="btn lg ghost" id="price-enterprise">Contact sales</button>
           </div>
         </div>
-        <p class="pricing-note">The open-core platform is <strong>free to self-host</strong> &mdash; every scanning and analysis tool, the command centers, the CLI, desktop app, Darknode OS, and live threat feeds. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free. Paid plans add <strong>team and enterprise features</strong> like automated scan scheduling, vulnerability tracking, report generation, credential leak monitoring, and collaboration. No hidden fees, no usage caps, cancel anytime.</p>
+        <p class="pricing-note">Paid plans are in preview: checkout is not live yet, so upgrades are requested and granted by hand and no payment is taken. You never pay Darknode for AI tokens &mdash; bring your own key or run Ollama locally.</p>
       </div>
     </section>
 
@@ -1194,7 +1168,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. The open-core platform &mdash; every scanning and analysis tool in the Deck, the CLI, the desktop app, and Darknode OS &mdash; is free to run on your own infrastructure with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI assistant using your own API key or a free local model like Ollama. Paid Team and Enterprise plans (coming soon) add features like automated scan scheduling, vulnerability tracking, report generation, and collaboration, but the core platform stays free to self-host.</div>
+              <div class="faq-a-inner">Yes. The Free plan includes every browser-based security tool, the Personal space checks, a local security graph and the Darknode AI assistant, with no time limit. The CLI is free to run from source. Pro, Team and Enterprise add the Exposure, Application Security, Organization and Compliance tool sets, shared workspaces and cloud sync; they are in preview and granted on request while checkout is not live.</div>
             </div>
           </div>
 
@@ -1395,19 +1369,6 @@ testing methodology for 10.10.14.7:
   if ($("price-pro")) $("price-pro").onclick = scrollToCta;
   if ($("price-team")) $("price-team").onclick = scrollToCta;
   if ($("price-enterprise")) $("price-enterprise").onclick = scrollToCta;
-
-  // Billing toggle (monthly ↔ annual)
-  const billSwitch = $("billing-switch");
-  if (billSwitch) {
-    billSwitch.onclick = function() {
-      const grid = $("pricing-grid");
-      const isAnnual = billSwitch.classList.toggle("annual");
-      grid.classList.toggle("billing-annual", isAnnual);
-      var mLabel = $("bill-monthly"), aLabel = $("bill-annual");
-      if (mLabel) mLabel.classList.toggle("active", !isAnnual);
-      if (aLabel) aLabel.classList.toggle("active", isAnnual);
-    };
-  }
 
   // Animated counter for hero stats — scroll-triggered with easing
   const counterEls = view.querySelectorAll("[data-count]");

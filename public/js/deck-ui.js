@@ -1199,8 +1199,8 @@ const CSS = `
 .dk-gcpin svg{width:14px;height:14px;fill:currentColor;stroke:none}
 /* ======================= Toolkit workspace ======================= */
 .dk-kit{position:absolute;inset:56px 0 0;display:flex;min-height:0}
-.dk-kitnav{flex:none;width:300px;display:flex;flex-direction:column;border-right:1px solid rgba(23,33,56,.08);padding:16px 12px 24px 4vw;overflow:auto}
-.dk-kitsearch{margin-bottom:12px}
+.dk-kitnav{flex:none;width:300px;display:flex;flex-direction:column;border-right:1px solid rgba(23,33,56,.08);padding:16px 12px 24px 16px;overflow:auto}
+.dk-kitsearch{flex:none;max-width:none;margin-bottom:12px}
 .dk-kitlist{display:flex;flex-direction:column;gap:2px}
 .dk-kitcat{margin-bottom:12px}
 .dk-kitcat .kc-h{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:6px 6px}
@@ -1228,6 +1228,7 @@ const CSS = `
 .dk-kitio{width:100%;border-radius:12px;border:1px solid rgba(23,33,56,.12);background:#f5f7fb;color:#1a2233;font:13px/1.55 ui-monospace,"SF Mono",Menlo,Consolas,monospace;padding:13px 15px;outline:none;resize:vertical}
 .dk-kitio:focus{border-color:rgba(79,134,255,.55);background:#eef1f7}
 textarea.dk-kitio{min-height:120px}
+.dk-kiofield>.dk-kitio{flex:1;min-height:120px;resize:none;overflow:auto}
 .dk-kitout{min-height:120px;white-space:pre-wrap;word-break:break-word;overflow:auto;margin:0}
 .dk-kitout.err{color:#c0282a;border-color:rgba(240,72,74,.4);background:rgba(240,72,74,.08)}
 /* keyboard-shortcuts overlay */
@@ -1332,11 +1333,12 @@ textarea.dk-kitio{min-height:120px}
 .dk-plancard{position:relative;display:flex;flex-direction:column;padding:22px 20px;border-radius:14px;background:rgba(23,33,56,.025);border:1px solid rgba(23,33,56,.1)}
 .dk-plancard.feat{border-color:var(--a);box-shadow:0 0 0 1px var(--a)}
 .dk-plantag{position:absolute;top:-10px;left:20px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--a);padding:4px 9px;border-radius:7px}
-.dk-planname{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--a)}
+.dk-planname{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#5a6680}
 .dk-planprice{font-size:30px;font-weight:800;color:#141c2e;margin:6px 0 2px;line-height:1}
 .dk-planprice span{font-size:12.5px;font-weight:600;color:#6b7589;margin-left:4px}
 .dk-planblurb{font-size:12.8px;color:#5a6680;line-height:1.5;margin:8px 0 14px;min-height:38px}
-.dk-planbtn{width:100%;padding:10px;border-radius:9px;border:1px solid var(--a);background:var(--a);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+.dk-planbtn{width:100%;padding:10px;border-radius:9px;border:1px solid rgba(23,33,56,.22);background:transparent;color:#141c2e;font-weight:700;font-size:13px;cursor:pointer}
+.dk-plancard.feat .dk-planbtn:not(.cur){border-color:var(--a);background:var(--a);color:#fff}
 .dk-planbtn:hover{filter:brightness(1.07)}
 .dk-planbtn.cur{background:transparent;color:#6b7589;border-color:rgba(23,33,56,.18);cursor:default}
 .dk-planfeats{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
@@ -4002,21 +4004,21 @@ export function renderDeck(host, opts) {
   function renderPlans(){
     const el = sceneEls.plans;
     const PLANS = [
-      { id: "free", name: "Free", price: "$0", unit: "forever", tag: "", a: "#64748b",
+      { id: "free", name: "Free", price: "$0", unit: "forever", tag: "", a: "#2552c6",
         blurb: "The full browser toolbox for solo practitioners and evaluation.",
         feats: ["Every browser-based security tool", "Personal space: domain, link, secret and data checks", "Local-only security graph & cases", "Darknode AI assistant", "1 workspace, 1 seat"],
         cta: "Current plan", cur: true },
-      { id: "pro", name: "Pro", price: "$29", unit: "per user / month", tag: "Popular", a: "#2552c6",
+      { id: "pro", name: "Pro", price: "$29", unit: "per user / month", tag: "Recommended", a: "#2552c6",
         blurb: "For professionals who need history, exports and priority AI.",
         feats: ["Everything in Free", "Exposure and Application Security tools, findings and reports", "Unlimited saved findings & reports", "Priority Darknode AI — faster, higher limits", "Cloud sync across devices", "Email support"],
         cta: "Upgrade to Pro" },
-      { id: "team", name: "Team", price: "$79", unit: "per user / month", tag: "", a: "#7c3aed",
+      { id: "team", name: "Team", price: "$79", unit: "per user / month", tag: "", a: "#2552c6",
         blurb: "Shared workspaces, roles and one audit trail for the whole team.",
         feats: ["Everything in Pro", "Organization space, Identity, Security Operations, Fraud & Abuse", "Shared team workspaces & roles", "Integrations (ticketing, chat webhooks)", "Activity & audit log"],
         cta: "Start Team trial" },
-      { id: "enterprise", name: "Enterprise", price: "Custom", unit: "", tag: "", a: "#0f766e",
+      { id: "enterprise", name: "Enterprise", price: "Custom", unit: "", tag: "", a: "#2552c6",
         blurb: "Scale, compliance and deployment on your terms.",
-        feats: ["Everything in Team", "Risk & Resilience and Compliance tools", "Self-hosted / private deployment", "SSO & MFA (on the roadmap), custom roles", "Compliance pack & DPA", "Dedicated support & SLA"],
+        feats: ["Everything in Team", "Risk & Resilience and Compliance tools", "Self-hosted / private deployment", "SSO & MFA (on the roadmap), custom roles", "Compliance pack & DPA", "Dedicated support"],
         cta: "Contact sales" },
     ];
     // CTA depends on the effective tier: your current plan, something already
