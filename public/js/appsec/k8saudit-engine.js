@@ -330,6 +330,19 @@ export function parseInput(input) {
 /** Built-in cluster-admin rules (used when the ClusterRole itself is not in the dump). */
 const CLUSTER_ADMIN_RULES = [{ apiGroups: ["*"], resources: ["*"], verbs: ["*"] }, { nonResourceURLs: ["*"], verbs: ["*"] }];
 const WORKLOAD_RESOURCES = [["", "pods"], ["", "replicationcontrollers"], ["apps", "deployments"], ["apps", "daemonsets"], ["apps", "statefulsets"], ["apps", "replicasets"], ["batch", "jobs"], ["batch", "cronjobs"]];
+// The default user-facing ClusterRoles, trimmed to the rules the DANGEROUS catalogue tests. An export
+// rarely includes them, yet "edit" / "admin" bindings are the most common way people get these powers.
+const EDIT_RULES = [
+  { apiGroups: [""], resources: ["secrets"], verbs: ["get", "list", "watch", "create", "update", "patch", "delete"] },
+  { apiGroups: [""], resources: ["pods", "pods/exec", "pods/attach", "pods/portforward", "pods/proxy", "replicationcontrollers"], verbs: ["get", "list", "watch", "create", "update", "patch", "delete"] },
+  { apiGroups: ["apps"], resources: ["deployments", "daemonsets", "statefulsets", "replicasets"], verbs: ["get", "list", "watch", "create", "update", "patch", "delete"] },
+  { apiGroups: ["batch"], resources: ["jobs", "cronjobs"], verbs: ["get", "list", "watch", "create", "update", "patch", "delete"] },
+  { apiGroups: [""], resources: ["serviceaccounts"], verbs: ["impersonate"] },
+];
+const BUILTIN_RULES = {
+  edit: EDIT_RULES,
+  admin: EDIT_RULES.concat([{ apiGroups: ["rbac.authorization.k8s.io"], resources: ["roles", "rolebindings"], verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"] }]),
+};
 
 /** Dangerous permission catalogue: key, label, severity, rule test. */
 export const DANGEROUS = [
@@ -405,6 +418,7 @@ function roleFor(roles, binding) {
   const r = roles.get(key);
   if (r) return { ...r, found: true };
   if (rr.kind !== "Role" && rr.name === "cluster-admin") return { key, kind: "ClusterRole", name: "cluster-admin", rules: CLUSTER_ADMIN_RULES, aggregatedFrom: [], found: false, builtin: true };
+  if (rr.kind !== "Role" && BUILTIN_RULES[rr.name]) return { key, kind: "ClusterRole", name: rr.name, rules: BUILTIN_RULES[rr.name], aggregatedFrom: [], found: false, builtin: true };
   return { key, kind: rr.kind || "ClusterRole", name: str(rr.name), rules: [], aggregatedFrom: [], found: false, builtin: isBuiltinRole(rr.name) };
 }
 export const subjectKey = (s, bindingNs) => (s.kind === "ServiceAccount" ? "ServiceAccount:" + str(s.namespace || bindingNs) + ":" + s.name : str(s.kind) + "::" + str(s.name));
@@ -720,7 +734,7 @@ export function analyze(input, opts = {}, ctx) {
         if (bo.kind === "ClusterRoleBinding" && bo.metadata.name === "cluster-admin" && s.kind === "Group" && s.name === "system:masters") continue; // built-in default
         const bref = bo.kind + "/" + (bo.metadata.namespace ? bo.metadata.namespace + "/" : "") + bo.metadata.name;
         let sev, conf = "confirmed", why;
-        if (bo.kind === "RoleBinding") { sev = "medium"; why = "full control of namespace " + bo.metadata.namespace; }
+        if (bo.kind === "RoleBinding") { sev = isBroad(s) ? "high" : "medium"; why = (isBroad(s) ? "every member of " + s.name + " gets " : "") + "full control of namespace " + bo.metadata.namespace + ", including its secrets"; }
         else if (isBroad(s)) { sev = o.authenticatedCritical ? "critical" : "high"; why = "every " + (s.name === "system:serviceaccounts" ? "service account" : s.name === "system:authenticated" ? "authenticated identity" : "anonymous request") + " is a cluster administrator"; }
         else if (s.kind === "ServiceAccount" && SYSTEM_NS.includes(s.namespace || bo.metadata.namespace)) { sev = "medium"; conf = "review"; why = "a kube-system service account is cluster-admin (common for add-ons, but any pod using it owns the cluster)"; }
         else { sev = "high"; why = s.kind === "ServiceAccount" ? "any pod running as this service account owns the cluster" : "this " + s.kind.toLowerCase() + " has unrestricted cluster access"; }

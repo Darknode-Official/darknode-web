@@ -578,4 +578,15 @@ group("k8saudit: contract", () => {
       assert.ok(rep && Array.isArray(rep.findings), "analyze returned a report for kind=" + kind);
     }
   });
+  test("bindings to the built-in edit / admin roles report their dangerous powers when the dump omits those roles", () => {
+    const rb = (name, role, subj) => ({ apiVersion: "rbac.authorization.k8s.io/v1", kind: "RoleBinding", metadata: { name, namespace: "app" }, roleRef: { apiGroup: "rbac.authorization.k8s.io", kind: "ClusterRole", name: role }, subjects: [subj] });
+    const rep = analyze(parseInput([{ name: "rbac.json", text: list([ns("app"), rb("devs", "edit", { kind: "Group", name: "system:authenticated" }), rb("leads", "admin", { kind: "User", name: "lead" }), rb("all-admin", "cluster-admin", { kind: "Group", name: "system:authenticated" })]) }]), { now: "2026-10-01" });
+    const broad = rep.findings.find((f) => f.check === "rbac.dangerous_role" && f.title === "Dangerous permissions granted to system:authenticated");
+    assert.ok(broad && /read secrets/.test(broad.description) && /pods\/exec/.test(broad.description), "edit to system:authenticated is flagged");
+    const lead = rep.tables.subjects.find((s) => s.name === "lead");
+    assert.ok(lead && /write RBAC objects/.test(lead.dangerous), "admin includes RBAC write");
+    const ca = rep.findings.find((f) => f.check === "rbac.cluster_admin" && /all-admin/.test(f.description));
+    assert.equal(ca && ca.severity, "high", "namespace cluster-admin for every authenticated user is high");
+    assert.ok(!rep.findings.some((f) => f.check === "rbac.orphan_binding"), "built-in roles are not orphan references");
+  });
 });
