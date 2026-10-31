@@ -56,7 +56,7 @@ export const SEVERITIES = ["critical", "high", "medium", "low", "info"];
 // License table. c = category, osi = on the OSI approved list.
 // ---------------------------------------------------------------------------
 const L = (c, osi, extra) => Object.assign({ c, osi: !!osi }, extra || {});
-const LICENSES = {
+const LICENSES = { __proto__: null,
   // public domain dedications
   "CC0-1.0": L("public-domain", 0), "Unlicense": L("public-domain", 1), "PDDL-1.0": L("public-domain", 0),
   "LicenseRef-Public-Domain": L("public-domain", 0),
@@ -106,7 +106,7 @@ const LICENSES = {
 };
 
 // Deprecated SPDX ids -> current ids (SPDX License List deprecations).
-const DEPRECATED = {
+const DEPRECATED = { __proto__: null,
   "GPL-1.0": "GPL-1.0-only", "GPL-1.0+": "GPL-1.0-or-later", "GPL-2.0": "GPL-2.0-only", "GPL-2.0+": "GPL-2.0-or-later",
   "GPL-3.0": "GPL-3.0-only", "GPL-3.0+": "GPL-3.0-or-later", "LGPL-2.0": "LGPL-2.0-only", "LGPL-2.0+": "LGPL-2.0-or-later",
   "LGPL-2.1": "LGPL-2.1-only", "LGPL-2.1+": "LGPL-2.1-or-later", "LGPL-3.0": "LGPL-3.0-only", "LGPL-3.0+": "LGPL-3.0-or-later",
@@ -120,7 +120,7 @@ const DEPRECATED = {
 
 // "+" suffix on an -only/-or-later-less id: "GPL-2.0-only+" is invalid, "LGPL-2.1+" handled above, "MPL-1.1+" = this version or later.
 // SPDX exceptions. link = linking/runtime exception that keeps the library's copyleft from reaching your code.
-const EXCEPTIONS = {
+const EXCEPTIONS = { __proto__: null,
   "Classpath-exception-2.0": { link: true }, "GCC-exception-2.0": { link: true }, "GCC-exception-3.1": { link: true },
   "LLVM-exception": { link: true }, "Linux-syscall-note": { link: true }, "Autoconf-exception-2.0": { link: true },
   "Autoconf-exception-3.0": { link: true }, "Bison-exception-2.2": { link: true }, "Libtool-exception": { link: true },
@@ -140,7 +140,7 @@ const EXC_BY_LOWER = new Map(Object.keys(EXCEPTIONS).map((k) => [k.toLowerCase()
 // Free-text license names seen in package metadata and PyPI classifiers -> SPDX.
 // Only unambiguous names are mapped; "BSD", "GPL" or "LGPL" without a version stay unknown.
 const ALIASES = (() => {
-  const m = {};
+  const m = Object.create(null);
   const add = (target, ...names) => { for (const n of names) m[aliasKey(n)] = target; };
   add("MIT", "mit", "mit license", "the mit license", "mit licence", "expat", "expat license", "mit/x11");
   add("MIT-0", "mit no attribution", "mit no attribution license", "mit-0 license");
@@ -463,7 +463,7 @@ export function evaluate(ast, policy) {
 // https://www.gnu.org/licenses/license-list.html, and the Apache Software
 // Foundation's https://www.apache.org/licenses/GPL-compatibility.html).
 // ---------------------------------------------------------------------------
-const GPL_INCOMPATIBLE = {
+const GPL_INCOMPATIBLE = { __proto__: null,
   "EPL-1.0": "The FSF lists EPL-1.0 as incompatible with the GPL (weak copyleft plus a choice-of-law clause).",
   "MPL-1.1": "The FSF lists MPL-1.1 as incompatible with the GPL.",
   "MPL-1.0": "The FSF lists MPL-1.0 as incompatible with the GPL.",

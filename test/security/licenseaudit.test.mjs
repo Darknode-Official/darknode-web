@@ -494,6 +494,14 @@ group("licenseaudit: SPDX expression parser", () => {
     assert.ok(p.ok); assert.equal(p.ast.type, "or");
     assert.ok(p.notes.some((n) => /lower-case operator/.test(n)));
   });
+  test("a license named like an Object member is unrecognised, not an inherited function", () => {
+    for (const k of ["constructor", "toString", "hasOwnProperty"]) {
+      const r = normalizeLicense(k);
+      assert.ok(!/native code|object Object/.test(JSON.stringify(r)), k);
+      assert.ok(r.notes.some((n) => n.includes("unrecognised license id")), k);
+      assert.equal(classifyLeaf({ type: "license", id: k }).known, false, k);
+    }
+  });
   test("normalizeLicense: free text, classifiers, Cargo slash form, npm specials", () => {
     assert.equal(normalizeLicense("Apache License, Version 2.0").expr, "Apache-2.0");
     assert.equal(normalizeLicense("License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)").expr, "GPL-3.0-or-later");
