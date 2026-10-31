@@ -8411,6 +8411,7 @@ html[data-style=dark] .boot-sweep {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     flex-wrap: nowrap !important;
+    justify-content: flex-start !important; /* a centred row that overflows cannot scroll to its first items */
     scrollbar-width: none;
   }
   [class$="-tabs"]::-webkit-scrollbar {
