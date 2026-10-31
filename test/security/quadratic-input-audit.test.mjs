@@ -29,4 +29,17 @@ group("Long single-character runs stay linear", () => {
     assert.equal(m.normalizeName("John (Contractor) Doe"), "john doe");
     assert.ok(timed(() => m.normalizeName("(".repeat(200000))) < 1500);
   });
+  test("risk register parseNum on a 200k digit run", async () => {
+    const m = await import(J + "risk/riskreg-engine.js");
+    assert.equal(m.parseNum("$1,250.5k"), 1250500); assert.equal(m.parseNum(".5"), 0.5); assert.equal(m.parseNum("5."), null);
+    assert.ok(timed(() => assert.equal(m.parseNum("9".repeat(200000) + "g"), null)) < 500);
+  });
+  test("IOC extraction on long dotted and letter runs", async () => {
+    for (const f of ["siem-engine.js", "threat-engine.js"]) {
+      const m = await import(J + f);
+      const r = m.extractIOCs("mail ops.team@corp.example.org from c2.evil-host.ru now");
+      assert.ok(JSON.stringify(r).includes("ops.team@corp.example.org") && JSON.stringify(r).includes("c2.evil-host.ru"), f);
+      for (const x of ["a.".repeat(100000) + "@", "1.".repeat(100000), "a".repeat(200000)]) assert.ok(timed(() => m.extractIOCs(x)) < 1500, f);
+    }
+  });
 });

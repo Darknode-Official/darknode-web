@@ -7,9 +7,9 @@
 
 const RE_IPV4 = /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g;
 const RE_IPV6 = /\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b/g;
-const RE_DOMAIN = /\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:com|net|org|io|ai|edu|gov|mil|int|info|biz|name|pro|aero|coop|museum|xyz|top|site|online|club|tech|dev|app|cloud|security|hack|cyber|onion|bit|cc|ws|tk|ml|ga|cf|gq|ru|cn|br|in|de|uk|fr|jp|au|ca|it|nl|se|no|fi|dk|pl|cz|ch|at|be|es|pt|ie|nz|sg|hk|tw|kr|za|mx|ar|co|cl|pe|ve|ec|uy|py|bo)\b/gi;
+const RE_DOMAIN = /\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.){1,127}(?:com|net|org|io|ai|edu|gov|mil|int|info|biz|name|pro|aero|coop|museum|xyz|top|site|online|club|tech|dev|app|cloud|security|hack|cyber|onion|bit|cc|ws|tk|ml|ga|cf|gq|ru|cn|br|in|de|uk|fr|jp|au|ca|it|nl|se|no|fi|dk|pl|cz|ch|at|be|es|pt|ie|nz|sg|hk|tw|kr|za|mx|ar|co|cl|pe|ve|ec|uy|py|bo)\b/gi;
 const RE_URL = /https?:\/\/[^\s"'<>\])}]+/gi;
-const RE_EMAIL = /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g;
+const RE_EMAIL = /\b[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g;
 const RE_MD5 = /\b[a-fA-F0-9]{32}\b/g;
 const RE_SHA1 = /\b[a-fA-F0-9]{40}\b/g;
 const RE_SHA256 = /\b[a-fA-F0-9]{64}\b/g;

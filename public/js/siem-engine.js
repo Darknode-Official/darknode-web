@@ -1233,7 +1233,7 @@ export function extractIOCs(text) {
   iocs.ips = [...new Set(ips.filter(ip => !ip.startsWith("0.") && !ip.startsWith("255.")))];
 
   // Domains
-  const domainRegex = /\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:com|net|org|edu|gov|mil|int|info|biz|xyz|top|club|online|site|store|tech|cloud|io|ai|co|us|uk|de|fr|ru|cn|jp|kr|br|in|au|ca|nl|se|no|fi|dk|ch|at|it|es|pt|pl|cz|ro|hu|bg|hr|sk|lt|lv|ee|onion)\b/gi;
+  const domainRegex = /\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.){1,127}(?:com|net|org|edu|gov|mil|int|info|biz|xyz|top|club|online|site|store|tech|cloud|io|ai|co|us|uk|de|fr|ru|cn|jp|kr|br|in|au|ca|nl|se|no|fi|dk|ch|at|it|es|pt|pl|cz|ro|hu|bg|hr|sk|lt|lv|ee|onion)\b/gi;
   const domains = text.match(domainRegex) || [];
   iocs.domains = [...new Set(domains.map(d => d.toLowerCase()))];
 
@@ -1252,7 +1252,7 @@ export function extractIOCs(text) {
   iocs.urls = [...new Set(text.match(urlRegex) || [])];
 
   // Emails
-  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  const emailRegex = /[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
   iocs.emails = [...new Set((text.match(emailRegex) || []).map(e => e.toLowerCase()))];
 
   // CVEs

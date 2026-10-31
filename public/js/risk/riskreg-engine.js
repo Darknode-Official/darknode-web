@@ -138,7 +138,7 @@ export function parseNum(v, { pct = false } = {}) {
   let isPct = false;
   if (s.endsWith("%")) { isPct = true; s = s.slice(0, -1); }
   s = s.replace(/[\s,_]/g, "").replace(/^[^\d.+-]+/, "").replace(/(usd|eur|gbp|inr|aud|cad|jpy|chf)$/i, "");
-  const m = /^([+-]?\d*\.?\d+(?:e[+-]?\d+)?)([kmb])?$/i.exec(s);
+  const m = /^([+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?)([kmb])?$/i.exec(s); // one way to split the digits: \d*\.?\d+ was quadratic on a long digit run
   if (!m) return null;
   let n = Number(m[1]);
   const suf = (m[2] || "").toLowerCase();
