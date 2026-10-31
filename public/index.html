@@ -104,6 +104,9 @@
 [data-boot=classic] .boot-classic{display:block}
 [data-boot=pro] .boot-pro{display:flex;flex-direction:column;align-items:center;gap:28px}
 [data-boot=pro] .boot-grid,[data-boot=pro] .boot-sweep,[data-boot=pro] .boot-ring{display:none!important}
+/* Returning visitors: no logo flash, just the colour of the page they last saw (--boot-bg, recorded on pagehide by auth.js), gone as soon as the shell is ready. */
+[data-boot=pro][data-boot-quick] #bootscreen{background:var(--boot-bg,#f4f6fa);transition:opacity .15s ease}
+[data-boot=pro][data-boot-quick] .boot-pro{display:none!important}
 .boot-pro-icon{width:56px;height:56px;opacity:0;animation:bootProIn .6s ease .1s forwards}
 .boot-pro-icon svg{width:100%;height:100%}
 .boot-pro-logo{font-size:clamp(1.4rem,3.5vw,2rem);font-weight:700;letter-spacing:.02em;color:#111;opacity:0;animation:bootProIn .5s ease .3s forwards}
@@ -126,7 +129,7 @@
   /* The Deck already titles the tool and uses the system font stack; match it. */
   html[data-embed] .pg-h1{display:none!important}
   html[data-embed] body.app{--aws-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,Helvetica,Arial,sans-serif}</style>
-  <script>!function(){var em=0;try{em=new URLSearchParams(location.search).get('embed')==='1'}catch(_){}var b='pro';try{b=localStorage.getItem('sw_boot_theme')||'pro'}catch(_){}document.documentElement.setAttribute('data-boot',b);var s='pro';try{s=localStorage.getItem('sw_style')||'pro'}catch(_){}if(s==='command'){s='pro';try{localStorage.setItem('sw_style','pro')}catch(_){}}if(em){s='pro';document.documentElement.setAttribute('data-theme','light');document.documentElement.setAttribute('data-embed','1')}document.documentElement.setAttribute('data-style',s)}()</script>
+  <script>!function(){var em=0;try{em=new URLSearchParams(location.search).get('embed')==='1'}catch(_){}var b='pro';try{b=localStorage.getItem('sw_boot_theme')||'pro'}catch(_){}document.documentElement.setAttribute('data-boot',b);try{if(localStorage.getItem('sw_booted')==='1'){document.documentElement.setAttribute('data-boot-quick','1');var bb=localStorage.getItem('sw_boot_bg')||'';if(/^rgba?\([\d.,\s%]+\)$/.test(bb))document.documentElement.style.setProperty('--boot-bg',bb)}}catch(_){}var s='pro';try{s=localStorage.getItem('sw_style')||'pro'}catch(_){}if(s==='command'){s='pro';try{localStorage.setItem('sw_style','pro')}catch(_){}}if(em){s='pro';document.documentElement.setAttribute('data-theme','light');document.documentElement.setAttribute('data-embed','1')}document.documentElement.setAttribute('data-style',s)}()</script>
   <script>!function(){try{var d=window.darknode&&window.darknode.desktop;if(!d||!Array.isArray(d.caps))return;var h=document.documentElement;h.setAttribute('data-desktop',d.platform||'1');var l=document.createElement('link');l.rel='stylesheet';l.href='/css/desktop.css';document.head.appendChild(l)}catch(_){}}()</script>
   <link rel="modulepreload" href="/js/auth.js?v=20261030d">
   <link rel="modulepreload" href="/js/firebase.js?v=20261021a">

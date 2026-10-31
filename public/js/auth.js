@@ -444,6 +444,15 @@ function afterBoot() {
   whenIdle(loadSupportChat, 6000);
   if (auth.currentUser) { preloadDictionary(); prewarmCommon(); }
 }
+// Remember the backdrop that was on screen (the Deck, or the page body) so the next load's
+// quick boot screen is painted in the same colour instead of flashing white.
+addEventListener("pagehide", () => {
+  try {
+    const el = document.querySelector(".dk") || document.body;
+    const bg = getComputedStyle(el).backgroundColor;
+    if (/^rgba?\(/.test(bg) && !/,\s*0\)$/.test(bg)) localStorage.setItem("sw_boot_bg", bg);
+  } catch (_) {}
+});
 function dismissBoot() {
   if (window.__boot) window.__boot.set(100);
   const b = document.getElementById("bootscreen"); if (!b) { afterBoot(); return; }
@@ -453,12 +462,13 @@ function dismissBoot() {
   // soon as it is ready (a short floor so the fade never cuts a frame).
   let returning = false;
   try { returning = localStorage.getItem("sw_booted") === "1"; localStorage.setItem("sw_booted", "1"); } catch (_) {}
-  const floor = returning ? 250 : (isPro ? 1200 : 2200);
+  const quick = returning && isPro; // plain backdrop, no logo (data-boot-quick): just fade it out
+  const floor = quick ? 0 : returning ? 250 : (isPro ? 1200 : 2200);
   const delay = Math.max(0, floor - elapsed);
   setTimeout(() => {
     const inner = b.querySelector(".boot-inner"); if (inner) inner.classList.add("exit");
-    setTimeout(() => { b.style.opacity = "0"; }, 150);
-    setTimeout(() => { b.remove(); afterBoot(); }, 650);
+    setTimeout(() => { b.style.opacity = "0"; }, quick ? 0 : 150);
+    setTimeout(() => { b.remove(); afterBoot(); }, quick ? 170 : 650);
   }, delay);
 }
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>

@@ -2465,14 +2465,40 @@ export function renderDeck(host, opts) {
     const sec = t && (t.dataset.tool || t.dataset.sec);
     if (!sec || live.has(sec) || !secLabel[sec] || isLocked("tool:" + sec)) return;
     // one background load at a time, so sweeping the pointer across a grid stays cheap
-    warmT = setTimeout(() => { for (const x of live.values()) if (!x.dataset.ready) return; toolFrame(sec, secLabel[sec] || t.dataset.label || sec); }, 300);
+    warmT = setTimeout(() => { for (const x of live.values()) if (!x.dataset.ready) return; toolFrame(sec, secLabel[sec] || t.dataset.label || sec); }, 120);
   });
+  // A press starts the load ~100ms before the click lands, even mid-way through another warm.
+  root.addEventListener("pointerdown", (e) => {
+    const t = e.target.closest("[data-tool],.dk-gcard[data-sec],.dk-pin[data-sec],.dk-compcard[data-sec]");
+    const sec = t && (t.dataset.tool || t.dataset.sec);
+    if (sec && !live.has(sec) && secLabel[sec] && !isLocked("tool:" + sec)) toolFrame(sec, secLabel[sec] || t.dataset.label || sec);
+  });
+  // Recently opened tools (per user), so the idle warm-up below can have them ready.
+  const LS_RTOOLS = "dn_deck_rtools_v1";
+  const loadRecentTools = () => { try { const v = JSON.parse(localStorage.getItem(userKey(LS_RTOOLS)) || "[]"); return Array.isArray(v) ? v : []; } catch (_) { return []; } };
+  const pushRecentTool = (sec) => { try { localStorage.setItem(userKey(LS_RTOOLS), JSON.stringify([sec].concat(loadRecentTools().filter((x) => x !== sec)).slice(0, 8))); } catch (_) {} };
+  // Idle warm-up: once the Deck is up, load pinned + recent tools in the background, one at
+  // a time, so the ones you actually use open instantly. Skipped on Save-Data / slow links.
+  (function warmFavourites(){
+    const c = navigator.connection;
+    if (c && (c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || ""))) return;
+    const queue = [...new Set(pins.concat(loadRecentTools()))].filter((sec) => secLabel[sec] && !isLocked("tool:" + sec)).slice(0, KEEP - 1);
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
+    const next = () => {
+      if (!root.isConnected || !queue.length) return;
+      for (const x of live.values()) if (!x.dataset.ready) { setTimeout(next, 400); return; }
+      const sec = queue.shift();
+      if (!live.has(sec)) { if (live.size >= KEEP) return; toolFrame(sec, secLabel[sec]); }
+      idle(next, { timeout: 3000 });
+    };
+    setTimeout(() => idle(next, { timeout: 3000 }), 1500);
+  })();
   function openTool(sec, label, accent){
     if (!sec) return;
     if (isLocked("tool:" + sec)) return;
     label = label || sec; curSec = sec;
     try { closeDrawer(); } catch (_) {}
-    syncUrl("/" + sec);
+    syncUrl("/" + sec); pushRecentTool(sec);
     const f = toolFrame(sec, label);
     live.forEach((x) => x.classList.toggle("off", x !== f));
     if (f.dataset.ready) wLoad.remove();
