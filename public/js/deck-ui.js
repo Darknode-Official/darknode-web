@@ -4028,7 +4028,7 @@ export function renderDeck(host, opts) {
         cta: "Start Team trial" },
       { id: "enterprise", name: "Enterprise", price: "Custom", unit: "", tag: "", a: "#2552c6",
         blurb: "Scale, compliance and deployment on your terms.",
-        feats: ["Everything in Team", "Risk & Resilience and Compliance tools", "Self-hosted / private deployment", "SSO & MFA (on the roadmap), custom roles", "Compliance pack & DPA", "Dedicated support"],
+        feats: ["Everything in Team", "Risk & Resilience and Compliance tools", "Private deployment", "SSO & MFA (on the roadmap), custom roles", "Compliance pack & DPA", "Dedicated support"],
         cta: "Contact sales" },
     ];
     // CTA depends on the effective tier: your current plan, something already

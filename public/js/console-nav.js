@@ -50,7 +50,7 @@ for (const [cat, meta] of Object.entries(TOOL_CATS)) {
 // company (search-dork launchers, shell/payload generators, pretext templates, and
 // duplicate cheat sheets). The modules stay on disk so old links still route, but
 // nothing in the menus, directory or search points at them any more.
-export const RETIRED = new Set(["prometheus", "sentineleye", "ghdb", "reverseshell", "socialeng", "payloads", "payloadgen", "payloadstudio",
+export const RETIRED = new Set(["prometheus", "sentineleye", "ghdb", "reverseshell", "socialeng", "payloads", "payloadgen", "payloadstudio", "vulndb",
   ...["w-revshell", "w-bindshell", "w-msfvenom", "w-google-dork", "w-xss-payload-gen", "w-wordlist-mangler",
     "sx-xss-mutator", "sx-unicode-bypass", "leetspeak", "sx-xss-cheatsheet", "sx-ua-list", "sx-path-wordlist"].map((id) => "tool-" + id)]);
 for (const g of NAV) g.items = g.items.filter((i) => !RETIRED.has(i.sec));
