@@ -788,7 +788,7 @@ export function parseInput(input) {
       continue;
     }
     const c = parseCounts(t);
-    if (c.rows.length) { format = format === "empty" ? "jurisdiction-counts" : format; rows.push(...c.rows.map((r) => ({ ...r, _counts: true }))); }
+    if (c.rows.length) { format = format === "empty" ? "jurisdiction-counts" : format; for (const r of c.rows) rows.push({ ...r, _counts: true }); /* one at a time: spreading 100k+ rows into push() overflows the call stack */ }
     for (const s of c.skipped) skipped.push({ check: name + ":" + s.line, reason: s.reason });
   }
   const headers = format === "jurisdiction-counts" ? ["jurisdiction", "count"] : format === "breachclock-incident" ? ["facts", "statuses", "notes"] : [];

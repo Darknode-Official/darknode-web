@@ -631,7 +631,7 @@ export function analyze(dataset, opts = {}, ctx) {
       }
     } else if (role === "training") trainingCaps = mergeCaps(trainingCaps, normalizeTraining(f, training, cx));
     else if (role === "roster") rosterCaps = mergeCaps(rosterCaps, normalizeRoster(f, roster, cx));
-    else if (role === "history") history.push(...(f.rows || []));
+    else if (role === "history") for (const r of f.rows || []) history.push(r);
     done += (f.rows || []).length;
   }
   const outcomes = [...outcomeMap.values()].map(finishOutcome).sort((a, b) => cmp(a.campaign, b.campaign) || cmp(a.email, b.email));

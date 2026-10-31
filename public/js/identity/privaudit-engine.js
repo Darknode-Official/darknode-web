@@ -492,7 +492,7 @@ export function parseInput(input, options = {}) {
           : det.source === "github-members" ? normGithubJson(doc, name) : [];
         if (det.source === "github-members" && recs.length && recs.every((r) => r.role == null)) entry.note = "no role field; owner checks need the people CSV export or a role-aware query";
         entry.headers = recs.length ? Object.keys(recs[0]).filter((k) => k[0] !== "_") : [];
-        entry.rows = recs.length; rows.push(...recs);
+        entry.rows = recs.length; for (const r of recs) rows.push(r);
         if (det.source === "unknown") skipped.push({ file: name, reason: "JSON shape not recognised (expected Entra roleAssignments, AWS authorization details, GCP IAM policy, Okta roles or GitHub members)" });
       } else if (sn.format === "csv" || sn.format === "tsv") {
         const { headers, rows: raw } = parseCsv(text, { delimiter: sn.delimiter });
@@ -513,7 +513,7 @@ export function parseInput(input, options = {}) {
           if (!cols.login) skipped.push({ file: name, reason: "GitHub CSV needs a Login column" }); else recs = normGithubCsv(raw, cols, name);
           if (!cols.twoFactor && recs.length) entry.note = "no Two-factor column; 2FA checks skipped";
         } else skipped.push({ file: name, reason: "CSV headers not recognised: " + headers.slice(0, 8).join(", ") });
-        entry.columns = cols; entry.rows = recs.length; rows.push(...recs);
+        entry.columns = cols; entry.rows = recs.length; for (const r of recs) rows.push(r);
       } else {
         skipped.push({ file: name, reason: "unsupported format: " + sn.format });
       }

@@ -18,9 +18,9 @@ import {
   TOOL_ID, CATEGORIES, STATUSES, TREATMENTS, CANON_HEADERS, MODEL_NOTE, REGISTER_SCHEMA, SETTINGS_SCHEMA, SETTINGS_ID, MAX_ITERATIONS,
   parseInput, rowsToRecords, analyze, normalizeRecord, normalizeSettings, validateRisk, withHistory, snapshotOf,
   registerToCsv, registerToJson, lecToCsv, reviewEvents, boardSummary, findingsToCsv, exampleDataset, bandsValid, parseNum,
-} from "./riskreg-engine.js?v=20261029e";
+} from "./riskreg-engine.js?v=20261030c";
 
-const ENGINE = engineUrl("./riskreg-engine.js?v=20261029e", import.meta);
+const ENGINE = engineUrl("./riskreg-engine.js?v=20261030c", import.meta);
 const P = "rsk";
 const toast = (m, t) => { try { (window.showToast || (() => {}))(m, t || "info"); } catch (_) {} };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));

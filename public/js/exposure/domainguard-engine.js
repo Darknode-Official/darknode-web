@@ -601,7 +601,7 @@ export function parseInput(input, mapping = {}) {
         info.records = z.records.length;
       } else if (det.format === "domain-list" || det.format === "domain-csv") {
         const dl = parseDomainList(text, mapping);
-        domains.push(...dl.domains); skipped.push(...dl.skipped);
+        for (const d of dl.domains) domains.push(d); for (const s of dl.skipped) skipped.push(s);
         if (dl.headers.length) { headers = dl.headers; info.headers = dl.headers; }
         if (dl.needsMapping) info.needsMapping = true;
         info.domains = dl.domains.length;

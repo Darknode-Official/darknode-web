@@ -1301,8 +1301,8 @@ export function parseInput(input) {
         for (const r of j) { if (!r || typeof r !== "object") continue; if (r.received !== undefined && r.type !== undefined && r.name === undefined) ds.push(r); else if (r.name || r.purpose) acts.push(r); }
       }
       if (!acts.length && !ds.length) { skipped.push({ check: name, reason: "no processing activities or DSAR records found in the JSON" }); continue; }
-      out.activities.push(...acts.map(normalizeActivity));
-      out.dsars.push(...ds.map(normalizeDsar));
+      for (const a of acts) out.activities.push(normalizeActivity(a));
+      for (const d of ds) out.dsars.push(normalizeDsar(d));
       if (out.format === "empty") { out.format = "dataflow-register"; out.confidence = "high"; out.kind = "register"; }
       out.files.push({ name, kind: "register", format: "Processing Register JSON", confidence: "high", count: acts.length + ds.length, activities: acts.length, dsars: ds.length });
     } else if (fmt === "csv" || fmt === "tsv") {

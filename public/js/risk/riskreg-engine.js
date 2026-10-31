@@ -638,7 +638,7 @@ export function parseInput(input) {
       const list = doc && Array.isArray(doc.risks) ? doc.risks : Array.isArray(doc) ? doc : null;
       if (list && list.some(looksLikeRecord)) {
         const recs = list.filter(looksLikeRecord).map(normalizeRecord);
-        out.records.push(...recs);
+        for (const r of recs) out.records.push(r);
         if (doc && doc.settings && typeof doc.settings === "object") out.settings = doc.settings;
         if (list.length > recs.length) out.skipped.push({ check: "import", reason: name + ": " + (list.length - recs.length) + " item(s) are not risk records" });
         out.format = "riskreg-json";
@@ -663,7 +663,7 @@ function addRows(out, name, rows, format) {
   const headers = Object.keys(rows[0]);
   const { mapping, confidence } = autoMap(headers);
   if (!out.rows.length) { out.headers = headers; out.mapping = mapping; out.confidence = confidence; }
-  out.rows.push(...rows);
+  for (const r of rows) out.rows.push(r); // one at a time: spreading 100k+ rows into push() overflows the call stack
   out.files.push({ name, format, confidence, count: rows.length });
   if (confidence === "none") out.skipped.push({ check: "import", reason: name + ": no risk title column (" + COLUMNS.title.join(", ") + ")" });
 }
