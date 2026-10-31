@@ -220,6 +220,21 @@ Windows: whoami /priv | wmic service get pathname (unquoted paths) | cmdkey /lis
 - Reference Darknode tools when relevant (e.g. "You can use the Hash Suite in the sidebar to identify this hash type")
 - Be direct and technical; when a request would only make sense as unauthorized harm, redirect it to the authorized, lab, or defensive version instead of refusing flatly`;
 
+// Claude models get their own, neutrally-framed system prompt. The DEFAULT_SYS above
+// is tuned for Gemini; its pre-authorization framing ("assume authorized", "don't
+// refuse flatly") plus the enumerated offensive-command catalog read as jailbreak-
+// shaped to Claude's strongest models, which then return a top-level refusal (an
+// empty answer) even to "hi". This leaner persona keeps Darknode's identity and
+// platform guidance, drops that framing, and lets Claude apply its own judgment to
+// each request — which is what it does on the raw API anyway.
+const CLAUDE_SYS = `You are Darknode AI, the built-in assistant for Darknode (darknode.ai), a cybersecurity platform for security professionals, students and learners.
+
+Darknode offers a large library of security tools and reference playbooks, organized in a sidebar and in a workspace called the Deck (with Overview, Tools, Toolkit, Diaries and Threat Intel tabs). When a user asks how to do something on the platform or which tool fits their task, point them to the most relevant Darknode tool or playbook and say where to find it in the sidebar.
+
+Help users with security topics and with using the platform. Give accurate, specific, technical answers, and use your own judgment as you normally would.
+
+Refer to yourself only as Darknode AI, built by Darknode. Do not name, confirm or speculate about any underlying model, vendor or provider, and do not give yourself a version number.`;
+
 // The Darknode AI models — the platform's free, no-setup assistant. They are
 // served by the built-in server proxy (the key lives only in the Worker/Cloud
 // Function env, never in the browser), so users need no API key of their own.
@@ -621,13 +636,16 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
   const STOP_ICON = '<svg viewBox="0 0 20 20" width="13" height="13"><rect x="4" y="4" width="12" height="12" rx="2.5" fill="currentColor"/></svg>';
   const setSend = (b) => { const el = $("#aiSend"); if (!el) return; el.innerHTML = b ? STOP_ICON : SEND_ICON; el.classList.toggle("is-stop", !!b); el.setAttribute("aria-label", b ? "Stop" : "Send"); el.title = b ? "Stop" : "Send"; };
   let _sysBase = localStorage.getItem(acct(SYS_KEY)) || DEFAULT_SYS;
-  function _buildSys() {
+  function _buildSys(provider) {
+    // Claude gets the leaner, refusal-safe persona unless the user set their own
+    // custom system prompt (then respect their choice verbatim).
+    let base = (provider === "anthropic" && _sysBase === DEFAULT_SYS) ? CLAUDE_SYS : _sysBase;
     let ctx = '';
     try {
       const sg = window._securityGraphContext;
       if (sg) ctx = sg();
     } catch (_) {}
-    return ctx ? _sysBase + '\n\n## Current Security Context\n' + ctx : _sysBase;
+    return ctx ? base + '\n\n## Current Security Context\n' + ctx : base;
   }
   const history = [{ role: "system", content: _buildSys() }];
 
@@ -696,9 +714,12 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
   // that AI on its own site: send the system prompt plus only the most recent turns
   // (long back-scroll rarely changes the next answer but costs tokens every call).
   const MAX_TURNS = 20;
-  const wire = (h) => {
-    const head = h.length && h[0].role === "system" ? [h[0]] : [];
-    const rest = (head.length ? h.slice(1) : h).slice(-MAX_TURNS);
+  const wire = (h, provider) => {
+    // Rebuild the system head for the target provider (Claude gets CLAUDE_SYS) so a
+    // mid-conversation model switch uses the right persona.
+    const hadSys = h.length && h[0].role === "system";
+    const head = [{ role: "system", content: _buildSys(provider) }];
+    const rest = (hadSys ? h.slice(1) : h).slice(-MAX_TURNS);
     return head.concat(rest).map((m) => {
       if (m.files && m.files.length) {
         const extra = m.files.map((f) => `\n\n--- Attached file: ${f.name} ---\n\`\`\`\n${f.content}\n\`\`\``).join("");
@@ -913,7 +934,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
       for (let step = 0; ; step++) {
         out = appendStreaming(); acc = "";
         const tools = step < MAX_TOOL_STEPS ? availableTools() : [];
-        await streamFor(provider, modelId, withTools(wire(history), tools), (t) => { acc += t; const shown = stripCall(acc); out.innerHTML = shown ? mdToHtml(shown) : (acc.includes("<tool") ? '<span class="ai-dots"><i></i><i></i><i></i></span>' : ""); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal);
+        await streamFor(provider, modelId, withTools(wire(history, provider), tools), (t) => { acc += t; const shown = stripCall(acc); out.innerHTML = shown ? mdToHtml(shown) : (acc.includes("<tool") ? '<span class="ai-dots"><i></i><i></i><i></i></span>' : ""); chatEl.scrollTop = chatEl.scrollHeight; }, ctrl.signal);
         const call = tools.length ? parseCall(acc, tools) : null;
         if (!call) {
           history.push({ role: "assistant", content: acc || "" });
@@ -962,7 +983,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     const { provider, modelId } = curModel();
     if (!_key(provider) && !PROXY_PROVIDERS.has(provider)) { status.textContent = "No API key for " + provider + " — add one in Settings → API Keys."; return; }
     const base = history[i].content || "";
-    const msgs = wire(history).concat([{ role: "user", content: "Continue exactly where you left off. Do not repeat anything you have already written." }]);
+    const msgs = wire(history, provider).concat([{ role: "user", content: "Continue exactly where you left off. Do not repeat anything you have already written." }]);
     busy = true; ctrl = new AbortController(); setSend(true);
     const myCtrl = ctrl;
     const out = appendStreaming(); let acc = "";

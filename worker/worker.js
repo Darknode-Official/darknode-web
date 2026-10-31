@@ -433,6 +433,9 @@ function streamBack(upstream, isGemini, opts = {}) {
               const j = JSON.parse(payload);
               if (j.type === "content_block_delta" && j.delta && j.delta.type === "text_delta" && j.delta.text) controller.enqueue(enc.encode(sseChunk(j.delta.text)));
               else if (j.type === "error") controller.enqueue(enc.encode(sseChunk("\n\n[Claude error: " + String((j.error && j.error.message) || "stream failed").slice(0, 200) + "]")));
+              // A refusal ends the message with stop_reason "refusal" and no text block,
+              // which would otherwise reach the user as a blank answer. Surface it.
+              else if (j.type === "message_delta" && j.delta && j.delta.stop_reason === "refusal") controller.enqueue(enc.encode(sseChunk("This request was declined. Claude won't help with this one as written — try rephrasing toward the defensive, detection, or authorized-lab angle, or switch to another model.")));
             } catch (_) { /* partial */ }
           } else if (fmt === "gemini") {
             try {

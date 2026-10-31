@@ -41,6 +41,17 @@ group("worker: server-held Claude", () => {
     assert.ok(!out.includes("secret") && !out.includes("event:"));
     assert.equal(out.match(/\[DONE\]/g).length, 1);
   });
+  test("a refusal (stop_reason refusal, no text block) is surfaced, not a blank answer", async () => {
+    const ev = (o) => "event: x\ndata: " + JSON.stringify(o) + "\n\n";
+    const up = new Response(ev({ type: "message_start" })
+      + ev({ type: "message_delta", delta: { stop_reason: "refusal", stop_details: { type: "refusal", category: "cyber" } } })
+      + ev({ type: "message_stop" }));
+    const out = await (claudeStream(up)).text();
+    const texts = out.split("\n").filter((l) => l.startsWith("data: ") && l !== "data: [DONE]").map((l) => JSON.parse(l.slice(6)).choices[0].delta.content);
+    assert.equal(texts.length, 1);
+    assert.ok(/declined/i.test(texts[0]), texts[0]);
+    assert.equal(out.match(/\[DONE\]/g).length, 1);
+  });
   test("a first chunk with no text (message_start alone) does not stall the stream", async () => {
     const enc = new TextEncoder();
     const chunks = [{ type: "message_start" }, { type: "ping" }, { type: "content_block_delta", delta: { type: "text_delta", text: "ok" } }, { type: "message_stop" }]
@@ -83,5 +94,19 @@ group("no Anthropic key in the repo", () => {
     for (const d of ["public", "worker", "scripts", "docs", "functions"]) { try { walk(join(root, d)); } catch (_) {} }
     for (const f of ["README.md", "firebase.json"]) { try { if (KEY.test(readFileSync(join(root, f), "utf8"))) hits.push(f); } catch (_) {} }
     assert.deepEqual(hits, []);
+  });
+});
+
+group("Claude persona is refusal-safe", () => {
+  test("webai.js defines CLAUDE_SYS, used for the anthropic provider, without the jailbreak-shaped Gemini framing", () => {
+    const root = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+    const src = readFileSync(join(root, "public/js/webai.js"), "utf8");
+    assert.ok(/const CLAUDE_SYS = `/.test(src), "CLAUDE_SYS missing");
+    const sys = src.slice(src.indexOf("const CLAUDE_SYS = `") + 20, src.indexOf("`;", src.indexOf("const CLAUDE_SYS = `")));
+    // The persona Claude's strongest models refuse: pre-authorization + "don't refuse" + raw offensive command catalog.
+    for (const bad of ["assume authorized", "refusing flatly", "reverse shell", "sqlmap", "--os-shell", "Credential Dumping"])
+      assert.ok(!new RegExp(bad, "i").test(sys), "CLAUDE_SYS should not contain: " + bad);
+    assert.ok(sys.length < 2000, "CLAUDE_SYS should stay lean, was " + sys.length);
+    assert.ok(/anthropic.*CLAUDE_SYS|CLAUDE_SYS.*anthropic/s.test(src.replace(/\n/g, " ")), "CLAUDE_SYS is not wired to the anthropic provider");
   });
 });
