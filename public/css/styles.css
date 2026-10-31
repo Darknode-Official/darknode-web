@@ -8709,6 +8709,15 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .ai2-model:hover { border-color: color-mix(in srgb, var(--acc) 45%, var(--line)); }
 .ai2-model:focus { outline: none; border-color: var(--acc); }
 .ai2-model-caret { position: absolute; right: 10px; pointer-events: none; color: var(--mut); }
+/* In-page model menu: the native option popup is drawn outside page CSS (and outside the
+   Deck's invert filter), so it showed unthemed system colours. */
+.ai2-mmenu { position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 50; min-width: 240px; max-width: 340px; max-height: 340px; overflow-y: auto; padding: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); color: var(--txt); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+.ai2-mmenu[hidden] { display: none; }
+.ai2-mgroup { padding: 8px 10px 4px; font-size: .68rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--mut); }
+.ai2-mopt { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; font-size: .8rem; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai2-mopt:is(:hover, .is-active) { background: color-mix(in srgb, var(--acc) 14%, transparent); }
+.ai2-mopt[aria-selected=true] { font-weight: 600; }
+.ai2-mopt[aria-selected=true]::after { content: ""; margin-left: auto; flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
 .ai2-tool { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 32px; min-width: 32px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--mut); cursor: pointer; font-size: .8rem; }
 .ai2-tool:hover { background: var(--card2); color: var(--txt); }
 .ai2-tool-txt { padding: 0 10px; }
