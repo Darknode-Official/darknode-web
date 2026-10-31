@@ -1,0 +1,50 @@
+# CI (architecture plan, Phase 0): every pull request and push runs the full test
+# suite and proves the Cloudflare Worker still bundles for production and staging.
+# Both jobs must be green before a PR merges. The suite has no dependencies, so
+# there is no install step.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Tests
+        run: npm test
+
+  worker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bundle production Worker (dry run, no credentials)
+        run: npx --yes wrangler@4 deploy --dry-run --env="" --outdir "$RUNNER_TEMP/wr-prod"
+      - name: Bundle staging Worker (dry run, no credentials)
+        run: npx --yes wrangler@4 deploy --dry-run --env staging --outdir "$RUNNER_TEMP/wr-staging"
