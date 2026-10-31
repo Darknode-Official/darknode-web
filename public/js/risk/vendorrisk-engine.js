@@ -432,8 +432,8 @@ export const CHECKS = [
   { id: "rdap", label: "Domain registration", category: "registration" },
   { id: "leak", label: "Ransomware leak trackers", category: "exposure" },
 ];
-const CHECK_ORDER = Object.fromEntries(CHECKS.map((c, i) => [c.id, i]));
-const STATUS_SCORE = { pass: 100, warn: 55, fail: 0 };
+const CHECK_ORDER = Object.assign(Object.create(null), Object.fromEntries(CHECKS.map((c, i) => [c.id, i])));
+const STATUS_SCORE = { __proto__: null, pass: 100, warn: 55, fail: 0 };
 export const DNS_TYPES = { A: 1, NS: 2, CNAME: 5, MX: 15, TXT: 16, DS: 43, CAA: 257 };
 
 /** Decode Answer data of one RR type from a DoH JSON response (dns.google or cloudflare-dns.com shape). */
@@ -711,7 +711,7 @@ export function postureScore(results) {
     }
     const cs = Object.keys(cats).sort().map((k) => ({ category: k, score: Math.round(cats[k].reduce((a, b) => a + b, 0) / cats[k].length) }));
     const score = cs.length ? Math.round(cs.reduce((a, c) => a + c.score, 0) / cs.length) : null;
-    const counts = { pass: 0, warn: 0, fail: 0, error: 0, skip: 0, info: 0 };
+    const counts = { __proto__: null, pass: 0, warn: 0, fail: 0, error: 0, skip: 0, info: 0 };
     for (const r of rs) counts[r.status] = (counts[r.status] || 0) + 1;
     domains.push({ domain, score, grade: letterGrade(score), categories: cs, counts });
   }

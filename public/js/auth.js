@@ -2157,7 +2157,7 @@ function renderApp(user) {
     else if (sec === "breachclock") { import("/js/risk/breachclock.js?v=20261030c").then(m => live() && m.renderBreachClock(main)); }
     else if (sec === "riskreg") { import("/js/risk/riskreg.js?v=20261030c").then(m => live() && m.renderRiskRegister(main)); }
     else if (sec === "evidence") { import("/js/compliance/evidence.js?v=20261029e").then(m => live() && m.renderEvidence(main)); }
-    else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261029e").then(m => live() && m.renderVendorRisk(main)); }
+    else if (sec === "vendorrisk") { import("/js/risk/vendorrisk.js?v=20261030c").then(m => live() && m.renderVendorRisk(main)); }
     else if (sec === "backupready") { import("/js/risk/backupready.js?v=20261029c").then(m => live() && m.renderBackupReady(main)); }
     else if (sec === "dmarcreports") { import("/js/exposure/dmarcreports.js?v=20261029e").then(m => live() && m.renderDmarcReports(main)); }
     else if (sec === "domainguard") { import("/js/exposure/domainguard.js?v=20261030c").then(m => live() && m.renderDomainGuard(main)); }

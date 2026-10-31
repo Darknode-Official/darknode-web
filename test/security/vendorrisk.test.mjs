@@ -199,6 +199,13 @@ group("vendorrisk: posture grading from fixture responses", () => {
     const rs = [{ domain: "a", check: "spf", status: "pass" }, { domain: "a", check: "leak", status: "fail" }];
     assert.equal(postureScore(rs).grade, "A");
   });
+  test("a status or check named like an Object member does not turn the grade into NaN", () => {
+    for (const k of ["constructor", "toString", "__proto__"]) {
+      const p = postureScore([{ domain: "a", check: "spf", status: k }, { domain: "a", check: k, status: "fail" }, { domain: "a", check: "dmarc", status: "pass" }]);
+      assert.equal(p.score, 100, k);
+      assert.equal(p.domains[0].counts[k], 1, k);
+    }
+  });
   test("registrable domain guess", () => {
     assert.equal(registrableGuess("pay.quillcard.test.darknode.ai"), "darknode.ai");
     assert.equal(registrableGuess("a.b.example.co.uk"), "example.co.uk");
