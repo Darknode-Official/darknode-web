@@ -162,7 +162,7 @@ const SIDE_DESC = {
   vulndb: "Searchable database of known vulnerabilities.",
   supplychain: "Assess the risk in your software supply chain.",
   // Network Analysis
-  networkscanner: "Scan a network for live hosts and open ports.",
+  networkscanner: "Look up a host's recorded open ports and possible CVEs (Shodan InternetDB) and check HTTP/HTTPS.",
   networktools: "General-purpose networking utilities.",
   packetanalyzer: "Break captured packets down protocol-by-protocol.",
   sslinspector: "Check a site's SSL/TLS certificate and cipher suites.",
@@ -190,7 +190,7 @@ const SIDE_DESC = {
   codescan: "Scan a GitHub repository or local folder for leaked secrets, risky code and vulnerable dependencies, then jump to the exact line.",
   threatforest: "Turn weaknesses found in source code into attack trees mapped to CWE, CAPEC, MITRE ATT&CK and STRIDE.",
   embedsdk: "Generate an iframe or snippet to embed any Darknode tool in another site.",
-  mcpconnect: "Connect other apps and AI agents to Darknode tools via MCP, embeds and a read-only API.",
+  mcpconnect: "Connect other apps and AI agents to Darknode tools via MCP and embeds.",
   zerotrust: "Plan a zero-trust security architecture.",
   // Crypto & Encoding
   credaudit: "Audit credentials against breach lists and password policy.",

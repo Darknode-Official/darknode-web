@@ -6206,7 +6206,6 @@ html[data-style=dark].crt body::after {
 }
 
 /* ═══ DNS Enumeration ═══ */
-[data-style=pro] .de-wrap { background: #fff !important; color: #18181b !important; }
 [data-style=pro] .de-header { background: linear-gradient(135deg, #eff6ff, #dbeafe) !important; border-bottom: 1px solid #e2e8f0 !important; }
 [data-style=pro] .de-header h2 { color: #1e293b !important; }
 [data-style=pro] .de-tabs { background: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; }

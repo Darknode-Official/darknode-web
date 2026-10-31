@@ -1687,7 +1687,7 @@ export function renderDeck(host, opts) {
     "payloads", "payloadgen", "payloadstudio", "packetcraft", "privesc", "cracklab",
     "xsslab", "pentestconsole",
     "favicon", "reconplanner", "netmap", "stego",
-    "math", "dataviz", "engines", "education", "downloads", "dlguide", "setup", "privatecloud"
+    "math", "dataviz", "engines", "education", "downloads", "dlguide", "setup", "privatecloud", "embedsdk"
   ]);
   const groups = (opts.groups || [])
     .filter((g) => g.items && g.items.length && !DECK_DENY_GROUPS.has(g.id))
