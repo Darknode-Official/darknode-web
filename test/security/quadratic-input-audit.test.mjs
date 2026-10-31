@@ -41,12 +41,14 @@ group("Long single-character runs stay linear", () => {
     assert.equal(m.parseNum("$1,250.5k"), 1250500); assert.equal(m.parseNum(".5"), 0.5); assert.equal(m.parseNum("5."), null);
     assert.ok(timed(() => assert.equal(m.parseNum("9".repeat(200000) + "g"), null)) < 500);
   });
+  // The bounded {1,64} patterns are linear with a large constant: ~120ms locally but
+  // ~1.7s on a GitHub runner under Node 22. The old unbounded patterns took minutes here.
   test("IOC extraction on long dotted and letter runs", async () => {
     for (const f of ["siem-engine.js", "threat-engine.js"]) {
       const m = await import(J + f);
       const r = m.extractIOCs("mail ops.team@corp.example.org from c2.evil-host.ru now");
       assert.ok(JSON.stringify(r).includes("ops.team@corp.example.org") && JSON.stringify(r).includes("c2.evil-host.ru"), f);
-      for (const x of ["a.".repeat(100000) + "@", "1.".repeat(100000), "a".repeat(200000)]) { const ms = timed(() => m.extractIOCs(x)); assert.ok(ms < 1500, f + " " + JSON.stringify(x.slice(0, 4)) + " took " + ms + "ms"); }
+      for (const x of ["a.".repeat(100000) + "@", "1.".repeat(100000), "a".repeat(200000)]) { const ms = timed(() => m.extractIOCs(x)); assert.ok(ms < 5000, f + " " + JSON.stringify(x.slice(0, 4)) + " took " + ms + "ms"); }
     }
   });
 });
