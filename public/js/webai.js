@@ -245,7 +245,7 @@ Refer to yourself only as Darknode AI, built by Darknode. Do not name, confirm o
 const DARKNODE_MODELS = [
   { id: "gemini-flash-latest", name: "Darknode Core", provider: "gemini", group: "Darknode AI", sub: "auto-updating" },
   { id: "gemini-3.8-flash", name: "Darknode Max", provider: "gemini", group: "Darknode AI", sub: "newest" },
-  { id: "gemini-3.5-flash", name: "Darknode Pro", provider: "gemini", group: "Darknode AI", sub: "recommended" },
+  { id: "gemini-3.5-flash", name: "Darknode Balanced", provider: "gemini", group: "Darknode AI", sub: "recommended" },
   { id: "gemini-flash-lite-latest", name: "Darknode Swift", provider: "gemini", group: "Darknode AI", sub: "fastest" },
 ];
 
@@ -422,10 +422,10 @@ function looksLikeRefusal(text) {
 const PRESETS = [
   ["Explain code", "Explain what this code does, step by step:\n\n"],
   ["Find vulns", "Review this code for security vulnerabilities and list concrete issues with fixes:\n\n"],
-  ["Write PoC", "Write a proof-of-concept exploit for this (authorized testing):\n\n"],
+  ["Write a detection", "Write a detection rule for this (Sigma, plus an equivalent SIEM query) and note likely false positives:\n\n"],
   ["Explain this CVE", "Explain this CVE in depth — impact, affected versions, exploitation, and remediation:\n\n"],
   ["Nuclei template", "Write a nuclei YAML template that detects this vulnerability:\n\n"],
-  ["Engagement report", "Draft a professional penetration-test report section for this finding (summary, risk rating, evidence, remediation):\n\n"],
+  ["Finding write-up", "Write up this security finding for a report: summary, risk rating, evidence and remediation:\n\n"],
   ["To Python", "Convert this to clean, idiomatic Python:\n\n"],
   ["Regex for", "Write a single regex that matches: "],
   ["One-liner", "Give me a shell one-liner to: "],
