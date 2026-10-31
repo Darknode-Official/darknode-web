@@ -15,6 +15,8 @@ const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&':
 // ============================================================================
 // THREAT ACTOR DATABASE (30+ APT groups)
 // ============================================================================
+// Quoted CSV cell; a leading = + - @ tab or CR is prefixed with ' so a spreadsheet will not run it as a formula.
+const csvCell = (v) => { let s = String(v == null ? "" : v); if (/^[=+@\t\r]/.test(s) || (/^-/.test(s) && !/^-\d+(\.\d+)?$/.test(s))) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
 const APT_DB = [
   { id: 'apt28', name: 'APT28', aliases: ['Fancy Bear', 'Sofacy', 'Sednit', 'STRONTIUM'], nation: 'Russia', agency: 'GRU Unit 26165', motivation: 'Espionage', sectors: ['Government', 'Military', 'Media', 'Energy'], since: 2004, techniques: ['T1566', 'T1059', 'T1027', 'T1071', 'T1078', 'T1190'], campaigns: ['DNC Hack 2016', 'Bundestag Attack', 'IAAF Breach'], iocs: ['185.86.148.0/24', 'sednitspy.com', '5d2b4e3c7a1f8e9d0b6c'] },
   { id: 'apt29', name: 'APT29', aliases: ['Cozy Bear', 'The Dukes', 'NOBELIUM', 'Midnight Blizzard'], nation: 'Russia', agency: 'SVR', motivation: 'Espionage', sectors: ['Government', 'Think Tanks', 'Healthcare', 'Technology'], since: 2008, techniques: ['T1195', 'T1059', 'T1071', 'T1027', 'T1053', 'T1098'], campaigns: ['SolarWinds', 'COVID-19 Vaccine Theft', 'Microsoft 365 Abuse'], iocs: ['avsvmcloud.com', '13.59.205.66', 'dblbnd4jx3ftgd'] },
@@ -1089,7 +1091,7 @@ export function renderOracle(main) {
     };
     c.querySelector('#or-export-csv').onclick = function() {
       var csv = 'Type,Value,Severity,Confidence,Tags,Source,Added\n' + filtered.map(function(i) {
-        return [i.type, '"' + i.value + '"', i.severity, i.confidence, '"' + (i.tags || []).join(';') + '"', i.source, i.added].join(',');
+        return [i.type, i.value, i.severity, i.confidence, (i.tags || []).join(';'), i.source, i.added].map(csvCell).join(',');
       }).join('\n');
       var blob = new Blob([csv], { type: 'text/csv' });
       var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'oracle-iocs.csv'; a.click();
@@ -1802,7 +1804,7 @@ export function renderOracle(main) {
       if (!enrichResults) return;
       var csv = 'Indicator,Defanged,Type,Attribution\n' + enrichResults.map(function(r) {
         var attr = r.actors.map(function(h) { return h.actor + (h.kind === 'near' ? ' (near)' : ''); }).join('; ');
-        return ['"' + r.refanged + '"', '"' + r.defanged + '"', r.type, '"' + attr + '"'].join(',');
+        return [r.refanged, r.defanged, r.type, attr].map(csvCell).join(',');
       }).join('\n');
       var blob = new Blob([csv], { type: 'text/csv' });
       var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'oracle-enrichment.csv'; a.click();

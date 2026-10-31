@@ -1117,7 +1117,7 @@ export function analyze(dataset, opts = {}, ctx) {
 // Exports
 // ---------------------------------------------------------------------------
 // Quote every cell; neutralise spreadsheet formula prefixes (CSV injection) in text values.
-const q = (v) => { let s = v == null ? "" : Array.isArray(v) ? v.join(" ") : String(v); if (typeof v !== "number" && /^(?:[=+@\t\r]|-(?!\d))/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+const q = (v) => { let s = v == null ? "" : Array.isArray(v) ? v.join(" ") : String(v); if (typeof v !== "number" && /^(?:[=+@\t\r]|-(?!\d+(?:\.\d+)?$))/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
 const csv = (cols, rows) => [cols.join(","), ...(rows || []).map((r) => cols.map((c) => q(r[c])).join(","))].join("\n");
 
 const FINDING_COLS = ["severity", "confidence", "category", "check", "title", "description", "recommendation", "controls", "assets", "evidenceCount"];

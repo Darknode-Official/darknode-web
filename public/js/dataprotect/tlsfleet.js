@@ -16,6 +16,8 @@ import { tlsFleetFindings, tlsFleetHeld } from "/js/dataprotect/dp-sink.js";
 
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Quoted CSV cell; a leading = + - @ tab or CR is prefixed with ' so a spreadsheet will not run it as a formula.
+const csvCell = (v) => { let s = String(v == null ? "" : v); if (/^[=+@\t\r]/.test(s) || (/^-/.test(s) && !/^-\d+(\.\d+)?$/.test(s))) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
 const toast = (m) => { try { (window.showToast || (() => {}))(m); } catch (_) {} };
 
 function lsKey() { let uid = "anon"; try { uid = window.__dnUid || "anon"; } catch (_) {} return "dn_tlswatch_" + uid; }
@@ -213,7 +215,7 @@ export function renderTlsFleet(main) {
     const head = "domain,status,days_left,expires,issuer,hsts\n";
     const body = store.domains.map((d) => {
       const e = store.entries[d] || {};
-      return [d, (e.band && e.band.level) || "unknown", e.daysLeft == null ? "" : e.daysLeft, e.notAfter || "", (e.issuer || "").replace(/,/g, " "), e.hsts === true ? "yes" : e.hsts === false ? "no" : ""].join(",");
+      return [d, (e.band && e.band.level) || "unknown", e.daysLeft == null ? "" : e.daysLeft, e.notAfter || "", e.issuer || "", e.hsts === true ? "yes" : e.hsts === false ? "no" : ""].map(csvCell).join(",");
     }).join("\n");
     try {
       const blob = new Blob([head + body], { type: "text/csv" });
