@@ -154,7 +154,7 @@ export function renderMobileSecurityLab(main) {
     }).join('');
 
     main.innerHTML =
-      '<h1 class="pg-h1">Mobile Security Lab</h1>' +
+      '<h1 class="pg-h1">Mobile Security</h1>' +
       '<p class="muted pg-sub">Android and iOS security testing reference — permission analysis, ADB commands, Frida scripts, and pentest methodology.</p>' +
       '<div class="tab-bar" style="overflow-x:auto;flex-wrap:nowrap">' + tabsHtml + '</div>' +
       '<div id="msl-content" style="margin-top:12px"></div>';

@@ -33,33 +33,33 @@ var _nsCommonPorts = [
 
 export function renderNetworkScanner(container) {
   var h = '';
-  h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:20px;min-height:600px;">';
-  h += '<h2 style="color:#00ddff;font-size:18px;letter-spacing:2px;margin:0 0 4px;">NETWORK SCANNER</h2>';
-  h += '<div style="color:#4a6a8a;font-size:11px;margin-bottom:20px;">Port reachability, DNS resolution, HTTP probing — all from the browser</div>';
+  h += '<div>';
+  h += '<div class="pg-head"><div><h1 class="pg-h1">Network Scanner</h1>';
+  h += '<p class="muted pg-sub">Port reachability, DNS resolution and HTTP probing from the browser.</p></div></div>';
 
   // Input
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:16px;">';
+  h += '<div class="card">';
   h += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
-  h += '<input id="ns-target" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="example.com or IP address">';
-  h += '<button onclick="_nsQuickScan()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Quick Scan</button>';
-  h += '<button onclick="_nsFullScan()" style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Full Scan</button>';
+  h += '<input id="ns-target" style="flex:1;" placeholder="example.com or IP address">';
+  h += '<button class="btn" onclick="_nsQuickScan()">Quick Scan</button>';
+  h += '<button class="btn ghost" onclick="_nsFullScan()">Full Scan</button>';
   h += '</div>';
-  h += '<div style="color:#4a6a8a;font-size:9px;">Quick scan checks common web ports (80, 443, 8080, 8443). Full scan checks all 23 common ports. Uses HTTP/HTTPS fetch timing.</div>';
+  h += '<div style="color:var(--mut);font-size:12px;">Quick scan checks common web ports (80, 443, 8080, 8443). Full scan checks all 23 common ports. Uses HTTP/HTTPS fetch timing.</div>';
   h += '</div>';
 
   // Results
   h += '<div id="ns-results"></div>';
 
   // Port reference
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-top:16px;">';
-  h += '<div style="color:#00aaff;font-size:12px;font-weight:bold;margin-bottom:10px;">COMMON PORTS REFERENCE</div>';
+  h += '<div class="card" style="margin-top:16px;">';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin-bottom:10px;">Common ports reference</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;">';
   for (var p = 0; p < _nsCommonPorts.length; p++) {
     var port = _nsCommonPorts[p];
     var catColor = { web: '#00aaff', remote: '#ff6644', mail: '#ffaa00', db: '#aa66ff', file: '#00ff88', infra: '#44cc44' }[port.category] || '#4a6a8a';
-    h += '<div style="background:#080c14;border:1px solid #1a2a44;border-radius:3px;padding:4px 8px;font-size:10px;display:flex;justify-content:space-between;">';
+    h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:3px;padding:4px 8px;font-size:12px;display:flex;justify-content:space-between;">';
     h += '<span style="color:' + catColor + ';font-weight:bold;">' + port.port + '</span>';
-    h += '<span style="color:#6a8aaa;">' + esc(port.service) + '</span>';
+    h += '<span style="color:var(--mut);">' + esc(port.service) + '</span>';
     h += '</div>';
   }
   h += '</div>';
@@ -118,15 +118,15 @@ function _nsScan(host, ports) {
   var results = document.getElementById('ns-results');
   if (!results) return;
 
-  results.innerHTML = '<div style="color:#ffaa00;font-size:12px;font-family:monospace;padding:16px;text-align:center;">Scanning ' + esc(host) + ' — ' + ports.length + ' ports...</div>';
+  results.innerHTML = '<div style="color:var(--warn);font-size:12px;font-family:monospace;padding:16px;text-align:center;">Scanning ' + esc(host) + ' — ' + ports.length + ' ports...</div>';
 
   // DNS resolution first
   var h = '';
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-bottom:12px;">';
-  h += '<div style="color:#00ddff;font-size:12px;font-weight:bold;margin-bottom:8px;">SCAN RESULTS: ' + esc(host) + '</div>';
-  h += '<div id="ns-dns-info" style="margin-bottom:10px;"><span style="color:#ffaa00;font-size:10px;">Resolving DNS...</span></div>';
+  h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:12px;">';
+  h += '<div style="color:var(--acc);font-size:12px;font-weight:bold;margin-bottom:8px;">SCAN RESULTS: ' + esc(host) + '</div>';
+  h += '<div id="ns-dns-info" style="margin-bottom:10px;"><span style="color:var(--warn);font-size:12px;">Resolving DNS...</span></div>';
   h += '<div id="ns-port-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;"></div>';
-  h += '<div id="ns-scan-progress" style="margin-top:10px;color:#4a6a8a;font-size:10px;">0/' + ports.length + ' ports scanned</div>';
+  h += '<div id="ns-scan-progress" style="margin-top:10px;color:var(--mut);font-size:12px;">0/' + ports.length + ' ports scanned</div>';
   h += '</div>';
   results.innerHTML = h;
 
@@ -137,14 +137,14 @@ function _nsScan(host, ports) {
       var dnsEl = document.getElementById('ns-dns-info');
       if (dnsEl && data.Answer) {
         var ips = data.Answer.filter(function(a) { return a.type === 1; }).map(function(a) { return a.data; });
-        dnsEl.innerHTML = '<span style="color:#00ff88;font-size:10px;">DNS: ' + esc(host) + ' &#8594; ' + ips.map(function(ip) { return esc(ip); }).join(', ') + '</span>';
+        dnsEl.innerHTML = '<span style="color:var(--ok);font-size:12px;">DNS: ' + esc(host) + ' &#8594; ' + ips.map(function(ip) { return esc(ip); }).join(', ') + '</span>';
       } else if (dnsEl) {
-        dnsEl.innerHTML = '<span style="color:#ff4444;font-size:10px;">DNS resolution failed</span>';
+        dnsEl.innerHTML = '<span style="color:var(--bad);font-size:12px;">DNS resolution failed</span>';
       }
     })
     .catch(function() {
       var dnsEl = document.getElementById('ns-dns-info');
-      if (dnsEl) dnsEl.innerHTML = '<span style="color:#ff4444;font-size:10px;">DNS lookup unavailable (network or DoH blocked)</span>';
+      if (dnsEl) dnsEl.innerHTML = '<span style="color:var(--bad);font-size:12px;">DNS lookup unavailable (network or DoH blocked)</span>';
     });
 
   // Port scan
@@ -170,14 +170,14 @@ function _nsScan(host, ports) {
 
         if (grid) {
           var card = document.createElement('div');
-          card.style.cssText = 'background:' + statusBg + ';border:1px solid ' + statusColor + '33;border-radius:4px;padding:8px 10px;font-size:10px;';
+          card.style.cssText = 'background:' + statusBg + ';border:1px solid ' + statusColor + '33;border-radius:4px;padding:8px 10px;font-size:12px;';
           card.innerHTML =
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
-            '<span style="color:#00aaff;font-weight:bold;font-size:12px;">' + port + '</span>' +
-            '<span style="color:' + statusColor + ';font-weight:bold;font-size:9px;padding:1px 6px;background:' + statusColor + '15;border:1px solid ' + statusColor + '33;border-radius:2px;">' + result.status.toUpperCase() + '</span>' +
+            '<span style="color:var(--acc);font-weight:bold;font-size:12px;">' + port + '</span>' +
+            '<span style="color:' + statusColor + ';font-weight:bold;font-size:12px;padding:1px 6px;background:' + statusColor + '15;border:1px solid ' + statusColor + '33;border-radius:2px;">' + result.status.toUpperCase() + '</span>' +
             '</div>' +
-            '<div style="color:#6a8aaa;">' + (portInfo ? esc(portInfo.service) : 'Unknown') + '</div>' +
-            '<div style="color:#3a5a7a;font-size:9px;">' + result.time + 'ms</div>';
+            '<div style="color:var(--mut);">' + (portInfo ? esc(portInfo.service) : 'Unknown') + '</div>' +
+            '<div style="color:var(--mut);font-size:12px;">' + result.time + 'ms</div>';
           grid.appendChild(card);
         }
 

@@ -107,7 +107,7 @@ export function renderPrivAudit(main) {
 
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Privileged Access</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Privileged Access</h1></div>',
     '<p class="', P, '-sub">Standing, stale and over-broad administrator access across Microsoft Entra, AWS IAM, GCP, Okta and GitHub exports. Runs entirely in your browser. Nothing is uploaded and nothing is fetched live.</p>',
     '<div class="', P, '-card"><h2>Inputs</h2><div class="', P, '-drop" id="', P, '-drop"></div>',
     '<p class="', P, '-help">Accepted: Entra "Download assignments" CSV or Graph roleAssignments / roleEligibilityScheduleInstances JSON; AWS credential report CSV; aws iam get-account-authorization-details JSON; gcloud projects get-iam-policy JSON; Okta administrators CSV or role JSON; GitHub organization people CSV or members JSON. Drop any combination; each file is detected on its own.</p>',

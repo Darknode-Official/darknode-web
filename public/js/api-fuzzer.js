@@ -290,7 +290,7 @@ export function renderAPIFuzzer(container) {
       </style>
       <div class="af-wrap">
         <div class="af-header">
-          <h2>API Security Fuzzer</h2>
+          <h2>API Fuzzer</h2>
           <p>HTTP request builder, payload library & automated API fuzz testing</p>
         </div>
         <div class="af-tabs">

@@ -75,30 +75,30 @@ var _tfSignatures = [
 
 export function renderTechFingerprint(container) {
   var h = '';
-  h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:20px;min-height:500px;">';
-  h += '<h2 style="color:#00ddff;font-size:18px;letter-spacing:2px;margin:0 0 4px;">TECHNOLOGY FINGERPRINTER</h2>';
-  h += '<div style="color:#4a6a8a;font-size:11px;margin-bottom:20px;">Identify web technologies, servers, CDNs, frameworks, and security configurations</div>';
+  h += '<div>';
+  h += '<div class="pg-head"><div><h1 class="pg-h1">Tech Fingerprint</h1>';
+  h += '<p class="muted pg-sub">Identify the web technologies, servers, CDNs and frameworks behind a site from its real response headers and HTML.</p></div></div>';
 
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:16px;">';
+  h += '<div class="card">';
   h += '<div style="display:flex;gap:8px;">';
-  h += '<input id="tf-url" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="https://example.com">';
-  h += '<button onclick="_tfScan()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 20px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Fingerprint</button>';
+  h += '<input id="tf-url" style="flex:1;" placeholder="https://example.com">';
+  h += '<button class="btn" onclick="_tfScan()">Fingerprint</button>';
   h += '</div>';
-  h += '<div style="color:#3a5a7a;font-size:9px;margin-top:6px;">Fetches the target server-side through the Darknode SSRF-guarded proxy and fingerprints technologies from the real response headers and HTML body. Public hosts only.</div>';
+  h += '<div style="color:var(--mut);font-size:12px;margin-top:8px;">Fetches the target server-side through the Darknode SSRF-guarded proxy and fingerprints technologies from the real response headers and HTML body. Public hosts only.</div>';
   h += '</div>';
 
   h += '<div id="tf-results"></div>';
 
   // Signature database reference
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-top:16px;">';
-  h += '<div style="color:#00aaff;font-size:12px;font-weight:bold;margin-bottom:10px;">DETECTION SIGNATURES (' + _tfSignatures.length + ')</div>';
+  h += '<div class="card" style="margin-top:16px;">';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin-bottom:10px;">Detection signatures (' + _tfSignatures.length + ')</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:4px;">';
   for (var s = 0; s < _tfSignatures.length; s++) {
     var sig = _tfSignatures[s];
-    h += '<div style="background:#080c14;border:1px solid #1a2a44;border-radius:3px;padding:4px 8px;font-size:9px;display:flex;align-items:center;gap:6px;">';
+    h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:3px;padding:4px 8px;font-size:12px;display:flex;align-items:center;gap:6px;">';
     h += '<span style="width:6px;height:6px;border-radius:50%;background:' + sig.color + ';flex-shrink:0;"></span>';
-    h += '<span style="color:#c8d6e5;">' + esc(sig.name) + '</span>';
-    h += '<span style="color:#3a5a7a;margin-left:auto;">' + esc(sig.category) + '</span>';
+    h += '<span style="color:var(--txt);">' + esc(sig.name) + '</span>';
+    h += '<span style="color:var(--mut);margin-left:auto;">' + esc(sig.category) + '</span>';
     h += '</div>';
   }
   h += '</div></div>';
@@ -116,14 +116,14 @@ window._tfScan = async function() {
 
   if (!proxyConfigured()) {
     results.innerHTML =
-      '<div style="background:#1a0a0a;border:1px solid #ff444433;border-radius:6px;padding:16px;text-align:center;">' +
-      '<div style="color:#ff4444;font-size:14px;font-weight:bold;">LIVE FINGERPRINT UNAVAILABLE</div>' +
-      '<div style="color:#4a6a8a;font-size:10px;margin-top:8px;">The Darknode fetch proxy is not configured, so real headers and content cannot be retrieved. No detections are fabricated.</div>' +
+      '<div style="background:color-mix(in srgb,var(--bad) 10%,var(--card));border:1px solid color-mix(in srgb,var(--bad) 20%,transparent);border-radius:6px;padding:16px;text-align:center;">' +
+      '<div style="color:var(--bad);font-size:14px;font-weight:bold;">Live fingerprint unavailable</div>' +
+      '<div style="color:var(--mut);font-size:12px;margin-top:8px;">The Darknode fetch proxy is not configured, so real headers and content cannot be retrieved. No detections are fabricated.</div>' +
       '</div>';
     return;
   }
 
-  results.innerHTML = '<div style="color:#ffaa00;font-size:11px;padding:16px;text-align:center;">Fingerprinting ' + esc(url) + '...</div>';
+  results.innerHTML = '<div style="color:var(--warn);font-size:12px;padding:16px;text-align:center;">Fingerprinting ' + esc(url) + '...</div>';
 
   var start = performance.now();
 
@@ -149,11 +149,11 @@ window._tfScan = async function() {
     var h = '';
 
     // Summary
-    h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:12px;">';
+    h += '<div class="card">';
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
     h += '<div>';
-    h += '<div style="color:#00ddff;font-size:14px;font-weight:bold;">' + esc(resp.finalUrl || url) + '</div>';
-    h += '<div style="color:#4a6a8a;font-size:10px;margin-top:2px;">Status: ' + esc(String(resp.status)) + ' | Time: ' + elapsed + 'ms | Technologies: ' + detected.length + (resp.truncated ? ' | body truncated' : '') + '</div>';
+    h += '<div style="color:var(--acc);font-size:14px;font-weight:bold;">' + esc(resp.finalUrl || url) + '</div>';
+    h += '<div style="color:var(--mut);font-size:12px;margin-top:2px;">Status: ' + esc(String(resp.status)) + ' | Time: ' + elapsed + 'ms | Technologies: ' + detected.length + (resp.truncated ? ' | body truncated' : '') + '</div>';
     h += '</div>';
     h += '</div>';
 
@@ -163,32 +163,32 @@ window._tfScan = async function() {
         var tech = detected[d];
         h += '<div style="background:' + tech.color + '18;border:1px solid ' + tech.color + '44;border-radius:4px;padding:6px 12px;display:flex;align-items:center;gap:6px;">';
         h += '<span style="width:8px;height:8px;border-radius:50%;background:' + tech.color + ';"></span>';
-        h += '<span style="color:#c8d6e5;font-size:12px;font-weight:bold;">' + esc(tech.name) + '</span>';
-        h += '<span style="color:#6a8aaa;font-size:9px;">' + esc(tech.category) + '</span>';
+        h += '<span style="color:var(--txt);font-size:12px;font-weight:bold;">' + esc(tech.name) + '</span>';
+        h += '<span style="color:var(--mut);font-size:12px;">' + esc(tech.category) + '</span>';
         h += '</div>';
       }
       h += '</div>';
     } else {
-      h += '<div style="color:#ffaa00;font-size:11px;margin-bottom:10px;">No known technologies matched the real response headers or body. The site may not expose identifying markers.</div>';
+      h += '<div style="color:var(--warn);font-size:12px;margin-bottom:10px;">No known technologies matched the real response headers or body. The site may not expose identifying markers.</div>';
     }
 
     // Server info
     var server = hdr.get('server');
     var poweredBy = hdr.get('x-powered-by');
     if (server || poweredBy || generator) {
-      h += '<div style="padding:8px;background:#080c14;border-radius:4px;margin-bottom:10px;font-size:11px;">';
-      if (server) h += '<div><span style="color:#4a7a9a;">Server:</span> <span style="color:#00ff88;">' + esc(server) + '</span></div>';
-      if (poweredBy) h += '<div><span style="color:#4a7a9a;">X-Powered-By:</span> <span style="color:#ffaa00;">' + esc(poweredBy) + '</span></div>';
-      if (generator) h += '<div><span style="color:#4a7a9a;">Meta generator:</span> <span style="color:#aa66ff;">' + esc(generator) + '</span></div>';
+      h += '<div style="padding:8px;background:var(--card2);border-radius:4px;margin-bottom:10px;font-size:12px;">';
+      if (server) h += '<div><span style="color:var(--mut);">Server:</span> <span style="color:var(--ok);">' + esc(server) + '</span></div>';
+      if (poweredBy) h += '<div><span style="color:var(--mut);">X-Powered-By:</span> <span style="color:var(--warn);">' + esc(poweredBy) + '</span></div>';
+      if (generator) h += '<div><span style="color:var(--mut);">Meta generator:</span> <span style="color:var(--acc-2);">' + esc(generator) + '</span></div>';
       h += '</div>';
     }
 
     // All headers
     h += '<details>';
-    h += '<summary style="color:#4a6a8a;font-size:10px;cursor:pointer;margin-top:8px;">All response headers (' + headerKeys.length + ')</summary>';
-    h += '<div style="background:#060a10;border:1px solid #0d1525;border-radius:4px;padding:8px;margin-top:4px;max-height:250px;overflow-y:auto;">';
+    h += '<summary style="color:var(--mut);font-size:12px;cursor:pointer;margin-top:8px;">All response headers (' + headerKeys.length + ')</summary>';
+    h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:8px;margin-top:4px;max-height:250px;overflow-y:auto;">';
     for (var hi = 0; hi < headerKeys.length; hi++) {
-      h += '<div style="font-size:10px;margin:2px 0;word-break:break-all;"><span style="color:#00aaff;">' + esc(headerKeys[hi]) + ':</span> <span style="color:#8ab4d4;">' + esc(resp.headers[headerKeys[hi]]) + '</span></div>';
+      h += '<div style="font-size:12px;margin:2px 0;word-break:break-all;"><span style="color:var(--acc);">' + esc(headerKeys[hi]) + ':</span> <span style="color:var(--txt-2);">' + esc(resp.headers[headerKeys[hi]]) + '</span></div>';
     }
     h += '</div></details>';
 
@@ -196,10 +196,10 @@ window._tfScan = async function() {
     results.innerHTML = h;
   } catch (err) {
     results.innerHTML =
-      '<div style="background:#1a0a0a;border:1px solid #ff444433;border-radius:6px;padding:16px;text-align:center;">' +
-      '<div style="color:#ff4444;font-size:14px;font-weight:bold;">FINGERPRINT FAILED</div>' +
-      '<div style="color:#6a4a4a;font-size:10px;margin-top:4px;">' + esc(String((err && err.message) || err)) + '</div>' +
-      '<div style="color:#4a6a8a;font-size:10px;margin-top:8px;">The target could not be reached through the Darknode proxy. No technologies are guessed.</div>' +
+      '<div style="background:color-mix(in srgb,var(--bad) 10%,var(--card));border:1px solid color-mix(in srgb,var(--bad) 20%,transparent);border-radius:6px;padding:16px;text-align:center;">' +
+      '<div style="color:var(--bad);font-size:14px;font-weight:bold;">Fingerprint failed</div>' +
+      '<div style="color:var(--mut);font-size:12px;margin-top:4px;">' + esc(String((err && err.message) || err)) + '</div>' +
+      '<div style="color:var(--mut);font-size:12px;margin-top:8px;">The target could not be reached through the Darknode proxy. No technologies are guessed.</div>' +
       '</div>';
   }
 };

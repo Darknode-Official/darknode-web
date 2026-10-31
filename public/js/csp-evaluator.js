@@ -9,17 +9,17 @@ var _CSP_CSS = '<style>' +
   '.csp-wrap{background:var(--card,#0b1120);color:var(--txt,#e7eefc);padding:20px;min-height:100vh}' +
   '.csp-head{text-align:center;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--line,#283a5a)}' +
   '.csp-title{font-size:22px;font-weight:800;letter-spacing:4px;color:var(--acc,#2563eb)}' +
-  '.csp-subtitle{font-size:10px;color:var(--mut,#7a93b8);letter-spacing:2px}' +
-  '.csp-preset{font-family:var(--font-mono);font-size:9px;cursor:pointer;border-radius:4px;letter-spacing:1px;padding:5px 12px}' +
-  '.csp-ta{width:100%;box-sizing:border-box;background:var(--card2,#0f1726);border:2px solid var(--line,#283a5a);border-radius:6px;color:var(--txt,#e7eefc);font-family:var(--font-mono);font-size:11px;padding:10px;resize:vertical}' +
-  '.csp-analyze{background:color-mix(in srgb,var(--acc,#2563eb) 14%,transparent);color:var(--acc,#2563eb);border:1px solid color-mix(in srgb,var(--acc,#2563eb) 40%,transparent);padding:8px 20px;font-family:inherit;font-size:11px;font-weight:bold;cursor:pointer;border-radius:4px;letter-spacing:1px}' +
-  '.csp-url{flex:1;background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:4px;color:var(--txt,#e7eefc);font-family:var(--font-mono);font-size:10px;padding:8px}' +
-  '.csp-fetch{background:rgba(124,58,237,.12);color:#7c3aed;border:1px solid rgba(124,58,237,.4);padding:8px 14px;font-family:inherit;font-size:10px;cursor:pointer;border-radius:4px}' +
+  '.csp-subtitle{font-size:12px;color:var(--mut,#7a93b8);letter-spacing:2px}' +
+  '.csp-preset{font-family:var(--font-mono);font-size:12px;cursor:pointer;border-radius:4px;letter-spacing:1px;padding:5px 12px}' +
+  '.csp-ta{width:100%;box-sizing:border-box;background:var(--card2,#0f1726);border:2px solid var(--line,#283a5a);border-radius:6px;color:var(--txt,#e7eefc);font-family:var(--font-mono);font-size:12px;padding:10px;resize:vertical}' +
+  '.csp-analyze{background:color-mix(in srgb,var(--acc,#2563eb) 14%,transparent);color:var(--acc,#2563eb);border:1px solid color-mix(in srgb,var(--acc,#2563eb) 40%,transparent);padding:8px 20px;font-family:inherit;font-size:12px;font-weight:bold;cursor:pointer;border-radius:4px;letter-spacing:1px}' +
+  '.csp-url{flex:1;background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:4px;color:var(--txt,#e7eefc);font-family:var(--font-mono);font-size:12px;padding:8px}' +
+  '.csp-fetch{background:rgba(124,58,237,.12);color:#7c3aed;border:1px solid rgba(124,58,237,.4);padding:8px 14px;font-family:inherit;font-size:12px;cursor:pointer;border-radius:4px}' +
   '.csp-card{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px}' +
-  '.csp-gen-input{flex:1;background:var(--card,#0b1120);border:1px solid var(--line,#283a5a);border-radius:4px;color:var(--txt,#e7eefc);font-family:var(--font-mono);font-size:10px;padding:5px 8px}' +
-  '.csp-gen-out{background:var(--card,#0b1120);border:1px solid var(--line,#283a5a);border-radius:4px;padding:10px;margin-top:10px;font-size:10px;color:var(--acc,#2563eb);white-space:pre-wrap;word-break:break-all;font-family:var(--font-mono)}' +
-  '.csp-dir-name{color:var(--acc,#2563eb);font-weight:bold;font-size:11px}' +
-  '.csp-gen-label{color:var(--acc,#2563eb);font-size:10px;min-width:110px;font-weight:bold}' +
+  '.csp-gen-input{flex:1;background:var(--card,#0b1120);border:1px solid var(--line,#283a5a);border-radius:4px;color:var(--txt,#e7eefc);font-family:var(--font-mono);font-size:12px;padding:5px 8px}' +
+  '.csp-gen-out{background:var(--card,#0b1120);border:1px solid var(--line,#283a5a);border-radius:4px;padding:10px;margin-top:10px;font-size:12px;color:var(--acc,#2563eb);white-space:pre-wrap;word-break:break-all;font-family:var(--font-mono)}' +
+  '.csp-dir-name{color:var(--acc,#2563eb);font-weight:bold;font-size:12px}' +
+  '.csp-gen-label{color:var(--acc,#2563eb);font-size:12px;min-width:110px;font-weight:bold}' +
   '</style>';
 
 export function renderCspEvaluator(container) {
@@ -209,15 +209,15 @@ export function renderCspEvaluator(container) {
     h += '<div style="display:flex;gap:20px;align-items:center;margin-bottom:16px;padding:16px;background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;">';
     h += '<div style="width:80px;height:80px;border:3px solid ' + gc + ';border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">';
     h += '<div style="font-size:32px;font-weight:800;color:' + gc + ';">' + g.grade + '</div>';
-    h += '<div style="font-size:9px;color:var(--mut,#7a93b8);letter-spacing:1px;">' + g.score + '/100</div></div>';
+    h += '<div style="font-size:12px;color:var(--mut,#7a93b8);letter-spacing:1px;">' + g.score + '/100</div></div>';
     h += '<div style="flex:1;">';
     g.issues.forEach(function(issue) {
       var ic = issue.sev === 'critical' ? '#dc2626' : issue.sev === 'high' ? '#ea580c' : issue.sev === 'medium' ? '#d97706' : '#2563eb';
-      h += '<div style="display:flex;gap:8px;align-items:flex-start;margin:3px 0;font-size:10px;">';
-      h += '<span style="color:' + ic + ';font-weight:bold;min-width:60px;font-size:8px;letter-spacing:0.5px;padding:1px 4px;background:' + ic + '15;border:1px solid ' + ic + '33;border-radius:2px;">' + issue.sev.toUpperCase() + '</span>';
+      h += '<div style="display:flex;gap:8px;align-items:flex-start;margin:3px 0;font-size:12px;">';
+      h += '<span style="color:' + ic + ';font-weight:bold;min-width:60px;font-size:12px;letter-spacing:0.5px;padding:1px 4px;background:' + ic + '15;border:1px solid ' + ic + '33;border-radius:2px;">' + issue.sev.toUpperCase() + '</span>';
       h += '<span style="color:var(--txt-2,#9fb0cc);">' + esc(issue.msg) + '</span></div>';
     });
-    if (g.issues.length === 0) h += '<div style="color:#16a34a;font-size:11px;">No major issues detected</div>';
+    if (g.issues.length === 0) h += '<div style="color:#16a34a;font-size:12px;">No major issues detected</div>';
     h += '</div></div>';
 
     h += '<div style="margin-bottom:16px;">';
@@ -230,8 +230,8 @@ export function renderCspEvaluator(container) {
       h += '<div class="csp-card" style="padding:10px 12px;margin-bottom:6px;">';
       h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
       h += '<span class="csp-dir-name" style="font-family:var(--font-mono);">' + esc(dir) + '</span>';
-      h += '<span style="color:' + impC + ';font-size:8px;letter-spacing:0.5px;">' + info.importance.toUpperCase() + '</span></div>';
-      h += '<div style="color:var(--mut,#7a93b8);font-size:9px;margin-bottom:6px;">' + esc(info.desc) + '</div>';
+      h += '<span style="color:' + impC + ';font-size:12px;letter-spacing:0.5px;">' + info.importance.toUpperCase() + '</span></div>';
+      h += '<div style="color:var(--mut,#7a93b8);font-size:12px;margin-bottom:6px;">' + esc(info.desc) + '</div>';
       h += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
       vals.forEach(function(v) {
         var assessment = assessSource(v, dir, vals);
@@ -239,19 +239,19 @@ export function renderCspEvaluator(container) {
         if (assessment) {
           vc = assessment.level === 'critical' ? '#dc2626' : assessment.level === 'high' ? '#ea580c' : assessment.level === 'medium' ? '#d97706' : '#16a34a';
         }
-        h += '<span style="background:' + vc + '12;color:' + vc + ';border:1px solid ' + vc + '33;padding:2px 8px;border-radius:3px;font-size:10px;cursor:default;font-family:var(--font-mono);" title="' + (assessment ? esc(assessment.msg) : 'OK') + '">' + esc(v) + '</span>';
+        h += '<span style="background:' + vc + '12;color:' + vc + ';border:1px solid ' + vc + '33;padding:2px 8px;border-radius:3px;font-size:12px;cursor:default;font-family:var(--font-mono);" title="' + (assessment ? esc(assessment.msg) : 'OK') + '">' + esc(v) + '</span>';
       });
-      if (vals.length === 0) h += '<span style="color:var(--mut,#7a93b8);font-size:9px;font-style:italic;">no values (boolean directive)</span>';
+      if (vals.length === 0) h += '<span style="color:var(--mut,#7a93b8);font-size:12px;font-style:italic;">no values (boolean directive)</span>';
       h += '</div></div>';
     });
 
     var missing = ['default-src', 'script-src', 'object-src', 'base-uri', 'frame-ancestors', 'form-action'].filter(function(d) { return !dirs[d]; });
     if (missing.length > 0) {
       h += '<div style="background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2);border-radius:6px;padding:10px 12px;margin-top:8px;">';
-      h += '<div style="color:#dc2626;font-size:10px;font-weight:bold;margin-bottom:4px;">MISSING DIRECTIVES</div>';
+      h += '<div style="color:#dc2626;font-size:12px;font-weight:bold;margin-bottom:4px;">MISSING DIRECTIVES</div>';
       missing.forEach(function(m) {
         var info = DIRECTIVES_INFO[m] || {};
-        h += '<div style="color:#e08a76;font-size:10px;margin:2px 0;">' + esc(m) + ' <span style="color:var(--mut,#7a93b8);">— ' + esc(info.desc || '') + '</span></div>';
+        h += '<div style="color:#e08a76;font-size:12px;margin:2px 0;">' + esc(m) + ' <span style="color:var(--mut,#7a93b8);">— ' + esc(info.desc || '') + '</span></div>';
       });
       h += '</div>';
     }
@@ -263,8 +263,8 @@ export function renderCspEvaluator(container) {
       state.bypasses.forEach(function(b) {
         var bc = b.sev === 'high' ? '#ea580c' : b.sev === 'medium' ? '#d97706' : '#2563eb';
         h += '<div class="csp-card" style="border-left:3px solid ' + bc + ';padding:8px 12px;margin-bottom:6px;border-radius:0 6px 6px 0;">';
-        h += '<div style="color:' + bc + ';font-weight:bold;font-size:11px;">' + esc(b.title) + '</div>';
-        h += '<div style="color:var(--txt-2,#9fb0cc);font-size:10px;margin-top:2px;">' + esc(b.desc) + '</div>';
+        h += '<div style="color:' + bc + ';font-weight:bold;font-size:12px;">' + esc(b.title) + '</div>';
+        h += '<div style="color:var(--txt-2,#9fb0cc);font-size:12px;margin-top:2px;">' + esc(b.desc) + '</div>';
         h += '</div>';
       });
       h += '</div>';
@@ -299,11 +299,11 @@ export function renderCspEvaluator(container) {
     });
     h += '<div style="display:flex;gap:8px;margin-top:6px;align-items:center;">';
     h += '<label class="csp-gen-label" style="font-weight:normal;">Options</label>';
-    h += '<label style="color:var(--txt-2,#9fb0cc);font-size:10px;cursor:pointer;"><input type="checkbox" id="csp-gen-upgrade" checked style="margin-right:4px;">upgrade-insecure-requests</label>';
+    h += '<label style="color:var(--txt-2,#9fb0cc);font-size:12px;cursor:pointer;"><input type="checkbox" id="csp-gen-upgrade" checked style="margin-right:4px;">upgrade-insecure-requests</label>';
     h += '</div>';
     h += '<div style="display:flex;gap:8px;margin-top:12px;">';
-    h += '<button id="csp-gen-build" style="background:rgba(124,58,237,.12);color:#7c3aed;border:1px solid rgba(124,58,237,.4);padding:6px 16px;font-family:inherit;font-size:10px;cursor:pointer;border-radius:4px;">Build CSP</button>';
-    h += '<button id="csp-gen-copy" style="background:rgba(22,163,74,.12);color:#16a34a;border:1px solid rgba(22,163,74,.4);padding:6px 16px;font-family:inherit;font-size:10px;cursor:pointer;border-radius:4px;">Copy</button>';
+    h += '<button id="csp-gen-build" style="background:rgba(124,58,237,.12);color:#7c3aed;border:1px solid rgba(124,58,237,.4);padding:6px 16px;font-family:inherit;font-size:12px;cursor:pointer;border-radius:4px;">Build CSP</button>';
+    h += '<button id="csp-gen-copy" style="background:rgba(22,163,74,.12);color:#16a34a;border:1px solid rgba(22,163,74,.4);padding:6px 16px;font-family:inherit;font-size:12px;cursor:pointer;border-radius:4px;">Copy</button>';
     h += '</div>';
     h += '<pre id="csp-gen-output" class="csp-gen-out" style="display:none;"></pre>';
     h += '</div>';
@@ -345,27 +345,27 @@ export function renderCspEvaluator(container) {
   var html = '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:20px;min-height:100vh;">';
   html += '<div style="text-align:center;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #1a2a44;">';
   html += '<div style="font-size:22px;font-weight:800;letter-spacing:4px;color:#00ddff;text-shadow:0 0 20px rgba(0,212,255,0.3);">CSP EVALUATOR</div>';
-  html += '<div style="font-size:10px;color:#4a6a8a;letter-spacing:2px;">CONTENT SECURITY POLICY ANALYZER &amp; GENERATOR</div></div>';
+  html += '<div style="font-size:12px;color:#4a6a8a;letter-spacing:2px;">CONTENT SECURITY POLICY ANALYZER &amp; GENERATOR</div></div>';
 
   html += '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">';
-  html += '<button class="csp-preset-btn" data-preset="strict" style="background:#00ff8815;color:#00ff88;border:1px solid #00ff8833;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;letter-spacing:1px;">STRICT</button>';
-  html += '<button class="csp-preset-btn" data-preset="moderate" style="background:#ffaa0015;color:#ffaa00;border:1px solid #ffaa0033;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;letter-spacing:1px;">MODERATE</button>';
-  html += '<button class="csp-preset-btn" data-preset="permissive" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;letter-spacing:1px;">PERMISSIVE</button>';
-  html += '<button class="csp-preset-btn" data-preset="broken" style="background:#ff222215;color:#ff2222;border:1px solid #ff222233;padding:5px 12px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:4px;letter-spacing:1px;">BROKEN</button>';
+  html += '<button class="csp-preset-btn" data-preset="strict" style="background:#00ff8815;color:#00ff88;border:1px solid #00ff8833;padding:5px 12px;font-family:monospace;font-size:12px;cursor:pointer;border-radius:4px;letter-spacing:1px;">STRICT</button>';
+  html += '<button class="csp-preset-btn" data-preset="moderate" style="background:#ffaa0015;color:#ffaa00;border:1px solid #ffaa0033;padding:5px 12px;font-family:monospace;font-size:12px;cursor:pointer;border-radius:4px;letter-spacing:1px;">MODERATE</button>';
+  html += '<button class="csp-preset-btn" data-preset="permissive" style="background:#ff660015;color:#ff6600;border:1px solid #ff660033;padding:5px 12px;font-family:monospace;font-size:12px;cursor:pointer;border-radius:4px;letter-spacing:1px;">PERMISSIVE</button>';
+  html += '<button class="csp-preset-btn" data-preset="broken" style="background:#ff222215;color:#ff2222;border:1px solid #ff222233;padding:5px 12px;font-family:monospace;font-size:12px;cursor:pointer;border-radius:4px;letter-spacing:1px;">BROKEN</button>';
   html += '</div>';
 
   html += '<div style="margin-bottom:16px;">';
-  html += '<textarea id="csp-input" rows="4" placeholder="Paste a CSP header here, e.g.:\ndefault-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data:; object-src \'none\'" style="width:100%;box-sizing:border-box;background:#060a14;border:2px solid #1a3050;border-radius:6px;color:#00ddff;font-family:monospace;font-size:11px;padding:10px;resize:vertical;"></textarea>';
+  html += '<textarea id="csp-input" rows="4" placeholder="Paste a CSP header here, e.g.:\ndefault-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data:; object-src \'none\'" style="width:100%;box-sizing:border-box;background:#060a14;border:2px solid #1a3050;border-radius:6px;color:#00ddff;font-family:monospace;font-size:12px;padding:10px;resize:vertical;"></textarea>';
   html += '</div>';
 
   html += '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">';
-  html += '<button id="csp-analyze-btn" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff44;padding:8px 20px;font-family:monospace;font-size:11px;font-weight:bold;cursor:pointer;border-radius:4px;letter-spacing:1px;">Analyze</button>';
+  html += '<button id="csp-analyze-btn" style="background:#00aaff15;color:#00aaff;border:1px solid #00aaff44;padding:8px 20px;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer;border-radius:4px;letter-spacing:1px;">Analyze</button>';
   html += '<div style="display:flex;gap:4px;flex:1;min-width:200px;">';
-  html += '<input id="csp-url-input" type="text" placeholder="Or fetch from a URL" style="flex:1;background:#060a14;border:1px solid #1a3050;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:10px;padding:8px;">';
-  html += '<button id="csp-fetch-btn" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff44;padding:8px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Fetch</button>';
+  html += '<input id="csp-url-input" type="text" placeholder="Or fetch from a URL" style="flex:1;background:#060a14;border:1px solid #1a3050;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px;">';
+  html += '<button id="csp-fetch-btn" style="background:#aa66ff15;color:#aa66ff;border:1px solid #aa66ff44;padding:8px 14px;font-family:monospace;font-size:12px;cursor:pointer;border-radius:4px;">Fetch</button>';
   html += '</div></div>';
 
-  html += '<div id="csp-status" style="display:none;padding:8px 12px;margin-bottom:12px;border-radius:4px;font-size:10px;"></div>';
+  html += '<div id="csp-status" style="display:none;padding:8px 12px;margin-bottom:12px;border-radius:4px;font-size:12px;"></div>';
   html += '<div id="csp-results"></div>';
 
   html += buildGenerator();

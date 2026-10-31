@@ -351,8 +351,6 @@ export function renderThreatHuntLab(main) {
   function render() {
     main.innerHTML =
       '<style>' +
-      '.thl-header { display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:2px solid #00e676; }' +
-      '.thl-title { font-size:1.5rem; font-weight:800; color:#00e676; margin:0; letter-spacing:.05em; }' +
       '.thl-scenarios { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; margin-top:16px; }' +
       '.thl-card { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:14px; cursor:pointer; transition:all .15s; }' +
       '.thl-card:hover { border-color:#00e676; }' +
@@ -370,10 +368,10 @@ export function renderThreatHuntLab(main) {
       '.thl-tools-panel { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:12px; }' +
       '</style>' +
       '<div>' +
-        '<div class="thl-header">' +
-          '<h1 class="thl-title">THREAT HUNT LAB</h1>' +
-          '<span style="color:var(--mut);font-size:.75rem">Find the Attacker in the Logs</span>' +
-        '</div>' +
+        '<div class="pg-head"><div>' +
+          '<h1 class="pg-h1">Threat Hunt Lab</h1>' +
+          '<p class="muted pg-sub">Find the attacker in the logs.</p>' +
+        '</div></div>' +
         '<div id="thl-content"></div>' +
       '</div>';
 

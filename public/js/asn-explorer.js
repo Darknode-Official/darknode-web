@@ -29,22 +29,20 @@ var _asnBulletproof = {
 
 var _ASN_CSS = '<style>' +
   '.asn-wrap{color:var(--txt,#e7eefc);background:var(--card,#0b1120);padding:20px;min-height:600px;border-radius:8px}' +
-  '.asn-h2{color:var(--acc,#2563eb);font-size:18px;letter-spacing:2px;margin:0 0 4px;font-weight:700}' +
-  '.asn-sub{color:var(--mut,#7a93b8);font-size:11px;margin-bottom:20px}' +
   '.asn-bar{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:16px;margin-bottom:16px}' +
   '.asn-input{flex:1;background:var(--card,#0b1120);border:1px solid var(--line,#283a5a);border-radius:4px;color:var(--txt,#e7eefc);font-family:var(--font-mono);font-size:12px;padding:8px 12px}' +
-  '.asn-btn{background:color-mix(in srgb,var(--acc,#2563eb) 14%,transparent);color:var(--acc,#2563eb);border:1px solid color-mix(in srgb,var(--acc,#2563eb) 40%,transparent);padding:8px 16px;font-size:11px;cursor:pointer;border-radius:4px;font-family:inherit}' +
+  '.asn-btn{background:color-mix(in srgb,var(--acc,#2563eb) 14%,transparent);color:var(--acc,#2563eb);border:1px solid color-mix(in srgb,var(--acc,#2563eb) 40%,transparent);padding:8px 16px;font-size:12px;cursor:pointer;border-radius:4px;font-family:inherit}' +
   '.asn-btn.warn{background:rgba(217,119,6,.14);color:#d97706;border-color:rgba(217,119,6,.4)}' +
-  '.asn-note{color:var(--mut,#7a93b8);font-size:9px;margin-top:6px}' +
+  '.asn-note{color:var(--mut,#7a93b8);font-size:12px;margin-top:6px}' +
   '.asn-card{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:14px;margin-top:16px}' +
   '.asn-bp-title{color:#dc2626;font-size:12px;font-weight:bold;margin-bottom:10px;letter-spacing:1px}' +
   '.asn-bp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px}' +
-  '.asn-bp-item{background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.25);border-radius:4px;padding:5px 8px;font-size:10px;display:flex;justify-content:space-between;cursor:pointer}' +
+  '.asn-bp-item{background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.25);border-radius:4px;padding:5px 8px;font-size:12px;display:flex;justify-content:space-between;cursor:pointer}' +
   '.asn-bp-asn{color:#dc2626;font-weight:bold;font-family:var(--font-mono)}' +
   '.asn-bp-desc{color:#e08a76}' +
-  '.asn-busy{color:#d97706;font-size:11px;padding:16px;text-align:center}' +
-  '.asn-err{color:#dc2626;font-size:11px}' +
-  '.asn-empty{color:var(--mut,#7a93b8);font-size:11px}' +
+  '.asn-busy{color:#d97706;font-size:12px;padding:16px;text-align:center}' +
+  '.asn-err{color:#dc2626;font-size:12px}' +
+  '.asn-empty{color:var(--mut,#7a93b8);font-size:12px}' +
   '.asn-panel{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:14px}' +
   '.asn-res-title{color:var(--acc,#2563eb);font-size:12px;font-weight:bold;margin-bottom:10px}' +
   '.asn-th{text-align:left;padding:6px;color:var(--acc,#2563eb)}' +
@@ -52,11 +50,11 @@ var _ASN_CSS = '<style>' +
   '.asn-td{padding:6px;color:var(--txt,#e7eefc)}' +
   '.asn-td-mut{padding:6px;color:var(--txt-2,#9fb0cc)}' +
   '.asn-detail-cell{background:var(--card,#0b1120);border:1px solid var(--line,#283a5a);border-radius:3px;padding:6px 8px}' +
-  '.asn-detail-label{color:var(--mut,#7a93b8);font-size:8px;letter-spacing:1px}' +
-  '.asn-detail-val{color:var(--txt,#e7eefc);font-size:11px;word-break:break-all}' +
+  '.asn-detail-label{color:var(--mut,#7a93b8);font-size:12px;letter-spacing:1px}' +
+  '.asn-detail-val{color:var(--txt,#e7eefc);font-size:12px;word-break:break-all}' +
   '.asn-as-num{font-size:20px;font-weight:bold;color:var(--acc,#2563eb);font-family:var(--font-mono)}' +
   '.asn-as-name{color:var(--txt,#e7eefc);font-size:13px;margin-top:2px}' +
-  '.asn-as-desc{color:var(--txt-2,#9fb0cc);font-size:11px}' +
+  '.asn-as-desc{color:var(--txt-2,#9fb0cc);font-size:12px}' +
   '.asn-prefix-title{color:#16a34a;font-size:12px;font-weight:bold}' +
   '.asn-peer-title{color:#d97706;font-size:12px;font-weight:bold;margin-bottom:10px}' +
   '.asn-mono{font-family:var(--font-mono)}' +
@@ -65,8 +63,8 @@ var _ASN_CSS = '<style>' +
 export function renderAsnExplorer(container) {
   var h = _ASN_CSS;
   h += '<div class="asn-wrap">';
-  h += '<h2 class="asn-h2">ASN EXPLORER</h2>';
-  h += '<div class="asn-sub">Autonomous System Number intelligence — BGP prefixes, peers, reputation</div>';
+  h += '<div class="pg-head"><div><h1 class="pg-h1">ASN Explorer</h1>';
+  h += '<p class="muted pg-sub">Autonomous System Number intelligence: BGP prefixes, peers and reputation.</p></div></div>';
 
   h += '<div class="asn-bar">';
   h += '<div style="display:flex;gap:8px;">';
@@ -169,7 +167,7 @@ window._asnSearch = function() {
 
       var h = '<div class="asn-panel">';
       h += '<div class="asn-res-title">SEARCH RESULTS (' + asns.length + ')</div>';
-      h += '<table style="width:100%;border-collapse:collapse;font-size:10px;">';
+      h += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
       h += '<thead><tr style="border-bottom:2px solid var(--line,#283a5a);">';
       h += '<th class="asn-th">ASN</th>';
       h += '<th class="asn-th">NAME</th>';
@@ -185,10 +183,10 @@ window._asnSearch = function() {
         h += '<td class="asn-td-asn">AS' + a.asn + '</td>';
         h += '<td class="asn-td">' + esc(a.name || a.description || '') + '</td>';
         h += '<td class="asn-td-mut">' + esc(a.country_code || '??') + '</td>';
-        h += '<td style="padding:6px;"><span style="color:' + repColor + ';font-size:9px;padding:1px 6px;background:' + repColor + '15;border:1px solid ' + repColor + '33;border-radius:2px;">' + repText + '</span></td>';
+        h += '<td style="padding:6px;"><span style="color:' + repColor + ';font-size:12px;padding:1px 6px;background:' + repColor + '15;border:1px solid ' + repColor + '33;border-radius:2px;">' + repText + '</span></td>';
         h += '</tr>';
         if (isBP) {
-          h += '<tr><td colspan="4" style="padding:2px 6px 6px;color:#e08a76;font-size:9px;">&#9888; ' + esc(isBP) + '</td></tr>';
+          h += '<tr><td colspan="4" style="padding:2px 6px 6px;color:#e08a76;font-size:12px;">&#9888; ' + esc(isBP) + '</td></tr>';
         }
       }
       h += '</tbody></table></div>';
@@ -220,7 +218,7 @@ function _asnRenderResults(el, asn, asnData, prefixData, peerData) {
   h += '</div>';
   h += '<div style="text-align:right;">';
   h += '<div style="color:' + repColor + ';font-size:14px;font-weight:bold;">' + (isBP ? 'SUSPICIOUS' : 'NOT LISTED') + '</div>';
-  if (isBP) h += '<div style="color:#e08a76;font-size:9px;max-width:200px;">' + esc(isBP) + '</div>';
+  if (isBP) h += '<div style="color:#e08a76;font-size:12px;max-width:200px;">' + esc(isBP) + '</div>';
   h += '</div>';
   h += '</div>';
 
@@ -252,21 +250,21 @@ function _asnRenderResults(el, asn, asnData, prefixData, peerData) {
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
     h += '<div class="asn-prefix-title">ANNOUNCED PREFIXES</div>';
     h += '<div style="display:flex;gap:12px;">';
-    h += '<span style="color:var(--acc,#2563eb);font-size:11px;">IPv4: <strong>' + v4.length + '</strong></span>';
-    h += '<span style="color:#7c3aed;font-size:11px;">IPv6: <strong>' + v6.length + '</strong></span>';
+    h += '<span style="color:var(--acc,#2563eb);font-size:12px;">IPv4: <strong>' + v4.length + '</strong></span>';
+    h += '<span style="color:#7c3aed;font-size:12px;">IPv6: <strong>' + v6.length + '</strong></span>';
     h += '</div>';
     h += '</div>';
 
     // Visual bar
     var maxPrefixes = Math.max(v4.length, v6.length, 1);
     h += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
-    h += '<div style="flex:1;"><div style="color:var(--mut,#7a93b8);font-size:9px;margin-bottom:2px;">IPv4</div><div style="background:var(--line,#283a5a);border-radius:2px;height:8px;overflow:hidden;"><div style="background:var(--acc,#2563eb);height:100%;width:' + Math.round((v4.length / maxPrefixes) * 100) + '%;border-radius:2px;"></div></div></div>';
-    h += '<div style="flex:1;"><div style="color:var(--mut,#7a93b8);font-size:9px;margin-bottom:2px;">IPv6</div><div style="background:var(--line,#283a5a);border-radius:2px;height:8px;overflow:hidden;"><div style="background:#7c3aed;height:100%;width:' + Math.round((v6.length / maxPrefixes) * 100) + '%;border-radius:2px;"></div></div></div>';
+    h += '<div style="flex:1;"><div style="color:var(--mut,#7a93b8);font-size:12px;margin-bottom:2px;">IPv4</div><div style="background:var(--line,#283a5a);border-radius:2px;height:8px;overflow:hidden;"><div style="background:var(--acc,#2563eb);height:100%;width:' + Math.round((v4.length / maxPrefixes) * 100) + '%;border-radius:2px;"></div></div></div>';
+    h += '<div style="flex:1;"><div style="color:var(--mut,#7a93b8);font-size:12px;margin-bottom:2px;">IPv6</div><div style="background:var(--line,#283a5a);border-radius:2px;height:8px;overflow:hidden;"><div style="background:#7c3aed;height:100%;width:' + Math.round((v6.length / maxPrefixes) * 100) + '%;border-radius:2px;"></div></div></div>';
     h += '</div>';
 
     if (v4.length > 0) {
       h += '<div style="max-height:200px;overflow-y:auto;">';
-      h += '<table style="width:100%;border-collapse:collapse;font-size:10px;">';
+      h += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
       h += '<thead><tr style="border-bottom:1px solid var(--line,#283a5a);"><th class="asn-th" style="padding:4px;">PREFIX</th><th class="asn-th" style="padding:4px;">NAME</th><th class="asn-th" style="padding:4px;">DESCRIPTION</th></tr></thead><tbody>';
       for (var p = 0; p < Math.min(v4.length, 50); p++) {
         h += '<tr style="border-bottom:1px solid var(--line,#283a5a);">';
@@ -292,12 +290,12 @@ function _asnRenderResults(el, asn, asnData, prefixData, peerData) {
         var peer = upstream[u];
         var peerBP = _asnBulletproof[peer.asn];
         var peerColor = peerBP ? '#dc2626' : '#2563eb';
-        h += '<span style="background:' + peerColor + '10;border:1px solid ' + peerColor + '33;border-radius:4px;padding:2px 6px;font-size:9px;color:' + peerColor + ';cursor:pointer;font-family:var(--font-mono);" onclick="_asnLookupDirect(' + peer.asn + ')" title="' + esc(peer.name || '') + '">AS' + peer.asn + '</span>';
+        h += '<span style="background:' + peerColor + '10;border:1px solid ' + peerColor + '33;border-radius:4px;padding:2px 6px;font-size:12px;color:' + peerColor + ';cursor:pointer;font-family:var(--font-mono);" onclick="_asnLookupDirect(' + peer.asn + ')" title="' + esc(peer.name || '') + '">AS' + peer.asn + '</span>';
       }
-      if (upstream.length > 40) h += '<span style="color:var(--mut,#7a93b8);font-size:9px;padding:2px 6px;">+' + (upstream.length - 40) + ' more</span>';
+      if (upstream.length > 40) h += '<span style="color:var(--mut,#7a93b8);font-size:12px;padding:2px 6px;">+' + (upstream.length - 40) + ' more</span>';
       h += '</div>';
     } else {
-      h += '<div class="asn-empty" style="font-size:10px;">No peer data available.</div>';
+      h += '<div class="asn-empty" style="font-size:12px;">No peer data available.</div>';
     }
     h += '</div>';
   }
