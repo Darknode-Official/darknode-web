@@ -71,7 +71,7 @@ const ALLOWED_ORIGINS = [
   "https://www.darknode.ai",
   "https://darknode-official.github.io",
 ];
-function originAllowed(origin) {
+export function originAllowed(origin) {
   if (!origin) return true; // non-browser client
   try {
     const h = new URL(origin).hostname;
@@ -79,6 +79,8 @@ function originAllowed(origin) {
     // Our own Render mirror gets an auto-assigned subdomain whose suffix can change
     // across redeploys; match the service prefix so a new suffix never breaks CORS.
     if (/^darknode-web-[a-z0-9]+\.onrender\.com$/.test(h)) return true;
+    // Our Firebase Hosting sites and their preview channels (<site>--<channel>-<hash>.web.app).
+    if (origin.startsWith("https://") && /^sentinel-b4194(-6173e)?(--[a-z0-9-]+)?\.web\.app$/.test(h)) return true;
     return ALLOWED_ORIGINS.includes(origin);
   } catch (_) { return false; }
 }
