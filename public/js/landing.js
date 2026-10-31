@@ -603,7 +603,7 @@ export function renderLanding(view, actions) {
       <div class="wrap">
         <div class="sec-label">Darknode OS</div>
         <h2 class="sec-title" id="os-title">Your own security operating system</h2>
-        <p class="sec-sub">Two editions — a custom x86 kernel built from scratch, and a full Linux desktop. Both open-core and self-hostable, ideal for locked-down and air-gapped environments.</p>
+        <p class="sec-sub">Two editions — a custom x86 kernel built from scratch, and a full Linux desktop. Both self-hostable, ideal for locked-down and air-gapped environments.</p>
         <div class="os-grid">
           <div class="os-card">
             <div class="os-card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
@@ -885,7 +885,7 @@ export function renderLanding(view, actions) {
       <div class="cta-grid-bg"></div>
       <div class="wrap cta-inner">
         <h2>Find your real risks today.</h2>
-        <p class="cta-sub">Open-core and self-hostable. Your code and findings stay on infrastructure you control.</p>
+        <p class="cta-sub">Self-hostable. Your code and findings stay on infrastructure you control.</p>
         <button class="btn lg" id="cta-signup">Get started &rarr;</button>
         <div class="cta-divider"></div>
         <div class="cta-notify">

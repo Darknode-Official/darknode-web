@@ -9550,6 +9550,7 @@ html[data-style=dark] .boot-sweep {
 [data-style=pro] .adm-side { background: #fff !important; border-right: 1px solid #e2e8f0 !important; }
 [data-style=pro] .adm-cols { gap: 16px !important; }
 [data-style=pro] .adm-msg { background: #eff6ff !important; border: 1px solid #bfdbfe !important; color: #1e40af !important; border-radius: 8px !important; }
+[data-style=pro] .adm-msg:empty, [data-style=pro] .pt-alert:empty { display: none !important; }
 [data-style=pro] .adm-err { background: #fef2f2 !important; border: 1px solid #fecaca !important; color: #991b1b !important; border-radius: 8px !important; }
 [data-style=pro] .ur-main { background: #fff !important; }
 [data-style=pro] .user-row { background: #fff !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; margin-bottom: 8px !important; }

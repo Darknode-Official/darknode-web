@@ -242,6 +242,7 @@ body:not(.landing):not(.app)::before{content:"";position:fixed;inset:0;z-index:-
 .auth-logo img{width:52px;height:52px;border-radius:13px;box-shadow:0 0 0 1px var(--line),0 10px 26px -6px color-mix(in srgb,var(--acc) 60%,transparent)}
 .auth-card h1{margin:0 0 4px;letter-spacing:-.02em}
 .auth-card .btn{width:100%;margin-top:10px}
+.auth-card .gis-btn{display:flex;justify-content:center;margin-top:10px;min-height:44px;color-scheme:light}
 .btn.google{background:#fff;color:#1a1a1a}
 .btn.github{background:#24292e;color:#fff;border:1px solid #3a4048}
 .or{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:.75rem;margin:14px 0}
@@ -8704,7 +8705,7 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .ai2-bar-r { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 /* Model selector — a subtle pill living inside the composer */
 .ai2-modelwrap { position: relative; display: inline-flex; align-items: center; }
-.ai2-model { appearance: none; -webkit-appearance: none; border: 1px solid var(--line); background: color-mix(in srgb, var(--card2) 60%, transparent); color: var(--txt); font: inherit; font-size: .8rem; font-weight: 500; border-radius: 999px; padding: 5px 26px 5px 12px; max-width: 230px; cursor: pointer; text-overflow: ellipsis; }
+.ai2-model { appearance: none; -webkit-appearance: none; border: 1px solid var(--line); background: color-mix(in srgb, var(--card2) 60%, transparent); color: var(--txt); font: inherit; font-size: .8rem; font-weight: 500; border-radius: 999px; padding: 5px 26px 5px 12px; max-width: 290px; cursor: pointer; text-overflow: ellipsis; }
 .ai2-model:hover { border-color: color-mix(in srgb, var(--acc) 45%, var(--line)); }
 .ai2-model:focus { outline: none; border-color: var(--acc); }
 .ai2-model-caret { position: absolute; right: 10px; pointer-events: none; color: var(--mut); }
@@ -9009,3 +9010,20 @@ body.focus-mode .app-main { padding-left: 20px !important; padding-right: 20px !
 .tk-cat > .tk-item:last-of-type{border-radius:0 0 9px 9px}
 .tk-cat > .tk-cat-h + .tk-item:last-of-type{border-radius:9px}
 .tk-cat > .tk-item > .tk-head{padding:8px 14px;border-radius:0}
+
+/* Terms of Service gate (auth.js) */
+.tos-gate{max-width:720px;margin:56px auto;padding:0 24px;font-family:var(--font-body,system-ui)}
+.tos-gate h1{font-size:1.6rem;line-height:1.25;margin:0 0 6px}
+.tos-gate .tos-sub{color:var(--mut);margin:0 0 20px}
+.tos-update,.tos-box{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:16px 20px}
+.tos-update{margin:0 0 16px;font-size:.86rem;line-height:1.6;box-shadow:inset 3px 0 0 var(--acc)}
+.tos-update ul{margin:6px 0 0;padding-left:18px}
+.tos-box{max-height:min(52vh,460px);overflow-y:auto;font-size:.86rem;line-height:1.7}
+.tos-box>:first-child{margin-top:0}
+.tos-box h3{font-size:1.05rem;margin:0 0 8px}
+.tos-box h4{font-family:inherit;font-size:.92rem;font-weight:650;margin:20px 0 6px}
+.tos-box ul{padding-left:18px}
+.tos-box .tos-aside{margin-top:18px;color:var(--mut);font-style:italic}
+.tos-box .tos-final{margin:18px 0 0}
+.tos-acts{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:20px}
+.tos-acts .btn{min-width:140px;margin:0}

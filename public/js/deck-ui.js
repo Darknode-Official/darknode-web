@@ -991,16 +991,16 @@ const CSS = `
 .dk-sevleg i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:-1px}
 /* ======================= Tools workspace (rail + search) ======================= */
 .dk-tools2{position:absolute;inset:56px 0 0;display:flex;flex-direction:column}
-.dk-tbar{flex:none;display:flex;align-items:center;gap:14px;padding:18px 4vw 14px}
+.dk-tbar{flex:none;display:flex;align-items:center;gap:14px;padding:26px clamp(20px,2.6vw,44px) 14px}
 .dk-tsearch{flex:1;max-width:520px;height:40px;display:flex;align-items:center;gap:10px;padding:0 14px;border-radius:10px;background:rgba(23,33,56,.05);border:1px solid rgba(23,33,56,.1)}
 .dk-tsearch:focus-within{border-color:rgba(79,134,255,.6);background:rgba(79,134,255,.08)}
 .dk-tsearch svg{width:17px;height:17px;color:#687388;flex:none}
 .dk .dk-tsearch input{flex:1;min-width:0;width:auto;height:100%;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;outline:0;box-shadow:none!important;background:transparent!important;color:#1a2233;font:inherit;font-size:14px;-webkit-appearance:none;appearance:none}
 .dk .dk-tsearch input::-webkit-search-decoration{-webkit-appearance:none}
 @media(max-width:640px){.dk-tbar{padding:14px 16px 10px;gap:10px}.dk-tsearch{max-width:none}}
-.dk-tcount{font-size:12.5px;color:#687388;margin-left:auto;flex:none}
+.dk-tbar{flex-wrap:wrap}.dk-tbar>.dk-ti-head{flex-basis:100%;margin-bottom:4px}
 .dk-tbody{flex:1;display:flex;min-height:0}
-.dk-tnav{flex:none;width:calc(236px + 4vw);overflow-x:hidden;overflow-y:auto;padding:4px 12px 30px 4vw;scrollbar-width:thin;scrollbar-color:rgba(23,33,56,.16) transparent}
+.dk-tnav{flex:none;width:calc(236px + clamp(20px,2.6vw,44px));overflow-x:hidden;overflow-y:auto;padding:4px 12px 30px clamp(20px,2.6vw,44px);scrollbar-width:thin;scrollbar-color:rgba(23,33,56,.16) transparent}
 .dk-tcat{display:flex;align-items:center;gap:9px;width:100%;white-space:nowrap;padding:9px 12px;margin-bottom:3px;border:0;border-radius:11px;background:transparent;color:#5a6680;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:background .15s,color .15s}
 .dk-tcat:hover{background:rgba(23,33,56,.05);color:#38435c}
 .dk-tcat.on{background:rgba(47,95,255,.16);color:#2552c6}
@@ -1008,7 +1008,7 @@ const CSS = `
 .dk-tcat .tl{min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
 .dk-tcat .n{flex:none;margin-left:auto;font-size:11.5px;font-weight:600;color:#6a7488;background:rgba(23,33,56,.06);padding:1px 8px;border-radius:999px}
 .dk-tcat.on .n{color:#38435c;background:rgba(23,33,56,.12)}
-.dk-tmain{flex:1;overflow:auto;padding:4px 4vw 60px 24px;scrollbar-width:thin;scrollbar-color:rgba(23,33,56,.16) transparent}
+.dk-tmain{flex:1;overflow:auto;padding:4px clamp(20px,2.6vw,44px) 60px 24px;scrollbar-width:thin;scrollbar-color:rgba(23,33,56,.16) transparent}
 @media(max-width:820px){.dk-tnav{display:none}.dk-tmain{padding:4px 18px 56px}}
 .dk-tsec{margin:0 0 30px}
 .dk-tsec .th{display:flex;align-items:center;gap:10px;margin:0 0 14px}
@@ -1208,7 +1208,7 @@ const CSS = `
 .dk-kititem{display:block;width:100%;text-align:left;appearance:none;border:0;background:transparent;color:#5a6680;font:inherit;font-size:13px;padding:8px 11px;border-radius:9px;cursor:pointer;transition:background .14s,color .14s}
 .dk-kititem:hover{background:rgba(23,33,56,.05);color:#1a2233}
 .dk-kititem.on{background:rgba(47,95,255,.18);color:#2552c6;font-weight:600}
-.dk-kitmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px;padding:22px 4vw 40px 26px;overflow:auto}
+.dk-kitmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px;padding:22px clamp(20px,2.6vw,44px) 40px 26px;overflow:auto}
 @media(max-width:820px){.dk-kitnav{width:200px;padding-left:18px}.dk-kitmain{padding:18px}}
 .dk-kithead{display:flex;align-items:center;gap:14px}
 .dk-kithead .ki{flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:var(--a,#4f86ff);background:color-mix(in srgb,var(--a,#4f86ff) 18%,transparent)}
@@ -1421,7 +1421,7 @@ textarea.dk-kitio{min-height:120px}
 .dk-intcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 .dk-intcard{appearance:none;font:inherit;display:flex;align-items:center;gap:13px;text-align:left;cursor:pointer;background:#fff;border:1px solid rgba(23,33,56,.08);border-radius:13px;padding:13px 15px;transition:border-color .15s,transform .15s}
 .dk-intcard:hover{border-color:#3f78ff;transform:translateY(-1px)}
-.dk-intcard .ic{flex:none;width:34px;height:34px;border-radius:9px;object-fit:contain;background:rgba(23,33,56,.04)}
+.dk-intcard .ic{flex:none;box-sizing:border-box;width:36px;height:36px;padding:6px;border-radius:9px;object-fit:contain;background:#fff;border:1px solid rgba(23,33,56,.1)}
 .dk-intcard .ic.mono{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:var(--a,#3f78ff)}
 .dk-intcard .meta{min-width:0;flex:1}
 .dk-intcard .meta b{display:block;font-size:13.5px;font-weight:700;color:#141c2e}
@@ -1689,10 +1689,19 @@ export function renderDeck(host, opts) {
     "favicon", "reconplanner", "netmap", "stego",
     "math", "dataviz", "engines", "education", "downloads", "dlguide", "setup", "privatecloud", "embedsdk"
   ]);
+  // Full pages and mini utilities come from two catalogs; categories that mean the same
+  // thing are folded into one so the library never lists the same discipline twice.
+  const GROUP_MERGE = { "Forensics & Malware": "Forensics & DFIR" };
   const groups = (opts.groups || [])
     .filter((g) => g.items && g.items.length && !DECK_DENY_GROUPS.has(g.id))
     .map((g) => ({ ...g, items: g.items.filter((it) => !DECK_DENY_SECS.has(it.sec) && (DECK_KEEP_LABEL.test(it.label || "") || !DECK_DENY_LABEL.test(it.label || ""))) }))
-    .filter((g) => g.items.length);
+    .filter((g) => g.items.length)
+    .reduce((acc, g) => {
+      const name = GROUP_MERGE[g.name] || g.name, into = acc.find((x) => x.name === name);
+      if (!into) acc.push({ ...g, name });
+      else for (const it of g.items) if (!into.items.some((x) => x.sec === it.sec)) into.items.push(it);
+      return acc;
+    }, []);
   // Sidebar definition (groups of [kind, id, label, icon]; kind = "scene" | "tool"). Declared here,
   // before the catalog is consumed, so tools that exist only in the Deck can be merged into it.
   const NAV_DEF = [
@@ -2375,8 +2384,8 @@ export function renderDeck(host, opts) {
     if (toolsBuilt) return; toolsBuilt = true;
     sceneTools.innerHTML = `
       <div class="dk-tbar">
+        <div class="dk-ti-head"><h1>Tool library</h1><span class="dk-intmeta" id="dkToolCount"></span></div>
         <label class="dk-tsearch">${IC_SEARCH}<input id="dkToolSearch" type="search" placeholder="Search tools…" autocomplete="off" spellcheck="false"></label>
-        <span class="dk-tcount" id="dkToolCount"></span>
       </div>
       <div class="dk-tbody">
         <nav class="dk-tnav" id="dkToolNav" aria-label="Tool categories">

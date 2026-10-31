@@ -22,7 +22,7 @@
   if (window.__darknodeChat) return; // idempotent
   window.__darknodeChat = true;
 
-  var log = function (m, x) { try { console.info("[darknode-agent] " + m, x === undefined ? "" : x); } catch (_) {} };
+  var log = function (m, x) { try { if (localStorage.getItem("dn_debug") === "1") console.info("[darknode-agent] " + m, x === undefined ? "" : x); } catch (_) {} };
 
   // ── Allowlisted navigation verbs ───────────────────────────────────────────
   var ACTIONS = {

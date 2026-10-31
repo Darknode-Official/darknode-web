@@ -735,6 +735,10 @@ async function initGis() {
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
     use_fedcm_for_prompt: true,
+    // Button mode: clicking Google's rendered button opens the browser's centred
+    // "Sign in to darknode.ai with google.com" account chooser (FedCM), not a window.
+    use_fedcm_for_button: true,
+    button_auto_select: false,
     auto_select: false,
     cancel_on_tap_outside: true,
     callback: async (resp) => {
@@ -751,18 +755,25 @@ async function initGis() {
   });
   _gisInit = true;
 }
-// Show the bubble. onUnavailable() runs only when GIS can't display it (FedCM opted out,
-// cooldown, library blocked), so the caller can fall back to the popup. Never throws.
-async function googleOneTap(onUnavailable) {
+// Quietly offer the One Tap / FedCM bubble. No moment callback: the browser owns that UI
+// under FedCM, and the status methods are deprecated. Never throws.
+async function googleOneTap() {
+  try { await initGis(); google.accounts.id.prompt(); } catch (_) {}
+}
+// Replace our "Continue with Google" button with Google's rendered one, which runs FedCM
+// button mode. Resolves false (our button stays, with the popup flow) if GIS can't load.
+async function googleButton(slot) {
+  // Google only renders the button on origins authorised for the client ID; elsewhere
+  // (localhost, preview channels) it would be a dead frame, so keep our popup button.
+  if (!/^(www\.)?darknode\.ai$/.test(location.hostname)) return false;
   try {
-    await initGis();
-    google.accounts.id.prompt((notif) => {
-      try {
-        const gone = notif && ((notif.isNotDisplayed && notif.isNotDisplayed()) || (notif.isSkippedMoment && notif.isSkippedMoment()));
-        if (gone && typeof onUnavailable === "function") onUnavailable();
-      } catch (_) { /* under FedCM the moment methods are gone and the browser owns the UI */ }
-    });
-  } catch (_) { if (typeof onUnavailable === "function") onUnavailable(); }
+    await Promise.race([initGis(), new Promise((_, r) => setTimeout(() => r(new Error("gis-timeout")), 4000))]);
+    if (!slot.isConnected) return false;
+    const host = document.createElement("div"); host.className = "gis-btn";
+    google.accounts.id.renderButton(host, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", logo_alignment: "center", width: Math.max(200, Math.min(400, Math.round(slot.getBoundingClientRect().width) || 360)) });
+    slot.replaceWith(host);
+    return true;
+  } catch (_) { return false; }
 }
 
 function renderAuth(mode = "signin") {
@@ -819,8 +830,8 @@ function renderAuth(mode = "signin") {
       } catch (e) { try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {} note.className = "auth-err"; err(errText(e)); }
       return;
     }
-    // Browser: show the native in-page FedCM / One Tap bubble first (stays on darknode.ai,
-    // no separate window). Fall back to the popup/redirect only if the bubble can't be shown.
+    // Browser without Google's button (GIS blocked or still loading): one popup, falling
+    // back to a redirect if popups are blocked. Only ever one sign-in window.
     const popupSignIn = async () => {
       try {
         await signInWithPopup(auth, googleProvider);
@@ -838,7 +849,7 @@ function renderAuth(mode = "signin") {
         err(errText(e));
       }
     };
-    googleOneTap(popupSignIn);
+    await popupSignIn();
   };
   document.getElementById("github").onclick = async () => {
     err("");
@@ -877,9 +888,8 @@ function renderAuth(mode = "signin") {
     try { await sendPasswordResetEmail(auth, email, RESET_ACS); err(""); document.getElementById("err").className = "auth-ok"; document.getElementById("err").textContent = "Password reset email sent — check your inbox."; }
     catch (e) { err(errText(e)); }
   });
-  // Auto-show the Google One Tap / FedCM bubble on the sign-in screen (browser only).
-  // No popup fallback here — the explicit "Continue with Google" button handles that.
-  if (!desktopHas("auth.google")) { try { googleOneTap(() => {}); } catch (_) {} }
+  // Browser: swap in Google's FedCM button, and offer the One Tap bubble once.
+  if (!desktopHas("auth.google")) { googleButton(document.getElementById("google")).then((ok) => { if (ok) googleOneTap(); }); }
 }
 
 function renderVerify(user) {
@@ -2907,15 +2917,15 @@ onAuthStateChanged(auth, async (user) => {
   const tosReturning = !!ud.tosAccepted && !tosAccepted;
   if (!tosAccepted) {
     view.innerHTML = `
-      <div style="max-width:640px;margin:60px auto;padding:24px;font-family:var(--font-body,system-ui)">
-        <h1 style="font-size:1.6rem;margin-bottom:8px">${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
-        <p style="color:var(--mut,#888);margin-bottom:20px">${tosReturning ? "Please review the changes and accept to keep using Darknode." : "Please read and accept before continuing."}</p>
-        ${tosReturning ? `<div style="border:1px solid var(--line,#333);border-left:4px solid var(--acc,#2552c6);padding:14px 18px;margin-bottom:16px;border-radius:4px;font-size:.88rem;line-height:1.6">
+      <div class="tos-gate">
+        <h1>${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
+        <p class="tos-sub">${tosReturning ? "Please review the changes and accept to keep using Darknode." : "Please read and accept before continuing."}</p>
+        ${tosReturning ? `<div class="tos-update">
           <strong>What changed (October 31, 2026)</strong>
-          <ul style="margin:8px 0 0;padding-left:20px">
+          <ul>
             <li>Signed-in users can pick Claude models in the built-in assistant. Those messages go through Darknode's edge proxy to Anthropic, which processes them under its own terms; Darknode does not log or store them. Claude use is rate-limited per account.</li>
           </ul></div>` : ""}
-        <div style="background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:20px;max-height:400px;overflow-y:auto;font-size:.85rem;line-height:1.7;margin-bottom:20px;border-radius:4px" id="tosBox">
+        <div class="tos-box" id="tosBox" tabindex="0">
           <h3>Darknode Terms of Service</h3>
           <p><strong>Last updated:</strong> October 31, 2026</p>
           <p>By using Darknode ("the Platform"), including darknode.ai, the Darknode command center, the Darknode Deck and its Personal and Organization spaces, the code, cloud, dependency and web-exposure analysis engines, the Darknode CLI, the Nexus agent, Darknode OS, the API and MCP server, and all associated tools, you (and, where you act for an organization, that organization) agree to these terms. If you do not agree, do not use the Platform.</p>
@@ -3026,12 +3036,12 @@ onAuthStateChanged(auth, async (user) => {
           <p>Questions about these terms? Email <strong>contact@darknode.ai</strong>.</p>
 
           <!-- The pointing-up emoji below is the one emoji the owner explicitly asked to keep here (points up at the terms); no other emojis in the UI. -->
-          <p style="margin-top:18px;opacity:.8;font-style:italic">Our lawyers made us say all of that. <span aria-hidden="true">&#9757;&#65039;</span> They were, regrettably, correct. The short version, which changes none of the legally binding version above: the tools help, they are not magic, nothing here is a guarantee, and you are responsible for your own systems, data, and decisions. Read a real audit before you bet the company on anything.</p>
+          <p class="tos-aside">Our lawyers made us say all of that. <span aria-hidden="true">&#9757;&#65039;</span> They were, regrettably, correct. The short version, which changes none of the legally binding version above: the tools help, they are not magic, nothing here is a guarantee, and you are responsible for your own systems, data, and decisions. Read a real audit before you bet the company on anything.</p>
 
-          <p style="margin-top:20px"><strong>By clicking "I Agree" below, you acknowledge that you have read, understood, and agree to be bound by these terms.</strong></p>
+          <p class="tos-final"><strong>By clicking "I Agree" below, you acknowledge that you have read, understood, and agree to be bound by these terms.</strong></p>
         </div>
-        <div style="display:flex;gap:12px;align-items:center">
-          <button class="btn lg" id="tosAgree" style="min-width:140px">I Agree</button>
+        <div class="tos-acts">
+          <button class="btn lg" id="tosAgree">I Agree</button>
           <button class="btn lg ghost" id="tosDecline">Decline &amp; Sign Out</button>
         </div>
       </div>`;
