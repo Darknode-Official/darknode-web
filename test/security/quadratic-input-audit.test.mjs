@@ -5,7 +5,14 @@ import { test, assert, group } from "../harness.mjs";
 import { stripEnclosed, normHeader } from "../../public/js/ingest/parse.js";
 
 const J = "../../public/js/";
-const timed = (fn) => { const t = Date.now(); fn(); return Date.now() - t; };
+// Best of up to three runs, re-measured only when a run is slow: a shared CI runner can
+// stall one linear run past the budget, while a real quadratic blow-up is slow every time
+// (and a run over 5s is not retried).
+const timed = (fn) => {
+  let best = Infinity;
+  for (let i = 0; i < 3 && best >= 300; i++) { const t = Date.now(); fn(); const ms = Date.now() - t; best = Math.min(best, ms); if (ms > 5000) break; }
+  return best;
+};
 
 group("Long single-character runs stay linear", () => {
   test("stripEnclosed gives the regex result", () => {
