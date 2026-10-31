@@ -2924,6 +2924,7 @@ onAuthStateChanged(auth, async (user) => {
   const tosAccepted = !!ud.tosAccepted && ud.tosVersion === TOS_VERSION;
   const tosReturning = !!ud.tosAccepted && !tosAccepted;
   if (!tosAccepted) {
+    dismissBoot(); // on a reload the boot screen is still up and would cover the gate
     view.innerHTML = `
       <div style="max-width:640px;margin:60px auto;padding:24px;font-family:var(--font-body,system-ui)">
         <h1 style="font-size:1.6rem;margin-bottom:8px">${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
