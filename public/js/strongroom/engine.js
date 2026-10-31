@@ -3,7 +3,7 @@
 // STRONGROOM engine (v1 bridgehead) — pure, deterministic, dependency-free.
 //
 // This is the first real increment of the cyber-financial FUSION engine described in
-// docs/STRONGROOM-FUSION-ENGINE.md. It runs entirely in the browser on data YOU load;
+// docs/plans/STRONGROOM-FUSION-ENGINE.md. It runs entirely in the browser on data YOU load;
 // nothing is uploaded. Every detection is deterministic: the same input always produces
 // byte-identical findings. No AI decides anything here, and nothing is simulated — the
 // engine analyses exactly the rows you give it.

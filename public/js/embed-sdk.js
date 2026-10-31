@@ -1,4 +1,4 @@
-// Embed SDK — generate an iframe or snippet to embed any Darknode tool in another site.
+// Embed SDK — generate iframe markup that shows one Darknode tool in embed mode on a Darknode-origin page.
 // Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Darknode runs any route in EMBED MODE with ?embed=1 — the full app boots but all chrome
@@ -38,7 +38,7 @@ const EM_CSS =
   '@media(max-width:860px){.em-grid{grid-template-columns:1fr}}' +
   '.em-field{margin:0 0 14px}' +
   '.em-field:last-child{margin-bottom:0}' +
-  '.em-label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:0 0 6px}' +
+  '.em-label{display:block;font-size:.75rem;font-weight:600;color:var(--mut);margin:0 0 6px}' +
   '.em-input,.em-select{width:100%;box-sizing:border-box;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:9px 11px;font-size:.86rem;font-family:inherit}' +
   '.em-input:focus,.em-select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 15%,transparent)}' +
   '.em-row{display:flex;gap:12px;flex-wrap:wrap}' +
@@ -48,16 +48,16 @@ const EM_CSS =
   '.em-tool:last-child{border-bottom:none}' +
   '.em-tool:hover{background:color-mix(in srgb,var(--acc) 8%,transparent)}' +
   '.em-tool.on{background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--acc)}' +
-  '.em-tool .em-tool-g{font-size:.72rem;color:var(--mut);white-space:nowrap}' +
+  '.em-tool .em-tool-g{font-size:.75rem;color:var(--mut);white-space:nowrap}' +
   '.em-tool.on .em-tool-g{color:var(--acc)}' +
   '.em-checks{display:flex;flex-direction:column;gap:9px;margin-top:4px}' +
   '.em-check{display:flex;align-items:center;gap:9px;font-size:.84rem;color:var(--txt-2);cursor:pointer}' +
   '.em-check input{width:auto;margin:0;accent-color:var(--acc)}' +
   '.em-preview-box{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--card2);min-height:220px}' +
   '.em-preview-box iframe{display:block;width:100%;border:0;background:var(--bg)}' +
-  '.em-prev-note{font-size:.74rem;color:var(--mut);margin:6px 0 0}' +
+  '.em-prev-note{font-size:.75rem;color:var(--mut);margin:6px 0 0}' +
   '.em-codehead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 6px}' +
-  '.em-codehead h3{margin:0;font-size:.82rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--txt)}' +
+  '.em-codehead h3{margin:0;font-size:.875rem;font-weight:600;color:var(--txt)}' +
   '.em-code{margin:0;background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:11px 12px;font-family:var(--font-mono);font-size:.76rem;line-height:1.55;color:var(--txt-2);white-space:pre-wrap;word-break:break-word;overflow-x:auto;max-height:230px;overflow-y:auto}' +
   '.em-codeblock{margin:0 0 16px}' +
   '.em-codeblock p{margin:0 0 6px;font-size:.78rem;color:var(--mut);line-height:1.45}' +
@@ -73,7 +73,6 @@ export function renderEmbedSDK(main) {
     sec: TOOLS.length ? TOOLS[0].sec : "dns",
     width: "100%",
     height: 640,
-    theme: "auto",
     radius: true,
     showLink: true,
   };
@@ -82,14 +81,14 @@ export function renderEmbedSDK(main) {
     '<div class="em-wrap">' +
       '<div class="pg-head"><div>' +
         '<h1 class="pg-h1">Embed SDK</h1>' +
-        '<p class="muted pg-sub">Embed any Darknode tool into your own site or portal. Pick a tool, tune the frame, preview it live, then copy a ready-made snippet.</p>' +
+        '<p class="muted pg-sub">Build iframe markup that shows a single Darknode tool in embed mode. Framing is limited to Darknode-origin pages, so these snippets do not work on other domains.</p>' +
       '</div></div>' +
       '<div class="em-grid">' +
         // ── Left: configuration ──
         '<div class="panel" style="padding:16px">' +
           '<div class="em-field">' +
             '<label class="em-label" for="emSearch">Tool</label>' +
-            '<input class="em-input" id="emSearch" type="search" placeholder="Search tools, e.g. &quot;dns&quot;" autocomplete="off" spellcheck="false">' +
+            '<input class="em-input" id="emSearch" type="search" placeholder="Search tools" autocomplete="off" spellcheck="false">' +
             '<div class="em-tools" id="emTools" role="listbox" aria-label="Embeddable tools"></div>' +
           '</div>' +
           '<div class="em-row">' +
@@ -100,14 +99,6 @@ export function renderEmbedSDK(main) {
             '<div class="em-field">' +
               '<label class="em-label" for="emHeight">Height (px)</label>' +
               '<input class="em-input" id="emHeight" type="number" min="120" max="4000" value="640">' +
-            '</div>' +
-            '<div class="em-field">' +
-              '<label class="em-label" for="emTheme">Theme hint</label>' +
-              '<select class="em-select" id="emTheme">' +
-                '<option value="auto">Auto</option>' +
-                '<option value="dark">Dark</option>' +
-                '<option value="light">Light</option>' +
-              '</select>' +
             '</div>' +
           '</div>' +
           '<div class="em-field">' +
@@ -120,13 +111,13 @@ export function renderEmbedSDK(main) {
         // ── Right: preview + output ──
         '<div>' +
           '<div class="panel" style="padding:16px;margin-bottom:16px">' +
-            '<div class="em-codehead"><h3>Live preview</h3></div>' +
+            '<div class="em-codehead"><h3>Preview</h3></div>' +
             '<div class="em-preview-box" id="emPreviewBox"></div>' +
             '<p class="em-prev-note" id="emPrevNote"></p>' +
           '</div>' +
           '<div class="panel" style="padding:16px">' +
             '<div class="em-codeblock">' +
-              '<div class="em-codehead"><h3>IFrame snippet</h3><button class="btn sm" data-copy="iframe">Copy</button></div>' +
+              '<div class="em-codehead"><h3>Iframe snippet</h3><button class="btn sm" data-copy="iframe">Copy</button></div>' +
               '<pre class="em-code" id="emCodeIframe"></pre>' +
             '</div>' +
             '<div class="em-codeblock">' +
@@ -141,12 +132,12 @@ export function renderEmbedSDK(main) {
             '</div>' +
           '</div>' +
           '<div class="panel" style="padding:16px;margin-top:16px">' +
-            '<div class="em-codehead"><h3>How it works &amp; security</h3></div>' +
+            '<div class="em-codehead"><h3>How it works and limits</h3></div>' +
             '<ul class="em-note" style="margin:0;padding-left:18px">' +
               '<li>Each embed loads a Darknode route with <code>?embed=1</code>, which strips all chrome and renders only that one tool.</li>' +
-              '<li>Framing is allowed same-origin only. The embed must live on a Darknode-origin page (or a Darknode preview); it will not render inside an unrelated third-party domain.</li>' +
+              '<li>Framing is allowed same-origin only (<code>frame-ancestors \'self\'</code>). The embed must live on a Darknode-origin page; browsers refuse to render it inside any other domain.</li>' +
               '<li>The viewer must be signed in to Darknode. A same-origin iframe inherits the existing Firebase session, so there is no extra login step.</li>' +
-              '<li>The snippets compute the origin at runtime, so the same code works on darknode.ai and in local previews.</li>' +
+              '<li>Embedded tools always render in the light theme.</li>' +
             '</ul>' +
           '</div>' +
         '</div>' +
@@ -158,7 +149,6 @@ export function renderEmbedSDK(main) {
   const searchEl = $("#emSearch");
   const widthEl = $("#emWidth");
   const heightEl = $("#emHeight");
-  const themeEl = $("#emTheme");
   const radiusEl = $("#emRadius");
   const linkEl = $("#emLink");
   const previewBox = $("#emPreviewBox");
@@ -176,7 +166,7 @@ export function renderEmbedSDK(main) {
   function embedUrl(sec) {
     let origin = "";
     try { origin = window.location.origin; } catch (_) {}
-    const q = "?embed=1&theme=" + encodeURIComponent(cfg.theme);
+    const q = "?embed=1";
     return origin + "/" + sec + q;
   }
 
@@ -213,7 +203,6 @@ export function renderEmbedSDK(main) {
     cfg.height = Math.max(120, Math.min(4000, h));
     refresh();
   };
-  themeEl.onchange = () => { cfg.theme = themeEl.value; refresh(); };
   radiusEl.onchange = () => { cfg.radius = radiusEl.checked; refresh(); };
   linkEl.onchange = () => { cfg.showLink = linkEl.checked; refresh(); };
 
@@ -235,7 +224,7 @@ export function renderEmbedSDK(main) {
       (cfg.radius ? "border-radius:8px;" : "");
     let html =
       '<iframe\n' +
-      '  src="' + origin + '/' + cfg.sec + '?embed=1&theme=' + cfg.theme + '"\n' +
+      '  src="' + origin + '/' + cfg.sec + '?embed=1"\n' +
       '  title="' + labelOf(cfg.sec) + ' — Darknode"\n' +
       '  loading="lazy"\n' +
       '  style="' + style + '">\n' +
@@ -257,7 +246,7 @@ export function renderEmbedSDK(main) {
     let html =
       '<div style="position:relative;width:' + cfg.width + ';padding-top:' + ratio + '%">\n' +
       '  <iframe\n' +
-      '    src="' + origin + '/' + cfg.sec + '?embed=1&theme=' + cfg.theme + '"\n' +
+      '    src="' + origin + '/' + cfg.sec + '?embed=1"\n' +
       '    title="' + labelOf(cfg.sec) + ' — Darknode"\n' +
       '    loading="lazy"\n' +
       '    style="position:absolute;inset:0;width:100%;height:100%;border:0;' + radius + '">\n' +
@@ -277,7 +266,6 @@ export function renderEmbedSDK(main) {
     const h = cfg.height;
     const radius = cfg.radius ? "8px" : "0";
     const link = cfg.showLink ? "true" : "false";
-    const theme = cfg.theme;
     return [
       '<script>',
       '(function () {',
@@ -286,10 +274,9 @@ export function renderEmbedSDK(main) {
       '  for (var i = 0; i < nodes.length; i++) {',
       '    var el = nodes[i], sec = el.getAttribute("data-darknode-tool");',
       '    if (!sec || el.getAttribute("data-dn-done")) continue;',
-      '    var theme = el.getAttribute("data-theme") || "' + theme + '";',
       '    var h = el.getAttribute("data-height") || "' + h + '";',
       '    var f = document.createElement("iframe");',
-      '    f.src = ORIGIN + "/" + sec + "?embed=1&theme=" + theme;',
+      '    f.src = ORIGIN + "/" + sec + "?embed=1";',
       '    f.loading = "lazy"; f.title = "Darknode — " + sec;',
       '    f.style.cssText = "border:0;width:100%;height:" + h + "px;border-radius:' + radius + '";',
       '    el.appendChild(f);',
@@ -314,7 +301,7 @@ export function renderEmbedSDK(main) {
       '<iframe src="' + esc(url) + '" title="Preview: ' + esc(labelOf(cfg.sec)) + '" ' +
       'loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" ' +
       'style="width:' + esc(cfg.width) + ';height:' + Math.min(cfg.height, 520) + 'px;' + radius + '"></iframe>';
-    prevNote.textContent = "Previewing " + labelOf(cfg.sec) + " at " + cfg.sec + "?embed=1 (theme: " + cfg.theme + "). " +
+    prevNote.textContent = "Previewing " + labelOf(cfg.sec) + " at " + cfg.sec + "?embed=1. " +
       "The embed inherits your current Darknode sign-in.";
   }
 

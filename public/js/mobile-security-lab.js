@@ -150,16 +150,16 @@ export function renderMobileSecurityLab(main) {
 
   function render() {
     var tabsHtml = TABS.map(function(t) {
-      return '<button class="tab' + (activeTab === t.id ? ' active' : '') + '" data-tab="' + t.id + '">' + esc(t.label) + '</button>';
+      return '<button class="tab' + (activeTab === t.id ? ' on' : '') + '" data-tab="' + t.id + '">' + esc(t.label) + '</button>';
     }).join('');
 
     main.innerHTML =
-      '<h1 class="pg-h1">Mobile Security Lab</h1>' +
-      '<p class="muted pg-sub">Android and iOS security testing reference — permission analysis, ADB commands, Frida scripts, and pentest methodology.</p>' +
-      '<div class="tab-bar" style="overflow-x:auto;flex-wrap:nowrap">' + tabsHtml + '</div>' +
+      '<div class="pg-head"><div><h1 class="pg-h1">Mobile Security</h1>' +
+      '<p class="muted pg-sub">Android manifest permission check plus an Android and iOS testing reference: OWASP Mobile Top 10, ADB commands, Frida scripts and pentest methodology.</p></div></div>' +
+      '<div class="seg msl-tabs" style="overflow-x:auto;flex-wrap:nowrap">' + tabsHtml + '</div>' +
       '<div id="msl-content" style="margin-top:12px"></div>';
 
-    main.querySelector('.tab-bar').onclick = function(e) {
+    main.querySelector('.msl-tabs').onclick = function(e) {
       var b = e.target.closest('.tab');
       if (!b) return;
       activeTab = b.dataset.tab;
@@ -178,12 +178,12 @@ export function renderMobileSecurityLab(main) {
 
   function renderPermsTab(el) {
     el.innerHTML =
-      '<h2 class="pg-h2">Android Permission Analyzer</h2>' +
+      '<h2 class="pg-h2">Android permission analyzer</h2>' +
       '<p class="muted" style="margin-bottom:12px">Paste an AndroidManifest.xml below to analyze permissions, or browse the dangerous permissions reference.</p>' +
-      '<textarea class="tk-in" id="msl-manifest" rows="8" placeholder="Paste AndroidManifest.xml content here..."></textarea>' +
+      '<textarea class="tk-in" id="msl-manifest" rows="8" placeholder="AndroidManifest.xml"></textarea>' +
       '<div class="tk-btns"><button class="btn sm" id="msl-analyze">Analyze Permissions</button></div>' +
       '<div id="msl-perm-results" style="margin-top:12px"></div>' +
-      '<h3 class="pg-h2" style="margin-top:20px">Dangerous Permissions Reference</h3>' +
+      '<h3 class="pg-h2" style="margin-top:20px">Dangerous permissions reference</h3>' +
       '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">' +
       '<thead><tr style="border-bottom:2px solid var(--line)">' +
       '<th style="padding:8px;text-align:left;color:var(--mut)">Permission</th>' +
@@ -191,10 +191,10 @@ export function renderMobileSecurityLab(main) {
       '<th style="padding:8px;text-align:left;color:var(--mut)">Description</th>' +
       '</tr></thead><tbody>' +
       DANGEROUS_PERMISSIONS.map(function(p) {
-        var color = p.risk === 'critical' ? '#ff1744' : p.risk === 'high' ? '#ff9100' : p.risk === 'medium' ? '#ffd600' : 'var(--mut)';
+        var color = p.risk === 'critical' ? 'var(--bad)' : p.risk === 'high' ? 'var(--warn)' : p.risk === 'medium' ? 'var(--txt-2)' : 'var(--mut)';
         return '<tr style="border-bottom:1px solid var(--line)">' +
-          '<td style="padding:8px;font-family:var(--mono,monospace);font-size:.72rem">' + esc(p.perm.replace('android.permission.', '')) + '</td>' +
-          '<td style="padding:8px;color:' + color + ';font-weight:600;text-transform:uppercase;font-size:.7rem">' + esc(p.risk) + '</td>' +
+          '<td style="padding:8px;font-family:var(--mono,monospace);font-size:.75rem">' + esc(p.perm.replace('android.permission.', '')) + '</td>' +
+          '<td style="padding:8px;color:' + color + ';font-weight:600;font-size:.75rem">' + esc(p.risk) + '</td>' +
           '<td style="padding:8px;color:var(--mut)">' + esc(p.desc) + '</td></tr>';
       }).join('') +
       '</tbody></table></div>';
@@ -204,10 +204,12 @@ export function renderMobileSecurityLab(main) {
       var results = el.querySelector('#msl-perm-results');
       if (!manifest.trim()) { results.innerHTML = '<p class="muted">Paste a manifest first.</p>'; return; }
       var found = [];
+      // Match only permissions actually requested via <uses-permission android:name="...">.
+      var declared = {};
+      manifest.replace(/<uses-permission(?:-sdk-23)?\b[^>]*android:name\s*=\s*["']([^"']+)["']/g, function(_, n) { declared[n.trim()] = 1; return _; });
+      if (!Object.keys(declared).length) { results.innerHTML = '<p class="muted">No &lt;uses-permission&gt; entries found in the pasted manifest.</p>'; return; }
       DANGEROUS_PERMISSIONS.forEach(function(p) {
-        if (manifest.indexOf(p.perm) !== -1 || manifest.indexOf(p.perm.replace('android.permission.', '')) !== -1) {
-          found.push(p);
-        }
+        if (declared[p.perm]) found.push(p);
       });
       var critCount = found.filter(function(p){return p.risk==='critical'}).length;
       var highCount = found.filter(function(p){return p.risk==='high'}).length;
@@ -215,15 +217,15 @@ export function renderMobileSecurityLab(main) {
         '<div style="padding:12px;background:var(--card);border:1px solid var(--line);border-radius:6px">' +
         '<div style="font-weight:600;margin-bottom:8px">Found ' + found.length + ' sensitive permissions</div>' +
         '<div style="display:flex;gap:12px;margin-bottom:12px">' +
-        '<span style="color:#ff1744;font-weight:600">' + critCount + ' Critical</span>' +
-        '<span style="color:#ff9100;font-weight:600">' + highCount + ' High</span>' +
-        '<span style="color:#ffd600">' + (found.length - critCount - highCount) + ' Medium/Low</span></div>' +
+        '<span style="color:var(--bad);font-weight:600">' + critCount + ' Critical</span>' +
+        '<span style="color:var(--warn);font-weight:600">' + highCount + ' High</span>' +
+        '<span style="color:var(--txt-2)">' + (found.length - critCount - highCount) + ' Medium/Low</span></div>' +
         found.map(function(p) {
-          var color = p.risk === 'critical' ? '#ff1744' : p.risk === 'high' ? '#ff9100' : '#ffd600';
+          var color = p.risk === 'critical' ? 'var(--bad)' : p.risk === 'high' ? 'var(--warn)' : 'var(--txt-2)';
           return '<div style="border-left:3px solid ' + color + ';padding:6px 12px;margin:4px 0;font-size:.78rem">' +
             '<span style="color:' + color + ';font-weight:600">[' + p.risk.toUpperCase() + ']</span> ' +
             '<span style="font-family:var(--mono,monospace)">' + esc(p.perm.replace('android.permission.', '')) + '</span>' +
-            '<div style="color:var(--mut);font-size:.72rem;margin-top:2px">' + esc(p.desc) + '</div></div>';
+            '<div style="color:var(--mut);font-size:.75rem;margin-top:2px">' + esc(p.desc) + '</div></div>';
         }).join('') +
         '</div>';
     };
@@ -251,14 +253,14 @@ export function renderMobileSecurityLab(main) {
   function renderAdbTab(el) {
     var cats = Object.keys(ADB_COMMANDS);
     el.innerHTML =
-      '<h2 class="pg-h2">ADB Command Reference</h2>' +
+      '<h2 class="pg-h2">ADB command reference</h2>' +
       '<p class="muted" style="margin-bottom:12px">' + cats.reduce(function(a,c){return a + ADB_COMMANDS[c].length}, 0) + ' commands organized by category. Click any command to copy.</p>' +
       cats.map(function(cat) {
         return '<h3 style="margin:16px 0 8px;font-size:.85rem;color:var(--acc)">' + esc(cat) + '</h3>' +
           '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">' +
           ADB_COMMANDS[cat].map(function(c) {
             return '<tr style="border-bottom:1px solid var(--line)">' +
-              '<td style="padding:6px 8px;font-family:var(--mono,monospace);font-size:.72rem;cursor:pointer;color:var(--acc)" onclick="navigator.clipboard.writeText(this.textContent).then(()=>{this.style.color=\'#00e676\';setTimeout(()=>this.style.color=\'\',500)})">' + esc(c.cmd) + '</td>' +
+              '<td style="padding:6px 8px;font-family:var(--mono,monospace);font-size:.75rem;cursor:pointer;color:var(--acc)" onclick="navigator.clipboard.writeText(this.textContent).then(()=>{this.style.color=\'var(--ok)\';setTimeout(()=>this.style.color=\'\',500)})">' + esc(c.cmd) + '</td>' +
               '<td style="padding:6px 8px;color:var(--mut)">' + esc(c.desc) + '</td></tr>';
           }).join('') +
           '</table></div>';
@@ -267,7 +269,7 @@ export function renderMobileSecurityLab(main) {
 
   function renderFridaTab(el) {
     el.innerHTML =
-      '<h2 class="pg-h2">Frida Script Library</h2>' +
+      '<h2 class="pg-h2">Frida script library</h2>' +
       '<p class="muted" style="margin-bottom:12px">' + FRIDA_SCRIPTS.length + ' ready-to-use Frida scripts for mobile security testing. Click "Copy" to copy the script.</p>' +
       FRIDA_SCRIPTS.map(function(s) {
         return '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:10px">' +
@@ -277,14 +279,14 @@ export function renderMobileSecurityLab(main) {
           '<button class="btn sm" onclick="navigator.clipboard.writeText(this.parentElement.parentElement.querySelector(\'pre\').textContent).then(()=>{this.textContent=\'Copied!\';setTimeout(()=>this.textContent=\'Copy\',1000)})">Copy</button>' +
           '</div>' +
           '<p style="color:var(--mut);font-size:.78rem;margin:0 0 8px">' + esc(s.desc) + '</p>' +
-          '<pre style="background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px;font-size:.72rem;overflow-x:auto;white-space:pre;color:var(--acc)">' + esc(s.code) + '</pre>' +
+          '<pre style="background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px;font-size:.75rem;overflow-x:auto;white-space:pre;color:var(--acc)">' + esc(s.code) + '</pre>' +
           '</div>';
       }).join('');
   }
 
   function renderMalwareTab(el) {
     el.innerHTML =
-      '<h2 class="pg-h2">Mobile Malware Indicators</h2>' +
+      '<h2 class="pg-h2">Mobile malware indicators</h2>' +
       '<p class="muted" style="margin-bottom:12px">Common indicators of malicious mobile applications.</p>' +
       '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">' +
       '<thead><tr style="border-bottom:2px solid var(--line)">' +
@@ -293,10 +295,10 @@ export function renderMobileSecurityLab(main) {
       '<th style="padding:8px;text-align:left;color:var(--mut)">Malware Type</th>' +
       '</tr></thead><tbody>' +
       MOBILE_MALWARE_INDICATORS.map(function(m) {
-        var color = m.risk === 'critical' ? '#ff1744' : m.risk === 'high' ? '#ff9100' : '#ffd600';
+        var color = m.risk === 'critical' ? 'var(--bad)' : m.risk === 'high' ? 'var(--warn)' : 'var(--txt-2)';
         return '<tr style="border-bottom:1px solid var(--line)">' +
           '<td style="padding:8px">' + esc(m.indicator) + '</td>' +
-          '<td style="padding:8px;color:' + color + ';font-weight:600;text-transform:uppercase;font-size:.7rem">' + esc(m.risk) + '</td>' +
+          '<td style="padding:8px;color:' + color + ';font-weight:600;font-size:.75rem">' + esc(m.risk) + '</td>' +
           '<td style="padding:8px;color:var(--mut)">' + esc(m.type) + '</td></tr>';
       }).join('') +
       '</tbody></table></div>';
@@ -311,7 +313,7 @@ export function renderMobileSecurityLab(main) {
       {name: 'Reporting', steps: ['Document all findings with severity', 'Include reproduction steps with screenshots', 'Provide remediation guidance per finding', 'Map findings to OWASP Mobile Top 10', 'Calculate CVSS scores for each finding']},
     ];
     el.innerHTML =
-      '<h2 class="pg-h2">Mobile Pentest Methodology</h2>' +
+      '<h2 class="pg-h2">Mobile pentest methodology</h2>' +
       phases.map(function(phase, i) {
         return '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:10px">' +
           '<div style="font-weight:600;color:var(--acc);margin-bottom:8px">Phase ' + (i+1) + ': ' + esc(phase.name) + '</div>' +
@@ -330,7 +332,7 @@ export function renderMobileSecurityLab(main) {
       {cat: 'Tools', items: ['Objection: runtime exploration', 'Frida: dynamic instrumentation', 'ipatool: download IPA from App Store', 'otool: binary analysis', 'ldid: code signing', 'Hopper/IDA: disassembly', 'Burp Suite: traffic interception', 'ssl-kill-switch2: bypass SSL pinning']},
     ];
     el.innerHTML =
-      '<h2 class="pg-h2">iOS Security Reference</h2>' +
+      '<h2 class="pg-h2">iOS security reference</h2>' +
       '<p class="muted" style="margin-bottom:12px">Key areas for iOS application security testing.</p>' +
       iosChecks.map(function(cat) {
         return '<div style="background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:10px">' +

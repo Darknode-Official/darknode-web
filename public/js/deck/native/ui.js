@@ -111,7 +111,13 @@ export function injectStyle() {
 .ns-hero::after{content:"";position:absolute;right:-60px;top:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),transparent 65%);pointer-events:none}
 .ns-hero .k{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.85}
 .dk .ns .ns-hero h1,.ns .ns-hero h1{font-size:28px;line-height:1.15;margin:6px 0 6px;letter-spacing:-.02em;color:#fff!important}
-.dk[data-ui=deck] .ns-hero{filter:invert(1) hue-rotate(180deg)}
+.dk[data-ui=deck] .ns{--ns-acc:var(--dk-tx,#161514)}
+.dk[data-ui=deck] .ns-hero{background:var(--ns-surf);color:var(--ns-tx);border:1px solid var(--ns-line)}
+.dk[data-ui=deck] .ns-hero::after{display:none}
+.dk[data-ui=deck] .ns .ns-hero h1{color:var(--ns-tx)!important}
+.dk[data-ui=deck] .ns-tile{border-top:1px solid var(--ns-line)}
+.dk[data-ui=deck] .ns-tile:hover{border-color:var(--ns-mut)}
+.dk[data-ui=deck] .ns-tile em{color:var(--ns-tx)}
 .ns-hero p{margin:0;max-width:72ch;opacity:.9;font-size:14.5px}
 .ns-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 18px;padding:6px;border:1px solid var(--ns-line);border-radius:12px;background:var(--ns-surf)}
 .ns-tab{appearance:none;border:0;background:transparent;color:var(--ns-tx2);font:inherit;font-size:13.5px;font-weight:600;padding:9px 14px;border-radius:8px;cursor:pointer;white-space:nowrap}

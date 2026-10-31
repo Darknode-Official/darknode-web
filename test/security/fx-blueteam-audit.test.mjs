@@ -70,10 +70,10 @@ group("forensics quick tools audit", () => {
 
 group("blue-team quick tools audit", () => {
   test("grok builder keeps a literal's trailing space", async () => {
-    assert.equal(await run("bt-grok-build", {}), "%{IPORHOST:client} - %{USER:user} [%{TIMESTAMP_ISO8601:ts}] %{WORD:method}");
+    assert.equal(await run("bt-grok-build", { tokens: "IPORHOST client\nlit: - \nUSER user\nlit: [\nTIMESTAMP_ISO8601 ts\nlit:] \nWORD method" }), "%{IPORHOST:client} - %{USER:user} [%{TIMESTAMP_ISO8601:ts}] %{WORD:method}");
   });
   test("nginx rate keeps the requested rate (100 per 60 s is 100r/m, not 2r/s) and is never 0", async () => {
-    assert.ok((await run("bt-ratelimit-calc", {})).includes("rate=100r/m;"));
+    assert.ok((await run("bt-ratelimit-calc", { limit: "100", window: "60" })).includes("rate=100r/m;"));
     assert.ok((await run("bt-ratelimit-calc", { limit: "10", window: "1" })).includes("rate=10r/s;"));
     assert.ok((await run("bt-ratelimit-calc", { limit: "1", window: "3600" })).includes("rate=1r/m;"));
   });
@@ -83,7 +83,7 @@ group("blue-team quick tools audit", () => {
   });
   test("Wazuh and Sysmon XML escape & and <", async () => {
     assert.ok((await run("bt-wazuh-rule", { match: "a & b < c", desc: "x<y" })).includes("<match>a &amp; b &lt; c</match>"));
-    assert.ok((await run("bt-sysmon-config", { value: "a & b" })).includes(">a &amp; b</Image>"));
+    assert.ok((await run("bt-sysmon-config", { field: "Image", value: "a & b" })).includes(">a &amp; b</Image>"));
   });
   test("Falco rule fields are YAML-safe with ': ', ' #' and backslashes", async () => {
     const r = await run("bt-falco-rule", { rule: "Shell: in container", desc: "spawned # here", output: 'x \\d "q"' });

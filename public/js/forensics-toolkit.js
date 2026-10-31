@@ -328,36 +328,29 @@ export function renderForensicsToolkit(container) {
   function render() {
     container.innerHTML = `
       <style>
-        .ft-wrap{font-family:system-ui,sans-serif;color:#e0e0e0;max-width:1200px;margin:0 auto;padding:20px}
-        .ft-h1{font-size:1.6rem;font-weight:700;color:#00d4ff;margin:0 0 6px}
-        .ft-sub{color:#888;font-size:.85rem;margin:0 0 20px}
-        .ft-tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid #333;flex-wrap:wrap}
-        .ft-tab{padding:8px 14px;cursor:pointer;color:#888;border:none;background:none;font-size:.82rem;border-bottom:2px solid transparent;transition:all .2s}
-        .ft-tab:hover{color:#ccc}
-        .ft-tab.active{color:#00d4ff;border-bottom-color:#00d4ff}
-        .ft-card{background:#111;border:1px solid #222;border-radius:8px;padding:16px;margin-bottom:16px}
-        .ft-card h3{margin:0 0 12px;font-size:1rem;color:#00d4ff}
-        .ft-input{background:#0a0a0a;border:1px solid #333;color:#e0e0e0;padding:8px 12px;border-radius:4px;font-family:monospace;font-size:.85rem;width:100%}
-        .ft-input:focus{outline:none;border-color:#00d4ff}
-        .ft-btn{background:#00d4ff;color:#000;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:.8rem;font-weight:600}
-        .ft-table{width:100%;border-collapse:collapse;font-size:.8rem}
-        .ft-table th{text-align:left;padding:6px 8px;border-bottom:1px solid #333;color:#888;font-weight:600;position:sticky;top:0;background:#111}
-        .ft-table td{padding:5px 8px;border-bottom:1px solid #1a1a1a;vertical-align:top}
-        .ft-mono{font-family:monospace;font-size:.8rem}
-        .ft-badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:.7rem;font-weight:600}
+        .ft-wrap{color:var(--txt)}
+        .ft-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
+        .ft-card h3{margin:0 0 12px;font-size:15px;font-weight:600;color:var(--txt)}
+        .ft-input{background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:4px;font-family:monospace;font-size:13px;width:100%}
+        .ft-input:focus{outline:none;border-color:var(--acc)}
+        .ft-table{width:100%;border-collapse:collapse;font-size:13px}
+        .ft-table th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);color:var(--mut);font-weight:600;position:sticky;top:0;background:var(--card)}
+        .ft-table td{padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+        .ft-mono{font-family:monospace;font-size:13px}
+        .ft-badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:12px;font-weight:600;background:var(--card2);color:var(--acc)}
         .ft-scroll{max-height:500px;overflow-y:auto}
-        .ft-result{background:#0a0f14;border:1px solid #00d4ff33;border-radius:6px;padding:12px;margin:8px 0}
-        .ft-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1a1a}
-        .ft-label{color:#888;font-size:.82rem}
-        .ft-val{font-family:monospace;color:#e0e0e0;font-size:.82rem}
+        .ft-result{background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:12px;margin:8px 0}
+        .ft-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line)}
+        .ft-label{color:var(--mut);font-size:13px}
+        .ft-val{font-family:monospace;color:var(--txt);font-size:13px}
         .ft-search{margin-bottom:12px}
       </style>
       <div class="ft-wrap">
-        <h1 class="ft-h1">Forensics Toolkit</h1>
-        <p class="ft-sub">File identification, timestamp conversion, artifact reference, and analysis tools</p>
-        <div class="ft-tabs">
+        <div class="pg-head"><div><h1 class="pg-h1">Forensics Toolkit</h1>
+        <p class="muted pg-sub">Magic-byte identification, timestamp conversion and string extraction on input you paste, plus artifact, Volatility3 and EXIF references.</p></div></div>
+        <div class="seg" style="margin-bottom:16px;flex-wrap:wrap">
           ${["file-id", "timestamps", "strings", "win-artifacts", "linux-artifacts", "volatility", "exif"].map(t =>
-            `<button class="ft-tab ${activeTab === t ? "active" : ""}" data-tab="${t}">${
+            `<button class="ft-tab${activeTab === t ? " on" : ""}" data-tab="${t}">${
               ({
                 "file-id": "File ID",
                 "timestamps": "Timestamps",
@@ -379,8 +372,8 @@ export function renderForensicsToolkit(container) {
     if (activeTab === "file-id") renderFileId(content);
     else if (activeTab === "timestamps") renderTimestamps(content);
     else if (activeTab === "strings") renderStrings(content);
-    else if (activeTab === "win-artifacts") renderArtifacts(content, WINDOWS_ARTIFACTS, "Windows Forensic Artifacts");
-    else if (activeTab === "linux-artifacts") renderArtifacts(content, LINUX_ARTIFACTS, "Linux Forensic Artifacts");
+    else if (activeTab === "win-artifacts") renderArtifacts(content, WINDOWS_ARTIFACTS, "Windows forensic artifacts (reference)");
+    else if (activeTab === "linux-artifacts") renderArtifacts(content, LINUX_ARTIFACTS, "Linux forensic artifacts (reference)");
     else if (activeTab === "volatility") renderVolatility(content);
     else if (activeTab === "exif") renderExif(content);
   }
@@ -388,19 +381,19 @@ export function renderForensicsToolkit(container) {
   function renderFileId(el) {
     el.innerHTML = `
       <div class="ft-card">
-        <h3>File Header / Magic Bytes Identifier</h3>
-        <p style="color:#888;font-size:.82rem;margin:0 0 8px">Paste hex bytes from the start of a file to identify its type.</p>
-        <input class="ft-input" id="ft-hex-input" placeholder="e.g. 89504E470D0A1A0A or 4D 5A 90 00" style="margin-bottom:8px">
-        <button class="ft-btn" id="ft-identify-btn">Identify</button>
+        <h3>File header (magic bytes) identifier</h3>
+        <p style="color:var(--mut);font-size:.82rem;margin:0 0 8px">Paste hex bytes from the start of a file to identify its type.</p>
+        <input class="ft-input" id="ft-hex-input" placeholder="e.g. 89504E47" style="margin-bottom:8px">
+        <button class="btn" id="ft-identify-btn">Identify</button>
         <div id="ft-id-result"></div>
       </div>
       <div class="ft-card">
-        <h3>Complete Signature Database (${FILE_SIGNATURES.length} signatures)</h3>
-        <input class="ft-input ft-search" id="ft-sig-search" placeholder="Search by extension or description...">
+        <h3>Signature reference (${FILE_SIGNATURES.length} signatures)</h3>
+        <input class="ft-input ft-search" id="ft-sig-search" placeholder="Search signatures">
         <div class="ft-scroll">
           <table class="ft-table" id="ft-sig-table">
             <tr><th>Hex</th><th>Extension</th><th>Description</th></tr>
-            ${FILE_SIGNATURES.map(s => `<tr><td class="ft-mono" style="color:#00d4ff">${s.hex}</td><td><span class="ft-badge" style="background:#1a3a4a;color:#00d4ff">${s.ext}</span></td><td>${s.desc}</td></tr>`).join("")}
+            ${FILE_SIGNATURES.map(s => `<tr><td class="ft-mono" style="color:var(--acc)">${s.hex}</td><td><span class="ft-badge">${s.ext}</span></td><td>${s.desc}</td></tr>`).join("")}
           </table>
         </div>
       </div>`;
@@ -411,8 +404,8 @@ export function renderForensicsToolkit(container) {
     const table = el.querySelector("#ft-sig-table");
     btn.onclick = () => {
       const matches = identifyFile(input.value);
-      if (!matches.length) { result.innerHTML = `<div class="ft-result" style="border-color:#ef444433"><span style="color:#ef4444">No matching signature found.</span> The file may be text-based, corrupted, or use an uncommon format.</div>`; return; }
-      result.innerHTML = matches.map(m => `<div class="ft-result"><span class="ft-badge" style="background:#0d4f2b;color:#17a34a">Match</span> <strong>${m.ext}</strong> — ${m.desc}<br><span class="ft-mono" style="color:#888">Signature: ${m.hex}</span></div>`).join("");
+      if (!matches.length) { result.innerHTML = `<div class="ft-result" style="border-color:var(--bad)"><span style="color:var(--bad)">No matching signature found.</span> The file may be text-based, corrupted, or use an uncommon format.</div>`; return; }
+      result.innerHTML = matches.map(m => `<div class="ft-result"><span class="ft-badge" style="color:var(--ok)">Match</span> <strong>${m.ext}</strong> — ${m.desc}<br><span class="ft-mono" style="color:var(--mut)">Signature: ${m.hex}</span></div>`).join("");
     };
     search.oninput = () => {
       const q = search.value.toLowerCase();
@@ -424,10 +417,10 @@ export function renderForensicsToolkit(container) {
   function renderTimestamps(el) {
     el.innerHTML = `
       <div class="ft-card">
-        <h3>Timestamp Converter</h3>
+        <h3>Timestamp converter</h3>
         <div style="display:grid;grid-template-columns:1fr 200px auto;gap:8px;align-items:end">
-          <div><label style="color:#888;font-size:.75rem;display:block;margin-bottom:4px">Value</label><input class="ft-input" id="ft-ts-input" placeholder="e.g. 1700000000"></div>
-          <div><label style="color:#888;font-size:.75rem;display:block;margin-bottom:4px">Format</label><select class="ft-input" id="ft-ts-format">
+          <div><label style="color:var(--mut);font-size:.75rem;display:block;margin-bottom:4px">Value</label><input class="ft-input" id="ft-ts-input" placeholder="e.g. 1700000000"></div>
+          <div><label style="color:var(--mut);font-size:.75rem;display:block;margin-bottom:4px">Format</label><select class="ft-input" id="ft-ts-format">
             <option value="unix">Unix (seconds)</option>
             <option value="unix_ms">Unix (milliseconds)</option>
             <option value="filetime">Windows FILETIME</option>
@@ -437,12 +430,12 @@ export function renderForensicsToolkit(container) {
             <option value="webkit">Cocoa/WebKit</option>
             <option value="iso">ISO 8601</option>
           </select></div>
-          <button class="ft-btn" id="ft-ts-btn" style="height:36px">Convert</button>
+          <button class="btn" id="ft-ts-btn" style="height:36px">Convert</button>
         </div>
         <div id="ft-ts-result"></div>
       </div>
       <div class="ft-card">
-        <h3>Current Time Reference</h3>
+        <h3>Current time</h3>
         <div id="ft-now"></div>
       </div>`;
     const btn = el.querySelector("#ft-ts-btn");
@@ -451,7 +444,7 @@ export function renderForensicsToolkit(container) {
       const val = el.querySelector("#ft-ts-input").value.trim();
       const fmt = el.querySelector("#ft-ts-format").value;
       const r = convertTimestamp(val, fmt);
-      if (!r) { result.innerHTML = `<div class="ft-result" style="border-color:#ef444433;color:#ef4444">Invalid timestamp value</div>`; return; }
+      if (!r) { result.innerHTML = `<div class="ft-result" style="border-color:var(--bad);color:var(--bad)">Invalid timestamp value</div>`; return; }
       result.innerHTML = `<div class="ft-result">
         ${Object.entries({ "Human Readable": r.human, "Local Time": r.local, "ISO 8601": r.iso, "Unix (s)": r.unix, "Unix (ms)": r.unix_ms, "Windows FILETIME": r.filetime, "Mac Absolute": r.mac_absolute, "Chrome": r.chrome, "WebKit/Cocoa": r.webkit })
           .map(([k, v]) => `<div class="ft-row"><span class="ft-label">${k}</span><span class="ft-val">${v}</span></div>`).join("")}
@@ -469,13 +462,13 @@ export function renderForensicsToolkit(container) {
   function renderStrings(el) {
     el.innerHTML = `
       <div class="ft-card">
-        <h3>String Extractor</h3>
-        <p style="color:#888;font-size:.82rem;margin:0 0 8px">Paste a hex dump to extract ASCII strings (like the <code>strings</code> command).</p>
+        <h3>String extractor</h3>
+        <p style="color:var(--mut);font-size:.82rem;margin:0 0 8px">Paste a hex dump to extract ASCII strings (like the <code>strings</code> command).</p>
         <textarea class="ft-input" id="ft-str-input" rows="6" placeholder="Paste hex bytes here..."></textarea>
         <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-          <label style="color:#888;font-size:.8rem">Min length:</label>
+          <label style="color:var(--mut);font-size:.8rem">Min length:</label>
           <input class="ft-input" id="ft-str-min" type="number" min="3" max="50" value="4" style="width:60px">
-          <button class="ft-btn" id="ft-str-btn">Extract</button>
+          <button class="btn" id="ft-str-btn">Extract</button>
         </div>
         <div id="ft-str-result"></div>
       </div>`;
@@ -484,8 +477,8 @@ export function renderForensicsToolkit(container) {
       const min = parseInt(el.querySelector("#ft-str-min").value, 10) || 4;
       const strings = extractStrings(hex, min);
       const result = el.querySelector("#ft-str-result");
-      if (!strings.length) { result.innerHTML = `<div class="ft-result" style="color:#888">No strings found (min length: ${min})</div>`; return; }
-      result.innerHTML = `<div class="ft-result"><strong>${strings.length} strings found:</strong><div class="ft-scroll" style="max-height:300px;margin-top:8px"><table class="ft-table"><tr><th>Offset</th><th>String</th></tr>${strings.map(s => `<tr><td class="ft-mono" style="color:#00d4ff">0x${s.offset.toString(16).padStart(4, "0")}</td><td class="ft-mono">${s.string.replace(/</g, "&lt;")}</td></tr>`).join("")}</table></div></div>`;
+      if (!strings.length) { result.innerHTML = `<div class="ft-result" style="color:var(--mut)">No strings found (min length: ${min})</div>`; return; }
+      result.innerHTML = `<div class="ft-result"><strong>${strings.length} strings found:</strong><div class="ft-scroll" style="max-height:300px;margin-top:8px"><table class="ft-table"><tr><th>Offset</th><th>String</th></tr>${strings.map(s => `<tr><td class="ft-mono" style="color:var(--acc)">0x${s.offset.toString(16).padStart(4, "0")}</td><td class="ft-mono">${s.string.replace(/</g, "&lt;")}</td></tr>`).join("")}</table></div></div>`;
     };
   }
 
@@ -498,10 +491,10 @@ export function renderForensicsToolkit(container) {
           <table class="ft-table" id="ft-art-table">
             <tr><th>Path / Location</th><th>Description</th><th>${artifacts[0].tool ? "Tool" : ""}</th><th>Forensic Value</th></tr>
             ${artifacts.map(a => `<tr>
-              <td class="ft-mono" style="font-size:.72rem;color:#00d4ff;max-width:300px;word-break:break-all">${a.path}</td>
+              <td class="ft-mono" style="font-size:12px;color:var(--acc);max-width:300px;word-break:break-all">${a.path}</td>
               <td>${a.desc}</td>
-              <td>${a.tool ? `<span class="ft-badge" style="background:#1a1a3a;color:#9f7aea">${a.tool}</span>` : ""}</td>
-              <td style="color:#aaa;font-size:.78rem">${a.forensicValue}</td>
+              <td>${a.tool ? `<span class="ft-badge">${a.tool}</span>` : ""}</td>
+              <td style="color:var(--txt-2);font-size:.78rem">${a.forensicValue}</td>
             </tr>`).join("")}
           </table>
         </div>
@@ -516,14 +509,14 @@ export function renderForensicsToolkit(container) {
     const cats = [...new Set(VOLATILITY_PLUGINS.map(p => p.category))];
     el.innerHTML = `
       <div class="ft-card">
-        <h3>Volatility3 Plugin Reference (${VOLATILITY_PLUGINS.length} plugins)</h3>
-        <p style="color:#888;font-size:.82rem;margin:0 0 8px">Usage: <code class="ft-mono" style="color:#00d4ff">vol -f memory.dmp &lt;plugin&gt;</code></p>
+        <h3>Volatility3 plugin reference (${VOLATILITY_PLUGINS.length} plugins)</h3>
+        <p style="color:var(--mut);font-size:.82rem;margin:0 0 8px">Usage: <code class="ft-mono" style="color:var(--acc)">vol -f memory.dmp &lt;plugin&gt;</code></p>
         <input class="ft-input ft-search" id="ft-vol-search" placeholder="Search plugins...">
         ${cats.map(cat => `
-          <h4 style="color:#888;font-size:.85rem;margin:16px 0 6px;border-bottom:1px solid #222;padding-bottom:4px">${cat}</h4>
+          <h4 style="color:var(--mut);font-size:.85rem;margin:16px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px">${cat}</h4>
           <table class="ft-table">
             ${VOLATILITY_PLUGINS.filter(p => p.category === cat).map(p => `
-              <tr><td class="ft-mono" style="color:#00d4ff;white-space:nowrap">${p.name}</td><td>${p.desc}</td></tr>
+              <tr><td class="ft-mono" style="color:var(--acc);white-space:nowrap">${p.name}</td><td>${p.desc}</td></tr>
             `).join("")}
           </table>
         `).join("")}
@@ -537,17 +530,17 @@ export function renderForensicsToolkit(container) {
   function renderExif(el) {
     el.innerHTML = `
       <div class="ft-card">
-        <h3>EXIF Tag Reference (${EXIF_TAGS.length} tags)</h3>
-        <p style="color:#888;font-size:.82rem;margin:0 0 8px">EXIF metadata in photos can reveal device info, GPS location, timestamps, and more. Use <code class="ft-mono" style="color:#00d4ff">exiftool &lt;image&gt;</code> to extract.</p>
+        <h3>EXIF tag reference (${EXIF_TAGS.length} tags)</h3>
+        <p style="color:var(--mut);font-size:.82rem;margin:0 0 8px">EXIF metadata in photos can reveal device info, GPS location, timestamps, and more. Use <code class="ft-mono" style="color:var(--acc)">exiftool &lt;image&gt;</code> to extract.</p>
         <input class="ft-input ft-search" id="ft-exif-search" placeholder="Search tags...">
         <div class="ft-scroll">
           <table class="ft-table" id="ft-exif-table">
             <tr><th>Tag ID</th><th>Name</th><th>Description</th><th>Forensic Value</th></tr>
             ${EXIF_TAGS.map(t => `<tr>
-              <td class="ft-mono" style="color:#888">${t.id}</td>
-              <td style="color:#00d4ff;font-weight:600">${t.name}</td>
+              <td class="ft-mono" style="color:var(--mut)">${t.id}</td>
+              <td style="color:var(--acc);font-weight:600">${t.name}</td>
               <td>${t.desc}</td>
-              <td style="color:#aaa;font-size:.78rem">${t.forensicValue}</td>
+              <td style="color:var(--txt-2);font-size:.78rem">${t.forensicValue}</td>
             </tr>`).join("")}
           </table>
         </div>

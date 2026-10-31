@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "node test/run.mjs",
-    "loc": "bash scripts/loc.sh"
+    "loc": "bash scripts/loc.sh",
+    "release:check": "node scripts/release-check.mjs"
   },
   "license": "SEE LICENSE IN LICENSE"
 }

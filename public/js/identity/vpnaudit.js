@@ -156,7 +156,7 @@ export function renderVpnAudit(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>VPN & Remote Access</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>VPN & Remote Access</h1></div>',
     '<p class="', P, '-sub">Audit who connected to your VPN or zero-trust access and how: leavers still connecting, brute force and password spraying followed by a success, impossible travel and concurrent distant sessions, missing MFA, outdated clients, shared accounts, long, off-hours and dormant sessions, and large transfers. Every finding links to the log lines behind it. Runs entirely in your browser; nothing is uploaded. Travel uses only the coordinates your logs carry (no geolocation lookups); checks whose data is missing are listed as skipped, never guessed.</p>',
     '<div class="', P, '-grid2">',
     '<div class="', P, '-card"><h2>Remote-access logs</h2><div id="', P, '-drop"></div>',

@@ -305,12 +305,12 @@ function renderResultsTable(results) {
   html += '<th style="padding:6px 8px">Source</th></tr></thead><tbody>';
   for (var i = 0; i < results.length; i++) {
     var r = results[i];
-    var statusColor = r.resolves ? '#22c55e' : 'var(--mut)';
+    var statusColor = r.resolves ? 'var(--ok)' : 'var(--mut)';
     html += '<tr style="border-bottom:1px solid var(--line)">';
-    html += '<td style="padding:6px 8px;font-family:var(--mono,monospace)">' + esc(r.subdomain) + (r.wildcard ? ' <span style="color:#f59e0b;font-size:.68rem">WILDCARD</span>' : '') + '</td>';
+    html += '<td style="padding:6px 8px;font-family:var(--mono,monospace)">' + esc(r.subdomain) + (r.wildcard ? ' <span style="color:var(--warn);font-size:.75rem">wildcard</span>' : '') + '</td>';
     html += '<td style="padding:6px 8px;font-family:var(--mono,monospace)">' + (r.ip ? esc(r.ip) : '<span style="color:var(--mut)">&mdash;</span>') + '</td>';
-    html += '<td style="padding:6px 8px;color:' + statusColor + ';font-weight:600">' + (r.resolves ? 'LIVE' : 'NO A') + '</td>';
-    html += '<td style="padding:6px 8px;font-family:var(--mono,monospace);color:var(--mut);font-size:.72rem">' + esc(r.source) + '</td>';
+    html += '<td style="padding:6px 8px;color:' + statusColor + ';font-weight:600">' + (r.resolves ? 'Resolves' : 'No A record') + '</td>';
+    html += '<td style="padding:6px 8px;font-family:var(--mono,monospace);color:var(--mut);font-size:.75rem">' + esc(r.source) + '</td>';
     html += '</tr>';
   }
   html += '</tbody></table></div>';
@@ -338,13 +338,13 @@ export function renderSubdomainFinder(main) {
   var scanDomain = '';
 
   main.innerHTML =
-    '<h1 class="pg-h1">Subdomain Finder</h1>' +
-    '<p class="muted pg-sub">Subdomain enumeration (live crt.sh CT logs + DNS-over-HTTPS), takeover fingerprints, and typosquat permutation generation.</p>' +
-    '<div class="tab-bar" id="sf-tabs">' +
-      '<button class="tab active" data-tab="enum">Enumeration</button>' +
-      '<button class="tab" data-tab="takeover">Takeover Check</button>' +
-      '<button class="tab" data-tab="permute">Permutation</button>' +
-      '<button class="tab" data-tab="ct">CT Logs</button>' +
+    '<div class="pg-head"><div><h1 class="pg-h1">Subdomain Enum</h1>' +
+    '<p class="muted pg-sub">Finds subdomains from crt.sh Certificate Transparency logs and a wordlist resolved over DNS-over-HTTPS, matches CNAMEs against a takeover fingerprint reference, and generates look-alike domain names.</p></div></div>' +
+    '<div class="seg" id="sf-tabs" style="margin-bottom:12px;flex-wrap:wrap">' +
+      '<button class="tab on" data-tab="enum">Enumeration</button>' +
+      '<button class="tab" data-tab="takeover">Takeover fingerprints</button>' +
+      '<button class="tab" data-tab="permute">Permutations</button>' +
+      '<button class="tab" data-tab="ct">CT logs</button>' +
       '<button class="tab" data-tab="wordlist">Wordlist</button>' +
     '</div>' +
     '<div id="sf-content"></div>';
@@ -353,7 +353,7 @@ export function renderSubdomainFinder(main) {
   var tabs = main.querySelector('#sf-tabs');
 
   function switchTab(id) {
-    tabs.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === id); });
+    tabs.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('on', t.dataset.tab === id); });
     if (id === 'enum') renderEnum();
     else if (id === 'takeover') renderTakeover();
     else if (id === 'permute') renderPermute();
@@ -366,10 +366,10 @@ export function renderSubdomainFinder(main) {
       '<div style="margin-top:12px">' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
           '<input type="text" class="tk-in" id="sf-domain" placeholder="example.com" style="flex:1;min-width:200px">' +
-          '<button class="btn sm" id="sf-scan">Scan Subdomains</button>' +
+          '<button class="btn sm" id="sf-scan">Scan</button>' +
           '<button class="btn sm ghost" id="sf-export-csv">Export CSV</button>' +
           '<button class="btn sm ghost" id="sf-export-json">Export JSON</button>' +
-          '<button class="btn sm ghost" id="sf-export-scope" title="Live hosts as name and IP, one per line">Scope File</button>' +
+          '<button class="btn sm ghost" id="sf-export-scope" title="Live hosts as name and IP, one per line">Scope file</button>' +
           '<button class="btn sm" id="sf-to-graph">Send to Security Graph</button>' +
         '</div>' +
         '<div style="margin-top:6px;font-size:.75rem;color:var(--mut)">Passive discovery via crt.sh certificate-transparency logs, plus live DNS-over-HTTPS resolution of a ' + scanWords().length + '-entry wordlist' + (customWords.length ? ' (' + customWords.length + ' imported)' : '') + '. Real data &mdash; use only on domains you are authorized to assess.</div>' +
@@ -381,7 +381,7 @@ export function renderSubdomainFinder(main) {
       var raw = main.querySelector('#sf-domain').value.trim().toLowerCase();
       var domain = raw.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^\*?\.?/, '');
       if (!domain || !/^[a-z0-9.-]+\.(?:[a-z]{2,}|xn--[a-z0-9-]+)$/.test(domain)) {
-        main.querySelector('#sf-results').innerHTML = '<p style="color:#f59e0b">Enter a valid domain, e.g. example.com</p>';
+        main.querySelector('#sf-results').innerHTML = '<p style="color:var(--warn)">Enter a valid domain, e.g. example.com</p>';
         return;
       }
       var btn = this;
@@ -401,7 +401,7 @@ export function renderSubdomainFinder(main) {
         stats.textContent = 'Discovered ' + scanResults.length + ' subdomains of ' + domain + ' — ' + live + ' live in DNS across ' + ips + ' unique IPs.' + (out.crtOk ? '' : ' (crt.sh unreachable/CORS-blocked; DNS resolution only — use the Darknode CLI for full CT discovery.)');
         btn.disabled = false;
       }).catch(function(e) {
-        results.innerHTML = '<p style="color:#ef4444">Scan failed: ' + esc(e && e.message ? e.message : 'network error') + '</p>';
+        results.innerHTML = '<p style="color:var(--bad)">Scan failed: ' + esc(e && e.message ? e.message : 'network error') + '</p>';
         btn.disabled = false;
       });
     };
@@ -459,24 +459,24 @@ export function renderSubdomainFinder(main) {
 
   function renderTakeover() {
     var html = '<div style="margin-top:12px">' +
-      '<h2 class="pg-h2">Subdomain Takeover Fingerprints</h2>' +
-      '<p class="muted" style="margin-bottom:12px">Dangling CNAME records pointing to decommissioned services can be claimed by attackers. Check your subdomains against these ' + TAKEOVER_FINGERPRINTS.length + ' service fingerprints.</p>' +
+      '<h2 class="pg-h2">Subdomain takeover fingerprints</h2>' +
+      '<p class="muted" style="margin-bottom:12px">Dangling CNAME records pointing to deleted resources on some services can be claimed by someone else. Match a CNAME against this reference of ' + TAKEOVER_FINGERPRINTS.length + ' service fingerprints. A match is a pattern match only; confirm by loading the host and looking for the fingerprint text.</p>' +
       '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">' +
-        '<input type="text" class="tk-in" id="sf-takeover-cname" placeholder="CNAME value (e.g. myapp.herokuapp.com)" style="flex:1;min-width:200px">' +
-        '<button class="btn sm" id="sf-check-takeover">Check</button>' +
+        '<input type="text" class="tk-in" id="sf-takeover-cname" placeholder="myapp.herokuapp.com" style="flex:1;min-width:200px">' +
+        '<button class="btn sm" id="sf-check-takeover">Match</button>' +
       '</div>' +
       '<div id="sf-takeover-result" style="margin-bottom:12px"></div>' +
       '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">' +
       '<thead><tr style="border-bottom:2px solid var(--line);text-align:left">' +
-      '<th style="padding:6px 8px">Service</th><th style="padding:6px 8px">CNAME Patterns</th><th style="padding:6px 8px">Fingerprint</th><th style="padding:6px 8px">Vulnerable</th></tr></thead><tbody>';
+      '<th style="padding:6px 8px">Service</th><th style="padding:6px 8px">CNAME patterns</th><th style="padding:6px 8px">Fingerprint</th><th style="padding:6px 8px">Claimable if dangling</th></tr></thead><tbody>';
     for (var i = 0; i < TAKEOVER_FINGERPRINTS.length; i++) {
       var fp = TAKEOVER_FINGERPRINTS[i];
-      var vulnColor = fp.vulnerable ? '#ef4444' : '#22c55e';
+      var vulnColor = fp.vulnerable ? 'var(--bad)' : 'var(--ok)';
       html += '<tr style="border-bottom:1px solid var(--line)">' +
         '<td style="padding:6px 8px;font-weight:500">' + esc(fp.service) + '</td>' +
-        '<td style="padding:6px 8px;font-family:var(--mono,monospace);font-size:.72rem">' + fp.cname.map(function(c) { return esc(c); }).join(', ') + '</td>' +
-        '<td style="padding:6px 8px;font-size:.72rem;color:var(--mut)">' + esc(fp.fingerprint.slice(0, 50)) + '</td>' +
-        '<td style="padding:6px 8px;color:' + vulnColor + ';font-weight:600">' + (fp.vulnerable ? 'YES' : 'NO') + '</td>' +
+        '<td style="padding:6px 8px;font-family:var(--mono,monospace);font-size:.75rem">' + fp.cname.map(function(c) { return esc(c); }).join(', ') + '</td>' +
+        '<td style="padding:6px 8px;font-size:.75rem;color:var(--mut)">' + esc(fp.fingerprint.slice(0, 50)) + '</td>' +
+        '<td style="padding:6px 8px;color:' + vulnColor + ';font-weight:600">' + (fp.vulnerable ? 'Yes' : 'No') + '</td>' +
         '</tr>';
     }
     html += '</tbody></table></div></div>';
@@ -491,9 +491,9 @@ export function renderSubdomainFinder(main) {
         resultDiv.innerHTML = '<div style="padding:10px;background:var(--card);border:1px solid var(--line);border-radius:6px;color:var(--mut)">No matching service fingerprint found for: ' + esc(cname) + '</div>';
       } else {
         var m = matched[0];
-        var color = m.vulnerable ? '#ef4444' : '#22c55e';
+        var color = m.vulnerable ? 'var(--bad)' : 'var(--ok)';
         resultDiv.innerHTML = '<div style="padding:10px;background:var(--card);border:1px solid ' + color + ';border-radius:6px">' +
-          '<strong style="color:' + color + '">' + (m.vulnerable ? 'POTENTIALLY VULNERABLE' : 'NOT VULNERABLE') + '</strong> - ' + esc(m.service) +
+          '<strong style="color:' + color + '">' + (m.vulnerable ? 'Claimable if the resource is deleted' : 'Not known to be claimable') + '</strong> - ' + esc(m.service) +
           '<div style="margin-top:4px;font-size:.8rem;color:var(--mut)">Fingerprint: ' + esc(m.fingerprint) + '</div></div>';
       }
     };
@@ -502,8 +502,8 @@ export function renderSubdomainFinder(main) {
   function renderPermute() {
     content.innerHTML =
       '<div style="margin-top:12px">' +
-        '<h2 class="pg-h2">Domain Permutation Generator</h2>' +
-        '<p class="muted" style="margin-bottom:12px">Generate typosquat, homoglyph, and look-alike domains for brand protection monitoring.</p>' +
+        '<h2 class="pg-h2">Domain permutation generator</h2>' +
+        '<p class="muted" style="margin-bottom:12px">Generate typosquat, homoglyph, and look-alike domain names to review for brand protection. Names are generated locally; registration is not checked.</p>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
           '<input type="text" class="tk-in" id="sf-perm-domain" placeholder="example.com" style="flex:1;min-width:200px">' +
           '<button class="btn sm" id="sf-perm-gen">Generate</button>' +
@@ -541,10 +541,10 @@ export function renderSubdomainFinder(main) {
   function renderCT() {
     content.innerHTML =
       '<div style="margin-top:12px">' +
-        '<h2 class="pg-h2">Certificate Transparency Logs</h2>' +
+        '<h2 class="pg-h2">Certificate Transparency logs</h2>' +
         '<p class="muted" style="margin-bottom:16px">Certificate Transparency (CT) is a system for monitoring and auditing SSL/TLS certificates. Every publicly trusted CA must submit certificates to CT logs, making them searchable.</p>' +
         '<div style="background:var(--card);border:1px solid var(--line);padding:16px;border-radius:6px;margin-bottom:16px">' +
-          '<h3 style="margin-top:0;font-size:.95rem">How CT Works</h3>' +
+          '<h3 style="margin-top:0;font-size:.95rem">How CT works</h3>' +
           '<ol style="font-size:.85rem;line-height:1.8;padding-left:20px;color:var(--txt)">' +
             '<li>CA issues a certificate for a domain</li>' +
             '<li>CA submits the certificate to one or more CT logs</li>' +
@@ -555,7 +555,7 @@ export function renderSubdomainFinder(main) {
           '</ol>' +
         '</div>' +
         '<div style="background:var(--card);border:1px solid var(--line);padding:16px;border-radius:6px;margin-bottom:16px">' +
-          '<h3 style="margin-top:0;font-size:.95rem">Using CT for Subdomain Enumeration</h3>' +
+          '<h3 style="margin-top:0;font-size:.95rem">Using CT for subdomain enumeration</h3>' +
           '<p style="font-size:.85rem;line-height:1.7">CT logs reveal all certificates issued for a domain, including wildcard and subdomain certs. This is one of the most effective passive recon techniques.</p>' +
           '<div style="margin-top:12px">' +
             '<h4 style="font-size:.85rem;margin-bottom:6px">Tools and Services</h4>' +
@@ -569,7 +569,7 @@ export function renderSubdomainFinder(main) {
             '</table>' +
           '</div>' +
           '<div style="margin-top:12px">' +
-            '<h4 style="font-size:.85rem;margin-bottom:6px">Example Queries</h4>' +
+            '<h4 style="font-size:.85rem;margin-bottom:6px">Example queries</h4>' +
             '<pre class="tk-out" style="font-size:.78rem">' +
               '# crt.sh via curl\n' +
               'curl -s "https://crt.sh/?q=%25.example.com&output=json" | jq -r ".[].name_value" | sort -u\n\n' +
@@ -584,7 +584,7 @@ export function renderSubdomainFinder(main) {
           '</div>' +
         '</div>' +
         '<div style="background:var(--card);border:1px solid var(--line);padding:16px;border-radius:6px">' +
-          '<h3 style="margin-top:0;font-size:.95rem">Monitoring Your Domains</h3>' +
+          '<h3 style="margin-top:0;font-size:.95rem">Monitoring your domains</h3>' +
           '<p style="font-size:.85rem;line-height:1.7">Set up CT monitoring to detect unauthorized certificate issuance for your domains:</p>' +
           '<ul style="font-size:.85rem;line-height:1.8;padding-left:20px">' +
             '<li>Use CAA DNS records to restrict which CAs can issue certs</li>' +
@@ -610,16 +610,16 @@ export function renderSubdomainFinder(main) {
     ];
     content.innerHTML =
       '<div style="margin-top:12px">' +
-        '<h2 class="pg-h2">Built-in Wordlist</h2>' +
+        '<h2 class="pg-h2">Built-in wordlist</h2>' +
         '<p class="muted" style="margin-bottom:8px">' + WORDLIST.length + ' common subdomain names. Filter and copy for use with external tools.</p>' +
         '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">' +
           '<input type="text" class="tk-in" id="sf-wl-filter" placeholder="Filter wordlist..." style="flex:1;min-width:200px">' +
-          '<button class="btn sm" id="sf-wl-copy">Copy All</button>' +
+          '<button class="btn sm" id="sf-wl-copy">Copy all</button>' +
           '<button class="btn sm ghost" id="sf-wl-import">Import from File</button>' +
-          (customWords.length ? '<button class="btn sm ghost" id="sf-wl-reset">Remove Imported</button>' : '') +
+          (customWords.length ? '<button class="btn sm ghost" id="sf-wl-reset">Remove imported</button>' : '') +
         '</div>' +
         '<div id="sf-wl-note" style="margin:-4px 0 10px;font-size:.75rem;color:var(--mut)">' + (customWords.length ? customWords.length + ' imported names are resolved first on the next scan, ahead of the built-in list.' : 'Import a .txt or .lst file (one name per line) to resolve your own names on the next scan.') + '</div>' +
-        '<div id="sf-wl-list" style="max-height:500px;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px;font-family:var(--mono,monospace);font-size:.72rem;line-height:1.6;columns:3;column-gap:16px"></div>' +
+        '<div id="sf-wl-list" style="max-height:500px;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px;font-family:var(--mono,monospace);font-size:.75rem;line-height:1.6;columns:3;column-gap:16px"></div>' +
       '</div>';
 
     function updateList(filter) {

@@ -1,6 +1,10 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
-// Network Scanner — port check, ping simulation, traceroute visualization
-// All checks run client-side using fetch/WebSocket timing for port detection
+// Network Scanner: resolves a host over DNS-over-HTTPS, then reports the open ports
+// Shodan's internet-wide scans last observed for each address (InternetDB, keyless),
+// plus a real HTTP/HTTPS request made through the Darknode edge proxy.
+// A browser cannot open raw TCP connections, so this page does not probe ports itself.
+
+import { dnFetch, dnFetchJSON, proxyConfigured } from '/js/net.js';
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) {
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
@@ -33,33 +37,31 @@ var _nsCommonPorts = [
 
 export function renderNetworkScanner(container) {
   var h = '';
-  h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:20px;min-height:600px;">';
-  h += '<h2 style="color:#00ddff;font-size:18px;letter-spacing:2px;margin:0 0 4px;">NETWORK SCANNER</h2>';
-  h += '<div style="color:#4a6a8a;font-size:11px;margin-bottom:20px;">Port reachability, DNS resolution, HTTP probing — all from the browser</div>';
+  h += '<div>';
+  h += '<div class="pg-head"><div><h1 class="pg-h1">Network Scanner</h1>';
+  h += '<p class="muted pg-sub">Resolves a host, lists the open ports and possible CVEs that Shodan\'s internet-wide scans last recorded for it, and checks HTTP and HTTPS through the edge proxy.</p></div></div>';
 
   // Input
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:16px;">';
+  h += '<div class="card">';
   h += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
-  h += '<input id="ns-target" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="example.com or IP address">';
-  h += '<button onclick="_nsQuickScan()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Quick Scan</button>';
-  h += '<button onclick="_nsFullScan()" style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Full Scan</button>';
+  h += '<input id="ns-target" style="flex:1;" placeholder="Domain or IPv4 address" onkeydown="if(event.key===\'Enter\')_nsLookup()">';
+  h += '<button class="btn" onclick="_nsLookup()">Look up</button>';
   h += '</div>';
-  h += '<div style="color:#4a6a8a;font-size:9px;">Quick scan checks common web ports (80, 443, 8080, 8443). Full scan checks all 23 common ports. Uses HTTP/HTTPS fetch timing.</div>';
+  h += '<div style="color:var(--mut);font-size:12px;">Port data comes from Shodan InternetDB and reflects its most recent public scan, not a scan run now. Browsers cannot open raw TCP connections, so no ports are probed from this page.</div>';
   h += '</div>';
 
   // Results
   h += '<div id="ns-results"></div>';
 
   // Port reference
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-top:16px;">';
-  h += '<div style="color:#00aaff;font-size:12px;font-weight:bold;margin-bottom:10px;">COMMON PORTS REFERENCE</div>';
+  h += '<div class="card" style="margin-top:16px;">';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin-bottom:10px;">Common ports (reference)</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;">';
   for (var p = 0; p < _nsCommonPorts.length; p++) {
     var port = _nsCommonPorts[p];
-    var catColor = { web: '#00aaff', remote: '#ff6644', mail: '#ffaa00', db: '#aa66ff', file: '#00ff88', infra: '#44cc44' }[port.category] || '#4a6a8a';
-    h += '<div style="background:#080c14;border:1px solid #1a2a44;border-radius:3px;padding:4px 8px;font-size:10px;display:flex;justify-content:space-between;">';
-    h += '<span style="color:' + catColor + ';font-weight:bold;">' + port.port + '</span>';
-    h += '<span style="color:#6a8aaa;">' + esc(port.service) + '</span>';
+    h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:3px;padding:4px 8px;font-size:12px;display:flex;justify-content:space-between;">';
+    h += '<span style="color:var(--txt);font-weight:600;">' + port.port + '</span>';
+    h += '<span style="color:var(--mut);">' + esc(port.service) + '</span>';
     h += '</div>';
   }
   h += '</div>';
@@ -69,123 +71,93 @@ export function renderNetworkScanner(container) {
   container.innerHTML = h;
 };
 
-function _nsCheckPort(host, port, protocol) {
-  return new Promise(function(resolve) {
-    var url = protocol + '://' + host + ':' + port + '/';
-    var start = performance.now();
-    var controller = new AbortController();
-    var timeout = setTimeout(function() { controller.abort(); }, 3000);
+var _nsSeq = 0;
+var _IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
 
-    fetch(url, { mode: 'no-cors', signal: controller.signal })
-      .then(function() {
-        clearTimeout(timeout);
-        var elapsed = performance.now() - start;
-        resolve({ port: port, status: 'open', time: Math.round(elapsed), protocol: protocol });
-      })
-      .catch(function(err) {
-        clearTimeout(timeout);
-        var elapsed = performance.now() - start;
-        if (err.name === 'AbortError') {
-          resolve({ port: port, status: 'filtered', time: 3000, protocol: protocol });
-        } else if (elapsed < 100) {
-          resolve({ port: port, status: 'closed', time: Math.round(elapsed), protocol: protocol });
-        } else {
-          resolve({ port: port, status: 'open', time: Math.round(elapsed), protocol: protocol });
-        }
-      });
-  });
+function _nsService(port) {
+  for (var i = 0; i < _nsCommonPorts.length; i++) if (_nsCommonPorts[i].port === port) return _nsCommonPorts[i].service;
+  return '';
 }
 
-function _nsWarnNoTarget() {
-  try { if (typeof window.showToast === 'function') window.showToast('Enter a hostname or IP to scan first.', 'warning'); } catch (_) {}
+function _nsLine(color, text) {
+  return '<div style="color:' + color + ';font-size:12px;margin:4px 0;">' + text + '</div>';
 }
 
-window._nsQuickScan = function() {
-  var target = (document.getElementById('ns-target') || {}).value;
-  if (!target || !target.trim()) { _nsWarnNoTarget(); return; }
-  target = target.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:.*$/, '');
-  _nsScan(target, [80, 443, 8080, 8443]);
-};
+async function _nsResolve(host) {
+  if (_IPV4.test(host)) return [host];
+  var data = await dnFetchJSON('https://dns.google/resolve?name=' + encodeURIComponent(host) + '&type=A');
+  return (data.Answer || []).filter(function(a) { return a.type === 1; }).map(function(a) { return a.data; });
+}
 
-window._nsFullScan = function() {
-  var target = (document.getElementById('ns-target') || {}).value;
-  if (!target || !target.trim()) { _nsWarnNoTarget(); return; }
-  target = target.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:.*$/, '');
-  _nsScan(target, _nsCommonPorts.map(function(p) { return p.port; }));
-};
-
-function _nsScan(host, ports) {
-  var results = document.getElementById('ns-results');
-  if (!results) return;
-
-  results.innerHTML = '<div style="color:#ffaa00;font-size:12px;font-family:monospace;padding:16px;text-align:center;">Scanning ' + esc(host) + ' — ' + ports.length + ' ports...</div>';
-
-  // DNS resolution first
-  var h = '';
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;margin-bottom:12px;">';
-  h += '<div style="color:#00ddff;font-size:12px;font-weight:bold;margin-bottom:8px;">SCAN RESULTS: ' + esc(host) + '</div>';
-  h += '<div id="ns-dns-info" style="margin-bottom:10px;"><span style="color:#ffaa00;font-size:10px;">Resolving DNS...</span></div>';
-  h += '<div id="ns-port-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;"></div>';
-  h += '<div id="ns-scan-progress" style="margin-top:10px;color:#4a6a8a;font-size:10px;">0/' + ports.length + ' ports scanned</div>';
-  h += '</div>';
-  results.innerHTML = h;
-
-  // DNS lookup
-  fetch('https://dns.google/resolve?name=' + encodeURIComponent(host) + '&type=A')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var dnsEl = document.getElementById('ns-dns-info');
-      if (dnsEl && data.Answer) {
-        var ips = data.Answer.filter(function(a) { return a.type === 1; }).map(function(a) { return a.data; });
-        dnsEl.innerHTML = '<span style="color:#00ff88;font-size:10px;">DNS: ' + esc(host) + ' &#8594; ' + ips.map(function(ip) { return esc(ip); }).join(', ') + '</span>';
-      } else if (dnsEl) {
-        dnsEl.innerHTML = '<span style="color:#ff4444;font-size:10px;">DNS resolution failed</span>';
-      }
-    })
-    .catch(function() {
-      var dnsEl = document.getElementById('ns-dns-info');
-      if (dnsEl) dnsEl.innerHTML = '<span style="color:#ff4444;font-size:10px;">DNS lookup unavailable (network or DoH blocked)</span>';
-    });
-
-  // Port scan
-  var completed = 0;
-  var portResults = [];
-  var grid = document.getElementById('ns-port-grid');
-  var progress = document.getElementById('ns-scan-progress');
-
-  for (var i = 0; i < ports.length; i++) {
-    (function(port) {
-      var proto = (port === 443 || port === 8443 || port === 993 || port === 995) ? 'https' : 'https';
-      _nsCheckPort(host, port, proto).then(function(result) {
-        completed++;
-        portResults.push(result);
-
-        var portInfo = null;
-        for (var pi = 0; pi < _nsCommonPorts.length; pi++) {
-          if (_nsCommonPorts[pi].port === port) { portInfo = _nsCommonPorts[pi]; break; }
-        }
-
-        var statusColor = result.status === 'open' ? '#00ff88' : result.status === 'filtered' ? '#ffaa00' : '#ff4444';
-        var statusBg = result.status === 'open' ? 'rgba(0,255,136,0.08)' : result.status === 'filtered' ? 'rgba(255,170,0,0.08)' : 'rgba(255,68,68,0.05)';
-
-        if (grid) {
-          var card = document.createElement('div');
-          card.style.cssText = 'background:' + statusBg + ';border:1px solid ' + statusColor + '33;border-radius:4px;padding:8px 10px;font-size:10px;';
-          card.innerHTML =
-            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
-            '<span style="color:#00aaff;font-weight:bold;font-size:12px;">' + port + '</span>' +
-            '<span style="color:' + statusColor + ';font-weight:bold;font-size:9px;padding:1px 6px;background:' + statusColor + '15;border:1px solid ' + statusColor + '33;border-radius:2px;">' + result.status.toUpperCase() + '</span>' +
-            '</div>' +
-            '<div style="color:#6a8aaa;">' + (portInfo ? esc(portInfo.service) : 'Unknown') + '</div>' +
-            '<div style="color:#3a5a7a;font-size:9px;">' + result.time + 'ms</div>';
-          grid.appendChild(card);
-        }
-
-        if (progress) {
-          progress.textContent = completed + '/' + ports.length + ' ports scanned' + (completed >= ports.length ? ' — COMPLETE' : '');
-          if (completed >= ports.length) progress.style.color = '#00ff88';
-        }
-      });
-    })(ports[i]);
+async function _nsHttp(host, scheme) {
+  try {
+    var r = await dnFetch(scheme + '://' + host + '/', { redirect: 'manual', timeout: 12000 });
+    var loc = r.headers && (r.headers.location || r.headers.Location);
+    return 'HTTP ' + r.status + (r.statusText ? ' ' + esc(r.statusText) : '') + (loc ? ' &#8594; ' + esc(loc) : '');
+  } catch (e) {
+    return '<span style="color:var(--bad);">' + esc((e && e.message) || 'No response') + '</span>';
   }
 }
+
+function _nsIpCard(ip, d) {
+  var h = '<div style="border-top:1px solid var(--line);padding-top:10px;margin-top:10px;">';
+  h += '<div style="color:var(--txt);font-weight:600;font-size:13px;margin-bottom:6px;">' + esc(ip) + (d && d.hostnames && d.hostnames.length ? ' <span style="color:var(--mut);font-weight:400;">' + d.hostnames.slice(0, 4).map(esc).join(', ') + '</span>' : '') + '</div>';
+  if (!d || !Array.isArray(d.ports)) {
+    h += _nsLine('var(--mut)', d ? 'Shodan has no record for this address.' : 'Shodan InternetDB could not be reached.');
+    return h + '</div>';
+  }
+  if (!d.ports.length) h += _nsLine('var(--mut)', 'No open ports recorded.');
+  else {
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;">';
+    d.ports.forEach(function(port) {
+      h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:6px 10px;font-size:12px;display:flex;justify-content:space-between;">';
+      h += '<span style="color:var(--txt);font-weight:600;">' + esc(port) + '</span><span style="color:var(--mut);">' + esc(_nsService(port) || 'Open') + '</span></div>';
+    });
+    h += '</div>';
+  }
+  if (d.vulns && d.vulns.length) h += _nsLine('var(--warn)', 'Possible CVEs from version matching (' + d.vulns.length + '): ' + d.vulns.slice(0, 20).map(esc).join(', ') + (d.vulns.length > 20 ? ', ...' : ''));
+  if (d.tags && d.tags.length) h += _nsLine('var(--mut)', 'Tags: ' + d.tags.map(esc).join(', '));
+  if (d.cpes && d.cpes.length) h += _nsLine('var(--mut)', 'Software: ' + d.cpes.slice(0, 8).map(esc).join(', '));
+  return h + '</div>';
+}
+
+window._nsLookup = async function() {
+  var target = ((document.getElementById('ns-target') || {}).value || '').trim();
+  if (!target) {
+    try { (window.dnToast || window.showToast || function() {})('Enter a domain or IP address first.', 'warning'); } catch (_) {}
+    return;
+  }
+  var host = target.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/:\d+$/, '').toLowerCase();
+  var results = document.getElementById('ns-results');
+  if (!results) return;
+  var seq = ++_nsSeq;
+  if (!proxyConfigured()) {
+    results.innerHTML = '<div class="card" style="margin-top:16px;">' + _nsLine('var(--bad)', 'Lookups need the Darknode proxy, which is not configured here.') + '</div>';
+    return;
+  }
+  results.innerHTML = '<div class="card" style="margin-top:16px;">' + _nsLine('var(--mut)', 'Looking up ' + esc(host) + '...') + '</div>';
+
+  var h = '<div class="card" style="margin-top:16px;">';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin-bottom:8px;">Results for ' + esc(host) + '</div>';
+  var ips;
+  try { ips = await _nsResolve(host); }
+  catch (e) { ips = null; h += _nsLine('var(--bad)', 'DNS lookup failed: ' + esc((e && e.message) || e)); }
+  if (seq !== _nsSeq) return;
+  if (ips && !ips.length) h += _nsLine('var(--bad)', 'No IPv4 address found for this name.');
+  if (ips && ips.length) h += _nsLine('var(--mut)', 'Resolves to ' + ips.map(esc).join(', '));
+
+  var shown = (ips || []).slice(0, 4);
+  var all = await Promise.all([
+    _nsHttp(host, 'https'),
+    _nsHttp(host, 'http'),
+    Promise.all(shown.map(function(ip) { return dnFetchJSON('https://internetdb.shodan.io/' + ip).catch(function() { return null; }); }))
+  ]);
+  if (seq !== _nsSeq) return;
+  h += _nsLine('var(--txt)', 'HTTPS (443): ' + all[0]);
+  h += _nsLine('var(--txt)', 'HTTP (80): ' + all[1]);
+  shown.forEach(function(ip, i) { h += _nsIpCard(ip, all[2][i]); });
+  if (ips && ips.length > 4) h += _nsLine('var(--mut)', (ips.length - 4) + ' more addresses not shown.');
+  h += '<div style="color:var(--mut);font-size:12px;margin-top:10px;">Source: Shodan InternetDB (last observed scan data). CVEs are inferred from software versions and may not apply.</div>';
+  h += '</div>';
+  results.innerHTML = h;
+};

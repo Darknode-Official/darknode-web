@@ -107,7 +107,7 @@ export const TOOLS = [
       { k: "token", label: "JWT", type: "textarea", rows: 4, placeholder: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0In0.XXXXX" },
       { k: "mode", label: "Mode", type: "select", value: "analyze", opts: [["analyze", "Analyze — decode + security audit"], ["crack", "Crack — brute-force the HMAC secret"], ["forge", "Forge — tamper claims + re-sign"]] },
       { k: "wordlist", label: "Crack: extra secrets (one per line)", type: "textarea", rows: 3, placeholder: "candidate secrets, one per line — tried in addition to the built-in weak-secret list" },
-      { k: "patch", label: "Forge: claim changes (JSON merged into payload)", type: "textarea", rows: 2, value: '{"role":"admin"}' },
+      { k: "patch", label: "Forge: claim changes (JSON merged into payload)", type: "textarea", rows: 2, placeholder: '{"role":"admin"}' },
       { k: "forgeAlg", label: "Forge: output", type: "select", value: "none", opts: [["none", "alg:none — strip the signature"], ["hs256", "HS256 — re-sign with secret below"], ["keep", "Keep header alg — HS-sign with secret below"]] },
       { k: "forgeSecret", label: "Forge: HMAC secret (for re-sign)", type: "text", placeholder: "secret" },
     ],
@@ -364,12 +364,13 @@ export const TOOLS = [
 
   { id: "w-cors-preflight", name: "CORS Preflight Explainer", cat: "websec", desc: "Given a request Origin/Method/Headers, show what the server's preflight response must contain for it to succeed.", tags: ["cors", "preflight"],
     inputs: [
-      { k: "origin", label: "Request Origin", type: "text", value: "https://evil.example" },
+      { k: "origin", label: "Request Origin", type: "text", placeholder: "https://evil.example" },
       { k: "method", label: "Request Method", type: "select", opts: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"], value: "PUT" },
-      { k: "headers", label: "Custom request headers (comma-sep)", type: "text", value: "Content-Type, X-Auth-Token" },
+      { k: "headers", label: "Custom request headers (comma-sep)", type: "text", placeholder: "Content-Type, X-Auth-Token" },
       { k: "credentials", label: "Request includes credentials (cookies)", type: "checkbox" },
     ],
     run(v) {
+      if (!v.origin) return "";
       const hdrs = (v.headers || "").split(",").map((h) => h.trim()).filter(Boolean);
       const lines = [];
       lines.push(`Browser sends OPTIONS preflight to the target with:`);
@@ -436,8 +437,8 @@ export const TOOLS = [
   { id: "w-revshell", name: "Reverse Shell Generator", cat: "websec", desc: "Generate reverse-shell one-liners for an authorized engagement listener (LHOST/LPORT).", tags: ["shell", "reverse shell", "payload"],
     inputs: [
       { k: "lang", label: "Language/tool", type: "select", opts: ["bash", "python", "php", "powershell", "nc", "perl", "ruby"], value: "bash" },
-      { k: "lhost", label: "LHOST", type: "text", value: "10.10.10.10" },
-      { k: "lport", label: "LPORT", type: "text", value: "4444" },
+      { k: "lhost", label: "LHOST", type: "text", placeholder: "10.10.10.10" },
+      { k: "lport", label: "LPORT", type: "text", placeholder: "4444" },
     ],
     run(v) {
       const h = (v.lhost || "").trim(), p = (v.lport || "").trim();
@@ -457,7 +458,7 @@ export const TOOLS = [
   { id: "w-bindshell", name: "Bind Shell Generator", cat: "websec", desc: "Generate bind-shell one-liners that listen on the target for an authorized engagement.", tags: ["shell", "bind shell", "payload"],
     inputs: [
       { k: "lang", label: "Language/tool", type: "select", opts: ["bash", "python", "nc", "powershell"], value: "bash" },
-      { k: "port", label: "Listen port", type: "text", value: "4444" },
+      { k: "port", label: "Listen port", type: "text", placeholder: "4444" },
     ],
     run(v) {
       const p = (v.port || "").trim();
@@ -474,10 +475,10 @@ export const TOOLS = [
   { id: "w-msfvenom", name: "msfvenom Command Builder", cat: "websec", desc: "Build an msfvenom payload-generation command from payload type, LHOST/LPORT and output format.", tags: ["metasploit", "msfvenom", "payload"],
     inputs: [
       { k: "payload", label: "Payload", type: "select", opts: ["windows/x64/meterpreter/reverse_tcp", "linux/x64/meterpreter/reverse_tcp", "windows/x64/shell/reverse_tcp", "php/meterpreter/reverse_tcp", "android/meterpreter/reverse_tcp", "osx/x64/meterpreter/reverse_tcp"], value: "windows/x64/meterpreter/reverse_tcp" },
-      { k: "lhost", label: "LHOST", type: "text", value: "10.10.10.10" },
-      { k: "lport", label: "LPORT", type: "text", value: "4444" },
+      { k: "lhost", label: "LHOST", type: "text", placeholder: "10.10.10.10" },
+      { k: "lport", label: "LPORT", type: "text", placeholder: "4444" },
       { k: "format", label: "Output format (-f)", type: "select", opts: ["exe", "elf", "raw", "php", "apk", "macho", "psh"], value: "exe" },
-      { k: "out", label: "Output file", type: "text", value: "payload.exe" },
+      { k: "out", label: "Output file", type: "text", placeholder: "payload.exe" },
     ],
     run(v) {
       if (!v.lhost || !v.lport) return { error: "Set LHOST and LPORT." };
@@ -676,7 +677,7 @@ export const TOOLS = [
     } },
 
   { id: "w-lfi-payloads", name: "LFI Payload List", cat: "websec", desc: "Local File Inclusion payloads: PHP wrappers and path-traversal depths for testing include/read endpoints.", tags: ["lfi", "php", "traversal"],
-    inputs: [{ k: "target", label: "Target file", type: "text", value: "/etc/passwd" }, { k: "maxDepth", label: "Max traversal depth", type: "range", min: 1, max: 12, step: 1, value: 6 }],
+    inputs: [{ k: "target", label: "Target file", type: "text", placeholder: "/etc/passwd" }, { k: "maxDepth", label: "Max traversal depth", type: "range", min: 1, max: 12, step: 1, value: 6 }],
     run(v, H) {
       const target = (v.target || "/etc/passwd").replace(/^\/+/, "");
       const depth = H.clampInt(v.maxDepth, 1, 20, 6);
@@ -694,7 +695,7 @@ export const TOOLS = [
     } },
 
   { id: "w-path-traversal-encoder", name: "Path Traversal Encoder", cat: "websec", desc: "Build ../ traversal sequences at a chosen depth and produce URL-encoded / double-encoded / overlong variants for filter bypass testing.", tags: ["traversal", "encode", "bypass"],
-    inputs: [{ k: "depth", label: "Depth (../ repeats)", type: "range", min: 1, max: 12, step: 1, value: 4 }, { k: "target", label: "Target path", type: "text", value: "etc/passwd" }],
+    inputs: [{ k: "depth", label: "Depth (../ repeats)", type: "range", min: 1, max: 12, step: 1, value: 4 }, { k: "target", label: "Target path", type: "text", placeholder: "etc/passwd" }],
     run(v, H) {
       const depth = H.clampInt(v.depth, 1, 20, 4);
       const target = (v.target || "").replace(/^\/+/, "");
@@ -713,7 +714,7 @@ export const TOOLS = [
     } },
 
   { id: "w-xxe-builder", name: "XXE Payload Builder", cat: "websec", desc: "Build an XML External Entity payload to test for local-file-read via XML parsers.", tags: ["xxe", "xml", "injection"],
-    inputs: [{ k: "file", label: "File to read", type: "text", value: "/etc/passwd" }, { k: "elementName", label: "XML element name carrying payload", type: "text", value: "foo" }],
+    inputs: [{ k: "file", label: "File to read", type: "text", placeholder: "/etc/passwd" }, { k: "elementName", label: "XML element name carrying payload", type: "text", placeholder: "foo" }],
     run(v) {
       const file = v.file || "/etc/passwd";
       const el = v.elementName || "foo";
@@ -743,7 +744,7 @@ export const TOOLS = [
     } },
 
   { id: "w-cmdi-cheatsheet", name: "Command Injection Cheatsheet", cat: "websec", desc: "Shell metacharacter separators used to chain injected OS commands, with notes on when each applies.", tags: ["cmdi", "injection", "shell"],
-    inputs: [{ k: "cmd", label: "Command to inject", type: "text", value: "id" }],
+    inputs: [{ k: "cmd", label: "Command to inject", type: "text", placeholder: "id" }],
     run(v) {
       const c = v.cmd || "id";
       return [
@@ -761,7 +762,7 @@ export const TOOLS = [
     } },
 
   { id: "w-crlf-injection", name: "CRLF Injection Payload", cat: "websec", desc: "Build a CRLF-injection payload to test for HTTP response splitting / header injection.", tags: ["crlf", "http", "injection"],
-    inputs: [{ k: "header", label: "Header to inject", type: "text", value: "Set-Cookie" }, { k: "value", label: "Injected header value", type: "text", value: "admin=true" }],
+    inputs: [{ k: "header", label: "Header to inject", type: "text", placeholder: "Set-Cookie" }, { k: "value", label: "Injected header value", type: "text", placeholder: "admin=true" }],
     run(v) {
       const h = v.header || "X-Injected";
       const val = v.value || "true";
@@ -777,7 +778,7 @@ export const TOOLS = [
     } },
 
   { id: "w-open-redirect", name: "Open Redirect Payload List", cat: "websec", desc: "Common bypass payloads for testing redirect/URL parameters against allowlist filters.", tags: ["redirect", "bypass"],
-    inputs: [{ k: "target", label: "Attacker-controlled host", type: "text", value: "evil.example" }],
+    inputs: [{ k: "target", label: "Attacker-controlled host", type: "text", placeholder: "evil.example" }],
     run(v) {
       const t = v.target || "evil.example";
       return [
@@ -799,9 +800,9 @@ export const TOOLS = [
   // ---------------- PoC page generators ----------------
   { id: "w-csrf-poc", name: "CSRF PoC Form Generator", cat: "websec", desc: "Generate a self-submitting HTML form to demonstrate a CSRF finding against a given action/method/fields.", tags: ["csrf", "poc", "html"],
     inputs: [
-      { k: "action", label: "Target action URL", type: "text", value: "https://victim.example/account/email" },
+      { k: "action", label: "Target action URL", type: "text", placeholder: "https://victim.example/account/email" },
       { k: "method", label: "Method", type: "select", opts: ["POST", "GET"], value: "POST" },
-      { k: "fields", label: "Fields (name=value, one per line)", type: "textarea", rows: 3, value: "email=attacker@evil.example" },
+      { k: "fields", label: "Fields (name=value, one per line)", type: "textarea", rows: 3, placeholder: "email=attacker@evil.example" },
       { k: "autoSubmit", label: "Auto-submit on load", type: "checkbox", value: true },
     ],
     run(v, H) {
@@ -817,7 +818,7 @@ export const TOOLS = [
     } },
 
   { id: "w-clickjacking-poc", name: "Clickjacking PoC Iframe Generator", cat: "websec", desc: "Generate an HTML page framing a target URL to demonstrate missing X-Frame-Options/frame-ancestors.", tags: ["clickjacking", "poc", "iframe"],
-    inputs: [{ k: "url", label: "Target URL", type: "text", value: "https://victim.example/settings" }, { k: "opacity", label: "Iframe opacity", type: "range", min: 0, max: 100, step: 5, value: 50 }],
+    inputs: [{ k: "url", label: "Target URL", type: "text", placeholder: "https://victim.example/settings" }, { k: "opacity", label: "Iframe opacity", type: "range", min: 0, max: 100, step: 5, value: 50 }],
     run(v, H) {
       if (!v.url) return { error: "Set a target URL." };
       const op = (H.clampInt(v.opacity, 0, 100, 50)) / 100;
@@ -825,7 +826,7 @@ export const TOOLS = [
     } },
 
   { id: "w-htaccess-basicauth", name: ".htaccess Basic Auth Snippet", cat: "websec", desc: "Generate an Apache .htaccess + .htpasswd snippet to password-protect a directory during testing/staging.", tags: ["apache", "htaccess", "auth"],
-    inputs: [{ k: "realm", label: "Auth realm", type: "text", value: "Restricted Area" }, { k: "user", label: "Username", type: "text", value: "tester" }, { k: "passwordHashHint", label: "(hash password separately with htpasswd -c)", type: "text", value: "", inputType: "text" }],
+    inputs: [{ k: "realm", label: "Auth realm", type: "text", placeholder: "Restricted Area" }, { k: "user", label: "Username", type: "text", placeholder: "tester" }, { k: "passwordHashHint", label: "(hash password separately with htpasswd -c)", type: "text", placeholder: "", inputType: "text" }],
     run(v) {
       const realm = v.realm || "Restricted Area";
       const user = v.user || "tester";
@@ -861,7 +862,7 @@ export const TOOLS = [
     } },
 
   { id: "w-dkim-explainer", name: "DKIM Explainer", cat: "websec", desc: "Explain DKIM record structure and how signature verification works, for auditing a domain's mail auth setup.", tags: ["dkim", "dns", "email"],
-    inputs: [{ k: "selector", label: "Selector", type: "text", value: "default" }, { k: "domain", label: "Domain", type: "text", value: "example.com" }],
+    inputs: [{ k: "selector", label: "Selector", type: "text", placeholder: "default" }, { k: "domain", label: "Domain", type: "text", placeholder: "example.com" }],
     run(v) {
       const selector = v.selector || "default";
       const domain = v.domain || "example.com";
@@ -962,8 +963,8 @@ export const TOOLS = [
 
   { id: "w-security-txt", name: "security.txt Generator", cat: "websec", desc: "Generate an RFC 9116 security.txt file for a domain's vulnerability-disclosure process.", tags: ["security.txt", "disclosure", "rfc9116"],
     inputs: [
-      { k: "contact", label: "Contact (mailto: or https:)", type: "text", value: "mailto:security@example.com" },
-      { k: "expires", label: "Expires (YYYY-MM-DD)", type: "text", value: "2027-01-01" },
+      { k: "contact", label: "Contact (mailto: or https:)", type: "text", placeholder: "mailto:security@example.com" },
+      { k: "expires", label: "Expires (YYYY-MM-DD)", type: "text", placeholder: "2027-01-01" },
       { k: "policy", label: "Policy URL", type: "text", placeholder: "https://example.com/security-policy" },
       { k: "acknowledgments", label: "Acknowledgments URL", type: "text", placeholder: "https://example.com/hall-of-fame" },
       { k: "preferredLang", label: "Preferred languages", type: "text", value: "en" },
@@ -1041,7 +1042,7 @@ export const TOOLS = [
 
   { id: "w-smuggling-cheatsheet", name: "HTTP Request Smuggling Templates", cat: "websec", desc: "CL.TE / TE.CL / TE.TE raw request templates for testing front-end/back-end parsing discrepancies.", tags: ["smuggling", "http", "cl.te", "te.cl"],
     inputs: [{ k: "variant", label: "Variant", type: "select", opts: ["CL.TE", "TE.CL", "TE.TE (obfuscated)"], value: "CL.TE" },
-      { k: "host", label: "Host header value", type: "text", value: "victim.example" }],
+      { k: "host", label: "Host header value", type: "text", placeholder: "victim.example" }],
     run(v) {
       const host = v.host || "victim.example";
       const templates = {

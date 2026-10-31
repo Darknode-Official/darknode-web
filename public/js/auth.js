@@ -162,7 +162,7 @@ const SIDE_DESC = {
   vulndb: "Searchable database of known vulnerabilities.",
   supplychain: "Assess the risk in your software supply chain.",
   // Network Analysis
-  networkscanner: "Scan a network for live hosts and open ports.",
+  networkscanner: "Look up a host's recorded open ports and possible CVEs (Shodan InternetDB) and check HTTP/HTTPS.",
   networktools: "General-purpose networking utilities.",
   packetanalyzer: "Break captured packets down protocol-by-protocol.",
   sslinspector: "Check a site's SSL/TLS certificate and cipher suites.",
@@ -190,7 +190,7 @@ const SIDE_DESC = {
   codescan: "Scan a GitHub repository or local folder for leaked secrets, risky code and vulnerable dependencies, then jump to the exact line.",
   threatforest: "Turn weaknesses found in source code into attack trees mapped to CWE, CAPEC, MITRE ATT&CK and STRIDE.",
   embedsdk: "Generate an iframe or snippet to embed any Darknode tool in another site.",
-  mcpconnect: "Connect other apps and AI agents to Darknode tools via MCP, embeds and a read-only API.",
+  mcpconnect: "Connect other apps and AI agents to Darknode tools via MCP and embeds.",
   zerotrust: "Plan a zero-trust security architecture.",
   // Crypto & Encoding
   credaudit: "Audit credentials against breach lists and password policy.",
@@ -444,6 +444,15 @@ function afterBoot() {
   whenIdle(loadSupportChat, 6000);
   if (auth.currentUser) { preloadDictionary(); prewarmCommon(); }
 }
+// Remember the backdrop that was on screen (the Deck, or the page body) so the next load's
+// quick boot screen is painted in the same colour instead of flashing white.
+addEventListener("pagehide", () => {
+  try {
+    const el = document.querySelector(".dk") || document.body;
+    const bg = getComputedStyle(el).backgroundColor;
+    if (/^rgba?\(/.test(bg) && !/,\s*0\)$/.test(bg)) localStorage.setItem("sw_boot_bg", bg);
+  } catch (_) {}
+});
 function dismissBoot() {
   if (window.__boot) window.__boot.set(100);
   const b = document.getElementById("bootscreen"); if (!b) { afterBoot(); return; }
@@ -453,12 +462,13 @@ function dismissBoot() {
   // soon as it is ready (a short floor so the fade never cuts a frame).
   let returning = false;
   try { returning = localStorage.getItem("sw_booted") === "1"; localStorage.setItem("sw_booted", "1"); } catch (_) {}
-  const floor = returning ? 250 : (isPro ? 1200 : 2200);
+  const quick = returning && isPro; // plain backdrop, no logo (data-boot-quick): just fade it out
+  const floor = quick ? 0 : returning ? 250 : (isPro ? 1200 : 2200);
   const delay = Math.max(0, floor - elapsed);
   setTimeout(() => {
     const inner = b.querySelector(".boot-inner"); if (inner) inner.classList.add("exit");
-    setTimeout(() => { b.style.opacity = "0"; }, 150);
-    setTimeout(() => { b.remove(); afterBoot(); }, 650);
+    setTimeout(() => { b.style.opacity = "0"; }, quick ? 0 : 150);
+    setTimeout(() => { b.remove(); afterBoot(); }, quick ? 170 : 650);
   }, delay);
 }
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -559,8 +569,21 @@ const errText = (e) => {
     "auth/operation-not-allowed": "This sign-in method isn't enabled in Firebase yet.",
     "auth/too-many-requests": "Too many attempts — wait a bit and retry.",
     "auth/account-exists-with-different-credential": "That email is already registered with a different sign-in method — use that one.",
+    "auth/user-disabled": "This account has been suspended. Contact contact@darknode.ai.",
+    "auth/missing-password": "Enter your password.",
+    "auth/missing-email": "Enter your email address.",
+    "auth/network-request-failed": "Network error — check your connection and try again.",
+    "auth/popup-blocked": "Your browser blocked the sign-in window. Allow popups for darknode.ai and try again.",
+    "auth/unauthorized-domain": "Sign-in isn't enabled on this address. Use darknode.ai.",
+    "auth/credential-already-in-use": "That account is already linked to another Darknode user.",
+    "auth/requires-recent-login": "For security, sign out and sign in again, then retry.",
+    "auth/expired-action-code": "That link has expired. Request a new one.",
+    "auth/invalid-action-code": "That link is invalid or was already used.",
+    "auth/internal-error": "Sign-in failed on Google's side. Try again in a moment.",
   };
-  return map[e?.code] || e?.message || String(e);
+  if (map[e?.code]) return map[e.code];
+  const m = String(e?.message || e || "");
+  return /^Firebase:|auth\//.test(m) ? "Sign-in failed. Try again, or use another sign-in method." : m;
 };
 
 async function ensureUserDoc(user) {
@@ -640,7 +663,7 @@ function showLanding() {
     <div class="nav-dd" data-dd="products">
       <button class="nav-dd-btn">Products <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
       <div class="nav-dd-menu">
-        <a class="nav-dd-item" href="/get-started" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></span><span><strong>Web App</strong><span class="nav-dd-desc">Tools and labs in your browser</span></span></a>
+        <a class="nav-dd-item" href="/get-started" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></span><span><strong>Web App</strong><span class="nav-dd-desc">The Deck security workspace in your browser</span></span></a>
         <a class="nav-dd-item" href="/quelvra/"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h6M7 9v6M14 9h6M14 15h6"/><rect x="2" y="3" width="20" height="18" rx="3"/></svg></span><span><strong>Quelvra Math</strong><span class="nav-dd-desc">Verified math engine, works offline</span></span></a>
         <a class="nav-dd-item" href="https://github.com/Darknode-Official/darknode-cli" target="_blank" rel="noopener"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span><span><strong>CLI</strong><span class="nav-dd-desc">Install from GitHub</span></span></a><!-- NPM_SUSPENDED: restore "Install via npm" when the npm account is back -->
         <a class="nav-dd-item" href="https://github.com/Darknode-Official/darknode-os" target="_blank" rel="noopener"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/></svg></span><span><strong>Linux VM</strong><span class="nav-dd-desc">Pre-built Darknode OS</span></span></a>
@@ -649,10 +672,9 @@ function showLanding() {
     <div class="nav-dd" data-dd="features">
       <button class="nav-dd-btn">Features <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
       <div class="nav-dd-menu">
-        <a class="nav-dd-item" href="/features" data-nav="section" data-section="features"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span><strong>Overview</strong><span class="nav-dd-desc">Everything you need to learn security</span></span></a>
-        <a class="nav-dd-item" href="/arsenal" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span><strong>Tools</strong><span class="nav-dd-desc">140+ tools plus 780 quick utilities</span></span></a>
+        <a class="nav-dd-item" href="/features" data-nav="section" data-section="features"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span><strong>Overview</strong><span class="nav-dd-desc">What Darknode checks, and how</span></span></a>
+        <a class="nav-dd-item" href="/arsenal" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span><strong>Tools</strong><span class="nav-dd-desc">Analysis tools for code, cloud, email and identity</span></span></a>
         <a class="nav-dd-item" href="/ai" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span><span><strong>Darknode AI</strong><span class="nav-dd-desc">AI-powered security agent</span></span></a>
-        <a class="nav-dd-item" href="/cyberrange" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3h6v4l4 8H5l4-8V3z"/><path d="M5 15h14v2a4 4 0 01-4 4H9a4 4 0 01-4-4v-2z"/></svg></span><span><strong>Practice Labs</strong><span class="nav-dd-desc">Hands-on CTF challenges</span></span></a>
       </div>
     </div>
     <div class="nav-dd" data-dd="resources">
@@ -684,7 +706,8 @@ function showLanding() {
       document.querySelectorAll(".nav-dd.open").forEach(d => d.classList.remove("open"));
       const nav = item.dataset.nav;
       if (nav === "auth") {
-        history.pushState(null, "", item.getAttribute("href"));
+        // Don't push the item's path: after sign-in the Deck reads the URL as a tool to
+        // open, and these marketing paths aren't tools ("That page was not found.").
         renderAuth("signup");
       } else if (nav === "section") {
         window.location.href = item.getAttribute("href");
@@ -725,6 +748,10 @@ async function initGis() {
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
     use_fedcm_for_prompt: true,
+    // Button mode: clicking Google's rendered button opens the browser's centred
+    // "Sign in to darknode.ai with google.com" account chooser (FedCM), not a window.
+    use_fedcm_for_button: true,
+    button_auto_select: false,
     auto_select: false,
     cancel_on_tap_outside: true,
     callback: async (resp) => {
@@ -741,18 +768,25 @@ async function initGis() {
   });
   _gisInit = true;
 }
-// Show the bubble. onUnavailable() runs only when GIS can't display it (FedCM opted out,
-// cooldown, library blocked), so the caller can fall back to the popup. Never throws.
-async function googleOneTap(onUnavailable) {
+// Quietly offer the One Tap / FedCM bubble. No moment callback: the browser owns that UI
+// under FedCM, and the status methods are deprecated. Never throws.
+async function googleOneTap() {
+  try { await initGis(); google.accounts.id.prompt(); } catch (_) {}
+}
+// Replace our "Continue with Google" button with Google's rendered one, which runs FedCM
+// button mode. Resolves false (our button stays, with the popup flow) if GIS can't load.
+async function googleButton(slot) {
+  // Google only renders the button on origins authorised for the client ID; elsewhere
+  // (localhost, preview channels) it would be a dead frame, so keep our popup button.
+  if (!/^(www\.)?darknode\.ai$/.test(location.hostname)) return false;
   try {
-    await initGis();
-    google.accounts.id.prompt((notif) => {
-      try {
-        const gone = notif && ((notif.isNotDisplayed && notif.isNotDisplayed()) || (notif.isSkippedMoment && notif.isSkippedMoment()));
-        if (gone && typeof onUnavailable === "function") onUnavailable();
-      } catch (_) { /* under FedCM the moment methods are gone and the browser owns the UI */ }
-    });
-  } catch (_) { if (typeof onUnavailable === "function") onUnavailable(); }
+    await Promise.race([initGis(), new Promise((_, r) => setTimeout(() => r(new Error("gis-timeout")), 4000))]);
+    if (!slot.isConnected) return false;
+    const host = document.createElement("div"); host.className = "gis-btn";
+    google.accounts.id.renderButton(host, { type: "standard", theme: "outline", size: "large", text: "continue_with", shape: "rectangular", logo_alignment: "center", width: Math.max(200, Math.min(400, Math.round(slot.getBoundingClientRect().width) || 360)) });
+    slot.replaceWith(host);
+    return true;
+  } catch (_) { return false; }
 }
 
 function renderAuth(mode = "signin") {
@@ -765,7 +799,7 @@ function renderAuth(mode = "signin") {
         <a class="auth-back" id="authBack">&larr; Back</a>
         <div class="auth-logo"><img src="/logo-dark.svg?v=20261007b" alt=""></div>
         <h1>${isSignup ? "Create your account" : "Welcome back"}</h1>
-        <p class="auth-subtitle">${isSignup ? "Create your Darknode account." : "Sign in to your Darknode account."}</p>
+        <p class="auth-subtitle">${isSignup ? "Free to start. No credit card." : "Sign in to your Darknode account."}</p>
         <button class="btn google" id="google"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button>
         <button class="btn github" id="github"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.42.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12.01 12.01 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>Continue with GitHub</button>
         <div class="or"><span></span>or<span></span></div>
@@ -781,8 +815,6 @@ function renderAuth(mode = "signin") {
         </div>
         <p id="err" class="auth-err"></p>
         <div class="auth-test"><a id="testMode">Test Mode (no account)</a></div>
-        <div class="auth-test"><a id="betaAsk">Request a tool for our Beta Lab</a></div>
-        <div id="betaAskPanel" hidden style="margin-top:14px;text-align:left"></div>
       </section>
       <div class="auth-footer">darknode.ai &mdash; cybersecurity platform</div>
     </div>`;
@@ -811,8 +843,8 @@ function renderAuth(mode = "signin") {
       } catch (e) { try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {} note.className = "auth-err"; err(errText(e)); }
       return;
     }
-    // Browser: show the native in-page FedCM / One Tap bubble first (stays on darknode.ai,
-    // no separate window). Fall back to the popup/redirect only if the bubble can't be shown.
+    // Browser without Google's button (GIS blocked or still loading): one popup, falling
+    // back to a redirect if popups are blocked. Only ever one sign-in window.
     const popupSignIn = async () => {
       try {
         await signInWithPopup(auth, googleProvider);
@@ -830,7 +862,7 @@ function renderAuth(mode = "signin") {
         err(errText(e));
       }
     };
-    googleOneTap(popupSignIn);
+    await popupSignIn();
   };
   document.getElementById("github").onclick = async () => {
     err("");
@@ -861,14 +893,6 @@ function renderAuth(mode = "signin") {
   };
   const on = (id, fn) => { const el = document.getElementById(id); if (el) el.onclick = fn; };
   if (isDesktop()) { const b = document.getElementById("authBack"); if (b) b.remove(); } else on("authBack", showLanding);
-  on("betaAsk", async () => {
-    const panel = document.getElementById("betaAskPanel");
-    if (!panel) return;
-    if (!panel.hidden) { panel.hidden = true; return; }
-    panel.hidden = false;
-    try { const m = await import("/js/beta-lab.js?v=20261029c"); m.mountRequestForm(panel, { user: null }); }
-    catch (_) { panel.textContent = "Beta Lab is unavailable right now."; }
-  });
   on("toSignup", () => renderAuth("signup"));
   on("toSignin", () => renderAuth("signin"));
   on("forgot", async () => {
@@ -877,9 +901,8 @@ function renderAuth(mode = "signin") {
     try { await sendPasswordResetEmail(auth, email, RESET_ACS); err(""); document.getElementById("err").className = "auth-ok"; document.getElementById("err").textContent = "Password reset email sent — check your inbox."; }
     catch (e) { err(errText(e)); }
   });
-  // Auto-show the Google One Tap / FedCM bubble on the sign-in screen (browser only).
-  // No popup fallback here — the explicit "Continue with Google" button handles that.
-  if (!desktopHas("auth.google")) { try { googleOneTap(() => {}); } catch (_) {} }
+  // Browser: swap in Google's FedCM button, and offer the One Tap bubble once.
+  if (!desktopHas("auth.google")) { googleButton(document.getElementById("google")).then((ok) => { if (ok) googleOneTap(); }); }
 }
 
 function renderVerify(user) {
@@ -920,7 +943,8 @@ function renderCodeVerify(user) {
       <input id="code" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code" style="text-align:center;letter-spacing:.4em;font-size:1.3rem">
       <button class="btn" id="verify">Verify</button>
       <button class="btn ghost" id="resend">Resend code</button>
-      <p id="err" class="auth-err"></p>`;
+      <p id="err" class="auth-err"></p>
+    </section>`;
   const setMsg = (m, ok) => { const e = document.getElementById("err"); e.textContent = m; e.className = ok ? "auth-ok" : "auth-err"; };
   const resendBtn = document.getElementById("resend");
   let cd = 0, timer = null;
@@ -1048,7 +1072,9 @@ function applyLogo(key) {
   if (!LOGO_VARIANTS[key]) return;
   try { localStorage.setItem("sw_logo", key); } catch (_) {}
   const mark = document.querySelector(".brand-mark");
-  if (mark) { mark.src = "data:image/svg+xml," + encodeURIComponent(logoSvg(key).replace(/currentColor/g, "#F2F5F9")); }
+  // Ink follows the header: dark strokes on the white Professional header, light on dark ones.
+  const ink = /^(dark|classic)$/.test(document.documentElement.getAttribute("data-style") || "") ? "#F2F5F9" : "#101722";
+  if (mark) { mark.src = "data:image/svg+xml," + encodeURIComponent(logoSvg(key).replace(/currentColor/g, ink)); }
   let fav = document.querySelector('link[rel="icon"]');
   if (!fav) { fav = document.createElement("link"); fav.rel = "icon"; document.head.appendChild(fav); }
   fav.href = "data:image/svg+xml," + encodeURIComponent(logoFavSvg(key));
@@ -1638,26 +1664,6 @@ claude mcp add darknode -- node ~/darknode-cli/darknode.js mcp</code></pre>
   wireSetPanel();
 }
 
-// Gamer "ACCESS GRANTED" neon-portal transition, played once on a FRESH sign-in
-// (never on a session-restore page load). Renders the app under the overlay
-// mid-animation so it's ready as the portal clears. Falls straight through when
-// the visitor prefers reduced motion.
-function playAccessGranted(name, cb) {
-  try {
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches) { cb(); return; }
-  } catch (_) {}
-  const safe = String(name || "").replace(/[<>&"']/g, "").slice(0, 24);
-  const o = document.createElement("div");
-  o.id = "xfer";
-  o.innerHTML = '<div class="xgrid"></div><div class="xring"></div><div class="xring b"></div>'
-    + '<div class="xmsg"><div class="xgranted">Welcome Operator</div><div class="xwho">'
-    + (safe ? safe : "Access Granted") + '</div></div><div class="xflash"></div>';
-  document.body.appendChild(o);
-  let ran = false; const go = () => { if (ran) return; ran = true; try { cb(); } catch (_) {} };
-  setTimeout(go, 720);                    // build the app beneath the portal
-  setTimeout(() => { try { o.remove(); } catch (_) {} }, 1800); // remove after it fades
-}
-
 // Which account the app is currently rendered for (see the onAuthStateChanged guard),
 // and whether that is a no-Firebase guest/Test session.
 let _appUid = null, _appGuest = false;
@@ -2012,7 +2018,7 @@ function renderApp(user) {
     if (prevH > 200) main.style.minHeight = prevH + "px";
     requestAnimationFrame(() => { main.style.minHeight = ""; });
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
-    if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
+    if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Scanner Suite</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
     else if (sec === "ai") { import("/js/webai.js?v=20261030d").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderPayloads(main)); }
@@ -2831,7 +2837,9 @@ getRedirectResult(auth).then((result) => {
   if (result && result.user) {
     try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {}
   }
-}).catch(() => {});
+}).catch((e) => {
+  if (e && e.code && e.code !== "auth/no-auth-event") showToast(errText(e), "error", 8000);
+});
 onAuthStateChanged(auth, async (user) => {
   // Idempotent: the same signed-in user while the app is up is a no-op (no re-render),
   // and a transient null (a cross-window storage sync) is re-checked before tearing
@@ -2852,7 +2860,7 @@ onAuthStateChanged(auth, async (user) => {
   // license verification
   const _hn = [0x64,0x61,0x72,0x6b,0x6e,0x6f,0x64,0x65,0x2e,0x61,0x69].map(c=>String.fromCharCode(c)).join("");
   if(location.hostname!==_hn&&location.hostname!=="www."+_hn&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"&&!/^sentinel-b4194(-6173e)?--[a-z0-9-]+\.web\.app$/.test(location.hostname)){document.body.innerHTML="";return}
-  let fresh = false; try { fresh = sessionStorage.getItem("sw_fresh_signin") === "1"; if (fresh) sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
+  try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
   if (!user) {
     // Embedded tool frame (/<sec>?embed=1 inside the Deck): the parent tab is signed in,
     // but this child frame's own Firebase persistence can resolve to null (the default
@@ -2926,15 +2934,15 @@ onAuthStateChanged(auth, async (user) => {
   if (!tosAccepted) {
     dismissBoot(); // on a reload the boot screen is still up and would cover the gate
     view.innerHTML = `
-      <div style="max-width:640px;margin:60px auto;padding:24px;font-family:var(--font-body,system-ui)">
-        <h1 style="font-size:1.6rem;margin-bottom:8px">${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
-        <p style="color:var(--mut,#888);margin-bottom:20px">${tosReturning ? "Please review the changes and accept to keep using Darknode." : "Please read and accept before continuing."}</p>
-        ${tosReturning ? `<div style="border:1px solid var(--line,#333);border-left:4px solid var(--acc,#2552c6);padding:14px 18px;margin-bottom:16px;border-radius:4px;font-size:.88rem;line-height:1.6">
+      <div class="tos-gate">
+        <h1>${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
+        <p class="tos-sub">${tosReturning ? "Please review the changes and accept to keep using Darknode." : "Please read and accept before continuing."}</p>
+        ${tosReturning ? `<div class="tos-update">
           <strong>What changed (October 31, 2026)</strong>
-          <ul style="margin:8px 0 0;padding-left:20px">
+          <ul>
             <li>Signed-in users can pick Claude models in the built-in assistant. Those messages go through Darknode's edge proxy to Anthropic, which processes them under its own terms; Darknode does not log or store them. Claude use is rate-limited per account.</li>
           </ul></div>` : ""}
-        <div style="background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:20px;max-height:400px;overflow-y:auto;font-size:.85rem;line-height:1.7;margin-bottom:20px;border-radius:4px" id="tosBox">
+        <div class="tos-box" id="tosBox" tabindex="0">
           <h3>Darknode Terms of Service</h3>
           <p><strong>Last updated:</strong> October 31, 2026</p>
           <p>By using Darknode ("the Platform"), including darknode.ai, the Darknode command center, the Darknode Deck and its Personal and Organization spaces, the code, cloud, dependency and web-exposure analysis engines, the Darknode CLI, the Nexus agent, Darknode OS, the API and MCP server, and all associated tools, you (and, where you act for an organization, that organization) agree to these terms. If you do not agree, do not use the Platform.</p>
@@ -3045,30 +3053,32 @@ onAuthStateChanged(auth, async (user) => {
           <p>Questions about these terms? Email <strong>contact@darknode.ai</strong>.</p>
 
           <!-- The pointing-up emoji below is the one emoji the owner explicitly asked to keep here (points up at the terms); no other emojis in the UI. -->
-          <p style="margin-top:18px;opacity:.8;font-style:italic">Our lawyers made us say all of that. <span aria-hidden="true">&#9757;&#65039;</span> They were, regrettably, correct. The short version, which changes none of the legally binding version above: the tools help, they are not magic, nothing here is a guarantee, and you are responsible for your own systems, data, and decisions. Read a real audit before you bet the company on anything.</p>
+          <p class="tos-aside">Our lawyers made us say all of that. <span aria-hidden="true">&#9757;&#65039;</span> They were, regrettably, correct. The short version, which changes none of the legally binding version above: the tools help, they are not magic, nothing here is a guarantee, and you are responsible for your own systems, data, and decisions. Read a real audit before you bet the company on anything.</p>
 
-          <p style="margin-top:20px"><strong>By clicking "I Agree" below, you acknowledge that you have read, understood, and agree to be bound by these terms.</strong></p>
+          <p class="tos-final"><strong>By clicking "I Agree" below, you acknowledge that you have read, understood, and agree to be bound by these terms.</strong></p>
         </div>
-        <div style="display:flex;gap:12px;align-items:center">
-          <button class="btn lg" id="tosAgree" style="min-width:140px">I Agree</button>
+        <div class="tos-acts">
+          <button class="btn lg" id="tosAgree">I Agree</button>
           <button class="btn lg ghost" id="tosDecline">Decline &amp; Sign Out</button>
         </div>
+        <p id="tosErr" class="auth-err" role="alert"></p>
       </div>`;
-    document.getElementById("tosAgree").onclick = async () => {
-      await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosVersion: TOS_VERSION, tosAcceptedAt: serverTimestamp() }, { merge: true });
-      const enter = () => { try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {} renderApp(user); loadAnnouncement(); };
-      if (fresh) playAccessGranted(user.displayName || ((user.email || "").split("@")[0]), enter);
-      else enter();
+    document.getElementById("tosAgree").onclick = async (ev) => {
+      const btn = ev.currentTarget; btn.disabled = true;
+      try {
+        await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosVersion: TOS_VERSION, tosAcceptedAt: serverTimestamp() }, { merge: true });
+      } catch (e) {
+        btn.disabled = false;
+        document.getElementById("tosErr").textContent = "Couldn't save your acceptance. Check your connection and try again.";
+        return;
+      }
+      try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {}
+      renderApp(user); loadAnnouncement();
     };
-    document.getElementById("tosDecline").onclick = async () => {
-      await signOut(auth);
-    };
+    document.getElementById("tosDecline").onclick = () => doLogout();
     return;
   }
 
-  // Fresh sign-in (flag captured up top)? Play the gamer "Access Granted" portal,
-  // then reveal the app. A session-restore page load has no flag → boots straight in.
-  const enter = () => { try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {} renderApp(user); loadAnnouncement(); };
-  if (fresh) playAccessGranted(user.displayName || ((user.email || "").split("@")[0]), enter);
-  else enter();
+  try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {}
+  renderApp(user); loadAnnouncement();
 });

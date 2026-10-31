@@ -471,16 +471,16 @@ export function renderFirewallBuilder(main) {
       '<th style="padding:6px;text-align:center">Del</th></tr>';
     for (var i = 0; i < rules.length; i++) {
       var r = rules[i];
-      var actColor = r.action === "ACCEPT" ? "color:#22c55e" : (r.action === "DROP" ? "color:#ef4444" : (r.action === "REJECT" ? "color:#f59e0b" : "color:var(--acc)"));
+      var actColor = r.action === "ACCEPT" ? "color:var(--ok)" : (r.action === "DROP" ? "color:var(--bad)" : (r.action === "REJECT" ? "color:var(--warn)" : "color:var(--acc)"));
       html += '<tr style="border-bottom:1px solid var(--line)">' +
         '<td style="padding:6px">' + (i + 1) + '</td>' +
         '<td style="padding:6px">' + esc(r.dir) + '</td>' +
         '<td style="padding:6px">' + esc(r.proto) + '</td>' +
-        '<td style="padding:6px;font-family:var(--mono,monospace);font-size:.72rem">' + esc(r.src || "any") + '</td>' +
-        '<td style="padding:6px;font-family:var(--mono,monospace);font-size:.72rem">' + esc(r.dst || "any") + '</td>' +
+        '<td style="padding:6px;font-family:var(--mono,monospace);font-size:12px">' + esc(r.src || "any") + '</td>' +
+        '<td style="padding:6px;font-family:var(--mono,monospace);font-size:12px">' + esc(r.dst || "any") + '</td>' +
         '<td style="padding:6px;font-family:var(--mono,monospace)">' + esc(r.port || "all") + '</td>' +
         '<td style="padding:6px;font-weight:600;' + actColor + '">' + esc(r.action) + '</td>' +
-        '<td style="padding:6px;color:var(--mut);font-size:.72rem">' + esc(r.comment) + '</td>' +
+        '<td style="padding:6px;color:var(--mut);font-size:12px">' + esc(r.comment) + '</td>' +
         '<td style="padding:6px">' + (r.log ? "Y" : "-") + '</td>' +
         '<td style="padding:6px;text-align:center">' +
           (i > 0 ? '<button class="btn sm ghost fw-move" data-idx="' + i + '" data-d="-1" style="padding:2px 6px">Up</button>' : '') +
@@ -520,11 +520,11 @@ export function renderFirewallBuilder(main) {
     if (!el) return;
     var c = detectConflicts(rules);
     if (!c.length) {
-      el.innerHTML = '<div style="color:#22c55e;padding:8px">No conflicts detected.</div>';
+      el.innerHTML = '<div style="color:var(--ok);padding:8px">No conflicts detected.</div>';
       return;
     }
     el.innerHTML = c.map(function(cf) {
-      var color = cf.type === "conflict" ? "#ef4444" : "#f59e0b";
+      var color = cf.type === "conflict" ? "var(--bad)" : "var(--warn)";
       return '<div style="padding:6px 8px;border-left:3px solid ' + color + ';margin:4px 0;font-size:.8rem;background:var(--card2);border-radius:0 4px 4px 0">' + esc(cf.msg) + '</div>';
     }).join("");
   }
@@ -537,19 +537,19 @@ export function renderFirewallBuilder(main) {
   var dirOptions = DIRECTIONS.map(function(d) { return '<option value="' + esc(d) + '">' + esc(d) + '</option>'; }).join("");
 
   main.innerHTML =
-    '<h1 class="pg-h1">Firewall Builder</h1>' +
-    '<p class="muted pg-sub">Build, analyze, and export firewall rules for iptables, nftables, pf, Windows Firewall, Cisco ACL, and cloud platforms.</p>' +
+    '<div class="pg-head"><div><h1 class="pg-h1">Firewall Builder</h1>' +
+    '<p class="muted pg-sub">Build, check, and export firewall rules for iptables, nftables, pf, Windows Firewall, Cisco ACL, and cloud platforms. Runs in your browser.</p></div></div>' +
 
-    '<div class="tab-bar" id="fw-tabs">' +
-      '<button class="tab active" data-tab="builder">Rule Builder</button>' +
-      '<button class="tab" data-tab="templates">Templates</button>' +
-      '<button class="tab" data-tab="output">Export</button>' +
-      '<button class="tab" data-tab="conflicts">Conflict Detector</button>' +
-      '<button class="tab" data-tab="simulate">Packet Simulator</button>' +
-      '<button class="tab" data-tab="import">Import</button>' +
-      '<button class="tab" data-tab="nat">NAT Rules</button>' +
-      '<button class="tab" data-tab="icmp">ICMP Reference</button>' +
-      '<button class="tab" data-tab="hardening">Hardening Checklist</button>' +
+    '<div class="seg" id="fw-tabs" style="flex-wrap:wrap;margin-bottom:12px">' +
+      '<button class="on" data-tab="builder">Rule builder</button>' +
+      '<button data-tab="templates">Templates</button>' +
+      '<button data-tab="output">Export</button>' +
+      '<button data-tab="conflicts">Conflict detector</button>' +
+      '<button data-tab="simulate">Packet tester</button>' +
+      '<button data-tab="import">Import</button>' +
+      '<button data-tab="nat">NAT rules</button>' +
+      '<button data-tab="icmp">ICMP reference</button>' +
+      '<button data-tab="hardening">Hardening checklist</button>' +
     '</div>' +
 
     '<div id="fw-content"></div>';
@@ -558,21 +558,21 @@ export function renderFirewallBuilder(main) {
   var content = main.querySelector("#fw-content");
 
   function renderTab(tabId) {
-    tabBar.querySelectorAll(".tab").forEach(function(t) { t.classList.toggle("active", t.dataset.tab === tabId); });
+    tabBar.querySelectorAll("button[data-tab]").forEach(function(t) { t.classList.toggle("on", t.dataset.tab === tabId); });
 
     if (tabId === "builder") {
       content.innerHTML =
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:12px">' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Direction</label><select class="tk-f" id="fw-dir">' + dirOptions + '</select></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Protocol</label><select class="tk-f" id="fw-proto">' + protoOptions + '</select></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Source IP/CIDR</label><input class="tk-f" id="fw-src" placeholder="0.0.0.0/0"></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Dest IP/CIDR</label><input class="tk-f" id="fw-dst" placeholder="any"></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Port/Range</label><input class="tk-f" id="fw-port" placeholder="80,443"></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Action</label><select class="tk-f" id="fw-action">' + actionOptions + '</select></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Comment</label><input class="tk-f" id="fw-comment" placeholder="Description"></div>' +
-          '<div style="display:flex;align-items:end;gap:8px"><label style="font-size:.72rem;color:var(--mut);display:flex;align-items:center;gap:4px"><input type="checkbox" id="fw-log"> Log</label></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Direction</label><select class="tk-f" id="fw-dir">' + dirOptions + '</select></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Protocol</label><select class="tk-f" id="fw-proto">' + protoOptions + '</select></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Source IP/CIDR</label><input class="tk-f" id="fw-src" placeholder="0.0.0.0/0"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Dest IP/CIDR</label><input class="tk-f" id="fw-dst" placeholder="any"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Port/Range</label><input class="tk-f" id="fw-port" placeholder="80,443"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Action</label><select class="tk-f" id="fw-action">' + actionOptions + '</select></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Comment</label><input class="tk-f" id="fw-comment" placeholder="Description"></div>' +
+          '<div style="display:flex;align-items:end;gap:8px"><label style="font-size:12px;color:var(--mut);display:flex;align-items:center;gap:4px"><input type="checkbox" id="fw-log"> Log</label></div>' +
         '</div>' +
-        '<button class="btn sm" id="fw-add">Add Rule</button>' +
+        '<button class="btn sm" id="fw-add">Add rule</button>' +
         '<div id="fw-rules" style="margin-top:16px"></div>';
 
       main.querySelector("#fw-add").onclick = function() {
@@ -597,14 +597,14 @@ export function renderFirewallBuilder(main) {
 
     } else if (tabId === "templates") {
       content.innerHTML =
-        '<h2 class="pg-h2">Scenario Templates</h2>' +
+        '<h2 class="pg-h2">Scenario templates</h2>' +
         '<p class="muted" style="font-size:.82rem">Click a template to load its rules. You can combine multiple templates.</p>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:12px">' +
           Object.keys(SCENARIO_TEMPLATES).map(function(k) {
             var count = SCENARIO_TEMPLATES[k].length;
             return '<button class="btn sm ghost fw-tpl" data-tpl="' + esc(k) + '" style="text-align:left;padding:10px">' +
               '<div style="font-weight:600">' + esc(k) + '</div>' +
-              '<div style="font-size:.72rem;color:var(--mut)">' + count + ' rule' + (count !== 1 ? 's' : '') + '</div>' +
+              '<div style="font-size:12px;color:var(--mut)">' + count + ' rule' + (count !== 1 ? 's' : '') + '</div>' +
             '</button>';
           }).join("") +
         '</div>' +
@@ -650,21 +650,21 @@ export function renderFirewallBuilder(main) {
 
     } else if (tabId === "conflicts") {
       content.innerHTML =
-        '<h2 class="pg-h2">Rule Conflict Detector</h2>' +
+        '<h2 class="pg-h2">Rule conflict detector</h2>' +
         '<p class="muted" style="font-size:.82rem">Analyzes rules for conflicts (same traffic, different actions) and shadowed rules (more specific rule after a broader one with the same action).</p>' +
         '<div id="fw-conflicts" style="margin-top:12px"></div>';
       renderConflicts();
 
     } else if (tabId === "simulate") {
       content.innerHTML =
-        '<h2 class="pg-h2">Packet Simulator</h2>' +
+        '<h2 class="pg-h2">Packet tester</h2>' +
         '<p class="muted" style="font-size:.82rem">Test which rule matches a given packet.</p>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:12px 0">' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Direction</label><select class="tk-f" id="fw-sim-dir">' + dirOptions + '</select></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Protocol</label><select class="tk-f" id="fw-sim-proto">' + protoOptions + '</select></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Source IP</label><input class="tk-f" id="fw-sim-src" placeholder="192.168.1.100"></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Dest IP</label><input class="tk-f" id="fw-sim-dst" placeholder="10.0.0.5"></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Dest Port</label><input class="tk-f" id="fw-sim-port" placeholder="80"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Direction</label><select class="tk-f" id="fw-sim-dir">' + dirOptions + '</select></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Protocol</label><select class="tk-f" id="fw-sim-proto">' + protoOptions + '</select></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Source IP</label><input class="tk-f" id="fw-sim-src" placeholder="192.168.1.100"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Dest IP</label><input class="tk-f" id="fw-sim-dst" placeholder="10.0.0.5"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Dest Port</label><input class="tk-f" id="fw-sim-port" placeholder="80"></div>' +
         '</div>' +
         '<button class="btn sm" id="fw-sim-run">Test Packet</button>' +
         '<div id="fw-sim-result" style="margin-top:12px"></div>';
@@ -680,8 +680,8 @@ export function renderFirewallBuilder(main) {
         var results = simulatePacket(rules, pkt);
         var out = main.querySelector("#fw-sim-result");
         out.innerHTML = results.map(function(r) {
-          var bg = r.match ? (r.action === "ACCEPT" ? "rgba(34,197,94,.1)" : "rgba(239,68,68,.1)") : "transparent";
-          var border = r.match ? (r.action === "ACCEPT" ? "#22c55e" : "#ef4444") : "var(--line)";
+          var bg = r.match ? (r.action === "ACCEPT" ? "color-mix(in srgb,var(--ok) 10%,transparent)" : "color-mix(in srgb,var(--bad) 10%,transparent)") : "transparent";
+          var border = r.match ? (r.action === "ACCEPT" ? "var(--ok)" : "var(--bad)") : "var(--line)";
           return '<div style="padding:6px 10px;border-left:3px solid ' + border + ';margin:3px 0;font-size:.8rem;background:' + bg + ';border-radius:0 4px 4px 0">' +
             '<strong>Rule #' + r.rule + ':</strong> ' + esc(r.reason) + '</div>';
         }).join("");
@@ -689,9 +689,9 @@ export function renderFirewallBuilder(main) {
 
     } else if (tabId === "import") {
       content.innerHTML =
-        '<h2 class="pg-h2">Import Rules</h2>' +
+        '<h2 class="pg-h2">Import rules</h2>' +
         '<p class="muted" style="font-size:.82rem">Paste iptables-save output to import existing rules.</p>' +
-        '<textarea class="tk-in" id="fw-import-text" rows="12" placeholder="Paste iptables-save output here..."></textarea>' +
+        '<textarea class="tk-in" id="fw-import-text" rows="12" placeholder="iptables-save output"></textarea>' +
         '<div class="tk-btns"><button class="btn sm" id="fw-import-btn">Import</button></div>' +
         '<div id="fw-import-result" style="margin-top:8px"></div>';
 
@@ -699,25 +699,25 @@ export function renderFirewallBuilder(main) {
         var text = main.querySelector("#fw-import-text").value;
         var imported = parseIptablesSave(text);
         if (!imported.length) {
-          main.querySelector("#fw-import-result").innerHTML = '<div style="color:#ef4444">No rules found. Make sure you paste iptables-save format (-A chain ... -j TARGET).</div>';
+          main.querySelector("#fw-import-result").innerHTML = '<div style="color:var(--bad)">No rules found. Make sure you paste iptables-save format (-A chain ... -j TARGET).</div>';
           return;
         }
         for (var i = 0; i < imported.length; i++) rules.push(imported[i]);
-        main.querySelector("#fw-import-result").innerHTML = '<div style="color:#22c55e">Imported ' + imported.length + ' rules.</div>';
+        main.querySelector("#fw-import-result").innerHTML = '<div style="color:var(--ok)">Imported ' + imported.length + ' rules.</div>';
       };
 
     } else if (tabId === "nat") {
       content.innerHTML =
-        '<h2 class="pg-h2">NAT / Port Forwarding Rules</h2>' +
+        '<h2 class="pg-h2">NAT and port forwarding rules</h2>' +
         '<p class="muted" style="font-size:.82rem">Generate NAT, masquerade, and port forwarding rules.</p>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:12px 0">' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Type</label><select class="tk-f" id="fw-nat-type"><option>MASQUERADE</option><option>SNAT</option><option>DNAT</option><option>Port Forward</option></select></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Interface (out)</label><input class="tk-f" id="fw-nat-iface" placeholder="eth0"></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Source CIDR</label><input class="tk-f" id="fw-nat-src" placeholder="192.168.1.0/24"></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">SNAT IP</label><input class="tk-f" id="fw-nat-snat" placeholder="203.0.113.1"></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Dest IP (DNAT)</label><input class="tk-f" id="fw-nat-dnat" placeholder="10.0.0.5"></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Ext Port</label><input class="tk-f" id="fw-nat-eport" placeholder="8080"></div>' +
-          '<div><label style="font-size:.72rem;color:var(--mut)">Int Port</label><input class="tk-f" id="fw-nat-iport" placeholder="80"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Type</label><select class="tk-f" id="fw-nat-type"><option>MASQUERADE</option><option>SNAT</option><option>DNAT</option><option>Port Forward</option></select></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Interface (out)</label><input class="tk-f" id="fw-nat-iface" placeholder="eth0"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Source CIDR</label><input class="tk-f" id="fw-nat-src" placeholder="192.168.1.0/24"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">SNAT IP</label><input class="tk-f" id="fw-nat-snat" placeholder="203.0.113.1"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Dest IP (DNAT)</label><input class="tk-f" id="fw-nat-dnat" placeholder="10.0.0.5"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Ext Port</label><input class="tk-f" id="fw-nat-eport" placeholder="8080"></div>' +
+          '<div><label style="font-size:12px;color:var(--mut)">Int Port</label><input class="tk-f" id="fw-nat-iport" placeholder="80"></div>' +
         '</div>' +
         '<button class="btn sm" id="fw-nat-gen">Generate NAT Rule</button>' +
         '<pre class="tk-out" id="fw-nat-output" style="margin-top:10px"></pre>';
@@ -752,7 +752,7 @@ export function renderFirewallBuilder(main) {
 
     } else if (tabId === "icmp") {
       content.innerHTML =
-        '<h2 class="pg-h2">ICMP Type Reference</h2>' +
+        '<h2 class="pg-h2">ICMP type reference</h2>' +
         '<p class="muted" style="font-size:.82rem">ICMP message types commonly used in firewall rules.</p>' +
         '<table style="width:100%;border-collapse:collapse;font-size:.8rem;margin-top:12px">' +
         '<tr style="border-bottom:1px solid var(--line);color:var(--mut)"><th style="padding:6px;text-align:left">Type</th><th style="padding:6px;text-align:left">Name</th><th style="padding:6px;text-align:left">Description</th><th style="padding:6px;text-align:left">iptables flag</th></tr>' +
@@ -761,7 +761,7 @@ export function renderFirewallBuilder(main) {
             '<td style="padding:6px;font-family:var(--mono,monospace)">' + t.type + '</td>' +
             '<td style="padding:6px;font-weight:500">' + esc(t.name) + '</td>' +
             '<td style="padding:6px;color:var(--mut)">' + esc(t.desc) + '</td>' +
-            '<td style="padding:6px;font-family:var(--mono,monospace);font-size:.72rem">--icmp-type ' + t.type + '</td></tr>';
+            '<td style="padding:6px;font-family:var(--mono,monospace);font-size:12px">--icmp-type ' + t.type + '</td></tr>';
         }).join("") +
         '</table>' +
         '<div style="margin-top:16px">' +
@@ -783,14 +783,14 @@ export function renderFirewallBuilder(main) {
 
     } else if (tabId === "hardening") {
       content.innerHTML =
-        '<h2 class="pg-h2">Firewall Hardening Checklist</h2>' +
+        '<h2 class="pg-h2">Firewall hardening checklist</h2>' +
         '<p class="muted" style="font-size:.82rem">' + HARDENING_CHECKLIST.length + ' items. Check off as you implement each one.</p>' +
         '<div id="fw-checklist" style="margin-top:12px">' +
           HARDENING_CHECKLIST.map(function(c, i) {
             return '<label style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-bottom:1px solid var(--line);font-size:.82rem;cursor:pointer">' +
               '<input type="checkbox" class="fw-check" data-idx="' + i + '" style="margin-top:3px">' +
               '<div><div style="font-weight:500">' + esc(c.item) + '</div>' +
-              '<div style="font-size:.72rem;color:var(--mut)">' + esc(c.category) + '</div></div>' +
+              '<div style="font-size:12px;color:var(--mut)">' + esc(c.category) + '</div></div>' +
             '</label>';
           }).join("") +
         '</div>';
@@ -810,7 +810,7 @@ export function renderFirewallBuilder(main) {
   }
 
   tabBar.onclick = function(e) {
-    var b = e.target.closest(".tab");
+    var b = e.target.closest("button[data-tab]");
     if (b) renderTab(b.dataset.tab);
   };
   renderTab("builder");

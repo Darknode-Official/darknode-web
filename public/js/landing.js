@@ -63,17 +63,6 @@ export function renderLanding(view, actions) {
             Star on GitHub
           </a>
         </div>
-        <div class="hero-trust">
-          <div class="trust-item"><span class="trust-n" data-count="720000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
-          <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="980" data-suffix="+" data-format="comma">0</span><span class="trust-l">Security tools</span></div>
-          <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="33">0</span><span class="trust-l">Analysis engines</span></div>
-          <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="20">0</span><span class="trust-l">Tool categories</span></div>
-          <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n trust-n-static">$0</span><span class="trust-l">Open-core</span></div>
-        </div>
         <div class="hero-built-with">
           <span class="built-label">Built with</span>
           <div class="built-pills">
@@ -180,39 +169,29 @@ export function renderLanding(view, actions) {
         <div class="feature-rows">
           <div class="feature-row">
             <div class="feature-text">
-              <h3>Scan code, cloud, and dependencies — one command away</h3>
-              <p>Static analysis, dependency and SBOM checks, secret detection, and cloud-config review — pre-configured and ready to run. Search, filter, and launch from the web or CLI.</p>
+              <h3>Scan code, cloud and dependencies</h3>
+              <p>Static analysis, dependency and SBOM checks, secret detection and cloud-config review run in the Deck, ready to use. The CLI adds checks from your own terminal: port scans of hosts you are allowed to test, plus dependency and environment-variable audits.</p>
             </div>
             <div class="feature-visual">
               <div class="term-window">
-                <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode</span></div>
-                <pre class="tw-body"><span class="c-pl">$</span> darknode scan 10.10.14.7\n<span class="c-ok">22</span>  ssh    OpenSSH 9.6\n<span class="c-ok">80</span>  http   nginx 1.24\n<span class="c-ok">443</span> https\n<span class="c-acc">[+]</span> 3 open ports</pre>
+                <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode (example)</span></div>
+                <pre class="tw-body"><span class="c-pl">$</span> darknode scan 192.0.2.10 top
+<span class="c-mut">PORT   SERVICE   BANNER</span>
+<span class="c-ok">22</span>     ssh       SSH-2.0-OpenSSH_9.6
+<span class="c-ok">443</span>    https
+<span class="c-acc">&#9679;</span> 2 open ports on 192.0.2.10</pre>
               </div>
             </div>
           </div>
           <div class="feature-row reverse">
             <div class="feature-text">
               <h3>Deterministic engines, with AI only to explain</h3>
-              <p>The engines that find and rank risk are deterministic — no model decides severity. Nexus, the optional assistant, only reads the findings to explain them and draft remediation. Run it on local models or your own key. We never see your data.</p>
+              <p>The engines that find and rank risk are deterministic — no model decides severity. Nexus, the optional assistant, only reads the findings to explain them and draft remediation. Run it on a local model and nothing leaves your machine, or use your own key.</p>
             </div>
             <div class="feature-visual">
               <div class="term-window">
                 <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
                 <pre class="tw-body"><span class="c-pl">$</span> nexus "explain CVE-2021-44228"\n\n<span class="c-acc">Nexus:</span> Log4Shell is a critical RCE\nin Apache Log4j. It exploits\nJNDI lookup string injection...\n\n<span class="c-mut">engine: ollama (local, free)</span></pre>
-              </div>
-            </div>
-          </div>
-          <div class="feature-row">
-            <div class="feature-text">
-              <h3>Safe sandboxes to validate your controls</h3>
-              <p>Launch DVWA, Juice Shop, WebGoat, and more with one click. They run locally in Docker — legal, safe, isolated. Validate detections, train your team, and reset in a controlled environment.</p>
-            </div>
-            <div class="feature-visual">
-              <div class="lab-grid">
-                <div class="lab-card"><span class="lab-status on"></span>DVWA<span class="lab-port">:8080</span></div>
-                <div class="lab-card"><span class="lab-status on"></span>Juice Shop<span class="lab-port">:3000</span></div>
-                <div class="lab-card"><span class="lab-status off"></span>WebGoat<span class="lab-port">:8081</span></div>
-                <div class="lab-card"><span class="lab-status off"></span>HackTheBox<span class="lab-port">:—</span></div>
               </div>
             </div>
           </div>
@@ -298,194 +277,6 @@ export function renderLanding(view, actions) {
       </div>
     </section>
 
-    <!-- ====== TOOL SHOWCASE ====== -->
-    <section class="section alt" id="tools-showcase" aria-labelledby="tools-title">
-      <div class="wrap">
-        <div class="sec-label">Toolkit</div>
-        <h2 class="sec-title" id="tools-title">Purpose-built security tools for every discipline</h2>
-        <p class="sec-sub">A broad toolkit across recon, offensive testing, defense, forensics and threat intelligence — original tooling built for Darknode alongside clean web interfaces over trusted public data sources and standard industry utilities.</p>
-        <div class="ts-tabs" role="tablist" aria-label="Tool categories">
-          <button class="ts-tab on" data-cat="all" role="tab" aria-selected="true">All</button>
-          <button class="ts-tab" data-cat="recon" role="tab" aria-selected="false">Recon</button>
-          <button class="ts-tab" data-cat="testing" role="tab" aria-selected="false">Testing</button>
-          <button class="ts-tab" data-cat="defense" role="tab" aria-selected="false">Defense</button>
-          <button class="ts-tab" data-cat="advanced" role="tab" aria-selected="false">Advanced</button>
-          <button class="ts-tab" data-cat="analysis" role="tab" aria-selected="false">Analysis</button>
-          <button class="ts-tab" data-cat="gov" role="tab" aria-selected="false">Government</button>
-        </div>
-        <div class="ts-grid" id="ts-grid">
-          <div class="ts-card" data-cat="testing">
-            <div class="ts-name">darknode-sandbox</div>
-            <div class="ts-desc">Isolated threat sample analysis lab — disposable containers, filesystem + network monitoring, behavior reports, sample library</div>
-            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="testing">
-            <div class="ts-name">darknode-command</div>
-            <div class="ts-desc">Security operations orchestration — multi-host coordination, encrypted channels, task automation, centralized management</div>
-            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="recon">
-            <div class="ts-name">darknode-recon</div>
-            <div class="ts-desc">Full-scope reconnaissance — subdomain discovery, port scanning, service fingerprinting, tech stack detection, automated report generation</div>
-            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="defense">
-            <div class="ts-name">darknode-forensics</div>
-            <div class="ts-desc">Digital forensics evidence collection — disk imaging, memory dumps, timeline reconstruction, chain-of-custody logging</div>
-            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="testing">
-            <div class="ts-name">darknode-auth-test</div>
-            <div class="ts-desc">Authentication security testing — multi-protocol (SSH, FTP, HTTP, SMB, RDP), wordlist management, rate-aware testing</div>
-            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="recon">
-            <div class="ts-name">darknode-osint</div>
-            <div class="ts-desc">Open-source intelligence gathering — email discovery, social media profiling, domain history, exposure detection</div>
-            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="advanced">
-            <div class="ts-name">darknode-tunnel</div>
-            <div class="ts-desc">Network tunneling and routing — SSH tunnels, SOCKS proxies, port forwarding chains, multi-hop connectivity</div>
-            <div class="ts-meta"><span class="ts-badge cat-advanced">Advanced</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="defense">
-            <div class="ts-name">darknode-incident</div>
-            <div class="ts-desc">Incident response playbook runner — triage workflows, containment automation, evidence preservation, stakeholder notifications</div>
-            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="testing">
-            <div class="ts-name">darknode-testgen</div>
-            <div class="ts-desc">Security test script generation — proof-of-concept creation, multi-format output (EXE, ELF, PS1, Python), encoding variations</div>
-            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="recon">
-            <div class="ts-name">darknode-exposure</div>
-            <div class="ts-desc">Full exposure mapping — asset discovery, exposed services, cloud enumeration, dependency analysis, risk scoring</div>
-            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="analysis">
-            <div class="ts-name">darknode-re</div>
-            <div class="ts-desc">Binary reverse engineering — disassembly, decompilation, string extraction, function analysis, binary analysis</div>
-            <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="defense">
-            <div class="ts-name">darknode-monitor</div>
-            <div class="ts-desc">Real-time system monitoring — process tracking, network connections, file integrity, anomaly detection, alert triggers</div>
-            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="testing">
-            <div class="ts-name">darknode-wireless</div>
-            <div class="ts-desc">Wireless security assessment — network discovery, handshake analysis, WPA testing, rogue AP detection, Bluetooth scanning</div>
-            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="advanced">
-            <div class="ts-name">darknode-channels</div>
-            <div class="ts-desc">Covert channel detection and analysis — DNS tunneling identification, ICMP analysis, steganography detection, encrypted transfer testing</div>
-            <div class="ts-meta"><span class="ts-badge cat-advanced">Advanced</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="defense">
-            <div class="ts-name">darknode-harden</div>
-            <div class="ts-desc">Automated system hardening — CIS benchmark checks, firewall rules, service lockdown, permission auditing, compliance scoring</div>
-            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="recon">
-            <div class="ts-name">darknode-intel</div>
-            <div class="ts-desc">Threat intelligence aggregation — IOC feeds, APT tracking, CVE correlation, deep source monitoring, automated enrichment</div>
-            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="testing">
-            <div class="ts-name">darknode-apifuzz</div>
-            <div class="ts-desc">REST/GraphQL API fuzzer — endpoint discovery, parameter mutation, authorization testing, rate limit detection, schema extraction</div>
-            <div class="ts-meta"><span class="ts-badge cat-testing">Testing</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="advanced">
-            <div class="ts-name">darknode-directory</div>
-            <div class="ts-desc">Active Directory security assessment — Kerberos analysis, delegation review, privilege auditing, enumeration mapping</div>
-            <div class="ts-meta"><span class="ts-badge cat-advanced">Advanced</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="analysis">
-            <div class="ts-name">darknode-report</div>
-            <div class="ts-desc">Professional security assessment report generator — findings, evidence, risk ratings, remediation steps, executive summary, PDF/HTML output</div>
-            <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="defense">
-            <div class="ts-name">darknode-decoy</div>
-            <div class="ts-desc">Honeypot network deployment — service emulation, canary tokens, activity logging, threat detection, alert escalation</div>
-            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="gov">
-            <div class="ts-name">cyber-briefing</div>
-            <div class="ts-desc">Executive cyber threat briefing generator — PDB-style reports, BLUF summaries, classification banners, decision support for national security leadership</div>
-            <div class="ts-meta"><span class="ts-badge cat-gov">Government</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="gov">
-            <div class="ts-name">vuln-triage</div>
-            <div class="ts-desc">SSVC-based vulnerability triage engine — CISA KEV integration, BOD 22-01 compliance tracking, federal remediation SLA calculator, risk acceptance workflow</div>
-            <div class="ts-meta"><span class="ts-badge cat-gov">Government</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="gov">
-            <div class="ts-name">incident-cost</div>
-            <div class="ts-desc">Cyber incident cost calculator — Ponemon methodology, sector-specific multipliers, regulatory fine estimator, insurance gap analysis, breach comparison database</div>
-            <div class="ts-meta"><span class="ts-badge cat-gov">Government</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="gov">
-            <div class="ts-name">fed-compliance</div>
-            <div class="ts-desc">Federal compliance cross-walker — NIST 800-53, CSF 2.0, FedRAMP, CMMC 2.0, FISMA mapped side-by-side with gap analysis and POA&M generation</div>
-            <div class="ts-meta"><span class="ts-badge cat-gov">Government</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="gov">
-            <div class="ts-name">adversary-playbook</div>
-            <div class="ts-desc">ATT&CK adversary emulation builder — drag-and-drop technique chaining, detection coverage heatmap, STIX 2.1 export, purple team exercise generation</div>
-            <div class="ts-meta"><span class="ts-badge cat-gov">Government</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="analysis">
-            <div class="ts-name">email-header-analyzer</div>
-            <div class="ts-desc">Parse raw email headers to detect spoofing — SPF/DKIM/DMARC verification, hop-by-hop route tracing, suspicious indicator flagging, phishing detection</div>
-            <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Medium</span></div>
-          </div>
-          <div class="ts-card" data-cat="analysis">
-            <div class="ts-name">ioc-extractor</div>
-            <div class="ts-desc">Extract indicators of compromise from unstructured text — IPs, domains, hashes, CVEs, URLs, emails with defang/refang, CSV/JSON/STIX 2.1 export</div>
-            <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Medium</span></div>
-          </div>
-          <div class="ts-card" data-cat="defense">
-            <div class="ts-name">threat-model-canvas</div>
-            <div class="ts-desc">Interactive threat modeling with STRIDE methodology — component mapping, DREAD scoring, risk matrix visualization, mitigation tracking</div>
-            <div class="ts-meta"><span class="ts-badge cat-defense">Defense</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="analysis">
-            <div class="ts-name">log-forensics</div>
-            <div class="ts-desc">Log analysis workbench — multi-format parser, timeline reconstruction, anomaly detection, pattern matching, IOC correlation, forensic report export</div>
-            <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="recon">
-            <div class="ts-name">recon-planner</div>
-            <div class="ts-desc">Structured reconnaissance planning — target scoping, methodology selection, tool recommendations, phase tracking, findings aggregation</div>
-            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Medium</span></div>
-          </div>
-          <div class="ts-card" data-cat="recon">
-            <div class="ts-name">subdomain-enum</div>
-            <div class="ts-desc">Passive subdomain enumeration — domain discovery, IP resolution, status checking, tech stack detection, wordlist customization, multi-format export</div>
-            <div class="ts-meta"><span class="ts-badge cat-recon">Recon</span><span class="ts-mode">Heavy</span></div>
-          </div>
-          <div class="ts-card" data-cat="analysis">
-            <div class="ts-name">password-analyzer</div>
-            <div class="ts-desc">Password strength analysis — entropy calculation, crack time estimation, pattern detection, policy compliance checking, secure password generation</div>
-            <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Medium</span></div>
-          </div>
-          <div class="ts-card" data-cat="analysis">
-            <div class="ts-name">cert-analyzer</div>
-            <div class="ts-desc">X.509 certificate analysis — PEM parsing, chain visualization, expiry and weakness checks, SAN validation, field reference guide</div>
-            <div class="ts-meta"><span class="ts-badge cat-analysis">Analysis</span><span class="ts-mode">Medium</span></div>
-          </div>
-        </div>
-        <div style="text-align:center;margin-top:32px">
-          <a class="btn lg ghost" href="/get-started" id="ts-view-all">Explore the full toolset &rarr;</a>
-        </div>
-      </div>
-    </section>
-
     <!-- ====== NEXUS ENGINE ====== -->
     <section class="section nx-section" id="nexus" aria-labelledby="nexus-title">
       <div class="nx-section-glow"></div>
@@ -560,7 +351,7 @@ export function renderLanding(view, actions) {
           </div>
           <div class="nx-arch-connector"></div>
           <div class="nx-arch-layer nx-arch-l5">
-            <div class="nx-arch-footer-band">88 modules &mdash; 720,000+ lines of code across the Darknode ecosystem</div>
+            <div class="nx-arch-footer-band">Ships in the Darknode CLI &mdash; runs in your own terminal with your own engine credentials</div>
           </div>
         </div>
 
@@ -619,116 +410,6 @@ export function renderLanding(view, actions) {
             </div>
           </div>
         </details>
-      </div>
-    </section>
-
-    <!-- ====== SEE IT IN ACTION ====== -->
-    <section class="section alt" id="demo" aria-labelledby="demo-title">
-      <div class="wrap">
-        <div class="sec-label">See it in action</div>
-        <h2 class="sec-title" id="demo-title">From scan to audit-ready report in one workflow</h2>
-        <p class="sec-sub">Four steps. One tool. Watch Darknode assess an asset in your own estate and document every finding for the team and the auditors.</p>
-        <div class="showcase-tabs" role="tablist" aria-label="Demo tabs">
-          <button class="showcase-tab active" role="tab" aria-selected="true" aria-controls="stab-recon" id="tab-recon" data-tab="recon">Recon scan</button>
-          <button class="showcase-tab" role="tab" aria-selected="false" aria-controls="stab-analysis" id="tab-analysis" data-tab="analysis">AI analysis</button>
-          <button class="showcase-tab" role="tab" aria-selected="false" aria-controls="stab-exploit" id="tab-exploit" data-tab="exploit">Security assessment</button>
-          <button class="showcase-tab" role="tab" aria-selected="false" aria-controls="stab-report" id="tab-report" data-tab="report">Report generation</button>
-        </div>
-        <div class="showcase-window">
-          <div class="term-window showcase-term">
-            <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title" id="showcase-tw-title">darknode</span></div>
-            <pre class="tw-body" id="showcase-body" aria-live="polite"><span class="showcase-panel" id="stab-recon" role="tabpanel" aria-labelledby="tab-recon"><span class="c-pl">$</span> darknode scan 10.10.14.7
-
-<span class="c-mut">[*] Starting Darknode scan against 10.10.14.7</span>
-<span class="c-mut">[*] Running service detection on all ports...</span>
-
-<span class="c-ok">PORT    STATE  SERVICE       VERSION</span>
-<span class="c-ok">22</span>      open   ssh           OpenSSH 8.9p1 Ubuntu
-<span class="c-ok">80</span>      open   http          Apache httpd 2.4.52
-<span class="c-ok">443</span>     open   https         Apache httpd 2.4.52
-<span class="c-ok">3306</span>    open   mysql         MySQL 5.7.38
-<span class="c-ok">8080</span>    open   http-proxy    Jetty 9.4.43
-
-<span class="c-acc">[+] 5 open ports found on 10.10.14.7</span>
-<span class="c-mut">[*] OS detection: Linux 5.x (96% confidence)</span>
-<span class="c-mut">[*] Scan completed in 14.2s</span>
-<span class="c-acc">[+] Results saved to ./scans/10.10.14.7.json</span></span><span class="showcase-panel" id="stab-analysis" role="tabpanel" aria-labelledby="tab-analysis" hidden><span class="c-pl">$</span> nexus "analyze the scan results for vulnerabilities"
-
-<span class="c-acc">Nexus:</span> Analyzing scan output for 10.10.14.7...
-
-<span class="c-ok">CRITICAL FINDINGS:</span>
-
-<span class="c-bad">1. MySQL 5.7.38 (port 3306)</span>
-   End-of-life version. Multiple known CVEs including
-   CVE-2023-21977 (privilege escalation) and
-   CVE-2022-21515 (denial of service).
-   Publicly exposed on a non-standard config.
-
-<span class="c-bad">2. Apache 2.4.52 (ports 80, 443)</span>
-   Vulnerable to CVE-2022-31813 (mod_proxy bypass)
-   and CVE-2022-28615 (out-of-bounds read).
-   Recommend upgrade to 2.4.58+.
-
-<span class="c-pl">3. Jetty 9.4.43 (port 8080)</span>
-   Check for CVE-2023-26048 (multipart DoS).
-   Often fronts Jenkins, Nexus, or Solr instances.
-
-<span class="c-mut">engine: ollama/llama3 (local, free)</span></span><span class="showcase-panel" id="stab-exploit" role="tabpanel" aria-labelledby="tab-exploit" hidden><span class="c-pl">$</span> nexus "suggest assessment approach"
-
-<span class="c-acc">Nexus:</span> Based on the findings, here is a recommended
-testing methodology for 10.10.14.7:
-
-<span class="c-ok">PHASE 1 -- Enumeration</span>
-  <span class="c-pl">></span> Enumerate Apache vhosts and directories
-    <span class="c-mut">$ darknode gobuster 10.10.14.7</span>
-  <span class="c-pl">></span> Check Jetty 8080 for admin panels
-    <span class="c-mut">$ darknode probe http://10.10.14.7:8080</span>
-
-<span class="c-ok">PHASE 2 -- Testing</span>
-  <span class="c-pl">></span> Test MySQL for default/weak credentials
-    <span class="c-mut">$ darknode auth-test mysql://10.10.14.7</span>
-  <span class="c-pl">></span> Check mod_proxy SSRF via CVE-2022-31813
-  <span class="c-pl">></span> Probe Jetty for unauthenticated endpoints
-
-<span class="c-ok">PHASE 3 -- Verification</span>
-  <span class="c-pl">></span> If MySQL access: verify scope, document
-  <span class="c-pl">></span> If web access: check privilege boundaries
-
-<span class="c-mut">engine: ollama/llama3 (local, free)</span></span><span class="showcase-panel" id="stab-report" role="tabpanel" aria-labelledby="tab-report" hidden><span class="c-pl">$</span> darknode report --target 10.10.14.7
-
-<span class="c-mut">[*] Generating security assessment report...</span>
-<span class="c-mut">[*] Compiling scan data, findings, and recommendations</span>
-
-<span class="c-acc">====================================</span>
-<span class="c-acc">  PENETRATION TEST REPORT</span>
-<span class="c-acc">  Target: 10.10.14.7</span>
-<span class="c-acc">  Date:   2026-09-07</span>
-<span class="c-acc">  Risk:   <span class="c-bad">HIGH</span></span>
-<span class="c-acc">====================================</span>
-
-  Executive Summary:
-  5 services identified. 2 critical vulnerabilities
-  found in MySQL and Apache. Immediate patching
-  recommended. MySQL instance should not be
-  publicly accessible.
-
-  <span class="c-ok">Findings:  3 critical, 1 medium, 1 info</span>
-  <span class="c-ok">Pages:     12</span>
-  <span class="c-ok">Format:    PDF + Markdown</span>
-
-<span class="c-acc">[+] Report saved to ./reports/10.10.14.7.pdf</span>
-<span class="c-acc">[+] Markdown copy: ./reports/10.10.14.7.md</span>
-<span class="c-mut">[*] Done in 3.8s</span></span></pre>
-          </div>
-        </div>
-        <div class="showcase-hint">
-          <span class="showcase-step-dots">
-            <span class="showcase-dot active" data-tab="recon"></span>
-            <span class="showcase-dot" data-tab="analysis"></span>
-            <span class="showcase-dot" data-tab="exploit"></span>
-            <span class="showcase-dot" data-tab="report"></span>
-          </span>
-        </div>
       </div>
     </section>
 
@@ -917,127 +598,12 @@ testing methodology for 10.10.14.7:
       </div>
     </section>
 
-    <!-- ====== PRACTICE LABS ====== -->
-    <section class="section alt" id="labs" aria-labelledby="labs-title">
-      <div class="wrap">
-        <div class="sec-label">Validation &amp; training</div>
-        <h2 class="sec-title" id="labs-title">Validate detections and level up your team</h2>
-        <p class="sec-sub">Spin up intentionally vulnerable environments to confirm your scanners catch what they should and to train analysts and developers safely. Reset anytime.</p>
-        <div class="plab-grid">
-          <div class="plab-card">
-            <div class="plab-top">
-              <span class="plab-status"></span>
-              <span class="plab-runtime">Docker</span>
-            </div>
-            <h3 class="plab-name">DVWA</h3>
-            <p class="plab-desc">Damn Vulnerable Web App &mdash; SQLi, XSS, CSRF, file upload, command injection. The classic training ground.</p>
-            <span class="plab-diff beginner">Beginner</span>
-          </div>
-          <div class="plab-card">
-            <div class="plab-top">
-              <span class="plab-status"></span>
-              <span class="plab-runtime">Docker</span>
-            </div>
-            <h3 class="plab-name">Juice Shop</h3>
-            <p class="plab-desc">OWASP modern web app with 100+ challenges across injection, broken auth, XSS, and insecure deserialization.</p>
-            <span class="plab-diff beginner">Beginner</span>
-          </div>
-          <div class="plab-card">
-            <div class="plab-top">
-              <span class="plab-status"></span>
-              <span class="plab-runtime">Docker</span>
-            </div>
-            <h3 class="plab-name">WebGoat</h3>
-            <p class="plab-desc">OWASP guided lessons covering A1&ndash;A10 vulnerabilities with built-in hints and explanations.</p>
-            <span class="plab-diff beginner">Beginner</span>
-          </div>
-          <div class="plab-card">
-            <div class="plab-top">
-              <span class="plab-status"></span>
-              <span class="plab-runtime">VM</span>
-            </div>
-            <h3 class="plab-name">Metasploitable</h3>
-            <p class="plab-desc">Intentionally vulnerable Linux VM. Practice network enumeration, privilege analysis, and security assessment chains.</p>
-            <span class="plab-diff intermediate">Intermediate</span>
-          </div>
-          <div class="plab-card">
-            <div class="plab-top">
-              <span class="plab-status"></span>
-              <span class="plab-runtime">VM</span>
-            </div>
-            <h3 class="plab-name">VulnHub machines</h3>
-            <p class="plab-desc">50+ downloadable VMs with varying difficulty. Full boot-to-root practice for OSCP-style methodology.</p>
-            <span class="plab-diff intermediate">Intermediate</span>
-          </div>
-          <div class="plab-card">
-            <div class="plab-top">
-              <span class="plab-status"></span>
-              <span class="plab-runtime">Browser</span>
-            </div>
-            <h3 class="plab-name">HackTheBox-style challenges</h3>
-            <p class="plab-desc">CTF-format exercises covering cryptography, reverse engineering, forensics, and web security.</p>
-            <span class="plab-diff advanced">Advanced</span>
-          </div>
-          <div class="plab-card">
-            <div class="plab-top">
-              <span class="plab-status"></span>
-              <span class="plab-runtime">Adapter required</span>
-            </div>
-            <h3 class="plab-name">Wireless lab</h3>
-            <p class="plab-desc">WiFi security assessment &mdash; WPA/WPA2 testing, rogue AP detection, and wireless analysis.</p>
-            <span class="plab-diff advanced">Advanced</span>
-          </div>
-          <div class="plab-card">
-            <div class="plab-top">
-              <span class="plab-status"></span>
-              <span class="plab-runtime">Docker</span>
-            </div>
-            <h3 class="plab-name">API security lab</h3>
-            <p class="plab-desc">REST and GraphQL vulnerability practice &mdash; broken auth, BOLA, injection, rate limiting, and SSRF.</p>
-            <span class="plab-diff intermediate">Intermediate</span>
-          </div>
-        </div>
-        <p class="plab-note">All labs run locally in Docker or VirtualBox. Nothing touches the internet.</p>
-      </div>
-    </section>
-
-    <!-- ====== WHAT'S INCLUDED ====== -->
-    <section class="section" id="compare" aria-labelledby="compare-title">
-      <div class="wrap">
-        <div class="sec-label">What's included</div>
-        <h2 class="sec-title" id="compare-title">Everything in one platform</h2>
-        <p class="sec-sub">Open-core and self-hostable. Runs on your own infrastructure.</p>
-        <div class="cmp-scroll">
-          <table class="cmp-landing" aria-label="What Darknode includes">
-            <thead>
-              <tr>
-                <th class="cmp-feature-col">Capability</th>
-                <th class="cmp-dn-col">Darknode</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>Price</td><td class="cmp-dn"><span class="cmp-highlight">Open-core &mdash; free to self-host</span></td></tr>
-              <tr><td>AI assistant</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Nexus &mdash; 88 modules, 6 engines (bring your own key or run Ollama locally)</td></tr>
-              <tr><td>Private and self-hosted</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Runs on your infrastructure, works offline and air-gapped</td></tr>
-              <tr><td>Scanning engines</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Code, cloud, dependencies, secrets, forensics</td></tr>
-              <tr><td>Interactive labs</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Cyber Range</td></tr>
-              <tr><td>Threat intelligence</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Live feeds</td></tr>
-              <tr><td>Report generation</td><td class="cmp-dn"><span class="cmp-check">&check;</span> AI-assisted</td></tr>
-              <tr><td>Works offline</td><td class="cmp-dn"><span class="cmp-check">&check;</span></td></tr>
-              <tr><td>Custom OS</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Research kernel + Linux desktop</td></tr>
-              <tr><td>Web GUI</td><td class="cmp-dn"><span class="cmp-check">&check;</span> Full single-page app</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
     <!-- ====== DARKNODE OS ====== -->
     <section class="section alt" id="darknode-os" aria-labelledby="os-title">
       <div class="wrap">
         <div class="sec-label">Darknode OS</div>
         <h2 class="sec-title" id="os-title">Your own security operating system</h2>
-        <p class="sec-sub">Two editions — a custom x86 kernel built from scratch, and a full Linux desktop. Both open-core and self-hostable, ideal for locked-down and air-gapped environments.</p>
+        <p class="sec-sub">Two editions — a custom x86 kernel built from scratch, and a full Linux desktop. Both self-hostable, ideal for locked-down and air-gapped environments.</p>
         <div class="os-grid">
           <div class="os-card">
             <div class="os-card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
@@ -1105,69 +671,45 @@ testing methodology for 10.10.14.7:
         <div class="sec-label">Pricing</div>
         <h2 class="sec-title" id="pricing-title">Free to start. Upgrade when you're ready.</h2>
         <p class="sec-sub">Bring your own AI key on any plan. Paid plans unlock platform features, not AI access.</p>
-        <div class="billing-toggle">
-          <label id="bill-monthly" class="active">Monthly</label>
-          <button class="billing-switch" id="billing-switch" type="button" aria-label="Toggle annual billing"></button>
-          <label id="bill-annual">Annual</label>
-          <span class="billing-save">Save up to 33%</span>
-        </div>
         <div class="pricing-grid" id="pricing-grid">
           <div class="price-card">
             <div class="price-tier">Free</div>
-            <div class="price-amount">$0<span class="price-period">/self-hosted</span></div>
-            <p class="price-desc">The full open-core platform. No limits, no trials, no paywalls.</p>
+            <div class="price-amount">$0<span class="price-period">/forever</span></div>
+            <p class="price-desc">The full browser toolbox for solo practitioners and evaluation.</p>
             <ul class="price-features">
-              <li>Every scanning and analysis tool (no limits)</li>
-              <li>PROMETHEUS, SENTINEL EYE, HYDRA, AEGIS &mdash; full access</li>
-              <li>Nexus AI assistant (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
-              <li>Security knowledge base: 1,400+ topics and references</li>
-              <li>CLI, desktop app, and Darknode OS</li>
-              <li>Live threat intelligence feeds</li>
-              <li>Unlimited scans and analysis</li>
-              <li>Community Discord support</li>
+              <li>Every browser-based security tool</li>
+              <li>Personal space: domain, link, secret and data checks</li>
+              <li>Local-only security graph &amp; cases</li>
+              <li>Darknode AI assistant</li>
+              <li>1 workspace, 1 seat</li>
             </ul>
             <button class="btn lg" id="price-free">Get started free</button>
           </div>
           <div class="price-card featured">
             <div class="price-badge">Recommended</div>
             <div class="price-tier">Pro</div>
-            <div class="price-amount price-monthly" data-monthly="$12" data-annual="$99">$12<span class="price-period">/month</span></div>
-            <div class="price-amount price-annual" data-monthly="$12" data-annual="$99">$99<span class="price-period">/year</span> <span class="price-saved">Save $45</span></div>
+            <div class="price-amount">$29<span class="price-period">/user/month</span></div>
             <p class="price-desc">Built for working security professionals.</p>
             <ul class="price-features compact">
               <li>Everything in Free, plus:</li>
-              <li>Automated scan scheduling (daily/weekly/monthly)</li>
-              <li>Vulnerability tracker with severity trends</li>
-              <li>Threat watchlist with real-time alerts</li>
-              <li>AI-powered security report writer</li>
-              <li>AI code auditor</li>
-              <li>Custom scan profiles and templates</li>
-              <li>Credential leak monitoring</li>
-              <li>Nexus Overnight Mode (background analysis)</li>
-              <li>Priority API rate limits (5x)</li>
-              <li>Early access to new tools</li>
-              <li>Email support (24h response)</li>
+              <li>Exposure and Application Security tools, findings and reports</li>
+              <li>Unlimited saved findings &amp; reports</li>
+              <li>Premium AI models: Claude Fable 5.1, Claude Opus 5.5, Darknode Max</li>
+              <li>Cloud sync across devices</li>
+              <li>Email support</li>
             </ul>
             <button class="btn lg ghost" id="price-pro">Join waitlist</button>
           </div>
           <div class="price-card">
             <div class="price-tier">Team</div>
-            <div class="price-amount price-monthly" data-monthly="$25" data-annual="$199">$25<span class="price-period">/user/month</span></div>
-            <div class="price-amount price-annual" data-monthly="$25" data-annual="$199">$199<span class="price-period">/user/year</span> <span class="price-saved">Save $101</span></div>
+            <div class="price-amount">$79<span class="price-period">/user/month</span></div>
             <p class="price-desc">Shared findings and workflow for a security team.</p>
             <ul class="price-features compact">
               <li>Everything in Pro, plus:</li>
-              <li>Shared workspace and findings</li>
-              <li>Team CTF builder with scoring</li>
-              <li>Asset inventory and shared scan history</li>
-              <li>Activity feed and leaderboard</li>
-              <li>Role-based permissions</li>
-              <li>Branded security reports (custom logo)</li>
-              <li>Engagement and project management</li>
-              <li>Findings deduplication and tracking</li>
-              <li>Export to Jira, GitHub, Linear, CSV</li>
-              <li>Plugin system and SDK</li>
-              <li>Priority chat support (4h response)</li>
+              <li>Organization space, Identity, Security Operations, Fraud &amp; Abuse</li>
+              <li>Shared team workspaces &amp; roles</li>
+              <li>Integrations (ticketing, chat webhooks)</li>
+              <li>Activity &amp; audit log</li>
             </ul>
             <button class="btn lg ghost" id="price-team">Join waitlist</button>
           </div>
@@ -1177,22 +719,16 @@ testing methodology for 10.10.14.7:
             <p class="price-desc">Control, compliance, and scale for organizations.</p>
             <ul class="price-features compact">
               <li>Everything in Team, plus:</li>
-              <li>SSO and SAML authentication</li>
-              <li>Data isolation and tenant separation</li>
-              <li>Role-based access control (RBAC)</li>
-              <li>Audit logging and compliance exports (SOC2, PCI-DSS, HIPAA)</li>
-              <li>Self-hosted and air-gapped deployment</li>
-              <li>Custom Darknode OS builds (org-branded)</li>
-              <li>Admin dashboard and analytics</li>
-              <li>User provisioning (SCIM)</li>
-              <li>Dedicated account manager</li>
-              <li>99.9% SLA guarantee</li>
-              <li>Volume licensing and invoicing</li>
+              <li>Risk &amp; Resilience and Compliance tools</li>
+              <li>Self-hosted / private deployment</li>
+              <li>SSO &amp; MFA (on the roadmap), custom roles</li>
+              <li>Compliance pack &amp; DPA</li>
+              <li>Dedicated support</li>
             </ul>
             <button class="btn lg ghost" id="price-enterprise">Contact sales</button>
           </div>
         </div>
-        <p class="pricing-note">The open-core platform is <strong>free to self-host</strong> &mdash; every scanning and analysis tool, the command centers, the CLI, desktop app, Darknode OS, and live threat feeds. You never pay for AI tokens &mdash; bring your own key or run Ollama locally for free. Paid plans add <strong>team and enterprise features</strong> like automated scan scheduling, vulnerability tracking, report generation, credential leak monitoring, and collaboration. No hidden fees, no usage caps, cancel anytime.</p>
+        <p class="pricing-note">Paid plans are in preview: checkout is not live yet, so upgrades are requested and granted by hand and no payment is taken. You never pay Darknode for AI tokens &mdash; bring your own key or run Ollama locally.</p>
       </div>
     </section>
 
@@ -1209,7 +745,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. The open-core platform &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, PHANTOM, CITADEL, ORACLE, SPECTRE, the Security Assessment Console, every scanning and analysis tool, the CLI, the desktop app, and Darknode OS &mdash; is free to run on your own infrastructure with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI assistant using your own API key or a free local model like Ollama. Paid Team and Enterprise plans (coming soon) add features like automated scan scheduling, vulnerability tracking, report generation, and collaboration, but the core platform stays free to self-host.</div>
+              <div class="faq-a-inner">Yes. The Free plan includes every browser-based security tool, the Personal space checks, a local security graph and the Darknode AI assistant, with no time limit. The CLI is free to run from source. Pro, Team and Enterprise add the premium AI models (Claude Fable 5.1, Claude Opus 5.5, Darknode Max), the Exposure, Application Security, Organization and Compliance tool sets, shared workspaces and cloud sync; they are in preview and granted on request while checkout is not live.</div>
             </div>
           </div>
 
@@ -1327,7 +863,7 @@ testing methodology for 10.10.14.7:
           <div class="gov-card">
             <div class="gov-icon">[$]</div>
             <h3>Incident Cost Calculator</h3>
-            <p>IBM/Ponemon methodology breach cost modeling with sector multipliers, regulatory fine estimation, and insurance gap analysis.</p>
+            <p>Planning estimates from IBM Cost of a Data Breach figures, with sector multipliers, regulatory fine estimation, and insurance gap analysis.</p>
           </div>
           <div class="gov-card">
             <div class="gov-icon">[C]</div>
@@ -1339,11 +875,6 @@ testing methodology for 10.10.14.7:
             <h3>Adversary Playbook Builder</h3>
             <p>MITRE ATT&amp;CK emulation planning with detection coverage heatmaps, purple team exercise generation, and STIX 2.1 export.</p>
           </div>
-          <div class="gov-card">
-            <div class="gov-icon">[+]</div>
-            <h3>5 More Coming</h3>
-            <p>Architecture reviewer, election security toolkit, infrastructure dependency mapper, workforce planner, and sanctions analyzer.</p>
-          </div>
         </div>
       </div>
     </section>
@@ -1354,7 +885,7 @@ testing methodology for 10.10.14.7:
       <div class="cta-grid-bg"></div>
       <div class="wrap cta-inner">
         <h2>Find your real risks today.</h2>
-        <p class="cta-sub">Open-core. 100% private. Runs entirely on your own infrastructure.</p>
+        <p class="cta-sub">Self-hostable. Your code and findings stay on infrastructure you control.</p>
         <button class="btn lg" id="cta-signup">Get started &rarr;</button>
         <div class="cta-divider"></div>
         <div class="cta-notify">
@@ -1374,7 +905,7 @@ testing methodology for 10.10.14.7:
         <div class="land-footer-left">
           <span class="land-footer-brand">Darknode</span>
           <p style="font-size:.72rem;color:inherit;opacity:.5;margin:0 0 4px">Security and data-integrity platform for companies &mdash; scan your code, cloud, dependencies, and records. For authorized use on systems you own or are permitted to assess.</p>
-          <span class="land-footer-copy">&copy; 2026 Darknode-Official. All rights reserved.</span>
+          <span class="land-footer-copy">&copy; 2026 Darknode. All rights reserved.</span>
         </div>
         <div class="land-footer-links">
           <a href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
@@ -1415,19 +946,6 @@ testing methodology for 10.10.14.7:
   if ($("price-pro")) $("price-pro").onclick = scrollToCta;
   if ($("price-team")) $("price-team").onclick = scrollToCta;
   if ($("price-enterprise")) $("price-enterprise").onclick = scrollToCta;
-
-  // Billing toggle (monthly ↔ annual)
-  const billSwitch = $("billing-switch");
-  if (billSwitch) {
-    billSwitch.onclick = function() {
-      const grid = $("pricing-grid");
-      const isAnnual = billSwitch.classList.toggle("annual");
-      grid.classList.toggle("billing-annual", isAnnual);
-      var mLabel = $("bill-monthly"), aLabel = $("bill-annual");
-      if (mLabel) mLabel.classList.toggle("active", !isAnnual);
-      if (aLabel) aLabel.classList.toggle("active", isAnnual);
-    };
-  }
 
   // Animated counter for hero stats — scroll-triggered with easing
   const counterEls = view.querySelectorAll("[data-count]");
@@ -1472,7 +990,7 @@ testing methodology for 10.10.14.7:
     if (wrap) {
       let maxW = 0;
       const orig = rotateEl.textContent;
-      for (const w of words) { rotateEl.textContent = w; maxW = Math.max(maxW, rotateEl.offsetWidth); }
+      for (const w of words) { rotateEl.textContent = w; maxW = Math.max(maxW, rotateEl.scrollWidth); } // scrollWidth: the word box spans the wrap (0 wide until sized)
       rotateEl.textContent = orig;
       wrap.style.minWidth = maxW + "px";
     }
@@ -1617,85 +1135,6 @@ testing methodology for 10.10.14.7:
           panel.style.maxHeight = "none";
           panel.removeEventListener("transitionend", handler);
         });
-      }
-    });
-  });
-
-  // Tool showcase: category filter tabs
-  const tsTabs = view.querySelectorAll(".ts-tab");
-  const tsCards = view.querySelectorAll(".ts-card");
-  tsTabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      tsTabs.forEach(t => { t.classList.remove("on"); t.setAttribute("aria-selected", "false"); });
-      tab.classList.add("on");
-      tab.setAttribute("aria-selected", "true");
-      const cat = tab.dataset.cat;
-      tsCards.forEach(card => {
-        if (cat === "all" || card.dataset.cat === cat) {
-          card.style.display = "";
-          card.classList.add("revealed");
-        } else {
-          card.style.display = "none";
-        }
-      });
-    });
-  });
-
-  // Tool showcase: "Explore the full toolset" links to the tools section in the app
-  const tsViewAll = $("ts-view-all");
-  if (tsViewAll) {
-    tsViewAll.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (actions.onGetStarted) actions.onGetStarted();
-    });
-  }
-
-  // Showcase tabs: "See it in action" tabbed terminal demo
-  const showcaseTabs = view.querySelectorAll(".showcase-tab");
-  const showcasePanels = view.querySelectorAll(".showcase-panel");
-  const showcaseDots = view.querySelectorAll(".showcase-dot");
-  const showcaseTitles = { recon: "darknode", analysis: "nexus", exploit: "nexus", report: "darknode" };
-  const showcaseTitleEl = view.querySelector("#showcase-tw-title");
-
-  function switchShowcaseTab(tabName) {
-    showcaseTabs.forEach(t => {
-      const active = t.dataset.tab === tabName;
-      t.classList.toggle("active", active);
-      t.setAttribute("aria-selected", active ? "true" : "false");
-    });
-    showcasePanels.forEach(p => {
-      const id = p.id.replace("stab-", "");
-      if (id === tabName) {
-        p.hidden = false;
-        p.classList.add("showcase-panel-in");
-      } else {
-        p.hidden = true;
-        p.classList.remove("showcase-panel-in");
-      }
-    });
-    showcaseDots.forEach(d => d.classList.toggle("active", d.dataset.tab === tabName));
-    if (showcaseTitleEl) showcaseTitleEl.textContent = showcaseTitles[tabName] || "darknode";
-  }
-
-  showcaseTabs.forEach(tab => {
-    tab.addEventListener("click", () => switchShowcaseTab(tab.dataset.tab));
-  });
-  showcaseDots.forEach(dot => {
-    dot.addEventListener("click", () => switchShowcaseTab(dot.dataset.tab));
-  });
-
-  // Keyboard navigation for showcase tabs (left/right arrows)
-  showcaseTabs.forEach(tab => {
-    tab.addEventListener("keydown", (e) => {
-      const tabList = Array.from(showcaseTabs);
-      const idx = tabList.indexOf(tab);
-      let next = -1;
-      if (e.key === "ArrowRight") next = (idx + 1) % tabList.length;
-      else if (e.key === "ArrowLeft") next = (idx - 1 + tabList.length) % tabList.length;
-      if (next >= 0) {
-        e.preventDefault();
-        tabList[next].focus();
-        switchShowcaseTab(tabList[next].dataset.tab);
       }
     });
   });

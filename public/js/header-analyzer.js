@@ -37,18 +37,18 @@ var _haSecurityHeaders = [
 ];
 
 function _haGradeFromScore(score) {
-  if (score >= 90) return { grade: 'A', color: '#00ff88', label: 'EXCELLENT' };
-  if (score >= 80) return { grade: 'B', color: '#00cc66', label: 'GOOD' };
-  if (score >= 65) return { grade: 'C', color: '#ffcc00', label: 'AVERAGE' };
-  if (score >= 50) return { grade: 'D', color: '#ff8800', label: 'BELOW AVERAGE' };
-  if (score >= 30) return { grade: 'E', color: '#ff4444', label: 'POOR' };
-  return { grade: 'F', color: '#ff0000', label: 'CRITICAL' };
+  if (score >= 90) return { grade: 'A', color: '#00ff88', label: 'Excellent' };
+  if (score >= 80) return { grade: 'B', color: '#00cc66', label: 'Good' };
+  if (score >= 65) return { grade: 'C', color: '#ffcc00', label: 'Average' };
+  if (score >= 50) return { grade: 'D', color: '#ff8800', label: 'Below average' };
+  if (score >= 30) return { grade: 'E', color: '#ff4444', label: 'Poor' };
+  return { grade: 'F', color: '#ff0000', label: 'Critical' };
 }
 
 // Disclosure headers: the secure state is absence.
 var _haDisclosure = [
   { name: 'Server', note: 'consider hiding this' },
-  { name: 'X-Powered-By', note: 'REMOVE THIS — reveals technology stack' },
+  { name: 'X-Powered-By', note: 'remove — reveals the technology stack' },
   { name: 'X-AspNet-Version', note: 'remove — reveals the exact framework version' },
   { name: 'X-AspNetMvc-Version', note: 'remove — reveals the exact framework version' }
 ];
@@ -72,10 +72,10 @@ function _haParseRaw(raw) {
 }
 
 function _haBox(title, msg, sub) {
-  return '<div style="background:#1a0a0a;border:1px solid #ff444444;border-radius:8px;padding:20px;text-align:center;">' +
-    '<div style="color:#ff4444;font-size:14px;font-family:monospace;font-weight:bold;margin-bottom:8px;">' + esc(title) + '</div>' +
-    '<div style="color:#8ab4d4;font-size:11px;font-family:monospace;' + (sub ? 'margin-bottom:8px;' : '') + '">' + esc(msg) + '</div>' +
-    (sub ? '<div style="color:#4a6a8a;font-size:10px;font-family:monospace;">' + esc(sub) + '</div>' : '') + '</div>';
+  return '<div style="background:color-mix(in srgb,var(--bad) 10%,var(--card));border:1px solid color-mix(in srgb,var(--bad) 27%,transparent);border-radius:8px;padding:20px;text-align:center;">' +
+    '<div style="color:var(--bad);font-size:14px;font-weight:bold;margin-bottom:8px;">' + esc(title) + '</div>' +
+    '<div style="color:var(--txt-2);font-size:13px;' + (sub ? 'margin-bottom:8px;' : '') + '">' + esc(msg) + '</div>' +
+    (sub ? '<div style="color:var(--mut);font-size:12px;">' + esc(sub) + '</div>' : '') + '</div>';
 }
 
 function _haNormUrl(url) {
@@ -89,14 +89,14 @@ async function _haAnalyze(url) {
   var resultsEl = document.getElementById('ha-results');
   if (!resultsEl) return;
   url = _haNormUrl(url);
-  if (!url) { resultsEl.innerHTML = '<div style="color:#ff4444;font-family:monospace;font-size:11px;padding:16px;">Enter a URL to analyze.</div>'; return; }
+  if (!url) { resultsEl.innerHTML = '<div style="color:var(--bad);font-family:monospace;font-size:12px;padding:16px;">Enter a URL to analyze.</div>'; return; }
 
   if (!proxyConfigured()) {
-    resultsEl.innerHTML = _haBox('LIVE LOOKUP UNAVAILABLE', 'The Darknode fetch proxy is not configured, so real headers cannot be retrieved. Use the local agent or paste headers instead.');
+    resultsEl.innerHTML = _haBox('Live lookup unavailable', 'The Darknode fetch proxy is not configured, so real headers cannot be retrieved. Use the local agent or paste headers instead.');
     return;
   }
 
-  resultsEl.innerHTML = '<div style="text-align:center;padding:30px;color:#00aaff;font-family:monospace;font-size:12px;">Analyzing headers for <b>' + esc(url) + '</b>...</div>';
+  resultsEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--acc);font-family:monospace;font-size:12px;">Analyzing headers for <b>' + esc(url) + '</b>...</div>';
 
   try {
     var start = performance.now();
@@ -106,7 +106,7 @@ async function _haAnalyze(url) {
     Object.keys(rawHeaders).forEach(function(key) { headers[key.toLowerCase()] = rawHeaders[key]; });
     _haRender(resultsEl, { url: url, headers: headers, status: resp.status, statusText: resp.statusText || '', finalUrl: resp.finalUrl || url, timing: Math.round(performance.now() - start), redirects: resp.redirectChain || [], source: 'proxy' });
   } catch (e) {
-    resultsEl.innerHTML = _haBox('ANALYSIS FAILED', e.message || 'Request failed', 'The target could not be reached through the Darknode proxy (the host may be down, private, or blocking automated requests). No results are shown — nothing is guessed.');
+    resultsEl.innerHTML = _haBox('Analysis failed', e.message || 'Request failed', 'The target could not be reached through the Darknode proxy (the host may be down, private, or blocking automated requests). No results are shown — nothing is guessed.');
   }
 }
 
@@ -117,11 +117,11 @@ async function _haAgent(url) {
   if (!resultsEl) return;
   url = _haNormUrl(url);
   var b = window._bridge;
-  if (!b || !b.connected || !b.hasTool('curl')) { resultsEl.innerHTML = _haBox('LOCAL AGENT NOT CONNECTED', 'Start the Darknode local agent (with curl installed) to fetch headers from this machine.'); return; }
+  if (!b || !b.connected || !b.hasTool('curl')) { resultsEl.innerHTML = _haBox('Local agent not connected', 'Start the Darknode local agent (with curl installed) to fetch headers from this machine.'); return; }
   var href = '';
   try { href = new URL(url).href; } catch (_) {}
-  if (!href || /['"\\\s`$;|&<>(){}]/.test(href)) { resultsEl.innerHTML = _haBox('INVALID URL', 'Enter a plain http(s) URL.'); return; }
-  resultsEl.innerHTML = '<div style="text-align:center;padding:30px;color:#00aaff;font-family:monospace;font-size:12px;">Fetching headers with the local agent for <b>' + esc(href) + '</b>...</div>';
+  if (!href || /['"\\\s`$;|&<>(){}]/.test(href)) { resultsEl.innerHTML = _haBox('Invalid URL', 'Enter a plain http(s) URL.'); return; }
+  resultsEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--acc);font-family:monospace;font-size:12px;">Fetching headers with the local agent for <b>' + esc(href) + '</b>...</div>';
   try {
     var start = performance.now();
     var r = await b.exec("curl -sI --max-time 15 '" + href + "' 2>/dev/null | head -60");
@@ -129,7 +129,7 @@ async function _haAgent(url) {
     if (!p.status && !Object.keys(p.headers).length) { resultsEl.innerHTML = _haBox('NO RESPONSE', 'curl returned no headers for this URL.', 'The host may be unreachable from this machine.'); return; }
     _haRender(resultsEl, { url: href, headers: p.headers, status: p.status, statusText: p.statusText, finalUrl: href, timing: Math.round(performance.now() - start), redirects: [], source: 'agent' });
   } catch (e) {
-    resultsEl.innerHTML = _haBox('LOCAL AGENT ERROR', e.message || 'curl failed');
+    resultsEl.innerHTML = _haBox('Local agent error', e.message || 'curl failed');
   }
 }
 
@@ -138,7 +138,7 @@ function _haPasted() {
   var raw = (document.getElementById('ha-paste') || {}).value || '';
   if (!resultsEl) return;
   var p = _haParseRaw(raw);
-  if (!Object.keys(p.headers).length) { resultsEl.innerHTML = '<div style="color:#ff4444;font-family:monospace;font-size:11px;padding:16px;">Paste response headers, one per line (Name: Value).</div>'; return; }
+  if (!Object.keys(p.headers).length) { resultsEl.innerHTML = '<div style="color:var(--bad);font-family:monospace;font-size:12px;padding:16px;">Paste response headers, one per line (Name: Value).</div>'; return; }
   var u = _haNormUrl((document.getElementById('ha-input') || {}).value);
   _haRender(resultsEl, { url: u, headers: p.headers, status: p.status, statusText: p.statusText, finalUrl: u, timing: null, redirects: [], source: 'pasted' });
 }
@@ -192,14 +192,14 @@ function _haRender(resultsEl, info) {
       var status, statusColor, statusLabel;
       if (value) {
         if (hdr.weak && hdr.weak(value)) {
-          status = 'weak'; statusColor = '#ffcc00'; statusLabel = 'WEAK';
+          status = 'weak'; statusColor = '#ffcc00'; statusLabel = 'Weak';
           earnedWeight += hdr.weight * 0.5;
         } else {
-          status = 'present'; statusColor = '#00ff88'; statusLabel = 'PRESENT';
+          status = 'present'; statusColor = '#00ff88'; statusLabel = 'Present';
           earnedWeight += hdr.weight;
         }
       } else {
-        status = 'missing'; statusColor = hdr.critical ? '#ff4444' : '#ff8844'; statusLabel = 'MISSING';
+        status = 'missing'; statusColor = hdr.critical ? '#ff4444' : '#ff8844'; statusLabel = 'Missing';
       }
 
       results.push({ header: hdr, value: value, status: status, color: statusColor, label: statusLabel });
@@ -217,49 +217,49 @@ function _haRender(resultsEl, info) {
     var isHTTPS = !url || url.toLowerCase().indexOf('https://') === 0;
     if (!isHTTPS) { score = Math.max(0, score - 20); grade = _haGradeFromScore(score); }
 
-    var srcLabel = info.source === 'agent' ? 'LOCAL AGENT (curl -sI)' : info.source === 'pasted' ? 'PASTED HEADERS' : 'DARKNODE PROXY';
+    var srcLabel = info.source === 'agent' ? 'local agent (curl -sI)' : info.source === 'pasted' ? 'pasted headers' : 'Darknode proxy';
     var h = '';
 
     // Grade card
     h += '<div style="display:flex;gap:16px;margin-bottom:20px;align-items:center;flex-wrap:wrap;">';
-    h += '<div style="width:100px;height:100px;border-radius:12px;border:3px solid ' + grade.color + ';display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);">';
+    h += '<div style="width:100px;height:100px;border-radius:12px;border:3px solid ' + grade.color + ';display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--card2);">';
     h += '<div style="font-size:42px;font-weight:bold;color:' + grade.color + ';font-family:monospace;line-height:1;">' + grade.grade + '</div>';
-    h += '<div style="font-size:9px;color:' + grade.color + ';font-family:monospace;letter-spacing:1px;">' + grade.label + '</div>';
+    h += '<div style="font-size:12px;color:' + grade.color + ';font-family:monospace;">' + grade.label + '</div>';
     h += '</div>';
     h += '<div style="flex:1;min-width:0;">';
-    h += '<div style="font-size:14px;color:#c8d6e5;font-family:monospace;font-weight:bold;margin-bottom:4px;word-break:break-all;">' + esc(info.finalUrl || url || 'Pasted response headers') + '</div>';
-    h += '<div style="font-size:11px;color:#4a6a8a;font-family:monospace;">' + (info.status ? 'HTTP ' + esc(String(info.status)) + ' ' + esc(info.statusText || '') + ' | ' : '') + 'Score: ' + score + '/100 | Headers checked: ' + _haSecurityHeaders.length + (info.timing != null ? ' | ' + info.timing + 'ms' : '') + ' | Source: ' + srcLabel + '</div>';
-    if (!isHTTPS) h += '<div style="color:#ff4444;font-size:11px;font-family:monospace;margin-top:4px;">WARNING: Not using HTTPS (-20 points)</div>';
-    for (var di = 0; di < disclosed.length; di++) h += '<div style="color:#ffaa00;font-size:10px;font-family:monospace;margin-top:2px;word-break:break-all;">' + esc(disclosed[di].name) + ': ' + esc(disclosed[di].value) + ' (' + esc(disclosed[di].note) + ')</div>';
-    if (/^3\d\d$/.test(String(info.status)) && headers['location']) h += '<div style="color:#8ab4d4;font-size:10px;font-family:monospace;margin-top:2px;word-break:break-all;">Redirects to: ' + esc(headers['location']) + ' (headers graded on this redirect response)</div>';
-    if (info.redirects && info.redirects.length) h += '<div style="color:#8ab4d4;font-size:10px;font-family:monospace;margin-top:2px;word-break:break-all;">Redirect chain: ' + info.redirects.map(function(hop) { return esc(typeof hop === 'string' ? hop : ((hop.status != null ? hop.status + ' ' : '') + (hop.url || hop.from || '') + (hop.location || hop.to ? ' -> ' + (hop.location || hop.to) : ''))); }).join(' | ') + '</div>';
-    if (headers['allow']) h += '<div style="color:#8ab4d4;font-size:10px;font-family:monospace;margin-top:2px;">Advertised methods (Allow): ' + esc(headers['allow']) + '</div>';
-    if (acao === '*' && acac) h += '<div style="color:#ff4444;font-size:10px;font-family:monospace;margin-top:2px;">CORS: Access-Control-Allow-Origin * together with Allow-Credentials true (browsers reject it, but it signals a misconfigured policy)</div>';
-    else if (acao) h += '<div style="color:#8ab4d4;font-size:10px;font-family:monospace;margin-top:2px;word-break:break-all;">CORS: Access-Control-Allow-Origin ' + esc(acao) + (acac ? ' with credentials' : '') + '</div>';
+    h += '<div style="font-size:14px;color:var(--txt);font-family:monospace;font-weight:bold;margin-bottom:4px;word-break:break-all;">' + esc(info.finalUrl || url || 'Pasted response headers') + '</div>';
+    h += '<div style="font-size:12px;color:var(--mut);font-family:monospace;">' + (info.status ? 'HTTP ' + esc(String(info.status)) + ' ' + esc(info.statusText || '') + ' | ' : '') + 'Score: ' + score + '/100 | Headers checked: ' + _haSecurityHeaders.length + (info.timing != null ? ' | ' + info.timing + 'ms' : '') + ' | Source: ' + srcLabel + '</div>';
+    if (!isHTTPS) h += '<div style="color:var(--bad);font-size:12px;font-family:monospace;margin-top:4px;">WARNING: Not using HTTPS (-20 points)</div>';
+    for (var di = 0; di < disclosed.length; di++) h += '<div style="color:var(--warn);font-size:12px;font-family:monospace;margin-top:2px;word-break:break-all;">' + esc(disclosed[di].name) + ': ' + esc(disclosed[di].value) + ' (' + esc(disclosed[di].note) + ')</div>';
+    if (/^3\d\d$/.test(String(info.status)) && headers['location']) h += '<div style="color:var(--txt-2);font-size:12px;font-family:monospace;margin-top:2px;word-break:break-all;">Redirects to: ' + esc(headers['location']) + ' (headers graded on this redirect response)</div>';
+    if (info.redirects && info.redirects.length) h += '<div style="color:var(--txt-2);font-size:12px;font-family:monospace;margin-top:2px;word-break:break-all;">Redirect chain: ' + info.redirects.map(function(hop) { return esc(typeof hop === 'string' ? hop : ((hop.status != null ? hop.status + ' ' : '') + (hop.url || hop.from || '') + (hop.location || hop.to ? ' -> ' + (hop.location || hop.to) : ''))); }).join(' | ') + '</div>';
+    if (headers['allow']) h += '<div style="color:var(--txt-2);font-size:12px;font-family:monospace;margin-top:2px;">Advertised methods (Allow): ' + esc(headers['allow']) + '</div>';
+    if (acao === '*' && acac) h += '<div style="color:var(--bad);font-size:12px;font-family:monospace;margin-top:2px;">CORS: Access-Control-Allow-Origin * together with Allow-Credentials true (browsers reject it, but it signals a misconfigured policy)</div>';
+    else if (acao) h += '<div style="color:var(--txt-2);font-size:12px;font-family:monospace;margin-top:2px;word-break:break-all;">CORS: Access-Control-Allow-Origin ' + esc(acao) + (acac ? ' with credentials' : '') + '</div>';
     h += '</div>';
     h += '</div>';
 
     // Progress bar
-    h += '<div style="background:#1a2a3a;height:6px;border-radius:3px;margin-bottom:20px;overflow:hidden;">';
+    h += '<div style="background:var(--line);height:6px;border-radius:3px;margin-bottom:20px;overflow:hidden;">';
     h += '<div style="background:' + grade.color + ';height:100%;width:' + score + '%;border-radius:3px;transition:width 0.5s;"></div>';
     h += '</div>';
 
     // Header results
-    h += '<div style="color:#00aaff;font-size:11px;font-family:monospace;letter-spacing:2px;font-weight:bold;margin-bottom:8px;border-bottom:1px solid #1a2a44;padding-bottom:4px;">SECURITY HEADERS</div>';
+    h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin-bottom:8px;border-bottom:1px solid var(--line);padding-bottom:4px;">Security headers</div>';
 
     for (var r = 0; r < results.length; r++) {
       var res = results[r];
-      h += '<div style="padding:10px 0;border-bottom:1px solid #0d1525;">';
+      h += '<div style="padding:10px 0;border-bottom:1px solid var(--line);">';
       h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
-      h += '<div style="font-family:monospace;font-size:12px;color:#c8d6e5;font-weight:bold;">' + esc(res.header.name) + (res.header.critical ? ' <span style="color:#ff4444;font-size:8px;">CRITICAL</span>' : '') + '</div>';
-      h += '<span style="background:' + res.color + '22;color:' + res.color + ';font-size:9px;font-family:monospace;padding:2px 8px;border-radius:3px;border:1px solid ' + res.color + '44;font-weight:bold;letter-spacing:1px;">' + res.label + '</span>';
+      h += '<div style="font-family:monospace;font-size:12px;color:var(--txt);font-weight:bold;">' + esc(res.header.name) + (res.header.critical ? ' <span style="color:var(--bad);font-size:12px;">CRITICAL</span>' : '') + '</div>';
+      h += '<span style="background:' + res.color + '22;color:' + res.color + ';font-size:12px;font-family:monospace;padding:2px 8px;border-radius:3px;border:1px solid ' + res.color + '44;font-weight:bold;">' + res.label + '</span>';
       h += '</div>';
       if (res.value) {
-        h += '<div style="font-family:monospace;font-size:10px;color:#8ab4d4;word-break:break-all;margin:4px 0;padding:4px 8px;background:#0a1018;border-radius:3px;">' + esc(res.value.substring(0, 300)) + (res.value.length > 300 ? '...' : '') + '</div>';
+        h += '<div style="font-family:monospace;font-size:12px;color:var(--txt-2);word-break:break-all;margin:4px 0;padding:4px 8px;background:var(--card2);border-radius:3px;">' + esc(res.value.substring(0, 300)) + (res.value.length > 300 ? '...' : '') + '</div>';
       }
-      h += '<div style="font-family:monospace;font-size:10px;color:#4a6a8a;margin-top:2px;">' + esc(res.header.desc) + '</div>';
+      h += '<div style="font-family:monospace;font-size:12px;color:var(--mut);margin-top:2px;">' + esc(res.header.desc) + '</div>';
       if (res.status !== 'present') {
-        h += '<div style="font-family:monospace;font-size:10px;color:#ffaa00;margin-top:4px;">Recommendation: ' + esc(res.header.rec) + '</div>';
+        h += '<div style="font-family:monospace;font-size:12px;color:var(--warn);margin-top:4px;">Recommendation: ' + esc(res.header.rec) + '</div>';
       }
       h += '</div>';
     }
@@ -268,19 +268,19 @@ function _haRender(resultsEl, info) {
     var issueCount = results.filter(function(x) { return x.status !== 'present'; }).length + disclosed.length;
     if (issueCount) {
       h += '<div style="display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap;">';
-      if (info.source === 'pasted' && !_haHostOf(url)) h += '<input id="ha-graph-host" type="text" placeholder="Domain (optional, links findings)" style="flex:1;min-width:180px;background:#0a0e1a;border:1px solid #1a2a44;border-radius:4px;padding:6px 10px;color:#c8d6e5;font-family:monospace;font-size:11px;outline:none;">';
-      h += '<button id="ha-graph" style="background:#00aaff22;border:1px solid #00aaff66;border-radius:4px;padding:6px 14px;color:#00ddff;font-family:monospace;font-size:11px;font-weight:bold;cursor:pointer;">Send ' + issueCount + ' header issue' + (issueCount === 1 ? '' : 's') + ' to Security Graph</button>';
+      if (info.source === 'pasted' && !_haHostOf(url)) h += '<input id="ha-graph-host" type="text" placeholder="Domain (optional, links findings)" style="flex:1;min-width:180px;">';
+      h += '<button class="btn ghost sm" id="ha-graph">Send ' + issueCount + ' header issue' + (issueCount === 1 ? '' : 's') + ' to Security Graph</button>';
       h += '</div>';
     }
 
     // Raw headers dump
     h += '<div style="margin-top:16px;">';
-    h += '<div style="color:#4a6a8a;font-size:10px;font-family:monospace;letter-spacing:2px;margin-bottom:6px;cursor:pointer;" onclick="var el=document.getElementById(\'ha-raw\');el.hidden=!el.hidden;">ALL RESPONSE HEADERS [TOGGLE]</div>';
-    h += '<div id="ha-raw" hidden style="background:#0a0e1a;border:1px solid #1a2a44;border-radius:6px;padding:10px;max-height:300px;overflow-y:auto;">';
+    h += '<div style="color:var(--mut);font-size:13px;margin-bottom:6px;cursor:pointer;" onclick="var el=document.getElementById(\'ha-raw\');el.hidden=!el.hidden;">All response headers (show / hide)</div>';
+    h += '<div id="ha-raw" hidden style="background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:10px;max-height:300px;overflow-y:auto;">';
     var hdrKeys = Object.keys(headers).sort();
     for (var hi = 0; hi < hdrKeys.length; hi++) {
-      h += '<div style="font-family:monospace;font-size:10px;padding:2px 0;border-bottom:1px solid #0d1525;">';
-      h += '<span style="color:#00aaff;">' + esc(hdrKeys[hi]) + ':</span> <span style="color:#c8d6e5;">' + esc(headers[hdrKeys[hi]]) + '</span>';
+      h += '<div style="font-family:monospace;font-size:12px;padding:2px 0;border-bottom:1px solid var(--line);">';
+      h += '<span style="color:var(--acc);">' + esc(hdrKeys[hi]) + ':</span> <span style="color:var(--txt);">' + esc(headers[hdrKeys[hi]]) + '</span>';
       h += '</div>';
     }
     h += '</div></div>';
@@ -293,31 +293,31 @@ function _haRender(resultsEl, info) {
 
 export function renderHeaderAnalyzer(container) {
   var agentReady = !!(window._bridge && window._bridge.connected && window._bridge.hasTool && window._bridge.hasTool('curl'));
-  var btnCss = 'border-radius:4px;padding:10px 16px;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer;letter-spacing:1px;';
   container.innerHTML =
-    '<div style="padding:20px 24px;max-width:1000px;margin:0 auto;">' +
-    '<h2 style="margin:0 0 4px;font-size:20px;color:#00aaff;font-family:monospace;letter-spacing:2px;text-transform:uppercase;">HTTP SECURITY HEADERS</h2>' +
-    '<div style="color:#4a6a8a;font-size:11px;font-family:monospace;margin-bottom:16px;">Grade any URL\'s security headers A through F: live through the Darknode proxy, from this machine with the local agent, or from pasted headers</div>' +
+    '<div>' +
+    '<div class="pg-head"><div>' +
+    '<h1 class="pg-h1">Header Analyzer</h1>' +
+    '<p class="muted pg-sub">Grade any URL\'s HTTP security headers A through F: live through the Darknode proxy, from this machine with the local agent, or from pasted headers.</p>' +
+    '</div></div>' +
 
     '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +
     '<input id="ha-input" type="text" placeholder="https://example.com" ' +
-    'style="flex:1;min-width:200px;background:#0a0e1a;border:1px solid #1a2a44;border-radius:6px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" ' +
+    'style="flex:1;min-width:200px;" ' +
     'onkeydown="if(event.key===\'Enter\')_haAnalyze(this.value)">' +
-    '<button onclick="_haAnalyze(document.getElementById(\'ha-input\').value)" ' +
-    'style="background:linear-gradient(135deg,#00aaff22,#00aaff11);border:1px solid #00aaff66;color:#00ddff;' + btnCss + '">Analyze</button>' +
-    (agentReady ? '<button id="ha-agent" title="Run curl -sI on this machine through the Darknode local agent" style="background:#22c55e18;border:1px solid #22c55e66;color:#22c55e;' + btnCss + '">Fetch via local agent</button>' : '') +
+    '<button class="btn" onclick="_haAnalyze(document.getElementById(\'ha-input\').value)">Analyze</button>' +
+    (agentReady ? '<button class="btn ghost" id="ha-agent" title="Run curl -sI on this machine through the Darknode local agent">Fetch via local agent</button>' : '') +
     '</div>' +
 
-    '<details style="margin-bottom:12px;"><summary style="color:#5a8aaa;font-size:11px;font-family:monospace;cursor:pointer;">Or paste response headers (e.g. from curl -sI or browser dev tools)</summary>' +
-    '<textarea id="ha-paste" rows="6" placeholder="Name: Value, one per line" style="width:100%;box-sizing:border-box;margin-top:8px;background:#0a0e1a;border:1px solid #1a2a44;border-radius:6px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:12px;outline:none;resize:vertical;"></textarea>' +
-    '<button id="ha-paste-go" style="margin-top:6px;background:#0a1a28;border:1px solid #1a3050;color:#5a8aaa;' + btnCss + '">Grade pasted headers</button>' +
+    '<details style="margin-bottom:12px;"><summary style="color:var(--mut);font-size:13px;cursor:pointer;">Or paste response headers (e.g. from curl -sI or browser dev tools)</summary>' +
+    '<textarea id="ha-paste" rows="6" placeholder="Name: Value, one per line" style="width:100%;box-sizing:border-box;margin-top:8px;font-family:monospace;font-size:12px;resize:vertical;"></textarea>' +
+    '<button class="btn ghost" id="ha-paste-go" style="margin-top:6px;">Grade pasted headers</button>' +
     '</details>' +
 
-    '<div style="color:#4a6a8a;font-size:9px;font-family:monospace;margin-bottom:12px;padding:6px 10px;background:#0a0e1a;border-radius:4px;border:1px solid #1a2a44;">' +
-    'Note: Analyze retrieves the real upstream response headers server-side through the Darknode SSRF-guarded proxy (public hosts only). The local agent fetches from your own machine, so it also reaches internal hosts.</div>' +
+    '<p class="muted" style="font-size:13px;margin:0 0 12px;">' +
+    'Analyze retrieves the real upstream response headers server-side through the Darknode SSRF-guarded proxy (public hosts only). The local agent fetches from your own machine, so it also reaches internal hosts.</p>' +
 
-    '<div id="ha-results" style="background:#080c14;border:1px solid #1a2a44;border-radius:8px;padding:16px;min-height:200px;">' +
-    '<div style="color:#3a5a7a;font-size:11px;font-family:monospace;text-align:center;padding:40px;">Enter a URL above to analyze its security headers.</div>' +
+    '<div id="ha-results" class="card" style="min-height:200px;">' +
+    '<div style="color:var(--mut);font-size:14px;text-align:center;padding:40px;">Enter a URL above to analyze its security headers.</div>' +
     '</div>' +
     '</div>';
   var ag = container.querySelector('#ha-agent');

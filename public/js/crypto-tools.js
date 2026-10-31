@@ -339,7 +339,7 @@ function topNgrams(counts, limit = 15) {
 function renderFrequencyAnalysis(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">Frequency Analysis</h2>
+    <h2 class="pg-h2">Frequency analysis</h2>
     <p class="muted">Paste any text below. This tool counts every letter A-Z, shows the
       distribution as a bar chart, and compares it against standard English letter
       frequencies using a chi-squared goodness-of-fit test. Classical ciphers like Caesar,
@@ -466,7 +466,7 @@ ${ENGLISH_TRIGRAMS.map(([g, p]) => `${g} (${p}%)`).join("  ")}`;
   }
 }
 
-registerTab("freq", "Frequency Analysis", renderFrequencyAnalysis);
+registerTab("freq", "Frequency analysis", renderFrequencyAnalysis);
 
 // ---------------------------------------------------------------------------
 // Tool 2: Caesar Cipher Brute Force
@@ -569,7 +569,7 @@ function rot47(text) {
   return text.replace(/[!-~]/g, (c) => String.fromCharCode(33 + ((c.charCodeAt(0) + 14) % 94)));
 }
 
-registerTab("caesar", "Caesar Brute Force", renderCaesarBruteForce);
+registerTab("caesar", "Caesar brute force", renderCaesarBruteForce);
 
 // ---------------------------------------------------------------------------
 // Tool 3: Vigenere Cipher
@@ -605,7 +605,7 @@ function vigenereProcess(text, key, decode) {
 
 function buildVigenereTableau() {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  let html = '<table class="mono" style="border-collapse:collapse;font-size:11px">';
+  let html = '<table class="mono" style="border-collapse:collapse;font-size:12px">';
   html += "<tr><td></td>" + [...alphabet].map((c) => `<td style="padding:2px 4px;text-align:center;opacity:.6">${c}</td>`).join("") + "</tr>";
   for (let row = 0; row < 26; row++) {
     html += `<tr><td style="padding:2px 4px;opacity:.6">${alphabet[row]}</td>`;
@@ -622,7 +622,7 @@ function buildVigenereTableau() {
 function renderVigenere(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">Vigenere Cipher</h2>
+    <h2 class="pg-h2">Vigenere cipher</h2>
     <p class="muted">A polyalphabetic substitution cipher: each letter is shifted by an amount
       taken from a repeating keyword. Row = plaintext letter, column = key letter (or use the
       tableau below directly): the cell where the plaintext row meets the key column is the
@@ -757,7 +757,7 @@ solve each column independently to recover the key letter by letter.`;
   }
 }
 
-registerTab("vigenere", "Vigenere Cipher", renderVigenere);
+registerTab("vigenere", "Vigenere cipher", renderVigenere);
 
 // ---------------------------------------------------------------------------
 // Tool 4: XOR Cipher
@@ -780,7 +780,7 @@ function xorBytes(dataBytes, keyBytes) {
 function renderXorCipher(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">XOR Cipher</h2>
+    <h2 class="pg-h2">XOR cipher</h2>
     <p class="muted">XOR each byte of the input against a repeating key. XOR is symmetric --
       the same operation encrypts and decrypts, so "Apply XOR" works both directions as long
       as you feed it the right input format. Includes a single-byte brute-force mode that
@@ -979,7 +979,7 @@ ${decryptedText !== null ? decryptedText : "(decryption did not produce valid UT
   };
 }
 
-registerTab("xor", "XOR Cipher", renderXorCipher);
+registerTab("xor", "XOR cipher", renderXorCipher);
 
 // ---------------------------------------------------------------------------
 // Tool 5: Substitution Cipher Helper
@@ -1209,7 +1209,7 @@ ${decoded}`;
   }
 }
 
-registerTab("substitution", "Substitution Helper", renderSubstitution);
+registerTab("substitution", "Substitution helper", renderSubstitution);
 
 // ---------------------------------------------------------------------------
 // Tool 6: RSA Calculator
@@ -1227,7 +1227,7 @@ registerTab("substitution", "Substitution Helper", renderSubstitution);
 function renderRSA(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">RSA Calculator</h2>
+    <h2 class="pg-h2">RSA calculator</h2>
     <p class="muted">Textbook RSA, worked by hand with BigInt so nothing is hidden behind a
       library call. Enter two <em>distinct prime</em> numbers p and q (keep them small --
       under a few thousand -- so the numbers stay readable; this is for learning the math,
@@ -1289,9 +1289,10 @@ function renderRSA(root) {
   root.querySelector("#rsa-sample").onclick = () => { pInp.value = "61"; qInp.value = "53"; eInp.value = "17"; generate(); };
   root.querySelector("#rsa-random").onclick = () => {
     const primesUnder1000 = smallPrimesUpTo(2000).filter((p) => p > 100);
-    const p = primesUnder1000[Math.floor(Math.random() * primesUnder1000.length)];
-    let q = primesUnder1000[Math.floor(Math.random() * primesUnder1000.length)];
-    while (q === p) q = primesUnder1000[Math.floor(Math.random() * primesUnder1000.length)];
+    const pick = () => primesUnder1000[crypto.getRandomValues(new Uint32Array(1))[0] % primesUnder1000.length];
+    const p = pick();
+    let q = pick();
+    while (q === p) q = pick();
     pInp.value = p; qInp.value = q; eInp.value = "";
     generate();
   };
@@ -1486,7 +1487,7 @@ because p and q were too close together.`;
   };
 }
 
-registerTab("rsa", "RSA Calculator", renderRSA);
+registerTab("rsa", "RSA calculator", renderRSA);
 
 // ---------------------------------------------------------------------------
 // Tool 7: Diffie-Hellman Key Exchange Calculator
@@ -1763,7 +1764,7 @@ function identifyHash(value) {
 function renderHashIdentifier(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">Hash Identifier</h2>
+    <h2 class="pg-h2">Hash identifier</h2>
     <p class="muted">Paste a hash and this tool matches it against a database of ${HASH_PATTERNS.length}
       known hash/encoding formats by length, character set, and structural markers (dollar-sign
       prefixes, curly-brace LDAP tags, base64 padding, etc). Many algorithms share an identical
@@ -1814,7 +1815,7 @@ function renderHashIdentifier(root) {
   }
 }
 
-registerTab("hashid", "Hash Identifier", renderHashIdentifier);
+registerTab("hashid", "Hash identifier", renderHashIdentifier);
 
 // ---------------------------------------------------------------------------
 // Tool 9: Password Entropy Calculator
@@ -2028,7 +2029,7 @@ function renderPasswordEntropy(root) {
   }
 }
 
-registerTab("entropy", "Password Entropy", renderPasswordEntropy);
+registerTab("entropy", "Password entropy", renderPasswordEntropy);
 
 // ---------------------------------------------------------------------------
 // Tool 10: Password / Passphrase Generator
@@ -2561,7 +2562,7 @@ function renderPasswordGenerator(root) {
   generate();
 }
 
-registerTab("passgen", "Password Generator", renderPasswordGenerator);
+registerTab("passgen", "Password generator", renderPasswordGenerator);
 
 // ---------------------------------------------------------------------------
 // Tool 11: Base Encoding (16 / 32 / 58 / 64 / 85)
@@ -2691,7 +2692,7 @@ const BASE_ENCODERS = {
 function renderBaseEncoding(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">Base Encoding</h2>
+    <h2 class="pg-h2">Base encoding</h2>
     <p class="muted">Convert text or bytes between Base16 (hex), Base32 (RFC 4648, used in TOTP
       secrets and DNS), Base58 (Bitcoin/IPFS-style, no visually ambiguous characters), Base64
       (the ubiquitous web/email encoding), and Base85/ASCII85 (denser than Base64, used in
@@ -2756,7 +2757,7 @@ function renderBaseEncoding(root) {
   };
 }
 
-registerTab("baseenc", "Base Encoding", renderBaseEncoding);
+registerTab("baseenc", "Base encoding", renderBaseEncoding);
 
 // ---------------------------------------------------------------------------
 // Tool 12: Morse Code
@@ -2795,7 +2796,7 @@ export function morseToText(morse) {
 function renderMorse(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">Morse Code</h2>
+    <h2 class="pg-h2">Morse code</h2>
     <p class="muted">Encodes/decodes the international Morse code standard: letters, digits, and
       common punctuation. Dots and dashes are separated by spaces; a forward slash marks a word
       break. Includes an audio playback preview using the Web Audio API.</p>
@@ -2850,7 +2851,7 @@ function renderMorse(root) {
   }
 }
 
-registerTab("morse", "Morse Code", renderMorse);
+registerTab("morse", "Morse code", renderMorse);
 
 // ---------------------------------------------------------------------------
 // Tool 13: Number Base Converter
@@ -2899,7 +2900,7 @@ function formatBigIntInBase(value, base) {
 function renderNumberBase(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">Number Base Converter</h2>
+    <h2 class="pg-h2">Number base converter</h2>
     <p class="muted">Convert integers of arbitrary size between binary, octal, decimal, and
       hexadecimal using BigInt arithmetic -- no precision loss even for numbers hundreds of
       digits long. Prefixes (0b, 0o, 0x) are optional and auto-detected when present.</p>
@@ -3031,7 +3032,7 @@ Result: ${negative ? "-" : ""}${in2.value.trim()} (base ${fromBase}) = ${negativ
   };
 }
 
-registerTab("numbase", "Number Base Converter", renderNumberBase);
+registerTab("numbase", "Number base converter", renderNumberBase);
 
 // ---------------------------------------------------------------------------
 // Tool 14: ASCII Table Reference
@@ -3140,7 +3141,7 @@ function renderAsciiTable(root) {
   render(ASCII_TABLE_DATA);
 }
 
-registerTab("ascii", "ASCII Table", renderAsciiTable);
+registerTab("ascii", "ASCII table", renderAsciiTable);
 
 // ---------------------------------------------------------------------------
 // Tool 15: Unicode Lookup
@@ -3392,7 +3393,7 @@ function utf16Units(codePoint) {
 function renderUnicodeLookup(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">Unicode Lookup</h2>
+    <h2 class="pg-h2">Unicode lookup</h2>
     <p class="muted">Enter a single character, or a code point (e.g. <code>U+1F600</code>,
       <code>0x1F600</code>, or plain decimal <code>128512</code>), to see its Unicode block,
       an approximate general category, and its UTF-8 / UTF-16 byte encodings. A small built-in
@@ -3471,7 +3472,7 @@ function renderUnicodeLookup(root) {
   }
 }
 
-registerTab("unicode", "Unicode Lookup", renderUnicodeLookup);
+registerTab("unicode", "Unicode lookup", renderUnicodeLookup);
 
 // ---------------------------------------------------------------------------
 // Tool 16: Checksum Calculator (CRC16, CRC32, Adler32)
@@ -3626,7 +3627,7 @@ const CRC_PRESETS = {
 function renderChecksum(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">Checksum Calculator</h2>
+    <h2 class="pg-h2">Checksum calculator</h2>
     <p class="muted">CRC16-CCITT, CRC32 (IEEE/zlib), and Adler32, all implemented directly from
       their mathematical definitions. These detect accidental corruption -- they are <em>not</em>
       cryptographically secure and can be trivially forged by anyone who wants to; never use a
@@ -3721,7 +3722,7 @@ Fletcher-32
   };
 }
 
-registerTab("checksum", "Checksum Calculator", renderChecksum);
+registerTab("checksum", "Checksum calculator", renderChecksum);
 
 // ---------------------------------------------------------------------------
 // Tool 17: AES Encryption (WebCrypto: AES-GCM and AES-CBC)
@@ -3852,7 +3853,7 @@ ${bytesToHex(salt)}:${bytesToHex(iv)}:${bytesToHex(cipherBytes)}`;
   }
 }
 
-registerTab("aes", "AES Encryption", renderAES);
+registerTab("aes", "AES encryption", renderAES);
 
 // ---------------------------------------------------------------------------
 // Tool 18: Digital Signature Demo (ECDSA / RSA via WebCrypto)
@@ -3891,7 +3892,7 @@ async function verifySignature(publicKey, algorithm, message, signature) {
 function renderSignatureDemo(root) {
   root.innerHTML = `
     <div class="tk-section">
-    <h2 class="pg-h2">Digital Signature Demo</h2>
+    <h2 class="pg-h2">Digital signature demo</h2>
     <p class="muted">Signing is the mirror image of encryption: instead of a public key
       encrypting for a private key to decrypt, a <em>private</em> key signs and the matching
       <em>public</em> key verifies. Anyone with the public key can confirm the message hasn't
@@ -3997,15 +3998,15 @@ verify box below (unchanged, or edited to test failure) and click Verify.`;
       const sig = hexToBytes(lastSignatureHex);
       const valid = await verifySignature(keyPair.publicKey, algoSel.value, verifyMsgInp.value, sig);
       verifyOut.innerHTML = valid
-        ? '<div class="card"><strong style="color:#4ade80">VALID</strong><p class="muted" style="margin-top:6px">The signature matches this exact message and this public key. The message is authentic and unmodified since signing.</p></div>'
-        : '<div class="card"><strong style="color:#f87171">INVALID</strong><p class="muted" style="margin-top:6px">The signature does NOT match this message. Either the message was altered after signing, or this isn\'t the matching key pair -- this is exactly the tamper-detection digital signatures are built for.</p></div>';
+        ? '<div class="card"><strong style="color:var(--ok)">Valid</strong><p class="muted" style="margin-top:6px">The signature matches this exact message and this public key. The message is authentic and unmodified since signing.</p></div>'
+        : '<div class="card"><strong style="color:var(--bad)">Invalid</strong><p class="muted" style="margin-top:6px">The signature does NOT match this message. Either the message was altered after signing, or this isn\'t the matching key pair -- this is exactly the tamper-detection digital signatures are built for.</p></div>';
     } catch (err) {
       verifyOut.innerHTML = `<p class="muted">Error: ${escapeHtml(err.message)}</p>`;
     }
   };
 }
 
-registerTab("signature", "Digital Signature Demo", renderSignatureDemo);
+registerTab("signature", "Digital signature demo", renderSignatureDemo);
 
 // ---------------------------------------------------------------------------
 // Tool 19: TLS Cipher Suite Grader
@@ -4019,7 +4020,7 @@ registerTab("signature", "Digital Signature Demo", renderSignatureDemo);
 // weakness names the attack it enables.
 
 const GRADE_ORDER = ["A+", "A", "B", "C", "D", "F"];
-const GRADE_COLOR = { "A+": "#4ade80", A: "#4ade80", B: "#facc15", C: "#fb923c", D: "#f87171", F: "#ef4444" };
+const GRADE_COLOR = { "A+": "var(--ok)", A: "var(--ok)", B: "var(--warn)", C: "var(--warn)", D: "var(--bad)", F: "var(--bad)" };
 
 function gradeCipherSuite(raw) {
   const n = raw.toUpperCase();
@@ -4100,7 +4101,7 @@ function renderCipherGrader(root) {
   };
 }
 
-registerTab("ciphergrade", "Cipher Suite Grader", renderCipherGrader);
+registerTab("ciphergrade", "Cipher suite grader", renderCipherGrader);
 
 // ---------------------------------------------------------------------------
 // Main entry point
@@ -4108,25 +4109,24 @@ registerTab("ciphergrade", "Cipher Suite Grader", renderCipherGrader);
 
 export function renderCryptoTools(main) {
   main.innerHTML = `
-    <div class="dash-hero">
-      <div class="eyebrow">Cryptography &amp; Encoding</div>
+    <div class="pg-head"><div>
       <h1 class="pg-h1">Crypto Tools</h1>
-      <p class="pg-sub">Classical ciphers, modern crypto primitives, encodings and analysis --
-        nineteen self-contained tools for learning how cryptography actually works, all running
+      <p class="muted pg-sub">Classical ciphers, modern crypto primitives, encodings and analysis:
+        ${TABS.length} self-contained tools for learning how cryptography works, all running
         locally in your browser.</p>
-    </div>
-    <div class="tab-bar" id="ct-tabbar"></div>
+    </div></div>
+    <div class="seg" id="ct-tabbar" style="flex-wrap:wrap;margin-bottom:12px"></div>
     <div class="panel" id="ct-body"></div>
   `;
 
   const tabbar = main.querySelector("#ct-tabbar");
   const body = main.querySelector("#ct-body");
 
-  tabbar.innerHTML = TABS.map((t, i) => `<button class="tab${i === 0 ? " active" : ""}" data-tab="${t.id}">${t.label}</button>`).join("");
+  tabbar.innerHTML = TABS.map((t, i) => `<button class="${i === 0 ? "on" : ""}" data-tab="${t.id}">${t.label}</button>`).join("");
 
   function activate(id) {
-    for (const btn of tabbar.querySelectorAll(".tab")) {
-      btn.classList.toggle("active", btn.dataset.tab === id);
+    for (const btn of tabbar.querySelectorAll("button[data-tab]")) {
+      btn.classList.toggle("on", btn.dataset.tab === id);
     }
     const tab = TABS.find((t) => t.id === id) || TABS[0];
     body.innerHTML = "";

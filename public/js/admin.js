@@ -157,7 +157,7 @@ export async function renderAdmin(main, user) {
             <button class="btn danger sm" id="wlAdd">Ban</button>
           </div>
           <div class="wl-list" id="wlList"></div>
-          <p class="muted" style="font-size:.72rem;margin:10px 0 0">The owner account can never be banned.</p>
+          <p class="muted" style="font-size:.72rem;margin:10px 0 0">The owner account can never be banned. This list blocks sign-in in the browser only; to cut off an account completely, run <code>node scripts/suspend-user.mjs The owner account can never be banned.</p>lt;emailThe owner account can never be banned.</p>gt;</code>.</p>
         </div>
 
         <div class="panel">

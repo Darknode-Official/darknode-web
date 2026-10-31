@@ -14,7 +14,7 @@ const STRIDE = [
   { id: "E", name: "Elevation of Privilege", desc: "Gaining capabilities without proper authorization", examples: ["Buffer overflow exploitation", "SQL injection to admin", "Privilege escalation exploits", "Insecure deserialization", "IDOR", "JWT algorithm confusion", "Kernel exploits", "Container escape"], mitigations: ["Least privilege principle", "Input validation", "Sandboxing", "RBAC/ABAC", "Mandatory access controls", "Regular patching", "Security boundaries"] }
 ];
 
-// ── CVSS v3.1 Calculator Data ──
+// ── CVSS v3.1 calculator Data ──
 const CVSS31_METRICS = {
   AV: { name: "Attack Vector", options: [{ val: "N", label: "Network", score: 0.85 }, { val: "A", label: "Adjacent", score: 0.62 }, { val: "L", label: "Local", score: 0.55 }, { val: "P", label: "Physical", score: 0.20 }] },
   AC: { name: "Attack Complexity", options: [{ val: "L", label: "Low", score: 0.77 }, { val: "H", label: "High", score: 0.44 }] },
@@ -85,7 +85,7 @@ const COMPLIANCE_CONTROLS = {
 
 // ── Risk Matrix ──
 const RISK_LEVELS = ["Very Low", "Low", "Medium", "High", "Very High"];
-const RISK_COLORS = ["#2d7d46", "#4caf50", "#ff9800", "#f44336", "#b71c1c"];
+const RISK_COLORS = ["#2d7d46", "var(--ok)", "var(--warn)", "var(--bad)", "var(--bad)"];
 
 // ── Main Render ──
 export function renderThreatModeler(main) {
@@ -111,9 +111,9 @@ export function renderThreatModeler(main) {
   }).join("");
 
   main.innerHTML =
-    '<h1 class="pg-h1">Threat Modeler</h1>' +
-    '<p class="muted pg-sub">Interactive threat modeling — STRIDE, DREAD, PASTA, LINDDUN privacy, CVSS, a CWE-tagged threat library, security requirements, attack trees, data flow diagrams, and compliance mapping.</p>' +
-    '<div class="cs-filter" id="tm-tabs">' + tabBtns + '</div>' +
+    '<div class="pg-head"><div><h1 class="pg-h1">Threat Modeler</h1>' +
+    '<p class="muted pg-sub">Interactive threat modeling — STRIDE, DREAD, PASTA, LINDDUN privacy, CVSS, a CWE-tagged threat library, security requirements, attack trees, data flow diagrams, and compliance mapping.</p></div></div>' +
+    '<div class="seg" id="tm-tabs" style="flex-wrap:wrap">' + tabBtns + '</div>' +
     '<div id="tm-content" style="margin-top:16px"></div>';
 
   var content = main.querySelector("#tm-content");
@@ -155,13 +155,13 @@ function renderSTRIDE(el) {
       '<div class="ad" style="margin:8px 0">' + esc(s.desc) + '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.82rem">' +
         '<div><strong style="color:var(--acc)">Examples</strong><ul style="margin:4px 0;padding-left:18px;color:var(--mut)">' + examples + '</ul></div>' +
-        '<div><strong style="color:#4caf50">Mitigations</strong><ul style="margin:4px 0;padding-left:18px;color:var(--mut)">' + mits + '</ul></div>' +
+        '<div><strong style="color:var(--ok)">Mitigations</strong><ul style="margin:4px 0;padding-left:18px;color:var(--mut)">' + mits + '</ul></div>' +
       '</div>' +
     '</div>';
   }).join("");
 
   el.innerHTML =
-    '<h2 class="pg-h2">STRIDE Threat Classification</h2>' +
+    '<h2 class="pg-h2">STRIDE threat classification</h2>' +
     '<p class="muted" style="margin-bottom:16px">Systematically identify threats by classifying them into six categories. For each component in your system, ask: can an attacker do this?</p>' +
     cards +
     '<div class="arse-card" style="cursor:default;margin-top:16px;padding:16px">' +
@@ -196,7 +196,7 @@ function renderSTRIDE(el) {
       return '<tr><td style="padding:6px;border-bottom:1px solid var(--line)">' + esc(item.name) + '</td>' +
         '<td style="padding:6px;border-bottom:1px solid var(--line);color:var(--mut);font-size:.8rem">' + esc(item.type) + '</td>' +
         checks +
-        '<td style="padding:4px;border-bottom:1px solid var(--line)"><button class="btn" data-del="' + idx + '" style="padding:2px 8px;font-size:.75rem;background:#f44336">x</button></td></tr>';
+        '<td style="padding:4px;border-bottom:1px solid var(--line)"><button class="btn" data-del="' + idx + '" style="padding:2px 8px;font-size:.75rem;background:var(--bad)">x</button></td></tr>';
     }).join("");
     el.querySelector("#stride-table").innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:.82rem">' + header + rows + '</table>';
   }
@@ -244,7 +244,7 @@ function renderDREAD(el) {
   }).join("");
 
   el.innerHTML =
-    '<h2 class="pg-h2">DREAD Risk Scoring</h2>' +
+    '<h2 class="pg-h2">DREAD risk scoring</h2>' +
     '<p class="muted" style="margin-bottom:16px">Rate each factor from 1 (low) to 10 (high). The overall DREAD score is the average.</p>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">' +
       '<div>' + sliders + '</div>' +
@@ -253,15 +253,15 @@ function renderDREAD(el) {
           '<div style="font-size:.8rem;color:var(--mut);margin-bottom:8px">DREAD Score</div>' +
           '<div id="dread-score" style="font-size:3rem;font-weight:800;color:var(--acc)">5.0</div>' +
           '<div id="dread-level" style="font-size:1rem;font-weight:600;margin-top:4px">Medium</div>' +
-          '<div id="dread-vector" style="font-size:.72rem;color:var(--mut);margin-top:12px;font-family:var(--mono,monospace)"></div>' +
+          '<div id="dread-vector" style="font-size:.75rem;color:var(--mut);margin-top:12px;font-family:var(--mono,monospace)"></div>' +
         '</div>' +
         '<div class="arse-card" style="cursor:default;margin-top:12px;padding:16px">' +
           '<h3 style="margin:0 0 8px;font-size:.9rem">DREAD Scale Reference</h3>' +
           '<table style="width:100%;font-size:.78rem;border-collapse:collapse">' +
-            '<tr><td style="padding:4px;border-bottom:1px solid var(--line)"><strong>1-3</strong></td><td style="padding:4px;border-bottom:1px solid var(--line);color:#4caf50">Low Risk</td></tr>' +
-            '<tr><td style="padding:4px;border-bottom:1px solid var(--line)"><strong>4-6</strong></td><td style="padding:4px;border-bottom:1px solid var(--line);color:#ff9800">Medium Risk</td></tr>' +
-            '<tr><td style="padding:4px;border-bottom:1px solid var(--line)"><strong>7-8</strong></td><td style="padding:4px;border-bottom:1px solid var(--line);color:#f44336">High Risk</td></tr>' +
-            '<tr><td style="padding:4px"><strong>9-10</strong></td><td style="padding:4px;color:#b71c1c">Critical Risk</td></tr>' +
+            '<tr><td style="padding:4px;border-bottom:1px solid var(--line)"><strong>1-3</strong></td><td style="padding:4px;border-bottom:1px solid var(--line);color:var(--ok)">Low Risk</td></tr>' +
+            '<tr><td style="padding:4px;border-bottom:1px solid var(--line)"><strong>4-6</strong></td><td style="padding:4px;border-bottom:1px solid var(--line);color:var(--warn)">Medium Risk</td></tr>' +
+            '<tr><td style="padding:4px;border-bottom:1px solid var(--line)"><strong>7-8</strong></td><td style="padding:4px;border-bottom:1px solid var(--line);color:var(--bad)">High Risk</td></tr>' +
+            '<tr><td style="padding:4px"><strong>9-10</strong></td><td style="padding:4px;color:var(--bad)">Critical Risk</td></tr>' +
           '</table>' +
         '</div>' +
       '</div>' +
@@ -279,7 +279,7 @@ function renderDREAD(el) {
     var avg = (total / 5).toFixed(1);
     el.querySelector("#dread-score").textContent = avg;
     var level = avg < 4 ? "Low" : avg < 7 ? "Medium" : avg < 9 ? "High" : "Critical";
-    var color = avg < 4 ? "#4caf50" : avg < 7 ? "#ff9800" : avg < 9 ? "#f44336" : "#b71c1c";
+    var color = avg < 4 ? "var(--ok)" : avg < 7 ? "var(--warn)" : avg < 9 ? "var(--bad)" : "var(--bad)";
     el.querySelector("#dread-score").style.color = color;
     el.querySelector("#dread-level").textContent = level;
     el.querySelector("#dread-level").style.color = color;
@@ -305,7 +305,7 @@ function renderCVSS(el) {
   }).join("");
 
   el.innerHTML =
-    '<h2 class="pg-h2">CVSS v3.1 Calculator</h2>' +
+    '<h2 class="pg-h2">CVSS v3.1 calculator</h2>' +
     '<p class="muted" style="margin-bottom:16px">Select base metric values to calculate the CVSS v3.1 score.</p>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">' +
       '<div>' + metricsHTML + '</div>' +
@@ -314,16 +314,16 @@ function renderCVSS(el) {
           '<div style="font-size:.8rem;color:var(--mut);margin-bottom:8px">CVSS v3.1 Base Score</div>' +
           '<div id="cvss-score" style="font-size:3rem;font-weight:800;color:var(--acc)">0.0</div>' +
           '<div id="cvss-sev" style="font-size:1rem;font-weight:600;margin-top:4px">None</div>' +
-          '<div id="cvss-vector" style="font-size:.7rem;color:var(--mut);margin-top:12px;font-family:var(--mono,monospace);word-break:break-all"></div>' +
+          '<div id="cvss-vector" style="font-size:.75rem;color:var(--mut);margin-top:12px;font-family:var(--mono,monospace);word-break:break-all"></div>' +
         '</div>' +
         '<div class="arse-card" style="cursor:default;margin-top:12px;padding:16px">' +
           '<h3 style="margin:0 0 8px;font-size:.9rem">Severity Scale</h3>' +
           '<div style="display:flex;gap:4px;margin-bottom:8px">' +
-            '<span style="flex:1;text-align:center;padding:6px;background:#2d7d46;color:#fff;font-size:.72rem;border-radius:2px">None<br>0.0</span>' +
-            '<span style="flex:1;text-align:center;padding:6px;background:#4caf50;color:#fff;font-size:.72rem;border-radius:2px">Low<br>0.1-3.9</span>' +
-            '<span style="flex:1;text-align:center;padding:6px;background:#ff9800;color:#fff;font-size:.72rem;border-radius:2px">Med<br>4.0-6.9</span>' +
-            '<span style="flex:1;text-align:center;padding:6px;background:#f44336;color:#fff;font-size:.72rem;border-radius:2px">High<br>7.0-8.9</span>' +
-            '<span style="flex:1;text-align:center;padding:6px;background:#b71c1c;color:#fff;font-size:.72rem;border-radius:2px">Crit<br>9.0-10</span>' +
+            '<span style="flex:1;text-align:center;padding:6px;background:#2d7d46;color:#fff;font-size:.75rem;border-radius:2px">None<br>0.0</span>' +
+            '<span style="flex:1;text-align:center;padding:6px;background:var(--ok);color:#fff;font-size:.75rem;border-radius:2px">Low<br>0.1-3.9</span>' +
+            '<span style="flex:1;text-align:center;padding:6px;background:var(--warn);color:#fff;font-size:.75rem;border-radius:2px">Med<br>4.0-6.9</span>' +
+            '<span style="flex:1;text-align:center;padding:6px;background:var(--bad);color:#fff;font-size:.75rem;border-radius:2px">High<br>7.0-8.9</span>' +
+            '<span style="flex:1;text-align:center;padding:6px;background:var(--bad);color:#fff;font-size:.75rem;border-radius:2px">Crit<br>9.0-10</span>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -335,7 +335,7 @@ function renderCVSS(el) {
     var result = calcCVSS31(vals);
     el.querySelector("#cvss-score").textContent = result.score.toFixed(1);
     el.querySelector("#cvss-sev").textContent = result.severity;
-    var color = result.score === 0 ? "#2d7d46" : result.score < 4 ? "#4caf50" : result.score < 7 ? "#ff9800" : result.score < 9 ? "#f44336" : "#b71c1c";
+    var color = result.score === 0 ? "#2d7d46" : result.score < 4 ? "var(--ok)" : result.score < 7 ? "var(--warn)" : result.score < 9 ? "var(--bad)" : "var(--bad)";
     el.querySelector("#cvss-score").style.color = color;
     el.querySelector("#cvss-sev").style.color = color;
     el.querySelector("#cvss-vector").textContent = result.vector;
@@ -360,7 +360,7 @@ function renderThreats(el) {
     '</div>';
 
   el.innerHTML =
-    '<h2 class="pg-h2">Threat Library</h2>' +
+    '<h2 class="pg-h2">Threat library</h2>' +
     '<p class="muted" style="margin-bottom:16px">' + THREAT_LIBRARY.length + ' threats mapped to STRIDE categories, ' + THREAT_LIBRARY.filter(function(t) { return t.cwe; }).length + ' of them tagged with a CWE weakness, with mitigations and MITRE ATT&CK references. Tick threats that apply to your system to generate Security Requirements.</p>' +
     filterHTML +
     '<div id="tl-count" class="muted" style="font-size:.78rem;margin-bottom:8px"></div>' +
@@ -378,13 +378,13 @@ function renderThreats(el) {
       return true;
     });
     el.querySelector("#tl-count").textContent = filtered.length + " shown, " + Object.keys(selected).length + " selected for requirements";
-    var sevColor = { Critical: "#b71c1c", High: "#f44336", Medium: "#ff9800", Low: "#4caf50" };
+    var sevColor = { Critical: "var(--bad)", High: "var(--bad)", Medium: "var(--warn)", Low: "var(--ok)" };
     var cards = filtered.map(function(t) {
-      var mits = t.mitigations.map(function(m) { return '<span style="display:inline-block;padding:2px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.72rem;margin:2px;max-width:100%;white-space:normal">' + esc(m) + '</span>'; }).join("");
+      var mits = t.mitigations.map(function(m) { return '<span style="display:inline-block;padding:2px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.75rem;margin:2px;max-width:100%;white-space:normal">' + esc(m) + '</span>'; }).join("");
       var refs = [t.id, t.cwe, t.mitre ? "MITRE " + t.mitre : ""].filter(Boolean).join(" · ");
       return '<div class="arse-card" style="cursor:default;margin-bottom:8px">' +
         '<div class="an" style="display:flex;align-items:center;gap:8px">' +
-          '<span style="background:var(--acc);color:var(--on-acc,#fff);padding:1px 6px;border-radius:2px;font-size:.72rem;font-weight:700">' + t.stride + '</span>' +
+          '<span style="background:var(--acc);color:var(--on-acc,#fff);padding:1px 6px;border-radius:2px;font-size:.75rem;font-weight:700">' + t.stride + '</span>' +
           esc(t.name) +
           '<span style="margin-left:auto;color:' + (sevColor[t.severity] || "var(--mut)") + ';font-size:.75rem;font-weight:600">' + esc(t.severity) + '</span>' +
         '</div>' +
@@ -392,8 +392,8 @@ function renderThreats(el) {
         (t.example ? '<div class="muted" style="font-size:.75rem;margin:0 0 6px">Example: ' + esc(t.example) + '</div>' : '') +
         '<div style="margin-bottom:4px">' + mits + '</div>' +
         '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-          '<span style="font-size:.7rem;color:var(--mut);font-family:var(--mono,monospace)">' + esc(refs) + '</span>' +
-          '<label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:.72rem;cursor:pointer"><input type="checkbox" data-req="' + esc(t.id) + '"' + (selected[t.id] ? " checked" : "") + '> Applies to my system</label>' +
+          '<span style="font-size:.75rem;color:var(--mut);font-family:var(--mono,monospace)">' + esc(refs) + '</span>' +
+          '<label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:.75rem;cursor:pointer"><input type="checkbox" data-req="' + esc(t.id) + '"' + (selected[t.id] ? " checked" : "") + '> Applies to my system</label>' +
         '</div>' +
       '</div>';
     }).join("");
@@ -417,7 +417,7 @@ function renderAssets(el) {
   var types = ["Application", "Server", "Database", "Network Device", "API", "Cloud Service", "Workstation", "Mobile Device", "IoT Device", "Data Store"];
 
   el.innerHTML =
-    '<h2 class="pg-h2">Asset Inventory</h2>' +
+    '<h2 class="pg-h2">Asset inventory</h2>' +
     '<p class="muted" style="margin-bottom:16px">Catalog your assets with classification levels to prioritize threat modeling efforts.</p>' +
     '<div class="arse-card" style="cursor:default;padding:16px;margin-bottom:16px">' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px">' +
@@ -432,7 +432,7 @@ function renderAssets(el) {
 
   var assets = [];
   try { assets = JSON.parse(localStorage.getItem(acctKey("tm_assets")) || "[]"); } catch (_) {}
-  var classColors = { Public: "#4caf50", Internal: "#2196f3", Confidential: "#ff9800", Restricted: "#f44336" };
+  var classColors = { Public: "var(--ok)", Internal: "var(--acc)", Confidential: "var(--warn)", Restricted: "var(--bad)" };
 
   function renderAssetList() {
     if (!assets.length) { el.querySelector("#asset-list").innerHTML = '<p class="muted">No assets added yet.</p>'; return; }
@@ -443,8 +443,8 @@ function renderAssets(el) {
           '<div style="font-weight:600;font-size:.85rem">' + esc(a.name) + ' <span style="color:var(--mut);font-weight:400;font-size:.75rem">(' + esc(a.type) + ')</span></div>' +
           (a.desc ? '<div class="muted" style="font-size:.75rem">' + esc(a.desc) + '</div>' : '') +
         '</div>' +
-        '<span style="padding:2px 8px;border-radius:2px;font-size:.72rem;font-weight:600;color:' + (classColors[a.classification] || "var(--mut)") + ';border:1px solid ' + (classColors[a.classification] || "var(--line)") + '">' + esc(a.classification) + '</span>' +
-        '<button class="btn" data-del="' + i + '" style="padding:2px 8px;font-size:.72rem;background:#f44336">x</button>' +
+        '<span style="padding:2px 8px;border-radius:2px;font-size:.75rem;font-weight:600;color:' + (classColors[a.classification] || "var(--mut)") + ';border:1px solid ' + (classColors[a.classification] || "var(--line)") + '">' + esc(a.classification) + '</span>' +
+        '<button class="btn" data-del="' + i + '" style="padding:2px 8px;font-size:.75rem;background:var(--bad)">x</button>' +
       '</div>';
     }).join("");
     el.querySelector("#asset-list").innerHTML = cards;
@@ -488,14 +488,14 @@ function renderRisk(el) {
     matrixHTML += '<tr><th style="padding:8px;text-align:right;font-size:.75rem;border:1px solid var(--line)">' + RISK_LEVELS[l] + '<br>Likelihood</th>';
     for (var im = 0; im < 5; im++) {
       var risk = Math.round((l + im) / 2);
-      matrixHTML += '<td style="padding:12px;text-align:center;border:1px solid var(--line);background:' + RISK_COLORS[risk] + '20;cursor:pointer;font-size:.72rem;color:' + RISK_COLORS[risk] + ';font-weight:600" data-l="' + l + '" data-i="' + im + '">' + RISK_LEVELS[risk] + '</td>';
+      matrixHTML += '<td style="padding:12px;text-align:center;border:1px solid var(--line);background:' + RISK_COLORS[risk] + '20;cursor:pointer;font-size:.75rem;color:' + RISK_COLORS[risk] + ';font-weight:600" data-l="' + l + '" data-i="' + im + '">' + RISK_LEVELS[risk] + '</td>';
     }
     matrixHTML += '</tr>';
   }
   matrixHTML += '</table>';
 
   el.innerHTML =
-    '<h2 class="pg-h2">Risk Assessment Matrix</h2>' +
+    '<h2 class="pg-h2">Risk assessment matrix</h2>' +
     '<p class="muted" style="margin-bottom:16px">5x5 likelihood vs. impact matrix. Click a cell to place a risk item.</p>' +
     matrixHTML +
     '<div style="margin-top:16px">' +
@@ -515,9 +515,9 @@ function renderRisk(el) {
       return '<div class="arse-card" style="cursor:default;margin-bottom:4px;display:flex;align-items:center;gap:8px;padding:8px 12px">' +
         '<span style="width:8px;height:8px;border-radius:50%;background:' + RISK_COLORS[risk] + '"></span>' +
         '<span style="font-size:.82rem;font-weight:600">' + esc(r.name) + '</span>' +
-        '<span class="muted" style="font-size:.72rem;margin-left:auto">L:' + RISK_LEVELS[r.likelihood] + ' / I:' + RISK_LEVELS[r.impact] + '</span>' +
+        '<span class="muted" style="font-size:.75rem;margin-left:auto">L:' + RISK_LEVELS[r.likelihood] + ' / I:' + RISK_LEVELS[r.impact] + '</span>' +
         '<span style="color:' + RISK_COLORS[risk] + ';font-size:.75rem;font-weight:600">' + RISK_LEVELS[risk] + '</span>' +
-        '<button class="btn" data-rdel="' + i + '" style="padding:1px 6px;font-size:.7rem;background:#f44336">x</button>' +
+        '<button class="btn" data-rdel="' + i + '" style="padding:1px 6px;font-size:.75rem;background:var(--bad)">x</button>' +
       '</div>';
     }).join("");
     el.querySelector("#risk-items").innerHTML = html;
@@ -546,11 +546,11 @@ function renderRisk(el) {
 // ── Attack Tree Tab ──
 function renderAttackTree(el) {
   el.innerHTML =
-    '<h2 class="pg-h2">Attack Trees</h2>' +
+    '<h2 class="pg-h2">Attack trees</h2>' +
     '<p class="muted" style="margin-bottom:16px">Model attack scenarios as trees. The root is the attacker\'s goal; branches are sub-goals connected by AND/OR gates.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:12px">' +
       '<input id="at-root" placeholder="Root goal (e.g., Steal customer data)" value="" style="flex:1;padding:6px 10px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
-      '<button class="btn" id="at-reset" style="padding:6px 12px;background:#f44336">Reset</button>' +
+      '<button class="btn" id="at-reset" style="padding:6px 12px;background:var(--bad)">Reset</button>' +
     '</div>' +
     '<div id="at-tree" style="padding:16px;background:var(--card);border:1px solid var(--line);border-radius:2px;overflow-x:auto"></div>' +
     '<div style="display:flex;gap:8px;margin-top:12px">' +
@@ -567,16 +567,16 @@ function renderAttackTree(el) {
   function renderNode(node, depth) {
     var indent = depth * 24;
     var isSel = node.id === selectedId;
-    var gateColor = node.gate === "AND" ? "#f44336" : "#4caf50";
+    var gateColor = node.gate === "AND" ? "var(--bad)" : "var(--ok)";
     var childrenHTML = "";
     if (node.children && node.children.length) {
       childrenHTML = node.children.map(function(c) { return renderNode(c, depth + 1); }).join("");
     }
     return '<div style="margin-left:' + indent + 'px;margin-bottom:4px">' +
       '<div data-nid="' + esc(node.id) + '" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:2px solid ' + (isSel ? "var(--acc)" : "var(--line)") + ';border-radius:4px;cursor:pointer;background:' + (isSel ? "var(--acc)10" : "var(--card)") + '">' +
-        (node.children && node.children.length ? '<span style="font-size:.65rem;padding:1px 4px;border-radius:2px;background:' + gateColor + ';color:#fff;font-weight:700">' + node.gate + '</span>' : '') +
+        (node.children && node.children.length ? '<span style="font-size:.75rem;padding:1px 4px;border-radius:2px;background:' + gateColor + ';color:#fff;font-weight:700">' + node.gate + '</span>' : '') +
         '<span style="font-size:.82rem">' + esc(node.name) + '</span>' +
-        (node.id !== "root" ? '<span class="at-del" data-did="' + esc(node.id) + '" style="font-size:.7rem;color:#f44336;cursor:pointer;margin-left:4px">[x]</span>' : '') +
+        (node.id !== "root" ? '<span class="at-del" data-did="' + esc(node.id) + '" style="font-size:.75rem;color:var(--bad);cursor:pointer;margin-left:4px">[x]</span>' : '') +
       '</div>' +
       childrenHTML +
     '</div>';
@@ -636,7 +636,7 @@ function renderAttackTree(el) {
 // ── Data Flow Diagram Tab ──
 function renderDFD(el) {
   el.innerHTML =
-    '<h2 class="pg-h2">Data Flow Diagram</h2>' +
+    '<h2 class="pg-h2">Data flow diagram</h2>' +
     '<p class="muted" style="margin-bottom:16px">Model your system\'s data flows to identify trust boundaries and potential threats.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">' +
       '<select id="dfd-type" style="padding:6px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
@@ -653,10 +653,10 @@ function renderDFD(el) {
     '</div>' +
     '<div id="dfd-canvas" style="background:var(--card);border:1px solid var(--line);border-radius:2px;padding:20px;min-height:300px;overflow:auto"></div>' +
     '<div style="margin-top:8px;display:flex;gap:12px;font-size:.75rem;color:var(--mut)">' +
-      '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:16px;border:2px solid #2196f3;border-radius:50%"></span> External Entity</span>' +
+      '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:16px;border:2px solid var(--acc);border-radius:50%"></span> External Entity</span>' +
       '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:16px;border:2px solid var(--acc);border-radius:2px"></span> Process</span>' +
-      '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:6px;border-top:2px solid #4caf50;border-bottom:2px solid #4caf50"></span> Data Store</span>' +
-      '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:16px;border:2px dashed #f44336;border-radius:2px"></span> Trust Boundary</span>' +
+      '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:6px;border-top:2px solid var(--ok);border-bottom:2px solid var(--ok)"></span> Data Store</span>' +
+      '<span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:16px;height:16px;border:2px dashed var(--bad);border-radius:2px"></span> Trust Boundary</span>' +
     '</div>' +
     '<details style="margin-top:16px"><summary style="cursor:pointer;font-weight:600;font-size:.85rem">Common trust boundaries (' + DFD_TRUST_BOUNDARY_PATTERNS.length + ')</summary>' +
       DFD_TRUST_BOUNDARY_PATTERNS.map(function(p) { return '<div class="arse-card" style="cursor:default;margin-top:8px"><div class="an">' + esc(p.name) + '</div><div class="ad" style="margin-top:4px">' + esc(p.description) + '</div></div>'; }).join("") +
@@ -668,10 +668,10 @@ function renderDFD(el) {
   try { flows = JSON.parse(localStorage.getItem(acctKey("tm_dfd_flows")) || "[]"); } catch (_) {}
 
   function typeStyle(type) {
-    if (type === "external") return "border:2px solid #2196f3;border-radius:50%;padding:8px 16px;background:#2196f310";
+    if (type === "external") return "border:2px solid var(--acc);border-radius:50%;padding:8px 16px;background:#2196f310";
     if (type === "process") return "border:2px solid var(--acc);border-radius:2px;padding:8px 16px;background:var(--acc)10";
-    if (type === "datastore") return "border-top:2px solid #4caf50;border-bottom:2px solid #4caf50;padding:8px 16px;background:#4caf5010";
-    if (type === "boundary") return "border:2px dashed #f44336;border-radius:2px;padding:8px 16px;background:#f4433608";
+    if (type === "datastore") return "border-top:2px solid var(--ok);border-bottom:2px solid var(--ok);padding:8px 16px;background:#4caf5010";
+    if (type === "boundary") return "border:2px dashed var(--bad);border-radius:2px;padding:8px 16px;background:#f4433608";
     return "";
   }
 
@@ -679,7 +679,7 @@ function renderDFD(el) {
     var elems = elements.map(function(e, i) {
       return '<div style="display:inline-block;margin:8px;' + typeStyle(e.type) + ';font-size:.82rem;position:relative">' +
         esc(e.name) +
-        '<span class="dfd-del dn-round" data-eidx="' + i + '" style="position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:#f44336;color:#fff;font-size:.65rem;display:flex;align-items:center;justify-content:center;cursor:pointer">x</span>' +
+        '<span class="dfd-del dn-round" data-eidx="' + i + '" style="position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:var(--bad);color:#fff;font-size:.75rem;display:flex;align-items:center;justify-content:center;cursor:pointer">x</span>' +
       '</div>';
     }).join("");
     var flowsList = flows.map(function(f, i) {
@@ -688,7 +688,7 @@ function renderDFD(el) {
         ' <span style="color:var(--acc)">→</span> ' +
         '<span style="font-weight:600">' + esc(f.to) + '</span>' +
         '<span class="muted">(' + esc(f.label) + ')</span>' +
-        '<span class="dfd-fdel" data-fidx="' + i + '" style="margin-left:auto;color:#f44336;cursor:pointer;font-size:.7rem">[x]</span>' +
+        '<span class="dfd-fdel" data-fidx="' + i + '" style="margin-left:auto;color:var(--bad);cursor:pointer;font-size:.75rem">[x]</span>' +
       '</div>';
     }).join("");
     el.querySelector("#dfd-canvas").innerHTML =
@@ -733,8 +733,8 @@ function renderDFD(el) {
 // ── Kill Chain Tab ──
 function renderKillChain(el) {
   var phases = KILL_CHAIN.map(function(kc, i) {
-    var examples = kc.examples.map(function(ex) { return '<span style="display:inline-block;padding:1px 6px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.7rem;margin:2px">' + esc(ex) + '</span>'; }).join("");
-    var mitreLinks = kc.mitre.map(function(t) { return '<span style="font-family:var(--mono,monospace);font-size:.7rem;color:var(--acc)">' + esc(t) + '</span>'; }).join(", ");
+    var examples = kc.examples.map(function(ex) { return '<span style="display:inline-block;padding:1px 6px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.75rem;margin:2px">' + esc(ex) + '</span>'; }).join("");
+    var mitreLinks = kc.mitre.map(function(t) { return '<span style="font-family:var(--mono,monospace);font-size:.75rem;color:var(--acc)">' + esc(t) + '</span>'; }).join(", ");
     return '<div class="arse-card" style="cursor:default;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">' +
       '<div style="min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:var(--acc);color:var(--on-acc,#fff);font-weight:800;border-radius:2px;font-size:.85rem">' + (i + 1) + '</div>' +
       '<div style="flex:1">' +
@@ -747,14 +747,14 @@ function renderKillChain(el) {
   }).join("");
 
   el.innerHTML =
-    '<h2 class="pg-h2">Cyber Kill Chain & ATT&CK Mapping</h2>' +
+    '<h2 class="pg-h2">Cyber Kill Chain and ATT&CK mapping</h2>' +
     '<p class="muted" style="margin-bottom:16px">Map threats to Lockheed Martin\'s Cyber Kill Chain phases and corresponding MITRE ATT&CK tactics.</p>' +
     phases +
     '<div class="arse-card" style="cursor:default;margin-top:16px;padding:16px">' +
       '<h3 style="margin:0 0 8px;font-size:.9rem">MITRE ATT&CK Tactics Overview</h3>' +
       '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
         ["TA0043 Recon", "TA0042 Resource Dev", "TA0001 Initial Access", "TA0002 Execution", "TA0003 Persistence", "TA0004 Priv Esc", "TA0005 Defense Evasion", "TA0006 Credential Access", "TA0007 Discovery", "TA0008 Lateral Movement", "TA0009 Collection", "TA0010 Exfiltration", "TA0011 C2", "TA0040 Impact"].map(function(t) {
-          return '<span style="padding:4px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.72rem;font-family:var(--mono,monospace)">' + esc(t) + '</span>';
+          return '<span style="padding:4px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.75rem;font-family:var(--mono,monospace)">' + esc(t) + '</span>';
         }).join("") +
       '</div>' +
     '</div>';
@@ -765,7 +765,7 @@ function renderCompliance(el) {
   var frameworks = Object.keys(COMPLIANCE_CONTROLS);
   var frameworkCards = frameworks.map(function(fw) {
     var controls = COMPLIANCE_CONTROLS[fw].map(function(c) {
-      return '<div style="padding:4px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.72rem">' + esc(c) + '</div>';
+      return '<div style="padding:4px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.75rem">' + esc(c) + '</div>';
     }).join("");
     return '<div class="arse-card" style="cursor:default;margin-bottom:12px">' +
       '<div class="an">' + esc(fw) + ' <span style="color:var(--mut);font-size:.75rem">(' + COMPLIANCE_CONTROLS[fw].length + ' controls)</span></div>' +
@@ -774,7 +774,7 @@ function renderCompliance(el) {
   }).join("");
 
   el.innerHTML =
-    '<h2 class="pg-h2">Compliance Framework Mapping</h2>' +
+    '<h2 class="pg-h2">Compliance framework mapping</h2>' +
     '<p class="muted" style="margin-bottom:16px">Map identified threats to compliance framework controls. Reference for NIST CSF, ISO 27001, OWASP, CIS, and PCI DSS.</p>' +
     '<h3 style="font-size:.95rem;margin:0 0 8px">STRIDE to control mapping</h3>' +
     '<p class="muted" style="font-size:.8rem;margin-bottom:10px">The NIST SP 800-53, ISO/IEC 27001:2022 Annex A and CIS Controls v8 controls that most directly mitigate each STRIDE category.</p>' +
@@ -847,7 +847,7 @@ function renderLINDDUN(el) {
   function paint() {
     var done = LINDDUN_CATEGORIES.filter(function(c) { return st[c.key] && st[c.key].assessed; }).length;
     el.innerHTML =
-      '<h2 class="pg-h2">LINDDUN Privacy Threat Modeling</h2>' +
+      '<h2 class="pg-h2">LINDDUN privacy threat modeling</h2>' +
       '<p class="muted" style="margin-bottom:8px">LINDDUN covers privacy threats that STRIDE does not: linking, identifying, non-repudiation, detecting, data disclosure, unawareness and non-compliance. Use it whenever the system collects, processes or stores personal data. Mark each category assessed and note where it applies.</p>' +
       '<p style="font-size:.8rem;margin-bottom:12px"><strong>' + done + '/' + LINDDUN_CATEGORIES.length + '</strong> categories assessed</p>' +
       LINDDUN_CATEGORIES.map(function(c) {
@@ -888,7 +888,7 @@ function renderRequirements(el, showTab) {
   };
   var th = 'style="text-align:left;padding:6px;border-bottom:1px solid var(--line)"', td = 'style="padding:6px;border-bottom:1px solid var(--line);vertical-align:top"';
   el.innerHTML =
-    '<h2 class="pg-h2">Security Requirements</h2>' +
+    '<h2 class="pg-h2">Security requirements</h2>' +
     '<p class="muted" style="margin-bottom:16px">Concrete, testable requirements generated from the threats you ticked in the Threat Library, grouped by STRIDE category, each with a suggested verification method so it can be tracked through to acceptance testing.</p>' +
     (!g.threats.length ?
       '<div class="arse-card" style="cursor:default">No threats selected yet. Open the Threat Library, tick "Applies to my system" on the threats that are relevant, then come back here.<div style="margin-top:10px"><button class="btn" id="rq-goto">Open Threat Library</button></div></div>' :
@@ -926,7 +926,7 @@ function renderReportTab(el) {
   var tree = null; try { tree = JSON.parse(localStorage.getItem(acctKey("tm_attack_tree"))); } catch (_) {}
 
   var now = new Date().toISOString().split("T")[0];
-  var report = "# Threat Model Report\n";
+  var report = "# Threat model report\n";
   report += "Generated: " + now + "\n\n";
   report += "## Assets (" + assets.length + ")\n";
   assets.forEach(function(a) { report += "- " + a.name + " [" + a.type + "] — " + a.classification + (a.desc ? ": " + a.desc : "") + "\n"; });
@@ -968,7 +968,7 @@ function renderReportTab(el) {
   }
 
   el.innerHTML =
-    '<h2 class="pg-h2">Threat Model Report</h2>' +
+    '<h2 class="pg-h2">Threat model report</h2>' +
     '<p class="muted" style="margin-bottom:16px">Auto-generated report from your threat modeling data. Copy and save as needed.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:12px">' +
       '<button class="btn" id="tm-copy">Copy to Clipboard</button>' +

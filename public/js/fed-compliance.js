@@ -325,127 +325,76 @@ const EVIDENCE_TYPES = [
 // STYLES
 // ═══════════════════════════════════════════════════════════════════════════════
 const STYLE = `
-.fc-wrap { font-family: ui-sans-serif,system-ui,-apple-system,sans-serif; color: #e6eefc; max-width: 1200px; margin: 0 auto; }
-.fc-header { margin-bottom: 24px; }
-.fc-title { font-size: 1.5rem; font-weight: 700; margin: 0 0 4px; }
-.fc-subtitle { font-size: .85rem; color: #7a93b8; margin: 0; }
-.fc-tabs { display: flex; gap: 2px; border-bottom: 2px solid #1a2a44; margin-bottom: 20px; overflow-x: auto; }
-.fc-tab { padding: 10px 16px; font-size: .78rem; font-weight: 600; color: #7a93b8; background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; font-family: inherit; transition: all .2s; }
-.fc-tab:hover { color: #c8d6e5; }
-.fc-tab.active { color: #00d4ff; border-bottom-color: #00d4ff; }
+.fc-wrap { color: var(--txt); }
+.fc-tabs { margin-bottom: 16px; flex-wrap: wrap; }
 .fc-panel { display: none; }
 .fc-panel.active { display: block; }
-.fc-section { background: #0f1726; border: 1px solid #1a2a44; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-.fc-section-title { font-size: .8rem; font-weight: 700; color: #00d4ff; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 12px; font-family: 'JetBrains Mono',ui-monospace,monospace; }
-.fc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
-.fc-stat { background: #0f1726; border: 1px solid #1a2a44; border-radius: 8px; padding: 14px; text-align: center; }
-.fc-stat-val { font-size: 1.6rem; font-weight: 700; font-family: 'JetBrains Mono',ui-monospace,monospace; }
-.fc-stat-label { font-size: .7rem; color: #7a93b8; text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
-.fc-table { width: 100%; border-collapse: collapse; font-size: .78rem; }
-.fc-table th { text-align: left; padding: 8px 10px; color: #7a93b8; font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; border-bottom: 2px solid #1a2a44; font-weight: 700; position: sticky; top: 0; background: #0f1726; z-index: 1; }
-.fc-table td { padding: 8px 10px; border-bottom: 1px solid #111828; }
-.fc-table tr:hover td { background: #151f34; }
-.fc-table code, .fc-mono { font-family: 'JetBrains Mono',ui-monospace,monospace; font-size: .75rem; }
-.fc-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-.fc-badge-l { background: #16a34a22; color: #4ade80; }
-.fc-badge-m { background: #eab30822; color: #fbbf24; }
-.fc-badge-h { background: #ef444422; color: #f87171; }
+.fc-section { margin-bottom: 16px; }
+.fc-section-title { font-size: 14px; font-weight: 600; color: var(--txt); margin: 0 0 12px; }
+.fc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.fc-stat { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px; text-align: center; }
+.fc-stat-val { font-size: 1.6rem; font-weight: 700; color: var(--txt); }
+.fc-stat-label { font-size: 12px; color: var(--mut); margin-top: 4px; }
+.fc-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.fc-table th { text-align: left; padding: 8px 10px; color: var(--mut); font-size: 12px; border-bottom: 1px solid var(--line); font-weight: 600; position: sticky; top: 0; background: var(--card); z-index: 1; }
+.fc-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.fc-table tr:hover td { background: var(--card2); }
+.fc-table code, .fc-mono { font-family: var(--mono, monospace); font-size: 12px; }
+.fc-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.fc-badge-l { color: var(--ok); border: 1px solid var(--line); }
+.fc-badge-m { color: var(--warn); border: 1px solid var(--line); }
+.fc-badge-h { color: var(--bad); border: 1px solid var(--line); }
 .fc-accordion { margin-bottom: 8px; }
-.fc-acc-header { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #111828; border: 1px solid #1a2a44; border-radius: 6px; cursor: pointer; user-select: none; transition: background .2s; }
-.fc-acc-header:hover { background: #151f34; }
+.fc-acc-header { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; user-select: none; }
+.fc-acc-header:hover { background: var(--card2); }
 .fc-acc-header.open { border-radius: 6px 6px 0 0; border-bottom-color: transparent; }
-.fc-acc-arrow { font-size: 10px; color: #7a93b8; transition: transform .2s; }
+.fc-acc-arrow { font-size: 12px; color: var(--mut); transition: transform .2s; }
 .fc-acc-header.open .fc-acc-arrow { transform: rotate(90deg); }
-.fc-acc-title { font-size: .82rem; font-weight: 600; flex: 1; }
-.fc-acc-count { font-size: .7rem; color: #7a93b8; }
-.fc-acc-body { display: none; border: 1px solid #1a2a44; border-top: none; border-radius: 0 0 6px 6px; padding: 12px; background: #0c1020; }
+.fc-acc-title { font-size: 13px; font-weight: 600; flex: 1; }
+.fc-acc-count { font-size: 12px; color: var(--mut); }
+.fc-acc-body { display: none; border: 1px solid var(--line); border-top: none; border-radius: 0 0 6px 6px; padding: 12px; background: var(--card); }
 .fc-acc-header.open + .fc-acc-body { display: block; }
-.fc-check-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-bottom: 1px solid #111828; font-size: .78rem; }
+.fc-check-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-bottom: 1px solid var(--line); font-size: 13px; }
 .fc-check-row:last-child { border-bottom: none; }
 .fc-check-row label { flex: 1; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.fc-check-row input[type=checkbox] { accent-color: #00d4ff; width: 16px; height: 16px; }
-.fc-ctrl-id { font-family: 'JetBrains Mono',ui-monospace,monospace; color: #00d4ff; font-size: .75rem; min-width: 50px; }
+.fc-check-row input[type=checkbox] { accent-color: var(--acc); width: 16px; height: 16px; }
+.fc-ctrl-id { font-family: var(--mono, monospace); color: var(--acc); font-size: 12px; min-width: 50px; }
 .fc-progress-ring { position: relative; width: 100px; height: 100px; margin: 0 auto; }
 .fc-progress-ring svg { transform: rotate(-90deg); }
-.fc-progress-ring-val { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; font-family: 'JetBrains Mono',ui-monospace,monospace; }
+.fc-progress-ring-val { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700; }
 .fc-form-row { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
-.fc-form-label { font-size: .75rem; color: #7a93b8; text-transform: uppercase; letter-spacing: .04em; min-width: 120px; }
-.fc-input, .fc-select, .fc-textarea { background: #0c1020; border: 1px solid #1a2a44; color: #e6eefc; border-radius: 6px; padding: 8px 12px; font-size: .82rem; font-family: inherit; width: 100%; }
+.fc-form-label { font-size: 12px; color: var(--mut); min-width: 120px; }
+.fc-input, .fc-select, .fc-textarea { width: 100%; }
 .fc-textarea { min-height: 60px; resize: vertical; }
-.fc-select { cursor: pointer; }
-.fc-input:focus, .fc-select:focus, .fc-textarea:focus { outline: none; border-color: #00d4ff; box-shadow: 0 0 0 3px rgba(0,212,255,.15); }
-.fc-btn { padding: 8px 18px; border: none; border-radius: 6px; font-size: .8rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .2s; }
-.fc-btn-primary { background: #00d4ff; color: #04121a; }
-.fc-btn-primary:hover { background: #33ddff; }
-.fc-btn-ghost { background: transparent; border: 1px solid #1a2a44; color: #e6eefc; }
-.fc-btn-ghost:hover { border-color: #00d4ff; color: #00d4ff; }
 .fc-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .fc-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 .fc-csf-fn { padding: 12px; border-radius: 8px; border-left: 4px solid; margin-bottom: 10px; }
-.fc-csf-fn-name { font-size: .82rem; font-weight: 700; margin-bottom: 6px; }
-.fc-csf-cat { padding: 6px 10px; background: #0c102088; border-radius: 4px; margin-bottom: 4px; font-size: .75rem; }
-.fc-csf-cat-id { font-family: 'JetBrains Mono',ui-monospace,monospace; color: #00d4ff; margin-right: 8px; }
+.fc-csf-fn-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.fc-csf-cat { padding: 6px 10px; background: var(--card2); border-radius: 4px; margin-bottom: 4px; font-size: 12px; }
+.fc-csf-cat-id { font-family: var(--mono, monospace); color: var(--acc); margin-right: 8px; }
 .fc-inherit-bar { height: 24px; display: flex; border-radius: 6px; overflow: hidden; margin: 8px 0; }
-.fc-inherit-seg { display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700; }
-.fc-inherit-customer { background: #3b82f6; color: #fff; }
-.fc-inherit-shared { background: #eab308; color: #000; }
-.fc-inherit-inherited { background: #22c55e; color: #000; }
-.fc-ato-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #111828; border: 1px solid #1a2a44; border-radius: 6px; margin-bottom: 8px; }
-.fc-ato-status { min-width: 110px; }
-.fc-ato-name { font-weight: 600; font-size: .82rem; }
-.fc-ato-desc { font-size: .72rem; color: #7a93b8; margin-top: 2px; }
-.fc-status-badge { padding: 3px 10px; border-radius: 4px; font-size: .65rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
-.fc-status-complete { background: #16a34a22; color: #4ade80; }
-.fc-status-progress { background: #eab30822; color: #fbbf24; }
-.fc-status-notstarted { background: #ef444422; color: #f87171; }
-.fc-poam-entry { background: #111828; border: 1px solid #1a2a44; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+.fc-inherit-seg { display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; }
+.fc-inherit-customer { background: var(--acc); }
+.fc-inherit-shared { background: var(--warn); }
+.fc-inherit-inherited { background: var(--ok); }
+.fc-ato-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--card2); border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; }
+.fc-ato-status { min-width: 130px; }
+.fc-ato-name { font-weight: 600; font-size: 13px; }
+.fc-ato-desc { font-size: 12px; color: var(--mut); margin-top: 2px; }
+.fc-poam-entry { background: var(--card2); border: 1px solid var(--line); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
 .fc-evidence-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
-.fc-evidence-item { background: #111828; border: 1px solid #1a2a44; border-radius: 6px; padding: 10px; display: flex; align-items: center; gap: 8px; font-size: .75rem; }
-.fc-evidence-check { accent-color: #00d4ff; }
-.fc-cmmc-domain { display: flex; align-items: center; gap: 12px; padding: 10px; border-bottom: 1px solid #111828; }
-.fc-cmmc-abbr { background: #00d4ff22; color: #00d4ff; padding: 4px 10px; border-radius: 4px; font-family: 'JetBrains Mono',ui-monospace,monospace; font-size: .75rem; font-weight: 700; min-width: 36px; text-align: center; }
-.fc-cmmc-name { flex: 1; font-size: .82rem; }
-.fc-cmmc-counts { display: flex; gap: 12px; font-size: .72rem; color: #7a93b8; }
-.fc-cmmc-bar { height: 6px; background: #1a2a44; border-radius: 3px; flex: 1; overflow: hidden; }
-.fc-cmmc-fill { height: 100%; background: linear-gradient(90deg, #00d4ff, #7c5cff); border-radius: 3px; }
+.fc-evidence-item { background: var(--card2); border: 1px solid var(--line); border-radius: 6px; padding: 10px; display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.fc-evidence-check { accent-color: var(--acc); }
+.fc-cmmc-domain { display: flex; align-items: center; gap: 12px; padding: 10px; border-bottom: 1px solid var(--line); }
+.fc-cmmc-abbr { border: 1px solid var(--line); color: var(--acc); padding: 4px 10px; border-radius: 4px; font-family: var(--mono, monospace); font-size: 12px; font-weight: 600; min-width: 36px; text-align: center; }
+.fc-cmmc-name { flex: 1; font-size: 13px; }
+.fc-cmmc-counts { display: flex; gap: 12px; font-size: 12px; color: var(--mut); }
+.fc-cmmc-bar { height: 6px; background: var(--line); border-radius: 3px; flex: 1; overflow: hidden; }
+.fc-cmmc-fill { height: 100%; background: var(--acc); border-radius: 3px; }
 @media (max-width: 768px) {
   .fc-grid-2, .fc-grid-3 { grid-template-columns: 1fr; }
-  .fc-tabs { flex-wrap: nowrap; }
   .fc-stats { grid-template-columns: repeat(2, 1fr); }
 }
-
-/* Pro theme */
-[data-style=pro] .fc-wrap { color: #18181b; }
-[data-style=pro] .fc-subtitle { color: #71717a; }
-[data-style=pro] .fc-tab { color: #71717a; }
-[data-style=pro] .fc-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
-[data-style=pro] .fc-tab:hover { color: #3f3f46; }
-[data-style=pro] .fc-section { background: #fff; border-color: #e5e5e5; }
-[data-style=pro] .fc-section-title { color: #2563eb; }
-[data-style=pro] .fc-stat { background: #fff; border-color: #e5e5e5; }
-[data-style=pro] .fc-stat-label { color: #71717a; }
-[data-style=pro] .fc-table th { color: #71717a; border-bottom-color: #e5e5e5; background: #fff; }
-[data-style=pro] .fc-table td { border-bottom-color: #f4f4f5; }
-[data-style=pro] .fc-table tr:hover td { background: #f9fafb; }
-[data-style=pro] .fc-ctrl-id, [data-style=pro] .fc-csf-cat-id { color: #2563eb; }
-[data-style=pro] .fc-acc-header { background: #f9fafb; border-color: #e5e5e5; }
-[data-style=pro] .fc-acc-header:hover { background: #f4f4f5; }
-[data-style=pro] .fc-acc-body { background: #fff; border-color: #e5e5e5; }
-[data-style=pro] .fc-check-row { border-bottom-color: #f4f4f5; }
-[data-style=pro] .fc-input, [data-style=pro] .fc-select, [data-style=pro] .fc-textarea { background: #fff; border-color: #e5e5e5; color: #18181b; }
-[data-style=pro] .fc-input:focus, [data-style=pro] .fc-select:focus, [data-style=pro] .fc-textarea:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
-[data-style=pro] .fc-btn-primary { background: #2563eb; color: #fff; }
-[data-style=pro] .fc-btn-primary:hover { background: #1d4ed8; }
-[data-style=pro] .fc-btn-ghost { border-color: #e5e5e5; color: #18181b; }
-[data-style=pro] .fc-btn-ghost:hover { border-color: #2563eb; color: #2563eb; }
-[data-style=pro] .fc-ato-item { background: #f9fafb; border-color: #e5e5e5; }
-[data-style=pro] .fc-poam-entry { background: #f9fafb; border-color: #e5e5e5; }
-[data-style=pro] .fc-evidence-item { background: #f9fafb; border-color: #e5e5e5; }
-[data-style=pro] .fc-cmmc-abbr { background: #2563eb22; color: #2563eb; }
-[data-style=pro] .fc-cmmc-counts { color: #71717a; }
-[data-style=pro] .fc-cmmc-domain { border-bottom-color: #f4f4f5; }
-[data-style=pro] .fc-tabs { border-bottom-color: #e5e5e5; }
-[data-style=pro] .fc-form-label { color: #71717a; }
 `;
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -471,42 +420,42 @@ export function renderFedCompliance(container) {
   function saveAto() { try { localStorage.setItem(atoStatusKey, JSON.stringify(atoStatus)); } catch (_) {} }
 
   const TABS = [
-    ['crosswalk', 'Cross-Walk Matrix'],
-    ['families', 'Control Families'],
+    ['crosswalk', 'Crosswalk matrix'],
+    ['families', 'Control families'],
     ['csf', 'NIST CSF 2.0'],
     ['cmmc', 'CMMC 2.0'],
-    ['gap', 'Gap Analysis'],
-    ['poam', 'POA&M Generator'],
-    ['ato', 'ATO Checklist'],
-    ['inherit', 'Inheritance Model'],
-    ['evidence', 'Evidence Tracker'],
+    ['gap', 'Gap analysis'],
+    ['poam', 'POA&M generator'],
+    ['ato', 'ATO checklist'],
+    ['inherit', 'Inheritance model'],
+    ['evidence', 'Evidence tracker'],
   ];
 
   let h = '<div class="fc-wrap">';
-  h += '<div class="fc-header">';
-  h += '<h1 class="fc-title">Federal Compliance Framework Mapper</h1>';
-  h += '<p class="fc-subtitle">Cross-walk NIST 800-53 Rev5, CSF 2.0, FedRAMP, CMMC 2.0, FISMA, CJIS, and HIPAA — with gap analysis, POA&M generation, and ATO tracking</p>';
-  h += '</div>';
+  h += '<div class="pg-head"><div>';
+  h += '<h1 class="pg-h1">Federal Compliance Framework Mapper</h1>';
+  h += '<p class="muted pg-sub">Reference crosswalk of a representative NIST 800-53 Rev5 subset to CSF 2.0, FedRAMP, CMMC 2.0, CJIS and HIPAA, with a self-assessment checklist, POA&amp;M drafting and ATO tracking. Progress reflects only what you mark and is saved in this browser.</p>';
+  h += '</div></div>';
 
   // Stats
   h += '<div class="fc-stats">';
-  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:#00d4ff">' + NIST_CONTROLS.length + '</div><div class="fc-stat-label">NIST Controls</div></div>';
-  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:#a78bfa">' + CSF_FUNCTIONS.reduce((a, f) => a + f.categories.length, 0) + '</div><div class="fc-stat-label">CSF Categories</div></div>';
-  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:#34d399">' + families.length + '</div><div class="fc-stat-label">Control Families</div></div>';
-  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:#fbbf24">7</div><div class="fc-stat-label">Frameworks</div></div>';
-  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:#f87171">' + Object.keys(CROSSWALK).length + '</div><div class="fc-stat-label">Cross-Walk Maps</div></div>';
+  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:var(--acc)">' + NIST_CONTROLS.length + '</div><div class="fc-stat-label">NIST controls (subset)</div></div>';
+  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:var(--acc)">' + CSF_FUNCTIONS.reduce((a, f) => a + f.categories.length, 0) + '</div><div class="fc-stat-label">CSF categories</div></div>';
+  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:var(--acc)">' + families.length + '</div><div class="fc-stat-label">Control families</div></div>';
+  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:var(--acc)">6</div><div class="fc-stat-label">Frameworks</div></div>';
+  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:var(--acc)">' + Object.keys(CROSSWALK).length + '</div><div class="fc-stat-label">Crosswalk rows</div></div>';
   h += '</div>';
 
   // Tabs
-  h += '<div class="fc-tabs">';
+  h += '<div class="fc-tabs seg">';
   TABS.forEach(([id, label], i) => {
-    h += '<button class="fc-tab' + (i === 0 ? ' active' : '') + '" data-tab="' + id + '">' + esc(label) + '</button>';
+    h += '<button class="fc-tab' + (i === 0 ? ' active on' : '') + '" data-tab="' + id + '">' + esc(label) + '</button>';
   });
   h += '</div>';
 
   // ── Panel: Cross-Walk Matrix ──
   h += '<div class="fc-panel active" data-panel="crosswalk">';
-  h += '<div class="fc-section"><div class="fc-section-title">NIST 800-53 Rev5 → Framework Cross-Walk</div>';
+  h += '<div class="card fc-section"><div class="fc-section-title">NIST 800-53 Rev5 to framework crosswalk (reference)</div>';
   h += '<div style="overflow-x:auto"><table class="fc-table"><thead><tr>';
   h += '<th>NIST 800-53</th><th>Title</th><th>CSF 2.0</th><th>FedRAMP</th><th>CMMC 2.0</th><th>CJIS</th><th>HIPAA</th>';
   h += '</tr></thead><tbody>';
@@ -541,7 +490,7 @@ export function renderFedCompliance(container) {
       h += '<div class="fc-check-row">';
       h += '<span class="fc-ctrl-id">' + esc(c.id) + '</span>';
       h += '<span style="flex:1">' + esc(c.title) + '</span>';
-      h += '<span class="fc-badge fc-badge-' + c.baseline.toLowerCase() + '">' + (c.baseline === 'L' ? 'LOW' : c.baseline === 'M' ? 'MOD' : 'HIGH') + '</span>';
+      h += '<span class="fc-badge fc-badge-' + c.baseline.toLowerCase() + '">' + (c.baseline === 'L' ? 'Low' : c.baseline === 'M' ? 'Moderate' : 'High') + '</span>';
       h += '</div>';
     });
     h += '</div></div>';
@@ -550,12 +499,12 @@ export function renderFedCompliance(container) {
 
   // ── Panel: CSF 2.0 ──
   h += '<div class="fc-panel" data-panel="csf">';
-  h += '<div class="fc-section"><div class="fc-section-title">NIST Cybersecurity Framework 2.0 — Functions & Categories</div>';
+  h += '<div class="card fc-section"><div class="fc-section-title">NIST Cybersecurity Framework 2.0 functions and categories (reference)</div>';
   CSF_FUNCTIONS.forEach(fn => {
     h += '<div class="fc-csf-fn" style="border-color:' + fn.color + ';background:' + fn.color + '0a">';
-    h += '<div class="fc-csf-fn-name" style="color:' + fn.color + '">' + esc(fn.id) + ' — ' + esc(fn.name) + '</div>';
+    h += '<div class="fc-csf-fn-name">' + esc(fn.id) + ' — ' + esc(fn.name) + '</div>';
     fn.categories.forEach(cat => {
-      h += '<div class="fc-csf-cat"><span class="fc-csf-cat-id">' + esc(cat.id) + '</span>' + esc(cat.title) + ' — <span style="color:#7a93b8">' + esc(cat.desc) + '</span></div>';
+      h += '<div class="fc-csf-cat"><span class="fc-csf-cat-id">' + esc(cat.id) + '</span>' + esc(cat.title) + ' — <span style="color:var(--mut)">' + esc(cat.desc) + '</span></div>';
     });
     h += '</div>';
   });
@@ -563,18 +512,18 @@ export function renderFedCompliance(container) {
 
   // ── Panel: CMMC 2.0 ──
   h += '<div class="fc-panel" data-panel="cmmc">';
-  h += '<div class="fc-section"><div class="fc-section-title">CMMC 2.0 Practice Domains</div>';
+  h += '<div class="card fc-section"><div class="fc-section-title">CMMC 2.0 practice domains (reference)</div>';
   h += '<div class="fc-grid-2" style="margin-bottom:16px">';
-  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:#4ade80">17</div><div class="fc-stat-label">Level 1 Practices</div></div>';
-  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:#fbbf24">110</div><div class="fc-stat-label">Level 2 Practices</div></div>';
+  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:var(--acc)">17</div><div class="fc-stat-label">Level 1 practices</div></div>';
+  h += '<div class="fc-stat"><div class="fc-stat-val" style="color:var(--acc)">110</div><div class="fc-stat-label">Level 2 practices</div></div>';
   h += '</div>';
   CMMC_DOMAINS.forEach(d => {
-    const pct = Math.round((d.l1 + d.l2) / 130 * 100);
+    const pct = Math.round(d.l2 / 110 * 100); // domain's share of the 110 Level 2 practices
     h += '<div class="fc-cmmc-domain">';
     h += '<span class="fc-cmmc-abbr">' + esc(d.abbr) + '</span>';
     h += '<span class="fc-cmmc-name">' + esc(d.name) + '</span>';
     h += '<div class="fc-cmmc-counts"><span>L1: ' + d.l1 + '</span><span>L2: ' + d.l2 + '</span></div>';
-    h += '<div class="fc-cmmc-bar" style="width:120px"><div class="fc-cmmc-fill" style="width:' + pct + '%"></div></div>';
+    h += '<div class="fc-cmmc-bar" style="width:120px" title="' + pct + '% of Level 2 practices"><div class="fc-cmmc-fill" style="width:' + pct + '%"></div></div>';
     h += '</div>';
   });
   h += '</div></div>';
@@ -582,14 +531,14 @@ export function renderFedCompliance(container) {
   // ── Panel: Gap Analysis ──
   h += '<div class="fc-panel" data-panel="gap">';
   h += '<div class="fc-grid-2">';
-  h += '<div class="fc-section"><div class="fc-section-title">Compliance Progress</div>';
+  h += '<div class="card fc-section"><div class="fc-section-title">Self-assessed coverage</div>';
   h += '<div id="fc-gap-rings" style="display:flex;flex-wrap:wrap;gap:20px;justify-content:center"></div>';
   h += '</div>';
-  h += '<div class="fc-section"><div class="fc-section-title">Missing Controls</div>';
+  h += '<div class="card fc-section"><div class="fc-section-title">Not yet marked implemented</div>';
   h += '<div id="fc-gap-missing" style="max-height:400px;overflow-y:auto"></div>';
   h += '</div>';
   h += '</div>';
-  h += '<div class="fc-section"><div class="fc-section-title">Control Checklist — Mark Implemented</div>';
+  h += '<div class="card fc-section"><div class="fc-section-title">Control checklist: mark implemented</div>';
   families.forEach(fam => {
     const controls = NIST_CONTROLS.filter(c => c.family === fam);
     h += '<div class="fc-accordion">';
@@ -614,8 +563,8 @@ export function renderFedCompliance(container) {
 
   // ── Panel: POA&M Generator ──
   h += '<div class="fc-panel" data-panel="poam">';
-  h += '<div class="fc-section"><div class="fc-section-title">Plan of Action & Milestones Generator</div>';
-  h += '<p style="font-size:.8rem;color:#7a93b8;margin:0 0 16px">Generate POA&M entries for unimplemented controls. Select a control to create an entry.</p>';
+  h += '<div class="card fc-section"><div class="fc-section-title">Plan of action and milestones</div>';
+  h += '<p style="font-size:13px;color:var(--mut);margin:0 0 16px">Draft POA&M entries for unimplemented controls. Select a control to create an entry.</p>';
   h += '<div class="fc-form-row">';
   h += '<span class="fc-form-label">Control</span>';
   h += '<select class="fc-select" id="fc-poam-ctrl" style="max-width:300px">';
@@ -625,23 +574,23 @@ export function renderFedCompliance(container) {
   h += '</select>';
   h += '</div>';
   h += '<div class="fc-form-row"><span class="fc-form-label">Priority</span><select class="fc-select" id="fc-poam-priority" style="max-width:200px"><option>Critical</option><option selected>High</option><option>Moderate</option><option>Low</option></select></div>';
-  h += '<div class="fc-form-row"><span class="fc-form-label">Scheduled Date</span><input type="date" class="fc-input" id="fc-poam-date" style="max-width:200px"></div>';
-  h += '<div class="fc-form-row"><span class="fc-form-label">Weakness</span><textarea class="fc-textarea" id="fc-poam-weakness" placeholder="Describe the weakness or gap..."></textarea></div>';
-  h += '<div class="fc-form-row"><span class="fc-form-label">Milestones</span><textarea class="fc-textarea" id="fc-poam-milestones" placeholder="1. Draft policy (30 days)&#10;2. Implement control (60 days)&#10;3. Verify and test (90 days)"></textarea></div>';
-  h += '<div class="fc-form-row"><span class="fc-form-label">Resources</span><input class="fc-input" id="fc-poam-resources" placeholder="e.g., ISSO, $15,000 for tooling, 2 FTEs"></div>';
-  h += '<button class="fc-btn fc-btn-primary" id="fc-poam-gen">Generate POA&M Entry</button>';
+  h += '<div class="fc-form-row"><span class="fc-form-label">Scheduled date</span><input type="date" class="fc-input" id="fc-poam-date" style="max-width:200px"></div>';
+  h += '<div class="fc-form-row"><span class="fc-form-label">Weakness</span><textarea class="fc-textarea" id="fc-poam-weakness" placeholder="Weakness or gap"></textarea></div>';
+  h += '<div class="fc-form-row"><span class="fc-form-label">Milestones</span><textarea class="fc-textarea" id="fc-poam-milestones" placeholder="One milestone per line"></textarea></div>';
+  h += '<div class="fc-form-row"><span class="fc-form-label">Resources</span><input class="fc-input" id="fc-poam-resources" placeholder="People, budget, tooling"></div>';
+  h += '<button class="btn" id="fc-poam-gen">Add POA&M entry</button>';
   h += '<div id="fc-poam-output" style="margin-top:16px"></div>';
   h += '</div></div>';
 
   // ── Panel: ATO Checklist ──
   h += '<div class="fc-panel" data-panel="ato">';
-  h += '<div class="fc-section"><div class="fc-section-title">Authority to Operate (ATO) Package Checklist</div>';
+  h += '<div class="card fc-section"><div class="fc-section-title">Authority to Operate (ATO) package checklist</div>';
   ATO_ITEMS.forEach(item => {
     const st = atoStatus[item.id] || 'notstarted';
     h += '<div class="fc-ato-item">';
-    h += '<div class="fc-ato-status"><select class="fc-select" data-ato="' + esc(item.id) + '" style="font-size:.72rem;padding:4px 8px">';
-    h += '<option value="notstarted"' + (st === 'notstarted' ? ' selected' : '') + '>Not Started</option>';
-    h += '<option value="progress"' + (st === 'progress' ? ' selected' : '') + '>In Progress</option>';
+    h += '<div class="fc-ato-status"><select class="fc-select" data-ato="' + esc(item.id) + '" style="font-size:12px;padding:4px 8px">';
+    h += '<option value="notstarted"' + (st === 'notstarted' ? ' selected' : '') + '>Not started</option>';
+    h += '<option value="progress"' + (st === 'progress' ? ' selected' : '') + '>In progress</option>';
     h += '<option value="complete"' + (st === 'complete' ? ' selected' : '') + '>Complete</option>';
     h += '</select></div>';
     h += '<div style="flex:1"><div class="fc-ato-name">' + esc(item.name) + '</div><div class="fc-ato-desc">' + esc(item.desc) + '</div></div>';
@@ -651,8 +600,8 @@ export function renderFedCompliance(container) {
 
   // ── Panel: Inheritance Model ──
   h += '<div class="fc-panel" data-panel="inherit">';
-  h += '<div class="fc-section"><div class="fc-section-title">Control Inheritance Model</div>';
-  h += '<div class="fc-form-row"><span class="fc-form-label">Deployment Type</span>';
+  h += '<div class="card fc-section"><div class="fc-section-title">Control inheritance model (typical split, illustrative)</div>';
+  h += '<div class="fc-form-row"><span class="fc-form-label">Deployment type</span>';
   h += '<select class="fc-select" id="fc-inherit-type" style="max-width:200px">';
   Object.keys(INHERITANCE).forEach(t => h += '<option>' + esc(t) + '</option>');
   h += '</select></div>';
@@ -661,8 +610,8 @@ export function renderFedCompliance(container) {
 
   // ── Panel: Evidence Tracker ──
   h += '<div class="fc-panel" data-panel="evidence">';
-  h += '<div class="fc-section"><div class="fc-section-title">Evidence Collection Tracker</div>';
-  h += '<p style="font-size:.8rem;color:#7a93b8;margin:0 0 16px">Track evidence artifacts collected for each control family.</p>';
+  h += '<div class="card fc-section"><div class="fc-section-title">Evidence collection tracker</div>';
+  h += '<p style="font-size:13px;color:var(--mut);margin:0 0 16px">Check off evidence artifacts collected for each control family.</p>';
   families.forEach(fam => {
     h += '<div class="fc-accordion">';
     h += '<div class="fc-acc-header">';
@@ -688,9 +637,9 @@ export function renderFedCompliance(container) {
   // Tab switching
   container.querySelectorAll('.fc-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      container.querySelectorAll('.fc-tab').forEach(t => t.classList.remove('active'));
+      container.querySelectorAll('.fc-tab').forEach(t => t.classList.remove('active', 'on'));
       container.querySelectorAll('.fc-panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
+      tab.classList.add('active', 'on');
       const panel = container.querySelector('[data-panel="' + tab.dataset.tab + '"]');
       if (panel) panel.classList.add('active');
       if (tab.dataset.tab === 'gap') updateGapAnalysis();
@@ -743,19 +692,19 @@ export function renderFedCompliance(container) {
       const resources = container.querySelector('#fc-poam-resources')?.value || '';
       const output = container.querySelector('#fc-poam-output');
       if (!output || !ctrl) return;
-      const riskColor = priority === 'Critical' ? '#ef4444' : priority === 'High' ? '#f97316' : priority === 'Moderate' ? '#eab308' : '#22c55e';
+      const riskColor = priority === 'Critical' ? '#ef4444' : priority === 'High' ? '#f97316' : priority === 'Moderate' ? '#eab308' : '#22c55e'; // alpha suffix appended below
       let ph = '<div class="fc-poam-entry">';
       ph += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
-      ph += '<div style="font-weight:700;font-size:.9rem"><span class="fc-ctrl-id">' + esc(ctrlId) + '</span> ' + esc(ctrl.title) + '</div>';
+      ph += '<div style="font-weight:600;font-size:14px"><span class="fc-ctrl-id">' + esc(ctrlId) + '</span> ' + esc(ctrl.title) + '</div>';
       ph += '<span class="fc-badge" style="background:' + riskColor + '22;color:' + riskColor + '">' + esc(priority) + '</span>';
       ph += '</div>';
-      ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.78rem;margin-bottom:12px">';
-      ph += '<div><strong style="color:#7a93b8">Scheduled Completion:</strong> ' + esc(date) + '</div>';
-      ph += '<div><strong style="color:#7a93b8">Family:</strong> ' + esc(ctrl.family) + '</div>';
+      ph += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;margin-bottom:12px">';
+      ph += '<div><strong style="color:var(--mut)">Scheduled completion:</strong> ' + esc(date) + '</div>';
+      ph += '<div><strong style="color:var(--mut)">Family:</strong> ' + esc(ctrl.family) + '</div>';
       ph += '</div>';
-      ph += '<div style="font-size:.78rem;margin-bottom:8px"><strong style="color:#7a93b8">Weakness:</strong><br>' + esc(weakness) + '</div>';
-      if (milestones) ph += '<div style="font-size:.78rem;margin-bottom:8px"><strong style="color:#7a93b8">Milestones:</strong><pre style="margin:4px 0;white-space:pre-wrap;font-family:inherit;color:#c8d6e5">' + esc(milestones) + '</pre></div>';
-      if (resources) ph += '<div style="font-size:.78rem"><strong style="color:#7a93b8">Resources Required:</strong> ' + esc(resources) + '</div>';
+      ph += '<div style="font-size:13px;margin-bottom:8px"><strong style="color:var(--mut)">Weakness:</strong><br>' + esc(weakness) + '</div>';
+      if (milestones) ph += '<div style="font-size:13px;margin-bottom:8px"><strong style="color:var(--mut)">Milestones:</strong><pre style="margin:4px 0;white-space:pre-wrap;font-family:inherit;color:var(--txt)">' + esc(milestones) + '</pre></div>';
+      if (resources) ph += '<div style="font-size:13px"><strong style="color:var(--mut)">Resources required:</strong> ' + esc(resources) + '</div>';
       ph += '</div>';
       output.innerHTML = ph + output.innerHTML;
     });
@@ -776,19 +725,19 @@ export function renderFedCompliance(container) {
     const famMap = INHERITANCE_FAMILIES[type] || {};
     let ih = '';
     ih += '<div style="margin:16px 0">';
-    ih += '<div style="font-size:.78rem;margin-bottom:6px;color:#7a93b8">Overall Responsibility Distribution</div>';
+    ih += '<div style="font-size:13px;margin-bottom:6px;color:var(--mut)">Typical responsibility split for this deployment type (illustrative, not a specific provider&#39;s responsibility matrix)</div>';
     ih += '<div class="fc-inherit-bar">';
     if (dist.customer > 0) ih += '<div class="fc-inherit-seg fc-inherit-customer" style="width:' + dist.customer + '%">Customer ' + dist.customer + '%</div>';
     if (dist.shared > 0) ih += '<div class="fc-inherit-seg fc-inherit-shared" style="width:' + dist.shared + '%">Shared ' + dist.shared + '%</div>';
     if (dist.inherited > 0) ih += '<div class="fc-inherit-seg fc-inherit-inherited" style="width:' + dist.inherited + '%">Inherited ' + dist.inherited + '%</div>';
     ih += '</div>';
-    ih += '<div style="display:flex;gap:20px;font-size:.72rem;margin-top:8px">';
-    ih += '<span><span style="display:inline-block;width:12px;height:12px;background:#3b82f6;border-radius:2px;vertical-align:middle;margin-right:4px"></span> Customer</span>';
-    ih += '<span><span style="display:inline-block;width:12px;height:12px;background:#eab308;border-radius:2px;vertical-align:middle;margin-right:4px"></span> Shared</span>';
-    ih += '<span><span style="display:inline-block;width:12px;height:12px;background:#22c55e;border-radius:2px;vertical-align:middle;margin-right:4px"></span> CSP Inherited</span>';
+    ih += '<div style="display:flex;gap:20px;font-size:12px;margin-top:8px">';
+    ih += '<span><span style="display:inline-block;width:12px;height:12px;background:var(--acc);border-radius:2px;vertical-align:middle;margin-right:4px"></span> Customer</span>';
+    ih += '<span><span style="display:inline-block;width:12px;height:12px;background:var(--warn);border-radius:2px;vertical-align:middle;margin-right:4px"></span> Shared</span>';
+    ih += '<span><span style="display:inline-block;width:12px;height:12px;background:var(--ok);border-radius:2px;vertical-align:middle;margin-right:4px"></span> CSP Inherited</span>';
     ih += '</div></div>';
 
-    ih += '<table class="fc-table"><thead><tr><th>Control Family</th><th>Responsibility</th></tr></thead><tbody>';
+    ih += '<table class="fc-table"><thead><tr><th>Control family</th><th>Responsibility</th></tr></thead><tbody>';
     Object.entries(famMap).forEach(([fam, resp]) => {
       const color = resp === 'customer' ? '#3b82f6' : resp === 'shared' ? '#eab308' : '#22c55e';
       const label = resp === 'customer' ? 'Customer' : resp === 'shared' ? 'Shared' : 'CSP Inherited';
@@ -803,14 +752,16 @@ export function renderFedCompliance(container) {
     const total = NIST_CONTROLS.length;
     const done = NIST_CONTROLS.filter(c => implemented[c.id]).length;
 
-    const frameworks = [
-      { name:'NIST 800-53', pct: Math.round(done / total * 100), color:'#00d4ff' },
-      { name:'FedRAMP', pct: Math.round(done / total * 92), color:'#a78bfa' },
-      { name:'CMMC L2', pct: Math.round(done / total * 85), color:'#34d399' },
-      { name:'CSF 2.0', pct: Math.round(done / total * 95), color:'#fbbf24' },
-      { name:'HIPAA', pct: Math.round(done / total * 88), color:'#f87171' },
-      { name:'CJIS', pct: Math.round(done / total * 90), color:'#60a5fa' },
-    ];
+    // NIST 800-53 coverage is over the controls in this tool. For each mapped framework, coverage is
+    // computed over the crosswalk rows that map to it (N/A rows excluded), from the same checkmarks.
+    const cwIds = Object.keys(CROSSWALK);
+    const mappedPct = (key) => {
+      const ids = cwIds.filter(id => CROSSWALK[id][key] && CROSSWALK[id][key] !== 'N/A');
+      return { n: ids.length, pct: ids.length ? Math.round(ids.filter(id => implemented[id]).length / ids.length * 100) : 0 };
+    };
+    const frameworks = [{ name:'NIST 800-53', n: total, pct: Math.round(done / total * 100) }]
+      .concat([['FedRAMP','fedramp'], ['CMMC 2.0','cmmc'], ['CSF 2.0','csf'], ['HIPAA','hipaa'], ['CJIS','cjis']].map(([name, key]) => Object.assign({ name }, mappedPct(key))))
+      .map(fw => Object.assign(fw, { color: fw.pct >= 80 ? 'var(--ok)' : fw.pct >= 50 ? 'var(--warn)' : 'var(--acc)' }));
 
     const ringsEl = container.querySelector('#fc-gap-rings');
     if (ringsEl) {
@@ -820,11 +771,11 @@ export function renderFedCompliance(container) {
         const offset = c - (fw.pct / 100) * c;
         rh += '<div style="text-align:center">';
         rh += '<div class="fc-progress-ring">';
-        rh += '<svg width="100" height="100"><circle cx="50" cy="50" r="' + r + '" fill="none" stroke="#1a2a44" stroke-width="8"/>';
+        rh += '<svg width="100" height="100"><circle cx="50" cy="50" r="' + r + '" fill="none" stroke="var(--line)" stroke-width="8"/>';
         rh += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + fw.color + '" stroke-width="8" stroke-dasharray="' + c + '" stroke-dashoffset="' + offset + '" stroke-linecap="round"/></svg>';
         rh += '<div class="fc-progress-ring-val" style="color:' + fw.color + '">' + fw.pct + '%</div>';
         rh += '</div>';
-        rh += '<div style="font-size:.72rem;color:#7a93b8;margin-top:4px">' + esc(fw.name) + '</div>';
+        rh += '<div style="font-size:12px;color:var(--mut);margin-top:4px">' + esc(fw.name) + ' (' + fw.n + ' controls)</div>';
         rh += '</div>';
       });
       ringsEl.innerHTML = rh;
@@ -835,13 +786,13 @@ export function renderFedCompliance(container) {
       const missing = NIST_CONTROLS.filter(c => !implemented[c.id]);
       let mh = '';
       if (missing.length === 0) {
-        mh = '<div style="text-align:center;color:#4ade80;padding:20px">All controls implemented!</div>';
+        mh = '<div style="text-align:center;color:var(--ok);padding:20px">Every control in this subset is marked implemented.</div>';
       } else {
         missing.forEach(c => {
           mh += '<div class="fc-check-row">';
           mh += '<span class="fc-ctrl-id">' + esc(c.id) + '</span>';
-          mh += '<span style="flex:1;font-size:.78rem">' + esc(c.title) + '</span>';
-          mh += '<span style="font-size:.7rem;color:#7a93b8">' + esc(c.family) + '</span>';
+          mh += '<span style="flex:1;font-size:13px">' + esc(c.title) + '</span>';
+          mh += '<span style="font-size:12px;color:var(--mut)">' + esc(c.family) + '</span>';
           mh += '</div>';
         });
       }

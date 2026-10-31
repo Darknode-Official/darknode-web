@@ -25,6 +25,7 @@ import { hostAllowed } from "./net-guard.js";
 import { readCapped } from "./body-cap.js";
 import { handleIntel } from "./intel.js";
 import { matchRoute, authenticate, authorize, attachPrincipal, rateCheck, ipCeiling, requestId, withHeaders } from "./auth.js";
+import { GEMINI_MODELS, CLAUDE_PLAN, userTier, planDenied } from "./plan.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
 export { MonitorDO } from "./monitor.js";
@@ -338,12 +339,51 @@ function toGeminiBody(messages, useSearch, thinkingBudget) {
 const sseChunk = (text) => "data: " + JSON.stringify({ choices: [{ delta: { content: text } }] }) + "\n\n";
 const SSE_HEADERS = { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive", ...CORS };
 
+// model id -> time until which it is skipped after hanging (per isolate, best effort)
+const STALLED = new Map();
+const STALL_SKIP_MS = 5 * 60 * 1000;
+// Stable Gemini tiers tried, in order, when the chosen model is retired, rate-limited,
+// overloaded or hung: the full stable Flash model, then the lite alias (most available).
+const GEMINI_FALLBACKS = ["gemini-3.5-flash", "gemini-flash-lite-latest"];
+
+// One Gemini call path for chat and the Darknode fallback: the chosen model on `key`;
+// a spent or rejected key (401/403, quota 429, or a model not yet rolled out to that
+// key's project: 404) retries once on the backup key (GEMINI_KEY_2); then a model that
+// is retired/limited/overloaded/hung (404/429/503/504) steps down GEMINI_FALLBACKS.
+// A model that just hung is skipped for STALL_SKIP_MS in this isolate, so only the
+// first chat after a stall pays the wait.
+async function callGemini(env, model, msgs, key, opts = {}) {
+  const cfg = PROVIDERS.gemini;
+  let r = (STALLED.get(model) || 0) > Date.now()
+    ? { upstream: new Response("{}", { status: 504 }), isGemini: true }
+    : await callUpstream(cfg, env, model, msgs, key, opts);
+  if (r.upstream.status === 504) STALLED.set(model, Date.now() + STALL_SKIP_MS);
+  if (!r.upstream.ok && [401, 403, 404, 429].includes(r.upstream.status) && env.GEMINI_KEY_2 && key !== env.GEMINI_KEY_2) {
+    key = env.GEMINI_KEY_2;
+    try { r = await callUpstream(cfg, env, model, msgs, key, opts); } catch (_) {}
+  }
+  for (const fb of GEMINI_FALLBACKS) {
+    if (r.upstream.ok || ![404, 429, 503, 504].includes(r.upstream.status)) break;
+    if (fb !== model) { try { r = await callUpstream(cfg, env, fb, msgs, key, opts); } catch (_) {} }
+  }
+  return r;
+}
+
+// Provider error bodies stay server-side (they can describe the account or the key);
+// the user gets a plain sentence and a status that says whose problem it is: 429 =
+// busy, 503 = our service is unavailable, 502 = the model failed to answer.
+async function upstreamError(upstream, where) {
+  const s = upstream.status;
+  const t = await upstream.text().catch(() => "");
+  console.warn(where + " upstream " + s + ": " + t.slice(0, 300));
+  if (s === 429) return json({ error: "The AI service is busy right now. Wait a few seconds or pick another model." }, 429);
+  if (s === 401 || s === 403) return json({ error: "The AI service is temporarily unavailable. Try again later or pick another model." }, 503);
+  return json({ error: "The AI model didn't answer. Try again in a moment or pick another model." }, 502);
+}
+
 // One upstream call. For Gemini, tries with Google Search grounding first and
 // transparently retries without it if the key/tier rejects the tool (400/403),
 // and retries transient 429/503 a couple of times.
-// model id -> time until which it is skipped after hanging (per isolate, best effort)
-const STALLED = new Map();
-
 async function callUpstream(cfg, env, model, messages, key, opts = {}) {
   const isGemini = cfg.format === "gemini";
   const url = cfg.url(env, model, key);
@@ -433,6 +473,9 @@ function streamBack(upstream, isGemini, opts = {}) {
               const j = JSON.parse(payload);
               if (j.type === "content_block_delta" && j.delta && j.delta.type === "text_delta" && j.delta.text) controller.enqueue(enc.encode(sseChunk(j.delta.text)));
               else if (j.type === "error") controller.enqueue(enc.encode(sseChunk("\n\n[Claude error: " + String((j.error && j.error.message) || "stream failed").slice(0, 200) + "]")));
+              // A refusal ends the message with stop_reason "refusal" and no text block,
+              // which would otherwise reach the user as a blank answer. Surface it.
+              else if (j.type === "message_delta" && j.delta && j.delta.stop_reason === "refusal") controller.enqueue(enc.encode(sseChunk("This request was declined. Claude won't help with this one as written — try rephrasing toward the defensive, detection, or authorized-lab angle, or switch to another model.")));
             } catch (_) { /* partial */ }
           } else if (fmt === "gemini") {
             try {
@@ -482,6 +525,35 @@ export function toClaudeBody(model, messages) {
   return body;
 }
 
+// Prompt caching (Anthropic). Place two cache breakpoints: one at the end of the
+// system block (the stable prefix, which also carries any tool instructions injected
+// client-side) and one at the end of the conversation. The API caches each marked
+// prefix for 5 minutes; a later request whose prefix matches is billed for the cached
+// span at ~10% of fresh input and skips re-encoding it, which is the common case in a
+// chat (same system every turn; each follow-up resends the whole history) and when a
+// large file or long conversation is attached. Breakpoints below the model's minimum
+// cacheable length are silently ignored by the API, so this is a no-op on short chats
+// rather than an error. Render order is tools -> system -> messages, so these two are
+// the natural prefix boundaries; max 4 breakpoints per request (we use 2).
+export function withPromptCache(body) {
+  const EPHEMERAL = { type: "ephemeral" };
+  const b = { ...body };
+  if (typeof b.system === "string" && b.system) b.system = [{ type: "text", text: b.system, cache_control: EPHEMERAL }];
+  const msgs = Array.isArray(b.messages) ? b.messages.slice() : [];
+  if (msgs.length) {
+    const last = { ...msgs[msgs.length - 1] };
+    const blocks = typeof last.content === "string" ? [{ type: "text", text: last.content }]
+      : Array.isArray(last.content) ? last.content.map((x) => ({ ...x })) : null;
+    if (blocks && blocks.length) {
+      blocks[blocks.length - 1] = { ...blocks[blocks.length - 1], cache_control: EPHEMERAL };
+      last.content = blocks;
+      msgs[msgs.length - 1] = last;
+      b.messages = msgs;
+    }
+  }
+  return b;
+}
+
 // Exported for tests: the Messages API SSE -> the reader's OpenAI-style SSE.
 export const claudeStream = (upstream, opts = {}) => streamBack(upstream, false, { ...opts, format: "anthropic" });
 
@@ -493,11 +565,14 @@ async function handleClaude(request, env, model, msgs, opts) {
   const p = a.principal;
   if (p.kind !== "user") return json({ error: "Sign in to use Claude models." }, 401);
   if (env.CLAUDE_ACCESS === "admin" && !(p.claims && p.claims.admin === true)) return json({ error: "Claude models are limited to administrators on this deployment." }, 403);
+  const planMsg = planDenied(CLAUDE_PLAN.get(model) || "pro", await userTier(env.FIREBASE_PROJECT_ID, p));
+  if (planMsg) return json({ error: planMsg, code: "plan_required" }, 403);
   const wait = await rateCheck(env, { kind: "user", uid: "claude:" + p.uid }, "", undefined, CLAUDE_PER_MIN);
   if (wait) return withHeaders(json({ error: "Claude limit reached (" + CLAUDE_PER_MIN + " messages a minute). Try again shortly." }, 429), { "Retry-After": String(wait) });
-  const body = toClaudeBody(model, msgs);
-  if (!body.messages.length) return json({ error: "Missing messages" }, 400);
-  if (JSON.stringify(body).length > CLAUDE_MAX_INPUT_CHARS) return json({ error: "Conversation too long for Claude here. Start a new chat." }, 413);
+  const plain = toClaudeBody(model, msgs);
+  if (!plain.messages.length) return json({ error: "Missing messages" }, 400);
+  if (JSON.stringify(plain).length > CLAUDE_MAX_INPUT_CHARS) return json({ error: "Conversation too long for Claude here. Start a new chat." }, 413);
+  const body = withPromptCache(plain);
   let upstream;
   const ac = new AbortController(), to = setTimeout(() => ac.abort(), 30000);
   try {
@@ -527,14 +602,11 @@ async function handleDarknode(cfg, env, model, messages, opts) {
     } catch (_) { /* fall through to Gemini */ }
   }
   const gKey = env.GEMINI_KEY || env.GEMINI_KEY_2;
-  if (!gKey) return json({ error: "Darknode GPU model is offline and no Gemini fallback key is configured (set GEMINI_KEY)." }, 503);
-  const gModel = env.GEMINI_FALLBACK_MODEL || "gemini-3.5-flash";
-  let { upstream, isGemini } = await callUpstream(PROVIDERS.gemini, env, gModel, msgs, gKey, { search: geminiSearchOn(env, msgs) });
-  if (!upstream.ok && [401, 403, 429].includes(upstream.status) && env.GEMINI_KEY_2 && gKey !== env.GEMINI_KEY_2) {
-    try { ({ upstream, isGemini } = await callUpstream(PROVIDERS.gemini, env, gModel, msgs, env.GEMINI_KEY_2, { search: geminiSearchOn(env, msgs) })); } catch (_) {}
-  }
-  if (!upstream.ok) { const t = await upstream.text().catch(() => ""); return json({ error: "Gemini fallback " + upstream.status + ": " + t.slice(0, 300) }, upstream.status); }
-  if (!upstream.body) return json({ error: "No upstream body" }, 502);
+  if (!gKey) { console.warn("darknode: GPU offline and no GEMINI_KEY fallback"); return json({ error: "This model is not available right now. Pick another model." }, 503); }
+  const gModel = env.GEMINI_FALLBACK_MODEL || GEMINI_FALLBACKS[0];
+  const { upstream, isGemini } = await callGemini(env, gModel, msgs, gKey, { search: geminiSearchOn(env, msgs) });
+  if (!upstream.ok) return upstreamError(upstream, "darknode/gemini");
+  if (!upstream.body) return json({ error: "The AI model didn't answer. Try again in a moment." }, 502);
   return streamBack(upstream, isGemini, opts);
 }
 
@@ -719,40 +791,34 @@ async function route(request, env, rid) {
 
       if (provider === "darknode") return await handleDarknode(cfg, env, model, msgs, opts);
       if (provider === "anthropic") return await handleClaude(request, env, model, msgs, opts);
+      // Only the listed Gemini models run on the owner's key; the stronger ones need a paid plan.
+      if (provider === "gemini") {
+        const need = GEMINI_MODELS.get(model);
+        if (!need) return json({ error: "Unknown model: " + String(model).slice(0, 60) + ". Pick another model." }, 400);
+        if (need !== "free") {
+          const a = await authenticate(request, env);
+          if (a.error) return json({ error: a.error }, a.status);
+          if (a.principal.kind !== "user") return json({ error: "Sign in to use this model.", code: "plan_required" }, 401);
+          const planMsg = planDenied(need, await userTier(env.FIREBASE_PROJECT_ID, a.principal));
+          if (planMsg) return json({ error: planMsg, code: "plan_required" }, 403);
+        }
+      }
       // Gemini chat falls back to SMART_KEY the same way /api/smart does, so one valid
       // Google key powers both routes and the two secrets never have to stay in sync.
-      let key = env[cfg.envKey] || (provider === "gemini" ? env.SMART_KEY || env.GEMINI_KEY_2 : undefined);
-      if (!key && !cfg.optionalKey) return json({ error: "Server key not configured for " + provider }, 500);
+      const key = env[cfg.envKey] || (provider === "gemini" ? env.SMART_KEY || env.GEMINI_KEY_2 : undefined);
+      if (!key && !cfg.optionalKey) { console.warn("chat: no server key for " + provider); return json({ error: "This model is not available right now. Pick another model." }, 503); }
       // Google Search grounding roughly doubles time-to-first-token, so turn it on
       // only when the question actually looks time-sensitive (see geminiSearchOn):
       // fast for the common case, grounded when recency matters. GEMINI_SEARCH="1"
       // forces it on, "0" off.
-      const search = provider === "gemini" && geminiSearchOn(env, msgs);
-      // A model that just hung (504 below) is skipped for a few minutes in this isolate,
-      // so only the first chat after it stalls pays the 12s wait.
-      let { upstream, isGemini } = provider === "gemini" && (STALLED.get(model) || 0) > Date.now()
-        ? { upstream: new Response("{}", { status: 504 }), isGemini: true }
-        : await callUpstream(cfg, env, model, msgs, key, { search });
-      if (provider === "gemini" && upstream.status === 504) STALLED.set(model, Date.now() + 5 * 60 * 1000);
-      // A spent or rejected primary Google key (quota 429, 401/403, or a model not yet
-      // rolled out to that key's project: 404) retries the same model once on the
-      // backup key (GEMINI_KEY_2 secret) before any model downgrade.
-      if (provider === "gemini" && !upstream.ok && [401, 403, 404, 429].includes(upstream.status) && env.GEMINI_KEY_2 && key !== env.GEMINI_KEY_2) {
-        key = env.GEMINI_KEY_2;
-        try { ({ upstream, isGemini } = await callUpstream(cfg, env, model, msgs, key, { search })); } catch (_) {}
-      }
-      // A chosen Gemini model can be retired (404), rate-limited (429) or overloaded
-      // (503) or hung (504). Rather than fail the chat, retry on the full stable Flash
-      // model, then the fast lite alias (the most available tier), so "Darknode Core"
-      // never dead-ends while another tier would have answered.
-      for (const fb of ["gemini-3.5-flash", "gemini-flash-lite-latest"]) {
-        if (provider !== "gemini" || upstream.ok || ![404, 429, 503, 504].includes(upstream.status)) break;
-        if (fb !== model) { try { ({ upstream, isGemini } = await callUpstream(cfg, env, fb, msgs, key, { search })); } catch (_) {} }
-      }
-      if (!upstream.ok) { const t = await upstream.text().catch(() => ""); return json({ error: "Upstream " + upstream.status + ": " + t.slice(0, 300) }, upstream.status); }
-      if (!upstream.body) return json({ error: "No upstream body" }, 502);
+      const { upstream, isGemini } = provider === "gemini"
+        ? await callGemini(env, model, msgs, key, { search: geminiSearchOn(env, msgs) })
+        : await callUpstream(cfg, env, model, msgs, key, {});
+      if (!upstream.ok) return upstreamError(upstream, "chat/" + provider);
+      if (!upstream.body) return json({ error: "The AI model didn't answer. Try again in a moment." }, 502);
       return streamBack(upstream, isGemini, opts);
     } catch (e) {
-      return json({ error: e.message || String(e) }, 500);
+      console.warn("chat: " + ((e && e.message) || e));
+      return json({ error: "Something went wrong on our side. Try again in a moment." }, 500);
     }
 }

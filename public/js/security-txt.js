@@ -2,7 +2,7 @@
 // Author, preview, download and audit the standardized vulnerability-disclosure
 // contact file that belongs at /.well-known/security.txt on a web host.
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
-// Fully client-side. No external libraries. Fetch is best-effort and may be CORS-blocked.
+// Generation and validation are client-side. Fetch uses the Darknode proxy when configured, else a direct (CORS-limited) request.
 //
 // Architecture: the RFC 9116 field set is expressed once as a declarative table
 // (FIELD_SPECS). That single table drives both generation (field order + emission)
@@ -297,15 +297,12 @@ function exampleText() {
 var ST_CSS =
   '<style>' +
   '.st-wrap{color:var(--txt)}' +
-  '.st-tabs{display:inline-flex;gap:2px;background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:3px;margin-bottom:16px}' +
-  '.st-tab{background:none;border:none;color:var(--mut);padding:7px 16px;border-radius:4px;cursor:pointer;font-size:.84rem;font-family:inherit}' +
-  '.st-tab.active{background:var(--acc);color:#fff}' +
   '.st-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}' +
   '@media(max-width:860px){.st-grid{grid-template-columns:minmax(0,1fr)}}' +
   '.st-col{display:flex;flex-direction:column;gap:14px;min-width:0}' +
   '.st-field{margin-bottom:12px}' +
   '.st-field:last-child{margin-bottom:0}' +
-  '.st-lbl{display:block;font-size:.74rem;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}' +
+  '.st-lbl{display:block;font-size:.8rem;color:var(--mut);margin-bottom:4px}' +
   '.st-req{color:var(--bad);font-weight:600}' +
   '.st-in,.st-ta{width:100%;box-sizing:border-box;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:4px;padding:8px 10px;font-size:.85rem;font-family:inherit}' +
   '.st-in[type=datetime-local]{width:auto;min-width:min(100%,240px)}' +
@@ -314,9 +311,9 @@ var ST_CSS =
   '.st-multi-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:6px}' +
   '.st-iconbtn{background:var(--card2);border:1px solid var(--line);color:var(--mut);border-radius:4px;padding:6px 10px;cursor:pointer;font-size:.8rem;line-height:1;white-space:nowrap}' +
   '.st-iconbtn:hover{border-color:var(--bad);color:var(--bad)}' +
-  '.st-mini{font-size:.76rem;padding:5px 11px}' +
-  '.st-hint{font-size:.74rem;color:var(--mut);margin-top:5px}' +
-  '.st-warnrow{font-size:.74rem;color:var(--bad);margin-top:5px;display:none}' +
+  '.st-mini{font-size:.8rem;padding:5px 11px}' +
+  '.st-hint{font-size:.75rem;color:var(--mut);margin-top:5px}' +
+  '.st-warnrow{font-size:.75rem;color:var(--bad);margin-top:5px;display:none}' +
   '.st-warnrow.show{display:block}' +
   '.st-pre{font-family:var(--font-mono);font-size:.8rem;line-height:1.6;white-space:pre;overflow:auto;background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:14px;max-height:560px;color:var(--txt);tab-size:4}' +
   '.st-actions{display:flex;flex-wrap:wrap;gap:8px}' +
@@ -325,15 +322,15 @@ var ST_CSS =
   '.st-verdict.pass{border:1px solid color-mix(in srgb,var(--acc) 50%,var(--line));background:color-mix(in srgb,var(--acc) 12%,transparent);color:var(--txt)}' +
   '.st-verdict.fail{border:1px solid color-mix(in srgb,var(--bad) 55%,var(--line));background:color-mix(in srgb,var(--bad) 12%,transparent);color:var(--txt)}' +
   '.st-issue{padding:7px 11px;border-radius:4px;margin-bottom:6px;font-size:.82rem;border:1px solid var(--line);background:var(--card2);display:flex;gap:9px;align-items:baseline}' +
-  '.st-issue .st-badge{flex:0 0 auto;font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:3px}' +
+  '.st-issue .st-badge{flex:0 0 auto;font-size:.75rem;font-weight:600;padding:2px 7px;border-radius:3px}' +
   '.st-issue.error{border-color:color-mix(in srgb,var(--bad) 50%,var(--line))}' +
   '.st-issue.error .st-badge{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}' +
   '.st-issue.warn .st-badge{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc)}' +
   '.st-issue.info .st-badge{background:color-mix(in srgb,var(--mut) 22%,transparent);color:var(--txt-2)}' +
-  '.st-issue .st-ln{color:var(--mut);font-family:var(--font-mono);font-size:.72rem;flex:0 0 auto}' +
+  '.st-issue .st-ln{color:var(--mut);font-family:var(--font-mono);font-size:.75rem;flex:0 0 auto}' +
   '.st-tbl{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:8px}' +
   '.st-tbl th,.st-tbl td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top}' +
-  '.st-tbl th{color:var(--mut);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em}' +
+  '.st-tbl th{color:var(--mut);font-size:.75rem}' +
   '.st-tbl td.k{font-family:var(--font-mono);color:var(--acc);white-space:nowrap}' +
   '.st-tbl td.v{font-family:var(--font-mono);color:var(--txt-2);word-break:break-all}' +
   '.st-fetchrow{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px}' +
@@ -373,10 +370,10 @@ export function renderSecurityTxt(main) {
     '<div class="st-wrap">' +
     '<div class="pg-head"><div>' +
     '<h1 class="pg-h1">security.txt Studio</h1>' +
-    '<p class="muted pg-sub">Generate and validate an RFC 9116 <code>security.txt</code> — the standardized file that tells researchers how to report vulnerabilities. Everything runs in your browser.</p>' +
+    '<p class="muted pg-sub">Generate and validate an RFC 9116 <code>security.txt</code> — the standardized file that tells researchers how to report vulnerabilities. Generation and validation run in your browser.</p>' +
     '</div></div>' +
-    '<div class="st-tabs" id="st-tabs">' +
-    '<button class="st-tab active" data-mode="generate" type="button">Generate</button>' +
+    '<div class="seg" id="st-tabs" style="margin-bottom:16px">' +
+    '<button class="st-tab on" data-mode="generate" type="button">Generate</button>' +
     '<button class="st-tab" data-mode="validate" type="button">Validate</button>' +
     '</div>' +
     '<div id="st-body"></div>' +
@@ -540,7 +537,7 @@ export function renderSecurityTxt(main) {
       '<button class="btn ghost st-mini" id="st-example" type="button">Load example</button>' +
       '<button class="btn primary st-mini" id="st-check" type="button">Validate</button>' +
       '</div></div>' +
-      '<p class="st-note" style="margin-bottom:10px">Fetch is best-effort: a browser may block the cross-origin request (CORS). If it fails, open the file manually and paste it below.</p>' +
+      '<p class="st-note" style="margin-bottom:10px">Fetch requests https://&lt;domain&gt;/.well-known/security.txt through the Darknode proxy when it is available, otherwise directly from the browser (which CORS may block). If it fails, open the file and paste it below.</p>' +
       '<div class="st-fetchrow">' +
       '<input class="st-in" id="st-domain" placeholder="example.com">' +
       '<button class="btn ghost st-mini" id="st-fetch" type="button">Fetch from domain</button>' +
@@ -567,7 +564,7 @@ export function renderSecurityTxt(main) {
       var res = validateSecurityTxt(input.value);
       var html = "";
       html += '<div class="st-verdict ' + (res.ok ? "pass" : "fail") + '">' +
-        (res.ok ? "PASS — valid per RFC 9116" : "FAIL — the file does not meet RFC 9116") +
+        (res.ok ? "Pass: valid per RFC 9116" : "Fail: the file does not meet RFC 9116") +
         (res.signed ? " (PGP-signed)" : "") + '</div>';
 
       var errs = res.findings.filter(function (x) { return x.level === "error"; });
@@ -616,9 +613,18 @@ export function renderSecurityTxt(main) {
       var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
       var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 8000);
 
-      fetch(target, ctrl ? { signal: ctrl.signal } : {}).then(function (r) {
-        return r.text().then(function (t) { return { ok: r.ok, status: r.status, text: t }; });
-      }).then(function (out) {
+      // Prefer the Darknode proxy (real server-side request, no CORS); fall back to a direct browser fetch.
+      function direct() {
+        return fetch(target, ctrl ? { signal: ctrl.signal } : {}).then(function (r) {
+          return r.text().then(function (t) { return { ok: r.ok, status: r.status, text: t }; });
+        });
+      }
+      import("/js/net.js").then(function (net) {
+        if (!net.proxyConfigured()) return direct();
+        return net.dnFetch(target, { raw: true, timeout: 8000 }).then(function (d) {
+          return { ok: d.status >= 200 && d.status < 300, status: d.status, text: String(d.body || "") };
+        });
+      }, direct).then(function (out) {
         clearTimeout(timer);
         btn.disabled = false;
         if (!out.ok) {
@@ -634,7 +640,7 @@ export function renderSecurityTxt(main) {
         btn.disabled = false;
         var why = (err && err.name === "AbortError")
           ? "the request timed out after 8 seconds"
-          : "the browser blocked it (most likely CORS) or the host is unreachable";
+          : (err && err.message) ? err.message : "the browser blocked it (most likely CORS) or the host is unreachable";
         report.innerHTML = '<div class="st-note">Could not fetch ' + esc(target) + ' — ' + why +
           '. This is expected for many hosts: open the URL in a new tab and paste the contents into the box on the left.</div>';
       });
@@ -645,7 +651,7 @@ export function renderSecurityTxt(main) {
   function setMode(mode) {
     state.mode = mode;
     main.querySelectorAll(".st-tab").forEach(function (t) {
-      t.classList.toggle("active", t.dataset.mode === mode);
+      t.classList.toggle("on", t.dataset.mode === mode);
     });
     if (mode === "generate") renderGenerate(); else renderValidate();
   }

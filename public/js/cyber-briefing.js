@@ -35,71 +35,36 @@ function injectStyles() {
   style.id = 'cb-styles';
   style.textContent = `
 /* ── Cyber Briefing Generator ── */
-.cb-wrap { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: #c8d6e5; max-width: 1200px; margin: 0 auto; }
-.cb-source-note { background: #0a1628; border: 1px solid #1e3a5f; border-radius: 6px; padding: 10px 14px; font-size: 12px; line-height: 1.55; margin-bottom: 16px; color: #93b4d8; }
-[data-style=pro] .cb-source-note { background: #f0f4ff; color: #1e3a5f; border-color: #dbeafe; }
-.cb-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
-.cb-header-left h1 { margin: 0 0 4px; font-size: 24px; font-family: 'JetBrains Mono', monospace; color: #fff; letter-spacing: 1px; }
-.cb-header-left .cb-subtitle { color: #667788; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
-.cb-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.cb-select { background: #0d1420; border: 1px solid #1e2d44; color: #c8d6e5; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; appearance: none; -webkit-appearance: none; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23667788'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
-.cb-select:focus { outline: none; border-color: #3b82f6; }
-.cb-btn { background: #1e293b; border: 1px solid #334155; color: #c8d6e5; padding: 7px 16px; border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px; }
-.cb-btn:hover { background: #334155; border-color: #475569; }
-.cb-btn-primary { background: #1e40af; border-color: #2563eb; color: #fff; }
-.cb-btn-primary:hover { background: #2563eb; }
-.cb-section { background: linear-gradient(135deg, #0c1220, #0a0f1c); border: 1px solid #1a2540; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
-.cb-section-title { color: #3b82f6; font-size: 13px; font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid #1a2540; display: flex; align-items: center; gap: 8px; }
-.cb-section-sub { color: #667788; font-size: 11px; font-family: 'JetBrains Mono', monospace; margin: -10px 0 14px; }
-.cb-bluf { background: #0a1628; border: 1px solid #1e3a5f; border-left: 4px solid #3b82f6; border-radius: 0 8px 8px 0; padding: 16px 20px; margin-bottom: 16px; }
-.cb-bluf-label { color: #3b82f6; font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: 2px; margin-bottom: 8px; }
-.cb-bluf-text { font-size: 13px; line-height: 1.7; color: #d1dbe8; white-space: pre-line; }
-.cb-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
-.cb-table th { text-align: left; padding: 10px 12px; color: #60a5fa; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; border-bottom: 2px solid #1a2540; font-weight: 600; white-space: nowrap; }
-.cb-table td { padding: 10px 12px; border-bottom: 1px solid #111d30; vertical-align: middle; }
-.cb-table tbody tr { transition: background 0.15s ease; }
-.cb-table tbody tr:hover { background: rgba(59, 130, 246, 0.06); }
-.cb-ioc-type { font-size: 9px; font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: 1px; padding: 2px 8px; border-radius: 3px; background: #1e293b; color: #93c5fd; white-space: nowrap; }
-.cb-cve { color: #f59e0b; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
-.cb-ransom-yes { color: #ef4444; font-weight: 700; }
-.cb-ransom-no { color: #667788; }
-.cb-epss-bar-wrap { width: 90px; height: 6px; background: #111d30; border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
-.cb-epss-bar { height: 100%; border-radius: 3px; background: #ef4444; }
+.cb-wrap { color: var(--txt); }
+.cb-source-note { color: var(--mut); font-size: 12px; margin-bottom: 12px; }
+.cb-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cb-section { margin-bottom: 16px; }
+.cb-section-title { color: var(--txt); font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+.cb-section-sub { color: var(--mut); font-size: 12px; margin: 0 0 12px; }
+.cb-bluf { border-left: 3px solid var(--acc); margin-bottom: 16px; }
+.cb-bluf-label { color: var(--txt); font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.cb-bluf-text { font-size: 13px; line-height: 1.7; color: var(--txt-2, var(--txt)); white-space: pre-line; }
+.cb-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cb-table th { text-align: left; padding: 8px 10px; color: var(--mut); font-size: 12px; border-bottom: 1px solid var(--line); font-weight: 600; white-space: nowrap; }
+.cb-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.cb-ioc-type { font-size: 12px; padding: 1px 8px; border-radius: 4px; background: var(--card2); color: var(--txt-2, var(--txt)); white-space: nowrap; }
+.cb-cve { color: var(--acc); font-family: var(--mono, monospace); font-weight: 600; }
+.cb-ransom-yes { color: var(--bad); font-weight: 600; }
+.cb-ransom-no { color: var(--mut); }
+.cb-epss-bar-wrap { width: 90px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
+.cb-epss-bar { height: 100%; border-radius: 3px; background: var(--bad); }
 .cb-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
-.cb-stat-card { background: #0a1220; border: 1px solid #1a2540; border-radius: 6px; padding: 12px; text-align: center; }
-.cb-stat-value { font-size: 24px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-.cb-stat-label { font-size: 10px; color: #667788; font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
-.cb-empty { color: #667788; font-size: 12px; padding: 20px; text-align: center; }
-.cb-err { background: #2a0a0a; border: 1px solid #dc2626; color: #fca5a5; border-radius: 8px; padding: 16px 20px; font-size: 13px; line-height: 1.6; }
-.cb-loading { color: #667788; font-size: 13px; padding: 40px; text-align: center; font-family: 'JetBrains Mono', monospace; }
+.cb-stat-card { text-align: center; }
+.cb-stat-value { font-size: 24px; font-weight: 700; }
+.cb-stat-label { font-size: 12px; color: var(--mut); margin-top: 4px; }
+.cb-empty { color: var(--mut); font-size: 12px; padding: 20px; text-align: center; }
+.cb-err { color: var(--bad); font-size: 13px; line-height: 1.6; }
+.cb-loading { color: var(--mut); font-size: 13px; padding: 40px; text-align: center; }
 /* Export modal */
-.cb-export-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-.cb-export-modal { background: #0c1220; border: 1px solid #1a2540; border-radius: 12px; padding: 24px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; }
-.cb-export-textarea { width: 100%; min-height: 400px; background: #070d18; border: 1px solid #1a2540; color: #c8d6e5; font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 16px; border-radius: 6px; resize: vertical; }
-.cb-export-actions { display: flex; gap: 10px; margin-top: 12px; justify-content: flex-end; }
-@media (max-width: 768px) { .cb-header { flex-direction: column; } }
-/* ── Pro Theme Overrides ── */
-[data-style=pro] .cb-wrap { color: #3f3f46; }
-[data-style=pro] .cb-header-left h1 { color: #18181b; }
-[data-style=pro] .cb-header-left .cb-subtitle { color: #71717a; }
-[data-style=pro] .cb-section { background: #fff; border-color: #e5e5e5; }
-[data-style=pro] .cb-section-title { color: #2563eb; border-bottom-color: #e5e5e5; }
-[data-style=pro] .cb-bluf { background: #f0f4ff; border-color: #dbeafe; border-left-color: #2563eb; }
-[data-style=pro] .cb-bluf-text { color: #1e293b; }
-[data-style=pro] .cb-select { background: #fff; border-color: #d4d4d8; color: #18181b; }
-[data-style=pro] .cb-btn { background: #f4f4f5; border-color: #d4d4d8; color: #18181b; }
-[data-style=pro] .cb-btn:hover { background: #e4e4e7; }
-[data-style=pro] .cb-btn-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
-[data-style=pro] .cb-btn-primary:hover { background: #1d4ed8; }
-[data-style=pro] .cb-table th { color: #2563eb; border-bottom-color: #e5e5e5; }
-[data-style=pro] .cb-table td { border-bottom-color: #f4f4f5; }
-[data-style=pro] .cb-table tbody tr:hover { background: rgba(37, 99, 235, 0.04); }
-[data-style=pro] .cb-ioc-type { background: #f0f4ff; color: #2563eb; }
-[data-style=pro] .cb-cve { color: #b45309; }
-[data-style=pro] .cb-stat-card { background: #fff; border-color: #e5e5e5; }
-[data-style=pro] .cb-stat-label { color: #71717a; }
-[data-style=pro] .cb-export-modal { background: #fff; border-color: #e5e5e5; }
-[data-style=pro] .cb-export-textarea { background: #fafafa; border-color: #e5e5e5; color: #18181b; }
+.cb-export-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.cb-export-modal { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 24px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; }
+.cb-export-textarea { width: 100%; min-height: 400px; font-family: var(--mono, monospace); font-size: 12px; padding: 12px; resize: vertical; }
+.cb-export-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
 `;
   document.head.appendChild(style);
 }
@@ -192,8 +157,8 @@ function renderBLUF(d, fig, audience) {
   }
   text += "\nPriority action: patch or mitigate the known-exploited vulnerabilities below, prioritising ransomware-linked and high-EPSS CVEs.";
 
-  let h = '<div class="cb-bluf">';
-  h += '<div class="cb-bluf-label">BOTTOM LINE UP FRONT (BLUF)</div>';
+  let h = '<div class="card cb-bluf">';
+  h += '<div class="cb-bluf-label">Bottom line up front</div>';
   h += '<div class="cb-bluf-text">' + esc(text) + '</div>';
   h += '</div>';
   return h;
@@ -201,24 +166,24 @@ function renderBLUF(d, fig, audience) {
 
 function renderStats(d, fig) {
   const stats = [
-    { value: d.recentKev.length, label: 'KEV In Scope', color: '#ef4444' },
-    { value: fig.ransomKev.length, label: 'Ransomware-Linked', color: '#dc2626' },
-    { value: fig.topEpss ? fig.topEpss.pct.toFixed(0) + '%' : 'n/a', label: 'Top EPSS', color: '#f59e0b' },
-    { value: d.victims.length, label: 'Recent Ransom Victims', color: '#ea580c' },
-    { value: fig.groupCount, label: 'Active Groups', color: '#8b5cf6' },
-    { value: d.allKev.length, label: 'KEV Catalog Total', color: '#3b82f6' }
+    { value: d.recentKev.length, label: 'KEV in scope', color: 'var(--bad)' },
+    { value: fig.ransomKev.length, label: 'Ransomware-linked', color: 'var(--bad)' },
+    { value: fig.topEpss ? fig.topEpss.pct.toFixed(0) + '%' : 'n/a', label: 'Top EPSS', color: 'var(--warn)' },
+    { value: d.victims.length, label: 'Recent leak-site posts', color: 'var(--warn)' },
+    { value: fig.groupCount, label: 'Groups posting', color: 'var(--acc)' },
+    { value: d.allKev.length, label: 'KEV catalog total', color: 'var(--acc)' }
   ];
   let h = '<div class="cb-stats-row">';
   stats.forEach(s => {
-    h += '<div class="cb-stat-card"><div class="cb-stat-value" style="color:' + s.color + '">' + esc(String(s.value)) + '</div><div class="cb-stat-label">' + esc(s.label) + '</div></div>';
+    h += '<div class="card cb-stat-card"><div class="cb-stat-value" style="color:' + s.color + '">' + esc(String(s.value)) + '</div><div class="cb-stat-label">' + esc(s.label) + '</div></div>';
   });
   h += '</div>';
   return h;
 }
 
 function renderKevTable(d) {
-  let h = '<div class="cb-section">';
-  h += '<div class="cb-section-title"><span class="cb-icon">&#9888;</span> Known-Exploited Vulnerabilities</div>';
+  let h = '<div class="card cb-section">';
+  h += '<div class="cb-section-title">Known-exploited vulnerabilities</div>';
   h += '<div class="cb-section-sub">Source: CISA KEV catalog. EPSS exploitation probability from FIRST (api.first.org).</div>';
   if (!d.recentKev.length) { h += '<div class="cb-empty">No entries.</div></div>'; return h; }
   h += '<div style="overflow-x:auto"><table class="cb-table"><thead><tr><th>CVE</th><th>Vendor / Product</th><th>Vulnerability</th><th>Added</th><th>Ransomware</th><th>EPSS</th></tr></thead><tbody>';
@@ -230,7 +195,7 @@ function renderKevTable(d) {
     h += '<td>' + esc([v.vendorProject, v.product].filter(Boolean).join(' / ')) + '</td>';
     h += '<td>' + esc(String(v.vulnerabilityName || '').substring(0, 90)) + '</td>';
     h += '<td>' + esc(v.dateAdded || '') + '</td>';
-    h += '<td>' + (ransom ? '<span class="cb-ransom-yes">KNOWN</span>' : '<span class="cb-ransom-no">—</span>') + '</td>';
+    h += '<td>' + (ransom ? '<span class="cb-ransom-yes">Known</span>' : '<span class="cb-ransom-no">—</span>') + '</td>';
     if (p != null) h += '<td><span class="cb-epss-bar-wrap"><span class="cb-epss-bar" style="width:' + Math.max(2, Math.min(100, p)) + '%"></span></span>' + p.toFixed(1) + '%</td>';
     else h += '<td class="cb-ransom-no">n/a</td>';
     h += '</tr>';
@@ -246,8 +211,8 @@ function renderEpssTop(d) {
     .sort((a, b) => b.p - a.p)
     .slice(0, 10);
   if (!ranked.length) return '';
-  let h = '<div class="cb-section">';
-  h += '<div class="cb-section-title"><span class="cb-icon">&#9650;</span> Highest Exploitation Probability</div>';
+  let h = '<div class="card cb-section">';
+  h += '<div class="cb-section-title">Highest exploitation probability</div>';
   h += '<div class="cb-section-sub">Known-exploited CVEs ranked by EPSS score (likelihood of exploitation in the next 30 days).</div>';
   h += '<div style="overflow-x:auto"><table class="cb-table"><thead><tr><th>Rank</th><th>CVE</th><th>Vendor / Product</th><th>EPSS</th></tr></thead><tbody>';
   ranked.forEach((x, i) => {
@@ -259,13 +224,13 @@ function renderEpssTop(d) {
 }
 
 function renderVictims(d, fig) {
-  let h = '<div class="cb-section">';
-  h += '<div class="cb-section-title"><span class="cb-icon">&#9673;</span> Recent Ransomware Victim Activity</div>';
+  let h = '<div class="card cb-section">';
+  h += '<div class="cb-section-title">Recent ransomware leak-site posts</div>';
   h += '<div class="cb-section-sub">Source: ransomware.live — organisations recently posted on ransomware leak sites.</div>';
   if (d.victimsError) { h += '<div class="cb-empty">Leak-site feed unavailable: ' + esc(d.victimsError) + '</div></div>'; return h; }
   if (!d.victims.length) { h += '<div class="cb-empty">No recent victims returned.</div></div>'; return h; }
   if (fig.topGroups.length) {
-    h += '<div style="margin-bottom:12px;color:#8899aa;font-size:11px;font-family:\'JetBrains Mono\',monospace;">Most active groups: ';
+    h += '<div style="margin-bottom:12px;color:var(--mut);font-size:12px;">Most active groups: ';
     h += fig.topGroups.slice(0, 6).map(g => esc(g[0]) + ' (' + g[1] + ')').join(' · ');
     h += '</div>';
   }
@@ -291,10 +256,10 @@ function generateExportText(d, fig, audience) {
   const sep = '='.repeat(72);
   const line = '-'.repeat(72);
   let t = '';
-  t += sep + '\nEXECUTIVE CYBER BRIEFING (LIVE)\n';
+  t += sep + '\nEXECUTIVE CYBER BRIEFING\n';
   t += 'Generated: ' + getNowISO() + '\n';
   t += 'Audience: ' + aud.label + '\n';
-  t += 'Sources: CISA KEV catalog, FIRST EPSS, ransomware.live. Real data; not a drill.\n';
+  t += 'Sources: CISA KEV catalog, FIRST EPSS, ransomware.live.\n';
   t += sep + '\n\n';
   t += 'BOTTOM LINE UP FRONT\n' + line + '\n';
   t += aud.lead + '\n';
@@ -337,26 +302,25 @@ export function renderCyberBriefing(container) {
   let error = '';
 
   function controlsHtml() {
-    let h = '<div class="cb-header"><div class="cb-header-left">';
-    h += '<h1>EXECUTIVE CYBER BRIEFING</h1>';
-    h += '<div class="cb-subtitle">Generated ' + esc(getNowISO()) + ' — live data from CISA KEV, FIRST EPSS and ransomware.live</div>';
+    let h = '<div class="pg-head"><div>';
+    h += '<h1 class="pg-h1">Cyber Briefing</h1>';
+    h += '<p class="muted pg-sub">Executive briefing built when the page loads from CISA KEV, FIRST EPSS and ransomware.live. Generated ' + esc(getNowISO()) + '</p>';
     h += '</div><div class="cb-controls">';
     h += '<select class="cb-select" id="cb-audience">';
     AUDIENCES.forEach(a => { h += '<option value="' + esc(a.id) + '"' + (a.id === curAudience ? ' selected' : '') + '>' + esc(a.label) + '</option>'; });
     h += '</select>';
-    h += '<button class="cb-btn" id="cb-refresh">&#8635; Refresh</button>';
-    h += '<button class="cb-btn cb-btn-primary" id="cb-export">&#9660; Export</button>';
+    h += '<button class="btn ghost" id="cb-refresh">Refresh</button>';
+    h += '<button class="btn" id="cb-export">Export</button>';
     h += '</div></div>';
     return h;
   }
 
   function bodyHtml() {
     if (loading) return '<div class="cb-loading">Assembling live briefing from CISA KEV, EPSS and ransomware.live…</div>';
-    if (error) return '<div class="cb-err"><strong>Could not assemble the briefing.</strong><br>' + esc(error) + '<br><br>This briefing uses only live data; no fictional or cached scenario is shown in its place. Use Refresh to try again.</div>';
+    if (error) return '<div class="card cb-err"><strong>Could not assemble the briefing.</strong><br>' + esc(error) + '<br><br>Use Refresh to try again.</div>';
     if (!data) return '';
     let h = '';
-    h += '<div class="cb-source-note">This is a real operational briefing built at load time from public threat sources. Figures reflect the live catalogs; nothing is simulated.</div>';
-    h += renderBLUF(data, figures, curAudience);
+        h += renderBLUF(data, figures, curAudience);
     h += renderStats(data, figures);
     h += renderEpssTop(data);
     h += renderKevTable(data);
@@ -401,10 +365,10 @@ export function renderCyberBriefing(container) {
     overlay.className = 'cb-export-overlay';
     overlay.innerHTML = '<div class="cb-export-modal">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
-      '<div style="font-size:16px;font-weight:700;color:#e2e8f0">Export Briefing</div>' +
-      '<button class="cb-btn" id="cb-export-close">&times; Close</button></div>' +
+      '<div style="font-size:16px;font-weight:600;color:var(--txt)">Export briefing</div>' +
+      '<button class="btn ghost" id="cb-export-close">Close</button></div>' +
       '<textarea class="cb-export-textarea" id="cb-export-text" readonly></textarea>' +
-      '<div class="cb-export-actions"><button class="cb-btn" id="cb-copy-text">Copy to Clipboard</button></div></div>';
+      '<div class="cb-export-actions"><button class="btn" id="cb-copy-text">Copy to clipboard</button></div></div>';
     const ta = overlay.querySelector('#cb-export-text');
     ta.value = text;
     document.body.appendChild(overlay);
@@ -412,7 +376,7 @@ export function renderCyberBriefing(container) {
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
     overlay.querySelector('#cb-copy-text').addEventListener('click', function () {
       const btn = this;
-      const done = () => { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy to Clipboard'; }, 2000); };
+      const done = () => { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy to clipboard'; }, 2000); };
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(done).catch(() => { ta.select(); try { document.execCommand('copy'); done(); } catch (_) {} });
         else { ta.select(); document.execCommand('copy'); done(); }

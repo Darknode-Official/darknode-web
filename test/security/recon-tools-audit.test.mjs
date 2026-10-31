@@ -49,14 +49,14 @@ group("ssl-inspector", () => {
       setGlobal("fetch", async (u) => { asked = u; return { ok: true, json: async () => rows }; });
       els["ssl-domain"].value = input;
       globalThis._sslSearch(); await tick();
-      onTab({ target: { classList: { contains: () => true }, style: {}, getAttribute: () => "subdomains" } });
+      onTab({ target: { classList: { contains: () => true, add() {}, remove() {} }, style: {}, getAttribute: () => "subdomains" } });
       out = { asked, html: els["ssl-results"].innerHTML };
     });
     return out;
   }
   test("only real subdomains are listed, not SANs that merely contain the domain", async () => {
     const { html } = await search("example.com");
-    assert.ok(html.includes("2 UNIQUE SUBDOMAINS"), html.slice(0, 200));
+    assert.ok(html.includes("2 unique subdomains"), html.slice(0, 200));
     assert.ok(!html.includes("myexample.com") && !html.includes("example.com.evil.net"));
   });
   test("a port in the input is dropped from the CT query", async () => {
@@ -153,7 +153,7 @@ group("asn-explorer", () => {
       els["asn-input"].value = "AS044477";
       globalThis._asnLookup(); await tick();
       assert.equal(asked[0], "https://stat.ripe.net/data/as-overview/data.json?resource=AS44477");
-      assert.ok(/SUSPICIOUS/.test(els["asn-results"].innerHTML));
+      assert.ok(/On reference list/.test(els["asn-results"].innerHTML));
     });
   });
 });

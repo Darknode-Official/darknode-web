@@ -253,10 +253,10 @@ function presets() {
 }
 
 var SEV_COLOR = {
-  Critical: "#f0484a",
-  High: "#f5920b",
-  Medium: "#f5b544",
-  Low: "#38d99a",
+  Critical: "var(--bad)",
+  High: "var(--warn)",
+  Medium: "var(--warn)",
+  Low: "var(--ok)",
   None: "var(--acc)"
 };
 
@@ -271,39 +271,39 @@ var CV_CSS =
   '.cv-metric:last-child{margin-bottom:0}' +
   '.cv-mhead{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;flex-wrap:wrap}' +
   '.cv-mlabel{font-size:.82rem;font-weight:600;color:var(--txt)}' +
-  '.cv-mabbr{font-family:var(--font-mono);font-size:.72rem;color:var(--acc)}' +
-  '.cv-mhelp{font-size:.72rem;color:var(--mut);flex:1 1 100%;margin-top:2px}' +
+  '.cv-mabbr{font-family:var(--font-mono);font-size:12px;color:var(--acc)}' +
+  '.cv-mhelp{font-size:12px;color:var(--mut);flex:1 1 100%;margin-top:2px}' +
   '.cv-seg{display:flex;flex-wrap:wrap;gap:6px}' +
   '.cv-opt{flex:1 1 auto;min-width:68px;background:var(--card2);border:1px solid var(--line);color:var(--txt-2);border-radius:5px;padding:8px 10px;font-size:.82rem;font-family:inherit;cursor:pointer;text-align:center;transition:border-color .12s,background .12s,color .12s}' +
   '.cv-opt:hover{border-color:var(--acc);color:var(--txt)}' +
   '.cv-opt:focus-visible{outline:2px solid var(--acc);outline-offset:2px}' +
   '.cv-opt.sel{background:color-mix(in srgb,var(--acc) 18%,transparent);border-color:var(--acc);color:var(--txt);font-weight:600}' +
-  '.cv-opt .cv-w{display:block;font-size:.66rem;color:var(--mut);font-family:var(--font-mono);margin-top:2px}' +
+  '.cv-opt .cv-w{display:block;font-size:12px;color:var(--mut);font-family:var(--font-mono);margin-top:2px}' +
   '.cv-opt.sel .cv-w{color:var(--acc)}' +
   '.cv-score-card{text-align:center;padding:18px 14px}' +
   '.cv-score-num{font-size:3.4rem;line-height:1;font-weight:700;font-family:var(--font-mono);letter-spacing:-.02em}' +
-  '.cv-badge{display:inline-block;margin-top:10px;padding:5px 16px;border-radius:999px;font-size:.84rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#0a0d12}' +
+  '.cv-badge{display:inline-block;margin-top:10px;padding:5px 16px;border-radius:999px;font-size:13px;font-weight:700;color:var(--on-acc,#fff)}' +
   '.cv-subs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}' +
   '.cv-sub{background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;text-align:center}' +
-  '.cv-sub-lbl{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}' +
+  '.cv-sub-lbl{font-size:12px;color:var(--mut)}' +
   '.cv-sub-val{font-size:1.3rem;font-weight:600;font-family:var(--font-mono);margin-top:3px;color:var(--txt)}' +
   '.cv-vecbox{font-family:var(--font-mono);font-size:.82rem;line-height:1.5;word-break:break-all;background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:12px;color:var(--txt);margin-bottom:10px}' +
   '.cv-actions{display:flex;flex-wrap:wrap;gap:8px}' +
   '.cv-mini{font-size:.76rem;padding:6px 12px}' +
   '.cv-field{margin-bottom:0}' +
-  '.cv-lbl{display:block;font-size:.74rem;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}' +
+  '.cv-lbl{display:block;font-size:12px;color:var(--mut);margin-bottom:4px}' +
   '.cv-row{display:grid;grid-template-columns:1fr auto;gap:8px}' +
   '.cv-in{width:100%;box-sizing:border-box;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:4px;padding:8px 10px;font-size:.82rem;font-family:var(--font-mono)}' +
   '.cv-in:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 15%,transparent)}' +
-  '.cv-in.err{border-color:#f0484a}' +
-  '.cv-err{font-size:.72rem;color:#f0484a;margin-top:6px;display:none}' +
+  '.cv-in.err{border-color:var(--bad)}' +
+  '.cv-err{font-size:12px;color:var(--bad);margin-top:6px;display:none}' +
   '.cv-err.show{display:block}' +
   '.cv-presets{display:flex;flex-direction:column;gap:8px}' +
   '.cv-preset{text-align:left;background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:10px 12px;cursor:pointer;font-family:inherit}' +
   '.cv-preset:hover{border-color:var(--acc)}' +
   '.cv-preset-name{font-size:.84rem;font-weight:600;display:block}' +
-  '.cv-preset-note{font-size:.72rem;color:var(--mut);display:block;margin-top:2px}' +
-  '.cv-hint{font-size:.72rem;color:var(--mut);margin-top:6px}' +
+  '.cv-preset-note{font-size:12px;color:var(--mut);display:block;margin-top:2px}' +
+  '.cv-hint{font-size:12px;color:var(--mut);margin-top:6px}' +
   '.cv-sticky{position:sticky;top:12px}' +
   '</style>';
 
@@ -373,7 +373,7 @@ export function renderCvssCalculator(main) {
     // ── left column (metrics) ──
     '<div class="cv-col">' +
     '<div class="panel">' +
-    '<div class="panel-h"><h2 class="pg-h2">Base Metrics</h2></div>' +
+    '<div class="panel-h"><h2 class="pg-h2">Base metrics</h2></div>' +
     '<div id="cv-metrics">' + METRICS.map(metricHtml).join("") + '</div>' +
     '</div>' +
     '</div>' +
@@ -381,7 +381,7 @@ export function renderCvssCalculator(main) {
     // ── right column (readout) ──
     '<div class="cv-col cv-sticky">' +
     '<div class="panel">' +
-    '<div class="panel-h"><h2 class="pg-h2">Base Score</h2></div>' +
+    '<div class="panel-h"><h2 class="pg-h2">Base score</h2></div>' +
     '<div class="cv-score-card">' +
     '<div class="cv-score-num" id="cv-score">0.0</div>' +
     '<div class="cv-badge" id="cv-badge">None</div>' +

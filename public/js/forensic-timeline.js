@@ -140,8 +140,8 @@ export function renderForensicTimeline(main) {
 
   function render() {
     main.innerHTML =
-      '<h1 class="pg-h1">Forensic Timeline Builder</h1>' +
-      '<p class="muted pg-sub">Reconstruct incident timelines from multiple evidence sources. Paste logs, the parser auto-detects the format.</p>' +
+      '<div class="pg-head"><div><h1 class="pg-h1">Forensic Timeline Builder</h1>' +
+      '<p class="muted pg-sub">Reconstruct incident timelines from multiple evidence sources. Paste logs, the parser auto-detects the format.</p></div></div>' +
       '<div class="tab-bar" style="overflow-x:auto;flex-wrap:nowrap">' +
         '<button class="tab' + (activeTab === 'input' ? ' active' : '') + '" data-tab="input">Evidence Input</button>' +
         '<button class="tab' + (activeTab === 'timeline' ? ' active' : '') + '" data-tab="timeline">Timeline (' + events.length + ')</button>' +
@@ -197,11 +197,12 @@ export function renderForensicTimeline(main) {
         '<span style="flex:1"></span>' +
         '<span style="font-size:.75rem;color:var(--mut)">Events loaded: ' + events.length + '</span>' +
       '</div>' +
-      '<textarea class="tk-in" id="ft-input" rows="12" placeholder="Paste log entries here. Supported formats:\n- Windows Event Logs\n- Syslog\n- Apache/Nginx access logs\n- Firewall logs (iptables, pf)\n- Auth logs (sshd, sudo)\n- Any line with an ISO timestamp\n\nMultiple formats can be mixed — the parser auto-detects each line."></textarea>' +
+      '<textarea class="tk-in" id="ft-input" rows="12" placeholder="Paste log lines"></textarea>' +
+      '<p class="muted" style="font-size:12px;margin:4px 0 8px">Windows Event Log, syslog, Apache/Nginx access, firewall (iptables, pf), auth (sshd, sudo), or any line with an ISO timestamp. Formats can be mixed.</p>' +
       '<div class="tk-btns">' +
         '<button class="btn sm" id="ft-parse">Parse and Add to Timeline</button>' +
         '<button class="btn sm ghost" id="ft-clear">Clear Timeline</button>' +
-        '<button class="btn sm ghost" id="ft-sample">Load Sample Data</button>' +
+        '<button class="btn sm ghost" id="ft-sample">Load example logs</button>' +
         '<button class="btn sm ghost" id="ft-manual" title="Add one event by hand, e.g. from an interview, a ticket or a screenshot">Add Event Manually</button>' +
       '</div>' +
       '<pre class="tk-out" id="ft-parse-result" style="margin-top:8px"></pre>';
@@ -294,12 +295,12 @@ export function renderForensicTimeline(main) {
       var list = container.querySelector('#ft-event-list');
       list.innerHTML = filtered.map(function(e, i) {
         var color = CAT_COLORS[e.category] || '#888';
-        var tagHtml = (e.tags || []).map(function(t) { return '<span style="font-size:.6rem;color:var(--acc);border:1px solid var(--acc);padding:0 4px;border-radius:2px;margin-left:4px">' + esc(t.technique) + '</span>'; }).join('');
+        var tagHtml = (e.tags || []).map(function(t) { return '<span style="font-size:12px;color:var(--acc);border:1px solid var(--acc);padding:0 4px;border-radius:2px;margin-left:4px">' + esc(t.technique) + '</span>'; }).join('');
         return '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.78rem;cursor:pointer' + (e.suspicious ? ';background:rgba(255,23,68,0.08)' : '') + '" data-idx="' + i + '">' +
           '<span style="color:var(--mut);white-space:nowrap;min-width:140px">' + e.timestamp.toISOString().replace('T', ' ').split('.')[0] + '</span>' +
           '<span style="color:' + color + ';font-weight:600;min-width:80px">' + esc(e.source) + '</span>' +
           '<span style="flex:1;word-break:break-word">' + esc(e.detail) + tagHtml + '</span>' +
-          '<button class="btn sm ghost" style="padding:2px 6px;font-size:.65rem" data-mark="' + i + '">' + (e.suspicious ? 'MARKED' : 'Mark') + '</button>' +
+          '<button class="btn sm ghost" style="padding:2px 6px;font-size:12px" data-mark="' + i + '">' + (e.suspicious ? 'Marked' : 'Mark') + '</button>' +
         '</div>';
       }).join('');
 
@@ -331,7 +332,7 @@ export function renderForensicTimeline(main) {
       return;
     }
     container.innerHTML =
-      '<h2 class="pg-h2">Event Correlation</h2>' +
+      '<h2 class="pg-h2">Event correlation</h2>' +
       '<p class="muted" style="margin-bottom:12px">Find events from different sources that occurred within a time window.</p>' +
       '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">' +
         '<label style="font-size:.78rem;color:var(--mut)">Window (seconds):</label>' +
@@ -389,7 +390,7 @@ export function renderForensicTimeline(main) {
       return;
     }
     container.innerHTML =
-      '<h2 class="pg-h2">Activity Gap Detection</h2>' +
+      '<h2 class="pg-h2">Activity gap detection</h2>' +
       '<p class="muted" style="margin-bottom:12px">Time periods with no logged activity may indicate log tampering, system outage, or attacker covering tracks.</p>' +
       '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">' +
         '<label style="font-size:.78rem;color:var(--mut)">Minimum gap (minutes):</label>' +
@@ -408,19 +409,19 @@ export function renderForensicTimeline(main) {
         }
       }
       if (gaps.length === 0) {
-        container.querySelector('#ft-gap-results').innerHTML = '<p style="color:#00e676;font-size:.82rem">No significant gaps found. Logging appears continuous.</p>';
+        container.querySelector('#ft-gap-results').innerHTML = '<p style="color:var(--ok);font-size:.82rem">No significant gaps found. Logging appears continuous.</p>';
         return;
       }
       container.querySelector('#ft-gap-results').innerHTML =
-        '<p style="font-size:.8rem;margin-bottom:8px;color:#ff9100">' + gaps.length + ' gap(s) detected:</p>' +
+        '<p style="font-size:.8rem;margin-bottom:8px;color:var(--warn)">' + gaps.length + ' gap(s) detected:</p>' +
         gaps.map(function(g) {
           var mins = Math.round(g.duration / 60000);
           var suspicious = mins > 30;
-          return '<div style="background:var(--card);border:1px solid ' + (suspicious ? '#ff1744' : 'var(--line)') + ';border-radius:6px;padding:10px;margin-bottom:6px">' +
-            '<div style="font-size:.82rem;font-weight:600;color:' + (suspicious ? '#ff1744' : '#ff9100') + '">' + mins + ' minute gap' + (suspicious ? ' [SUSPICIOUS]' : '') + '</div>' +
+          return '<div style="background:var(--card);border:1px solid ' + (suspicious ? 'var(--bad)' : 'var(--line)') + ';border-radius:6px;padding:10px;margin-bottom:6px">' +
+            '<div style="font-size:.82rem;font-weight:600;color:' + (suspicious ? 'var(--bad)' : 'var(--warn)') + '">' + mins + ' minute gap' + (suspicious ? ' (suspicious)' : '') + '</div>' +
             '<div style="font-size:.75rem;color:var(--mut);margin:4px 0">From: ' + g.start.toISOString().replace('T', ' ').split('.')[0] + '</div>' +
             '<div style="font-size:.75rem;color:var(--mut)">To: ' + g.end.toISOString().replace('T', ' ').split('.')[0] + '</div>' +
-            (suspicious ? '<div style="font-size:.75rem;color:#ff1744;margin-top:4px">Possible log tampering or system outage. Investigate: were logs cleared? Did the system reboot? Check for Event ID 1102 (audit log cleared) or 104 (system log cleared).</div>' : '') +
+            (suspicious ? '<div style="font-size:.75rem;color:var(--bad);margin-top:4px">Possible log tampering or system outage. Investigate: were logs cleared? Did the system reboot? Check for Event ID 1102 (audit log cleared) or 104 (system log cleared).</div>' : '') +
           '</div>';
         }).join('');
     };
@@ -443,7 +444,7 @@ export function renderForensicTimeline(main) {
     }
 
     container.innerHTML =
-      '<h2 class="pg-h2">MITRE ATT&CK Auto-Tags</h2>' +
+      '<h2 class="pg-h2">MITRE ATT&CK auto-tags</h2>' +
       '<p class="muted" style="margin-bottom:12px">' + tagList.length + ' techniques detected across ' + events.length + ' events.</p>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">' +
       tagList.map(function(t) {
@@ -451,10 +452,10 @@ export function renderForensicTimeline(main) {
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
             '<span style="font-size:.8rem;font-weight:700;color:var(--acc)">' + esc(t.technique) + '</span>' +
             '<span style="font-size:.82rem;font-weight:600">' + esc(t.name) + '</span>' +
-            '<span style="margin-left:auto;font-size:.8rem;font-weight:700;color:#ff1744">' + t.count + 'x</span>' +
+            '<span style="margin-left:auto;font-size:.8rem;font-weight:700;color:var(--bad)">' + t.count + 'x</span>' +
           '</div>' +
           t.events.map(function(e) {
-            return '<div style="font-size:.72rem;color:var(--mut);border-left:2px solid var(--acc);padding-left:6px;margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
+            return '<div style="font-size:12px;color:var(--mut);border-left:2px solid var(--acc);padding-left:6px;margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
               e.timestamp.toISOString().replace('T', ' ').split('.')[0] + ' — ' + esc((e.detail || '').substring(0, 80)) + '</div>';
           }).join('') +
         '</div>';
@@ -469,7 +470,7 @@ export function renderForensicTimeline(main) {
     }
     var suspicious = events.filter(function(e) { return e.suspicious; });
     container.innerHTML =
-      '<h2 class="pg-h2">Export Timeline</h2>' +
+      '<h2 class="pg-h2">Export timeline</h2>' +
       '<p class="muted" style="margin-bottom:12px">Export the full timeline or just marked suspicious events.</p>' +
       '<div class="tk-btns">' +
         '<button class="btn sm" id="ft-exp-all">Export All (' + events.length + ' events)</button>' +

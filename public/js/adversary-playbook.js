@@ -162,85 +162,85 @@ const THREAT_ACTORS = [
 const STYLE = `
 .ap-wrap { font-family: ui-sans-serif, system-ui, sans-serif; color: var(--txt,#e7eefc); }
 .ap-header { margin-bottom: 20px; }
-.ap-title { font-size: 24px; font-weight: 800; color: #fff; margin: 0 0 6px; }
+.ap-title { font-size: 24px; font-weight: 800; color: var(--txt,#e7eefc); margin: 0 0 6px; }
 .ap-subtitle { font-size: 13px; color: var(--mut,#7a93b8); margin: 0; }
 .ap-tabs { display: flex; gap: 2px; margin-bottom: 20px; flex-wrap: wrap; }
-.ap-tab { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); color: var(--txt-2,#9fb0cc); padding: 8px 16px; font-size: 12px; font-family: var(--font-mono, ui-monospace, monospace); cursor: pointer; border-radius: 4px 4px 0 0; text-transform: uppercase; letter-spacing: 1px; transition: all .2s; }
+.ap-tab { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); color: var(--txt-2,#9fb0cc); padding: 8px 16px; font-size: 12px; font-family: var(--font-mono, ui-monospace, monospace); cursor: pointer; border-radius: 4px 4px 0 0; transition: all .2s; }
 .ap-tab:hover { color: var(--txt,#e7eefc); border-color: var(--line,#283a5a); }
 .ap-tab.active { background: var(--line,#283a5a); color: var(--acc,#2563eb); border-color: var(--acc,#2563eb); border-bottom-color: var(--line,#283a5a); }
-.ap-panel { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 0 8px 8px 8px; padding: 20px; min-height: 500px; }
-.ap-section-title { font-size: 13px; font-family: var(--font-mono, ui-monospace, monospace); color: var(--acc,#2563eb); text-transform: uppercase; letter-spacing: 2px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line,#283a5a); }
+.ap-panel { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 20px; min-height: 500px; }
+.ap-section-title { font-size: 15px; font-weight: 600; color: var(--txt,#e7eefc); margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--line,#283a5a); }
 .ap-actor-select { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-.ap-actor-select label { font-size: 12px; color: var(--txt-2,#9fb0cc); font-family: var(--font-mono, ui-monospace, monospace); text-transform: uppercase; letter-spacing: 1px; }
+.ap-actor-select label { font-size: 12px; color: var(--txt-2,#9fb0cc); font-family: var(--font-mono, ui-monospace, monospace); }
 .ap-select { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); color: var(--txt,#e7eefc); padding: 8px 12px; border-radius: 4px; font-size: 13px; font-family: var(--font-mono, ui-monospace, monospace); min-width: 250px; cursor: pointer; }
 .ap-select:focus { outline: none; border-color: var(--acc,#2563eb); }
 .ap-actor-info { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
 .ap-info-card { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 6px; padding: 12px; }
-.ap-info-label { font-size: 9px; color: var(--mut,#7a93b8); font-family: var(--font-mono, ui-monospace, monospace); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.ap-info-label { font-size: 12px; color: var(--mut,#7a93b8); font-family: var(--font-mono, ui-monospace, monospace); margin-bottom: 4px; }
 .ap-info-value { font-size: 14px; color: var(--txt,#e7eefc); font-weight: bold; }
 
 /* Matrix view */
 .ap-matrix-scroll { overflow-x: auto; margin-bottom: 16px; }
-.ap-matrix { display: grid; grid-template-columns: repeat(14, minmax(90px, 1fr)); gap: 2px; min-width: 1260px; }
-.ap-matrix-header { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); padding: 8px 4px; font-size: 9px; color: var(--acc,#2563eb); font-family: var(--font-mono, ui-monospace, monospace); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; font-weight: bold; border-radius: 4px 4px 0 0; }
+.ap-matrix { display: grid; grid-template-columns: repeat(14, minmax(112px, 1fr)); gap: 2px; min-width: 1568px; }
+.ap-matrix-header { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); padding: 8px 4px; font-size: 12px; color: var(--acc,#2563eb); font-family: var(--font-mono, ui-monospace, monospace); text-align: center; font-weight: bold; border-radius: 4px 4px 0 0; }
 .ap-matrix-col { display: flex; flex-direction: column; gap: 2px; text-align: center; }
-.ap-tech-cell { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); padding: 6px 4px; font-size: 9px; color: var(--txt-2,#9fb0cc); font-family: var(--font-mono, ui-monospace, monospace); cursor: pointer; border-radius: 3px; text-align: center; transition: all .15s; line-height: 1.3; min-height: 36px; display: flex; align-items: center; justify-content: center; }
+.ap-tech-cell { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); padding: 6px 4px; font-size: 12px; color: var(--txt-2,#9fb0cc); font-family: var(--font-mono, ui-monospace, monospace); cursor: pointer; border-radius: 3px; text-align: center; transition: all .15s; line-height: 1.3; min-height: 36px; display: flex; align-items: center; justify-content: center; }
 .ap-tech-cell:hover { border-color: var(--line,#283a5a); color: var(--txt,#e7eefc); background: var(--card2,#0f1726); }
-.ap-tech-cell.actor-uses { background: #1a0a0a; border-color: #ff224444; color: #ff6666; }
-.ap-tech-cell.detected { background: #0a1a0a; border-color: #00ff8844; color: #00ff88; }
-.ap-tech-cell.gap { background: #1a1a0a; border-color: #eab30844; color: #eab308; }
+.ap-tech-cell.actor-uses { background: #1a0a0a; border-color: #ff224444; color: var(--bad); }
+.ap-tech-cell.detected { background: #0a1a0a; border-color: #00ff8844; color: var(--ok); }
+.ap-tech-cell.gap { background: #1a1a0a; border-color: #eab30844; color: var(--warn); }
 .ap-tech-cell.selected { background: color-mix(in srgb,var(--acc,#2563eb) 12%,transparent); border-color: var(--acc,#2563eb); color: var(--acc,#2563eb); box-shadow: 0 0 8px color-mix(in srgb,var(--acc,#2563eb) 15%,transparent); }
 
 .ap-legend { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
-.ap-legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--txt-2,#9fb0cc); font-family: var(--font-mono, ui-monospace, monospace); }
+.ap-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--txt-2,#9fb0cc); font-family: var(--font-mono, ui-monospace, monospace); }
 .ap-legend-dot { width: 12px; height: 12px; border-radius: 3px; }
 
 /* Playbook builder */
 .ap-playbook { margin-top: 16px; }
 .ap-chain { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 16px; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 6px; min-height: 80px; }
 .ap-chain-step { background: var(--card2,#0f1726); border: 1px solid color-mix(in srgb,var(--acc,#2563eb) 30%,transparent); border-radius: 6px; padding: 10px 12px; font-family: var(--font-mono, ui-monospace, monospace); position: relative; min-width: 120px; }
-.ap-chain-step .ap-cs-id { font-size: 10px; color: var(--acc,#2563eb); font-weight: bold; }
-.ap-chain-step .ap-cs-name { font-size: 11px; color: var(--txt,#e7eefc); margin-top: 2px; }
-.ap-chain-step .ap-cs-tactic { font-size: 9px; color: var(--mut,#7a93b8); margin-top: 2px; }
-.ap-chain-step .ap-cs-remove { position: absolute; top: 2px; right: 4px; background: none; border: none; color: #ff6666; cursor: pointer; font-size: 14px; padding: 0 4px; line-height: 1; }
+.ap-chain-step .ap-cs-id { font-size: 12px; color: var(--acc,#2563eb); font-weight: bold; }
+.ap-chain-step .ap-cs-name { font-size: 12px; color: var(--txt,#e7eefc); margin-top: 2px; }
+.ap-chain-step .ap-cs-tactic { font-size: 12px; color: var(--mut,#7a93b8); margin-top: 2px; }
+.ap-chain-step .ap-cs-remove { position: absolute; top: 2px; right: 4px; background: none; border: none; color: var(--bad); cursor: pointer; font-size: 14px; padding: 0 4px; line-height: 1; }
 .ap-chain-arrow { color: var(--mut,#7a93b8); font-size: 18px; flex-shrink: 0; }
 .ap-chain-empty { color: var(--mut,#7a93b8); font-size: 12px; font-family: var(--font-mono, ui-monospace, monospace); margin: auto; text-align: center; }
 .ap-chain-actions { display: flex; gap: 8px; margin-top: 12px; }
 
 /* Heatmap */
 .ap-heatmap-wrap { overflow-x: auto; }
-.ap-heatmap { border-collapse: collapse; font-family: var(--font-mono, ui-monospace, monospace); font-size: 10px; min-width: 600px; }
+.ap-heatmap { border-collapse: collapse; font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; min-width: 600px; }
 .ap-heatmap th { background: var(--card2,#0f1726); color: var(--txt-2,#9fb0cc); padding: 6px 8px; border: 1px solid var(--line,#283a5a); text-align: center; font-weight: normal; white-space: nowrap; }
 .ap-heatmap th:first-child { text-align: left; min-width: 160px; }
 .ap-heatmap td { padding: 4px; border: 1px solid var(--line,#283a5a); text-align: center; width: 30px; height: 30px; }
 .ap-heatmap th.ap-hm-toggle { cursor: pointer; }
 .ap-heatmap th.ap-hm-toggle:hover { color: var(--txt,#e7eefc); border-color: var(--line,#283a5a); }
-.ap-heatmap th.ap-hm-toggle.on { background: #0a2a0a; color: #00ff88; }
+.ap-heatmap th.ap-hm-toggle.on { background: #0a2a0a; color: var(--ok); }
 .ap-cov-help { font-size: 12px; color: var(--txt-2,#9fb0cc); margin: 0 0 12px; line-height: 1.5; }
 .ap-cov-help .ap-btn { margin-left: 8px; }
-.ap-hm-covered { background: #0a2a0a; color: #00ff88; }
-.ap-hm-partial { background: #2a2a0a; color: #eab308; }
-.ap-hm-none { background: #2a0a0a; color: #ff4444; }
+.ap-hm-covered { background: #0a2a0a; color: var(--ok); }
+.ap-hm-partial { background: #2a2a0a; color: var(--warn); }
+.ap-hm-none { background: #2a0a0a; color: var(--bad); }
 .ap-coverage-bar { margin-top: 12px; display: flex; align-items: center; gap: 12px; }
 .ap-coverage-fill { height: 8px; border-radius: 4px; transition: width .3s; }
 
 /* Detail panel */
 .ap-detail { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 6px; padding: 16px; margin-top: 16px; }
-.ap-detail-title { font-size: 16px; color: #fff; font-weight: bold; margin: 0 0 4px; }
+.ap-detail-title { font-size: 16px; color: var(--txt,#e7eefc); font-weight: bold; margin: 0 0 4px; }
 .ap-detail-id { font-size: 12px; color: var(--acc,#2563eb); font-family: var(--font-mono, ui-monospace, monospace); margin-bottom: 8px; }
 .ap-detail-desc { font-size: 13px; color: var(--txt,#e7eefc); line-height: 1.6; margin-bottom: 12px; }
 .ap-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .ap-detail-section { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 4px; padding: 10px; }
-.ap-detail-section-title { font-size: 10px; color: var(--acc,#2563eb); font-family: var(--font-mono, ui-monospace, monospace); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.ap-detail-section-title { font-size: 12px; color: var(--acc,#2563eb); font-family: var(--font-mono, ui-monospace, monospace); margin-bottom: 6px; }
 .ap-detail-list { list-style: none; padding: 0; margin: 0; }
-.ap-detail-list li { font-size: 11px; color: var(--txt-2,#9fb0cc); padding: 2px 0; }
+.ap-detail-list li { font-size: 12px; color: var(--txt-2,#9fb0cc); padding: 2px 0; }
 .ap-detail-list li::before { content: '\\25B8 '; color: var(--acc,#2563eb); }
 
 /* Exercise generator */
 .ap-exercise { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 6px; padding: 16px; margin-bottom: 12px; }
-.ap-exercise-title { font-size: 14px; color: #fff; font-weight: bold; margin-bottom: 8px; }
+.ap-exercise-title { font-size: 14px; color: var(--txt,#e7eefc); font-weight: bold; margin-bottom: 8px; }
 .ap-exercise-field { margin-bottom: 10px; }
-.ap-exercise-label { font-size: 10px; color: var(--mut,#7a93b8); font-family: var(--font-mono, ui-monospace, monospace); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+.ap-exercise-label { font-size: 12px; color: var(--mut,#7a93b8); font-family: var(--font-mono, ui-monospace, monospace); margin-bottom: 3px; }
 .ap-exercise-value { font-size: 12px; color: var(--txt,#e7eefc); line-height: 1.5; }
 
 /* Campaign timeline */
@@ -248,78 +248,78 @@ const STYLE = `
 .ap-tl-line { position: absolute; left: 14px; top: 0; bottom: 0; width: 2px; background: var(--line,#283a5a); }
 .ap-tl-node { position: relative; margin-bottom: 16px; padding-left: 24px; }
 .ap-tl-dot { position: absolute; left: -24px; top: 6px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid; }
-.ap-tl-time { font-size: 10px; color: var(--mut,#7a93b8); font-family: var(--font-mono, ui-monospace, monospace); margin-bottom: 2px; }
+.ap-tl-time { font-size: 12px; color: var(--mut,#7a93b8); font-family: var(--font-mono, ui-monospace, monospace); margin-bottom: 2px; }
 .ap-tl-action { font-size: 12px; color: var(--txt,#e7eefc); }
-.ap-tl-tech { font-size: 10px; color: var(--acc,#2563eb); font-family: var(--font-mono, ui-monospace, monospace); }
+.ap-tl-tech { font-size: 12px; color: var(--acc,#2563eb); font-family: var(--font-mono, ui-monospace, monospace); }
 
 /* Buttons */
-.ap-btn { background: var(--acc,#2563eb); color: var(--on-acc,#fff); border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px; font-family: var(--font-mono, ui-monospace, monospace); font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: all .2s; }
+.ap-btn { background: var(--acc,#2563eb); color: var(--on-acc,#fff); border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px; font-family: var(--font-mono, ui-monospace, monospace); font-weight: bold; cursor: pointer; transition: all .2s; }
 .ap-btn:hover { background: color-mix(in srgb,var(--acc,#2563eb) 85%,#fff); }
 .ap-btn-ghost { background: transparent; color: var(--acc,#2563eb); border: 1px solid color-mix(in srgb,var(--acc,#2563eb) 30%,transparent); }
 .ap-btn-ghost:hover { background: color-mix(in srgb,var(--acc,#2563eb) 10%,transparent); border-color: var(--acc,#2563eb); }
-.ap-btn-sm { padding: 5px 10px; font-size: 10px; }
+.ap-btn-sm { padding: 5px 10px; font-size: 12px; }
 
 /* STIX output */
-.ap-stix-output { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 4px; padding: 12px; font-family: var(--font-mono, ui-monospace, monospace); font-size: 11px; color: var(--txt,#e7eefc); max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+.ap-stix-output { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 4px; padding: 12px; font-family: var(--font-mono, ui-monospace, monospace); font-size: 12px; color: var(--txt,#e7eefc); max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
 
 /* Pro theme overrides */
-[data-style=pro] .ap-wrap { color: #3f3f46; }
-[data-style=pro] .ap-title { color: #18181b; }
-[data-style=pro] .ap-subtitle { color: #71717a; }
-[data-style=pro] .ap-tab { background: #fff; border-color: #e5e5e5; color: #71717a; }
-[data-style=pro] .ap-tab:hover { color: #3f3f46; border-color: #d4d4d8; }
-[data-style=pro] .ap-tab.active { background: #f9fafb; color: #2563eb; border-color: #2563eb; }
-[data-style=pro] .ap-panel { background: #fff; border-color: #e5e5e5; }
-[data-style=pro] .ap-section-title { color: #2563eb; border-color: #e5e5e5; }
-[data-style=pro] .ap-select { background: #f9fafb; border-color: #e5e5e5; color: #18181b; }
-[data-style=pro] .ap-info-card { background: #f9fafb; border-color: #e5e5e5; }
-[data-style=pro] .ap-info-label { color: #71717a; }
-[data-style=pro] .ap-info-value { color: #18181b; }
-[data-style=pro] .ap-matrix-header { background: #f9fafb; border-color: #e5e5e5; color: #2563eb; }
-[data-style=pro] .ap-tech-cell { background: #fff; border-color: #e5e5e5; color: #71717a; }
-[data-style=pro] .ap-tech-cell:hover { background: #f9fafb; color: #18181b; }
+[data-style=pro] .ap-wrap { color: var(--txt-2); }
+[data-style=pro] .ap-title { color: var(--txt); }
+[data-style=pro] .ap-subtitle { color: var(--mut); }
+[data-style=pro] .ap-tab { background: var(--card); border-color: var(--line); color: var(--mut); }
+[data-style=pro] .ap-tab:hover { color: var(--txt-2); border-color: var(--line); }
+[data-style=pro] .ap-tab.active { background: var(--card2); color: var(--acc); border-color: var(--acc); }
+[data-style=pro] .ap-panel { background: var(--card); border-color: var(--line); }
+[data-style=pro] .ap-section-title { color: var(--txt); border-color: var(--line); }
+[data-style=pro] .ap-select { background: var(--card2); border-color: var(--line); color: var(--txt); }
+[data-style=pro] .ap-info-card { background: var(--card2); border-color: var(--line); }
+[data-style=pro] .ap-info-label { color: var(--mut); }
+[data-style=pro] .ap-info-value { color: var(--txt); }
+[data-style=pro] .ap-matrix-header { background: var(--card2); border-color: var(--line); color: var(--acc); }
+[data-style=pro] .ap-tech-cell { background: var(--card); border-color: var(--line); color: var(--mut); }
+[data-style=pro] .ap-tech-cell:hover { background: var(--card2); color: var(--txt); }
 [data-style=pro] .ap-tech-cell.actor-uses { background: #fef2f2; border-color: #fca5a5; color: #dc2626; }
 [data-style=pro] .ap-tech-cell.detected { background: #f0fdf4; border-color: #86efac; color: #16a34a; }
 [data-style=pro] .ap-tech-cell.gap { background: #fefce8; border-color: #fde047; color: #ca8a04; }
-[data-style=pro] .ap-tech-cell.selected { background: #eff6ff; border-color: #2563eb; color: #2563eb; }
-[data-style=pro] .ap-chain { background: #f9fafb; border-color: #e5e5e5; }
-[data-style=pro] .ap-chain-step { background: #fff; border-color: #bfdbfe; }
-[data-style=pro] .ap-chain-step .ap-cs-id { color: #2563eb; }
-[data-style=pro] .ap-chain-step .ap-cs-name { color: #18181b; }
-[data-style=pro] .ap-chain-step .ap-cs-tactic { color: #71717a; }
-[data-style=pro] .ap-chain-arrow { color: #d4d4d8; }
-[data-style=pro] .ap-detail { background: #f9fafb; border-color: #e5e5e5; }
-[data-style=pro] .ap-detail-title { color: #18181b; }
-[data-style=pro] .ap-detail-id { color: #2563eb; }
-[data-style=pro] .ap-detail-desc { color: #3f3f46; }
-[data-style=pro] .ap-detail-section { background: #fff; border-color: #e5e5e5; }
-[data-style=pro] .ap-detail-section-title { color: #2563eb; }
-[data-style=pro] .ap-detail-list li { color: #52525b; }
-[data-style=pro] .ap-heatmap th { background: #f9fafb; color: #52525b; border-color: #e5e5e5; }
-[data-style=pro] .ap-heatmap td { border-color: #e5e5e5; }
+[data-style=pro] .ap-tech-cell.selected { background: #eff6ff; border-color: var(--acc); color: var(--acc); }
+[data-style=pro] .ap-chain { background: var(--card2); border-color: var(--line); }
+[data-style=pro] .ap-chain-step { background: var(--card); border-color: #bfdbfe; }
+[data-style=pro] .ap-chain-step .ap-cs-id { color: var(--acc); }
+[data-style=pro] .ap-chain-step .ap-cs-name { color: var(--txt); }
+[data-style=pro] .ap-chain-step .ap-cs-tactic { color: var(--mut); }
+[data-style=pro] .ap-chain-arrow { color: var(--line); }
+[data-style=pro] .ap-detail { background: var(--card2); border-color: var(--line); }
+[data-style=pro] .ap-detail-title { color: var(--txt); }
+[data-style=pro] .ap-detail-id { color: var(--acc); }
+[data-style=pro] .ap-detail-desc { color: var(--txt-2); }
+[data-style=pro] .ap-detail-section { background: var(--card); border-color: var(--line); }
+[data-style=pro] .ap-detail-section-title { color: var(--acc); }
+[data-style=pro] .ap-detail-list li { color: var(--txt-2); }
+[data-style=pro] .ap-heatmap th { background: var(--card2); color: var(--txt-2); border-color: var(--line); }
+[data-style=pro] .ap-heatmap td { border-color: var(--line); }
 [data-style=pro] .ap-hm-covered { background: #dcfce7; color: #166534; }
 [data-style=pro] .ap-hm-partial { background: #fef9c3; color: #854d0e; }
 [data-style=pro] .ap-hm-none { background: #fee2e2; color: #991b1b; }
-[data-style=pro] .ap-exercise { background: #f9fafb; border-color: #e5e5e5; }
-[data-style=pro] .ap-exercise-title { color: #18181b; }
-[data-style=pro] .ap-exercise-label { color: #71717a; }
-[data-style=pro] .ap-exercise-value { color: #3f3f46; }
-[data-style=pro] .ap-tl-line { background: #e5e5e5; }
-[data-style=pro] .ap-tl-time { color: #71717a; }
-[data-style=pro] .ap-tl-action { color: #18181b; }
-[data-style=pro] .ap-tl-tech { color: #2563eb; }
-[data-style=pro] .ap-btn { background: #18181b; color: #fff; }
-[data-style=pro] .ap-btn:hover { background: #3f3f46; }
-[data-style=pro] .ap-btn-ghost { background: transparent; color: #18181b; border-color: #d4d4d8; }
-[data-style=pro] .ap-btn-ghost:hover { background: #f4f4f5; }
-[data-style=pro] .ap-stix-output { background: #f9fafb; border-color: #e5e5e5; color: #18181b; }
-[data-style=pro] .ap-legend-item { color: #52525b; }
-[data-style=pro] .ap-chain-empty { color: #a1a1aa; }
+[data-style=pro] .ap-exercise { background: var(--card2); border-color: var(--line); }
+[data-style=pro] .ap-exercise-title { color: var(--txt); }
+[data-style=pro] .ap-exercise-label { color: var(--mut); }
+[data-style=pro] .ap-exercise-value { color: var(--txt-2); }
+[data-style=pro] .ap-tl-line { background: var(--line); }
+[data-style=pro] .ap-tl-time { color: var(--mut); }
+[data-style=pro] .ap-tl-action { color: var(--txt); }
+[data-style=pro] .ap-tl-tech { color: var(--acc); }
+[data-style=pro] .ap-btn { background: var(--txt); color: #fff; }
+[data-style=pro] .ap-btn:hover { background: var(--txt-2); }
+[data-style=pro] .ap-btn-ghost { background: transparent; color: var(--txt); border-color: var(--line); }
+[data-style=pro] .ap-btn-ghost:hover { background: var(--card2); }
+[data-style=pro] .ap-stix-output { background: var(--card2); border-color: var(--line); color: var(--txt); }
+[data-style=pro] .ap-legend-item { color: var(--txt-2); }
+[data-style=pro] .ap-chain-empty { color: var(--mut); }
 
 .ap-rec-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .ap-rec-mttd { width: 110px; background: var(--card,#0b1220); color: var(--txt,#e7eefc); border: 1px solid var(--line,#283a5a); border-radius: 4px; padding: 5px 8px; font-size: 12px; }
-.ap-rec-note { font-size: 11px; color: var(--mut,#7a93b8); }
-.ap-rec-help { font-size: 11px; color: var(--mut,#7a93b8); margin-top: 4px; line-height: 1.4; }
+.ap-rec-note { font-size: 12px; color: var(--mut,#7a93b8); }
+.ap-rec-help { font-size: 12px; color: var(--mut,#7a93b8); margin-top: 4px; line-height: 1.4; }
 .ap-res-detected { color: #16a34a; font-weight: bold; }
 .ap-res-missed { color: #dc2626; font-weight: bold; }
 .ap-res-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 12px; color: var(--txt-2,#9fb0cc); }
@@ -327,13 +327,13 @@ const STYLE = `
 .ap-res-wrap { overflow-x: auto; margin-bottom: 16px; }
 .ap-res-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .ap-res-table th, .ap-res-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line,#283a5a); white-space: nowrap; }
-.ap-res-table th { font-size: 10px; color: var(--mut,#7a93b8); text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-mono, ui-monospace, monospace); }
+.ap-res-table th { font-size: 12px; color: var(--mut,#7a93b8); font-family: var(--font-mono, ui-monospace, monospace); }
 .ap-res-table td.ap-res-name { white-space: normal; }
-[data-style=pro] .ap-rec-mttd, [data-style=pro] .ap-res-bar select { background: #fff; color: #18181b; border-color: #d4d4d8; }
-[data-style=pro] .ap-res-table th, [data-style=pro] .ap-res-table td { border-color: #e5e5e5; }
+[data-style=pro] .ap-rec-mttd, [data-style=pro] .ap-res-bar select { background: var(--card); color: var(--txt); border-color: var(--line); }
+[data-style=pro] .ap-res-table th, [data-style=pro] .ap-res-table td { border-color: var(--line); }
 
 @media (max-width: 768px) {
-  .ap-matrix { grid-template-columns: repeat(14, 96px); min-width: 0; }
+  .ap-matrix { grid-template-columns: repeat(14, 112px); min-width: 0; }
   .ap-matrix-header, .ap-tech-cell { letter-spacing: 0; overflow-wrap: anywhere; hyphens: auto; }
   .ap-detail-grid { grid-template-columns: 1fr; }
   .ap-actor-info { grid-template-columns: 1fr 1fr; }
@@ -444,14 +444,14 @@ export function renderAdversaryPlaybook(container) {
 
   function render() {
     let h = '<div class="ap-wrap">';
-    h += '<div class="ap-header">';
-    h += '<h1 class="ap-title">ADVERSARY PLAYBOOK BUILDER</h1>';
-    h += '<p class="ap-subtitle">MITRE ATT&CK-based adversary emulation planning, detection coverage analysis, and purple team exercise generation</p>';
-    h += '</div>';
+    h += '<div class="pg-head"><div>';
+    h += '<h1 class="pg-h1">Adversary Playbook Builder</h1>';
+    h += '<p class="muted pg-sub">Plan adversary emulation from a built-in ATT&CK reference set, record which techniques you detect, and generate purple team exercises. Actor profiles are a static reference, not a live intel feed.</p>';
+    h += '</div></div>';
 
     // Actor selector
     h += '<div class="ap-actor-select">';
-    h += '<label>Threat Actor:</label>';
+    h += '<label>Threat actor (reference profile):</label>';
     h += '<select class="ap-select" id="ap-actor-sel">';
     THREAT_ACTORS.forEach(a => {
       h += '<option value="' + esc(a.id) + '"' + (a.id === selectedActor.id ? ' selected' : '') + '>' + esc(a.name) + ' (' + esc(a.alias) + ') — ' + esc(a.nation) + '</option>';
@@ -463,24 +463,24 @@ export function renderAdversaryPlaybook(container) {
     h += '<div class="ap-actor-info">';
     h += '<div class="ap-info-card"><div class="ap-info-label">Attribution</div><div class="ap-info-value">' + esc(selectedActor.attribution) + '</div></div>';
     h += '<div class="ap-info-card"><div class="ap-info-label">Nation</div><div class="ap-info-value">' + esc(selectedActor.nation) + '</div></div>';
-    h += '<div class="ap-info-card"><div class="ap-info-label">Known Techniques</div><div class="ap-info-value">' + selectedActor.techniques.length + '</div></div>';
-    h += '<div class="ap-info-card"><div class="ap-info-label">Target Sectors</div><div class="ap-info-value">' + selectedActor.targets.length + '</div></div>';
-    h += '<div class="ap-info-card"><div class="ap-info-label">Detection Coverage</div><div class="ap-info-value">' + calcCoverage() + '%</div></div>';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Known techniques</div><div class="ap-info-value">' + selectedActor.techniques.length + '</div></div>';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Target sectors</div><div class="ap-info-value">' + selectedActor.targets.length + '</div></div>';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Detection coverage</div><div class="ap-info-value">' + calcCoverage() + '%</div></div>';
     h += '</div>';
 
     // Tabs
     const tabs = [
       { id: 'matrix', label: 'ATT&CK Matrix' },
-      { id: 'playbook', label: 'Playbook Builder' },
-      { id: 'heatmap', label: 'Detection Heatmap' },
-      { id: 'exercise', label: 'Purple Team Exercises' },
+      { id: 'playbook', label: 'Playbook builder' },
+      { id: 'heatmap', label: 'Detection heatmap' },
+      { id: 'exercise', label: 'Purple team exercises' },
       { id: 'results', label: 'Results' + (testResults.length ? ' (' + testResults.length + ')' : '') },
-      { id: 'timeline', label: 'Campaign Timeline' },
+      { id: 'timeline', label: 'Campaign sequence' },
       { id: 'stix', label: 'STIX Export' }
     ];
-    h += '<div class="ap-tabs">';
+    h += '<div class="ap-tabs seg">';
     tabs.forEach(t => {
-      h += '<div class="ap-tab' + (t.id === currentTab ? ' active' : '') + '" data-tab="' + t.id + '">' + esc(t.label) + '</div>';
+      h += '<button class="ap-tab' + (t.id === currentTab ? ' on' : '') + '" data-tab="' + t.id + '">' + esc(t.label) + '</button>';
     });
     h += '</div>';
 
@@ -519,12 +519,12 @@ export function renderAdversaryPlaybook(container) {
   // ─────────────────────────────────────────────────────────────────────────────
   function renderMatrix() {
     let h = '';
-    h += '<div class="ap-section-title">MITRE ATT&CK TECHNIQUE MATRIX</div>';
+    h += '<div class="ap-section-title">MITRE ATT&CK technique matrix</div>';
 
     h += '<div class="ap-legend">';
-    h += '<div class="ap-legend-item"><div class="ap-legend-dot" style="background:#ff224444;border:1px solid #ff6666"></div> Actor uses</div>';
-    h += '<div class="ap-legend-item"><div class="ap-legend-dot" style="background:#00ff8844;border:1px solid #00ff88"></div> You detect</div>';
-    h += '<div class="ap-legend-item"><div class="ap-legend-dot" style="background:#eab30844;border:1px solid #eab308"></div> Gap (actor uses, you don\'t detect)</div>';
+    h += '<div class="ap-legend-item"><div class="ap-legend-dot" style="background:#ff224444;border:1px solid var(--bad)"></div> Actor uses</div>';
+    h += '<div class="ap-legend-item"><div class="ap-legend-dot" style="background:#00ff8844;border:1px solid var(--ok)"></div> You detect</div>';
+    h += '<div class="ap-legend-item"><div class="ap-legend-dot" style="background:#eab30844;border:1px solid var(--warn)"></div> Gap (actor uses, you don\'t detect)</div>';
     h += '<div class="ap-legend-item"><div class="ap-legend-dot" style="background:color-mix(in srgb,var(--acc,#2563eb) 30%,transparent);border:1px solid var(--acc,#2563eb)"></div> Selected for playbook</div>';
     h += '</div>';
 
@@ -562,7 +562,7 @@ export function renderAdversaryPlaybook(container) {
   // ─────────────────────────────────────────────────────────────────────────────
   function renderPlaybook() {
     let h = '';
-    h += '<div class="ap-section-title">KILL CHAIN PLAYBOOK BUILDER</div>';
+    h += '<div class="ap-section-title">Kill chain playbook builder</div>';
     h += '<p style="font-size:12px;color:var(--mut,#7a93b8);margin-bottom:12px">Click techniques in the matrix tab to add them to the kill chain, or select from the actor\'s known techniques below.</p>';
 
     h += '<div class="ap-chain">';
@@ -585,19 +585,19 @@ export function renderAdversaryPlaybook(container) {
     h += '</div>';
 
     h += '<div class="ap-chain-actions">';
-    h += '<button class="ap-btn ap-btn-sm" id="ap-auto-chain">Auto-Generate Kill Chain</button>';
-    h += '<button class="ap-btn ap-btn-sm ap-btn-ghost" id="ap-clear-chain">Clear</button>';
+    h += '<button class="btn sm" id="ap-auto-chain">Auto-generate kill chain</button>';
+    h += '<button class="btn sm ghost" id="ap-clear-chain">Clear</button>';
     h += '</div>';
 
     // Quick-add from actor's techniques
     h += '<div style="margin-top:16px">';
-    h += '<div class="ap-section-title" style="font-size:11px;margin-bottom:8px">' + esc(selectedActor.name) + ' — KNOWN TECHNIQUES (click to add)</div>';
+    h += '<div class="ap-section-title" style="font-size:13px;margin-bottom:8px">' + esc(selectedActor.name) + ' — known techniques (click to add)</div>';
     h += '<div style="display:flex;flex-wrap:wrap;gap:4px">';
     selectedActor.techniques.forEach(tid => {
       const tech = getTechById(tid);
       if (!tech) return;
       const inChain = killChain.includes(tid);
-      h += '<div class="ap-tech-cell' + (inChain ? ' selected' : ' actor-uses') + '" data-add-tech="' + esc(tid) + '" style="min-height:auto;padding:4px 8px;cursor:pointer;font-size:10px">';
+      h += '<div class="ap-tech-cell' + (inChain ? ' selected' : ' actor-uses') + '" data-add-tech="' + esc(tid) + '" style="min-height:auto;padding:4px 8px;cursor:pointer;font-size:12px">';
       h += esc(tech.id) + ' ' + esc(tech.name);
       h += '</div>';
     });
@@ -612,10 +612,10 @@ export function renderAdversaryPlaybook(container) {
   // ─────────────────────────────────────────────────────────────────────────────
   function renderHeatmap() {
     let h = '';
-    h += '<div class="ap-section-title">DETECTION COVERAGE HEATMAP — ' + esc(selectedActor.name) + '</div>';
+    h += '<div class="ap-section-title">Detection coverage heatmap — ' + esc(selectedActor.name) + '</div>';
     h += '<div class="ap-cov-help">Coverage is your own assessment: click a technique column header to mark it as detected (or not) by your SOC. ' +
       'It starts with nothing detected and is saved in this browser only. ' + detectedTechniques.size + ' technique' + (detectedTechniques.size === 1 ? '' : 's') + ' marked detected.' +
-      (detectedTechniques.size ? ' <button class="ap-btn ap-btn-ghost ap-btn-sm" id="ap-clear-detect">Clear coverage</button>' : '') + '</div>';
+      (detectedTechniques.size ? ' <button class="btn ghost sm" id="ap-clear-detect">Clear coverage</button>' : '') + '</div>';
 
     const actorTechs = selectedActor.techniques.map(tid => getTechById(tid)).filter(Boolean);
     if (actorTechs.length === 0) {
@@ -651,9 +651,9 @@ export function renderAdversaryPlaybook(container) {
     h += '</div>';
 
     const pct = Math.round((coveredCells / totalCells) * 100);
-    const barColor = pct > 70 ? '#00ff88' : pct > 40 ? '#eab308' : '#ff4444';
+    const barColor = pct > 70 ? 'var(--ok)' : pct > 40 ? 'var(--warn)' : 'var(--bad)';
     h += '<div class="ap-coverage-bar">';
-    h += '<span style="font-size:12px;color:var(--txt-2,#9fb0cc);font-family:var(--font-mono, ui-monospace, monospace);min-width:140px">OVERALL COVERAGE:</span>';
+    h += '<span style="font-size:12px;color:var(--txt-2,#9fb0cc);font-family:var(--font-mono, ui-monospace, monospace);min-width:140px">Overall coverage:</span>';
     h += '<div style="flex:1;background:var(--card2,#0f1726);border-radius:4px;height:8px;overflow:hidden">';
     h += '<div class="ap-coverage-fill" style="width:' + pct + '%;background:' + barColor + '"></div>';
     h += '</div>';
@@ -668,7 +668,7 @@ export function renderAdversaryPlaybook(container) {
   // ─────────────────────────────────────────────────────────────────────────────
   function renderExercises() {
     let h = '';
-    h += '<div class="ap-section-title">PURPLE TEAM EXERCISE GENERATOR</div>';
+    h += '<div class="ap-section-title">Purple team exercise generator</div>';
 
     const techsToTest = killChain.length > 0 ? killChain : selectedActor.techniques.slice(0, 5);
 
@@ -683,29 +683,29 @@ export function renderAdversaryPlaybook(container) {
       h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Objective</div>';
       h += '<div class="ap-exercise-value">Test organizational detection and response capability against ' + esc(tech.name) + ' (' + esc(tactic ? tactic.name : '') + ' tactic) as employed by ' + esc(selectedActor.name) + '.</div></div>';
 
-      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Red Team Actions</div>';
+      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Red Team actions</div>';
       h += '<div class="ap-exercise-value">' + getRedTeamActions(tech) + '</div></div>';
 
-      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Blue Team Expected Response</div>';
+      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Blue Team expected response</div>';
       h += '<div class="ap-exercise-value">' + getBlueTeamResponse(tech) + '</div></div>';
 
-      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Success Criteria</div>';
+      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Success criteria</div>';
       h += '<div class="ap-exercise-value">Detection alert fires within 15 minutes. SOC analyst triages within 30 minutes. Containment action taken within 1 hour.</div></div>';
 
-      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Tools Required</div>';
+      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Tools required</div>';
       h += '<div class="ap-exercise-value">' + getToolsForTech(tech) + '</div></div>';
 
-      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Atomic Red Team Tests</div>';
+      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Atomic Red Team tests</div>';
       h += '<div class="ap-exercise-value">' + (tech.atomicTests.length > 0 ? tech.atomicTests.join(', ') : 'No mapped tests — custom procedure required') + '</div></div>';
 
       const last = testResults.find(r => r.tid === tech.id);
-      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Record Result</div><div class="ap-rec-row">';
+      h += '<div class="ap-exercise-field"><div class="ap-exercise-label">Record result</div><div class="ap-rec-row">';
       h += startedAt[tech.id]
         ? '<span class="ap-rec-note">Started ' + esc(new Date(startedAt[tech.id]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })) + '</span>'
-        : '<button class="ap-btn ap-btn-ghost ap-btn-sm" data-start="' + esc(tech.id) + '">Start Test</button>';
+        : '<button class="btn ghost sm" data-start="' + esc(tech.id) + '">Start test</button>';
       h += '<input class="ap-rec-mttd" type="number" min="0" step="1" inputmode="numeric" data-mttd-for="' + esc(tech.id) + '" placeholder="MTTD (min)" aria-label="Minutes to detect">';
-      h += '<button class="ap-btn ap-btn-sm" data-result="detected" data-rtid="' + esc(tech.id) + '">Detected</button>';
-      h += '<button class="ap-btn ap-btn-ghost ap-btn-sm" data-result="missed" data-rtid="' + esc(tech.id) + '">Missed</button>';
+      h += '<button class="btn sm" data-result="detected" data-rtid="' + esc(tech.id) + '">Detected</button>';
+      h += '<button class="btn ghost sm" data-result="missed" data-rtid="' + esc(tech.id) + '">Missed</button>';
       if (last) h += '<span class="ap-rec-note">Last: <span class="ap-res-' + last.status + '">' + last.status.toUpperCase() + '</span> ' + esc(fmtWhen(last.at)) + '</span>';
       h += '</div><div class="ap-rec-help">Run the test, then record whether your SOC raised an alert. Leave MTTD blank if not measured; after Start Test it fills from the elapsed time.</div></div>';
 
@@ -713,7 +713,7 @@ export function renderAdversaryPlaybook(container) {
     });
 
     h += '<div style="margin-top:12px">';
-    h += '<button class="ap-btn" id="ap-export-exercises">Export Exercise Plan</button>';
+    h += '<button class="btn" id="ap-export-exercises">Export exercise plan</button>';
     h += '</div>';
 
     return h;
@@ -741,7 +741,7 @@ export function renderAdversaryPlaybook(container) {
   }
   function buildReport() {
     const st = resultStats();
-    let t = 'PURPLE TEAM RESULTS REPORT\n';
+    let t = 'Purple team results REPORT\n';
     t += 'Generated: ' + new Date().toISOString() + '\n';
     t += '='.repeat(60) + '\n\nSUMMARY\n';
     t += 'Tests recorded: ' + st.total + '\n';
@@ -772,23 +772,23 @@ export function renderAdversaryPlaybook(container) {
 
   function renderResults() {
     let h = '';
-    h += '<div class="ap-section-title">PURPLE TEAM RESULTS</div>';
+    h += '<div class="ap-section-title">Purple team results</div>';
     if (!testResults.length) {
       h += '<p class="ap-cov-help">No results yet. Run tests from the Purple Team Exercises tab and record whether each was detected or missed.</p>';
       return h;
     }
     const st = resultStats();
     h += '<div class="ap-actor-info">';
-    h += '<div class="ap-info-card"><div class="ap-info-label">Tests Recorded</div><div class="ap-info-value">' + st.total + '</div></div>';
-    h += '<div class="ap-info-card"><div class="ap-info-label">Detection Rate</div><div class="ap-info-value">' + st.rate + '%</div></div>';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Tests recorded</div><div class="ap-info-value">' + st.total + '</div></div>';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Detection rate</div><div class="ap-info-value">' + st.rate + '%</div></div>';
     h += '<div class="ap-info-card"><div class="ap-info-label">Missed</div><div class="ap-info-value">' + st.missed + '</div></div>';
-    h += '<div class="ap-info-card"><div class="ap-info-label">Mean Time to Detect</div><div class="ap-info-value">' + (st.avg === null ? 'n/a' : st.avg + ' min') + '</div></div>';
+    h += '<div class="ap-info-card"><div class="ap-info-label">Mean time to detect</div><div class="ap-info-value">' + (st.avg === null ? 'n/a' : st.avg + ' min') + '</div></div>';
     h += '<div class="ap-info-card"><div class="ap-info-label">Within SLA</div><div class="ap-info-value">' + (st.timed ? st.inSla + ' / ' + st.timed : 'n/a') + '</div></div>';
     h += '</div>';
 
     h += '<div class="ap-res-bar"><label for="ap-sla">Detection SLA:</label><select id="ap-sla">';
     [5, 15, 30, 60].forEach(m => { h += '<option value="' + m + '"' + (m === slaMin ? ' selected' : '') + '>' + m + ' minutes</option>'; });
-    h += '</select><span style="flex:1"></span><button class="ap-btn ap-btn-ghost ap-btn-sm" id="ap-clear-results">Clear results</button></div>';
+    h += '</select><span style="flex:1"></span><button class="btn ghost sm" id="ap-clear-results">Clear results</button></div>';
 
     h += '<div class="ap-res-wrap"><table class="ap-res-table"><thead><tr><th>When</th><th>Technique</th><th>Result</th><th>MTTD</th><th>Source</th><th></th></tr></thead><tbody>';
     testResults.forEach((r, i) => {
@@ -798,14 +798,14 @@ export function renderAdversaryPlaybook(container) {
       h += '<td><span class="ap-res-' + r.status + '">' + r.status.toUpperCase() + '</span></td>';
       h += '<td' + (slow ? ' class="ap-res-missed" title="Slower than SLA"' : '') + '>' + (typeof r.mttd === 'number' ? r.mttd + ' min' : '-') + '</td>';
       h += '<td>' + esc(r.src || '') + '</td>';
-      h += '<td><button class="ap-btn ap-btn-ghost ap-btn-sm" data-del-result="' + i + '" aria-label="Remove result">Remove</button></td></tr>';
+      h += '<td><button class="btn ghost sm" data-del-result="' + i + '" aria-label="Remove result">Remove</button></td></tr>';
     });
     h += '</tbody></table></div>';
 
-    h += '<div class="ap-section-title">REPORT</div>';
+    h += '<div class="ap-section-title">Report</div>';
     h += '<div class="ap-stix-output" id="ap-report-text">' + esc(buildReport()) + '</div>';
     h += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">';
-    h += '<button class="ap-btn" id="ap-copy-report">Copy Report</button>';
+    h += '<button class="btn" id="ap-copy-report">Copy report</button>';
     h += '<button class="ap-btn ap-btn-ghost" id="ap-download-report">Download .txt</button>';
     h += '</div>';
     return h;
@@ -864,7 +864,8 @@ export function renderAdversaryPlaybook(container) {
   // ─────────────────────────────────────────────────────────────────────────────
   function renderTimeline() {
     let h = '';
-    h += '<div class="ap-section-title">CAMPAIGN TIMELINE — ' + esc(selectedActor.name) + ' EMULATION</div>';
+    h += '<div class="ap-section-title">Campaign sequence — ' + esc(selectedActor.name) + ' emulation</div>';
+    h += '<p class="ap-cov-help">The actor\'s known techniques ordered by ATT&CK tactic. Steps show order only; set real timings in your own exercise plan.</p>';
 
     const phases = buildCampaignPhases();
 
@@ -899,17 +900,14 @@ export function renderAdversaryPlaybook(container) {
       }
     });
 
-    const timeLabels = ['T+0h', 'T+2h', 'T+6h', 'T+12h', 'T+24h', 'T+36h', 'T+48h', 'T+72h', 'T+96h', 'T+120h', 'T+168h', 'T+240h', 'T+336h', 'T+504h'];
     let timeIdx = 0;
 
     tacticOrder.forEach(tacticId => {
       const tactic = TACTICS.find(t => t.id === tacticId);
       const techsInTactic = byTactic[tacticId];
       if (!techsInTactic || techsInTactic.length === 0) return;
-      if (timeIdx >= timeLabels.length) return;
-
       phases.push({
-        time: timeLabels[timeIdx],
+        time: 'Step ' + (timeIdx + 1),
         action: tactic.name + ': ' + techsInTactic.map(t => t.name).join(', '),
         techniques: techsInTactic.map(t => t.id)
       });
@@ -924,14 +922,14 @@ export function renderAdversaryPlaybook(container) {
   // ─────────────────────────────────────────────────────────────────────────────
   function renderStix() {
     let h = '';
-    h += '<div class="ap-section-title">STIX 2.1 BUNDLE EXPORT</div>';
+    h += '<div class="ap-section-title">STIX 2.1 bundle export</div>';
     h += '<p style="font-size:12px;color:var(--mut,#7a93b8);margin-bottom:12px">Structured Threat Information Expression (STIX) bundle for ' + esc(selectedActor.name) + ' including threat actor, campaign, and attack pattern objects.</p>';
 
     const bundle = generateStixBundle();
     h += '<div class="ap-stix-output" id="ap-stix-json">' + esc(JSON.stringify(bundle, null, 2)) + '</div>';
 
     h += '<div style="margin-top:12px;display:flex;gap:8px">';
-    h += '<button class="ap-btn" id="ap-copy-stix">Copy to Clipboard</button>';
+    h += '<button class="btn" id="ap-copy-stix">Copy to clipboard</button>';
     h += '<button class="ap-btn ap-btn-ghost" id="ap-download-stix">Download .json</button>';
     h += '</div>';
 
@@ -1024,27 +1022,27 @@ export function renderAdversaryPlaybook(container) {
     h += '<div class="ap-detail-desc">' + esc(tech.desc) + '</div>';
 
     h += '<div class="ap-detail-grid">';
-    h += '<div class="ap-detail-section"><div class="ap-detail-section-title">Data Sources</div><ul class="ap-detail-list">';
+    h += '<div class="ap-detail-section"><div class="ap-detail-section-title">Data sources</div><ul class="ap-detail-list">';
     tech.datasources.forEach(ds => { h += '<li>' + esc(ds) + '</li>'; });
     h += '</ul></div>';
     h += '<div class="ap-detail-section"><div class="ap-detail-section-title">Mitigations</div><ul class="ap-detail-list">';
     tech.mitigations.forEach(m => { h += '<li>' + esc(m) + '</li>'; });
     h += '</ul></div>';
-    h += '<div class="ap-detail-section"><div class="ap-detail-section-title">Atomic Red Team Tests</div><ul class="ap-detail-list">';
+    h += '<div class="ap-detail-section"><div class="ap-detail-section-title">Atomic Red Team tests</div><ul class="ap-detail-list">';
     if (tech.atomicTests.length > 0) {
       tech.atomicTests.forEach(t => { h += '<li>' + esc(t) + '</li>'; });
     } else {
       h += '<li style="color:var(--mut,#7a93b8)">No mapped Atomic tests</li>';
     }
     h += '</ul></div>';
-    h += '<div class="ap-detail-section"><div class="ap-detail-section-title">Detection Status</div>';
-    h += '<button class="ap-btn ap-btn-ghost ap-btn-sm" id="ap-toggle-detect" style="margin-bottom:8px">' + (detectedTechniques.has(tech.id) ? 'Mark as not detected' : 'Mark as detected') + '</button>';
+    h += '<div class="ap-detail-section"><div class="ap-detail-section-title">Detection status</div>';
+    h += '<button class="btn ghost sm" id="ap-toggle-detect" style="margin-bottom:8px">' + (detectedTechniques.has(tech.id) ? 'Mark as not detected' : 'Mark as detected') + '</button>';
     if (detectedTechniques.has(tech.id)) {
-      h += '<div style="color:#00ff88;font-size:13px;font-weight:bold">● COVERED</div>';
+      h += '<div style="color:var(--ok);font-size:13px;font-weight:bold">Covered</div>';
     } else if (selectedActor.techniques.includes(tech.id)) {
-      h += '<div style="color:#ff4444;font-size:13px;font-weight:bold">● GAP — ' + esc(selectedActor.name) + ' uses this technique</div>';
+      h += '<div style="color:var(--bad);font-size:13px;font-weight:bold">Gap — ' + esc(selectedActor.name) + ' uses this technique</div>';
     } else {
-      h += '<div style="color:var(--mut,#7a93b8);font-size:13px">○ Not in actor profile</div>';
+      h += '<div style="color:var(--mut,#7a93b8);font-size:13px">Not in actor profile</div>';
     }
     h += '</div>';
     h += '</div>';
@@ -1161,7 +1159,7 @@ export function renderAdversaryPlaybook(container) {
       if (json) {
         navigator.clipboard.writeText(json.textContent).then(() => {
           copyStix.textContent = 'COPIED!';
-          setTimeout(() => { copyStix.textContent = 'Copy to Clipboard'; }, 1500);
+          setTimeout(() => { copyStix.textContent = 'Copy to clipboard'; }, 1500);
         });
       }
     };
@@ -1211,7 +1209,7 @@ export function renderAdversaryPlaybook(container) {
     if (copyRep) copyRep.onclick = () => {
       navigator.clipboard.writeText(buildReport()).then(() => {
         copyRep.textContent = 'COPIED!';
-        setTimeout(() => { copyRep.textContent = 'Copy Report'; }, 1500);
+        setTimeout(() => { copyRep.textContent = 'Copy report'; }, 1500);
       });
     };
     const dlRep = container.querySelector('#ap-download-report');
@@ -1249,7 +1247,7 @@ export function renderAdversaryPlaybook(container) {
 
       navigator.clipboard.writeText(text).then(() => {
         exportEx.textContent = 'COPIED!';
-        setTimeout(() => { exportEx.textContent = 'Export Exercise Plan'; }, 1500);
+        setTimeout(() => { exportEx.textContent = 'Export exercise plan'; }, 1500);
       });
     };
   }

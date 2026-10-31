@@ -234,21 +234,21 @@ export function renderDeceptionArchitect(main) {
       { id: 'honeypots', label: 'Honeypots' },
       { id: 'honeytokens', label: 'Honeytokens' },
       { id: 'tripwires', label: 'Tripwires' },
-      { id: 'planner', label: 'Network Planner' },
-      { id: 'coverage', label: 'MITRE Coverage' },
-      { id: 'roi', label: 'ROI Calculator' },
+      { id: 'planner', label: 'Network planner' },
+      { id: 'coverage', label: 'MITRE coverage' },
+      { id: 'roi', label: 'ROI calculator' },
     ];
 
     main.innerHTML =
-      '<h1 class="pg-h1">Deception Architect</h1>' +
-      '<p class="muted pg-sub">Design honeypots, honeytokens, and tripwires to detect attackers early. Zero false positives — any interaction with deception is a confirmed intrusion.</p>' +
-      '<div class="tab-bar" style="overflow-x:auto;flex-wrap:nowrap">' +
-        tabs.map(function(t) { return '<button class="tab' + (activeTab === t.id ? ' active' : '') + '" data-tab="' + t.id + '">' + esc(t.label) + '</button>'; }).join('') +
+      '<div class="pg-head"><div><h1 class="pg-h1">Deception Architect</h1>' +
+      '<p class="muted pg-sub">Reference templates for honeypots, honeytokens, and tripwires you deploy yourself. Interaction with a decoy is a high-signal alert worth investigating.</p></div></div>' +
+      '<div class="seg da-tbar" style="overflow-x:auto;flex-wrap:nowrap;max-width:100%">' +
+        tabs.map(function(t) { return '<button class="' + (activeTab === t.id ? 'on' : '') + '" data-tab="' + t.id + '">' + esc(t.label) + '</button>'; }).join('') +
       '</div>' +
       '<div id="da-content" style="margin-top:12px"></div>';
 
-    main.querySelector('.tab-bar').onclick = function(e) {
-      var b = e.target.closest('.tab');
+    main.querySelector('.da-tbar').onclick = function(e) {
+      var b = e.target.closest('button[data-tab]');
       if (!b) return;
       activeTab = b.dataset.tab;
       render();
@@ -264,23 +264,23 @@ export function renderDeceptionArchitect(main) {
   }
 
   function renderHoneypots(container) {
-    container.innerHTML = '<h2 class="pg-h2">Honeypot Templates</h2>' +
-      '<p class="muted" style="margin-bottom:16px">Pre-configured honeypot deployments with Docker Compose, SIEM integration, and detection rules. Click any template to see the full configuration.</p>' +
+    container.innerHTML = '<h2 class="pg-h2">Honeypot templates</h2>' +
+      '<p class="muted" style="margin-bottom:16px">Example honeypot deployments with Docker Compose and SIEM detection rules to adapt to your environment. Click a template to see the configuration.</p>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px">' +
       HONEYPOT_TEMPLATES.map(function(hp, i) {
         return '<div class="arse-card" style="cursor:pointer" id="hp-card-' + i + '">' +
-          '<div class="an">' + esc(hp.name) + ' <span style="font-size:.7rem;color:var(--acc);font-weight:400">Ports: ' + hp.ports.join(', ') + '</span></div>' +
+          '<div class="an">' + esc(hp.name) + ' <span style="font-size:12px;color:var(--acc);font-weight:400">Ports: ' + hp.ports.join(', ') + '</span></div>' +
           '<div class="ad">' + esc(hp.desc) + '</div>' +
-          '<div style="margin-top:6px;font-size:.72rem;color:var(--mut)">Tools: ' + esc(hp.tools.join(', ')) + '</div>' +
-          '<div style="margin-top:4px;font-size:.68rem;color:var(--acc)">MITRE: ' + hp.mitre.join(', ') + '</div>' +
+          '<div style="margin-top:6px;font-size:12px;color:var(--mut)">Tools: ' + esc(hp.tools.join(', ')) + '</div>' +
+          '<div style="margin-top:4px;font-size:12px;color:var(--acc)">MITRE: ' + hp.mitre.join(', ') + '</div>' +
           '<div id="hp-detail-' + i + '" style="display:none;margin-top:10px;border-top:1px solid var(--line);padding-top:10px">' +
-            '<h4 style="margin:0 0 6px;font-size:.8rem">Expected Attacker Behavior</h4>' +
+            '<h4 style="margin:0 0 6px;font-size:.8rem">Expected attacker behavior</h4>' +
             '<ul style="margin:0 0 10px;padding-left:16px;font-size:.75rem;color:var(--mut)">' + hp.attackerBehavior.map(function(b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>' +
             '<h4 style="margin:0 0 6px;font-size:.8rem">Docker Compose</h4>' +
-            '<pre style="background:rgba(0,0,0,.3);padding:8px;border-radius:4px;font-size:.7rem;overflow-x:auto;margin:0 0 10px">' + esc(hp.dockerCompose) + '</pre>' +
-            '<h4 style="margin:0 0 6px;font-size:.8rem">SIEM Detection Rule</h4>' +
-            '<pre style="background:rgba(0,0,0,.3);padding:8px;border-radius:4px;font-size:.7rem;overflow-x:auto;margin:0 0 10px;color:var(--acc)">' + esc(hp.siemRule) + '</pre>' +
-            '<div style="font-size:.75rem;color:#00e676"><strong>Detection Value:</strong> ' + esc(hp.detectionValue) + '</div>' +
+            '<pre style="background:var(--card2);padding:8px;border-radius:4px;font-size:12px;overflow-x:auto;margin:0 0 10px">' + esc(hp.dockerCompose) + '</pre>' +
+            '<h4 style="margin:0 0 6px;font-size:.8rem">SIEM detection rule</h4>' +
+            '<pre style="background:var(--card2);padding:8px;border-radius:4px;font-size:12px;overflow-x:auto;margin:0 0 10px;color:var(--acc)">' + esc(hp.siemRule) + '</pre>' +
+            '<div style="font-size:12px;color:var(--ok)"><strong>Detection value:</strong> ' + esc(hp.detectionValue) + '</div>' +
           '</div>' +
         '</div>';
       }).join('') + '</div>';
@@ -295,22 +295,22 @@ export function renderDeceptionArchitect(main) {
   }
 
   function renderHoneytokens(container) {
-    container.innerHTML = '<h2 class="pg-h2">Honeytoken Generator</h2>' +
-      '<p class="muted" style="margin-bottom:16px">Generate realistic-looking fake credentials and files to plant across your infrastructure. Any use of these tokens confirms an intrusion.</p>' +
+    container.innerHTML = '<h2 class="pg-h2">Honeytoken formats</h2>' +
+      '<p class="muted" style="margin-bottom:16px">Example formats for fake credentials and files to plant across your infrastructure. Replace the sample values with your own unique tokens and wire them to an alerting service; any use of a planted token is a strong intrusion signal.</p>' +
       HONEYTOKEN_TEMPLATES.map(function(ht, i) {
         return '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:14px;margin-bottom:10px">' +
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
             '<span style="font-weight:600;font-size:.9rem">' + esc(ht.name) + '</span>' +
-            '<span style="font-size:.65rem;color:var(--acc);border:1px solid var(--acc);padding:1px 6px;border-radius:3px">' + esc(ht.type) + '</span>' +
+            '<span style="font-size:12px;color:var(--acc);border:1px solid var(--acc);padding:1px 6px;border-radius:3px">' + esc(ht.type) + '</span>' +
           '</div>' +
           '<div style="font-size:.8rem;color:var(--mut);margin-bottom:8px">' + esc(ht.desc) + '</div>' +
-          '<h4 style="margin:0 0 4px;font-size:.75rem;color:var(--txt)">Token Format</h4>' +
-          '<pre style="background:rgba(0,0,0,.3);padding:8px;border-radius:4px;font-size:.72rem;overflow-x:auto;margin:0 0 10px;color:#ff9100">' + esc(ht.format) + '</pre>' +
-          '<h4 style="margin:0 0 4px;font-size:.75rem;color:var(--txt)">Where to Place</h4>' +
+          '<h4 style="margin:0 0 4px;font-size:.75rem;color:var(--txt)">Token format</h4>' +
+          '<pre style="background:var(--card2);padding:8px;border-radius:4px;font-size:12px;overflow-x:auto;margin:0 0 10px;color:var(--warn)">' + esc(ht.format) + '</pre>' +
+          '<h4 style="margin:0 0 4px;font-size:.75rem;color:var(--txt)">Where to place</h4>' +
           '<ul style="margin:0 0 8px;padding-left:16px;font-size:.75rem;color:var(--mut)">' + ht.placement.map(function(p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>' +
-          '<div style="font-size:.75rem;margin-bottom:4px"><strong style="color:#00e676">Trigger:</strong> <span style="color:var(--mut)">' + esc(ht.trigger) + '</span></div>' +
-          '<div style="font-size:.75rem;margin-bottom:4px"><strong style="color:#ffd600">False Positives:</strong> <span style="color:var(--mut)">' + esc(ht.falsePositives) + '</span></div>' +
-          '<div style="font-size:.75rem"><strong style="color:var(--acc)">SIEM Query:</strong> <code style="font-size:.68rem;color:var(--acc)">' + esc(ht.siemRule) + '</code></div>' +
+          '<div style="font-size:.75rem;margin-bottom:4px"><strong style="color:var(--ok)">Trigger:</strong> <span style="color:var(--mut)">' + esc(ht.trigger) + '</span></div>' +
+          '<div style="font-size:.75rem;margin-bottom:4px"><strong style="color:var(--warn)">False positives:</strong> <span style="color:var(--mut)">' + esc(ht.falsePositives) + '</span></div>' +
+          '<div style="font-size:.75rem"><strong style="color:var(--acc)">SIEM query:</strong> <code style="font-size:12px;color:var(--acc)">' + esc(ht.siemRule) + '</code></div>' +
         '</div>';
       }).join('');
   }
@@ -319,16 +319,16 @@ export function renderDeceptionArchitect(main) {
     var categories = [];
     TRIPWIRE_TEMPLATES.forEach(function(t) { if (categories.indexOf(t.category) === -1) categories.push(t.category); });
 
-    container.innerHTML = '<h2 class="pg-h2">Tripwire Designer</h2>' +
-      '<p class="muted" style="margin-bottom:16px">Configure monitoring points that alert on attacker activity. Each tripwire has near-zero false positive rate.</p>' +
+    container.innerHTML = '<h2 class="pg-h2">Tripwire reference</h2>' +
+      '<p class="muted" style="margin-bottom:16px">Monitoring points to configure in your own SIEM or EDR. Most have a low false positive rate when tuned to your change process.</p>' +
       categories.map(function(cat) {
         var items = TRIPWIRE_TEMPLATES.filter(function(t) { return t.category === cat; });
         return '<h3 style="margin:16px 0 8px;color:var(--acc)">' + esc(cat) + '</h3>' +
           items.map(function(t) {
             return '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px;margin-bottom:6px;font-size:.82rem">' +
-              '<div style="font-weight:600;margin-bottom:4px">' + esc(t.name) + ' <span style="font-size:.65rem;color:var(--acc)">' + esc(t.mitre) + '</span></div>' +
+              '<div style="font-weight:600;margin-bottom:4px">' + esc(t.name) + ' <span style="font-size:12px;color:var(--acc)">' + esc(t.mitre) + '</span></div>' +
               '<div style="color:var(--mut);margin-bottom:6px">' + esc(t.desc) + '</div>' +
-              '<div style="font-size:.75rem;margin-bottom:3px"><strong>Monitor:</strong> <code style="font-size:.7rem">' + esc(t.monitor) + '</code></div>' +
+              '<div style="font-size:.75rem;margin-bottom:3px"><strong>Monitor:</strong> <code style="font-size:12px">' + esc(t.monitor) + '</code></div>' +
               '<div style="font-size:.75rem"><strong>Detection:</strong> <span style="color:var(--mut)">' + esc(t.detection) + '</span></div>' +
             '</div>';
           }).join('');
@@ -336,10 +336,10 @@ export function renderDeceptionArchitect(main) {
   }
 
   function renderPlanner(container) {
-    container.innerHTML = '<h2 class="pg-h2">Deception Network Planner</h2>' +
+    container.innerHTML = '<h2 class="pg-h2">Deception network planner</h2>' +
       '<p class="muted" style="margin-bottom:16px">Strategic placement recommendations for maximum deception coverage.</p>' +
 
-      '<h3 style="margin:0 0 8px">Placement Strategy by Network Zone</h3>' +
+      '<h3 style="margin:0 0 8px">Placement strategy by network zone</h3>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:20px">' +
         '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px">' +
           '<div style="font-weight:600;color:var(--acc);margin-bottom:6px">DMZ / Perimeter</div>' +
@@ -397,7 +397,7 @@ export function renderDeceptionArchitect(main) {
         '</div>' +
       '</div>' +
 
-      '<h3 style="margin:0 0 8px">Deployment Checklist</h3>' +
+      '<h3 style="margin:0 0 8px">Deployment checklist</h3>' +
       '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:14px;font-size:.8rem">' +
         '<ol style="margin:0;padding-left:20px;line-height:2">' +
           '<li>Map your network — identify subnets, critical assets, and likely attack paths</li>' +
@@ -405,7 +405,7 @@ export function renderDeceptionArchitect(main) {
           '<li>Deploy at least one honeypot per network segment</li>' +
           '<li>Plant honeytokens on high-value targets (DCs, file shares, dev workstations)</li>' +
           '<li>Configure tripwires on AD privileged groups and critical registry keys</li>' +
-          '<li>Set up SIEM alerts for ALL deception elements — these are zero-false-positive detections</li>' +
+          '<li>Set up SIEM alerts for all deception elements — they are high-signal detections</li>' +
           '<li>Create an incident response playbook specifically for deception alerts</li>' +
           '<li>Document all deception elements to prevent friendly-fire (SOC must know they exist)</li>' +
           '<li>Test monthly — attempt to trigger each deception element to verify alerting</li>' +
@@ -417,14 +417,14 @@ export function renderDeceptionArchitect(main) {
   function renderCoverage(container) {
     var tactics = ['Initial Access', 'Execution', 'Persistence', 'Privilege Escalation', 'Defense Evasion', 'Credential Access', 'Discovery', 'Lateral Movement', 'Collection', 'Command and Control', 'Exfiltration', 'Impact'];
 
-    container.innerHTML = '<h2 class="pg-h2">MITRE ATT&CK Deception Coverage</h2>' +
-      '<p class="muted" style="margin-bottom:16px">Which attack techniques your deception infrastructure can detect.</p>' +
+    container.innerHTML = '<h2 class="pg-h2">MITRE ATT&CK deception coverage</h2>' +
+      '<p class="muted" style="margin-bottom:16px">Reference mapping of ATT&CK techniques that the deception elements above are designed to surface.</p>' +
       '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.78rem">' +
       '<thead><tr style="border-bottom:2px solid var(--line)">' +
       '<th style="padding:8px;text-align:left;color:var(--mut)">MITRE ID</th>' +
       '<th style="padding:8px;text-align:left;color:var(--mut)">Tactic</th>' +
       '<th style="padding:8px;text-align:left;color:var(--mut)">Technique</th>' +
-      '<th style="padding:8px;text-align:left;color:var(--mut)">Deception Detection</th>' +
+      '<th style="padding:8px;text-align:left;color:var(--mut)">Deception detection</th>' +
       '</tr></thead><tbody>' +
       Object.keys(DECEPTION_MITRE_COVERAGE).map(function(id) {
         var m = DECEPTION_MITRE_COVERAGE[id];
@@ -432,30 +432,26 @@ export function renderDeceptionArchitect(main) {
           '<td style="padding:8px;color:var(--acc);font-weight:600">' + esc(id) + '</td>' +
           '<td style="padding:8px;color:var(--mut)">' + esc(m.tactic) + '</td>' +
           '<td style="padding:8px">' + esc(m.technique) + '</td>' +
-          '<td style="padding:8px;color:#00e676">' + esc(m.deception) + '</td>' +
+          '<td style="padding:8px;color:var(--ok)">' + esc(m.deception) + '</td>' +
           '</tr>';
       }).join('') +
       '</tbody></table></div>' +
 
       '<div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">' +
         '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 20px">' +
-          '<div style="font-size:1.4rem;font-weight:700;color:#00e676">' + Object.keys(DECEPTION_MITRE_COVERAGE).length + '</div>' +
-          '<div style="font-size:.75rem;color:var(--mut)">Techniques covered</div>' +
+          '<div style="font-size:1.4rem;font-weight:700;color:var(--ok)">' + Object.keys(DECEPTION_MITRE_COVERAGE).length + '</div>' +
+          '<div style="font-size:.75rem;color:var(--mut)">Techniques mapped</div>' +
         '</div>' +
         '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 20px">' +
           '<div style="font-size:1.4rem;font-weight:700;color:var(--acc)">' + (new Set(Object.values(DECEPTION_MITRE_COVERAGE).map(function(m) { return m.tactic; }))).size + '</div>' +
-          '<div style="font-size:.75rem;color:var(--mut)">Tactics covered</div>' +
-        '</div>' +
-        '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 20px">' +
-          '<div style="font-size:1.4rem;font-weight:700;color:#ffd600">~0%</div>' +
-          '<div style="font-size:.75rem;color:var(--mut)">Expected false positive rate</div>' +
+          '<div style="font-size:.75rem;color:var(--mut)">Tactics mapped</div>' +
         '</div>' +
       '</div>';
   }
 
   function renderROI(container) {
-    container.innerHTML = '<h2 class="pg-h2">Deception Technology ROI Calculator</h2>' +
-      '<p class="muted" style="margin-bottom:16px">Calculate the return on investment for deploying deception technology based on industry data.</p>' +
+    container.innerHTML = '<h2 class="pg-h2">Deception ROI calculator</h2>' +
+      '<p class="muted" style="margin-bottom:16px">Estimate return on investment from your own assumptions. Breach costs are IBM Cost of a Data Breach 2023 averages; the probability and detection improvement are inputs you supply.</p>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:700px">' +
         '<div>' +
           '<label style="font-size:.8rem;color:var(--mut);display:block;margin-bottom:4px">Industry</label>' +
@@ -463,23 +459,19 @@ export function renderDeceptionArchitect(main) {
             '<option value="4.45">Average (All Industries) — $4.45M</option>' +
             '<option value="10.93">Healthcare — $10.93M</option>' +
             '<option value="5.90">Financial — $5.90M</option>' +
-            '<option value="5.13">Technology — $5.13M</option>' +
-            '<option value="4.66">Industrial — $4.66M</option>' +
-            '<option value="3.86">Education — $3.86M</option>' +
-            '<option value="3.65">Retail — $3.65M</option>' +
           '</select>' +
         '</div>' +
         '<div>' +
           '<label style="font-size:.8rem;color:var(--mut);display:block;margin-bottom:4px">Annual deception budget ($)</label>' +
-          '<input type="number" id="roi-budget" value="50000" style="width:100%;background:var(--card);color:var(--txt);border:1px solid var(--line);padding:8px;border-radius:4px;font-family:inherit">' +
+          '<input type="number" id="roi-budget" placeholder="50000" style="width:100%;background:var(--card);color:var(--txt);border:1px solid var(--line);padding:8px;border-radius:4px;font-family:inherit">' +
         '</div>' +
         '<div>' +
           '<label style="font-size:.8rem;color:var(--mut);display:block;margin-bottom:4px">Estimated annual breach probability (%)</label>' +
-          '<input type="number" id="roi-prob" value="25" min="1" max="100" style="width:100%;background:var(--card);color:var(--txt);border:1px solid var(--line);padding:8px;border-radius:4px;font-family:inherit">' +
+          '<input type="number" id="roi-prob" placeholder="25" min="1" max="100" style="width:100%;background:var(--card);color:var(--txt);border:1px solid var(--line);padding:8px;border-radius:4px;font-family:inherit">' +
         '</div>' +
         '<div>' +
           '<label style="font-size:.8rem;color:var(--mut);display:block;margin-bottom:4px">Deception detection rate improvement (%)</label>' +
-          '<input type="number" id="roi-detect" value="35" min="1" max="100" style="width:100%;background:var(--card);color:var(--txt);border:1px solid var(--line);padding:8px;border-radius:4px;font-family:inherit">' +
+          '<input type="number" id="roi-detect" placeholder="35" min="1" max="100" style="width:100%;background:var(--card);color:var(--txt);border:1px solid var(--line);padding:8px;border-radius:4px;font-family:inherit">' +
         '</div>' +
       '</div>' +
       '<button class="btn sm" id="roi-calc" style="margin-top:12px">Calculate ROI</button>' +
@@ -494,7 +486,7 @@ export function renderDeceptionArchitect(main) {
       var prob = parseFloat(container.querySelector('#roi-prob').value);
       var detect = parseFloat(container.querySelector('#roi-detect').value);
       if (!(budget > 0) || !(prob >= 0 && prob <= 100) || !(detect >= 0 && detect <= 100)) {
-        container.querySelector('#roi-result').innerHTML = '<p style="font-size:.8rem;color:#ff1744">Enter a budget above 0 and percentages between 0 and 100.</p>';
+        container.querySelector('#roi-result').innerHTML = '<p style="font-size:.8rem;color:var(--bad)">Enter a budget above 0 and percentages between 0 and 100.</p>';
         return;
       }
       prob /= 100;
@@ -504,28 +496,28 @@ export function renderDeceptionArchitect(main) {
       var reducedLoss = cost * prob * (1 - detect);
       var savings = expectedLoss - reducedLoss;
       var roi = ((savings - budget) / budget * 100).toFixed(0);
-      var mttdReduction = Math.round(197 * detect);
+      var mttdReduction = Math.round(204 * detect);
 
       container.querySelector('#roi-result').innerHTML =
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">' +
           '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px">' +
-            '<div style="font-size:1.2rem;font-weight:700;color:#ff1744">$' + (expectedLoss / 1000000).toFixed(2) + 'M</div>' +
-            '<div style="font-size:.72rem;color:var(--mut)">Expected annual loss (without deception)</div>' +
+            '<div style="font-size:1.2rem;font-weight:700;color:var(--bad)">$' + (expectedLoss / 1000000).toFixed(2) + 'M</div>' +
+            '<div style="font-size:12px;color:var(--mut)">Expected annual loss (without deception)</div>' +
           '</div>' +
           '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px">' +
-            '<div style="font-size:1.2rem;font-weight:700;color:#00e676">$' + (savings / 1000000).toFixed(2) + 'M</div>' +
-            '<div style="font-size:.72rem;color:var(--mut)">Estimated annual savings</div>' +
+            '<div style="font-size:1.2rem;font-weight:700;color:var(--ok)">$' + (savings / 1000000).toFixed(2) + 'M</div>' +
+            '<div style="font-size:12px;color:var(--mut)">Estimated annual savings</div>' +
           '</div>' +
           '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px">' +
             '<div style="font-size:1.2rem;font-weight:700;color:var(--acc)">' + roi + '%</div>' +
-            '<div style="font-size:.72rem;color:var(--mut)">Return on investment</div>' +
+            '<div style="font-size:12px;color:var(--mut)">Return on investment</div>' +
           '</div>' +
           '<div style="background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px">' +
-            '<div style="font-size:1.2rem;font-weight:700;color:#ffd600">-' + mttdReduction + ' days</div>' +
-            '<div style="font-size:.72rem;color:var(--mut)">MTTD reduction (from 197 day avg)</div>' +
+            '<div style="font-size:1.2rem;font-weight:700;color:var(--warn)">-' + mttdReduction + ' days</div>' +
+            '<div style="font-size:12px;color:var(--mut)">Detection time reduction (from 204-day average)</div>' +
           '</div>' +
         '</div>' +
-        '<p style="font-size:.75rem;color:var(--mut);margin-top:10px">Based on IBM Cost of a Data Breach Report 2023 averages. Actual results vary by organization size, industry, and implementation quality. The 197-day MTTD is the IBM-reported average; deception typically reduces this to hours or days.</p>';
+        '<p style="font-size:.75rem;color:var(--mut);margin-top:10px">An estimate, not a measurement: breach costs and the 204-day mean time to identify are IBM Cost of a Data Breach 2023 averages; every other number comes from your inputs.</p>';
     };
   }
 

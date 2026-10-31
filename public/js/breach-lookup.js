@@ -77,7 +77,7 @@ function _blFilter(query, yearFilter, dataFilter) {
 
 function _blRenderCards(breaches, container) {
   if (!container) return;
-  if (breaches.length === 0) { container.innerHTML = '<div style="color:var(--mut,#7a93b8);font-family:\'Segoe UI\',system-ui,sans-serif;font-size:11px;text-align:center;padding:30px;">No breaches match your filters.</div>'; return; }
+  if (breaches.length === 0) { container.innerHTML = '<div style="color:var(--mut,#7a93b8);font-family:\'Segoe UI\',system-ui,sans-serif;font-size:12px;text-align:center;padding:30px;">No breaches match your filters.</div>'; return; }
 
   var h = '';
   for (var i = 0; i < breaches.length; i++) {
@@ -87,10 +87,10 @@ function _blRenderCards(breaches, container) {
     h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
     h += '<div style="font-family:\'Segoe UI\',system-ui,sans-serif;font-size:14px;color:var(--txt,#e7eefc);font-weight:bold;">' + esc(b.company) + '</div>';
     h += '<div style="display:flex;gap:8px;align-items:center;">';
-    h += '<span style="font-family:\'Segoe UI\',system-ui,sans-serif;font-size:10px;color:var(--mut,#7a93b8);">' + esc(b.date || b.year) + '</span>';
-    h += '<span style="background:' + sevColor + '22;color:' + sevColor + ';font-size:9px;font-family:\'Segoe UI\',system-ui,sans-serif;padding:2px 6px;border-radius:2px;border:1px solid ' + sevColor + '44;font-weight:bold;letter-spacing:1px;">' + b.severity.toUpperCase() + ' SCALE</span>';
+    h += '<span style="font-family:\'Segoe UI\',system-ui,sans-serif;font-size:12px;color:var(--mut,#7a93b8);">' + esc(b.date || b.year) + '</span>';
+    h += '<span style="background:' + sevColor + '22;color:' + sevColor + ';font-size:12px;font-family:\'Segoe UI\',system-ui,sans-serif;padding:2px 6px;border-radius:2px;border:1px solid ' + sevColor + '44;font-weight:bold;">' + b.severity.toUpperCase() + ' SCALE</span>';
     h += '</div></div>';
-    h += '<div style="display:flex;gap:16px;font-family:\'Segoe UI\',system-ui,sans-serif;font-size:11px;margin-bottom:6px;flex-wrap:wrap;">';
+    h += '<div style="display:flex;gap:16px;font-family:\'Segoe UI\',system-ui,sans-serif;font-size:12px;margin-bottom:6px;flex-wrap:wrap;">';
     h += '<span style="color:var(--bad,#dc2626);font-weight:bold;">' + _blFormatNum(b.records) + ' accounts</span>';
     if (b.domain) h += '<span style="color:var(--mut,#7a93b8);font-family:var(--font-mono);">' + esc(b.domain) + '</span>';
     if (b.added) h += '<span style="color:var(--mut,#7a93b8);">added ' + esc(b.added) + '</span>';
@@ -99,15 +99,15 @@ function _blRenderCards(breaches, container) {
       h += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">';
       for (var f = 0; f < b.flags.length; f++) {
         var fc = b.flags[f] === 'verified' ? '#16a34a' : (b.flags[f] === 'unverified' ? '#d97706' : '#dc2626');
-        h += '<span style="background:' + fc + '18;color:' + fc + ';font-size:8px;font-family:\'Segoe UI\',system-ui,sans-serif;padding:1px 5px;border-radius:2px;border:1px solid ' + fc + '33;letter-spacing:1px;">' + esc(b.flags[f].toUpperCase()) + '</span>';
+        h += '<span style="background:' + fc + '18;color:' + fc + ';font-size:12px;font-family:\'Segoe UI\',system-ui,sans-serif;padding:1px 5px;border-radius:2px;border:1px solid ' + fc + '33;">' + esc(b.flags[f]) + '</span>';
       }
       h += '</div>';
     }
     if (b.data.length) {
-      h += '<div style="font-family:\'Segoe UI\',system-ui,sans-serif;font-size:9px;color:var(--mut,#7a93b8);margin-bottom:4px;">Compromised data:</div>';
+      h += '<div style="font-family:\'Segoe UI\',system-ui,sans-serif;font-size:12px;color:var(--mut,#7a93b8);margin-bottom:4px;">Compromised data:</div>';
       h += '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
       for (var d = 0; d < b.data.length; d++) {
-        h += '<span style="background:var(--card,#0b1120);color:var(--txt-2,#9fb0cc);font-size:8px;font-family:\'Segoe UI\',system-ui,sans-serif;padding:1px 5px;border-radius:2px;border:1px solid var(--line,#283a5a);">' + esc(b.data[d]) + '</span>';
+        h += '<span style="background:var(--card,#0b1120);color:var(--txt-2,#9fb0cc);font-size:12px;font-family:\'Segoe UI\',system-ui,sans-serif;padding:1px 5px;border-radius:2px;border:1px solid var(--line,#283a5a);">' + esc(b.data[d]) + '</span>';
       }
       h += '</div>';
     }
@@ -131,17 +131,17 @@ function _blRenderDashboard() {
   var h = '';
   // Stats row
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));gap:10px;margin-bottom:16px;">';
-  h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px;text-align:center;"><div style="color:var(--bad,#dc2626);font-size:22px;font-weight:bold;font-family:\'Segoe UI\',system-ui,sans-serif;">' + _blFormatNum(totalRecords) + '</div><div style="color:var(--mut,#7a93b8);font-size:9px;font-family:\'Segoe UI\',system-ui,sans-serif;letter-spacing:1px;">ACCOUNTS EXPOSED</div></div>';
-  h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px;text-align:center;"><div style="color:var(--warn,#d97706);font-size:22px;font-weight:bold;font-family:\'Segoe UI\',system-ui,sans-serif;">' + BREACHES.length + '</div><div style="color:var(--mut,#7a93b8);font-size:9px;font-family:\'Segoe UI\',system-ui,sans-serif;letter-spacing:1px;">BREACHES IN CATALOG</div></div>';
-  h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px;text-align:center;"><div style="color:var(--acc,#2563eb);font-size:22px;font-weight:bold;font-family:\'Segoe UI\',system-ui,sans-serif;">' + Object.keys(dataClasses).length + '</div><div style="color:var(--mut,#7a93b8);font-size:9px;font-family:\'Segoe UI\',system-ui,sans-serif;letter-spacing:1px;">DATA CLASSES</div></div>';
-  h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px;text-align:center;"><div style="color:var(--ok,#16a34a);font-size:22px;font-weight:bold;font-family:\'Segoe UI\',system-ui,sans-serif;">' + verified + '</div><div style="color:var(--mut,#7a93b8);font-size:9px;font-family:\'Segoe UI\',system-ui,sans-serif;letter-spacing:1px;">VERIFIED</div></div>';
+  h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px;text-align:center;"><div style="color:var(--bad,#dc2626);font-size:22px;font-weight:bold;font-family:\'Segoe UI\',system-ui,sans-serif;">' + _blFormatNum(totalRecords) + '</div><div style="color:var(--mut,#7a93b8);font-size:12px;font-family:\'Segoe UI\',system-ui,sans-serif;">Accounts exposed</div></div>';
+  h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px;text-align:center;"><div style="color:var(--warn,#d97706);font-size:22px;font-weight:bold;font-family:\'Segoe UI\',system-ui,sans-serif;">' + BREACHES.length + '</div><div style="color:var(--mut,#7a93b8);font-size:12px;font-family:\'Segoe UI\',system-ui,sans-serif;">Breaches in catalog</div></div>';
+  h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px;text-align:center;"><div style="color:var(--acc,#2563eb);font-size:22px;font-weight:bold;font-family:\'Segoe UI\',system-ui,sans-serif;">' + Object.keys(dataClasses).length + '</div><div style="color:var(--mut,#7a93b8);font-size:12px;font-family:\'Segoe UI\',system-ui,sans-serif;">Data classes</div></div>';
+  h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:12px;text-align:center;"><div style="color:var(--ok,#16a34a);font-size:22px;font-weight:bold;font-family:\'Segoe UI\',system-ui,sans-serif;">' + verified + '</div><div style="color:var(--mut,#7a93b8);font-size:12px;font-family:\'Segoe UI\',system-ui,sans-serif;">Verified</div></div>';
   h += '</div>';
 
   // Timeline
   var sortedYears = Object.keys(years).sort();
   if (sortedYears.length) {
     h += '<div style="margin-bottom:16px;">';
-    h += '<div style="color:var(--acc,#2563eb);font-size:10px;font-family:\'Segoe UI\',system-ui,sans-serif;letter-spacing:2px;margin-bottom:6px;">BREACHES BY YEAR</div>';
+    h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin-bottom:6px;">Breaches by year</div>';
     h += '<div style="display:flex;gap:3px;align-items:flex-end;height:60px;padding:0 4px;background:var(--card,#0b1120);border:1px solid var(--line,#283a5a);border-radius:6px;overflow-x:auto;">';
     var maxY = Math.max.apply(null, Object.keys(years).map(function(k){ return years[k]; }));
     for (var yi = 0; yi < sortedYears.length; yi++) {
@@ -149,7 +149,7 @@ function _blRenderDashboard() {
       var barH = Math.max(4, (years[yr] / maxY) * 50);
       h += '<div style="display:flex;flex-direction:column;align-items:center;min-width:26px;" title="' + esc(yr) + ': ' + years[yr] + ' breaches">';
       h += '<div style="width:18px;height:' + barH + 'px;background:linear-gradient(180deg,var(--bad,#dc2626),var(--warn,#d97706));border-radius:2px 2px 0 0;"></div>';
-      h += '<div style="font-size:7px;color:var(--mut,#7a93b8);font-family:\'Segoe UI\',system-ui,sans-serif;margin-top:2px;">' + esc(yr) + '</div>';
+      h += '<div style="font-size:12px;color:var(--mut,#7a93b8);font-family:\'Segoe UI\',system-ui,sans-serif;margin-top:2px;">' + esc(yr) + '</div>';
       h += '</div>';
     }
     h += '</div></div>';
@@ -157,13 +157,13 @@ function _blRenderDashboard() {
 
   // Filters
   h += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">';
-  h += '<input id="bl-search" type="text" placeholder="Search company or domain..." oninput="_blDoFilter()" style="flex:1;min-width:200px;background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:8px 12px;color:var(--txt,#e7eefc);font-family:\'Segoe UI\',system-ui,sans-serif;font-size:12px;outline:none;">';
-  h += '<select id="bl-year" onchange="_blDoFilter()" style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:8px;color:var(--txt,#e7eefc);font-family:\'Segoe UI\',system-ui,sans-serif;font-size:11px;">';
-  h += '<option value="all">All Years</option>';
+  h += '<input id="bl-search" type="text" placeholder="Company or domain" oninput="_blDoFilter()" style="flex:1;min-width:200px;">';
+  h += '<select id="bl-year" onchange="_blDoFilter()">';
+  h += '<option value="all">All years</option>';
   for (var y = sortedYears.length - 1; y >= 0; y--) { h += '<option value="' + esc(sortedYears[y]) + '">' + esc(sortedYears[y]) + '</option>'; }
   h += '</select>';
-  h += '<select id="bl-data" onchange="_blDoFilter()" style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:8px;color:var(--txt,#e7eefc);font-family:\'Segoe UI\',system-ui,sans-serif;font-size:11px;">';
-  h += '<option value="all">All Data Types</option>';
+  h += '<select id="bl-data" onchange="_blDoFilter()">';
+  h += '<option value="all">All data types</option>';
   Object.keys(dataClasses).sort().forEach(function(d) { h += '<option value="' + esc(d) + '">' + esc(d) + '</option>'; });
   h += '</select>';
   h += '</div>';
@@ -180,13 +180,11 @@ function _blRenderDashboard() {
 
 export function renderBreachLookup(container) {
   var h = '';
-  h += '<div style="padding:20px 24px;">';
-  h += '<h2 style="margin:0 0 4px;font-size:20px;color:var(--acc,#2563eb);font-family:\'Segoe UI\',system-ui,sans-serif;letter-spacing:2px;text-transform:uppercase;">BREACH INTELLIGENCE</h2>';
-  h += '<div style="color:var(--txt-2,#9fb0cc);font-size:11px;font-family:\'Segoe UI\',system-ui,sans-serif;margin-bottom:8px;">Live catalog from Have I Been Pwned (haveibeenpwned.com) &mdash; searchable by company and domain.</div>';
-  h += '<div style="background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:8px 12px;margin-bottom:16px;color:var(--txt-2,#9fb0cc);font-family:\'Segoe UI\',system-ui,sans-serif;font-size:10px;line-height:1.6;">';
-  h += 'This searches the public breach <b>catalog</b> (which sites were breached, when, and what data was exposed). Checking whether a <b>specific email address</b> appears in these breaches requires a paid HIBP API key and is not performed here &mdash; no per-email results are simulated.';
-  h += '</div>';
-  h += '<div id="bl-body"><div style="color:var(--mut,#7a93b8);font-family:\'Segoe UI\',system-ui,sans-serif;font-size:11px;text-align:center;padding:40px;">Loading live breach catalog&hellip;</div></div>';
+  h += '<div>';
+  h += '<div class="pg-head"><div><h1 class="pg-h1">Breach Lookup</h1>';
+  h += '<p class="muted pg-sub">Browse the public breach catalog: which sites were breached, when, and what data was exposed. Search by company or domain. Source: Have I Been Pwned.</p></div></div>';
+  h += '<p class="muted" style="font-size:13px;margin:0 0 16px;">Checking whether a specific email address appears in a breach needs a paid HIBP API key and is not part of this tool.</p>';
+  h += '<div id="bl-body"><div style="color:var(--mut,#7a93b8);font-family:\'Segoe UI\',system-ui,sans-serif;font-size:12px;text-align:center;padding:40px;">Loading the breach catalog&hellip;</div></div>';
   h += '</div>';
   container.innerHTML = h;
   _blLoad();
@@ -195,7 +193,7 @@ export function renderBreachLookup(container) {
 async function _blLoad() {
   var body = document.getElementById('bl-body');
   if (!proxyConfigured()) {
-    if (body) body.innerHTML = '<div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.3);border-radius:6px;padding:16px;text-align:center;font-family:\'Segoe UI\',system-ui,sans-serif;"><div style="color:var(--bad,#dc2626);font-size:12px;font-weight:bold;margin-bottom:4px;">LIVE FETCH UNAVAILABLE</div><div style="color:var(--txt-2,#9fb0cc);font-size:10px;">The Darknode proxy is not configured, so the HIBP breach catalog cannot be loaded. No placeholder data is shown.</div></div>';
+    if (body) body.innerHTML = '<div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.3);border-radius:6px;padding:16px;text-align:center;font-family:\'Segoe UI\',system-ui,sans-serif;"><div style="color:var(--bad,#dc2626);font-size:12px;font-weight:bold;margin-bottom:4px;">Live fetch unavailable</div><div style="color:var(--txt-2,#9fb0cc);font-size:12px;">The Darknode proxy is not configured, so the HIBP breach catalog cannot be loaded.</div></div>';
     return;
   }
   try {
@@ -205,9 +203,9 @@ async function _blLoad() {
     _blRenderDashboard();
   } catch (err) {
     if (body) body.innerHTML = '<div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.3);border-radius:6px;padding:16px;text-align:center;font-family:\'Segoe UI\',system-ui,sans-serif;">' +
-      '<div style="color:var(--bad,#dc2626);font-size:12px;font-weight:bold;margin-bottom:4px;">COULD NOT LOAD BREACH CATALOG</div>' +
-      '<div style="color:var(--txt-2,#9fb0cc);font-size:10px;">' + esc(String((err && err.message) || err)) + '</div>' +
-      '<div style="color:var(--mut,#7a93b8);font-size:9px;margin-top:6px;">Source: haveibeenpwned.com/api/v3/breaches. No cached or synthetic data is substituted.</div>' +
+      '<div style="color:var(--bad,#dc2626);font-size:12px;font-weight:bold;margin-bottom:4px;">Could not load breach catalog</div>' +
+      '<div style="color:var(--txt-2,#9fb0cc);font-size:12px;">' + esc(String((err && err.message) || err)) + '</div>' +
+      '<div style="color:var(--mut,#7a93b8);font-size:12px;margin-top:6px;">Source: haveibeenpwned.com/api/v3/breaches</div>' +
       '</div>';
   }
 }

@@ -225,7 +225,7 @@ export function renderDmarcReports(main) {
   const num = (id, label, v, help) => '<div class="' + P + '-field"><label for="' + P + "-o-" + id + '">' + label + '</label><input id="' + P + "-o-" + id + '" type="number" min="0" step="any" value="' + esc(v) + '"><small>' + help + "</small></div>";
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>DMARC Reports</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>DMARC Reports</h1></div>',
     '<p class="', P, '-sub">Turns DMARC aggregate reports into who sends mail as your domains, which legitimate services are not aligned, how much spoofing there is, and a staged path to p=reject. Alignment is recomputed from each report\'s auth_results. Runs entirely in your browser. Nothing is uploaded. Only the optional Look up sources button makes requests: DNS-over-HTTPS to dns.google and cloudflare-dns.com for PTR names and your current DMARC, SPF and DKIM records.</p>',
     '<div class="', P, '-card"><h2>1. Reports</h2><div id="', P, '-drop"></div>',
     '<p class="', P, '-note">Aggregate (RUA) reports as .xml, .xml.gz or .zip, as Google, Microsoft, Yahoo and others send them, in the RFC 7489 or DMARCbis schema; drop hundreds at once or a folder, archives inside archives are unpacked. Also reads the parsedmarc aggregate CSV and ARF forensic (RUF) reports. Duplicate reports (same reporter and report_id) are counted once.</p>',

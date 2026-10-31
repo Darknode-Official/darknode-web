@@ -202,7 +202,7 @@ export function renderCloudTrail(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Cloud Audit Logs</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Cloud Audit Logs</h1></div>',
     '<p class="', P, '-sub">Hunt AWS CloudTrail, Azure Activity Log, GCP Cloud Audit Logs and the Microsoft 365 Unified Audit Log for what attackers do with cloud credentials: logging stopped, keys minted, policies opened to the world, roles granted, mail forwarded, secrets and data pulled in bursts. ', RULES.length, ' rules mapped to MITRE ATT&amp;CK and CIS / NIST / SCuBA controls. Runs entirely in your browser. Nothing is uploaded. The only request is the optional malicious-IP list at ', FEED_URL, ', a same-origin copy that is mirrored and dated, not live.</p>',
     '<div class="', P, '-card"><h2>1. Audit log exports</h2><div id="', P, '-drop"></div>',
     '<p class="', P, '-note">Accepted: CloudTrail {"Records":[...]} files (also .json.gz), CloudTrail NDJSON and Athena / Lake CSV; Azure Activity Log JSON and the Log Analytics AzureActivity CSV; GCP LogEntry NDJSON or JSON array; Microsoft 365 Search-UnifiedAuditLog | Export-Csv, Purview audit CSV and AuditData JSON. Drop many files or a zip at once.</p>',

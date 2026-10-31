@@ -16,7 +16,7 @@ export const PLAN_LABEL = { free: "Free", pro: "Pro", team: "Team", enterprise: 
 export const FEATURES = {
   cloudSync: "pro",          // findings/reports synced across devices
   unlimitedReports: "pro",   // unlimited saved findings & reports
-  priorityAI: "pro",         // higher AI limits
+  priorityAI: "pro",         // premium AI models (worker/plan.js enforces them)
   teamWorkspaces: "team",    // shared workspaces & roles
   vaultServerEnforced: "team", // server-enforced VAULT approvals & audit
   integrations: "team",      // SIEM / ticketing / chat connectors
