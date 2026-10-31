@@ -198,7 +198,7 @@ function _vgAddFinding(finding) {
     '<span style="color:#3a5a7a;font-size:8px;">' + esc(finding.phase || '') + '</span>' +
     '</div>' +
     '<div style="color:#c8d6e5;font-weight:bold;margin-bottom:2px;">' + esc(finding.title) + '</div>' +
-    '<div style="color:#6a8aaa;">' + esc(finding.description) + '</div>' +
+    '<div style="color:#6a8aaa;">' + esc(finding.description || finding.detail || '') + '</div>' +
     (finding.host ? '<div style="color:#4a6a8a;font-size:9px;margin-top:3px;">Host: ' + esc(finding.host) + '</div>' : '') +
     (finding.remediation ? '<div style="color:#00cc88;font-size:9px;margin-top:3px;">Fix: ' + esc(finding.remediation) + '</div>' : '');
   container.appendChild(card);
@@ -1314,7 +1314,7 @@ function _vgPhase10_Report() {
     });
     sorted.forEach(function(f) {
       var cls = f.severity === 'critical' ? 'crit' : f.severity === 'high' ? 'high' : f.severity === 'medium' ? 'med' : 'low';
-      report += '<tr><td class="' + cls + '">' + esc(f.severity).toUpperCase() + '</td><td>' + esc(f.title) + '</td><td style="color:#6a8aaa;font-size:10px">' + esc(f.detail || '') + '</td><td>' + (f.phase || '') + '</td></tr>';
+      report += '<tr><td class="' + cls + '">' + esc(f.severity).toUpperCase() + '</td><td>' + esc(f.title) + '</td><td style="color:#6a8aaa;font-size:10px">' + esc(f.description || f.detail || '') + '</td><td>' + (f.phase || '') + '</td></tr>';
     });
     report += '</table></div>';
 
