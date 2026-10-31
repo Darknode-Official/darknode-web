@@ -3572,7 +3572,7 @@ export function renderDeck(host, opts) {
     const entries = [];
     let clean = null;
     for (const raw of lines) {
-      const l = raw.replace(/\s+$/, "");
+      const l = raw.trimEnd();
       if (!l.trim()) continue;
       if (!entries.length && /^no\b.*(found|matches|rules|issues|settings)/i.test(l.trim())) { clean = l.trim(); continue; }
       if (/^\d+\s+(finding|internet-exposed|rule|match|statement)/i.test(l.trim()) && !isEntryStart(l.trim())) continue; // count header

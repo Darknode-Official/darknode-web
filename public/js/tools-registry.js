@@ -18,12 +18,12 @@ import { TOOLS as webhttp } from "/js/tools/webhttp.js?v=20261028c";
 import { TOOLS as appsec } from "/js/tools/appsec.js?v=20261029c";
 import { TOOLS as devx } from "/js/tools/devx.js?v=20261029a";
 import { TOOLS as crypto } from "/js/tools/crypto.js?v=20261029e";
-import { TOOLS as forensics } from "/js/tools/forensics.js?v=20261029e";
+import { TOOLS as forensics } from "/js/tools/forensics.js?v=20261030c";
 import { TOOLS as bininspect } from "/js/tools/bininspect.js?v=20261029e";
 import { TOOLS as blueteam } from "/js/tools/blueteam.js?v=20261029e";
 import { TOOLS as cloud } from "/js/tools/cloud.js?v=20261029e";
 import { TOOLS as identity } from "/js/tools/identity.js?v=20261029e";
-import { TOOLS as coding } from "/js/tools/coding.js?v=20261029c";
+import { TOOLS as coding } from "/js/tools/coding.js?v=20261030c";
 import { TOOLS as netproto } from "/js/tools/netproto.js?v=20261029e";
 
 export const TOOL_CATS = {

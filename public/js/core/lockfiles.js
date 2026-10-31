@@ -315,7 +315,7 @@ export function parseGemfileLock(text) {
   const specs = []; const directSet = new Set();
   let section = "";
   linesOf(text).forEach((raw, i) => {
-    const line = raw.replace(/\s+$/, "");
+    const line = raw.trimEnd();
     if (/^\S/.test(line)) { section = line.trim().replace(/:$/, ""); return; }
     if (section === "GEM" || section === "GIT" || section === "PATH") {
       const m = line.match(/^ {4}([A-Za-z0-9_.-]+) \(([^)]+)\)\s*$/); // 4-space indent = a resolved package

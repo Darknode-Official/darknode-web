@@ -86,7 +86,7 @@ function lookup(rows, q, cols) {
   const filtered = ql ? rows.filter((r) => r.some((c) => String(c).toLowerCase().includes(ql))) : rows;
   if (!filtered.length) return `No entry matches "${q}".`;
   const widths = cols.map((h, i) => Math.max(h.length, ...filtered.map((r) => String(r[i]).length)));
-  const line = (r) => r.map((c, i) => String(c).padEnd(widths[i])).join("  ").replace(/\s+$/, "");
+  const line = (r) => r.map((c, i) => String(c).padEnd(widths[i])).join("  ").trimEnd();
   return [line(cols), cols.map((_, i) => "-".repeat(widths[i])).join("  "), ...filtered.map(line)].join("\n");
 }
 // decode a bitmask against [value, name, note?] table

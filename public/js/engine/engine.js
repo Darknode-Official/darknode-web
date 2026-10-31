@@ -764,7 +764,7 @@ export function predictWords(model, text, k = 6) {
   const head = partial ? v.slice(0, v.length - partial.length) : v;
   const fh = correctText(lex, head);
   const ctx = fh.text;
-  const low = ctx.toLowerCase().replace(/\s+$/, "");
+  const low = ctx.toLowerCase().trimEnd();
   const p = partial.toLowerCase();
   const out = [];
   const push = (w) => { if (w && w !== p && !out.includes(w) && out.length < k) out.push(w); };

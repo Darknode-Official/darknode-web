@@ -199,7 +199,7 @@ export function validateSecurityTxt(text) {
   var counts = Object.create(null);
   for (var i = startIdx; i < endIdx; i++) {
     var lineNo = i + 1;
-    var trimmed = lines[i].replace(/\s+$/, "").replace(/^\s+/, "");
+    var trimmed = lines[i].trimEnd().replace(/^\s+/, "");
     // In a clear-signed body, '- ' is dash-escaping; undo it before any other check.
     if (signed && trimmed.indexOf("- ") === 0) trimmed = trimmed.slice(2);
     if (trimmed === "") continue;

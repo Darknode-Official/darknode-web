@@ -182,7 +182,7 @@ function parseYAML(text) {
         put(c);
       }
       const res = o.join("");
-      ln = res.replace(/\s+$/, "");
+      ln = res.trimEnd();
       const t = ln.trim();
       if (t === "") { blank++; continue; }
       if (t === "---" || t === "...") { if (t === "---" && lines.length) throw new Error("multiple documents are not supported; convert one at a time"); blank = 0; continue; }
@@ -1597,7 +1597,7 @@ export const TOOLS = [
       const cols = Math.max(...rows.map((r) => r.length));
       const w = []; for (let c = 0; c < cols; c++) w[c] = Math.max(...rows.map((r) => (r[c] || "").length));
       const gap = " ".repeat(Math.max(1, Number(v.gap) || 2));
-      return rows.map((r) => r.map((cell, c) => c === cols - 1 ? (cell || "") : (cell || "").padEnd(w[c])).join(gap).replace(/\s+$/, "")).join("\n");
+      return rows.map((r) => r.map((cell, c) => c === cols - 1 ? (cell || "") : (cell || "").padEnd(w[c])).join(gap).trimEnd()).join("\n");
     },
   },
   {
@@ -1768,12 +1768,12 @@ export const TOOLS = [
       let out = "", depth = 0;
       for (let i = 0; i < s.length; i++) {
         const c = s[i];
-        if (c === "{") { out = out.replace(/\s*$/, "") + " {\n"; depth++; out += ind.repeat(depth); }
-        else if (c === "}") { out = out.replace(/\s*$/, ""); depth = Math.max(0, depth - 1); out += "\n" + ind.repeat(depth) + "}\n" + ind.repeat(depth); }
+        if (c === "{") { out = out.trimEnd() + " {\n"; depth++; out += ind.repeat(depth); }
+        else if (c === "}") { out = out.trimEnd(); depth = Math.max(0, depth - 1); out += "\n" + ind.repeat(depth) + "}\n" + ind.repeat(depth); }
         else if (c === ";") { out += ";\n" + ind.repeat(depth); }
         else out += c;
       }
-      return out.split("\n").map((l) => l.replace(/\s+$/, "")).filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n").trim() + "\n";
+      return out.split("\n").map((l) => l.trimEnd()).filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n").trim() + "\n";
     },
   },
   {

@@ -574,7 +574,7 @@ function parseKvExtension(s) {
     const key = s.slice(ks, p);
     if (!key) continue;
     const end = e + 1 < eqs.length ? keyStart(eqs[e + 1]) : s.length;
-    put(ext, unescExt(key), unescExt(s.slice(p + 1, end).replace(/\s+$/, "")));
+    put(ext, unescExt(key), unescExt(s.slice(p + 1, end).trimEnd()));
   }
   return ext;
 }

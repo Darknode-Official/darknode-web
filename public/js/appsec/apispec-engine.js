@@ -259,7 +259,7 @@ export function expandYamlAnchors(text) {
         while (block.length && !block[block.length - 1].trim()) block.pop();
         const min = Math.min(...block.filter((x) => x.trim()).map(indentOf), Infinity);
         anchors.set(name, { block: block.map((x) => (x.trim() ? x.slice(Number.isFinite(min) ? min : 0) : "")) });
-        out.push(ind + prefix.replace(/\s+$/, ""));
+        out.push(ind + prefix.trimEnd());
         changed = true; continue;
       }
       m = Y_ALIAS.exec(l);
@@ -291,7 +291,7 @@ export function expandYamlAnchors(text) {
           a.block.forEach((x, k) => out.push(k === 0 ? ind + dash[0] + x : x ? " ".repeat(col) + x : ""));
         } else {
           const col = ind.length + (dash ? dash[0].length : 0) + 2;
-          out.push(ind + prefix.replace(/\s+$/, ""));
+          out.push(ind + prefix.trimEnd());
           for (const x of a.block) out.push(x ? " ".repeat(col) + x : "");
         }
         continue;

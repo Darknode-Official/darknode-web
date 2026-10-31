@@ -43,3 +43,16 @@ group("Long single-character runs stay linear", () => {
     }
   });
 });
+
+group("Trailing-whitespace trims stay linear", () => {
+  test("Gemfile.lock line of 200k spaces then a letter", async () => {
+    const { parseGemfileLock } = await import(J + "core/lockfiles.js");
+    assert.ok(timed(() => parseGemfileLock(" ".repeat(200000) + "x\n")) < 500);
+    assert.equal(parseGemfileLock("GEM\n  specs:\n    rack (2.2.3)   \n\nDEPENDENCIES\n  rack\n")[0].version, "2.2.3");
+  });
+  test("no /\\s+$/ replace left on user-data paths", async () => {
+    const { readFileSync } = await import("node:fs");
+    for (const f of ["core/lockfiles.js", "ingest/parse.js", "security-txt.js", "deck-ui.js", "tools/coding.js", "tools/forensics.js", "engine/engine.js", "appsec/apispec-engine.js"])
+      assert.ok(!/\.replace\(\/\\s[+*]\$\//.test(readFileSync(new URL(J + f, import.meta.url), "utf8")), f);
+  });
+});
