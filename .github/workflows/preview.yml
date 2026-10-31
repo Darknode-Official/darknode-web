@@ -1,0 +1,46 @@
+# Deploys every pull request to its own Firebase Hosting preview channel
+# (sentinel-b4194--pr<N>-<hash>.web.app, expires after 7 days) and comments the URL
+# on the PR. firebase.json's predeploy hook runs the release build, so the preview is
+# exactly what production would serve.
+#
+# Needs the repository secret FIREBASE_SERVICE_ACCOUNT (a service-account JSON key
+# with the "Firebase Hosting Admin" role on project sentinel-b4194). Without it, and
+# for PRs from forks (which never receive secrets), the job is skipped.
+name: Preview
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      HAS_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+    steps:
+      - name: Skip without the service-account secret
+        if: env.HAS_SA != 'true'
+        run: echo "FIREBASE_SERVICE_ACCOUNT is not set; preview deploy skipped."
+      - uses: actions/checkout@v4
+        if: env.HAS_SA == 'true'
+      - uses: actions/setup-node@v4
+        if: env.HAS_SA == 'true'
+        with:
+          node-version: 22
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        if: env.HAS_SA == 'true'
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: sentinel-b4194
+          target: sentinel-b4194
+          expires: 7d

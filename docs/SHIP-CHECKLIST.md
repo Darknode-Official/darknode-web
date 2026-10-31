@@ -93,6 +93,7 @@ Install commands appear in several places and must agree:
 - Check locally with `node scripts/build.mjs` (writes `dist/`, fails on a `?v=` specifier pointing at a missing file) and serve `dist/` to test the release build.
 - Commit on a feature branch; no Claude or co-author trailer; no backticks inside `git commit -m "..."`. Push only to `origin`, never `def`.
 - **Ask before merging to main and before deploying.** Deploy: `npx firebase deploy --only hosting` (both sites). The `chat` function warning is harmless. Worker changes need a separate `cd worker && npx wrangler deploy --env=""` (production; try `--env staging` first, which publishes darknode-proxy-staging); Firestore rules changes need `scripts/set-admin.mjs` run first.
+- Before production, check the release build on a preview channel: open a PR (the Preview workflow comments the URL once the FIREBASE_SERVICE_ACCOUNT secret is set) or run `npx firebase hosting:channel:deploy <name> --only sentinel-b4194 --expires 7d`.
 - After deploy, compare `/build.json` on both sites with the build hash `scripts/build.mjs` printed, and curl a changed file.
 
 ## 9. Report
