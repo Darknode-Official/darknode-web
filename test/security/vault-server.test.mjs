@@ -143,7 +143,7 @@ group("vault server: id token verification", () => {
   const good = { aud: PROJECT, iss: "https://securetoken.google.com/" + PROJECT, sub: "user-1", iat: now - 10, exp: now + 3000, auth_time: now - 100, email: "a@b.c" };
   const check = async (tok) => verifyIdToken(tok, PROJECT, { keys: [jwk], now });
 
-  test("valid token yields the uid", async () => assert.deepEqual(await check(await sign(good)), { uid: "user-1", email: "a@b.c" }));
+  test("valid token yields the uid", async () => { const { uid, email } = await check(await sign(good)); assert.deepEqual({ uid, email }, { uid: "user-1", email: "a@b.c" }); });
   test("rejects expired, wrong audience, wrong issuer, empty subject", async () => {
     await rejects(check(await sign({ ...good, exp: now - 1 })), /expired/);
     await rejects(check(await sign({ ...good, aud: "other" })), /audience/);

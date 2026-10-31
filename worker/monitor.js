@@ -9,8 +9,7 @@ import { runCheck, cvesFromEntities, hostOnly } from "./checks.js";
 import { diffFindings, diffToEvents, shouldAlert, defaultAlertRules } from "./monitor-core.js";
 import { buildGraphWrite } from "./monitor-graph.js";
 import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
-import { verifyIdToken } from "./vault-auth.js";
-import { isSuspended } from "./gate.js";
+import { requireUser } from "./auth.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
 import { readCapped } from "./body-cap.js";
 
@@ -300,15 +299,11 @@ export async function handleMonitor(request, env, wid, json) {
   if (!env.MONITOR) return json({ error: "Monitoring is not configured on this deployment." }, 503);
   if (!MON_ID.test(wid)) return json({ error: "Invalid workspace id" }, 400);
   if (request.method !== "POST") return json({ error: "POST only" }, 405);
+  const who = await requireUser(request, env, json);
+  if (who.err) return who.err;
   const projectId = env.FIREBASE_PROJECT_ID;
-  if (!projectId) return json({ error: "FIREBASE_PROJECT_ID is not set" }, 503);
-  const m = /^Bearer\s+(\S+)$/.exec(request.headers.get("Authorization") || "");
-  if (!m) return json({ error: "Sign in required" }, 401);
-  let who;
-  try { who = await verifyIdToken(m[1], projectId); } catch (e) { return json({ error: "Invalid sign-in token: " + e.message }, 401); }
-  if (await isSuspended(projectId, who, m[1])) return json({ error: "Your access has been suspended by an administrator." }, 403);
   let role;
-  try { role = await resolveWorkspaceRole(projectId, wid, who.uid, m[1]); }
+  try { role = await resolveWorkspaceRole(projectId, wid, who.uid, who.token); }
   catch (e) { return json({ error: e.message }, 502); }
   if (!role) return json({ error: "You are not a member of this workspace." }, 403);
   const bodyText = await readCapped(request, 256 * 1024);

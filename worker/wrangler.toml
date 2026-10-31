@@ -40,6 +40,12 @@ class_name = "MonitorDO"
 name = "INGEST"
 class_name = "IngestDO"
 
+# Per-principal rate limits (Phase 0): one in-memory Durable Object per signed-in
+# user or API key. Anonymous callers stay on the per-isolate IP limiter.
+[[durable_objects.bindings]]
+name = "RATE"
+class_name = "RateLimiterDO"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["VaultDO"]
@@ -55,3 +61,37 @@ new_sqlite_classes = ["MonitorDO"]
 [[migrations]]
 tag = "v4"
 new_sqlite_classes = ["IngestDO"]
+
+[[migrations]]
+tag = "v5"
+new_sqlite_classes = ["RateLimiterDO"]
+
+# Staging Worker: `npx wrangler deploy --env staging` publishes darknode-proxy-staging
+# with its own Durable Object namespaces, so a PR can be exercised end to end without
+# touching production data. Bindings and vars are not inherited, so they repeat here.
+[env.staging]
+name = "darknode-proxy-staging"
+
+[env.staging.vars]
+GEMINI_FALLBACK_MODEL = "gemini-flash-lite-latest"
+FIREBASE_PROJECT_ID = "sentinel-b4194"
+
+[[env.staging.durable_objects.bindings]]
+name = "VAULT"
+class_name = "VaultDO"
+
+[[env.staging.durable_objects.bindings]]
+name = "GRAPH"
+class_name = "GraphDO"
+
+[[env.staging.durable_objects.bindings]]
+name = "MONITOR"
+class_name = "MonitorDO"
+
+[[env.staging.durable_objects.bindings]]
+name = "INGEST"
+class_name = "IngestDO"
+
+[[env.staging.durable_objects.bindings]]
+name = "RATE"
+class_name = "RateLimiterDO"

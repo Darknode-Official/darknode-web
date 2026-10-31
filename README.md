@@ -52,7 +52,7 @@ npx serve public/      # serve the static site locally
 firebase deploy --only hosting      # the static site
 firebase deploy --only functions    # the AI chat / pairing functions
 firebase deploy --only firestore:rules,storage:rules
-# the Cloudflare Worker proxy deploys separately:  cd worker && npx wrangler deploy
+# the Cloudflare Worker proxy deploys separately:  cd worker && npx wrangler deploy --env=""   (staging: --env staging)
 ```
 
 ## Ecosystem

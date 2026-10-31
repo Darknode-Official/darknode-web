@@ -24,10 +24,12 @@ import { handleKeys, handleIngest } from "./ingest.js";
 import { hostAllowed } from "./net-guard.js";
 import { readCapped } from "./body-cap.js";
 import { handleIntel } from "./intel.js";
+import { matchRoute, authenticate, authorize, attachPrincipal, rateCheck, ipCeiling, requestId, withHeaders } from "./auth.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
 export { MonitorDO } from "./monitor.js";
 export { IngestDO } from "./ingest.js";
+export { RateLimiterDO } from "./auth.js";
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -53,7 +55,8 @@ const PROVIDERS = {
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-request-id",
+  "Access-Control-Expose-Headers": "x-request-id, Retry-After",
 };
 
 // Browser origins allowed to call the proxy. A request carrying an Origin that
@@ -75,23 +78,6 @@ function originAllowed(origin) {
     if (/^darknode-web-[a-z0-9]+\.onrender\.com$/.test(h)) return true;
     return ALLOWED_ORIGINS.includes(origin);
   } catch (_) { return false; }
-}
-
-// Best-effort in-memory per-IP rate limit. This worker has no KV/Durable Object
-// binding, so the counter resets when the isolate recycles and is per-PoP — it
-// blunts quota-drain abuse but is not a hard global guarantee. Bind a KV
-// namespace (or a Durable Object) for durable, global limits.
-const RL_WINDOW_MS = 60000, RL_MAX = 40;
-const rlHits = new Map(); // ip -> timestamps[]
-function rateLimited(ip) {
-  const now = Date.now();
-  let arr = rlHits.get(ip);
-  if (!arr) { arr = []; rlHits.set(ip, arr); }
-  while (arr.length && now - arr[0] > RL_WINDOW_MS) arr.shift();
-  if (arr.length >= RL_MAX) return true;
-  arr.push(now);
-  if (rlHits.size > 5000) { for (const [k, v] of rlHits) { if (!v.length || now - v[v.length - 1] > RL_WINDOW_MS) rlHits.delete(k); } }
-  return false;
 }
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json", ...CORS } });
@@ -544,32 +530,85 @@ async function handleSmart(request, env) {
 export default {
   // A handler that throws (e.g. a JSON body of `null` on /api/intel) must not become
   // Cloudflare's HTML 1101 page with no CORS headers: answer JSON 500, no stack.
+  // Every response carries x-request-id so a client report can be matched to logs.
   async fetch(request, env) {
-    try { return await route(request, env); } catch (_) { return json({ error: "Internal error." }, 500); }
+    const rid = requestId(request);
+    let res;
+    try { res = await route(request, env, rid); } catch (_) { res = json({ error: "Internal error." }, 500); }
+    return withHeaders(res, { "x-request-id": rid });
   },
 };
 
-async function route(request, env) {
+// GET /api/v1/health — liveness for uptime checks. Reports which bindings exist,
+// never which secrets are set.
+function handleHealth(env) {
+  return json({
+    ok: true, service: "darknode-proxy", api: "v1", time: new Date().toISOString(),
+    uptimeSec: Math.floor((Date.now() - STARTED) / 1000),
+    bindings: { vault: !!env.VAULT, graph: !!env.GRAPH, monitor: !!env.MONITOR, ingest: !!env.INGEST, rate: !!env.RATE },
+  });
+}
+
+// POST /api/v1/client-errors — the app reports uncaught errors here; they land in
+// the Worker log (wrangler tail / Logpush) tagged with the request id. Fields are
+// clipped and nothing is echoed back.
+async function handleClientError(request, rid) {
+  const raw = await readCapped(request, 8 * 1024);
+  if (raw === null) return json({ error: "Request too large." }, 413);
+  let b;
+  try { b = JSON.parse(raw); } catch (_) { return json({ error: "Invalid JSON body" }, 400); }
+  if (!b || typeof b !== "object") return json({ error: "Invalid JSON body" }, 400);
+  const clip = (v, n) => (typeof v === "string" ? v.slice(0, n) : typeof v === "number" && isFinite(v) ? v : undefined);
+  console.error(JSON.stringify({
+    type: "client-error", rid, message: clip(b.message, 500), source: clip(b.source, 300), line: clip(b.line, 10), col: clip(b.col, 10),
+    stack: clip(b.stack, 2000), page: clip(b.page, 300), release: clip(b.release, 40), ua: clip(request.headers.get("user-agent"), 200),
+  }));
+  return new Response(null, { status: 204, headers: CORS });
+}
+
+const STARTED = Date.now();
+
+async function route(request, env, rid) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
-    // Reject disallowed browser origins, then apply a per-IP rate limit, before
-    // any route reaches the upstream model (and spends the server-side key).
+    // Reject disallowed browser origins before anything else, so a hostile page
+    // cannot ride a visitor's browser to spend the server-side keys.
     const origin = request.headers.get("Origin");
     if (!originAllowed(origin)) return json({ error: "Origin not allowed" }, 403);
     const ip = request.headers.get("cf-connecting-ip") || "unknown";
-    if (rateLimited(ip)) return json({ error: "Rate limit exceeded — slow down and retry shortly." }, 429);
+    const limited = (wait) => withHeaders(json({ error: "Rate limit exceeded — slow down and retry shortly." }, 429), { "Retry-After": String(wait) });
+    // The route table (auth.js) declares what each path needs; enforce it here.
     const { pathname } = new URL(request.url);
-    if (pathname === "/api/fetch" && (request.method === "GET" || request.method === "POST")) return handleFetch(request);
-    if (pathname === "/api/smart" && request.method === "POST") return handleSmart(request, env);
-    if (pathname === "/api/intel") return handleIntel(request, json);
-    if (pathname.startsWith("/api/vault/")) return handleVault(request, env, pathname.slice(11), json);
-    if (pathname.startsWith("/api/graph/")) return handleGraph(request, env, pathname.slice(11), json);
-    if (pathname.startsWith("/api/monitor/")) return handleMonitor(request, env, pathname.slice(13), json);
-    if (pathname.startsWith("/api/keys/")) return handleKeys(request, env, pathname.slice(10), json);
-    if (pathname.startsWith("/api/v1/ingest/")) return handleIngest(request, env, pathname.slice(15), json, "ingest");
-    if (pathname.startsWith("/api/v1/findings/")) return handleIngest(request, env, pathname.slice(17), json, "findings");
-    if (pathname !== "/api/chat") return json({ error: "Not found" }, 404);
-    if (request.method !== "POST") return json({ error: "POST only" }, 405);
-
+    const hit = matchRoute(pathname, request.method);
+    if (hit.status === 404) return json({ error: "Not found" }, 404);
+    if (hit.status === 405) return withHeaders(json({ error: hit.allow.join(" or ") + " only" }, 405), { Allow: hit.allow.join(", ") });
+    const { route: r, rest } = hit;
+    let wait = r.auth === "none" ? 0 : ipCeiling(ip);
+    if (wait) return limited(wait);
+    let principal = { kind: "anonymous" };
+    if (r.auth !== "none") {
+      const a = await authenticate(request, env);
+      if (a.error) return json({ error: a.error }, a.status);
+      principal = a.principal;
+      const deny = authorize(r, principal);
+      if (deny) return json({ error: deny.error }, deny.status);
+      attachPrincipal(request, principal);
+    }
+    wait = await rateCheck(env, principal, ip);
+    if (wait) return limited(wait);
+    switch (r.id) {
+      case "health": return handleHealth(env);
+      case "client-errors": return handleClientError(request, rid);
+      case "fetch": return handleFetch(request);
+      case "smart": return handleSmart(request, env);
+      case "intel": return handleIntel(request, json);
+      case "vault": return handleVault(request, env, rest, json);
+      case "graph": return handleGraph(request, env, rest, json);
+      case "monitor": return handleMonitor(request, env, rest, json);
+      case "keys": return handleKeys(request, env, rest, json);
+      case "ingest": return handleIngest(request, env, rest, json, "ingest");
+      case "findings": return handleIngest(request, env, rest, json, "findings");
+    }
+    // r.id === "chat" (POST only, enforced by the table)
     let body;
     try {
       const raw = await readCapped(request, 1024 * 1024);

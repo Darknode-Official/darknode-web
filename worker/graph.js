@@ -19,8 +19,7 @@
 
 import { wins } from "../public/js/core/graph-merge.js";
 import { mergeToolData, nextStatus, toolSeverity } from "../public/js/core/sink-map.js";
-import { verifyIdToken } from "./vault-auth.js";
-import { isSuspended } from "./gate.js";
+import { requireUser } from "./auth.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
 import { readCapped } from "./body-cap.js";
 import { chainAppend, chainVerify, GENESIS, pad } from "./audit-chain.js";
@@ -242,15 +241,11 @@ export async function handleGraph(request, env, wid, json) {
   if (!env.GRAPH) return json({ error: "Cloud graph is not configured on this deployment." }, 503);
   if (!GRAPH_ID.test(wid)) return json({ error: "Invalid workspace id" }, 400);
   if (request.method !== "GET" && request.method !== "POST") return json({ error: "GET or POST only" }, 405);
+  const who = await requireUser(request, env, json);
+  if (who.err) return who.err;
   const projectId = env.FIREBASE_PROJECT_ID;
-  if (!projectId) return json({ error: "FIREBASE_PROJECT_ID is not set" }, 503);
-  const m = /^Bearer\s+(\S+)$/.exec(request.headers.get("Authorization") || "");
-  if (!m) return json({ error: "Sign in required" }, 401);
-  let who;
-  try { who = await verifyIdToken(m[1], projectId); } catch (e) { return json({ error: "Invalid sign-in token: " + e.message }, 401); }
-  if (await isSuspended(projectId, who, m[1])) return json({ error: "Your access has been suspended by an administrator." }, 403);
   let role;
-  try { role = await resolveWorkspaceRole(projectId, wid, who.uid, m[1]); }
+  try { role = await resolveWorkspaceRole(projectId, wid, who.uid, who.token); }
   catch (e) { return json({ error: e.message }, 502); }
   if (!role) return json({ error: "You are not a member of this workspace." }, 403);
   // The audit log is a trust surface, not operational data: only owners and admins read it.

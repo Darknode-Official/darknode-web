@@ -6,8 +6,7 @@
 // server-side copy of the graph write path.
 import { generateKey, hashKey, keyIdOf, keyPrefix, normalizeScopes, hasScope, timingSafeEqual, SCOPES } from "./keys-core.js";
 import { ingestToFindings } from "../public/js/ingest/formats.js";
-import { verifyIdToken } from "./vault-auth.js";
-import { isSuspended } from "./gate.js";
+import { requireUser, presentedKey } from "./auth.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
 import { readCapped } from "./body-cap.js";
 
@@ -164,15 +163,11 @@ export class IngestDO {
 
 // Shared Firebase-token + workspace-role check for the management plane.
 async function authWorkspace(request, env, wid, json) {
+  const who = await requireUser(request, env, json);
+  if (who.err) return who;
   const projectId = env.FIREBASE_PROJECT_ID;
-  if (!projectId) return { err: json({ error: "FIREBASE_PROJECT_ID is not set" }, 503) };
-  const m = /^Bearer\s+(\S+)$/.exec(request.headers.get("Authorization") || "");
-  if (!m) return { err: json({ error: "Sign in required" }, 401) };
-  let who;
-  try { who = await verifyIdToken(m[1], projectId); } catch (e) { return { err: json({ error: "Invalid sign-in token: " + e.message }, 401) }; }
-  if (await isSuspended(projectId, who, m[1])) return { err: json({ error: "Your access has been suspended by an administrator." }, 403) };
   let role;
-  try { role = await resolveWorkspaceRole(projectId, wid, who.uid, m[1]); }
+  try { role = await resolveWorkspaceRole(projectId, wid, who.uid, who.token); }
   catch (e) { return { err: json({ error: e.message }, 502) }; }
   if (!role) return { err: json({ error: "You are not a member of this workspace." }, 403) };
   return { uid: who.uid, role };
@@ -190,8 +185,6 @@ export async function handleKeys(request, env, wid, json) {
   const res = await stub.fetch("https://ingest/", { method: "POST", body: text || "{}", headers: { "Content-Type": "application/json", "x-ing-uid": a.uid, "x-ing-role": a.role } });
   return json(await res.json(), res.status);
 }
-
-const presentedKey = (request) => request.headers.get("x-darknode-key") || (/^Bearer\s+(dk_\S+)$/.exec(request.headers.get("Authorization") || "") || [])[1] || "";
 
 // POST /api/v1/ingest/<wid>   (API key)  — body: SARIF / CycloneDX / Finding JSON
 // GET  /api/v1/findings/<wid> (API key)  — read-back of still-pending findings

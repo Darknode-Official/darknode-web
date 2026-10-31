@@ -17,8 +17,7 @@
 
 import { Ledger, toCents, fmtCents, hashStr, canon } from "../public/js/vault/ledger.js";
 import { readCapped } from "./body-cap.js";
-import { verifyIdToken } from "./vault-auth.js";
-import { isSuspended } from "./gate.js";
+import { requireUser } from "./auth.js";
 import { ROLES, canDo } from "../public/js/vault/roles.js";
 
 export { ROLES, canDo };
@@ -253,15 +252,11 @@ export async function handleVault(request, env, vid, json) {
   if (!env.VAULT) return json({ error: "Server-enforced VAULT is not configured on this deployment." }, 503);
   if (!VAULT_ID.test(vid)) return json({ error: "Invalid vault id" }, 400);
   if (request.method !== "GET" && request.method !== "POST") return json({ error: "GET or POST only" }, 405);
+  const who = await requireUser(request, env, json);
+  if (who.err) return who.err;
   const projectId = env.FIREBASE_PROJECT_ID;
-  if (!projectId) return json({ error: "FIREBASE_PROJECT_ID is not set" }, 503);
-  const m = /^Bearer\s+(\S+)$/.exec(request.headers.get("Authorization") || "");
-  if (!m) return json({ error: "Sign in required" }, 401);
-  let who;
-  try { who = await verifyIdToken(m[1], projectId); } catch (e) { return json({ error: "Invalid sign-in token: " + e.message }, 401); }
-  if (await isSuspended(projectId, who, m[1])) return json({ error: "Your access has been suspended by an administrator." }, 403);
   let role;
-  try { role = await memberRole(projectId, vid, who.uid, m[1]); } catch (e) { return json({ error: e.message }, 502); }
+  try { role = await memberRole(projectId, vid, who.uid, who.token); } catch (e) { return json({ error: e.message }, 502); }
   if (!role) return json({ error: "You are not a member of this vault." }, 403);
   let body = null;
   if (request.method === "POST") {

@@ -60,5 +60,5 @@ export async function verifyIdToken(token, projectId, opts = {}) {
   if (!(claims.iat <= now + SKEW)) throw new Error("token issued in the future");
   if (claims.auth_time != null && !(claims.auth_time <= now + SKEW)) throw new Error("bad auth_time");
   if (typeof claims.sub !== "string" || !claims.sub || claims.sub.length > 128) throw new Error("bad subject");
-  return { uid: claims.sub, email: claims.email || "" };
+  return { uid: claims.sub, email: claims.email || "", claims };
 }
