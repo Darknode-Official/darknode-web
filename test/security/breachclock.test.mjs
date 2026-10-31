@@ -270,6 +270,13 @@ group("breachclock: US states from reference data", () => {
     const a = run({ counts: [{ jurisdiction: "Atlantis", count: 3 }] });
     assert.ok(a.skipped.some((s) => s.check === "jurisdiction:Atlantis"));
   });
+  test("a jurisdiction named like an Object member is unknown, not a crash", () => {
+    for (const j of ["__proto__", "constructor", "toString", "hasOwnProperty"]) {
+      assert.equal(resolveJurisdiction(j, LAWS.data).kind, "unknown", j);
+      const a = run({ counts: [{ jurisdiction: j, count: 3 }] });
+      assert.ok(a.skipped.some((s) => s.check === "jurisdiction:" + j), j);
+    }
+  });
   test("state rows without the reference file are skipped, not guessed", () => {
     const a = assess({ ...base, counts: [{ jurisdiction: "Texas", count: 5 }] }, { now: "2026-01-10T12:00:00Z" });
     assert.ok(a.skipped.some((s) => s.check === "us-states" || s.check === "jurisdiction:Texas"));

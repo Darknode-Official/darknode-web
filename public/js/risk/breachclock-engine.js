@@ -95,7 +95,7 @@ const OTHER_COUNTRIES = { GB: "United Kingdom", CA: "Canada", AU: "Australia", I
 export const COUNTRIES = { ...EU, ...OTHER_COUNTRIES };
 /** EU/EEA member states (ISO code -> name). */
 export const EU_STATES = { ...EU };
-const COUNTRY_ALIASES = { uk: "GB", "great britain": "GB", "united kingdom": "GB", england: "GB", scotland: "GB", wales: "GB", "northern ireland": "GB", el: "GR", czechrepublic: "CZ", "czech republic": "CZ" };
+const COUNTRY_ALIASES = { __proto__: null, uk: "GB", "great britain": "GB", "united kingdom": "GB", england: "GB", scotland: "GB", wales: "GB", "northern ireland": "GB", el: "GR", czechrepublic: "CZ", "czech republic": "CZ" };
 
 // ---------------------------------------------------------------------------
 // Built-in regimes (statute table). Each row: citation, trigger, clock, recipients, source.
