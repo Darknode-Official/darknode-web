@@ -87,12 +87,13 @@ Install commands appear in several places and must agree:
 
 ## 8. Cache-busters, commit, deploy
 
-- Bump `?v=` on every **changed** JS/CSS file **and every file up its import chain** whose URL is already live (e.g. deck-ui.js → deck/launch.js → admin.js and auth.js → index.html). Files that hold shared state (deck/launch.js) must use the same `?v=` everywhere they're imported.
+- **No manual bumps.** `firebase deploy` runs `scripts/build.mjs` first (predeploy) and uploads `dist/`: every `?v=` specifier gets a hash of the target file plus everything it imports, and `sw.js` gets `CACHE = 'darknode-<build hash>'` and precaches what index.html loads first. The `?v=` values in `public/` are placeholders; leave them as they are.
+- A new import of a cache-busted module needs some `?v=` (any value, e.g. `?v=1`) so the build versions it. Modules that build paths at runtime declare `const V = "?v=..."`; the build gives it the build hash.
 - **Never** add `?v=` to singleton modules: security-graph.js, context-bar.js, core/bus.js.
-- Bump `CACHE` in `public/sw.js` once per deploy.
+- Check locally with `node scripts/build.mjs` (writes `dist/`, fails on a `?v=` specifier pointing at a missing file) and serve `dist/` to test the release build.
 - Commit on a feature branch; no Claude or co-author trailer; no backticks inside `git commit -m "..."`. Push only to `origin`, never `def`.
 - **Ask before merging to main and before deploying.** Deploy: `npx firebase deploy --only hosting` (both sites). The `chat` function warning is harmless. Worker changes need a separate `cd worker && npx wrangler deploy --env=""` (production; try `--env staging` first, which publishes darknode-proxy-staging); Firestore rules changes need `scripts/set-admin.mjs` run first.
-- After deploy, curl both sites for the new SW version and a changed file.
+- After deploy, compare `/build.json` on both sites with the build hash `scripts/build.mjs` printed, and curl a changed file.
 
 ## 9. Report
 

@@ -1,7 +1,8 @@
 {
   "hosting": [
     {
-      "public": "public",
+      "public": "dist",
+      "predeploy": ["node scripts/build.mjs"],
       "site": "sentinel-b4194",
       "ignore": ["firebase/**", "**/.git/**", "**/node_modules/**", "**/*.exe", "**/*.deb", "**/*.AppImage", "**/*.dmg"],
       "rewrites": [
@@ -60,7 +61,8 @@
       ]
     },
     {
-      "public": "public",
+      "public": "dist",
+      "predeploy": ["node scripts/build.mjs"],
       "site": "sentinel-b4194-6173e",
       "ignore": ["firebase/**", "**/.git/**", "**/node_modules/**", "**/*.exe", "**/*.deb", "**/*.AppImage", "**/*.dmg"],
       "rewrites": [

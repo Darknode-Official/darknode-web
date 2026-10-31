@@ -32,6 +32,8 @@ jobs:
           node-version: ${{ matrix.node }}
       - name: Tests
         run: npm test
+      - name: Release build (public/ -> dist/ with content-hashed busters)
+        run: node scripts/build.mjs
 
   worker-build:
     runs-on: ubuntu-latest

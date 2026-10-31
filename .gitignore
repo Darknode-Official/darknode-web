@@ -24,3 +24,6 @@ functions/.env
 .codex-reviews/
 .wrangler
 BUILDLOG.md
+
+# release build output (scripts/build.mjs; firebase deploys this)
+dist/
