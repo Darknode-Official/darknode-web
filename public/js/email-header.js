@@ -154,12 +154,12 @@ function detectSuspicious(headers, hops, auth) {
       flags.push({ severity: auth.dmarc === 'fail' ? 'high' : 'medium', text: 'Return-Path domain (' + esc(rpD) + ') differs from From domain (' + esc(fromD) + ') and DMARC did not pass. The visible sender may be forged.' });
     }
   }
-  if (auth.spf === 'fail') flags.push({ severity: 'critical', text: 'SPF check FAILED. Sending server is not authorized for this domain.' });
+  if (auth.spf === 'fail') flags.push({ severity: 'critical', text: 'SPF check failed. Sending server is not authorized for this domain.' });
   if (auth.dmarc === 'fail') {
     var pol = ((auth.dmarcDetail.match(/\bp=(\w+)/i) || [])[1] || '').toLowerCase();
-    flags.push({ severity: 'critical', text: 'DMARC check FAILED. ' + (pol === 'reject' ? 'The domain asks receivers to reject this email.' : pol === 'quarantine' ? 'The domain asks receivers to send this email to spam.' : pol === 'none' ? 'The domain only monitors (p=none), so it was not blocked.' : 'The From domain could not be verified.') });
+    flags.push({ severity: 'critical', text: 'DMARC check failed. ' + (pol === 'reject' ? 'The domain asks receivers to reject this email.' : pol === 'quarantine' ? 'The domain asks receivers to send this email to spam.' : pol === 'none' ? 'The domain only monitors (p=none), so it was not blocked.' : 'The From domain could not be verified.') });
   }
-  if (auth.dkim === 'fail') flags.push({ severity: 'high', text: 'DKIM signature FAILED. Email may have been altered in transit.' });
+  if (auth.dkim === 'fail') flags.push({ severity: 'high', text: 'DKIM signature failed. Email may have been altered in transit.' });
   if (/urgent|immediate|wire transfer|confidential|act now|verify your account|suspended/i.test(subject)) {
     flags.push({ severity: 'medium', text: 'Subject line contains urgency/social engineering language: "' + esc(subject.substring(0, 60)) + '"' });
   }
@@ -190,66 +190,40 @@ export function renderEmailHeader(container) {
   var rawInput = '';
 
   var EH_CSS = '<style>' +
-    '.eh-wrap{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#c8d6e5;max-width:1100px}' +
-    '.eh-title{font-size:1.6rem;font-weight:700;margin:0 0 6px;color:var(--txt)}' +
-    '.eh-sub{color:var(--mut);font-size:.85rem;margin-bottom:20px;line-height:1.5}' +
-    '.eh-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:24px}' +
-    '.eh-tab{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 16px;font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;border-radius:var(--btn-radius,4px);transition:all .15s;font-family:inherit}' +
-    '.eh-tab:hover{background:color-mix(in srgb,var(--acc) 8%,var(--card));color:var(--txt)}' +
-    '.eh-tab.active{background:var(--acc);color:var(--on-acc,#fff);border-color:var(--acc)}' +
-    '.eh-panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px}' +
-    '.eh-panel-title{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--acc);margin-bottom:12px}' +
-    '.eh-textarea{width:100%;min-height:200px;background:var(--card2,#0a0e14);border:1px solid var(--line);color:var(--txt);font-family:ui-monospace,monospace;font-size:.75rem;padding:12px;border-radius:6px;resize:vertical}' +
-    '.eh-textarea:focus{border-color:var(--acc);outline:none}' +
-    '.eh-btn{background:var(--acc);color:var(--on-acc,#fff);border:1px solid var(--acc);padding:8px 16px;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}' +
-    '.eh-btn:hover{opacity:.9}' +
-    '.eh-btn.ghost{background:transparent;color:var(--acc);border-color:var(--line)}' +
-    '.eh-btn.ghost:hover{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,transparent)}' +
+    '.eh-wrap{color:var(--txt)}' +
+    '.eh-panel-title{font-size:.9rem;font-weight:600;color:var(--txt);margin-bottom:12px}' +
+    '.eh-textarea{width:100%;min-height:200px;font-family:ui-monospace,monospace;font-size:.8rem;padding:12px;border-radius:6px;resize:vertical}' +
     '.eh-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-start}' +
     '.eh-field{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.8rem}' +
-    '.eh-field-name{font-weight:700;color:var(--acc);min-width:140px;flex-shrink:0;font-family:ui-monospace,monospace;font-size:.75rem}' +
+    '.eh-field-name{font-weight:600;color:var(--acc);min-width:140px;flex-shrink:0;font-family:ui-monospace,monospace;font-size:.75rem}' +
     '.eh-field-val{color:var(--txt);word-break:break-all;line-height:1.5}' +
-    '.eh-badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:.65rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}' +
-    '.eh-badge.pass{background:rgba(22,163,74,.15);color:#16a34a}' +
-    '.eh-badge.fail{background:rgba(220,38,38,.15);color:#dc2626}' +
-    '.eh-badge.none{background:rgba(100,116,139,.15);color:#64748b}' +
-    '.eh-badge.warn{background:rgba(217,119,6,.15);color:#d97706}' +
+    '.eh-badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:600}' +
+    '.eh-badge.pass{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}' +
+    '.eh-badge.fail{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}' +
+    '.eh-badge.none{background:color-mix(in srgb,var(--mut) 15%,transparent);color:var(--mut)}' +
+    '.eh-badge.warn{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}' +
     '.eh-hop{display:flex;align-items:flex-start;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}' +
-    '.eh-hop-num{width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0}' +
-    '.eh-hop-info{flex:1;font-size:.78rem}' +
+    '.eh-hop-num{width:28px;height:28px;border-radius:50%;background:var(--acc);color:var(--on-acc,#fff);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}' +
+    '.eh-hop-info{flex:1;font-size:.8rem}' +
     '.eh-hop-server{font-weight:600;color:var(--txt);margin-bottom:2px}' +
-    '.eh-hop-detail{color:var(--mut);font-size:.72rem}' +
-    '.eh-hop-arrow{color:var(--acc);text-align:center;padding:4px 0;font-size:.7rem}' +
-    '.eh-alert{padding:10px 14px;border-radius:6px;margin-bottom:8px;font-size:.78rem;display:flex;align-items:flex-start;gap:8px;line-height:1.5}' +
-    '.eh-alert.critical{background:rgba(220,38,38,.1);border-left:3px solid #dc2626;color:#fca5a5}' +
-    '.eh-alert.high{background:rgba(249,115,22,.1);border-left:3px solid #f97316;color:#fdba74}' +
-    '.eh-alert.medium{background:rgba(217,119,6,.1);border-left:3px solid #d97706;color:#fcd34d}' +
-    '.eh-alert.info{background:rgba(37,99,235,.08);border-left:3px solid #2563eb;color:#93c5fd}' +
-    '.eh-alert-icon{flex-shrink:0;font-size:1rem}' +
-    '.eh-table{width:100%;border-collapse:collapse;font-size:.78rem}' +
-    '.eh-table th{text-align:left;padding:10px 12px;background:rgba(0,0,0,.2);color:var(--mut);font-weight:600;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--line)}' +
+    '.eh-hop-detail{color:var(--mut);font-size:.75rem}' +
+    '.eh-hop-arrow{color:var(--acc);text-align:center;padding:4px 0;font-size:.75rem}' +
+    '.eh-alert{padding:10px 14px;border-radius:6px;margin-bottom:8px;font-size:.8rem;display:flex;align-items:flex-start;gap:8px;line-height:1.5;color:var(--txt)}' +
+    '.eh-alert.critical{background:color-mix(in srgb,var(--bad) 8%,transparent);border-left:3px solid var(--bad)}' +
+    '.eh-alert.high{background:color-mix(in srgb,var(--bad) 6%,transparent);border-left:3px solid var(--bad)}' +
+    '.eh-alert.medium{background:color-mix(in srgb,var(--warn) 8%,transparent);border-left:3px solid var(--warn)}' +
+    '.eh-alert.info{background:color-mix(in srgb,var(--acc) 6%,transparent);border-left:3px solid var(--acc)}' +
+    '.eh-alert-icon{flex-shrink:0;font-weight:700}' +
+    '.eh-table{width:100%;border-collapse:collapse;font-size:.8rem}' +
+    '.eh-table th{text-align:left;padding:10px 12px;color:var(--mut);font-weight:600;font-size:.75rem;border-bottom:2px solid var(--line)}' +
     '.eh-table td{padding:10px 12px;border-bottom:1px solid var(--line);color:var(--txt);vertical-align:top}' +
-    '.eh-table tr:hover td{background:rgba(0,0,0,.05)}' +
-    '.eh-risk{display:inline-block;padding:2px 6px;border-radius:3px;font-size:.6rem;font-weight:700;text-transform:uppercase}' +
-    '.eh-risk.high{background:rgba(220,38,38,.15);color:#dc2626}' +
-    '.eh-risk.medium{background:rgba(217,119,6,.15);color:#d97706}' +
-    '.eh-risk.low{background:rgba(22,163,74,.15);color:#16a34a}' +
-    '.eh-risk.info{background:rgba(100,116,139,.15);color:#64748b}' +
+    '.eh-risk{display:inline-block;padding:2px 6px;border-radius:3px;font-size:.75rem;font-weight:600}' +
+    '.eh-risk.high{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}' +
+    '.eh-risk.medium{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}' +
+    '.eh-risk.low{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}' +
+    '.eh-risk.info{background:color-mix(in srgb,var(--mut) 15%,transparent);color:var(--mut)}' +
     '.eh-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}' +
     '@media(max-width:768px){.eh-grid{grid-template-columns:1fr}}' +
-    '[data-style=pro] .eh-wrap{color:#0f172a}' +
-    '[data-style=pro] .eh-panel{background:#fff;border-color:#e2e8f0}' +
-    '[data-style=pro] .eh-textarea{background:#f8fafc;border-color:#e2e8f0;color:#0f172a}' +
-    '[data-style=pro] .eh-field-val{color:#334155}' +
-    '[data-style=pro] .eh-hop-server{color:#0f172a}' +
-    '[data-style=pro] .eh-hop-detail{color:#64748b}' +
-    '[data-style=pro] .eh-table td{color:#334155}' +
-    '[data-style=pro] .eh-table th{background:#f1f5f9;color:#475569}' +
-    '[data-style=pro] .eh-table tr:hover td{background:#f8fafc}' +
-    '[data-style=pro] .eh-alert.critical{background:rgba(220,38,38,.06);color:#991b1b}' +
-    '[data-style=pro] .eh-alert.high{background:rgba(249,115,22,.06);color:#9a3412}' +
-    '[data-style=pro] .eh-alert.medium{background:rgba(217,119,6,.06);color:#92400e}' +
-    '[data-style=pro] .eh-alert.info{background:rgba(37,99,235,.06);color:#1e40af}' +
     '</style>';
 
   function render() {
@@ -266,32 +240,32 @@ export function renderEmailHeader(container) {
     var suspicious = headers.length > 0 ? detectSuspicious(headers, hops, auth) : [];
 
     var tabsHtml = ['analysis', 'route', 'auth', 'reference'].map(function(t) {
-      var labels = { analysis: 'Analysis', route: 'Route Trace', auth: 'Authentication', reference: 'Reference' };
-      return '<button class="eh-tab' + (activeTab === t ? ' active' : '') + '" data-tab="' + t + '">' + labels[t] + '</button>';
+      var labels = { analysis: 'Analysis', route: 'Route trace', auth: 'Authentication', reference: 'Reference' };
+      return '<button class="eh-tab' + (activeTab === t ? ' on' : '') + '" data-tab="' + t + '">' + labels[t] + '</button>';
     }).join('');
 
     var contentHtml = '';
 
     if (activeTab === 'analysis') {
-      contentHtml = '<div class="eh-panel">' +
-        '<div class="eh-panel-title">Paste Email Headers</div>' +
-        '<textarea class="eh-textarea" id="eh-input" placeholder="Paste raw email headers here...">' + esc(rawInput) + '</textarea>' +
+      contentHtml = '<div class="card eh-panel">' +
+        '<div class="eh-panel-title">Paste email headers</div>' +
+        '<textarea class="eh-textarea" id="eh-input" placeholder="Raw email headers">' + esc(rawInput) + '</textarea>' +
         '<div class="eh-row" style="margin-top:12px">' +
-          '<button class="eh-btn" id="eh-analyze">Analyze Headers</button>' +
-          '<button class="eh-btn ghost" id="eh-sample">Load Sample</button>' +
-          '<button class="eh-btn ghost" id="eh-clear">Clear</button>' +
+          '<button class="btn" id="eh-analyze">Analyze headers</button>' +
+          '<button class="btn ghost" id="eh-sample">Load example</button>' +
+          '<button class="btn ghost" id="eh-clear">Clear</button>' +
         '</div>' +
       '</div>';
       if (headers.length > 0) {
-        contentHtml += '<div class="eh-panel"><div class="eh-panel-title">Key Fields</div>';
+        contentHtml += '<div class="card eh-panel"><div class="eh-panel-title">Key fields</div>';
         var fields = [['From', from], ['To', to], ['Subject', subject], ['Date', date], ['Message-ID', msgId], ['Return-Path', extractField(headers, 'Return-Path')], ['Reply-To', extractField(headers, 'Reply-To')], ['X-Mailer', extractField(headers, 'X-Mailer')]];
         fields.forEach(function(f) {
           if (f[1]) contentHtml += '<div class="eh-field"><span class="eh-field-name">' + esc(f[0]) + '</span><span class="eh-field-val">' + esc(f[1]) + '</span></div>';
         });
         contentHtml += '</div>';
         if (suspicious.length > 0) {
-          contentHtml += '<div class="eh-panel"><div class="eh-panel-title">Suspicious Indicators (' + suspicious.length + ')</div>';
-          var icons = { critical: '[!!]', high: '[!]', medium: '[!]', info: 'ℹ' };
+          contentHtml += '<div class="card eh-panel"><div class="eh-panel-title">Suspicious indicators (' + suspicious.length + ')</div>';
+          var icons = { critical: '!!', high: '!', medium: '!', info: 'i' };
           suspicious.forEach(function(f) {
             contentHtml += '<div class="eh-alert ' + f.severity + '"><span class="eh-alert-icon">' + (icons[f.severity] || '') + '</span><span>' + f.text + '</span></div>';
           });
@@ -300,9 +274,9 @@ export function renderEmailHeader(container) {
       }
     } else if (activeTab === 'route') {
       if (hops.length === 0) {
-        contentHtml = '<div class="eh-panel"><div class="eh-panel-title">Route Trace</div><p style="color:var(--mut);font-size:.82rem">Analyze email headers first to see the routing path.</p></div>';
+        contentHtml = '<div class="card eh-panel"><div class="eh-panel-title">Route trace</div><p style="color:var(--mut);font-size:.82rem">Analyze email headers first to see the routing path.</p></div>';
       } else {
-        contentHtml = '<div class="eh-panel"><div class="eh-panel-title">Mail Routing Path (' + hops.length + ' hops)</div>';
+        contentHtml = '<div class="card eh-panel"><div class="eh-panel-title">Mail routing path (' + hops.length + ' hops, from the Received headers)</div>';
         hops.forEach(function(h, i) {
           if (i > 0) contentHtml += '<div class="eh-hop-arrow">↓</div>';
           contentHtml += '<div class="eh-hop">' +
@@ -321,7 +295,7 @@ export function renderEmailHeader(container) {
       }
     } else if (activeTab === 'auth') {
       var badgeClass = function(status) { return status === 'pass' ? 'pass' : status === 'fail' ? 'fail' : status === 'none' ? 'none' : 'warn'; };
-      contentHtml = '<div class="eh-panel"><div class="eh-panel-title">Email Authentication Results</div>';
+      contentHtml = '<div class="card eh-panel"><div class="eh-panel-title">Authentication results recorded by the receiving server</div>';
       if (!authResults) {
         contentHtml += '<p style="color:var(--mut);font-size:.82rem">No Authentication-Results header found. Analyze headers first.</p>';
       } else {
@@ -330,20 +304,20 @@ export function renderEmailHeader(container) {
          ['DKIM', auth.dkim, auth.dkimDetail, 'DomainKeys Identified Mail uses cryptographic signatures to verify the email was not altered.'],
          ['DMARC', auth.dmarc, auth.dmarcDetail, 'Domain-based Message Authentication builds on SPF and DKIM to set policies for failed checks.']
         ].forEach(function(a) {
-          contentHtml += '<div class="eh-panel" style="margin-bottom:0">' +
+          contentHtml += '<div class="card eh-panel" style="margin-bottom:0">' +
             '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' +
               '<strong style="font-size:.9rem">' + a[0] + '</strong>' +
-              '<span class="eh-badge ' + badgeClass(a[1]) + '">' + a[1].toUpperCase() + '</span>' +
+              '<span class="eh-badge ' + badgeClass(a[1]) + '">' + esc(a[1]) + '</span>' +
             '</div>' +
             '<p style="font-size:.78rem;color:var(--mut);margin:0 0 6px;line-height:1.5">' + a[3] + '</p>' +
-            (a[2] ? '<p style="font-size:.72rem;color:var(--txt);margin:0;font-family:ui-monospace,monospace;word-break:break-all">' + esc(a[2]) + '</p>' : '') +
+            (a[2] ? '<p style="font-size:.75rem;color:var(--txt);margin:0;font-family:ui-monospace,monospace;word-break:break-all">' + esc(a[2]) + '</p>' : '') +
           '</div>';
         });
         contentHtml += '</div>';
       }
       contentHtml += '</div>';
     } else if (activeTab === 'reference') {
-      contentHtml = '<div class="eh-panel"><div class="eh-panel-title">Email Header Field Reference</div>' +
+      contentHtml = '<div class="card eh-panel"><div class="eh-panel-title">Email header field reference</div>' +
         '<table class="eh-table"><thead><tr><th>Field</th><th>Description</th><th>Risk</th></tr></thead><tbody>';
       HEADER_REF.forEach(function(r) {
         contentHtml += '<tr><td><strong style="font-family:ui-monospace,monospace;font-size:.75rem">' + esc(r.field) + '</strong></td><td>' + esc(r.desc) + '</td><td><span class="eh-risk ' + r.risk + '">' + r.risk + '</span></td></tr>';
@@ -353,9 +327,9 @@ export function renderEmailHeader(container) {
 
     container.innerHTML = EH_CSS +
       '<div class="eh-wrap">' +
-        '<h1 class="eh-title">Email Header Analyzer</h1>' +
-        '<p class="eh-sub">Parse and analyze raw email headers to detect spoofing, trace mail routing, and verify authentication.</p>' +
-        '<div class="eh-tabs">' + tabsHtml + '</div>' +
+        '<div class="pg-head"><div><h1 class="pg-h1">Email Header Analyzer</h1>' +
+        '<p class="muted pg-sub">Parse raw email headers locally to flag spoofing signs, trace the Received chain and read the SPF, DKIM and DMARC results the receiving server recorded.</p></div></div>' +
+        '<div class="seg" style="margin-bottom:16px">' + tabsHtml + '</div>' +
         contentHtml +
       '</div>';
 

@@ -17,7 +17,7 @@ function fmtN(n) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SECTOR DATA (IBM Cost of Data Breach 2024)
+// SECTOR DATA (IBM Cost of a Data Breach 2023 averages)
 // ═══════════════════════════════════════════════════════════════════════════════
 const SECTORS = [
   { id: 'healthcare',     name: 'Healthcare',             avgCost: 10930000, perRecord: 408, multiplier: 2.10 },
@@ -189,7 +189,7 @@ function calculateCosts(params) {
   var records = params.records || 10000;
 
   // Base per-record cost adjusted by sector
-  var basePerRecord = 165; // IBM 2024 global average
+  var basePerRecord = 165; // IBM 2023 global average
   var sectorPerRecord = basePerRecord * sector.multiplier;
 
   // Data type multiplier (average of selected types)
@@ -327,48 +327,48 @@ function injectStyles() {
   _icStyled = true;
   var s = document.createElement('style');
   s.textContent =
-  '.ic-wrap { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: var(--txt,#e7eefc); max-width: 1300px; margin: 0 auto; }' +
+  '.ic-wrap { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; color: var(--txt,#e7eefc); }' +
   '.ic-header { padding: 24px 0 20px; border-bottom: 1px solid var(--line,#283a5a); margin-bottom: 24px; }' +
-  '.ic-title { font-size: 24px; font-weight: 800; color: #fff; margin: 0 0 4px; letter-spacing: -0.02em; }' +
+  '.ic-title { font-size: 24px; font-weight: 800; color: #fff; margin: 0 0 4px; }' +
   '.ic-subtitle { font-size: 13px; color: var(--mut,#7a93b8); margin: 0; }' +
   '.ic-grid { display: grid; grid-template-columns: 380px 1fr; gap: 24px; }' +
   '@media (max-width: 900px) { .ic-grid { grid-template-columns: 1fr; } }' +
 
   // Panel base
   '.ic-panel { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 10px; padding: 20px; margin-bottom: 20px; }' +
-  '.ic-panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--acc,#2563eb); margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line,#283a5a); }' +
+  '.ic-panel-title { font-size: 14px; font-weight: 600; color: var(--txt,#e7eefc); margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line,#283a5a); }' +
 
   // Hero cost
   '.ic-hero { background: linear-gradient(135deg, var(--card2,#0f1726), var(--card,#0b1120)); border: 1px solid var(--line,#283a5a); border-radius: 12px; padding: 28px 24px; margin-bottom: 24px; text-align: center; }' +
-  '.ic-hero-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--mut,#7a93b8); margin-bottom: 8px; }' +
-  '.ic-hero-cost { font-size: 48px; font-weight: 800; font-family: var(--font-mono, ui-monospace, monospace); color: #ff5c6c; margin: 0; letter-spacing: -2px; line-height: 1.1; }' +
+  '.ic-hero-label { font-size: 12px; font-weight: 700; color: var(--mut,#7a93b8); margin-bottom: 8px; }' +
+  '.ic-hero-cost { font-size: 48px; font-weight: 800; font-family: var(--font-mono, ui-monospace, monospace); color: #ff5c6c; margin: 0; line-height: 1.1; }' +
   '.ic-hero-range { font-size: 12px; color: var(--mut,#7a93b8); margin-top: 6px; font-family: var(--font-mono, ui-monospace, monospace); }' +
-  '.ic-hero-per-record { font-size: 13px; color: #8899aa; margin-top: 10px; }' +
+  '.ic-hero-per-record { font-size: 13px; color: var(--mut); margin-top: 10px; }' +
   '.ic-hero-per-record span { color: #ffaa00; font-weight: 700; font-family: var(--font-mono, ui-monospace, monospace); }' +
 
   // Cost breakdown cards row
   '.ic-cost-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }' +
   '.ic-cost-card { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 12px; text-align: center; }' +
-  '.ic-cost-card-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--mut,#7a93b8); margin-bottom: 6px; }' +
+  '.ic-cost-card-label { font-size: 12px; color: var(--mut,#7a93b8); margin-bottom: 6px; }' +
   '.ic-cost-card-val { font-size: 20px; font-weight: 700; font-family: var(--font-mono, ui-monospace, monospace); }' +
-  '.ic-cost-card-pct { font-size: 10px; color: var(--mut,#7a93b8); margin-top: 2px; }' +
+  '.ic-cost-card-pct { font-size: 12px; color: var(--mut,#7a93b8); margin-top: 2px; }' +
 
   // Form elements
   '.ic-form-group { margin-bottom: 14px; }' +
-  '.ic-label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #8899aa; margin-bottom: 6px; }' +
+  '.ic-label { display: block; font-size: 12px; font-weight: 600; color: var(--mut); margin-bottom: 6px; }' +
   '.ic-select { width: 100%; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 6px; color: var(--txt,#e7eefc); padding: 8px 10px; font-size: 13px; font-family: inherit; cursor: pointer; }' +
   '.ic-select:focus { outline: none; border-color: var(--acc,#2563eb); }' +
   '.ic-range-wrap { display: flex; align-items: center; gap: 10px; }' +
   '.ic-range { flex: 1; accent-color: var(--acc,#2563eb); }' +
   '.ic-range-val { font-family: var(--font-mono, ui-monospace, monospace); font-size: 13px; color: var(--acc,#2563eb); font-weight: 700; min-width: 60px; text-align: right; }' +
   '.ic-checkbox-group { display: flex; flex-wrap: wrap; gap: 6px; }' +
-  '.ic-check { display: flex; align-items: center; gap: 5px; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 4px; padding: 5px 10px; font-size: 11px; cursor: pointer; transition: all .15s; }' +
+  '.ic-check { display: flex; align-items: center; gap: 5px; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 4px; padding: 5px 10px; font-size: 12px; cursor: pointer; transition: all .15s; }' +
   '.ic-check:hover { border-color: #2a3a4a; }' +
   '.ic-check.active { background: #0a2a3a; border-color: var(--acc,#2563eb); color: var(--acc,#2563eb); }' +
   '.ic-check input { accent-color: var(--acc,#2563eb); margin: 0; }' +
   '.ic-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--card2,#0f1726); }' +
-  '.ic-toggle-label { font-size: 12px; color: #aabbcc; }' +
-  '.ic-toggle-savings { font-size: 11px; color: #2ee6a6; font-family: var(--font-mono, ui-monospace, monospace); }' +
+  '.ic-toggle-label { font-size: 12px; color: var(--txt-2); }' +
+  '.ic-toggle-savings { font-size: 12px; color: #2ee6a6; font-family: var(--font-mono, ui-monospace, monospace); }' +
   '.ic-toggle { position: relative; width: 36px; height: 20px; background: var(--line,#283a5a); border-radius: 10px; cursor: pointer; transition: background .2s; flex-shrink: 0; }' +
   '.ic-toggle.on { background: var(--acc,#2563eb); }' +
   '.ic-toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }' +
@@ -376,8 +376,8 @@ function injectStyles() {
 
   // Breakdown bars
   '.ic-bar-row { margin-bottom: 10px; }' +
-  '.ic-bar-header { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }' +
-  '.ic-bar-name { color: #aabbcc; }' +
+  '.ic-bar-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }' +
+  '.ic-bar-name { color: var(--txt-2); }' +
   '.ic-bar-val { font-family: var(--font-mono, ui-monospace, monospace); font-weight: 700; }' +
   '.ic-bar-track { height: 8px; background: var(--card2,#0f1726); border-radius: 4px; overflow: hidden; }' +
   '.ic-bar-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }' +
@@ -390,22 +390,22 @@ function injectStyles() {
 
   // Amplifier / mitigator list
   '.ic-factor-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--card2,#0f1726); font-size: 12px; }' +
-  '.ic-factor-name { color: #aabbcc; }' +
+  '.ic-factor-name { color: var(--txt-2); }' +
   '.ic-factor-cost { font-family: var(--font-mono, ui-monospace, monospace); font-weight: 700; }' +
   '.ic-factor-cost.amp { color: #ff5c6c; }' +
   '.ic-factor-cost.mit { color: #2ee6a6; }' +
 
   // Table
   '.ic-table { width: 100%; border-collapse: collapse; font-size: 12px; }' +
-  '.ic-table th { text-align: left; padding: 8px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--mut,#7a93b8); border-bottom: 2px solid var(--line,#283a5a); }' +
-  '.ic-table td { padding: 8px 10px; border-bottom: 1px solid var(--card2,#0f1726); color: #aabbcc; }' +
+  '.ic-table th { text-align: left; padding: 8px 10px; font-size: 12px; font-weight: 700; color: var(--mut,#7a93b8); border-bottom: 2px solid var(--line,#283a5a); }' +
+  '.ic-table td { padding: 8px 10px; border-bottom: 1px solid var(--card2,#0f1726); color: var(--txt-2); }' +
   '.ic-table tr:hover td { background: var(--card2,#0f1726); }' +
   '.ic-table .mono { font-family: var(--font-mono, ui-monospace, monospace); }' +
 
   // Insurance
   '.ic-insurance-bar { display: flex; align-items: stretch; height: 32px; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }' +
-  '.ic-ins-covered { background: #10b981; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; }' +
-  '.ic-ins-gap { background: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; }' +
+  '.ic-ins-covered { background: #10b981; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }' +
+  '.ic-ins-gap { background: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }' +
 
   // Revenue input
   '.ic-input { width: 100%; background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 6px; color: var(--txt,#e7eefc); padding: 8px 10px; font-size: 13px; font-family: var(--font-mono, ui-monospace, monospace); }' +
@@ -413,8 +413,8 @@ function injectStyles() {
 
   // Tabs
   '.ic-tabs { display: flex; gap: 2px; margin-bottom: 20px; background: var(--card,#0b1120); border-radius: 8px; padding: 3px; }' +
-  '.ic-tab { flex: 1; text-align: center; padding: 8px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mut,#7a93b8); cursor: pointer; border-radius: 4px; transition: all .15s; border: none; background: none; font-family: inherit; }' +
-  '.ic-tab:hover { color: #aabbcc; }' +
+  '.ic-tab { flex: 1; text-align: center; padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--mut,#7a93b8); cursor: pointer; border-radius: 4px; transition: all .15s; border: none; background: none; font-family: inherit; }' +
+  '.ic-tab:hover { color: var(--txt-2); }' +
   '.ic-tab.active { background: var(--line,#283a5a); color: var(--acc,#2563eb); }' +
 
   // Report button
@@ -427,7 +427,7 @@ function injectStyles() {
   '.ic-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }' +
   '.ic-stat { background: var(--card2,#0f1726); border: 1px solid var(--line,#283a5a); border-radius: 8px; padding: 14px; text-align: center; }' +
   '.ic-stat-val { font-size: 22px; font-weight: 800; font-family: var(--font-mono, ui-monospace, monospace); }' +
-  '.ic-stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--mut,#7a93b8); margin-top: 4px; }' +
+  '.ic-stat-label { font-size: 12px; color: var(--mut,#7a93b8); margin-top: 4px; }' +
   '@media (max-width: 700px) { .ic-stats-row { grid-template-columns: repeat(2, 1fr); } }' +
 
   // Fine tier
@@ -436,57 +436,57 @@ function injectStyles() {
   '.ic-fine-amount { font-size: 13px; font-family: var(--font-mono, ui-monospace, monospace); font-weight: 700; color: #ff5c6c; }' +
 
   // Pro (light) theme overrides
-  '[data-style=pro] .ic-wrap { color: #3f3f46; }' +
-  '[data-style=pro] .ic-header { border-bottom-color: #e5e5e5; }' +
-  '[data-style=pro] .ic-title { color: #18181b; }' +
-  '[data-style=pro] .ic-subtitle { color: #71717a; }' +
-  '[data-style=pro] .ic-panel { background: #fff; border-color: #e5e5e5; }' +
-  '[data-style=pro] .ic-panel-title { color: #2563eb; border-bottom-color: #e5e5e5; }' +
+  '[data-style=pro] .ic-wrap { color: var(--txt-2); }' +
+  '[data-style=pro] .ic-header { border-bottom-color: var(--line); }' +
+  '[data-style=pro] .ic-title { color: var(--txt); }' +
+  '[data-style=pro] .ic-subtitle { color: var(--mut); }' +
+  '[data-style=pro] .ic-panel { background: var(--card); border-color: var(--line); }' +
+  '[data-style=pro] .ic-panel-title { color: var(--txt); border-bottom-color: var(--line); }' +
   '[data-style=pro] .ic-hero { background: linear-gradient(135deg, #fff, #f0f4ff); border-color: #dbeafe; }' +
-  '[data-style=pro] .ic-hero-label { color: #71717a; }' +
+  '[data-style=pro] .ic-hero-label { color: var(--mut); }' +
   '[data-style=pro] .ic-hero-cost { color: #dc2626; }' +
-  '[data-style=pro] .ic-hero-range { color: #71717a; }' +
-  '[data-style=pro] .ic-hero-per-record { color: #52525b; }' +
+  '[data-style=pro] .ic-hero-range { color: var(--mut); }' +
+  '[data-style=pro] .ic-hero-per-record { color: var(--txt-2); }' +
   '[data-style=pro] .ic-hero-per-record span { color: #ca8a04; }' +
-  '[data-style=pro] .ic-cost-card { background: #fafafa; border-color: #e5e5e5; }' +
-  '[data-style=pro] .ic-cost-card-label { color: #71717a; }' +
-  '[data-style=pro] .ic-cost-card-pct { color: #a1a1aa; }' +
-  '[data-style=pro] .ic-select { background: #fafafa; border-color: #e5e5e5; color: #18181b; }' +
-  '[data-style=pro] .ic-select:focus { border-color: #2563eb; }' +
-  '[data-style=pro] .ic-range { accent-color: #2563eb; }' +
-  '[data-style=pro] .ic-range-val { color: #2563eb; }' +
-  '[data-style=pro] .ic-check { background: #fafafa; border-color: #e5e5e5; color: #3f3f46; }' +
-  '[data-style=pro] .ic-check:hover { border-color: #d4d4d8; }' +
-  '[data-style=pro] .ic-check.active { background: #eff6ff; border-color: #2563eb; color: #2563eb; }' +
-  '[data-style=pro] .ic-check input { accent-color: #2563eb; }' +
-  '[data-style=pro] .ic-toggle-row { border-bottom-color: #f4f4f5; }' +
-  '[data-style=pro] .ic-toggle-label { color: #3f3f46; }' +
+  '[data-style=pro] .ic-cost-card { background: var(--card2); border-color: var(--line); }' +
+  '[data-style=pro] .ic-cost-card-label { color: var(--mut); }' +
+  '[data-style=pro] .ic-cost-card-pct { color: var(--mut); }' +
+  '[data-style=pro] .ic-select { background: var(--card2); border-color: var(--line); color: var(--txt); }' +
+  '[data-style=pro] .ic-select:focus { border-color: var(--acc); }' +
+  '[data-style=pro] .ic-range { accent-color: var(--acc); }' +
+  '[data-style=pro] .ic-range-val { color: var(--acc); }' +
+  '[data-style=pro] .ic-check { background: var(--card2); border-color: var(--line); color: var(--txt-2); }' +
+  '[data-style=pro] .ic-check:hover { border-color: var(--line); }' +
+  '[data-style=pro] .ic-check.active { background: #eff6ff; border-color: var(--acc); color: var(--acc); }' +
+  '[data-style=pro] .ic-check input { accent-color: var(--acc); }' +
+  '[data-style=pro] .ic-toggle-row { border-bottom-color: var(--card2); }' +
+  '[data-style=pro] .ic-toggle-label { color: var(--txt-2); }' +
   '[data-style=pro] .ic-toggle-savings { color: #16a34a; }' +
-  '[data-style=pro] .ic-toggle { background: #e5e5e5; }' +
-  '[data-style=pro] .ic-toggle.on { background: #2563eb; }' +
-  '[data-style=pro] .ic-bar-name { color: #52525b; }' +
-  '[data-style=pro] .ic-bar-track { background: #f4f4f5; }' +
-  '[data-style=pro] .ic-factor-item { border-bottom-color: #f4f4f5; }' +
-  '[data-style=pro] .ic-factor-name { color: #52525b; }' +
+  '[data-style=pro] .ic-toggle { background: var(--line); }' +
+  '[data-style=pro] .ic-toggle.on { background: var(--acc); }' +
+  '[data-style=pro] .ic-bar-name { color: var(--txt-2); }' +
+  '[data-style=pro] .ic-bar-track { background: var(--card2); }' +
+  '[data-style=pro] .ic-factor-item { border-bottom-color: var(--card2); }' +
+  '[data-style=pro] .ic-factor-name { color: var(--txt-2); }' +
   '[data-style=pro] .ic-factor-cost.amp { color: #dc2626; }' +
   '[data-style=pro] .ic-factor-cost.mit { color: #16a34a; }' +
-  '[data-style=pro] .ic-table th { color: #71717a; border-bottom-color: #e5e5e5; }' +
-  '[data-style=pro] .ic-table td { color: #3f3f46; border-bottom-color: #f4f4f5; }' +
-  '[data-style=pro] .ic-table tr:hover td { background: #fafafa; }' +
-  '[data-style=pro] .ic-input { background: #fafafa; border-color: #e5e5e5; color: #18181b; }' +
-  '[data-style=pro] .ic-input:focus { border-color: #2563eb; }' +
-  '[data-style=pro] .ic-tabs { background: #f4f4f5; }' +
-  '[data-style=pro] .ic-tab { color: #71717a; }' +
-  '[data-style=pro] .ic-tab:hover { color: #3f3f46; }' +
-  '[data-style=pro] .ic-tab.active { background: #fff; color: #2563eb; }' +
-  '[data-style=pro] .ic-btn { background: #18181b; color: #fff; }' +
-  '[data-style=pro] .ic-btn:hover { background: #3f3f46; }' +
-  '[data-style=pro] .ic-btn.ghost { background: transparent; color: #3f3f46; border-color: #e5e5e5; }' +
-  '[data-style=pro] .ic-btn.ghost:hover { border-color: #2563eb; color: #2563eb; }' +
-  '[data-style=pro] .ic-stat { background: #fafafa; border-color: #e5e5e5; }' +
-  '[data-style=pro] .ic-stat-label { color: #71717a; }' +
-  '[data-style=pro] .ic-fine-row { background: #fafafa; border-color: #e5e5e5; }' +
-  '[data-style=pro] .ic-fine-reg { color: #18181b; }' +
+  '[data-style=pro] .ic-table th { color: var(--mut); border-bottom-color: var(--line); }' +
+  '[data-style=pro] .ic-table td { color: var(--txt-2); border-bottom-color: var(--card2); }' +
+  '[data-style=pro] .ic-table tr:hover td { background: var(--card2); }' +
+  '[data-style=pro] .ic-input { background: var(--card2); border-color: var(--line); color: var(--txt); }' +
+  '[data-style=pro] .ic-input:focus { border-color: var(--acc); }' +
+  '[data-style=pro] .ic-tabs { background: var(--card2); }' +
+  '[data-style=pro] .ic-tab { color: var(--mut); }' +
+  '[data-style=pro] .ic-tab:hover { color: var(--txt-2); }' +
+  '[data-style=pro] .ic-tab.active { background: var(--card); color: var(--acc); }' +
+  '[data-style=pro] .ic-btn { background: var(--txt); color: #fff; }' +
+  '[data-style=pro] .ic-btn:hover { background: var(--txt-2); }' +
+  '[data-style=pro] .ic-btn.ghost { background: transparent; color: var(--txt-2); border-color: var(--line); }' +
+  '[data-style=pro] .ic-btn.ghost:hover { border-color: var(--acc); color: var(--acc); }' +
+  '[data-style=pro] .ic-stat { background: var(--card2); border-color: var(--line); }' +
+  '[data-style=pro] .ic-stat-label { color: var(--mut); }' +
+  '[data-style=pro] .ic-fine-row { background: var(--card2); border-color: var(--line); }' +
+  '[data-style=pro] .ic-fine-reg { color: var(--txt); }' +
   '[data-style=pro] .ic-fine-amount { color: #dc2626; }' +
   '.ic-tl-row { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line,#283a5a); }' +
   '.ic-tl-row:last-child { border-bottom: 0; }' +
@@ -532,23 +532,23 @@ export function renderIncidentCost(container) {
     h += '<div class="ic-wrap">';
 
     // Header
-    h += '<div class="ic-header">';
-    h += '<h1 class="ic-title">Cyber Incident Cost Calculator</h1>';
-    h += '<p class="ic-subtitle">Estimate breach costs using IBM/Ponemon methodology &mdash; sector-adjusted, regulation-aware, with insurance gap analysis</p>';
-    h += '</div>';
+    h += '<div class="pg-head"><div>';
+    h += '<h1 class="pg-h1">Cyber Incident Cost Calculator</h1>';
+    h += '<p class="muted pg-sub">Estimate breach costs from industry averages (IBM Cost of a Data Breach 2023 figures), adjusted for sector, regulation and insurance cover. Results are planning estimates, not quotes.</p>';
+    h += '</div></div>';
 
     // Tabs
-    h += '<div class="ic-tabs">';
+    h += '<div class="seg" style="flex-wrap:wrap;margin-bottom:20px">';
     var tabs = [
-      ['calculator', 'Cost Calculator'],
-      ['regulatory', 'Regulatory Fines'],
-      ['insurance', 'Insurance Analysis'],
-      ['historical', 'Breach Comparisons'],
-      ['report', 'Executive Report'],
-      ['response', 'Response Plan'],
+      ['calculator', 'Cost calculator'],
+      ['regulatory', 'Regulatory fines'],
+      ['insurance', 'Insurance analysis'],
+      ['historical', 'Breach comparisons'],
+      ['report', 'Executive report'],
+      ['response', 'Response plan'],
     ];
     for (var t = 0; t < tabs.length; t++) {
-      h += '<button class="ic-tab' + (state.activeTab === tabs[t][0] ? ' active' : '') + '" data-tab="' + tabs[t][0] + '">' + tabs[t][1] + '</button>';
+      h += '<button class="ic-tab' + (state.activeTab === tabs[t][0] ? ' on' : '') + '" data-tab="' + tabs[t][0] + '">' + tabs[t][1] + '</button>';
     }
     h += '</div>';
 
@@ -576,9 +576,9 @@ export function renderIncidentCost(container) {
 
     // Hero cost display
     h += '<div class="ic-hero">';
-    h += '<div class="ic-hero-label">Estimated Total Breach Cost</div>';
+    h += '<div class="ic-hero-label">Estimated total breach cost</div>';
     h += '<div class="ic-hero-cost">' + fmt$(costs.total) + '</div>';
-    h += '<div class="ic-hero-range">Confidence range: ' + fmt$(costs.confidenceLow) + ' &mdash; ' + fmt$(costs.confidenceHigh) + '</div>';
+    h += '<div class="ic-hero-range">Planning range (-25% to +35%): ' + fmt$(costs.confidenceLow) + ' &mdash; ' + fmt$(costs.confidenceHigh) + '</div>';
     h += '<div class="ic-hero-per-record">Per record: <span>' + fmt$(costs.perRecord) + '</span> &times; ' + fmtN(costs.records) + ' records (' + esc(costs.sector.name) + ')</div>';
     h += '</div>';
 
@@ -589,11 +589,11 @@ export function renderIncidentCost(container) {
     // are shares of base cost only, so they mislabel once fines/amplifiers apply.
     var pctOfTotal = function (v) { return costs.total > 0 ? Math.round(v / costs.total * 100) : 0; };
     var comps = [
-      { label: 'Detection & Escalation', val: costs.detection, pct: pctOfTotal(costs.detection), color: '#3b82f6' },
-      { label: 'Lost Business', val: costs.lostBusiness, pct: pctOfTotal(costs.lostBusiness), color: '#ef4444' },
-      { label: 'Post-Breach Response', val: costs.postBreach, pct: pctOfTotal(costs.postBreach), color: '#f59e0b' },
-      { label: 'Notification', val: costs.notification, pct: pctOfTotal(costs.notification), color: '#8b5cf6' },
-      { label: 'Regulatory Fines', val: costs.fines, pct: pctOfTotal(costs.fines), color: '#ef4444' },
+      { label: 'Detection & Escalation', val: costs.detection, pct: pctOfTotal(costs.detection), color: 'var(--acc)' },
+      { label: 'Lost Business', val: costs.lostBusiness, pct: pctOfTotal(costs.lostBusiness), color: 'var(--bad)' },
+      { label: 'Post-Breach Response', val: costs.postBreach, pct: pctOfTotal(costs.postBreach), color: 'var(--warn)' },
+      { label: 'Notification', val: costs.notification, pct: pctOfTotal(costs.notification), color: 'var(--txt-2)' },
+      { label: 'Regulatory Fines', val: costs.fines, pct: pctOfTotal(costs.fines), color: 'var(--bad)' },
     ];
     for (var c = 0; c < comps.length; c++) {
       h += '<div class="ic-cost-card">';
@@ -610,7 +610,7 @@ export function renderIncidentCost(container) {
     // LEFT: Form
     h += '<div>';
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Incident Parameters</div>';
+    h += '<div class="ic-panel-title">Incident parameters</div>';
 
     // Sector
     h += '<div class="ic-form-group">';
@@ -683,7 +683,7 @@ export function renderIncidentCost(container) {
 
     // Cost reduction toggles
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Cost Reduction Factors</div>';
+    h += '<div class="ic-panel-title">Cost reduction factors</div>';
 
     var toggles = [
       { id: 'aiAutomation', label: 'AI & automation in security response', savings: '$1.76M', key: 'aiAutomation' },
@@ -708,7 +708,7 @@ export function renderIncidentCost(container) {
 
     // Cost breakdown bars
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Cost Breakdown</div>';
+    h += '<div class="ic-panel-title">Cost breakdown</div>';
     // Fines are one of the bars below, so they must be in the max or a
     // fines-dominated breach produces a >100% bar width and mis-scales the rest.
     var maxVal = Math.max(costs.detection, costs.lostBusiness, costs.postBreach, costs.notification, costs.fines);
@@ -730,7 +730,7 @@ export function renderIncidentCost(container) {
 
     // Amplifiers
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Cost Amplifiers</div>';
+    h += '<div class="ic-panel-title">Cost amplifiers</div>';
     for (var ai = 0; ai < AMPLIFIERS.length; ai++) {
       var ampActive = state.amplifiers.indexOf(AMPLIFIERS[ai].id) >= 0;
       h += '<div class="ic-toggle-row">';
@@ -742,13 +742,13 @@ export function renderIncidentCost(container) {
       h += '</div>';
     }
     if (costs.amplifierTotal > 0) {
-      h += '<div style="text-align:right;padding-top:8px;font-family:var(--font-mono, ui-monospace, monospace);font-size:13px;color:#ff5c6c;font-weight:700">Total amplification: +' + fmt$(costs.amplifierTotal) + '</div>';
+      h += '<div style="text-align:right;padding-top:8px;font-family:var(--font-mono, ui-monospace, monospace);font-size:13px;color:var(--bad);font-weight:700">Total amplification: +' + fmt$(costs.amplifierTotal) + '</div>';
     }
     h += '</div>';
 
     // Mitigators
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Additional Mitigators</div>';
+    h += '<div class="ic-panel-title">Additional mitigators</div>';
     for (var mi = 0; mi < MITIGATORS.length; mi++) {
       if (MITIGATORS[mi].id === 'ai_auto' || MITIGATORS[mi].id === 'ir_plan') continue;
       var mitActive = state.mitigators.indexOf(MITIGATORS[mi].id) >= 0;
@@ -761,22 +761,22 @@ export function renderIncidentCost(container) {
       h += '</div>';
     }
     if (costs.mitigatorTotal > 0) {
-      h += '<div style="text-align:right;padding-top:8px;font-family:var(--font-mono, ui-monospace, monospace);font-size:13px;color:#2ee6a6;font-weight:700">Total savings: -' + fmt$(costs.mitigatorTotal) + '</div>';
+      h += '<div style="text-align:right;padding-top:8px;font-family:var(--font-mono, ui-monospace, monospace);font-size:13px;color:var(--ok);font-weight:700">Total savings: -' + fmt$(costs.mitigatorTotal) + '</div>';
     }
     h += '</div>';
 
     // Time impact note
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Detection Time Impact</div>';
+    h += '<div class="ic-panel-title">Detection time impact</div>';
     var lifecycle = state.mtti + state.mttc;
-    var lifecycleColor = lifecycle < 200 ? '#2ee6a6' : lifecycle < 280 ? '#f59e0b' : '#ef4444';
-    var lifecycleLabel = lifecycle < 200 ? 'FAST — saves ~23% vs average' : lifecycle < 280 ? 'AVERAGE — 277 day benchmark' : 'SLOW — adds 10-23% to cost';
+    var lifecycleColor = lifecycle < 200 ? 'var(--ok)' : lifecycle < 280 ? 'var(--warn)' : 'var(--bad)';
+    var lifecycleLabel = lifecycle < 200 ? 'Fast — saves ~23% vs average' : lifecycle < 280 ? 'Average — 277 day benchmark' : 'Slow — adds 10-23% to cost';
     h += '<div style="text-align:center;padding:10px 0">';
     h += '<div style="font-size:36px;font-weight:800;font-family:var(--font-mono, ui-monospace, monospace);color:' + lifecycleColor + '">' + lifecycle + ' days</div>';
-    h += '<div style="font-size:11px;color:var(--mut,#7a93b8);margin-top:4px">breach lifecycle (identify + contain)</div>';
+    h += '<div style="font-size:12px;color:var(--mut);margin-top:4px">breach lifecycle (identify + contain)</div>';
     h += '<div style="font-size:12px;color:' + lifecycleColor + ';margin-top:8px;font-weight:600">' + lifecycleLabel + '</div>';
     h += '</div>';
-    h += '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mut,#7a93b8);margin-top:8px">';
+    h += '<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:8px">';
     h += '<span>MTTI: ' + state.mtti + ' days (avg 204)</span>';
     h += '<span>MTTC: ' + state.mttc + ' days (avg 73)</span>';
     h += '</div>';
@@ -792,16 +792,16 @@ export function renderIncidentCost(container) {
   function renderRegulatory(costs) {
     var h = '';
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Regulatory Fine Estimator</div>';
+    h += '<div class="ic-panel-title">Regulatory fine estimator</div>';
 
     if (costs.fineBreakdown.length === 0) {
-      h += '<div style="text-align:center;padding:30px;color:var(--mut,#7a93b8)">Select data types and toggle GDPR applicability in the Calculator tab to see fine estimates.</div>';
+      h += '<div style="text-align:center;padding:30px;color:var(--mut)">Select data types and toggle GDPR applicability in the Calculator tab to see fine estimates.</div>';
     } else {
       h += '<div class="ic-stats-row">';
-      h += '<div class="ic-stat"><div class="ic-stat-val" style="color:#ff5c6c">' + fmt$(costs.fines) + '</div><div class="ic-stat-label">Total Estimated Fines</div></div>';
-      h += '<div class="ic-stat"><div class="ic-stat-val" style="color:#3b82f6">' + costs.fineBreakdown.length + '</div><div class="ic-stat-label">Applicable Regulations</div></div>';
-      h += '<div class="ic-stat"><div class="ic-stat-val" style="color:#f59e0b">' + fmtN(costs.records) + '</div><div class="ic-stat-label">Records Affected</div></div>';
-      h += '<div class="ic-stat"><div class="ic-stat-val" style="color:#8b5cf6">' + Math.round(costs.fines / costs.total * 100) + '%</div><div class="ic-stat-label">of Total Cost</div></div>';
+      h += '<div class="ic-stat"><div class="ic-stat-val" style="color:var(--bad)">' + fmt$(costs.fines) + '</div><div class="ic-stat-label">Total Estimated Fines</div></div>';
+      h += '<div class="ic-stat"><div class="ic-stat-val" style="color:var(--acc)">' + costs.fineBreakdown.length + '</div><div class="ic-stat-label">Applicable Regulations</div></div>';
+      h += '<div class="ic-stat"><div class="ic-stat-val" style="color:var(--warn)">' + fmtN(costs.records) + '</div><div class="ic-stat-label">Records Affected</div></div>';
+      h += '<div class="ic-stat"><div class="ic-stat-val" style="color:var(--txt-2)">' + Math.round(costs.fines / costs.total * 100) + '%</div><div class="ic-stat-label">of Total Cost</div></div>';
       h += '</div>';
 
       for (var f = 0; f < costs.fineBreakdown.length; f++) {
@@ -815,7 +815,7 @@ export function renderIncidentCost(container) {
 
     // Regulation reference
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Regulation Reference</div>';
+    h += '<div class="ic-panel-title">Regulation reference</div>';
     h += '<table class="ic-table">';
     h += '<thead><tr><th>Regulation</th><th>Scope</th><th>Max Penalty</th><th>Notification Deadline</th></tr></thead>';
     h += '<tbody>';
@@ -832,9 +832,9 @@ export function renderIncidentCost(container) {
     ];
     for (var r = 0; r < regs.length; r++) {
       h += '<tr>';
-      h += '<td style="font-weight:600;color:var(--txt,#e7eefc)">' + regs[r][0] + '</td>';
+      h += '<td style="font-weight:600;color:var(--txt)">' + regs[r][0] + '</td>';
       h += '<td>' + regs[r][1] + '</td>';
-      h += '<td class="mono" style="color:#ff5c6c">' + regs[r][2] + '</td>';
+      h += '<td class="mono" style="color:var(--bad)">' + regs[r][2] + '</td>';
       h += '<td>' + regs[r][3] + '</td>';
       h += '</tr>';
     }
@@ -843,7 +843,7 @@ export function renderIncidentCost(container) {
 
     // SEC disclosure timeline
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">SEC Cyber Incident Disclosure Timeline (2023 Rules)</div>';
+    h += '<div class="ic-panel-title">SEC cyber incident disclosure timeline (2023 rules)</div>';
     var secSteps = [
       { day: 'Day 0', event: 'Incident discovered', note: 'Clock starts for materiality determination' },
       { day: 'Day 1-4', event: 'Materiality assessment', note: 'Determine if incident is material to investors' },
@@ -852,12 +852,12 @@ export function renderIncidentCost(container) {
       { day: 'Annual', event: '10-K disclosure', note: 'Annual report must describe cyber risk management, strategy, and governance' },
     ];
     for (var ss = 0; ss < secSteps.length; ss++) {
-      var dotColor = ss < 2 ? '#f59e0b' : ss === 2 ? '#ef4444' : '#3b82f6';
-      h += '<div style="display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--card2,#0f1726)">';
+      var dotColor = ss < 2 ? 'var(--warn)' : ss === 2 ? 'var(--bad)' : 'var(--acc)';
+      h += '<div style="display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--card2)">';
       h += '<div style="min-width:70px;font-family:var(--font-mono, ui-monospace, monospace);font-size:12px;font-weight:700;color:' + dotColor + '">' + secSteps[ss].day + '</div>';
       h += '<div>';
-      h += '<div style="font-size:13px;font-weight:600;color:var(--txt,#e7eefc)">' + secSteps[ss].event + '</div>';
-      h += '<div style="font-size:11px;color:var(--mut,#7a93b8);margin-top:2px">' + secSteps[ss].note + '</div>';
+      h += '<div style="font-size:13px;font-weight:600;color:var(--txt)">' + secSteps[ss].event + '</div>';
+      h += '<div style="font-size:12px;color:var(--mut);margin-top:2px">' + secSteps[ss].note + '</div>';
       h += '</div></div>';
     }
     h += '</div>';
@@ -871,17 +871,17 @@ export function renderIncidentCost(container) {
     var selectedTier = INSURANCE_TIERS[state.insuranceTier];
 
     h += '<div class="ic-stats-row">';
-    h += '<div class="ic-stat"><div class="ic-stat-val" style="color:#ff5c6c">' + fmt$(costs.total) + '</div><div class="ic-stat-label">Estimated Breach Cost</div></div>';
-    h += '<div class="ic-stat"><div class="ic-stat-val" style="color:#3b82f6">' + fmt$(selectedTier.limit) + '</div><div class="ic-stat-label">Policy Limit</div></div>';
+    h += '<div class="ic-stat"><div class="ic-stat-val" style="color:var(--bad)">' + fmt$(costs.total) + '</div><div class="ic-stat-label">Estimated Breach Cost</div></div>';
+    h += '<div class="ic-stat"><div class="ic-stat-val" style="color:var(--acc)">' + fmt$(selectedTier.limit) + '</div><div class="ic-stat-label">Policy Limit</div></div>';
     var gap = Math.max(0, costs.total - selectedTier.limit);
-    h += '<div class="ic-stat"><div class="ic-stat-val" style="color:' + (gap > 0 ? '#ef4444' : '#2ee6a6') + '">' + (gap > 0 ? fmt$(gap) : '$0') + '</div><div class="ic-stat-label">Coverage Gap</div></div>';
+    h += '<div class="ic-stat"><div class="ic-stat-val" style="color:' + (gap > 0 ? 'var(--bad)' : 'var(--ok)') + '">' + (gap > 0 ? fmt$(gap) : '$0') + '</div><div class="ic-stat-label">Coverage Gap</div></div>';
     var covPct = Math.min(100, Math.round(selectedTier.limit / costs.total * 100));
-    h += '<div class="ic-stat"><div class="ic-stat-val" style="color:' + (covPct >= 100 ? '#2ee6a6' : covPct >= 50 ? '#f59e0b' : '#ef4444') + '">' + covPct + '%</div><div class="ic-stat-label">Coverage Ratio</div></div>';
+    h += '<div class="ic-stat"><div class="ic-stat-val" style="color:' + (covPct >= 100 ? 'var(--ok)' : covPct >= 50 ? 'var(--warn)' : 'var(--bad)') + '">' + covPct + '%</div><div class="ic-stat-label">Coverage Ratio</div></div>';
     h += '</div>';
 
     // Coverage visualization
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Coverage Gap Analysis</div>';
+    h += '<div class="ic-panel-title">Coverage gap analysis</div>';
 
     var covWidth = Math.min(100, Math.round(selectedTier.limit / costs.total * 100));
     var gapWidth = 100 - covWidth;
@@ -902,7 +902,7 @@ export function renderIncidentCost(container) {
 
     // All tiers comparison
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Coverage Tier Comparison</div>';
+    h += '<div class="ic-panel-title">Coverage tier comparison</div>';
     h += '<table class="ic-table">';
     h += '<thead><tr><th>Limit</th><th>Premium Range</th><th>Coverage</th><th>Gap</th><th>Recommendation</th></tr></thead>';
     h += '<tbody>';
@@ -910,12 +910,12 @@ export function renderIncidentCost(container) {
       var tierGap = Math.max(0, costs.total - INSURANCE_TIERS[tt].limit);
       var tierCov = Math.min(100, Math.round(INSURANCE_TIERS[tt].limit / costs.total * 100));
       var rec = tierCov >= 100 ? 'Full coverage' : tierCov >= 75 ? 'Good coverage' : tierCov >= 50 ? 'Partial — consider upgrading' : 'Insufficient';
-      var recColor = tierCov >= 100 ? '#2ee6a6' : tierCov >= 75 ? '#3b82f6' : tierCov >= 50 ? '#f59e0b' : '#ef4444';
+      var recColor = tierCov >= 100 ? 'var(--ok)' : tierCov >= 75 ? 'var(--acc)' : tierCov >= 50 ? 'var(--warn)' : 'var(--bad)';
       h += '<tr>';
-      h += '<td class="mono" style="font-weight:700;color:var(--txt,#e7eefc)">' + INSURANCE_TIERS[tt].label + '</td>';
+      h += '<td class="mono" style="font-weight:700;color:var(--txt)">' + INSURANCE_TIERS[tt].label + '</td>';
       h += '<td class="mono">' + fmt$(INSURANCE_TIERS[tt].premiumLow) + ' - ' + fmt$(INSURANCE_TIERS[tt].premiumHigh) + '</td>';
-      h += '<td class="mono" style="color:#3b82f6">' + tierCov + '%</td>';
-      h += '<td class="mono" style="color:' + (tierGap > 0 ? '#ef4444' : '#2ee6a6') + '">' + (tierGap > 0 ? fmt$(tierGap) : '—') + '</td>';
+      h += '<td class="mono" style="color:var(--acc)">' + tierCov + '%</td>';
+      h += '<td class="mono" style="color:' + (tierGap > 0 ? 'var(--bad)' : 'var(--ok)') + '">' + (tierGap > 0 ? fmt$(tierGap) : '—') + '</td>';
       h += '<td style="color:' + recColor + ';font-weight:600">' + rec + '</td>';
       h += '</tr>';
     }
@@ -924,7 +924,7 @@ export function renderIncidentCost(container) {
 
     // Typical exclusions
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Common Policy Exclusions to Review</div>';
+    h += '<div class="ic-panel-title">Common policy exclusions to review</div>';
     var exclusions = [
       { item: 'Acts of war / nation-state attacks', risk: 'HIGH', note: 'Some insurers invoke war exclusions for state-sponsored attacks' },
       { item: 'Known unpatched vulnerabilities', risk: 'HIGH', note: 'Claims denied if breach exploited a known, unpatched vulnerability' },
@@ -934,13 +934,13 @@ export function renderIncidentCost(container) {
       { item: 'Prior acts / ongoing incidents', risk: 'LOW', note: 'Incidents that began before policy inception date' },
     ];
     for (var ex = 0; ex < exclusions.length; ex++) {
-      var riskColor = exclusions[ex].risk === 'HIGH' ? '#ef4444' : exclusions[ex].risk === 'MEDIUM' ? '#f59e0b' : '#3b82f6';
-      h += '<div style="padding:10px 0;border-bottom:1px solid var(--card2,#0f1726)">';
+      var riskColor = exclusions[ex].risk === 'HIGH' ? 'var(--bad)' : exclusions[ex].risk === 'MEDIUM' ? 'var(--warn)' : 'var(--acc)';
+      h += '<div style="padding:10px 0;border-bottom:1px solid var(--card2)">';
       h += '<div style="display:flex;align-items:center;justify-content:space-between">';
-      h += '<span style="font-size:13px;font-weight:600;color:var(--txt,#e7eefc)">' + exclusions[ex].item + '</span>';
-      h += '<span style="font-size:10px;font-weight:700;color:' + riskColor + ';background:' + riskColor + '22;padding:2px 8px;border-radius:3px">' + exclusions[ex].risk + ' RISK</span>';
+      h += '<span style="font-size:13px;font-weight:600;color:var(--txt)">' + exclusions[ex].item + '</span>';
+      h += '<span style="font-size:12px;font-weight:700;color:' + riskColor + ';background:var(--card2);padding:2px 8px;border-radius:3px">' + exclusions[ex].risk.charAt(0) + exclusions[ex].risk.slice(1).toLowerCase() + ' risk</span>';
       h += '</div>';
-      h += '<div style="font-size:11px;color:var(--mut,#7a93b8);margin-top:4px">' + exclusions[ex].note + '</div>';
+      h += '<div style="font-size:12px;color:var(--mut);margin-top:4px">' + exclusions[ex].note + '</div>';
       h += '</div>';
     }
     h += '</div>';
@@ -953,19 +953,19 @@ export function renderIncidentCost(container) {
     var h = '';
 
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Historical Breach Cost Comparison</div>';
-    h += '<p style="font-size:12px;color:var(--mut,#7a93b8);margin:0 0 16px">Your estimated cost of <span style="color:#ff5c6c;font-weight:700;font-family:var(--font-mono, ui-monospace, monospace)">' + fmt$(costs.total) + '</span> compared to notable breaches</p>';
+    h += '<div class="ic-panel-title">Historical breach cost comparison</div>';
+    h += '<p style="font-size:12px;color:var(--mut);margin:0 0 16px">Your estimated cost of <span style="color:var(--bad);font-weight:700;font-family:var(--font-mono, ui-monospace, monospace)">' + fmt$(costs.total) + '</span> compared to notable breaches</p>';
 
     h += '<table class="ic-table">';
     h += '<thead><tr><th>Organization</th><th>Year</th><th>Records</th><th>Total Cost</th><th>Cost/Record</th><th>Sector</th><th>Attack Vector</th></tr></thead>';
     h += '<tbody>';
 
     // Add user's scenario
-    h += '<tr style="background:#00e5ff08;border-left:3px solid var(--acc,#2563eb)">';
-    h += '<td style="font-weight:700;color:var(--acc,#2563eb)">YOUR SCENARIO</td>';
-    h += '<td>2026</td>';
+    h += '<tr style="background:#00e5ff08;border-left:3px solid var(--acc)">';
+    h += '<td style="font-weight:700;color:var(--acc)">Your scenario</td>';
+    h += '<td>' + new Date().getFullYear() + '</td>';
     h += '<td class="mono">' + fmtN(costs.records) + '</td>';
-    h += '<td class="mono" style="color:#ff5c6c;font-weight:700">' + fmt$(costs.total) + '</td>';
+    h += '<td class="mono" style="color:var(--bad);font-weight:700">' + fmt$(costs.total) + '</td>';
     h += '<td class="mono">' + fmt$(costs.perRecord) + '</td>';
     h += '<td>' + esc(costs.sector.name) + '</td>';
     h += '<td>' + esc(costs.vector.name) + '</td>';
@@ -977,13 +977,13 @@ export function renderIncidentCost(container) {
       var breach = sorted[hb];
       var perRec = breach.records > 0 ? breach.totalCost / breach.records : 0;
       h += '<tr>';
-      h += '<td style="font-weight:600;color:var(--txt,#e7eefc)">' + esc(breach.name) + '</td>';
+      h += '<td style="font-weight:600;color:var(--txt)">' + esc(breach.name) + '</td>';
       h += '<td>' + breach.year + '</td>';
       h += '<td class="mono">' + (breach.records > 0 ? fmtN(breach.records) : 'N/A') + '</td>';
       h += '<td class="mono" style="font-weight:700">' + fmt$(breach.totalCost) + '</td>';
       h += '<td class="mono">' + (perRec > 0 ? fmt$(perRec) : 'N/A') + '</td>';
       h += '<td>' + esc(breach.sector) + '</td>';
-      h += '<td style="font-size:11px">' + esc(breach.vector) + '</td>';
+      h += '<td style="font-size:12px">' + esc(breach.vector) + '</td>';
       h += '</tr>';
     }
     h += '</tbody></table>';
@@ -991,14 +991,14 @@ export function renderIncidentCost(container) {
 
     // Cost per record comparison
     h += '<div class="ic-panel">';
-    h += '<div class="ic-panel-title">Cost Per Record by Sector (IBM 2024)</div>';
+    h += '<div class="ic-panel-title">Cost per record by sector (IBM 2023, reference)</div>';
     var maxPR = 0;
     for (var sp = 0; sp < SECTORS.length; sp++) { if (SECTORS[sp].perRecord > maxPR) maxPR = SECTORS[sp].perRecord; }
     for (var sb = 0; sb < SECTORS.length; sb++) {
       var isActive = SECTORS[sb].id === state.sectorId;
       var pctWidth = Math.round(SECTORS[sb].perRecord / maxPR * 100);
       h += '<div class="ic-bar-row">';
-      h += '<div class="ic-bar-header"><span class="ic-bar-name" style="' + (isActive ? 'color:var(--acc,#2563eb);font-weight:700' : '') + '">' + esc(SECTORS[sb].name) + (isActive ? ' ←' : '') + '</span><span class="ic-bar-val" style="' + (isActive ? 'color:var(--acc,#2563eb)' : '') + '">' + fmt$(SECTORS[sb].perRecord) + '</span></div>';
+      h += '<div class="ic-bar-header"><span class="ic-bar-name" style="' + (isActive ? 'color:var(--acc);font-weight:700' : '') + '">' + esc(SECTORS[sb].name) + (isActive ? ' ←' : '') + '</span><span class="ic-bar-val" style="' + (isActive ? 'color:var(--acc)' : '') + '">' + fmt$(SECTORS[sb].perRecord) + '</span></div>';
       h += '<div class="ic-bar-track"><div class="ic-bar-fill ' + (isActive ? 'cyan' : 'blue') + '" style="width:' + pctWidth + '%"></div></div>';
       h += '</div>';
     }
@@ -1017,14 +1017,14 @@ export function renderIncidentCost(container) {
     h += '<div class="ic-panel">';
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
     h += '<div class="ic-panel-title" style="margin:0;border:0;padding:0">Executive Incident Cost Report</div>';
-    h += '<button class="ic-btn" id="ic-copy-report">Copy Report</button>';
+    h += '<button class="btn" id="ic-copy-report">Copy report</button>';
     h += '</div>';
 
     var report = '';
     report += '═══════════════════════════════════════════════════════════════\n';
     report += '  CYBER INCIDENT COST ASSESSMENT — EXECUTIVE SUMMARY\n';
     report += '  Generated: ' + now + '\n';
-    report += '  Methodology: IBM/Ponemon Cost of Data Breach 2024\n';
+    report += '  Methodology: IBM/Ponemon Cost of a Data Breach 2023\n';
     report += '═══════════════════════════════════════════════════════════════\n\n';
 
     report += 'BOTTOM LINE\n';
@@ -1032,7 +1032,7 @@ export function renderIncidentCost(container) {
     report += 'A data breach affecting ' + fmtN(costs.records) + ' records in the ' + sector.name + '\n';
     report += 'sector via ' + vector.name.toLowerCase() + ' is estimated to cost:\n\n';
     report += '  TOTAL ESTIMATED COST: ' + fmt$(costs.total) + '\n';
-    report += '  Confidence range:     ' + fmt$(costs.confidenceLow) + ' — ' + fmt$(costs.confidenceHigh) + '\n';
+    report += '  Planning range:       ' + fmt$(costs.confidenceLow) + ' — ' + fmt$(costs.confidenceHigh) + '\n';
     report += '  Cost per record:      ' + fmt$(costs.perRecord) + '\n\n';
 
     report += 'COST BREAKDOWN\n';
@@ -1073,11 +1073,11 @@ export function renderIncidentCost(container) {
 
     report += '═══════════════════════════════════════════════════════════════\n';
     report += '  Disclaimer: Estimates based on industry averages and the IBM\n';
-    report += '  Cost of Data Breach Report 2024 methodology. Actual costs may\n';
+    report += '  Cost of a Data Breach Report 2023 averages. Actual costs may\n';
     report += '  vary based on specific circumstances, jurisdiction, and response.\n';
     report += '═══════════════════════════════════════════════════════════════\n';
 
-    h += '<pre style="font-family:var(--font-mono, ui-monospace, monospace);font-size:12px;line-height:1.6;white-space:pre-wrap;color:var(--txt,#e7eefc);background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:8px;padding:20px;overflow-x:auto" id="ic-report-text">' + esc(report) + '</pre>';
+    h += '<pre style="font-family:var(--font-mono, ui-monospace, monospace);font-size:12px;line-height:1.6;white-space:pre-wrap;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:20px;overflow-x:auto" id="ic-report-text">' + esc(report) + '</pre>';
     h += '</div>';
 
     return h;
@@ -1110,23 +1110,23 @@ export function renderIncidentCost(container) {
   }
 
   function renderResponse(costs) {
-    var h = '<div class="ic-panel"><div class="ic-panel-title">Incident Timeline</div>';
+    var h = '<div class="ic-panel"><div class="ic-panel-title">Incident timeline</div>';
     h += '<p class="ic-subtitle" style="margin-bottom:12px">Built from your calculator inputs (attack vector, data types, sector, GDPR and detection times). Change them on the Cost Calculator tab.</p>';
     responseTimeline(state).forEach(function(e) {
       h += '<div class="ic-tl-row"><div class="ic-tl-when">' + esc(e.when) + '</div><div><div class="ic-tl-title">' + esc(e.title) + '</div><div class="ic-tl-detail">' + esc(e.detail) + '</div></div></div>';
     });
     h += '</div>';
     var obl = notificationObligations(state);
-    h += '<div class="ic-panel"><div class="ic-panel-title">Notification Obligations</div>';
-    h += obl.length ? obl.map(function(o) { return '<div class="ic-fine-row" style="flex-wrap:wrap;gap:4px"><span class="ic-fine-reg">' + esc(o.reg) + '</span><span style="flex:1;font-size:12px;color:var(--mut,#7a93b8);padding:0 10px">' + esc(o.who) + '</span><span style="font-size:12px">' + esc(o.when) + '</span></div>'; }).join('')
+    h += '<div class="ic-panel"><div class="ic-panel-title">Notification obligations</div>';
+    h += obl.length ? obl.map(function(o) { return '<div class="ic-fine-row" style="flex-wrap:wrap;gap:4px"><span class="ic-fine-reg">' + esc(o.reg) + '</span><span style="flex:1;font-size:12px;color:var(--mut);padding:0 10px">' + esc(o.who) + '</span><span style="font-size:12px">' + esc(o.when) + '</span></div>'; }).join('')
       : '<div class="ic-subtitle">No obligations implied by the selected inputs. Select data types or GDPR applicability on the Cost Calculator tab.</div>';
-    h += '<div style="margin-top:12px"><button class="ic-btn ghost" data-sec="breachclock">Work out exact deadlines in Breach Clock</button></div></div>';
-    h += '<div class="ic-panel"><div class="ic-panel-title">Recovery Roadmap</div>';
+    h += '<div style="margin-top:12px"><button class="btn ghost" data-sec="breachclock">Work out exact deadlines in Breach Clock</button></div></div>';
+    h += '<div class="ic-panel"><div class="ic-panel-title">Recovery roadmap</div>';
     recoveryPlan(state).forEach(function(ph, i) {
       h += '<div class="ic-tl-row"><div class="ic-tl-when">' + (i + 1) + '. ' + esc(ph.when) + '</div><div><div class="ic-tl-title">' + esc(ph.title) + '</div><ul class="ic-tl-list">' + ph.tasks.map(function(x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div></div>';
     });
     h += '</div>';
-    h += '<div class="ic-panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><div class="ic-panel-title" style="margin:0;border:0;padding:0">Board Brief</div><button class="ic-btn" id="ic-copy-brief">Copy Brief</button></div>';
+    h += '<div class="ic-panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap"><div class="ic-panel-title" style="margin:0;border:0;padding:0">Board Brief</div><button class="btn" id="ic-copy-brief">Copy Brief</button></div>';
     h += '<pre id="ic-brief-text" class="ic-brief">' + esc(boardBrief(costs)) + '</pre></div>';
     return h;
   }

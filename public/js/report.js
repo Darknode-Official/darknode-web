@@ -42,15 +42,15 @@ export function renderReport(main) {
   let d = load();
   const draw = () => {
     main.innerHTML = `
-      <div class="pg-head">
+      <div class="pg-head"><div>
         <h1 class="pg-h1">Report Generator</h1>
         <p class="muted pg-sub">Collect findings and export a clean Markdown report. Saved in this browser. For authorized engagements only.</p>
-      </div>
+      </div></div>
       ${sumStrip(d)}
       <div class="rp-grid">
         <div class="rp-col">
           <div class="card">
-            <label class="pc-f"><span>Report title</span><input class="tk-f" id="rTitle" value="${esc(d.title)}" placeholder="Client — External Pentest"></label>
+            <label class="pc-f"><span>Report title</span><input class="tk-f" id="rTitle" value="${esc(d.title)}" placeholder="Report title"></label>
           </div>
           <div class="card">
             <div class="lbl">Add a finding</div>
@@ -68,7 +68,7 @@ export function renderReport(main) {
         <div class="rp-col">
           <div class="card">
             <div class="lbl">Findings (${d.findings.length})</div>
-            <div id="rList">${d.findings.length ? d.findings.map((f, i) => `<div class="saved-row"><span class="sev ${f.sev.toLowerCase()}">${esc(f.sev)}</span><span class="saved-go" style="cursor:default">${esc(f.title || "Untitled")}</span><span class="muted" style="font-size:.74rem">${esc(f.target || "")}</span><button class="saved-x" data-rm="${i}">&times;</button></div>`).join("") : `<p class="muted" style="font-size:.85rem">No findings yet. Add one on the left — it appears here and in the report instantly.</p>`}</div>
+            <div id="rList">${d.findings.length ? d.findings.map((f, i) => `<div class="saved-row"><span class="sev ${f.sev.toLowerCase()}">${esc(f.sev)}</span><span class="saved-go" style="cursor:default">${esc(f.title || "Untitled")}</span><span class="muted" style="font-size:12px">${esc(f.target || "")}</span><button class="saved-x" data-rm="${i}">&times;</button></div>`).join("") : `<p class="muted" style="font-size:.85rem">No findings yet. Add one on the left — it appears here and in the report instantly.</p>`}</div>
           </div>
           <div class="card">
             <div class="lbl">Markdown preview</div>

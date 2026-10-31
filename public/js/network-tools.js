@@ -141,12 +141,12 @@ function ensureMapStyle() {
   s.id = NT_STYLE_ID;
   s.textContent = `
     .nt-presets{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 6px;font-size:.78rem}
-    .nt-preset{padding:3px 9px;border:1px solid var(--line);border-radius:var(--btn-radius,4px);background:none;color:var(--mut);font-family:var(--mono,monospace);font-size:.74rem;cursor:pointer}
+    .nt-preset{padding:3px 9px;border:1px solid var(--line);border-radius:var(--btn-radius,4px);background:none;color:var(--mut);font-family:var(--mono,monospace);font-size:.75rem;cursor:pointer}
     .nt-preset:hover{border-color:var(--acc);color:var(--acc)}
     .nt-map-legend{display:flex;flex-wrap:wrap;gap:12px;margin:6px 0;font-size:.75rem;color:var(--mut)}
     .nt-map-legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:5px;vertical-align:-1px}
     .nt-map{display:flex;flex-wrap:wrap;gap:3px;margin:8px 0}
-    .nt-map-cell{flex-basis:56px;min-width:56px;padding:8px 4px;border-radius:4px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--txt,inherit);font-family:var(--mono,monospace);font-size:.68rem;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .nt-map-cell{flex-basis:56px;min-width:56px;padding:8px 4px;border-radius:4px;border:1px solid var(--c);background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--txt,inherit);font-family:var(--mono,monospace);font-size:.75rem;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .nt-map-cell:hover,.nt-map-cell:focus-visible{background:color-mix(in srgb,var(--c) 38%,transparent)}
     .nt-map-cell.on{outline:2px solid var(--acc);outline-offset:1px}
     .nt-map-detail{white-space:normal;display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;padding:10px 12px;margin-top:6px}`;
@@ -525,7 +525,7 @@ function renderIpInfo(root) {
     <div class="panel">
       <p class="muted">Enter any IPv4 address to see its class, scope (private/public/reserved), binary and hex
       forms, integer representation, and IPv4-mapped IPv6 address.</p>
-      ${field("IPv4 address", "ii-ip", "8.8.8.8", "e.g. 192.168.1.1")}
+      ${field("IPv4 address", "ii-ip", "", "e.g. 192.168.1.1")}
       <div class="tk-btns"><button class="btn sm" id="ii-go">Look up</button></div>
       <div id="ii-out"></div>
 
@@ -599,7 +599,6 @@ function renderIpInfo(root) {
 
   root.querySelector("#ii-go").onclick = calc;
   root.querySelector("#ii-ip").addEventListener("keydown", (e) => { if (e.key === "Enter") calc(); });
-  calc();
 }
 
 // ---------------------------------------------------------------------------
@@ -775,7 +774,7 @@ function renderIpv6Converter(root) {
     <div class="panel">
       <p class="muted">Convert an IPv4 address into its various IPv6 transition representations: IPv4-mapped,
       IPv4-compatible (deprecated), 6to4, and NAT64 well-known prefix.</p>
-      ${field("IPv4 address", "v6-ip", "203.0.113.25", "e.g. 192.0.2.1")}
+      ${field("IPv4 address", "v6-ip", "", "e.g. 192.0.2.1")}
       <div class="tk-btns"><button class="btn sm" id="v6-go">Convert</button></div>
       <div id="v6-out"></div>
 
@@ -826,7 +825,6 @@ function renderIpv6Converter(root) {
 
   root.querySelector("#v6-go").onclick = calc;
   root.querySelector("#v6-ip").addEventListener("keydown", (e) => { if (e.key === "Enter") calc(); });
-  calc();
 
   // -- Native IPv6 subnet calculator ---------------------------------------
   const calcV6Subnet = () => {
@@ -1220,8 +1218,8 @@ function renderMacLookup(root) {
   root.innerHTML = `
     <div class="panel">
       <p class="muted">Look up the manufacturer of a network interface from its MAC address OUI (first 3 octets).
-      Database covers ${OUI_TOTAL.toLocaleString()} OUI blocks across ${VENDOR_BLOCKS.length} vendors.</p>
-      ${field("MAC address", "mc-mac", "3C:5A:B4:12:34:56", "e.g. AA:BB:CC:DD:EE:FF")}
+      Built-in reference list of ${OUI_TOTAL.toLocaleString()} OUI blocks across ${VENDOR_BLOCKS.length} vendors (not the full IEEE registry).</p>
+      ${field("MAC address", "mc-mac", "", "e.g. AA:BB:CC:DD:EE:FF")}
       <div class="tk-btns"><button class="btn sm" id="mc-go">Look up</button></div>
       <div id="mc-out"></div>
       <p class="pg-sub" style="margin-top:20px">Browse vendor list</p>
@@ -1254,7 +1252,7 @@ function renderMacLookup(root) {
 
       out.innerHTML = `
         <div class="dl-cmd" style="margin-top:14px">
-          <div class="stat-l">Vendor (OUI ${ouiFormatted})</div><div class="mono">${vendor ? escapeHtml(vendor) : "Unknown -- not in local database"}</div>
+          <div class="stat-l">Vendor (OUI ${ouiFormatted})</div><div class="mono">${vendor ? escapeHtml(vendor) : "Unknown -- not in the built-in list"}</div>
           <div class="stat-l">Colon form</div><div class="mono">${colonForm}</div>
           <div class="stat-l">Dash form</div><div class="mono">${dashForm}</div>
           <div class="stat-l">Cisco dotted form</div><div class="mono">${ciscoForm}</div>
@@ -1282,7 +1280,6 @@ function renderMacLookup(root) {
   root.querySelector("#mc-go").onclick = calc;
   root.querySelector("#mc-mac").addEventListener("keydown", (e) => { if (e.key === "Enter") calc(); });
   root.querySelector("#mc-filter").addEventListener("input", renderList);
-  calc();
   renderList();
 }
 
@@ -2558,7 +2555,7 @@ function renderPacketVisualizer(root) {
     }
     root.querySelector("#pkt-content").innerHTML = `
       <p class="pg-sub">${h.label}</p>
-      <pre class="tk-out" style="overflow-x:auto;font-size:.72rem;line-height:1.35">${escapeHtml(h.diagram.trim())}</pre>
+      <pre class="tk-out" style="overflow-x:auto;font-size:.75rem;line-height:1.35">${escapeHtml(h.diagram.trim())}</pre>
       <p class="pg-sub" style="margin-top:16px">Field reference</p>
       <table class="mono" style="width:100%;border-collapse:collapse;font-size:.82rem">
         <tr><td><strong>Field</strong></td><td><strong>Byte offset</strong></td><td><strong>Size</strong></td><td><strong>Description</strong></td></tr>
@@ -2786,7 +2783,7 @@ const TABS = [
   { id: "dns", label: "DNS Record Reference", render: renderDnsReference },
   { id: "http", label: "HTTP Status Codes", render: renderHttpReference },
   { id: "ports", label: "Port Reference", render: renderPortReference },
-  { id: "osi", label: "Protocol Analyzer", render: renderProtocolAnalyzer },
+  { id: "osi", label: "OSI / TCP-IP model", render: renderProtocolAnalyzer },
   { id: "bandwidth", label: "Bandwidth Calculator", render: renderBandwidthCalculator },
   { id: "mtu", label: "MTU Calculator", render: renderMtuCalculator },
   { id: "tcpflags", label: "TCP Flags", render: renderTcpFlags },
@@ -2803,24 +2800,20 @@ const TABS = [
  */
 export function renderNetworkTools(main) {
   main.innerHTML = `
-    <div class="dash-hero">
-      <div class="eyebrow">Darknode / Reference</div>
-      <h1 class="pg-h1">Network Tools</h1>
-      <p class="pg-sub">Subnet math, protocol references, and packet-level reference material -- all computed
-      locally in your browser. ${TABS.length} tools covering IPv4/IPv6 addressing, DNS, HTTP, ports, OSI/TCP-IP
-      layering, bandwidth and MTU math, TCP internals, and routing protocols.</p>
-    </div>
-    <div class="tab-bar" id="nt-tabs"></div>
+    <div class="pg-head"><div><h1 class="pg-h1">Network Tools</h1>
+      <p class="muted pg-sub">Subnet, bandwidth and MTU calculators computed locally, plus reference tables for
+      addressing, DNS, HTTP, ports, OSI/TCP-IP layering, TCP internals, VLANs and routing protocols.</p></div></div>
+    <div class="seg" id="nt-tabs" style="flex-wrap:wrap"></div>
     <div id="nt-content" class="card" style="padding:20px;margin-top:14px"></div>`;
 
   const tabBar = main.querySelector("#nt-tabs");
   const content = main.querySelector("#nt-content");
 
-  tabBar.innerHTML = TABS.map((t, i) => `<button class="tab${i === 0 ? " active" : ""}" data-id="${t.id}">${t.label}</button>`).join("");
+  tabBar.innerHTML = TABS.map((t, i) => `<button class="tab${i === 0 ? " on" : ""}" data-id="${t.id}">${t.label}</button>`).join("");
 
   const activate = (id) => {
     const tab = TABS.find((t) => t.id === id) || TABS[0];
-    tabBar.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.id === tab.id));
+    tabBar.querySelectorAll(".tab").forEach((b) => b.classList.toggle("on", b.dataset.id === tab.id));
     content.innerHTML = "";
     tab.render(content);
     if (history.replaceState) {

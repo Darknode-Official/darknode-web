@@ -175,15 +175,15 @@ export function renderAPITester(main) {
   function saveCollections() { try { localStorage.setItem(acctKey("api_collections"), JSON.stringify(collections)); } catch (_) {} }
 
   main.innerHTML =
-    '<h1 class="pg-h1">API Tester</h1>' +
-    '<p class="muted pg-sub">HTTP API security testing tool. All requests are made client-side via fetch.</p>' +
+    '<div class="pg-head"><div><h1 class="pg-h1">API Tester</h1>' +
+    '<p class="muted pg-sub">Send HTTP requests from your browser and inspect the response. The security header check runs through the Darknode edge proxy.</p></div></div>' +
 
-    '<div class="tab-bar" id="at-tabs">' +
-      '<button class="tab active" data-tab="request">Request Builder</button>' +
-      '<button class="tab" data-tab="security">Security Check</button>' +
+    '<div class="seg" id="at-tabs" style="flex-wrap:wrap;margin-bottom:12px">' +
+      '<button class="tab on" data-tab="request">Request builder</button>' +
+      '<button class="tab" data-tab="security">Security check</button>' +
       '<button class="tab" data-tab="history">History</button>' +
       '<button class="tab" data-tab="templates">Templates</button>' +
-      '<button class="tab" data-tab="curl">cURL Import</button>' +
+      '<button class="tab" data-tab="curl">cURL import</button>' +
       '<button class="tab" data-tab="env">Environment</button>' +
       '<button class="tab" data-tab="collections">Collections</button>' +
     '</div>' +
@@ -193,7 +193,7 @@ export function renderAPITester(main) {
   var content = main.querySelector("#at-content");
 
   function renderTab(tabId) {
-    tabBar.querySelectorAll(".tab").forEach(function(t) { t.classList.toggle("active", t.dataset.tab === tabId); });
+    tabBar.querySelectorAll(".tab").forEach(function(t) { t.classList.toggle("on", t.dataset.tab === tabId); });
 
     if (tabId === "request") {
       var methodOpts = METHODS.map(function(m) { return '<option value="' + m + '">' + m + '</option>'; }).join("");
@@ -206,7 +206,7 @@ export function renderAPITester(main) {
         '<div style="margin-bottom:12px">' +
           '<div style="display:flex;justify-content:space-between;align-items:center">' +
             '<label style="font-size:.82rem;font-weight:500">Headers</label>' +
-            '<button class="btn sm ghost" id="at-add-header" style="padding:2px 8px;font-size:.72rem">+ Add</button>' +
+            '<button class="btn sm ghost" id="at-add-header" style="padding:2px 8px;font-size:.75rem">+ Add</button>' +
           '</div>' +
           '<div id="at-headers" style="margin-top:4px"></div>' +
         '</div>' +
@@ -225,7 +225,7 @@ export function renderAPITester(main) {
         '</div>' +
         '<div style="margin-bottom:12px">' +
           '<label style="font-size:.82rem;font-weight:500">Body</label>' +
-          '<textarea class="tk-in" id="at-body" rows="6" placeholder="Request body (JSON, form data, etc.)"></textarea>' +
+          '<textarea class="tk-in" id="at-body" rows="6" placeholder="Request body"></textarea>' +
         '</div>' +
         '<div id="at-response" style="margin-top:16px"></div>';
 
@@ -271,7 +271,7 @@ export function renderAPITester(main) {
         var body = content.querySelector("#at-body").value;
         var url = substituteEnvVars(rawUrl, envVars);
         body = substituteEnvVars(body, envVars);
-        if (!url) { content.querySelector("#at-response").innerHTML = '<div style="color:#ef4444">Enter a URL.</div>'; return; }
+        if (!url) { content.querySelector("#at-response").innerHTML = '<div style="color:var(--bad)">Enter a URL.</div>'; return; }
 
         var fetchHeaders = {};
         headerList.forEach(function(h) { if (h.key) fetchHeaders[h.key] = substituteEnvVars(h.value, envVars); });
@@ -306,7 +306,7 @@ export function renderAPITester(main) {
           try { respBody = await resp.text(); } catch (_) {}
           var ct = resp.headers.get("content-type") || "";
           var formatted = formatBody(respBody, ct);
-          var statusColor = resp.status < 300 ? "#22c55e" : (resp.status < 400 ? "#3b82f6" : (resp.status < 500 ? "#f59e0b" : "#ef4444"));
+          var statusColor = resp.status < 300 ? "var(--ok)" : (resp.status < 400 ? "var(--acc)" : (resp.status < 500 ? "var(--warn)" : "var(--bad)"));
           var statusText = STATUS_MEANINGS[resp.status] || "";
 
           var respHeaders = [];
@@ -332,7 +332,7 @@ export function renderAPITester(main) {
                 '<span style="font-size:.78rem;color:var(--mut)">' + (new TextEncoder().encode(respBody).length / 1024).toFixed(1) + ' KB</span>' +
               '</div>' +
               '<div style="padding:10px 14px">' +
-                '<div style="margin-bottom:8px"><strong style="font-size:.82rem">Response Headers</strong></div>' +
+                '<div style="margin-bottom:8px"><strong style="font-size:.82rem">Response headers</strong> <span class="muted" style="font-size:.75rem">(only headers the server exposes to the browser via CORS)</span></div>' +
                 '<div style="max-height:200px;overflow:auto">' +
                   respHeaders.map(function(h) {
                     return '<div style="font-size:.78rem;padding:2px 0;font-family:var(--mono,monospace)"><span style="color:var(--acc)">' + esc(h.key) + ':</span> ' + esc(h.value) + '</div>';
@@ -340,20 +340,20 @@ export function renderAPITester(main) {
                 '</div>' +
               '</div>' +
               '<div style="padding:10px 14px;border-top:1px solid var(--line)">' +
-                '<div style="margin-bottom:8px"><strong style="font-size:.82rem">Response Body</strong></div>' +
+                '<div style="margin-bottom:8px"><strong style="font-size:.82rem">Response body</strong></div>' +
                 '<pre class="tk-out" style="max-height:400px;overflow:auto">' + esc(formatted) + '</pre>' +
               '</div>' +
             '</div>';
 
           if (jwtInBody) {
             html += '<div style="border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:8px">' +
-              '<strong style="font-size:.82rem">JWT Detected in Response</strong>' +
+              '<strong style="font-size:.82rem">JWT detected in response</strong>' +
               '<div style="margin-top:6px;font-size:.78rem">' +
                 '<div><span style="color:var(--acc)">Algorithm:</span> ' + esc(jwtInBody.header.alg) + '</div>' +
                 '<div><span style="color:var(--acc)">Payload:</span></div>' +
                 '<pre class="tk-out" style="max-height:150px">' + esc(JSON.stringify(jwtInBody.payload, null, 2)) + '</pre>' +
                 (jwtInBody.issues.length ? '<div style="margin-top:6px">' + jwtInBody.issues.map(function(iss) {
-                  return '<div style="color:#f59e0b;font-size:.78rem">[!] ' + esc(iss) + '</div>';
+                  return '<div style="color:var(--warn);font-size:.78rem">[!] ' + esc(iss) + '</div>';
                 }).join("") + '</div>' : '') +
               '</div>' +
             '</div>';
@@ -363,8 +363,8 @@ export function renderAPITester(main) {
         } catch (err) {
           var elapsed2 = Math.round(performance.now() - startTime);
           content.querySelector("#at-response").innerHTML =
-            '<div style="border:1px solid #ef4444;border-radius:6px;padding:14px;margin-top:12px">' +
-              '<div style="color:#ef4444;font-weight:600">Request Failed</div>' +
+            '<div style="border:1px solid var(--bad);border-radius:6px;padding:14px;margin-top:12px">' +
+              '<div style="color:var(--bad);font-weight:600">Request failed</div>' +
               '<div style="font-size:.82rem;color:var(--mut);margin-top:4px">' + esc(err.message) + '</div>' +
               '<div style="font-size:.78rem;color:var(--mut);margin-top:4px">Time: ' + elapsed2 + 'ms</div>' +
               '<div style="font-size:.78rem;color:var(--mut);margin-top:8px">Common causes: CORS policy blocking the request, network error, invalid URL, or the server is down.</div>' +
@@ -374,7 +374,7 @@ export function renderAPITester(main) {
 
     } else if (tabId === "security") {
       content.innerHTML =
-        '<h2 class="pg-h2">Security Header Check</h2>' +
+        '<h2 class="pg-h2">Security header check</h2>' +
         '<p class="muted" style="font-size:.82rem">Enter a URL to check its security headers.</p>' +
         '<div style="display:flex;gap:8px;margin:12px 0">' +
           '<input class="tk-f" id="at-sec-url" placeholder="https://example.com">' +
@@ -382,12 +382,12 @@ export function renderAPITester(main) {
         '</div>' +
         '<div id="at-sec-result"></div>' +
         '<div style="margin-top:20px">' +
-          '<h3 style="font-size:.9rem;margin-bottom:8px">Security Header Reference</h3>' +
+          '<h3 style="font-size:.9rem;margin-bottom:8px">Security header reference</h3>' +
           '<div style="display:grid;gap:6px">' +
             SECURITY_HEADERS.map(function(h) {
-              var color = h.importance === "critical" ? "#ef4444" : (h.importance === "high" ? "#f59e0b" : (h.importance === "medium" ? "#3b82f6" : "var(--mut)"));
+              var color = h.importance === "critical" ? "var(--bad)" : (h.importance === "high" ? "var(--warn)" : (h.importance === "medium" ? "var(--acc)" : "var(--mut)"));
               return '<div style="padding:8px 12px;border-left:3px solid ' + color + ';background:var(--card2);border-radius:0 4px 4px 0;font-size:.8rem">' +
-                '<div style="font-weight:600;font-family:var(--mono,monospace)">' + esc(h.name) + ' <span style="font-size:.7rem;color:' + color + ';font-weight:400">' + h.importance.toUpperCase() + '</span></div>' +
+                '<div style="font-weight:600;font-family:var(--mono,monospace)">' + esc(h.name) + ' <span style="font-size:.75rem;color:' + color + ';font-weight:400">' + h.importance + '</span></div>' +
                 '<div style="color:var(--mut);margin-top:2px">' + esc(h.desc) + '</div>' +
               '</div>';
             }).join("") +
@@ -410,36 +410,36 @@ export function renderAPITester(main) {
           var score = results.filter(function(r) { return r.present; }).length;
           var total = results.length;
           var pct = Math.round(score / total * 100);
-          var scoreColor = pct >= 80 ? "#22c55e" : (pct >= 50 ? "#f59e0b" : "#ef4444");
+          var scoreColor = pct >= 80 ? "var(--ok)" : (pct >= 50 ? "var(--warn)" : "var(--bad)");
 
           out.innerHTML =
             '<div style="text-align:center;margin:12px 0"><span style="font-size:2rem;font-weight:700;color:' + scoreColor + '">' + pct + '%</span><div style="font-size:.82rem;color:var(--mut)">' + score + '/' + total + ' headers present</div></div>' +
             results.map(function(r) {
-              var icon = r.present ? '<span style="color:#22c55e;font-weight:700">[OK]</span>' : '<span style="color:#ef4444;font-weight:700">[MISSING]</span>';
+              var icon = r.present ? '<span style="color:var(--ok);font-weight:700">[OK]</span>' : '<span style="color:var(--bad);font-weight:700">[MISSING]</span>';
               return '<div style="padding:6px 10px;border-bottom:1px solid var(--line);font-size:.8rem;display:flex;align-items:center;gap:8px">' +
                 icon + ' <span style="font-family:var(--mono,monospace);font-weight:500">' + esc(r.name) + '</span>' +
-                '<span style="margin-left:auto;color:var(--mut);font-size:.72rem;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.value) + '</span></div>';
+                '<span style="margin-left:auto;color:var(--mut);font-size:.75rem;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.value) + '</span></div>';
             }).join("");
         } catch (err) {
-          out.innerHTML = '<div style="color:#ef4444">Failed: ' + esc(err.message) + '</div>';
+          out.innerHTML = '<div style="color:var(--bad)">Failed: ' + esc(err.message) + '</div>';
         }
       };
 
     } else if (tabId === "history") {
       content.innerHTML =
-        '<h2 class="pg-h2">Request History</h2>' +
+        '<h2 class="pg-h2">Request history</h2>' +
         '<p class="muted" style="font-size:.82rem">' + history.length + ' saved requests. Click to reload.</p>' +
         (history.length ? '<button class="btn sm danger" id="at-clear-hist" style="margin-bottom:8px">Clear History</button>' : '') +
         '<div style="display:grid;gap:4px">' +
           history.map(function(h, i) {
-            var methodColor = h.method === "GET" ? "#22c55e" : (h.method === "POST" ? "#3b82f6" : (h.method === "DELETE" ? "#ef4444" : "#f59e0b"));
-            var statusColor = h.status < 300 ? "#22c55e" : (h.status < 400 ? "#3b82f6" : (h.status < 500 ? "#f59e0b" : "#ef4444"));
+            var methodColor = h.method === "GET" ? "var(--ok)" : (h.method === "POST" ? "var(--acc)" : (h.method === "DELETE" ? "var(--bad)" : "var(--warn)"));
+            var statusColor = h.status < 300 ? "var(--ok)" : (h.status < 400 ? "var(--acc)" : (h.status < 500 ? "var(--warn)" : "var(--bad)"));
             return '<div class="at-hist-item" data-idx="' + i + '" style="padding:8px 12px;border:1px solid var(--line);border-radius:4px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;gap:10px">' +
               '<span style="font-weight:700;color:' + methodColor + ';min-width:50px">' + esc(h.method) + '</span>' +
-              '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono,monospace);font-size:.72rem">' + esc(h.url) + '</span>' +
+              '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono,monospace);font-size:.75rem">' + esc(h.url) + '</span>' +
               '<span style="font-weight:600;color:' + statusColor + '">' + (h.status || "--") + '</span>' +
-              '<span style="color:var(--mut);font-size:.72rem">' + (h.elapsed || 0) + 'ms</span>' +
-              '<span style="color:var(--mut);font-size:.68rem">' + esc(h.time ? h.time.substring(0, 16).replace("T", " ") : "") + '</span>' +
+              '<span style="color:var(--mut);font-size:.75rem">' + (h.elapsed || 0) + 'ms</span>' +
+              '<span style="color:var(--mut);font-size:.75rem">' + esc(h.time ? h.time.substring(0, 16).replace("T", " ") : "") + '</span>' +
             '</div>';
           }).join("") +
         '</div>';
@@ -462,15 +462,15 @@ export function renderAPITester(main) {
 
     } else if (tabId === "templates") {
       content.innerHTML =
-        '<h2 class="pg-h2">Request Templates</h2>' +
+        '<h2 class="pg-h2">Request templates</h2>' +
         '<p class="muted" style="font-size:.82rem">Click a template to load it into the request builder.</p>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:12px">' +
           Object.keys(REQUEST_TEMPLATES).map(function(k) {
             var t = REQUEST_TEMPLATES[k];
-            var methodColor = t.method === "GET" ? "#22c55e" : (t.method === "POST" ? "#3b82f6" : (t.method === "DELETE" ? "#ef4444" : "#f59e0b"));
+            var methodColor = t.method === "GET" ? "var(--ok)" : (t.method === "POST" ? "var(--acc)" : (t.method === "DELETE" ? "var(--bad)" : "var(--warn)"));
             return '<button class="btn sm ghost at-tpl" data-tpl="' + esc(k) + '" style="text-align:left;padding:10px">' +
-              '<div style="display:flex;align-items:center;gap:6px"><span style="color:' + methodColor + ';font-weight:700;font-size:.72rem">' + esc(t.method) + '</span> <span style="font-weight:600">' + esc(k) + '</span></div>' +
-              '<div style="font-size:.72rem;color:var(--mut);margin-top:2px;font-family:var(--mono,monospace);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.url) + '</div>' +
+              '<div style="display:flex;align-items:center;gap:6px"><span style="color:' + methodColor + ';font-weight:700;font-size:.75rem">' + esc(t.method) + '</span> <span style="font-weight:600">' + esc(k) + '</span></div>' +
+              '<div style="font-size:.75rem;color:var(--mut);margin-top:2px;font-family:var(--mono,monospace);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.url) + '</div>' +
             '</button>';
           }).join("") +
         '</div>';
@@ -494,9 +494,9 @@ export function renderAPITester(main) {
 
     } else if (tabId === "curl") {
       content.innerHTML =
-        '<h2 class="pg-h2">cURL Import / Export</h2>' +
+        '<h2 class="pg-h2">cURL import / export</h2>' +
         '<p class="muted" style="font-size:.82rem">Paste a cURL command to import, or generate a cURL command from your current request.</p>' +
-        '<textarea class="tk-in" id="at-curl-input" rows="6" placeholder="curl -X POST https://api.example.com/data -H \'Content-Type: application/json\' -d \'{&quot;key&quot;:&quot;value&quot;}\'"></textarea>' +
+        '<textarea class="tk-in" id="at-curl-input" rows="6" placeholder="curl command"></textarea>' +
         '<div class="tk-btns">' +
           '<button class="btn sm" id="at-curl-import">Import to Builder</button>' +
           '<button class="btn sm ghost" id="at-curl-export">Generate cURL from Last Request</button>' +
@@ -534,7 +534,7 @@ export function renderAPITester(main) {
     } else if (tabId === "env") {
       var envEntries = Object.keys(envVars);
       content.innerHTML =
-        '<h2 class="pg-h2">Environment Variables</h2>' +
+        '<h2 class="pg-h2">Environment variables</h2>' +
         '<p class="muted" style="font-size:.82rem">Define variables like {{base_url}}, {{token}} to substitute in URLs, headers, and body.</p>' +
         '<div id="at-env-list" style="margin:12px 0">' +
           envEntries.map(function(k) {
@@ -576,13 +576,13 @@ export function renderAPITester(main) {
             return '<div style="border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:8px">' +
               '<div style="display:flex;justify-content:space-between;align-items:center">' +
                 '<strong>' + esc(c.name) + '</strong>' +
-                '<span style="color:var(--mut);font-size:.72rem">' + (c.requests || []).length + ' requests</span>' +
+                '<span style="color:var(--mut);font-size:.75rem">' + (c.requests || []).length + ' requests</span>' +
               '</div>' +
               (c.requests && c.requests.length ? c.requests.map(function(r) {
-                var mc = r.method === "GET" ? "#22c55e" : "#3b82f6";
+                var mc = r.method === "GET" ? "var(--ok)" : "var(--acc)";
                 return '<div style="font-size:.78rem;padding:4px 0;font-family:var(--mono,monospace)"><span style="color:' + mc + '">' + esc(r.method) + '</span> ' + esc(r.url) + '</div>';
               }).join("") : '<div style="color:var(--mut);font-size:.78rem">No requests yet</div>') +
-              '<button class="btn sm danger at-coll-del" data-idx="' + i + '" style="margin-top:6px;padding:2px 8px;font-size:.72rem">Delete Collection</button>' +
+              '<button class="btn sm danger at-coll-del" data-idx="' + i + '" style="margin-top:6px;padding:2px 8px;font-size:.75rem">Delete Collection</button>' +
             '</div>';
           }).join("") : '<div style="color:var(--mut);padding:12px;text-align:center">No collections yet.</div>') +
         '</div>';

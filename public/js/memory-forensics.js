@@ -386,13 +386,13 @@ var SAMPLE_PROCESSES = [
 function renderHexViewerTab(container) {
   container.innerHTML =
     '<div class="mf-section">' +
-      '<h3 class="mf-sh">Hex Viewer</h3>' +
+      '<h3 class="mf-sh">Hex viewer</h3>' +
       '<p class="mf-desc">Paste hex data or upload a binary file to view in standard hex editor format.</p>' +
-      '<textarea id="mf-hex-input" class="mf-textarea" rows="4" placeholder="Paste hex bytes (e.g. 4D 5A 90 00 03 00 00 00 04 00 00 00 FF FF 00 00)..." spellcheck="false"></textarea>' +
+      '<textarea id="mf-hex-input" class="mf-textarea" rows="4" placeholder="Hex bytes, e.g. 4D 5A 90 00" spellcheck="false"></textarea>' +
       '<div class="mf-btn-row">' +
-        '<button class="mf-btn" id="mf-hex-btn">View</button>' +
-        '<label class="mf-btn mf-btn-sec">Upload <input type="file" id="mf-hex-file" hidden></label>' +
-        '<button class="mf-btn mf-btn-sec" id="mf-hex-sample">Load PE Header Sample</button>' +
+        '<button class="btn" id="mf-hex-btn">View</button>' +
+        '<label class="btn ghost">Upload <input type="file" id="mf-hex-file" hidden></label>' +
+        '<button class="btn ghost" id="mf-hex-sample">Load example (PE header)</button>' +
       '</div>' +
       '<pre id="mf-hex-output" class="mf-pre"></pre>' +
     '</div>';
@@ -425,14 +425,14 @@ function renderHexViewerTab(container) {
 function renderProcessTab(container) {
   container.innerHTML =
     '<div class="mf-section">' +
-      '<h3 class="mf-sh">Process Tree Viewer</h3>' +
+      '<h3 class="mf-sh">Process tree viewer</h3>' +
       '<p class="mf-desc">Visualize process parent-child relationships from your own Volatility pslist output.</p>' +
       '<textarea id="mf-proc-input" class="mf-textarea" rows="6" placeholder="Paste pslist output..." spellcheck="false"></textarea>' +
       '<p class="mf-muted" style="font-size:.75rem;margin:-4px 0 8px">Include the header row (needs PID, PPID and Name or ImageFileName columns). Volatility 2 and 3 text or CSV output both work.</p>' +
       '<div class="mf-btn-row">' +
-        '<button class="mf-btn" id="mf-proc-parse">Build Tree</button>' +
-        '<button class="mf-btn mf-btn-sec" id="mf-proc-sample">Load Example Data</button>' +
-        '<button class="mf-btn mf-btn-sec" id="mf-proc-clear">Clear</button>' +
+        '<button class="btn" id="mf-proc-parse">Build Tree</button>' +
+        '<button class="btn ghost" id="mf-proc-sample">Load example</button>' +
+        '<button class="btn ghost" id="mf-proc-clear">Clear</button>' +
       '</div>' +
       '<div id="mf-proc-tree" class="mf-tree-container"></div>' +
       '<h4 class="mf-sh2">Suspicious Indicators</h4>' +
@@ -524,7 +524,7 @@ function renderVolatilityTab(container) {
   var categories = [...new Set(VOLATILITY_PLUGINS.map(function(p) { return p.category; }))];
   container.innerHTML =
     '<div class="mf-section">' +
-      '<h3 class="mf-sh">Volatility Plugin Reference</h3>' +
+      '<h3 class="mf-sh">Volatility plugin reference</h3>' +
       '<p class="mf-desc">' + VOLATILITY_PLUGINS.length + ' plugins for Volatility 2 &amp; 3 memory forensics framework.</p>' +
       '<div class="mf-filter" id="mf-vol-filter">' +
         '<button class="mf-chip on" data-c="all">All</button>' +
@@ -583,7 +583,7 @@ function renderStructuresTab(container) {
   var structs = Object.keys(MEMORY_STRUCTURES);
   container.innerHTML =
     '<div class="mf-section">' +
-      '<h3 class="mf-sh">Windows Memory Structures</h3>' +
+      '<h3 class="mf-sh">Windows memory structures (reference)</h3>' +
       '<p class="mf-desc">Key kernel and user-mode structures used in memory forensics (x64 offsets).</p>' +
       '<div class="mf-struct-tabs" id="mf-struct-tabs">' +
         structs.map(function(s, i) { return '<button class="mf-chip' + (i === 0 ? " on" : "") + '" data-s="' + esc(s) + '">' + esc(s) + '</button>'; }).join("") +
@@ -591,7 +591,7 @@ function renderStructuresTab(container) {
       '<div id="mf-struct-detail"></div>' +
     '</div>' +
     '<div class="mf-section">' +
-      '<h3 class="mf-sh">Pool Tags</h3>' +
+      '<h3 class="mf-sh">Pool tags</h3>' +
       '<p class="mf-desc">' + POOL_TAGS.length + ' common pool tags — use with pooltag scanning to identify kernel allocations.</p>' +
       '<div class="mf-table-wrap"><table class="mf-table">' +
         '<thead><tr><th>Tag</th><th>Description</th><th>Module</th></tr></thead><tbody>' +
@@ -624,7 +624,7 @@ function renderLinuxTab(container) {
   var structs = Object.keys(LINUX_STRUCTURES);
   container.innerHTML =
     '<div class="mf-section">' +
-      '<h3 class="mf-sh">Linux Memory Analysis</h3>' +
+      '<h3 class="mf-sh">Linux memory analysis (reference)</h3>' +
       '<p class="mf-desc">Key data structures and /proc filesystem references for Linux memory forensics.</p>' +
       '<div class="mf-struct-tabs" id="mf-linux-tabs">' +
         structs.map(function(s, i) { return '<button class="mf-chip' + (i === 0 ? " on" : "") + '" data-s="' + esc(s) + '">' + esc(s) + '</button>'; }).join("") +
@@ -656,7 +656,7 @@ function renderMalwareTab(container) {
   var categories = Object.keys(MALWARE_INDICATORS);
   container.innerHTML =
     '<div class="mf-section">' +
-      '<h3 class="mf-sh">Malware Indicators in Memory</h3>' +
+      '<h3 class="mf-sh">Malware indicators in memory (reference)</h3>' +
       '<p class="mf-desc">Code injection patterns, API hooking, and rootkit techniques — what to look for in a memory dump.</p>' +
       '<div class="mf-struct-tabs" id="mf-malware-tabs">' +
         categories.map(function(c, i) { return '<button class="mf-chip' + (i === 0 ? " on" : "") + '" data-c="' + esc(c) + '">' + esc(c) + '</button>'; }).join("") +
@@ -686,21 +686,21 @@ function renderMalwareTab(container) {
 function renderYaraTab(container) {
   container.innerHTML =
     '<div class="mf-section">' +
-      '<h3 class="mf-sh">YARA Scanner</h3>' +
+      '<h3 class="mf-sh">YARA scanner</h3>' +
       '<p class="mf-desc">Scan hex data against YARA rules (simplified client-side matcher for hex and text strings).</p>' +
       '<div class="mf-yara-split">' +
         '<div class="mf-yara-col">' +
           '<h4 class="mf-sh2">YARA Rule</h4>' +
-          '<textarea id="mf-yara-rule" class="mf-textarea" rows="10" spellcheck="false" placeholder="rule example_pe {\n  strings:\n    $mz = { 4D 5A }\n    $dos = \"This program\"\n  condition:\n    $mz at 0 and $dos\n}"></textarea>' +
+          '<textarea id="mf-yara-rule" class="mf-textarea" rows="10" spellcheck="false" placeholder="Paste a YARA rule"></textarea>' +
         '</div>' +
         '<div class="mf-yara-col">' +
           '<h4 class="mf-sh2">Hex Data to Scan</h4>' +
-          '<textarea id="mf-yara-data" class="mf-textarea" rows="10" spellcheck="false" placeholder="4D5A9000030000000400..."></textarea>' +
+          '<textarea id="mf-yara-data" class="mf-textarea" rows="10" spellcheck="false" placeholder="Hex bytes to scan"></textarea>' +
         '</div>' +
       '</div>' +
       '<div class="mf-btn-row">' +
-        '<button class="mf-btn" id="mf-yara-scan">Scan</button>' +
-        '<button class="mf-btn mf-btn-sec" id="mf-yara-sample">Load Sample</button>' +
+        '<button class="btn" id="mf-yara-scan">Scan</button>' +
+        '<button class="btn ghost" id="mf-yara-sample">Load example</button>' +
       '</div>' +
       '<div id="mf-yara-result" class="mf-result"></div>' +
     '</div>';
@@ -750,13 +750,13 @@ var MF_CSS = '<style>' +
   '.mf-pre{background:var(--bg,#111);border:1px solid var(--line,#333);padding:12px;border-radius:4px;font-family:monospace;font-size:.75rem;overflow-x:auto;color:var(--txt,#eee);white-space:pre;line-height:1.5;max-height:400px;overflow-y:auto}' +
   '.mf-result{margin-top:12px}' +
   '.mf-muted{color:var(--mut,#888);font-size:.85rem}' +
-  '.mf-pass{padding:8px 12px;background:rgba(76,175,80,.12);border:1px solid rgba(76,175,80,.3);border-radius:4px;color:#4caf50;font-size:.85rem;margin-bottom:8px}' +
-  '.mf-err{padding:8px 12px;background:rgba(244,67,54,.12);border:1px solid rgba(244,67,54,.3);border-radius:4px;color:#f44336;font-size:.85rem}' +
+  '.mf-pass{padding:8px 12px;background:rgba(76,175,80,.12);border:1px solid rgba(76,175,80,.3);border-radius:4px;color:var(--ok);font-size:.85rem;margin-bottom:8px}' +
+  '.mf-err{padding:8px 12px;background:rgba(244,67,54,.12);border:1px solid rgba(244,67,54,.3);border-radius:4px;color:var(--bad);font-size:.85rem}' +
   '.mf-filter{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}' +
   '.mf-chip{padding:4px 12px;border:1px solid var(--line,#333);background:var(--card,#1a1a1a);color:var(--txt,#eee);cursor:pointer;font-size:.78rem;border-radius:4px;transition:all .15s}' +
   '.mf-chip:hover{background:var(--bg,#111)}' +
   '.mf-chip.on{background:var(--acc,#ffc107);color:#111;border-color:var(--acc,#ffc107);font-weight:600}' +
-  '.mf-chip-sm{padding:2px 8px;background:var(--bg,#111);border:1px solid var(--line,#333);border-radius:3px;font-size:.7rem;color:var(--acc,#ffc107)}' +
+  '.mf-chip-sm{padding:2px 8px;background:var(--bg,#111);border:1px solid var(--line,#333);border-radius:3px;font-size:12px;color:var(--acc,#ffc107)}' +
   '.mf-table-wrap{overflow-x:auto;margin-bottom:12px}' +
   '.mf-table{width:100%;border-collapse:collapse;font-size:.8rem}' +
   '.mf-table th,.mf-table td{padding:6px 10px;border:1px solid var(--line,#333);text-align:left}' +
@@ -768,11 +768,11 @@ var MF_CSS = '<style>' +
   '.mf-tree-pid{color:var(--acc,#ffc107);font-weight:600}' +
   '.mf-tree-name{color:var(--txt,#eee)}' +
   '.mf-tree-user{color:var(--mut,#888);font-size:.75rem}' +
-  '.mf-tree-cmd{color:var(--mut,#666);font-size:.72rem}' +
+  '.mf-tree-cmd{color:var(--mut,#666);font-size:12px}' +
   '.mf-alerts{margin-bottom:12px}' +
   '.mf-alert{padding:8px 12px;border-radius:4px;font-size:.82rem;margin-bottom:4px}' +
-  '.mf-alert-crit{background:rgba(244,67,54,.12);border:1px solid rgba(244,67,54,.3);color:#f44336}' +
-  '.mf-alert-high{background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3);color:#ff9800}' +
+  '.mf-alert-crit{background:rgba(244,67,54,.12);border:1px solid rgba(244,67,54,.3);color:var(--bad)}' +
+  '.mf-alert-high{background:rgba(255,152,0,.12);border:1px solid rgba(255,152,0,.3);color:var(--warn)}' +
   '.mf-vol-list{display:flex;flex-direction:column;gap:8px}' +
   '.mf-vol-card{background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:12px;border-radius:4px}' +
   '.mf-vol-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}' +
@@ -805,18 +805,18 @@ var MF_TABS = [
 
 export function renderMemoryForensics(main) {
   main.innerHTML = MF_CSS +
-    '<h1 class="pg-h1">Memory Forensics</h1>' +
-    '<p class="muted pg-sub">Hex viewer, process tree analysis, Volatility reference, memory structures, YARA scanning. All client-side.</p>' +
-    '<div class="mf-filter" id="mf-tabs">' +
-      MF_TABS.map(function(t) { return '<button class="mf-chip' + (t.id === "hex" ? " on" : "") + '" data-tab="' + t.id + '">' + t.label + '</button>'; }).join("") +
+    '<div class="pg-head"><div><h1 class="pg-h1">Memory Forensics</h1>' +
+    '<p class="muted pg-sub">Hex viewer, process tree from your own Volatility pslist output, YARA scanning of pasted bytes, and Volatility and memory-structure references. It does not parse full memory images; run Volatility locally for that. All client-side.</p></div></div>' +
+    '<div class="seg" id="mf-tabs" style="margin-bottom:12px;flex-wrap:wrap">' +
+      MF_TABS.map(function(t) { return '<button' + (t.id === "hex" ? ' class="on"' : "") + ' data-tab="' + t.id + '">' + t.label + '</button>'; }).join("") +
     '</div>' +
     '<div id="mf-panel"></div>';
   var panel = main.querySelector("#mf-panel");
   renderHexViewerTab(panel);
   main.querySelector("#mf-tabs").onclick = function(e) {
-    var btn = e.target.closest(".mf-chip");
+    var btn = e.target.closest("button[data-tab]");
     if (!btn) return;
-    main.querySelectorAll("#mf-tabs .mf-chip").forEach(function(b) { b.classList.toggle("on", b === btn); });
+    main.querySelectorAll("#mf-tabs button").forEach(function(b) { b.classList.toggle("on", b === btn); });
     var tab = MF_TABS.find(function(t) { return t.id === btn.dataset.tab; });
     if (tab) tab.render(panel);
   };

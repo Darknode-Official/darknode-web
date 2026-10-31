@@ -16,7 +16,7 @@ function saveData(data) {
 
 const STATUSES = ["Not Started", "In Progress", "Implemented", "Not Applicable"];
 const PRIORITIES = ["Critical", "High", "Medium", "Low"];
-const STATUS_COLORS = { "Not Started": "#ef4444", "In Progress": "#f59e0b", "Implemented": "#22c55e", "Not Applicable": "#6b7280" };
+const STATUS_COLORS = { "Not Started": "var(--bad)", "In Progress": "var(--warn)", "Implemented": "var(--ok)", "Not Applicable": "var(--mut)" };
 
 // ---- FRAMEWORK DEFINITIONS ----
 
@@ -292,8 +292,8 @@ function renderFrameworkSelector(main, data) {
   var ccCell = function (n, label, key) {
     return '<div class="cc-sm" data-k="' + key + '"><span class="cc-sm-n">' + n + '</span><span class="cc-sm-l">' + label + '</span></div>';
   };
-  var html = '<div class="pg-head"><h1 class="pg-h1">Compliance Checker</h1>' +
-    '<p class="muted pg-sub">Assess your organization against major security frameworks. Track controls, map across standards, and generate audit-ready reports.</p></div>' +
+  var html = '<div class="pg-head"><div><h1 class="pg-h1">Compliance Checker</h1>' +
+    '<p class="muted pg-sub">Self-assess your controls against major security frameworks, map them across standards and export a readiness report. Scores reflect only the statuses you enter.</p></div></div>' +
     '<div class="cc-summary">' +
       ccCell(fwNames.length, "Frameworks", "fw") +
       ccCell(aggCtrl, "Total controls", "ctrl") +
@@ -315,7 +315,7 @@ function renderFrameworkSelector(main, data) {
     // "% ready" excludes Not Applicable controls from the denominator so
     // marking a control N/A cannot drag readiness down.
     var pct = applicable > 0 ? Math.round((implemented / applicable) * 100) : 0;
-    var barColor = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
+    var barColor = pct >= 80 ? "var(--ok)" : pct >= 50 ? "var(--warn)" : "var(--bad)";
     html += '<div class="cc-fw-card" data-fw="' + esc(fwNames[i]) + '">' +
       '<div class="cc-fw-name">' + esc(fwNames[i]) + '</div>' +
       '<div class="cc-fw-desc">' + esc(fw.description) + '</div>' +
@@ -344,14 +344,14 @@ function renderFrameworkDetail(main, fwName, data) {
   var cats = fw.categories;
 
   var html = '<div style="margin-bottom:12px">' +
-    '<button class="btn sm" id="cc-back">Back to Frameworks</button>' +
+    '<button class="btn ghost sm" id="cc-back">Back to frameworks</button>' +
     '<span style="margin-left:12px;font-size:1.1rem;font-weight:600">' + esc(fwName) + '</span>' +
   '</div>' +
-  '<div class="cc-tabs" id="cc-tabs">' +
-    '<button class="tab active" data-tab="controls">Controls</button>' +
-    '<button class="tab" data-tab="gap">Gap Analysis</button>' +
-    '<button class="tab" data-tab="mapping">Cross-Mapping</button>' +
-    '<button class="tab" data-tab="export">Export Report</button>' +
+  '<div class="cc-tabs seg" id="cc-tabs">' +
+    '<button class="tab active on" data-tab="controls">Controls</button>' +
+    '<button class="tab" data-tab="gap">Gap analysis</button>' +
+    '<button class="tab" data-tab="mapping">Cross-mapping</button>' +
+    '<button class="tab" data-tab="export">Export report</button>' +
   '</div>' +
   '<div id="cc-tab-content"></div>';
 
@@ -364,6 +364,7 @@ function renderFrameworkDetail(main, fwName, data) {
   function switchTab(tabId) {
     main.querySelectorAll('#cc-tabs .tab').forEach(function(t) {
       t.classList.toggle('active', t.dataset.tab === tabId);
+      t.classList.toggle('on', t.dataset.tab === tabId);
     });
     var content = main.querySelector('#cc-tab-content');
     if (tabId === 'controls') renderControlsTab(content, fw, fwName, fwData, data);
@@ -403,7 +404,7 @@ function renderControlsTab(container, fw, fwName, fwData, allData) {
     var notes = cd.notes || "";
     var responsible = cd.responsible || "";
     var targetDate = cd.targetDate || "";
-    var sc = STATUS_COLORS[status] || "#6b7280";
+    var sc = STATUS_COLORS[status] || "var(--mut)";
 
     controlsHtml += '<div class="cc-ctrl" data-cat="' + esc(ctrl.category) + '" data-status="' + esc(status) + '">' +
       '<div class="cc-ctrl-header">' +
@@ -466,7 +467,7 @@ function renderControlsTab(container, fw, fwName, fwData, allData) {
           var badge = ctrlEl.querySelector('.cc-status-badge');
           if (badge) {
             badge.textContent = field.value;
-            badge.style.background = STATUS_COLORS[field.value] || "#6b7280";
+            badge.style.background = STATUS_COLORS[field.value] || "var(--mut)";
           }
         }
       }
@@ -501,7 +502,7 @@ function renderGapTab(container, fw, fwName, fwData) {
   // Readiness excludes Not Applicable controls: they are out of scope, not gaps.
   var applicable = total - (byStatus["Not Applicable"] || 0);
   var score = applicable > 0 ? Math.round((implemented / applicable) * 100) : 0;
-  var scoreColor = score >= 80 ? "#22c55e" : score >= 50 ? "#f59e0b" : "#ef4444";
+  var scoreColor = score >= 80 ? "var(--ok)" : score >= 50 ? "var(--warn)" : "var(--bad)";
 
   var html = '<div class="cc-gap-header">' +
     '<div class="cc-score-card">' +
@@ -517,7 +518,7 @@ function renderGapTab(container, fw, fwName, fwData) {
     var cnt = byStatus[status];
     var pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
     html += '<div class="cc-gap-item">' +
-      '<div class="cc-gap-label"><span class="cc-dot" style="background:' + (STATUS_COLORS[status] || "#6b7280") + '"></span>' + esc(status) + '</div>' +
+      '<div class="cc-gap-label"><span class="cc-dot" style="background:' + (STATUS_COLORS[status] || "var(--mut)") + '"></span>' + esc(status) + '</div>' +
       '<div class="cc-gap-val">' + cnt + ' (' + pct + '%)</div>' +
     '</div>';
   }
@@ -528,7 +529,7 @@ function renderGapTab(container, fw, fwName, fwData) {
   for (var ci = 0; ci < catNames.length; ci++) {
     var cat = byCat[catNames[ci]];
     var cpct = cat.applicable > 0 ? Math.round((cat.implemented / cat.applicable) * 100) : 0;
-    var cColor = cpct >= 80 ? "#22c55e" : cpct >= 50 ? "#f59e0b" : "#ef4444";
+    var cColor = cpct >= 80 ? "var(--ok)" : cpct >= 50 ? "var(--warn)" : "var(--bad)";
     html += '<div class="cc-gap-item">' +
       '<div class="cc-gap-label">' + esc(catNames[ci]) + '</div>' +
       '<div class="cc-gap-val" style="color:' + cColor + '">' + cat.implemented + '/' + cat.applicable + ' (' + cpct + '%)</div>' +
@@ -537,10 +538,10 @@ function renderGapTab(container, fw, fwName, fwData) {
   html += '</div>';
 
   html += '<h3 style="margin:16px 0 8px">Priority Breakdown</h3><div class="cc-gap-grid">';
-  var prioColors = { "Critical": "#ef4444", "High": "#f59e0b", "Medium": "#3b82f6", "Low": "#6b7280" };
+  var prioColors = { "Critical": "var(--bad)", "High": "var(--warn)", "Medium": "var(--acc)", "Low": "var(--mut)" };
   for (var pri in byPriority) {
     html += '<div class="cc-gap-item">' +
-      '<div class="cc-gap-label"><span class="cc-dot" style="background:' + (prioColors[pri] || "#6b7280") + '"></span>' + esc(pri) + '</div>' +
+      '<div class="cc-gap-label"><span class="cc-dot" style="background:' + (prioColors[pri] || "var(--mut)") + '"></span>' + esc(pri) + '</div>' +
       '<div class="cc-gap-val">' + byPriority[pri] + '</div>' +
     '</div>';
   }
@@ -558,7 +559,7 @@ function renderGapTab(container, fw, fwName, fwData) {
       hasCritGaps = true;
       html += '<div class="cc-crit-gap">' +
         '<span class="cc-ctrl-id">' + esc(gctrl.id) + '</span> ' + esc(gctrl.title) +
-        ' <span class="cc-status-badge" style="background:' + (STATUS_COLORS[gstatus] || "#6b7280") + ';font-size:.65rem">' + esc(gstatus) + '</span>' +
+        ' <span class="cc-status-badge" style="background:' + (STATUS_COLORS[gstatus] || "var(--mut)") + ';font-size:.75rem">' + esc(gstatus) + '</span>' +
       '</div>';
     }
   }
@@ -660,7 +661,7 @@ var STYLE = '<style>' +
   '.cc-fw-card:hover{border-color:var(--acc)}' +
   '.cc-fw-name{font-weight:600;font-size:1rem;margin-bottom:4px}' +
   '.cc-fw-desc{font-size:.75rem;color:var(--mut);margin-bottom:10px;line-height:1.4}' +
-  '.cc-fw-stats{display:flex;justify-content:space-between;font-size:.72rem;color:var(--mut);margin-bottom:6px}' +
+  '.cc-fw-stats{display:flex;justify-content:space-between;font-size:.75rem;color:var(--mut);margin-bottom:6px}' +
   '.cc-bar-bg{height:4px;background:var(--line);border-radius:2px;overflow:hidden}' +
   '.cc-bar-fill{height:100%;border-radius:2px;transition:width .3s}' +
   '.cc-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}' +
@@ -670,7 +671,7 @@ var STYLE = '<style>' +
   '.cc-ctrl-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}' +
   '.cc-ctrl-id{font-family:var(--mono);font-size:.75rem;font-weight:600;color:var(--acc);background:var(--acc-soft,rgba(0,212,255,.1));padding:2px 8px;border-radius:4px}' +
   '.cc-ctrl-title{font-weight:600;font-size:.88rem}' +
-  '.cc-status-badge{font-size:.68rem;padding:2px 8px;border-radius:4px;color:#fff;font-weight:500}' +
+  '.cc-status-badge{font-size:.75rem;padding:2px 8px;border-radius:4px;color:#fff;font-weight:500}' +
   '.cc-ctrl-desc{font-size:.8rem;color:var(--mut);margin-bottom:6px;line-height:1.4}' +
   '.cc-ctrl-evidence{font-size:.75rem;color:var(--mut);margin-bottom:8px;padding:6px 10px;background:var(--card2,#111);border-radius:4px}' +
   '.cc-ctrl-fields{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:6px;font-size:.78rem}' +
@@ -682,7 +683,7 @@ var STYLE = '<style>' +
   '.cc-score-card{text-align:center;padding:20px 40px;background:var(--card);border:1px solid var(--line);border-radius:12px}' +
   '.cc-score-num{font-size:3rem;font-weight:700;line-height:1}' +
   '.cc-score-label{font-size:.85rem;color:var(--mut);margin-top:4px}' +
-  '.cc-score-sub{font-size:.72rem;color:var(--mut);margin-top:2px}' +
+  '.cc-score-sub{font-size:.75rem;color:var(--mut);margin-top:2px}' +
   '.cc-gap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:12px}' +
   '.cc-gap-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--card);border:1px solid var(--line);border-radius:6px;font-size:.8rem}' +
   '.cc-gap-label{display:flex;align-items:center;gap:6px}' +

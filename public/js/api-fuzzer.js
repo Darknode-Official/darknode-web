@@ -191,8 +191,8 @@ export function renderAPIFuzzer(container) {
   };
 
   const tabs = [
-    { id: 'builder', label: 'Request Builder' },
-    { id: 'payloads', label: 'Payload Library' },
+    { id: 'builder', label: 'Request builder' },
+    { id: 'payloads', label: 'Payload library' },
     { id: 'fuzzer', label: 'Fuzzer' },
     { id: 'results', label: 'Results' },
     { id: 'owasp', label: 'OWASP Top 10' }
@@ -201,100 +201,74 @@ export function renderAPIFuzzer(container) {
   function render() {
     container.innerHTML = `
       <style>
-        .af-wrap{background:#0a0e14;color:#c8d6e5;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding:0}
-        .af-header{background:linear-gradient(135deg,#0c1220 0%,#1a1040 50%,#0c1220 100%);padding:20px 28px;border-bottom:1px solid #1e293b}
-        .af-header h2{margin:0;font-size:22px;color:#00aaff;letter-spacing:1px;font-weight:700}
-        .af-header p{margin:4px 0 0;font-size:13px;color:#6a8aaa;letter-spacing:.5px}
-        .af-tabs{display:flex;gap:0;background:#0c1220;border-bottom:1px solid #1e293b;padding:0 20px;overflow-x:auto}
-        .af-tab{padding:12px 20px;background:none;border:none;color:#6a8aaa;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
-        .af-tab:hover{color:#c8d6e5;background:rgba(0,170,255,.05)}
-        .af-tab.active{color:#00aaff;border-bottom-color:#00aaff;background:rgba(0,170,255,.08)}
-        .af-content{padding:24px}
-        .af-panel{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:20px;margin-bottom:16px}
-        .af-panel h3{margin:0 0 16px;font-size:16px;color:#e2e8f0;font-weight:600}
+        .af-wrap{color:var(--txt)}
+        .af-tabs{margin-bottom:16px;flex-wrap:wrap}
+        .af-content{padding:0}
+        .af-panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin-bottom:16px}
+        .af-panel h3{margin:0 0 16px;font-size:15px;color:var(--txt);font-weight:600}
         .af-row{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-        .af-label{font-size:12px;color:#6a8aaa;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-        .af-input{background:#1a2744;border:1px solid #2a3f5f;border-radius:6px;padding:9px 14px;color:#e2e8f0;font-size:14px;width:100%;box-sizing:border-box;outline:none;transition:border-color .2s}
-        .af-input:focus{border-color:#00aaff}
-        .af-select{background:#1a2744;border:1px solid #2a3f5f;border-radius:6px;padding:9px 14px;color:#e2e8f0;font-size:14px;outline:none;cursor:pointer}
-        .af-textarea{background:#1a2744;border:1px solid #2a3f5f;border-radius:6px;padding:12px 14px;color:#e2e8f0;font-size:13px;font-family:'JetBrains Mono',monospace;width:100%;box-sizing:border-box;resize:vertical;min-height:120px;outline:none}
-        .af-textarea:focus{border-color:#00aaff}
-        .af-btn{background:linear-gradient(135deg,#00aaff,#0088cc);color:#fff;border:none;border-radius:6px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px}
-        .af-btn:hover{background:linear-gradient(135deg,#00ccff,#00aaff);transform:translateY(-1px)}
-        .af-btn.danger{background:linear-gradient(135deg,#ff4444,#cc2222)}
-        .af-btn.danger:hover{background:linear-gradient(135deg,#ff6666,#ff4444)}
-        .af-btn.success{background:linear-gradient(135deg,#00ff88,#00cc66);color:#0a0e14}
-        .af-btn.sm{padding:6px 14px;font-size:12px}
-        .af-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-        .af-method{font-weight:700;padding:8px 16px;border-radius:6px;font-size:12px;letter-spacing:.5px;min-width:72px;text-align:center}
-        .af-method.GET{background:rgba(0,170,255,.15);color:#00aaff}
-        .af-method.POST{background:rgba(0,255,136,.15);color:#00ff88}
-        .af-method.PUT{background:rgba(255,170,0,.15);color:#ffaa00}
-        .af-method.DELETE{background:rgba(255,68,68,.15);color:#ff4444}
-        .af-method.PATCH{background:rgba(170,0,255,.15);color:#aa00ff}
-        .af-method.OPTIONS{background:rgba(255,255,0,.15);color:#ffff00}
-        .af-method.HEAD{background:rgba(136,136,136,.15);color:#aaa}
+        .af-label{font-size:12px;color:var(--mut);margin-bottom:4px}
+        .af-input{width:100%;box-sizing:border-box}
+        .af-textarea{font-family:var(--mono,monospace);font-size:13px;width:100%;box-sizing:border-box;resize:vertical;min-height:120px}
+        .af-method{font-weight:700;padding:8px 16px;border-radius:6px;font-size:12px;min-width:72px;text-align:center;background:var(--card2);color:var(--acc)}
+        .af-method.POST{color:var(--ok)}
+        .af-method.PUT,.af-method.PATCH{color:var(--warn)}
+        .af-method.DELETE{color:var(--bad)}
+        .af-method.OPTIONS,.af-method.HEAD{color:var(--mut)}
         .af-header-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
         .af-header-row .af-input{flex:1}
-        .af-remove-btn{background:none;border:none;color:#ff4444;cursor:pointer;font-size:18px;padding:4px 8px;border-radius:4px}
-        .af-remove-btn:hover{background:rgba(255,68,68,.1)}
-        .af-payload-cat{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all .2s}
-        .af-payload-cat:hover{border-color:#00aaff;background:#111d30}
-        .af-payload-cat.expanded{border-color:#00aaff}
+        .af-remove-btn{background:none;border:none;color:var(--bad);cursor:pointer;font-size:18px;padding:4px 8px;border-radius:4px}
+        .af-payload-cat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:12px;cursor:pointer}
+        .af-payload-cat:hover,.af-payload-cat.expanded{border-color:var(--acc)}
         .af-payload-cat-head{display:flex;justify-content:space-between;align-items:center}
-        .af-payload-cat-title{font-size:15px;font-weight:600;color:#e2e8f0}
-        .af-payload-count{background:rgba(0,170,255,.15);color:#00aaff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
+        .af-payload-cat-title{font-size:15px;font-weight:600;color:var(--txt)}
+        .af-payload-count{background:var(--card2);color:var(--acc);padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
         .af-payload-list{margin-top:12px;max-height:300px;overflow-y:auto;display:none}
         .af-payload-cat.expanded .af-payload-list{display:block}
-        .af-payload-item{padding:6px 12px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#8ab4d0;border-bottom:1px solid #1a2744;word-break:break-all}
+        .af-payload-item{padding:6px 12px;font-family:var(--mono,monospace);font-size:12px;color:var(--txt-2);border-bottom:1px solid var(--line);word-break:break-all}
         .af-payload-item:last-child{border-bottom:none}
-        .af-payload-item:hover{background:rgba(0,170,255,.05);color:#00aaff}
+        .af-payload-item:hover{color:var(--acc)}
         .af-fuzz-config{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-        .af-progress{background:#1a2744;border-radius:8px;height:8px;overflow:hidden;margin:16px 0}
-        .af-progress-bar{height:100%;background:linear-gradient(90deg,#00aaff,#00ff88);border-radius:8px;transition:width .3s;width:0}
-        .af-result-card{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:14px;margin-bottom:8px;display:grid;grid-template-columns:80px 60px 1fr 80px;gap:12px;align-items:center}
-        .af-result-card:hover{border-color:#2a3f5f}
-        .af-status{font-weight:700;font-size:14px;text-align:center;padding:4px 0;border-radius:4px}
-        .af-status.s2xx{color:#00ff88;background:rgba(0,255,136,.1)}
-        .af-status.s3xx{color:#ffaa00;background:rgba(255,170,0,.1)}
-        .af-status.s4xx{color:#ff4444;background:rgba(255,68,68,.1)}
-        .af-status.s5xx{color:#ff00ff;background:rgba(255,0,255,.1)}
-        .af-timing{font-size:12px;color:#6a8aaa;font-family:'JetBrains Mono',monospace}
-        .af-payload-preview{font-size:12px;color:#8ab4d0;font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .af-size{font-size:12px;color:#6a8aaa;text-align:right;font-family:'JetBrains Mono',monospace}
+        .af-progress{background:var(--card2);border-radius:8px;height:8px;overflow:hidden;margin:16px 0}
+        .af-progress-bar{height:100%;background:var(--acc);border-radius:8px;transition:width .3s;width:0}
+        .af-result-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:8px;display:grid;grid-template-columns:80px 60px 1fr 80px;gap:12px;align-items:center}
+        .af-status{font-weight:700;font-size:14px;text-align:center;padding:4px 0;border-radius:4px;background:var(--card2)}
+        .af-status.s2xx{color:var(--ok)}
+        .af-status.s3xx{color:var(--warn)}
+        .af-status.s4xx,.af-status.s5xx{color:var(--bad)}
+        .af-timing,.af-size{font-size:12px;color:var(--mut);font-family:var(--mono,monospace)}
+        .af-size{text-align:right}
+        .af-payload-preview{font-size:12px;color:var(--txt-2);font-family:var(--mono,monospace);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .af-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
-        .af-stat{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:14px;text-align:center}
-        .af-stat-val{font-size:24px;font-weight:700;color:#00aaff}
-        .af-stat-label{font-size:11px;color:#6a8aaa;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
-        .af-owasp-item{background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:16px;margin-bottom:10px;transition:border-color .2s}
-        .af-owasp-item:hover{border-color:#2a3f5f}
+        .af-stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;text-align:center}
+        .af-stat-val{font-size:24px;font-weight:700;color:var(--txt)}
+        .af-stat-label{font-size:12px;color:var(--mut);margin-top:4px}
+        .af-owasp-item{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:10px}
         .af-owasp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-        .af-owasp-id{background:rgba(255,68,68,.15);color:#ff4444;padding:4px 10px;border-radius:4px;font-weight:700;font-size:13px;white-space:nowrap}
-        .af-owasp-title{font-size:15px;font-weight:600;color:#e2e8f0;flex:1}
-        .af-owasp-desc{font-size:13px;color:#8ab4d0;margin:8px 0;line-height:1.5}
-        .af-owasp-check{font-size:12px;color:#6a8aaa;background:#1a2744;padding:8px 12px;border-radius:6px;margin-top:8px;line-height:1.4}
-        .af-checkbox{width:18px;height:18px;accent-color:#00aaff;cursor:pointer;flex-shrink:0}
-        .af-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
-        .af-badge.anomaly{background:rgba(255,68,68,.15);color:#ff4444}
-        .af-badge.normal{background:rgba(0,255,136,.15);color:#00ff88}
-        .af-empty{text-align:center;padding:60px 20px;color:#4a6a8a}
-        .af-empty-icon{font-size:48px;margin-bottom:12px;opacity:.5}
+        .af-owasp-id{background:var(--card2);color:var(--acc);padding:4px 10px;border-radius:4px;font-weight:700;font-size:13px;white-space:nowrap}
+        .af-owasp-title{font-size:15px;font-weight:600;color:var(--txt);flex:1}
+        .af-owasp-desc{font-size:13px;color:var(--txt-2);margin:8px 0;line-height:1.5}
+        .af-owasp-check{font-size:12px;color:var(--mut);background:var(--card2);padding:8px 12px;border-radius:6px;margin-top:8px;line-height:1.4}
+        .af-checkbox{width:18px;height:18px;accent-color:var(--acc);cursor:pointer;flex-shrink:0}
+        .af-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;background:var(--card2)}
+        .af-badge.anomaly{color:var(--bad)}
+        .af-badge.normal{color:var(--ok)}
+        .af-empty{text-align:center;padding:60px 20px;color:var(--mut)}
         .af-export-bar{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
         @media(max-width:768px){
           .af-fuzz-config{grid-template-columns:1fr}
           .af-result-card{grid-template-columns:60px 50px 1fr;gap:8px}
           .af-size{display:none}
           .af-stats{grid-template-columns:1fr 1fr}
-          .af-content{padding:16px}
         }
       </style>
       <div class="af-wrap">
-        <div class="af-header">
-          <h2>API Fuzzer</h2>
-          <p>HTTP request builder, payload library & automated API fuzz testing</p>
-        </div>
-        <div class="af-tabs">
-          ${tabs.map(t => `<button class="af-tab${state.tab === t.id ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+        <div class="pg-head"><div>
+          <h1 class="pg-h1">API Fuzzer</h1>
+          <p class="muted pg-sub">Build HTTP requests and send payload lists from your browser, flagging responses that differ from a baseline.</p>
+        </div></div>
+        <div class="af-tabs seg">
+          ${tabs.map(t => `<button class="af-tab${state.tab === t.id ? ' on' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
         </div>
         <div class="af-content">
           ${renderTab()}
@@ -319,15 +293,15 @@ export function renderAPIFuzzer(container) {
   function renderBuilder() {
     return `
       <div class="af-panel">
-        <h3>HTTP Request</h3>
+        <h3>HTTP request</h3>
         <div class="af-row">
           <select class="af-select" id="af-method" style="min-width:120px">
             ${['GET','POST','PUT','DELETE','PATCH','OPTIONS','HEAD'].map(m => `<option value="${m}"${state.method===m?' selected':''}>${m}</option>`).join('')}
           </select>
           <input class="af-input" id="af-url" placeholder="API URL" value="${esc(state.url)}" style="flex:1">
-          <button class="af-btn" id="af-send">Send Request</button>
+          <button class="btn af-btn" id="af-send">Send request</button>
         </div>
-        <div style="font-size:11px;color:#4a6a8a;margin-top:4px">Sends a real request from your browser. Cross-origin targets may be blocked by CORS or this site’s security policy.</div>
+        <div style="font-size:12px;color:var(--mut);margin-top:4px">Sends a real request from your browser. Cross-origin targets may be blocked by CORS or this site’s security policy.</div>
       </div>
 
       ${renderManualResult()}
@@ -340,35 +314,35 @@ export function renderAPIFuzzer(container) {
             <input class="af-input" placeholder="Value" value="${esc(h.val)}" data-hidx="${i}" data-hfield="val">
             <button class="af-remove-btn" data-hremove="${i}">&times;</button>
           </div>`).join('')}
-        <button class="af-btn sm" id="af-add-header">+ Add Header</button>
+        <button class="btn sm ghost af-btn" id="af-add-header">+ Add header</button>
       </div>
 
       <div class="af-panel">
-        <h3>Request Body</h3>
+        <h3>Request body</h3>
         <div class="af-row" style="margin-bottom:12px">
-          ${['json','form','raw'].map(t => `<button class="af-btn sm${state.bodyType===t?' active':''}" data-bodytype="${t}" style="${state.bodyType===t?'':'opacity:.5'}">${t.toUpperCase()}</button>`).join('')}
+          ${['json','form','raw'].map(t => `<button class="btn sm ghost af-btn${state.bodyType===t?' active':''}" data-bodytype="${t}" style="${state.bodyType===t?'':'opacity:.5'}">${t.toUpperCase()}</button>`).join('')}
         </div>
         <textarea class="af-textarea" id="af-body" placeholder="${state.bodyType === 'json' ? '{\n  "username": "test",\n  "password": "test123"\n}' : 'key=value&key2=value2'}">${esc(state.body)}</textarea>
       </div>
 
       <div class="af-panel">
-        <h3>Quick Reference</h3>
+        <h3>Quick reference</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
-          <div style="background:#1a2744;padding:12px;border-radius:6px">
-            <div style="font-weight:600;color:#00ff88;margin-bottom:6px">Common Headers</div>
-            <div style="font-size:12px;color:#8ab4d0;line-height:1.8;font-family:monospace">
+          <div style="background:var(--card2);padding:12px;border-radius:6px">
+            <div style="font-weight:600;color:var(--ok);margin-bottom:6px">Common Headers</div>
+            <div style="font-size:12px;color:var(--txt-2);line-height:1.8;font-family:monospace">
               Content-Type<br>Authorization<br>X-API-Key<br>Accept<br>Cookie<br>User-Agent<br>X-Forwarded-For
             </div>
           </div>
-          <div style="background:#1a2744;padding:12px;border-radius:6px">
-            <div style="font-weight:600;color:#ffaa00;margin-bottom:6px">Content Types</div>
-            <div style="font-size:12px;color:#8ab4d0;line-height:1.8;font-family:monospace">
+          <div style="background:var(--card2);padding:12px;border-radius:6px">
+            <div style="font-weight:600;color:var(--warn);margin-bottom:6px">Content Types</div>
+            <div style="font-size:12px;color:var(--txt-2);line-height:1.8;font-family:monospace">
               application/json<br>application/x-www-form-urlencoded<br>multipart/form-data<br>text/xml<br>text/plain
             </div>
           </div>
-          <div style="background:#1a2744;padding:12px;border-radius:6px">
-            <div style="font-weight:600;color:#ff4444;margin-bottom:6px">Auth Schemes</div>
-            <div style="font-size:12px;color:#8ab4d0;line-height:1.8;font-family:monospace">
+          <div style="background:var(--card2);padding:12px;border-radius:6px">
+            <div style="font-weight:600;color:var(--bad);margin-bottom:6px">Auth Schemes</div>
+            <div style="font-size:12px;color:var(--txt-2);line-height:1.8;font-family:monospace">
               Bearer &lt;token&gt;<br>Basic &lt;base64&gt;<br>Digest ...<br>API-Key: &lt;key&gt;<br>OAuth 2.0
             </div>
           </div>
@@ -387,9 +361,9 @@ export function renderAPIFuzzer(container) {
           <span class="af-payload-count">${cat.payloads.length} payloads</span>
         </div>
         <div class="af-payload-list">
-          ${cat.payloads.map((p, i) => `<div class="af-payload-item"><span style="color:#4a6a8a;margin-right:8px">${i + 1}.</span>${esc(p)}</div>`).join('')}
-          <div style="padding:10px 12px;border-top:1px solid #1e293b">
-            <button class="af-btn sm" data-copy-cat="${key}">Copy All Payloads</button>
+          ${cat.payloads.map((p, i) => `<div class="af-payload-item"><span style="color:var(--mut);margin-right:8px">${i + 1}.</span>${esc(p)}</div>`).join('')}
+          <div style="padding:10px 12px;border-top:1px solid var(--line)">
+            <button class="btn sm ghost af-btn" data-copy-cat="${key}">Copy all payloads</button>
           </div>
         </div>
       </div>`).join('');
@@ -399,7 +373,7 @@ export function renderAPIFuzzer(container) {
     const totalPayloads = AF_PAYLOADS[state.fuzzCategory]?.payloads.length || 0;
     return `
       <div class="af-panel">
-        <h3>Fuzz Configuration</h3>
+        <h3>Fuzz configuration</h3>
         <div class="af-fuzz-config">
           <div>
             <div class="af-label">Target URL</div>
@@ -428,36 +402,36 @@ export function renderAPIFuzzer(container) {
           </div>
         </div>
         <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
-          <button class="af-btn${state.fuzzRunning?' danger':''}" id="af-start-fuzz">${state.fuzzRunning ? 'Stop Fuzzing' : `Start Fuzzing (${Math.min(totalPayloads, 50)} of ${totalPayloads} payloads)`}</button>
-          <span style="font-size:12px;color:#6a8aaa">Use <code style="color:#00aaff">FUZZ</code> as the placeholder in the URL or body</span>
+          <button class="btn af-btn${state.fuzzRunning?' danger':''}" id="af-start-fuzz">${state.fuzzRunning ? 'Stop fuzzing' : `Start fuzzing (${Math.min(totalPayloads, 50)} of ${totalPayloads} payloads)`}</button>
+          <span style="font-size:12px;color:var(--mut)">Use <code style="color:var(--acc)">FUZZ</code> as the placeholder in the URL or body</span>
         </div>
-        <div style="font-size:11px;color:#4a6a8a;margin-top:8px">Sends real requests from your browser (capped at 50, 250ms apart). Cross-origin targets may be blocked by CORS or this site’s security policy — those rows are marked "blocked", never guessed.</div>
-        ${state.manualError ? `<div style="font-size:12px;color:#ff4444;margin-top:8px">${esc(state.manualError)}</div>` : ''}
-        ${state.fuzzRunning ? `<div class="af-progress"><div class="af-progress-bar" id="af-fuzz-progress"></div></div><div id="af-fuzz-status" style="font-size:12px;color:#6a8aaa;text-align:center"></div>` : ''}
+        <div style="font-size:12px;color:var(--mut);margin-top:8px">Sends real requests from your browser (capped at 50, 250ms apart). Cross-origin targets may be blocked by CORS or this site’s security policy — those rows are marked "blocked", never guessed.</div>
+        ${state.manualError ? `<div style="font-size:12px;color:var(--bad);margin-top:8px">${esc(state.manualError)}</div>` : ''}
+        ${state.fuzzRunning ? `<div class="af-progress"><div class="af-progress-bar" id="af-fuzz-progress"></div></div><div id="af-fuzz-status" style="font-size:12px;color:var(--mut);text-align:center"></div>` : ''}
       </div>
 
       <div class="af-panel">
-        <h3>Fuzzing Tips</h3>
+        <h3>Fuzzing tips</h3>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px">
-          <div style="background:#1a2744;padding:12px;border-radius:6px">
-            <div style="font-weight:600;color:#00aaff;margin-bottom:6px">URL Parameter Fuzzing</div>
-            <div style="font-size:12px;color:#8ab4d0;line-height:1.6">
-              Place <code style="color:#00ff88">FUZZ</code> where a parameter value goes:<br>
-              <code style="color:#ffaa00">/api/users?id=FUZZ</code><br>
-              <code style="color:#ffaa00">/api/search?q=FUZZ&limit=10</code>
+          <div style="background:var(--card2);padding:12px;border-radius:6px">
+            <div style="font-weight:600;color:var(--acc);margin-bottom:6px">URL Parameter Fuzzing</div>
+            <div style="font-size:12px;color:var(--txt-2);line-height:1.6">
+              Place <code style="color:var(--ok)">FUZZ</code> where a parameter value goes:<br>
+              <code style="color:var(--warn)">/api/users?id=FUZZ</code><br>
+              <code style="color:var(--warn)">/api/search?q=FUZZ&limit=10</code>
             </div>
           </div>
-          <div style="background:#1a2744;padding:12px;border-radius:6px">
-            <div style="font-weight:600;color:#00aaff;margin-bottom:6px">Body Fuzzing</div>
-            <div style="font-size:12px;color:#8ab4d0;line-height:1.6">
+          <div style="background:var(--card2);padding:12px;border-radius:6px">
+            <div style="font-weight:600;color:var(--acc);margin-bottom:6px">Body Fuzzing</div>
+            <div style="font-size:12px;color:var(--txt-2);line-height:1.6">
               Replace the target field with FUZZ:<br>
-              <code style="color:#ffaa00">{"user":"FUZZ","pass":"test"}</code><br>
-              <code style="color:#ffaa00">username=FUZZ&password=test</code>
+              <code style="color:var(--warn)">{"user":"FUZZ","pass":"test"}</code><br>
+              <code style="color:var(--warn)">username=FUZZ&password=test</code>
             </div>
           </div>
-          <div style="background:#1a2744;padding:12px;border-radius:6px">
-            <div style="font-weight:600;color:#00aaff;margin-bottom:6px">Anomaly Detection</div>
-            <div style="font-size:12px;color:#8ab4d0;line-height:1.6">
+          <div style="background:var(--card2);padding:12px;border-radius:6px">
+            <div style="font-weight:600;color:var(--acc);margin-bottom:6px">Anomaly Detection</div>
+            <div style="font-size:12px;color:var(--txt-2);line-height:1.6">
               The fuzzer flags responses with:<br>
               • Different status codes from baseline<br>
               • Unusual response sizes (±30%)<br>
@@ -470,7 +444,7 @@ export function renderAPIFuzzer(container) {
 
   function renderResults() {
     if (!state.fuzzResults.length) {
-      return `<div class="af-empty"><div class="af-empty-icon">--</div><div style="font-size:16px;color:#6a8aaa">No fuzz results yet</div><div style="font-size:13px;color:#4a6a8a;margin-top:8px">Run the fuzzer to generate results</div></div>`;
+      return `<div class="af-empty"><div style="font-size:16px;color:var(--mut)">No fuzz results yet</div><div style="font-size:13px;color:var(--mut);margin-top:8px">Run the fuzzer to generate results</div></div>`;
     }
 
     const results = state.fuzzResults;
@@ -490,25 +464,25 @@ export function renderAPIFuzzer(container) {
     if (maxTime === 0) maxTime = 0;
 
     return `
-      <div class="af-panel" style="padding:12px 16px"><div style="font-size:12px;color:#6a8aaa">These are real responses to requests sent from your browser. Requests the browser blocked (CORS / this site’s security policy / network error) are marked <strong style="color:#ff4444">blocked</strong>.</div></div>
+      <div class="af-panel" style="padding:12px 16px"><div style="font-size:12px;color:var(--mut)">These are real responses to requests sent from your browser. Requests the browser blocked (CORS / this site’s security policy / network error) are marked <strong style="color:var(--bad)">blocked</strong>.</div></div>
       <div class="af-stats">
-        <div class="af-stat"><div class="af-stat-val">${results.length}</div><div class="af-stat-label">Requests Sent</div></div>
-        <div class="af-stat"><div class="af-stat-val" style="color:#ff4444">${blocked}</div><div class="af-stat-label">Blocked</div></div>
-        <div class="af-stat"><div class="af-stat-val" style="color:#ff4444">${anomalies.length}</div><div class="af-stat-label">Anomalies</div></div>
-        <div class="af-stat"><div class="af-stat-val" style="color:#00ff88">${timed ? avgTime + 'ms' : '—'}</div><div class="af-stat-label">Avg Response</div></div>
-        <div class="af-stat"><div class="af-stat-val" style="color:#ffaa00">${timed ? maxTime + 'ms' : '—'}</div><div class="af-stat-label">Max Response</div></div>
-        <div class="af-stat"><div class="af-stat-val">${sized ? formatBytes(avgSize) : '—'}</div><div class="af-stat-label">Avg Size</div></div>
+        <div class="af-stat"><div class="af-stat-val">${results.length}</div><div class="af-stat-label">Requests sent</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:var(--bad)">${blocked}</div><div class="af-stat-label">Blocked</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:var(--bad)">${anomalies.length}</div><div class="af-stat-label">Anomalies</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:var(--ok)">${timed ? avgTime + 'ms' : '—'}</div><div class="af-stat-label">Avg response</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:var(--warn)">${timed ? maxTime + 'ms' : '—'}</div><div class="af-stat-label">Max response</div></div>
+        <div class="af-stat"><div class="af-stat-val">${sized ? formatBytes(avgSize) : '—'}</div><div class="af-stat-label">Avg size</div></div>
       </div>
 
       <div class="af-panel">
-        <h3>Status Distribution</h3>
+        <h3>Status distribution</h3>
         <div style="display:flex;gap:16px;flex-wrap:wrap">
           ${Object.entries(statusDist).sort().map(([code, count]) => {
             const pct = Math.round(count / results.length * 100);
             const cls = code.startsWith('2') ? 's2xx' : code.startsWith('3') ? 's3xx' : code.startsWith('4') ? 's4xx' : 's5xx';
             return `<div style="flex:1;min-width:100px">
               <div class="af-status ${cls}" style="margin-bottom:4px">${code}</div>
-              <div style="font-size:12px;color:#6a8aaa;text-align:center">${count} (${pct}%)</div>
+              <div style="font-size:12px;color:var(--mut);text-align:center">${count} (${pct}%)</div>
             </div>`;
           }).join('')}
         </div>
@@ -516,25 +490,25 @@ export function renderAPIFuzzer(container) {
 
       <div class="af-panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <h3 style="margin:0">Response Details</h3>
+          <h3 style="margin:0">Response details</h3>
           <div class="af-export-bar" style="margin:0">
-            <button class="af-btn sm" id="af-export-json">Export JSON</button>
-            <button class="af-btn sm" id="af-export-csv">Export CSV</button>
+            <button class="btn sm ghost af-btn" id="af-export-json">Export JSON</button>
+            <button class="btn sm ghost af-btn" id="af-export-csv">Export CSV</button>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:80px 60px 1fr 80px;gap:12px;padding:8px 14px;font-size:11px;color:#4a6a8a;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #1e293b">
+        <div style="display:grid;grid-template-columns:80px 60px 1fr 80px;gap:12px;padding:8px 14px;font-size:12px;color:var(--mut);border-bottom:1px solid var(--line)">
           <div>Status</div><div>Time</div><div>Payload</div><div style="text-align:right">Size</div>
         </div>
         ${results.slice(0, 100).map(r => {
           const cls = r.blocked ? 's4xx' : String(r.status).startsWith('2') ? 's2xx' : String(r.status).startsWith('3') ? 's3xx' : String(r.status).startsWith('4') ? 's4xx' : 's5xx';
-          return `<div class="af-result-card" style="${r.anomaly ? 'border-color:#ff4444' : ''}">
-            <div class="af-status ${cls}">${esc(String(r.status))} ${r.anomaly && !r.blocked ? '<span class="af-badge anomaly" style="font-size:9px;margin-left:2px">!</span>' : ''}</div>
+          return `<div class="af-result-card" style="${r.anomaly ? 'border-color:var(--bad)' : ''}">
+            <div class="af-status ${cls}">${esc(String(r.status))} ${r.anomaly && !r.blocked ? '<span class="af-badge anomaly" style="font-size:12px;margin-left:2px">!</span>' : ''}</div>
             <div class="af-timing">${typeof r.time === 'number' ? r.time + 'ms' : '—'}</div>
             <div class="af-payload-preview" title="${esc(r.payload)}">${esc(r.payload)}</div>
             <div class="af-size">${typeof r.size === 'number' ? formatBytes(r.size) : '—'}</div>
           </div>`;
         }).join('')}
-        ${results.length > 100 ? `<div style="text-align:center;padding:12px;color:#4a6a8a;font-size:13px">Showing 100 of ${results.length} results</div>` : ''}
+        ${results.length > 100 ? `<div style="text-align:center;padding:12px;color:var(--mut);font-size:13px">Showing 100 of ${results.length} results</div>` : ''}
       </div>`;
   }
 
@@ -544,16 +518,16 @@ export function renderAPIFuzzer(container) {
       <div class="af-panel" style="display:flex;justify-content:space-between;align-items:center">
         <div>
           <h3 style="margin:0">OWASP API Security Top 10 (2023)</h3>
-          <p style="margin:4px 0 0;font-size:13px;color:#6a8aaa">Security checklist for API penetration testing</p>
+          <p style="margin:4px 0 0;font-size:13px;color:var(--mut)">Security checklist for API penetration testing</p>
         </div>
         <div style="text-align:right">
-          <div style="font-size:24px;font-weight:700;color:${checked === 10 ? '#00ff88' : '#00aaff'}">${checked}/10</div>
-          <div style="font-size:11px;color:#6a8aaa">Checked</div>
+          <div style="font-size:24px;font-weight:700;color:${checked === 10 ? 'var(--ok)' : 'var(--acc)'}">${checked}/10</div>
+          <div style="font-size:12px;color:var(--mut)">Checked</div>
         </div>
       </div>
 
       ${AF_OWASP.map((item, i) => `
-        <div class="af-owasp-item" style="${state.owaspChecks[i] ? 'border-color:#00ff88;opacity:.7' : ''}">
+        <div class="af-owasp-item" style="${state.owaspChecks[i] ? 'border-color:var(--ok);opacity:.7' : ''}">
           <div class="af-owasp-head">
             <input type="checkbox" class="af-checkbox" data-owasp="${i}" ${state.owaspChecks[i] ? 'checked' : ''}>
             <span class="af-owasp-id">${item.id}</span>
@@ -611,7 +585,7 @@ export function renderAPIFuzzer(container) {
           const text = AF_PAYLOADS[key].payloads.join('\n');
           navigator.clipboard.writeText(text);
           btn.textContent = 'Copied!';
-          setTimeout(() => { btn.textContent = 'Copy All Payloads'; }, 1500);
+          setTimeout(() => { btn.textContent = 'Copy all payloads'; }, 1500);
         };
       });
     }
@@ -719,25 +693,25 @@ export function renderAPIFuzzer(container) {
     const r = state.manualResult;
     if (!r) return '';
     if (r.pending) {
-      return `<div class="af-panel"><h3>Response</h3><div style="color:#6a8aaa;font-size:13px">Sending real request…</div></div>`;
+      return `<div class="af-panel"><h3>Response</h3><div style="color:var(--mut);font-size:13px">Sending real request…</div></div>`;
     }
     if (r.error) {
-      return `<div class="af-panel" style="border-color:#ff4444"><h3 style="color:#ff4444">Request blocked</h3>
-        <div style="font-size:13px;color:#c8d6e5;line-height:1.6">${esc(r.error)}</div></div>`;
+      return `<div class="af-panel" style="border-color:var(--bad)"><h3 style="color:var(--bad)">Request blocked</h3>
+        <div style="font-size:13px;color:var(--txt);line-height:1.6">${esc(r.error)}</div></div>`;
     }
     const cls = String(r.status).startsWith('2') ? 's2xx' : String(r.status).startsWith('3') ? 's3xx' : String(r.status).startsWith('4') ? 's4xx' : 's5xx';
     return `<div class="af-panel"><h3>Response (live)</h3>
       <div class="af-stats" style="margin-bottom:16px">
         <div class="af-stat"><div class="af-stat-val"><span class="af-status ${cls}" style="display:inline-block;padding:4px 10px">${r.status}</span></div><div class="af-stat-label">${esc(r.statusText || '')}</div></div>
-        <div class="af-stat"><div class="af-stat-val" style="color:#00ff88">${r.timeMs}ms</div><div class="af-stat-label">Round Trip</div></div>
-        <div class="af-stat"><div class="af-stat-val" style="color:#ffaa00">${formatBytes(r.size)}</div><div class="af-stat-label">Body Size</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:var(--ok)">${r.timeMs}ms</div><div class="af-stat-label">Round trip</div></div>
+        <div class="af-stat"><div class="af-stat-val" style="color:var(--warn)">${formatBytes(r.size)}</div><div class="af-stat-label">Body size</div></div>
       </div>
-      <div style="font-size:12px;color:#4a6a8a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Response Headers</div>
-      <div style="background:#1a2744;padding:12px;border-radius:6px;font-family:monospace;font-size:12px;color:#8ab4d0;line-height:1.7;margin-bottom:16px;max-height:180px;overflow:auto">
+      <div style="font-size:12px;color:var(--mut);margin-bottom:6px">Response headers</div>
+      <div style="background:var(--card2);padding:12px;border-radius:6px;font-family:monospace;font-size:12px;color:var(--txt-2);line-height:1.7;margin-bottom:16px;max-height:180px;overflow:auto">
         ${r.headers.length ? r.headers.map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('<br>') : '(no readable headers — cross-origin responses expose only a limited set)'}
       </div>
-      <div style="font-size:12px;color:#4a6a8a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Body${r.truncated ? ' (first 4000 chars)' : ''}</div>
-      <pre style="background:#1a2744;padding:12px;border-radius:6px;font-size:12px;color:#c8d6e5;overflow:auto;max-height:300px;white-space:pre-wrap;word-break:break-all;margin:0">${esc(r.bodyPreview) || '(empty body)'}</pre>
+      <div style="font-size:12px;color:var(--mut);margin-bottom:6px">Body${r.truncated ? ' (first 4000 chars)' : ''}</div>
+      <pre style="background:var(--card2);padding:12px;border-radius:6px;font-size:12px;color:var(--txt);overflow:auto;max-height:300px;white-space:pre-wrap;word-break:break-all;margin:0">${esc(r.bodyPreview) || '(empty body)'}</pre>
     </div>`;
   }
 
