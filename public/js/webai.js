@@ -583,6 +583,11 @@ ${E} .ai2-tool{width:34px;height:34px!important;min-width:34px!important;padding
 ${E} .ai2-tool-txt{width:auto;border-radius:999px!important;padding:0 12px!important;font-size:13px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important}
 ${E} :is(.ai2-tool,.ai2-model):hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
 ${E} .ai2-model{border:0!important;background:transparent!important;font-size:13px!important;font-weight:500!important;color:#3f3d3a!important;padding:0 26px 0 10px!important;height:34px!important;border-radius:999px!important;max-width:240px;box-shadow:none!important}
+${E} .ai2-mmenu{background:#f4f3f0!important;border:1px solid rgba(0,0,0,.12)!important;color:#1d1c1a!important;box-shadow:0 8px 24px rgba(0,0,0,.12)!important}
+${E} .ai2-mgroup{color:#8a877f!important}
+${E} .ai2-mopt{font-size:13px!important;color:#3f3d3a!important}
+${E} .ai2-mopt:is(:hover,.is-active){background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
+${E} .ai2-mopt[aria-selected=true]::after{background:#1d1c1a!important}
 ${E} .ai2-send{width:36px!important;height:36px!important;border-radius:50%!important;background:#1d1c1a!important;color:#fff!important;border:0!important;box-shadow:none!important}
 ${E} .ai2-send:hover,${E} .ai2-send.is-stop{background:#000!important}
 ${E} .ai2-status{font-size:12px!important;color:#8a877f!important;padding-top:10px!important}
@@ -702,6 +707,49 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
   };
   updateByokHint();
   sel.onchange = () => { try { localStorage.setItem(MODEL_KEY, sel.value); } catch (_) {} const m = availableModels().find((x) => sel.value === x.provider + ":" + x.id); if (m) status.textContent = "Switched to " + m.name; updateByokHint(); };
+  // Model menu drawn in the page. A native <select> popup ignores page CSS and the Deck's
+  // invert filter, so it came up in raw system colours. The select stays the source of truth.
+  (() => {
+    const wrap = sel.parentElement;
+    const menu = document.createElement("div");
+    menu.className = "ai2-mmenu"; menu.setAttribute("role", "listbox"); menu.hidden = true;
+    wrap.appendChild(menu);
+    let items = [], act = -1;
+    const mark = (i) => { act = i; items.forEach((el, j) => el.classList.toggle("is-active", j === i)); if (items[i]) items[i].scrollIntoView({ block: "nearest" }); };
+    const close = (focus) => { if (menu.hidden) return; menu.hidden = true; sel.setAttribute("aria-expanded", "false"); if (focus) sel.focus(); };
+    const pick = (v) => { close(true); if (v !== sel.value) { sel.value = v; sel.dispatchEvent(new Event("change")); } };
+    const open = () => {
+      menu.textContent = ""; items = [];
+      for (const node of sel.children) {
+        const opts = node.tagName === "OPTGROUP" ? [...node.children] : [node];
+        if (node.tagName === "OPTGROUP") { const h = document.createElement("div"); h.className = "ai2-mgroup"; h.textContent = node.label; menu.appendChild(h); }
+        for (const o of opts) {
+          const it = document.createElement("div");
+          it.className = "ai2-mopt"; it.setAttribute("role", "option"); it.textContent = o.textContent; it.title = o.textContent;
+          it.setAttribute("aria-selected", String(o.value === sel.value));
+          it.addEventListener("mousedown", (e) => e.preventDefault());
+          it.addEventListener("click", () => pick(o.value));
+          it.addEventListener("mousemove", () => { const j = items.indexOf(it); if (j !== act) mark(j); });
+          menu.appendChild(it); items.push({ el: it, v: o.value });
+        }
+      }
+      const vals = items.map((x) => x.v); items = items.map((x) => x.el);
+      menu._vals = vals; menu.hidden = false; sel.setAttribute("aria-expanded", "true");
+      mark(Math.max(0, vals.indexOf(sel.value)));
+    };
+    sel.setAttribute("aria-haspopup", "listbox"); sel.setAttribute("aria-expanded", "false");
+    sel.addEventListener("mousedown", (e) => { if (e.button !== 0) return; e.preventDefault(); sel.focus(); menu.hidden ? open() : close(); });
+    sel.addEventListener("keydown", (e) => {
+      const k = e.key;
+      if (menu.hidden) { if (k === "Enter" || k === " " || k === "ArrowDown" || k === "ArrowUp") { e.preventDefault(); open(); } return; }
+      if (k === "Escape" || k === "Tab") { if (k === "Escape") e.preventDefault(); close(k === "Escape"); }
+      else if (k === "ArrowDown") { e.preventDefault(); mark(Math.min(items.length - 1, act + 1)); }
+      else if (k === "ArrowUp") { e.preventDefault(); mark(Math.max(0, act - 1)); }
+      else if (k === "Home" || k === "End") { e.preventDefault(); mark(k === "Home" ? 0 : items.length - 1); }
+      else if (k === "Enter" || k === " ") { e.preventDefault(); if (act >= 0) pick(menu._vals[act]); }
+    });
+    sel.addEventListener("blur", () => close(false));
+  })();
   $("#aiSys").onclick = () => {
     aiModal({ title: "System prompt", desc: "Controls how Darknode AI behaves for the whole conversation.", fields: [{ type: "textarea", value: localStorage.getItem(acct(SYS_KEY)) || DEFAULT_SYS, rows: 12 }], submitText: "Save", extra: [{ label: "Reset to default", value: "__reset__" }] }).then((v) => {
       if (!v) return;
