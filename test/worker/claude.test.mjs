@@ -4,7 +4,7 @@ import { test, group, assert } from "../harness.mjs";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import worker, { toClaudeBody, claudeStream, CLAUDE_MODELS } from "../../worker/worker.js";
+import worker, { toClaudeBody, claudeStream, withPromptCache, CLAUDE_MODELS } from "../../worker/worker.js";
 
 let ipN = 0;
 async function chat(body, env, headers = {}) {
@@ -29,6 +29,25 @@ group("worker: server-held Claude", () => {
     assert.equal(b.system, "S1\n\nS2");
     assert.deepEqual(b.messages, [{ role: "user", content: "a\n\nb" }, { role: "assistant", content: "c" }]);
     assert.equal(b.stream, true); assert.equal(b.max_tokens, 4096);
+  });
+  test("withPromptCache: caches the system prefix and the end of the conversation", () => {
+    const b = withPromptCache({ model: "m", system: "S", messages: [{ role: "user", content: "a" }, { role: "assistant", content: "b" }, { role: "user", content: "c" }] });
+    // system becomes a cached text block
+    assert.deepEqual(b.system, [{ type: "text", text: "S", cache_control: { type: "ephemeral" } }]);
+    // only the last message carries a breakpoint, as a block array
+    assert.deepEqual(b.messages[0], { role: "user", content: "a" });
+    assert.deepEqual(b.messages[2], { role: "user", content: [{ type: "text", text: "c", cache_control: { type: "ephemeral" } }] });
+    // at most the two breakpoints we place (max 4 allowed by the API)
+    assert.equal(JSON.stringify(b).match(/cache_control/g).length, 2);
+  });
+  test("withPromptCache: no system, array content, and empty messages are handled", () => {
+    const noSys = withPromptCache({ messages: [{ role: "user", content: [{ type: "text", text: "a" }, { type: "text", text: "b" }] }] });
+    assert.ok(!("system" in noSys) || noSys.system === undefined);
+    // breakpoint lands on the last existing block, the others untouched
+    assert.deepEqual(noSys.messages[0].content, [{ type: "text", text: "a" }, { type: "text", text: "b", cache_control: { type: "ephemeral" } }]);
+    // empty system / no messages: nothing to cache, and no throw
+    const empty = withPromptCache({ system: "", messages: [] });
+    assert.equal(JSON.stringify(empty).match(/cache_control/g), null);
   });
   test("the stream keeps only text deltas and ends with one [DONE]", async () => {
     const ev = (o) => "event: x\ndata: " + JSON.stringify(o) + "\n\n";

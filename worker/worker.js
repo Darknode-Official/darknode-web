@@ -485,6 +485,35 @@ export function toClaudeBody(model, messages) {
   return body;
 }
 
+// Prompt caching (Anthropic). Place two cache breakpoints: one at the end of the
+// system block (the stable prefix, which also carries any tool instructions injected
+// client-side) and one at the end of the conversation. The API caches each marked
+// prefix for 5 minutes; a later request whose prefix matches is billed for the cached
+// span at ~10% of fresh input and skips re-encoding it, which is the common case in a
+// chat (same system every turn; each follow-up resends the whole history) and when a
+// large file or long conversation is attached. Breakpoints below the model's minimum
+// cacheable length are silently ignored by the API, so this is a no-op on short chats
+// rather than an error. Render order is tools -> system -> messages, so these two are
+// the natural prefix boundaries; max 4 breakpoints per request (we use 2).
+export function withPromptCache(body) {
+  const EPHEMERAL = { type: "ephemeral" };
+  const b = { ...body };
+  if (typeof b.system === "string" && b.system) b.system = [{ type: "text", text: b.system, cache_control: EPHEMERAL }];
+  const msgs = Array.isArray(b.messages) ? b.messages.slice() : [];
+  if (msgs.length) {
+    const last = { ...msgs[msgs.length - 1] };
+    const blocks = typeof last.content === "string" ? [{ type: "text", text: last.content }]
+      : Array.isArray(last.content) ? last.content.map((x) => ({ ...x })) : null;
+    if (blocks && blocks.length) {
+      blocks[blocks.length - 1] = { ...blocks[blocks.length - 1], cache_control: EPHEMERAL };
+      last.content = blocks;
+      msgs[msgs.length - 1] = last;
+      b.messages = msgs;
+    }
+  }
+  return b;
+}
+
 // Exported for tests: the Messages API SSE -> the reader's OpenAI-style SSE.
 export const claudeStream = (upstream, opts = {}) => streamBack(upstream, false, { ...opts, format: "anthropic" });
 
@@ -498,9 +527,10 @@ async function handleClaude(request, env, model, msgs, opts) {
   if (env.CLAUDE_ACCESS === "admin" && !(p.claims && p.claims.admin === true)) return json({ error: "Claude models are limited to administrators on this deployment." }, 403);
   const wait = await rateCheck(env, { kind: "user", uid: "claude:" + p.uid }, "", undefined, CLAUDE_PER_MIN);
   if (wait) return withHeaders(json({ error: "Claude limit reached (" + CLAUDE_PER_MIN + " messages a minute). Try again shortly." }, 429), { "Retry-After": String(wait) });
-  const body = toClaudeBody(model, msgs);
-  if (!body.messages.length) return json({ error: "Missing messages" }, 400);
-  if (JSON.stringify(body).length > CLAUDE_MAX_INPUT_CHARS) return json({ error: "Conversation too long for Claude here. Start a new chat." }, 413);
+  const plain = toClaudeBody(model, msgs);
+  if (!plain.messages.length) return json({ error: "Missing messages" }, 400);
+  if (JSON.stringify(plain).length > CLAUDE_MAX_INPUT_CHARS) return json({ error: "Conversation too long for Claude here. Start a new chat." }, 413);
+  const body = withPromptCache(plain);
   let upstream;
   const ac = new AbortController(), to = setTimeout(() => ac.abort(), 30000);
   try {
