@@ -74,7 +74,7 @@ self.addEventListener('fetch', e => {
   if (e.request.mode === 'navigate') {
     e.respondWith((async () => {
       try {
-        const res = await fetch(e.request);
+        const res = await fetch(e.request, { cache: 'no-cache' }); // revalidate: a stale shell would load last release's scripts
         if (res && res.ok) return res;           // real page (prod rewrites SPA routes to index.html)
       } catch (_) { /* offline / network error */ }
       const shell = await caches.match('/') || await caches.match(e.request); // SPA route with no file → app shell
