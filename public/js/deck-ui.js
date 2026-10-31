@@ -44,7 +44,7 @@ const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261027c");
 const corrMod = lazyMod("/js/deck/correlations.js?v=20261029c");
 const monMod = lazyMod("/js/deck/monitors.js?v=20261029d");
-const keysMod = lazyMod("/js/deck/apikeys.js?v=20261029c");
+const keysMod = lazyMod("/js/deck/apikeys.js?v=20261030d");
 const auditMod = lazyMod("/js/deck/audit.js?v=20261028a");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261027c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261028b";
@@ -2844,7 +2844,7 @@ export function renderDeck(host, opts) {
   async function autoDrainIngest() {
     if (_ingestDrained) return; _ingestDrained = true;
     try {
-      const { ingestAvailable, drainIngest } = await import("/js/deck/ingest-client.js?v=20261027c");
+      const { ingestAvailable, drainIngest } = await import("/js/deck/ingest-client.js?v=20261030d");
       if (!ingestAvailable()) return;
       const r = await drainIngest();
       const n = (r.created || 0) + (r.updated || 0);

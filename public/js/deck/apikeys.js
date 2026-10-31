@@ -2,7 +2,7 @@
 // A key is shown once; only its hash is stored server-side. Findings sent to the ingest
 // endpoint queue on the server and are pulled into the Security Graph here, through the
 // same sink every tool uses.
-import { ingestAvailable, ingestBaseUrl, ingestWorkspaceId, listKeys, createKey, revokeKey, peekQueue, drainIngest } from "/js/deck/ingest-client.js?v=20261027c";
+import { ingestAvailable, ingestBaseUrl, ingestWorkspaceId, listKeys, createKey, revokeKey, peekQueue, drainIngest } from "/js/deck/ingest-client.js?v=20261030d";
 
 const S = { ctx: null, el: null, data: null, wid: "", busy: false, created: null, seq: 0 }; // seq: a reply for a previous mount/workspace is dropped
 const E = (s) => (S.ctx && S.ctx.esc ? S.ctx.esc(s) : String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])));

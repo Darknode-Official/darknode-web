@@ -32,7 +32,7 @@ export async function getWhitelist() {
 }
 
 // The Deck launcher lives in its own module so every signed-in user can load it.
-import { openDeck, closeDeck } from "/js/deck/launch.js?v=20261030c";
+import { openDeck, closeDeck } from "/js/deck/launch.js?v=20261030d";
 export { openDeck, closeDeck };
 
 // ---- Preview UI: a light, single-surface alternate view of every tool, launched from

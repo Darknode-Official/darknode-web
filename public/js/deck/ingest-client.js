@@ -2,29 +2,23 @@
 // ingest queue into the Security Graph through the SAME sink every tool uses, so
 // ingested findings are indistinguishable from a tool's own results.
 import { activeWorkspaceId } from "/js/security-graph.js";
+import { api, apiBase } from "/js/core/api.js";
 
-const proxyBase = () => { try { return String(window.DARKNODE_PROXY_URL || "").replace(/\/api\/chat$/, ""); } catch (_) { return ""; } };
-export function ingestAvailable() { return !!proxyBase(); }
-export function ingestBaseUrl() { return proxyBase(); }
+export function ingestAvailable() { return !!apiBase(); }
+export function ingestBaseUrl() { return apiBase(); }
 
-async function widAndToken() {
+async function signedInUser() {
   const { auth } = await import("/js/firebase.js?v=20261021a");
   const user = (auth && auth.currentUser) || null;
   if (!user) throw new Error("Sign in to manage API keys.");
-  return { wid: activeWorkspaceId() || user.uid, token: await user.getIdToken() };
+  return user;
 }
-export async function ingestWorkspaceId() { try { return (await widAndToken()).wid; } catch (_) { return ""; } }
+export async function ingestWorkspaceId() { try { const u = await signedInUser(); return activeWorkspaceId() || u.uid; } catch (_) { return ""; } }
 
 async function keysApi(body) {
-  const base = proxyBase();
-  if (!base) throw new Error("The ingest API needs the cloud proxy, which this build has not configured.");
-  const { wid, token } = await widAndToken();
-  const r = await fetch(base + "/api/keys/" + encodeURIComponent(wid), {
-    method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify(body),
-  });
-  let j = {}; try { j = await r.json(); } catch (_) {}
-  if (!r.ok) throw new Error(j.error || ("Key request failed (" + r.status + ")"));
-  return j;
+  if (!apiBase()) throw new Error("The ingest API needs the cloud proxy, which this build has not configured.");
+  const user = await signedInUser();
+  return api("/api/keys/" + encodeURIComponent(activeWorkspaceId() || user.uid), { method: "POST", body, user, failed: "Key request failed" });
 }
 
 export const listKeys = () => keysApi({ op: "list" });
