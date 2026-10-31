@@ -53,7 +53,7 @@ export function renderLanding(view, actions) {
       <div class="hero-mesh"></div>
       <div class="hero-grain"></div>
       <div class="wrap hero-inner">
-        <div class="hero-badge"><span class="badge-dot"></span> Self-hostable &middot; Deterministic &middot; Your data stays yours</div>
+        <div class="hero-badge"><span class="badge-dot"></span> Runs air-gapped &middot; Deterministic &middot; Your data stays yours</div>
         <h1 class="hero-h1">Find the real risks in your<br><span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">code</span></span></h1>
         <p class="hero-sub">Darknode scans your code, cloud, dependencies, configs and records for real vulnerabilities and risks — with accurate, explainable, deterministic engines that run on your own infrastructure. No black-box AI deciding severity, no data leaving your estate.</p>
         <div class="hero-cta">
@@ -118,7 +118,7 @@ export function renderLanding(view, actions) {
             </div>
             <h3>REST API</h3>
             <p>Every scanning and analysis engine behind a clean HTTP API. Run the server with the CLI, set a token, and wire Darknode into your pipelines and dashboards &mdash; on your own infrastructure.</p>
-            <span class="bento-tag">self-hosted &middot; token auth</span>
+            <span class="bento-tag">runs locally &middot; token auth</span>
           </div>
           <div class="bento-card">
             <div class="bento-icon">
@@ -133,7 +133,7 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/><circle cx="5" cy="6" r=".5" fill="currentColor"/><circle cx="7.5" cy="6" r=".5" fill="currentColor"/></svg>
             </div>
             <h3>Cloud VM</h3>
-            <p>A full, self-hostable security workstation with every Darknode engine built in. Runs in VirtualBox, QEMU, or your own cloud — including air-gapped.</p>
+            <p>A full security workstation with every Darknode engine built in. Runs in VirtualBox, QEMU, or your own cloud — including air-gapped.</p>
             <span class="bento-tag">VirtualBox &middot; cloud</span>
           </div>
         </div>
@@ -603,7 +603,7 @@ export function renderLanding(view, actions) {
       <div class="wrap">
         <div class="sec-label">Darknode OS</div>
         <h2 class="sec-title" id="os-title">Your own security operating system</h2>
-        <p class="sec-sub">Two editions — a custom x86 kernel built from scratch, and a full Linux desktop. Both self-hostable, ideal for locked-down and air-gapped environments.</p>
+        <p class="sec-sub">Two editions — a custom x86 kernel built from scratch, and a full Linux desktop. Both run on your own machines, ideal for locked-down and air-gapped environments.</p>
         <div class="os-grid">
           <div class="os-card">
             <div class="os-card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
@@ -720,7 +720,7 @@ export function renderLanding(view, actions) {
             <ul class="price-features compact">
               <li>Everything in Team, plus:</li>
               <li>Risk &amp; Resilience and Compliance tools</li>
-              <li>Self-hosted / private deployment</li>
+              <li>Private deployment</li>
               <li>SSO &amp; MFA (on the roadmap), custom roles</li>
               <li>Compliance pack &amp; DPA</li>
               <li>Dedicated support</li>
@@ -741,7 +741,7 @@ export function renderLanding(view, actions) {
 
           <div class="faq-item">
             <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">Is Darknode really free to self-host?</span>
+              <span class="faq-q-text">Can I run Darknode offline or air-gapped?</span>
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
@@ -755,7 +755,7 @@ export function renderLanding(view, actions) {
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Your scans and saved findings stay with you. Self-hosted, the CLI, desktop app and Darknode OS run on your own machines and can run fully air-gapped. On darknode.ai, most analysis runs inside your browser; live checks against a domain (DNS, headers, certificate transparency) are fetched through our edge proxy and are not stored. The built-in web assistant sends your question through that same proxy to Google&rsquo;s Gemini model; we do not log or store prompts or answers. With Nexus you choose the engine: a local Ollama model keeps everything offline, and with a cloud engine your prompts go to that provider under its terms.</div>
+              <div class="faq-a-inner">Your scans and saved findings stay with you. The CLI, desktop app and Darknode OS run on your own machines and can run fully air-gapped. On darknode.ai, most analysis runs inside your browser; live checks against a domain (DNS, headers, certificate transparency) are fetched through our edge proxy and are not stored. The built-in web assistant sends your question through that same proxy to Google&rsquo;s Gemini model; we do not log or store prompts or answers. With Nexus you choose the engine: a local Ollama model keeps everything offline, and with a cloud engine your prompts go to that provider under its terms.</div>
             </div>
           </div>
 
@@ -815,7 +815,7 @@ export function renderLanding(view, actions) {
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">The core platform, the CLI and the self-hosted editions stay free. Paid Pro, Team and Enterprise plans (coming soon) add more of the platform: Pro adds exposure, application-security and reporting tools; Team adds the shared Organization space, identity and security-operations tools and team workspaces; Enterprise adds risk and compliance tooling. Tools are shown according to your plan, so you only see what your plan includes.</div>
+              <div class="faq-a-inner">The core platform, the CLI, desktop and OS editions stay free. Paid Pro, Team and Enterprise plans (coming soon) add more of the platform: Pro adds exposure, application-security and reporting tools; Team adds the shared Organization space, identity and security-operations tools and team workspaces; Enterprise adds risk and compliance tooling. Tools are shown according to your plan, so you only see what your plan includes.</div>
             </div>
           </div>
 
@@ -885,7 +885,7 @@ export function renderLanding(view, actions) {
       <div class="cta-grid-bg"></div>
       <div class="wrap cta-inner">
         <h2>Find your real risks today.</h2>
-        <p class="cta-sub">Self-hostable. Your code and findings stay on infrastructure you control.</p>
+        <p class="cta-sub">Your code and findings stay on infrastructure you control.</p>
         <button class="btn lg" id="cta-signup">Get started &rarr;</button>
         <div class="cta-divider"></div>
         <div class="cta-notify">
