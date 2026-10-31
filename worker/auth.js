@@ -131,9 +131,9 @@ export function principalKey(p, ip) {
 }
 
 // -> 0 when allowed, else Retry-After seconds
-export async function rateCheck(env, principal, ip, limiter = local) {
+// `limit` overrides the per-kind default (e.g. a tighter budget for a costly model).
+export async function rateCheck(env, principal, ip, limiter = local, limit = LIMITS[principal.kind] || LIMITS.anonymous) {
   const id = principalKey(principal, ip);
-  const limit = LIMITS[principal.kind] || LIMITS.anonymous;
   if (principal.kind === "anonymous" || !env.RATE) return limiter.take(id, limit);
   try {
     const res = await env.RATE.get(env.RATE.idFromName(id)).fetch("https://rate/?limit=" + limit);

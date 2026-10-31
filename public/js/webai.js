@@ -23,7 +23,7 @@ function proxyUrl() {
 }
 // Free, no-setup providers served by the server proxy (built-in keys): only the
 // Darknode flagship and Gemini. Everything else is BYOK (uses the user's key).
-const PROXY_PROVIDERS = new Set(["gemini"]);
+const PROXY_PROVIDERS = new Set(["gemini", "anthropic"]);
 function _key(provider) {
   const map = { claude: "sw_claude_key", openai: "sw_openai_key", gemini: "sw_gemini_key", groq: "sw_groq_key", openrouter: "sw_openrouter_key", mistral: "sw_mistral_key" };
   // Per-account storage (see user-keys.js): one user never reads another's key.
@@ -243,7 +243,16 @@ const DEFAULT_MODEL_ID = "gemini-3.5-flash";
 // which stores a key/preference locally; connectedModels() turns those into usable
 // models at runtime. See streamFor() / OAI_COMPAT for how each connected provider
 // is reached.
-const MODELS = [...DARKNODE_MODELS];
+// Claude on Darknode's own Anthropic key, held by the Worker (never in the browser).
+// Signed-in users only, with a per-user rate limit enforced server-side.
+const CLAUDE_MODELS = [
+  { id: "claude-fable-5-1", name: "Claude Fable 5.1", provider: "anthropic", group: "Claude", sub: "most capable, sign-in" },
+  { id: "claude-opus-5-5", name: "Claude Opus 5.5", provider: "anthropic", group: "Claude", sub: "sign-in" },
+  { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", provider: "anthropic", group: "Claude", sub: "sign-in" },
+  { id: "claude-haiku-5-5", name: "Claude Haiku 5.5", provider: "anthropic", group: "Claude", sub: "fastest, sign-in" },
+];
+
+const MODELS = [...DARKNODE_MODELS, ...CLAUDE_MODELS];
 
 // --- streaming ---
 
@@ -313,14 +322,25 @@ async function streamGemini(model, messages, onToken, signal) {
 // Free tier: POST {provider, model, messages} to the server proxy, which holds
 // the key and normalizes every provider to OpenAI-style SSE, so this reader is
 // identical to the direct OpenAI-compat one.
-async function streamProxy(provider, model, messages, onToken, signal) {
+// opts.auth sends the signed-in user's Firebase ID token (server-key models that
+// spend real credits); their errors come from the server verbatim.
+async function streamProxy(provider, model, messages, onToken, signal, opts = {}) {
   let r;
+  const headers = { "Content-Type": "application/json" };
+  if (opts.auth) {
+    const { auth } = await import("/js/firebase.js?v=20261021a");
+    const user = auth && auth.currentUser;
+    const token = user && await user.getIdToken().catch(() => "");
+    if (!token) throw new Error("Sign in to use Claude models.");
+    headers.Authorization = "Bearer " + token;
+  }
   try {
-    r = await fetch(proxyUrl(), { method: "POST", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, model, messages }) });
+    r = await fetch(proxyUrl(), { method: "POST", signal, headers, body: JSON.stringify({ provider, model, messages }) });
   } catch (e) {
     if (e.name === "AbortError") throw e;
     throw new Error("Can't reach the Darknode AI service. Add your own API key in Settings → API Keys to use this model directly.");
   }
+  if (opts.auth && !r.ok) { let msg = ""; try { msg = (await r.json()).error || ""; } catch (_) {} throw new Error(msg || ("AI service " + r.status)); }
   if (r.status === 404) throw new Error("The free AI service isn't available here yet. Add your own API key in Settings → API Keys, or run the app with the AI proxy deployed.");
   if (r.status === 401 || r.status === 403) throw new Error("The free Darknode AI service is temporarily unavailable (its key needs renewing). Add your own API key in Settings → API Keys to keep using AI, or try again later.");
   if (r.status === 429) throw new Error("Rate limit reached — wait a moment or switch to a different model.");
@@ -351,6 +371,7 @@ function streamFor(provider, model, messages, onToken, signal) {
   // lives only server-side, it is free with no setup, and this ignores any key
   // the user may have entered so it can never fail on a bad personal key.
   if (provider === "gemini") return streamProxy("gemini", model, messages, onToken, signal);
+  if (provider === "anthropic") return streamProxy("anthropic", model, messages, onToken, signal, { auth: true });
   if (provider === "claude") return streamClaude(model, messages, onToken, signal);
   const url = OAI_COMPAT[provider];
   if (url) {
@@ -613,6 +634,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
   if (defaultModel) {
     const prov = defaultModel.provider;
     if (prov === "gemini") status.textContent = "Ready — " + defaultModel.name + " (free, no setup)";
+    else if (prov === "anthropic") status.textContent = "Ready — " + defaultModel.name + " (signed-in users)";
     else status.textContent = "Ready — " + defaultModel.name + " (your API key)";
   }
 
@@ -622,7 +644,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     // gemini is free via the proxy; a connected provider needs a browser-side key
     // to actually stream. If the current pick has none (e.g. connected by account
     // only), show an actionable hint — clicking it adds the key here and now.
-    const needsKey = prov && prov !== "gemini" && !_key(prov);
+    const needsKey = prov && !PROXY_PROVIDERS.has(prov) && !_key(prov);
     if (needsKey) {
       const nm = (CONN_PROVIDERS[prov] || {}).name || prov;
       byokHint.textContent = "Add your " + nm + " API key to run it — click to paste it now.";
@@ -631,7 +653,7 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
   }
   byokHint.onclick = () => {
     const v = sel.value; const c = v.indexOf(":"); const prov = v.slice(0, c);
-    if (!prov || prov === "gemini") return;
+    if (!prov || PROXY_PROVIDERS.has(prov)) return;
     const nm = (CONN_PROVIDERS[prov] || {}).name || prov;
     aiModal({ title: "Add " + nm + " API key", desc: "Stored only in this browser (localStorage), never sent anywhere except " + nm + "'s own API.", fields: [{ label: nm + " API key", inputType: "password", placeholder: "paste key" }], submitText: "Save key" }).then((val) => {
       if (!val) return;

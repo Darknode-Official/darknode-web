@@ -17,6 +17,8 @@ FIREBASE_PROJECT_ID = "sentinel-b4194"
 #   npx wrangler secret put OPENROUTER_KEY    # optional — for the free OpenRouter models
 #   npx wrangler secret put MISTRAL_KEY       # optional — for the free Mistral models
 #   npx wrangler secret put DARKNODE_KEY      # optional — only if your GPU box needs auth
+#   npx wrangler secret put ANTHROPIC_KEY     # optional — Claude models for signed-in users (provider "anthropic")
+# Set CLAUDE_ACCESS = "admin" under [vars] to limit Claude to admin-claim accounts.
 
 # Server-enforced VAULT: one SQLite-backed Durable Object per team vault (free plan).
 [[durable_objects.bindings]]

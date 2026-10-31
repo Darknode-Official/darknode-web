@@ -2013,7 +2013,7 @@ function renderApp(user) {
     requestAnimationFrame(() => { main.style.minHeight = ""; });
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
     if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
-    else if (sec === "ai") { import("/js/webai.js?v=20261029e").then(m => live() && m.renderAI(main)); }
+    else if (sec === "ai") { import("/js/webai.js?v=20261030d").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderPayloads(main)); }
     else if (sec === "targets") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderTargets(main)); }
@@ -2130,7 +2130,7 @@ function renderApp(user) {
     else if (sec === "downloads") { import("/js/getapp.js?v=20261025h").then(m => live() && m.renderDownloads(main)); }
     else if (sec === "dlguide") { import("/js/getapp.js?v=20261025h").then(m => live() && m.renderDownloadDocs(main)); }
     else if (sec === "api") { import("/js/api.js?v=20261029c").then(m => live() && m.renderAPI(main, user)); }
-    else if (sec === "docs") { import("/js/docs.js?v=20261029c").then(m => live() && m.renderDocs(main)); }
+    else if (sec === "docs") { import("/js/docs.js?v=20261030d").then(m => live() && m.renderDocs(main)); }
     else if (sec === "veil") { import("/js/labs/veil.js?v=20261013m").then(m => live() && m.renderVeil(main)); }
     else if (sec === "strongroom") { import("/js/strongroom.js?v=20261029c").then(m => live() && m.renderStrongroom(main)); }
     else if (sec === "signins") { import("/js/identity/signin-forensics.js?v=20261029e").then(m => live() && m.renderSigninForensics(main)); }
@@ -2919,7 +2919,7 @@ onAuthStateChanged(auth, async (user) => {
   const udoc = await getDoc(doc(db, "users", user.uid)).catch(() => null);
   // Terms are versioned: bumping TOS_VERSION asks every account to accept the new text,
   // including accounts that accepted an earlier version (they also see what changed).
-  const TOS_VERSION = "2026-10-29";
+  const TOS_VERSION = "2026-10-31";
   const ud = udoc && udoc.exists() ? udoc.data() : {};
   const tosAccepted = !!ud.tosAccepted && ud.tosVersion === TOS_VERSION;
   const tosReturning = !!ud.tosAccepted && !tosAccepted;
@@ -2929,14 +2929,13 @@ onAuthStateChanged(auth, async (user) => {
         <h1 style="font-size:1.6rem;margin-bottom:8px">${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
         <p style="color:var(--mut,#888);margin-bottom:20px">${tosReturning ? "Please review the changes and accept to keep using Darknode." : "Please read and accept before continuing."}</p>
         ${tosReturning ? `<div style="border:1px solid var(--line,#333);border-left:4px solid var(--acc,#2552c6);padding:14px 18px;margin-bottom:16px;border-radius:4px;font-size:.88rem;line-height:1.6">
-          <strong>What changed (October 29, 2026)</strong>
+          <strong>What changed (October 31, 2026)</strong>
           <ul style="margin:8px 0 0;padding-left:20px">
-            <li>Deck Integrations: a security integration counts as connected only after a live test of your key. Lookups for those providers go through Darknode's relay, which uses your key for that one request and does not store it or the result.</li>
-            <li>The built-in assistant can run lookups on your connected integrations; it asks before each call unless you choose Always allow.</li>
+            <li>Signed-in users can pick Claude models in the built-in assistant. Those messages go through Darknode's edge proxy to Anthropic, which processes them under its own terms; Darknode does not log or store them. Claude use is rate-limited per account.</li>
           </ul></div>` : ""}
         <div style="background:var(--card,#1a1a1a);border:1px solid var(--line,#333);padding:20px;max-height:400px;overflow-y:auto;font-size:.85rem;line-height:1.7;margin-bottom:20px;border-radius:4px" id="tosBox">
           <h3>Darknode Terms of Service</h3>
-          <p><strong>Last updated:</strong> October 29, 2026</p>
+          <p><strong>Last updated:</strong> October 31, 2026</p>
           <p>By using Darknode ("the Platform"), including darknode.ai, the Darknode command center, the Darknode Deck and its Personal and Organization spaces, the code, cloud, dependency and web-exposure analysis engines, the Darknode CLI, the Nexus agent, Darknode OS, the API and MCP server, and all associated tools, you (and, where you act for an organization, that organization) agree to these terms. If you do not agree, do not use the Platform.</p>
 
           <h4>1. Authorized Use Only</h4>
@@ -2965,7 +2964,7 @@ onAuthStateChanged(auth, async (user) => {
           <p>Darknode provides real-world security intelligence including CVE databases, exploit references, MITRE ATT&amp;CK mappings, APT group profiles, vulnerability data, and penetration testing methodologies. This information is sourced from publicly available databases and is provided for <strong>defensive security, education, and authorized testing purposes only</strong>. Darknode does not create exploits — it references publicly known vulnerabilities to help defenders understand and mitigate threats.</p>
 
           <h4>8. AI Features</h4>
-          <p>The built-in web assistant sends your messages through Darknode's edge proxy to a third-party model provider (currently Google Gemini) and returns the answer. Darknode does not log or store those prompts or responses; the provider processes them under its own terms. In Nexus, the CLI, and the desktop app you choose the engine: local models (such as Ollama) keep everything on your machine, and cloud engines use your own account or API key with that provider. When you connect a security integration in the Deck, the assistant can run lookups on it (for example an IP, domain, hash or CVE); it shows each call and asks before sending it, unless you choose Always allow for that lookup. AI output can be wrong; review it before acting on it. You are responsible for your own API usage and costs and for any actions taken by AI agents you run.</p>
+          <p>The built-in web assistant sends your messages through Darknode's edge proxy to a third-party model provider (Google Gemini by default, or Anthropic when a signed-in user picks a Claude model) and returns the answer. Darknode does not log or store those prompts or responses; the provider processes them under its own terms. In Nexus, the CLI, and the desktop app you choose the engine: local models (such as Ollama) keep everything on your machine, and cloud engines use your own account or API key with that provider. When you connect a security integration in the Deck, the assistant can run lookups on it (for example an IP, domain, hash or CVE); it shows each call and asks before sending it, unless you choose Always allow for that lookup. AI output can be wrong; review it before acting on it. You are responsible for your own API usage and costs and for any actions taken by AI agents you run.</p>
 
           <h4>9. Plans and Feature Availability</h4>
           <p>Which tools and spaces you can use depends on your plan. Features outside your plan are not shown. We may move features between plans, and features marked as coming soon may change before release.</p>

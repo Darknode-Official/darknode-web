@@ -49,6 +49,9 @@ const PROVIDERS = {
   groq: { url: () => "https://api.groq.com/openai/v1/chat/completions", envKey: "GROQ_KEY", format: "openai" },
   openrouter: { url: () => "https://openrouter.ai/api/v1/chat/completions", envKey: "OPENROUTER_KEY", format: "openai", headers: { "HTTP-Referer": "https://darknode.ai", "X-Title": "Darknode AI" } },
   mistral: { url: () => "https://api.mistral.ai/v1/chat/completions", envKey: "MISTRAL_KEY", format: "openai" },
+  // Claude on the server-held ANTHROPIC_KEY secret; handled by handleClaude (not the
+  // OpenAI/Gemini path) because it is signed-in only and separately rate-limited.
+  anthropic: { url: () => "https://api.anthropic.com/v1/messages", envKey: "ANTHROPIC_KEY", format: "anthropic" },
   gemini: { url: (env, model, key) => `${GEMINI_BASE}/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(key)}`, envKey: "GEMINI_KEY", format: "gemini" },
 };
 
@@ -382,6 +385,8 @@ async function callUpstream(cfg, env, model, messages, key, opts = {}) {
 // Gemini grounding sources, strip the upstream [DONE], then emit an optional
 // Sources footer (when cite) and a single terminal [DONE].
 function streamBack(upstream, isGemini, opts = {}) {
+  const fmt = opts.format || (isGemini ? "gemini" : "openai");
+  const passthrough = fmt === "openai";
   const reader = upstream.body.getReader();
   const dec = new TextDecoder();
   const enc = new TextEncoder();
@@ -398,38 +403,114 @@ function streamBack(upstream, isGemini, opts = {}) {
     controller.enqueue(enc.encode("data: [DONE]\n\n"));
   };
   const stream = new ReadableStream({
-    async pull(controller) {
-      const { done, value } = await reader.read();
-      if (done) {
-        if (!isGemini && buf.trim() && buf.trim() !== "data: [DONE]") controller.enqueue(enc.encode(buf));
-        emitFooter(controller); controller.close(); return;
-      }
-      buf += dec.decode(value, { stream: true });
-      let nl;
-      while ((nl = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, nl);
-        buf = buf.slice(nl + 1);
-        const t = line.trim();
-        if (!t.startsWith("data:")) { if (!isGemini) controller.enqueue(enc.encode(line + "\n")); continue; }
-        const payload = t.slice(t.indexOf(":") + 1).trim();
-        if (payload === "[DONE]") continue; // we emit our own terminal DONE after the footer
-        if (isGemini) {
-          try {
-            const j = JSON.parse(payload);
-            const cand = j.candidates && j.candidates[0];
-            const parts = cand && cand.content && cand.content.parts;
-            if (parts) parts.forEach((p) => { if (p.text) controller.enqueue(enc.encode(sseChunk(p.text))); });
-            const ch = cand && cand.groundingMetadata && cand.groundingMetadata.groundingChunks;
-            if (Array.isArray(ch)) ch.forEach((c) => { const u = c && c.web && c.web.uri; if (u) sources.add(u); });
-          } catch (_) { /* keep-alive / partial */ }
-        } else {
-          controller.enqueue(enc.encode(line + "\n"));
+    async pull(ctrl) {
+      // A chunk can carry no text (Anthropic's message_start, pings, Gemini keep-alives).
+      // Returning from pull without enqueueing stalls the stream for good, so keep
+      // reading until something was emitted or the upstream ended.
+      let n = 0;
+      const controller = { enqueue: (x) => { n++; ctrl.enqueue(x); }, close: () => ctrl.close() };
+      while (n === 0) {
+        const { done, value } = await reader.read();
+        if (done) {
+          if (passthrough && buf.trim() && buf.trim() !== "data: [DONE]") controller.enqueue(enc.encode(buf));
+          emitFooter(controller); controller.close(); return;
+        }
+        buf += dec.decode(value, { stream: true });
+        let nl;
+        while ((nl = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, nl);
+          buf = buf.slice(nl + 1);
+          const t = line.trim();
+          if (!t.startsWith("data:")) { if (passthrough) controller.enqueue(enc.encode(line + "\n")); continue; }
+          const payload = t.slice(t.indexOf(":") + 1).trim();
+          if (payload === "[DONE]") continue; // we emit our own terminal DONE after the footer
+          if (fmt === "anthropic") {
+            // Messages API SSE: only text deltas reach the reader; thinking and tool
+            // blocks, pings and usage events are dropped.
+            try {
+              const j = JSON.parse(payload);
+              if (j.type === "content_block_delta" && j.delta && j.delta.type === "text_delta" && j.delta.text) controller.enqueue(enc.encode(sseChunk(j.delta.text)));
+              else if (j.type === "error") controller.enqueue(enc.encode(sseChunk("\n\n[Claude error: " + String((j.error && j.error.message) || "stream failed").slice(0, 200) + "]")));
+            } catch (_) { /* partial */ }
+          } else if (fmt === "gemini") {
+            try {
+              const j = JSON.parse(payload);
+              const cand = j.candidates && j.candidates[0];
+              const parts = cand && cand.content && cand.content.parts;
+              if (parts) parts.forEach((p) => { if (p.text) controller.enqueue(enc.encode(sseChunk(p.text))); });
+              const ch = cand && cand.groundingMetadata && cand.groundingMetadata.groundingChunks;
+              if (Array.isArray(ch)) ch.forEach((c) => { const u = c && c.web && c.web.uri; if (u) sources.add(u); });
+            } catch (_) { /* keep-alive / partial */ }
+          } else {
+            controller.enqueue(enc.encode(line + "\n"));
+          }
         }
       }
     },
     cancel() { try { reader.cancel(); } catch (_) {} },
   });
   return new Response(stream, { headers: SSE_HEADERS });
+}
+
+// Claude models on the owner's Anthropic key. The key is a Worker secret
+// (`wrangler secret put ANTHROPIC_KEY`): it is never in the repo, never sent to a
+// browser, and only this function reads it. Because every call spends real credits:
+// signed-in users only (admins only when CLAUDE_ACCESS="admin"), a per-user limit of
+// CLAUDE_PER_MIN calls a minute, an allow-listed model set, and capped input/output.
+// Upstream error bodies are not forwarded (they can describe the account).
+export const CLAUDE_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]);
+const CLAUDE_PER_MIN = 6, CLAUDE_MAX_INPUT_CHARS = 120000, CLAUDE_MAX_TOKENS = 4096;
+
+// OpenAI-style messages -> { system, messages } for the Messages API: system turns are
+// joined, roles other than user/assistant dropped, same-role neighbours merged, and
+// the conversation starts on a user turn.
+export function toClaudeBody(model, messages) {
+  const sys = [], out = [];
+  for (const m of Array.isArray(messages) ? messages : []) {
+    const text = typeof (m && m.content) === "string" ? m.content : Array.isArray(m && m.content) ? m.content.map((p) => (p && typeof p.text === "string" ? p.text : "")).join("") : "";
+    if (!text) continue;
+    if (m.role === "system") { sys.push(text); continue; }
+    if (m.role !== "user" && m.role !== "assistant") continue;
+    const last = out[out.length - 1];
+    if (last && last.role === m.role) last.content += "\n\n" + text; else out.push({ role: m.role, content: text });
+  }
+  while (out.length && out[0].role !== "user") out.shift();
+  const body = { model, max_tokens: CLAUDE_MAX_TOKENS, stream: true, messages: out };
+  if (sys.length) body.system = sys.join("\n\n");
+  return body;
+}
+
+// Exported for tests: the Messages API SSE -> the reader's OpenAI-style SSE.
+export const claudeStream = (upstream, opts = {}) => streamBack(upstream, false, { ...opts, format: "anthropic" });
+
+async function handleClaude(request, env, model, msgs, opts) {
+  if (!env.ANTHROPIC_KEY) return json({ error: "Claude is not configured on this deployment." }, 503);
+  if (!CLAUDE_MODELS.has(model)) return json({ error: "Unknown Claude model." }, 400);
+  const a = await authenticate(request, env);
+  if (a.error) return json({ error: a.error }, a.status);
+  const p = a.principal;
+  if (p.kind !== "user") return json({ error: "Sign in to use Claude models." }, 401);
+  if (env.CLAUDE_ACCESS === "admin" && !(p.claims && p.claims.admin === true)) return json({ error: "Claude models are limited to administrators on this deployment." }, 403);
+  const wait = await rateCheck(env, { kind: "user", uid: "claude:" + p.uid }, "", undefined, CLAUDE_PER_MIN);
+  if (wait) return withHeaders(json({ error: "Claude limit reached (" + CLAUDE_PER_MIN + " messages a minute). Try again shortly." }, 429), { "Retry-After": String(wait) });
+  const body = toClaudeBody(model, msgs);
+  if (!body.messages.length) return json({ error: "Missing messages" }, 400);
+  if (JSON.stringify(body).length > CLAUDE_MAX_INPUT_CHARS) return json({ error: "Conversation too long for Claude here. Start a new chat." }, 413);
+  let upstream;
+  const ac = new AbortController(), to = setTimeout(() => ac.abort(), 30000);
+  try {
+    upstream = await fetch(PROVIDERS.anthropic.url(), {
+      method: "POST", signal: ac.signal, body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": env.ANTHROPIC_VERSION || "2023-06-01" },
+    });
+  } catch (_) { return json({ error: ac.signal.aborted ? "Claude did not answer in time." : "Could not reach Claude." }, 504); }
+  finally { clearTimeout(to); }
+  if (!upstream.ok || !upstream.body) {
+    const st = upstream.status;
+    const msg = st === 429 ? "Claude is busy or out of credits. Try again later." : st === 529 ? "Claude is overloaded. Try again shortly." : st === 401 || st === 403 ? "Claude is temporarily unavailable." : "Claude request failed (" + st + ").";
+    return json({ error: msg }, st === 401 || st === 403 ? 503 : st >= 400 && st < 600 ? st : 502);
+  }
+  return claudeStream(upstream, opts);
 }
 
 // Flagship Darknode: self-hosted GPU model while DARKNODE_URL is set; the moment
@@ -633,6 +714,7 @@ async function route(request, env, rid) {
       const opts = { cite, fetchedSources };
 
       if (provider === "darknode") return await handleDarknode(cfg, env, model, msgs, opts);
+      if (provider === "anthropic") return await handleClaude(request, env, model, msgs, opts);
       // Gemini chat falls back to SMART_KEY the same way /api/smart does, so one valid
       // Google key powers both routes and the two secrets never have to stay in sync.
       let key = env[cfg.envKey] || (provider === "gemini" ? env.SMART_KEY || env.GEMINI_KEY_2 : undefined);
