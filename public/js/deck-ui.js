@@ -1724,6 +1724,7 @@ export function renderDeck(host, opts) {
   const realTier = tierFrom(opts.tier, opts.isOwner);
   let planTier = realTier;
   if (opts.isOwner) { try { const p = localStorage.getItem(LS_PREVIEW); if (TIERS.includes(p)) planTier = p; } catch (_) {} }
+  try { window.__dnTier = planTier; } catch (_) {} // webai lists paid models from this (the Worker enforces it)
   const needTier = {}, navName = {}, navIcon = {}; // navName keeps the names of entries the plan hides
   for (const grp of NAV_DEF) {
     if (grp.id) { needTier["section:" + grp.id] = PLAN_GROUP[grp.id] || "free"; navName["section:" + grp.id] = grp.g; }
@@ -4018,8 +4019,8 @@ export function renderDeck(host, opts) {
         feats: ["Every browser-based security tool", "Personal space: domain, link, secret and data checks", "Local-only security graph & cases", "Darknode AI assistant", "1 workspace, 1 seat"],
         cta: "Current plan", cur: true },
       { id: "pro", name: "Pro", price: "$29", unit: "per user / month", tag: "Recommended", a: "#2552c6",
-        blurb: "For professionals who need history, exports and priority AI.",
-        feats: ["Everything in Free", "Exposure and Application Security tools, findings and reports", "Unlimited saved findings & reports", "Priority Darknode AI — faster, higher limits", "Cloud sync across devices", "Email support"],
+        blurb: "For professionals who need history, exports and the strongest AI models.",
+        feats: ["Everything in Free", "Exposure and Application Security tools, findings and reports", "Unlimited saved findings & reports", "Premium AI models: Claude Fable 5.1, Claude Opus 5.5, Darknode Max", "Cloud sync across devices", "Email support"],
         cta: "Upgrade to Pro" },
       { id: "team", name: "Team", price: "$79", unit: "per user / month", tag: "", a: "#2552c6",
         blurb: "Shared workspaces, roles and one audit trail for the whole team.",

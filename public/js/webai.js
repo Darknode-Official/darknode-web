@@ -244,7 +244,7 @@ Refer to yourself only as Darknode AI, built by Darknode. Do not name, confirm o
 // the built-in key, so those are the tiers we expose, branded as Darknode.
 const DARKNODE_MODELS = [
   { id: "gemini-flash-latest", name: "Darknode Core", provider: "gemini", group: "Darknode AI", sub: "auto-updating" },
-  { id: "gemini-3.8-flash", name: "Darknode Max", provider: "gemini", group: "Darknode AI", sub: "newest" },
+  { id: "gemini-3.8-flash", name: "Darknode Max", provider: "gemini", group: "Darknode AI", sub: "newest, Pro plan", plan: "pro" },
   { id: "gemini-3.5-flash", name: "Darknode Balanced", provider: "gemini", group: "Darknode AI", sub: "recommended" },
   { id: "gemini-flash-lite-latest", name: "Darknode Swift", provider: "gemini", group: "Darknode AI", sub: "fastest" },
 ];
@@ -260,9 +260,12 @@ const DEFAULT_MODEL_ID = "gemini-3.5-flash";
 // is reached.
 // Claude on Darknode's own Anthropic key, held by the Worker (never in the browser).
 // Signed-in users only, with a per-user rate limit enforced server-side.
+// Models with `plan` run on the owner's most expensive keys: they are listed only for that
+// plan or above (the Deck publishes the plan as window.__dnTier), and the Worker refuses them
+// for anyone else, so hiding them here is only about not offering what won't work.
 const CLAUDE_MODELS = [
-  { id: "claude-fable-5-1", name: "Claude Fable 5.1", provider: "anthropic", group: "Claude", sub: "most capable, sign-in" },
-  { id: "claude-opus-5-5", name: "Claude Opus 5.5", provider: "anthropic", group: "Claude", sub: "sign-in" },
+  { id: "claude-fable-5-1", name: "Claude Fable 5.1", provider: "anthropic", group: "Claude", sub: "most capable, Pro plan", plan: "pro" },
+  { id: "claude-opus-5-5", name: "Claude Opus 5.5", provider: "anthropic", group: "Claude", sub: "Pro plan", plan: "pro" },
   { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", provider: "anthropic", group: "Claude", sub: "sign-in" },
   { id: "claude-haiku-5-5", name: "Claude Haiku 5.5", provider: "anthropic", group: "Claude", sub: "fastest, sign-in" },
 ];
@@ -470,9 +473,17 @@ function connectedModels() {
   return out;
 }
 
+const PLAN_RANK = { free: 0, pro: 1, team: 2, enterprise: 3 };
+function currentTier() {
+  try { if (window.__dnTier) return window.__dnTier; } catch (_) {}
+  try { if (window.parent !== window && window.parent.__dnTier) return window.parent.__dnTier; } catch (_) {}
+  return "free";
+}
 function availableModels() {
-  // Darknode AI (free, built-in) plus any providers connected through DarkDeck.
-  return MODELS.concat(connectedModels());
+  // Darknode AI (free, built-in) plus any providers connected through DarkDeck; paid models
+  // only for accounts on that plan.
+  const have = PLAN_RANK[currentTier()] || 0;
+  return MODELS.filter((m) => !m.plan || have >= (PLAN_RANK[m.plan] || 1)).concat(connectedModels());
 }
 
 // Lightweight CSS modal (replaces native prompt()/confirm()). Resolves with an

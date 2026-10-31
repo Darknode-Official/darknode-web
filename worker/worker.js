@@ -25,6 +25,7 @@ import { hostAllowed } from "./net-guard.js";
 import { readCapped } from "./body-cap.js";
 import { handleIntel } from "./intel.js";
 import { matchRoute, authenticate, authorize, attachPrincipal, rateCheck, ipCeiling, requestId, withHeaders } from "./auth.js";
+import { GEMINI_MODELS, CLAUDE_PLAN, userTier, planDenied } from "./plan.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
 export { MonitorDO } from "./monitor.js";
@@ -564,6 +565,8 @@ async function handleClaude(request, env, model, msgs, opts) {
   const p = a.principal;
   if (p.kind !== "user") return json({ error: "Sign in to use Claude models." }, 401);
   if (env.CLAUDE_ACCESS === "admin" && !(p.claims && p.claims.admin === true)) return json({ error: "Claude models are limited to administrators on this deployment." }, 403);
+  const planMsg = planDenied(CLAUDE_PLAN.get(model) || "pro", await userTier(env.FIREBASE_PROJECT_ID, p));
+  if (planMsg) return json({ error: planMsg, code: "plan_required" }, 403);
   const wait = await rateCheck(env, { kind: "user", uid: "claude:" + p.uid }, "", undefined, CLAUDE_PER_MIN);
   if (wait) return withHeaders(json({ error: "Claude limit reached (" + CLAUDE_PER_MIN + " messages a minute). Try again shortly." }, 429), { "Retry-After": String(wait) });
   const plain = toClaudeBody(model, msgs);
@@ -788,6 +791,18 @@ async function route(request, env, rid) {
 
       if (provider === "darknode") return await handleDarknode(cfg, env, model, msgs, opts);
       if (provider === "anthropic") return await handleClaude(request, env, model, msgs, opts);
+      // Only the listed Gemini models run on the owner's key; the stronger ones need a paid plan.
+      if (provider === "gemini") {
+        const need = GEMINI_MODELS.get(model);
+        if (!need) return json({ error: "Unknown model: " + String(model).slice(0, 60) + ". Pick another model." }, 400);
+        if (need !== "free") {
+          const a = await authenticate(request, env);
+          if (a.error) return json({ error: a.error }, a.status);
+          if (a.principal.kind !== "user") return json({ error: "Sign in to use this model.", code: "plan_required" }, 401);
+          const planMsg = planDenied(need, await userTier(env.FIREBASE_PROJECT_ID, a.principal));
+          if (planMsg) return json({ error: planMsg, code: "plan_required" }, 403);
+        }
+      }
       // Gemini chat falls back to SMART_KEY the same way /api/smart does, so one valid
       // Google key powers both routes and the two secrets never have to stay in sync.
       const key = env[cfg.envKey] || (provider === "gemini" ? env.SMART_KEY || env.GEMINI_KEY_2 : undefined);

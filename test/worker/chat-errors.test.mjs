@@ -9,7 +9,7 @@ async function chat(env, upstream) {
   globalThis.fetch = async (url, init) => { seen.push(String(url)); return upstream(String(url), init); };
   console.warn = () => {}; // upstreamError logs the provider body server-side
   try {
-    const body = JSON.stringify({ provider: "gemini", model: "gemini-test-model", messages: [{ role: "user", content: "hi" }] });
+    const body = JSON.stringify({ provider: "gemini", model: "gemini-flash-latest", messages: [{ role: "user", content: "hi" }] });
     const r = await worker.fetch(new Request("https://w.test/api/chat", { method: "POST", body, headers: { "cf-connecting-ip": "198.51.100." + (ipN++ % 250) } }), env);
     return { status: r.status, text: await r.text(), seen };
   } finally { globalThis.fetch = realFetch; console.warn = realWarn; }
@@ -37,7 +37,7 @@ group("worker: chat upstream errors", () => {
     assert.ok(!r.text.includes("SECRET"));
   });
   test("a retired model (404) steps down to the stable fallback models", async () => {
-    const r = await chat({ GEMINI_KEY: "k1" }, async (url) => url.includes("gemini-test-model") ? new Response(SECRET, { status: 404 }) : sse());
+    const r = await chat({ GEMINI_KEY: "k1" }, async (url) => url.includes("gemini-flash-latest") ? new Response(SECRET, { status: 404 }) : sse());
     assert.equal(r.status, 200);
     assert.ok(r.seen.some((u) => u.includes("/gemini-3.5-flash:")), r.seen.join("\n"));
   });

@@ -694,7 +694,7 @@ export function renderLanding(view, actions) {
               <li>Everything in Free, plus:</li>
               <li>Exposure and Application Security tools, findings and reports</li>
               <li>Unlimited saved findings &amp; reports</li>
-              <li>Priority Darknode AI &mdash; faster, higher limits</li>
+              <li>Premium AI models: Claude Fable 5.1, Claude Opus 5.5, Darknode Max</li>
               <li>Cloud sync across devices</li>
               <li>Email support</li>
             </ul>
@@ -745,7 +745,7 @@ export function renderLanding(view, actions) {
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. The Free plan includes every browser-based security tool, the Personal space checks, a local security graph and the Darknode AI assistant, with no time limit. The CLI is free to run from source. Pro, Team and Enterprise add the Exposure, Application Security, Organization and Compliance tool sets, shared workspaces and cloud sync; they are in preview and granted on request while checkout is not live.</div>
+              <div class="faq-a-inner">Yes. The Free plan includes every browser-based security tool, the Personal space checks, a local security graph and the Darknode AI assistant, with no time limit. The CLI is free to run from source. Pro, Team and Enterprise add the premium AI models (Claude Fable 5.1, Claude Opus 5.5, Darknode Max), the Exposure, Application Security, Organization and Compliance tool sets, shared workspaces and cloud sync; they are in preview and granted on request while checkout is not live.</div>
             </div>
           </div>
 
