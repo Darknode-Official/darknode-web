@@ -20,7 +20,7 @@
 // Control references: ISO 27001:2022 A.5.18 / A.6.5, SOC 2 CC6.2 / CC6.3,
 // NIST SP 800-53 AC-2(3) / PS-4 / PS-5, CIS Controls v8 5.3 / 6.2, MITRE ATT&CK T1078.
 
-import { sniff, parseCsv, iterJson, flatten } from "../ingest/parse.js";
+import { sniff, parseCsv, iterJson, flatten, stripEnclosed } from "../ingest/parse.js";
 import {
   parseHR, parseDirectory, findColumn, normalizeEmail, normalizeName, levenshtein, parseDate, looksLikeServiceAccount,
 } from "./access-review-engine.js";
@@ -117,7 +117,7 @@ export const KINDS = ["hr", "hr-changes", "idp", "saas", "devices", "ignore"];
 // ---------------------------------------------------------------------------
 const str = (v) => String(v == null ? "" : v).trim();
 const low = (v) => str(v).toLowerCase();
-const norm = (h) => low(h).replace(/\[[^\]]*\]/g, "").replace(/\([^)]*\)/g, "").replace(/[^a-z0-9]/g, "");
+const norm = (h) => stripEnclosed(stripEnclosed(low(h), "[", "]"), "(", ")").replace(/[^a-z0-9]/g, "");
 const iso = (t) => (t == null ? null : new Date(t).toISOString());
 const day = (t) => (t == null ? null : new Date(t).toISOString().slice(0, 10));
 const hours = (a, b) => Math.round(((b - a) / HOUR) * 10) / 10;

@@ -489,7 +489,19 @@ export function xmlText(node) {
 // Lower-case, drop bracketed / parenthesised suffixes ("[Required]"), drop
 // non-alphanumerics.
 export function normHeader(h) {
-  return String(h || "").toLowerCase().replace(/\[[^\]]*\]/g, "").replace(/\([^)]*\)/g, "").replace(/[^a-z0-9]/g, "");
+  return stripEnclosed(stripEnclosed(String(h || "").toLowerCase(), "[", "]"), "(", ")").replace(/[^a-z0-9]/g, "");
+}
+
+// Same result as s.replace(/\([^)]*\)/g, rep) (or the [ ] form), in linear time: the regex rescans to the
+// end of the text from every unclosed "(", so a header of 30k "(" took seconds and a bigger one hung.
+export function stripEnclosed(s, open, close, rep = "") {
+  let out = "", i = 0;
+  for (;;) {
+    const a = s.indexOf(open, i), b = a < 0 ? -1 : s.indexOf(close, a + 1);
+    if (b < 0) return out + s.slice(i);
+    out += s.slice(i, a) + rep;
+    i = b + 1;
+  }
 }
 
 // First header matching any alias, alias order wins. Returns the original header.

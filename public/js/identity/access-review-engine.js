@@ -16,6 +16,7 @@
 //   MITRE ATT&CK T1078 Valid Accounts (where the finding is an abuse path)
 
 import { controlsFromRefs } from "../core/sink-map.js";
+import { stripEnclosed } from "../ingest/parse.js";
 
 const DAY = 86400000;
 
@@ -82,7 +83,7 @@ export function parseCSV(text, opts = {}) {
 // against synonym lists. The first header matching any synonym wins.
 // ---------------------------------------------------------------------------
 export function normHeader(h) {
-  return String(h || "").toLowerCase().replace(/\[[^\]]*\]/g, "").replace(/\([^)]*\)/g, "").replace(/[^a-z0-9]/g, "");
+  return stripEnclosed(stripEnclosed(String(h || "").toLowerCase(), "[", "]"), "(", ")").replace(/[^a-z0-9]/g, "");
 }
 
 export function findColumn(headers, synonyms) {
@@ -216,7 +217,7 @@ export function normalizeName(name) {
   let s = String(name || "").toLowerCase();
   if (s.includes(",")) { const [a, b] = s.split(","); s = `${b || ""} ${a || ""}`; } // "Last, First"
   s = s.normalize("NFD").replace(/[̀-ͯ]/g, "");
-  s = s.replace(/\([^)]*\)/g, " ").replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ").trim();
+  s = stripEnclosed(s, "(", ")", " ").replace(/[^a-z\s]/g, " ").replace(/\s+/g, " ").trim();
   // drop single-letter initials ("J. Doe" -> "doe") so they do not break fuzzy matching
   return s.split(" ").filter((p) => p.length > 1).join(" ");
 }

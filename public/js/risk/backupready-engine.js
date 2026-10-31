@@ -511,11 +511,14 @@ function veeamRepoType(t) {
   return "disk";
 }
 
+// s.replace(/\s*\([^)]*\)\s*$/, "") in linear time (the regex rescans from every "(" in a long cell).
+const dropTrailingGroup = (s) => { const t = s.trimEnd(); if (!t.endsWith(")")) return s; const a = t.indexOf("(", t.lastIndexOf(")", t.length - 2) + 1); return a < 0 ? s : t.slice(0, a).trimEnd(); };
+
 function ingest(d, R, skipped) {
   const k = d.kind, cols = d.cols, file = d.name;
   if (k === "veeam-sessions") {
     for (const row of d.rows) {
-      const job = str(cell(row, cols, "job")) || str(cell(row, cols, "name")).replace(/\s*\([^)]*\)\s*$/, "");
+      const job = str(cell(row, cols, "job")) || dropTrailingGroup(str(cell(row, cols, "name")));
       if (!job) continue;
       const start = parseTime(cell(row, cols, "start")), end = parseTime(cell(row, cols, "end"));
       let status = normStatus(cell(row, cols, "result"));
