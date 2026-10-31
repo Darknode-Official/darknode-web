@@ -1112,7 +1112,7 @@ testing methodology for 10.10.14.7:
               <li>CLI, desktop app, and Darknode OS</li>
               <li>Live threat intelligence feeds</li>
               <li>Unlimited scans and analysis</li>
-              <li>Community Discord support</li>
+              <li>Community support on GitHub</li>
             </ul>
             <button class="btn lg" id="price-free">Get started free</button>
           </div>
@@ -1146,9 +1146,8 @@ testing methodology for 10.10.14.7:
             <ul class="price-features compact">
               <li>Everything in Pro, plus:</li>
               <li>Shared workspace and findings</li>
-              <li>Team CTF builder with scoring</li>
               <li>Asset inventory and shared scan history</li>
-              <li>Activity feed and leaderboard</li>
+              <li>Team activity feed</li>
               <li>Role-based permissions</li>
               <li>Branded security reports (custom logo)</li>
               <li>Engagement and project management</li>
@@ -1172,9 +1171,7 @@ testing methodology for 10.10.14.7:
               <li>Self-hosted and air-gapped deployment</li>
               <li>Custom Darknode OS builds (org-branded)</li>
               <li>Admin dashboard and analytics</li>
-              <li>User provisioning (SCIM)</li>
               <li>Dedicated account manager</li>
-              <li>99.9% SLA guarantee</li>
               <li>Volume licensing and invoicing</li>
             </ul>
             <button class="btn lg ghost" id="price-enterprise">Contact sales</button>
@@ -1327,11 +1324,6 @@ testing methodology for 10.10.14.7:
             <h3>Adversary Playbook Builder</h3>
             <p>MITRE ATT&amp;CK emulation planning with detection coverage heatmaps, purple team exercise generation, and STIX 2.1 export.</p>
           </div>
-          <div class="gov-card">
-            <div class="gov-icon">[+]</div>
-            <h3>5 More Coming</h3>
-            <p>Architecture reviewer, election security toolkit, infrastructure dependency mapper, workforce planner, and sanctions analyzer.</p>
-          </div>
         </div>
       </div>
     </section>
@@ -1342,7 +1334,7 @@ testing methodology for 10.10.14.7:
       <div class="cta-grid-bg"></div>
       <div class="wrap cta-inner">
         <h2>Find your real risks today.</h2>
-        <p class="cta-sub">Open-core. 100% private. Runs entirely on your own infrastructure.</p>
+        <p class="cta-sub">Open-core and self-hostable. Your code and findings stay on infrastructure you control.</p>
         <button class="btn lg" id="cta-signup">Get started &rarr;</button>
         <div class="cta-divider"></div>
         <div class="cta-notify">

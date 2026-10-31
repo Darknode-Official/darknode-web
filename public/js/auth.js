@@ -1640,26 +1640,6 @@ claude mcp add darknode -- node ~/darknode-cli/darknode.js mcp</code></pre>
   wireSetPanel();
 }
 
-// Gamer "ACCESS GRANTED" neon-portal transition, played once on a FRESH sign-in
-// (never on a session-restore page load). Renders the app under the overlay
-// mid-animation so it's ready as the portal clears. Falls straight through when
-// the visitor prefers reduced motion.
-function playAccessGranted(name, cb) {
-  try {
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches) { cb(); return; }
-  } catch (_) {}
-  const safe = String(name || "").replace(/[<>&"']/g, "").slice(0, 24);
-  const o = document.createElement("div");
-  o.id = "xfer";
-  o.innerHTML = '<div class="xgrid"></div><div class="xring"></div><div class="xring b"></div>'
-    + '<div class="xmsg"><div class="xgranted">Welcome Operator</div><div class="xwho">'
-    + (safe ? safe : "Access Granted") + '</div></div><div class="xflash"></div>';
-  document.body.appendChild(o);
-  let ran = false; const go = () => { if (ran) return; ran = true; try { cb(); } catch (_) {} };
-  setTimeout(go, 720);                    // build the app beneath the portal
-  setTimeout(() => { try { o.remove(); } catch (_) {} }, 1800); // remove after it fades
-}
-
 // Which account the app is currently rendered for (see the onAuthStateChanged guard),
 // and whether that is a no-Firebase guest/Test session.
 let _appUid = null, _appGuest = false;
@@ -2854,7 +2834,7 @@ onAuthStateChanged(auth, async (user) => {
   // license verification
   const _hn = [0x64,0x61,0x72,0x6b,0x6e,0x6f,0x64,0x65,0x2e,0x61,0x69].map(c=>String.fromCharCode(c)).join("");
   if(location.hostname!==_hn&&location.hostname!=="www."+_hn&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"&&!/^sentinel-b4194(-6173e)?--[a-z0-9-]+\.web\.app$/.test(location.hostname)){document.body.innerHTML="";return}
-  let fresh = false; try { fresh = sessionStorage.getItem("sw_fresh_signin") === "1"; if (fresh) sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
+  try { sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
   if (!user) {
     // Embedded tool frame (/<sec>?embed=1 inside the Deck): the parent tab is signed in,
     // but this child frame's own Firebase persistence can resolve to null (the default
@@ -3057,9 +3037,8 @@ onAuthStateChanged(auth, async (user) => {
       </div>`;
     document.getElementById("tosAgree").onclick = async () => {
       await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosVersion: TOS_VERSION, tosAcceptedAt: serverTimestamp() }, { merge: true });
-      const enter = () => { try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {} renderApp(user); loadAnnouncement(); };
-      if (fresh) playAccessGranted(user.displayName || ((user.email || "").split("@")[0]), enter);
-      else enter();
+      try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {}
+      renderApp(user); loadAnnouncement();
     };
     document.getElementById("tosDecline").onclick = async () => {
       await signOut(auth);
@@ -3067,9 +3046,6 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // Fresh sign-in (flag captured up top)? Play the gamer "Access Granted" portal,
-  // then reveal the app. A session-restore page load has no flag → boots straight in.
-  const enter = () => { try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {} renderApp(user); loadAnnouncement(); };
-  if (fresh) playAccessGranted(user.displayName || ((user.email || "").split("@")[0]), enter);
-  else enter();
+  try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {}
+  renderApp(user); loadAnnouncement();
 });

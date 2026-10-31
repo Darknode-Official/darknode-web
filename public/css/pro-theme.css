@@ -3477,42 +3477,6 @@ html[data-style=dark].crt body::after {
   content: none !important;
 }
 
-/* Access-granted transition — clean, no CRT */
-[data-style=pro] #xfer {
-  background: #fff !important;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif !important;
-}
-[data-style=pro] #xfer::after {
-  display: none !important;
-  content: none !important;
-}
-[data-style=pro] #xfer .xgrid {
-  display: none !important;
-}
-[data-style=pro] #xfer .xring {
-  border-color: #e5e5e5 !important;
-  box-shadow: none !important;
-}
-[data-style=pro] #xfer .xring.b {
-  border-color: #f4f4f5 !important;
-  box-shadow: none !important;
-}
-[data-style=pro] #xfer .xgranted {
-  background: none !important;
-  -webkit-background-clip: unset !important;
-  background-clip: unset !important;
-  color: #18181b !important;
-  filter: none !important;
-  font-weight: 700 !important;
-  letter-spacing: .02em !important;
-}
-[data-style=pro] #xfer .xwho {
-  color: #71717a !important;
-  letter-spacing: .08em !important;
-}
-[data-style=pro] #xfer .xflash {
-  display: none !important;
-}
 
 /* Dedicated page header (back link on /faq, /pricing, etc.) */
 .dedicated-page-header {
