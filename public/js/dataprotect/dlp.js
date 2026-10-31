@@ -7,7 +7,7 @@
 //
 //   renderDlp(main) -> void
 
-import { scan, redact, DETECTORS } from "/js/dataprotect/dlp-engine.js?v=20261029e";
+import { scan, redact, DETECTORS } from "/js/dataprotect/dlp-engine.js?v=20261030c";
 import { attachSinkButton } from "../core/sink.js";
 import { dlpFindings } from "/js/dataprotect/dp-sink.js";
 

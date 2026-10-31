@@ -193,7 +193,14 @@ export function scanEntropy(text, alreadyFound, opts = {}) {
   const hits = [];
   const taken = alreadyFound || [];
   const b64Need = Number.isFinite(opts.entropyThreshold) ? opts.entropyThreshold : ENTROPY_B64;
-  const covers = (i, j) => taken.some((f) => i < f.end && j > f.start);
+  // tokens come in increasing start order: sweep the found hits once instead of .some() per token
+  const byStart = taken.slice().sort((a, b) => a.start - b.start);
+  let next = 0, live = [];
+  const covers = (i, j) => {
+    while (next < byStart.length && byStart[next].start < j) live.push(byStart[next++]);
+    live = live.filter((f) => f.end > i);
+    return live.some((f) => f.start < j);
+  };
   const re = /[A-Za-z0-9+/=_-]{24,}/g;
   let m;
   while ((m = re.exec(text))) {
@@ -270,13 +277,18 @@ export function scan(text, opts = {}) {
 
   // de-dup overlapping named hits: keep the higher-severity / longer one
   found.sort((a, b) => a.start - b.start || (SEV_RANK[b.severity] || 0) - (SEV_RANK[a.severity] || 0));
-  const kept = [];
+  // Hits arrive in start order, so a kept hit can only clash while its end is past the current
+  // start: track those (by index, in kept order) instead of searching every kept hit (O(n^2)).
+  const kept = [], open = [];
   for (const f of found) {
-    const clash = kept.find((k) => f.start < k.end && f.end > k.start);
-    if (!clash) { kept.push(f); continue; }
+    let w = 0;
+    for (const i of open) if (kept[i].end > f.start) open[w++] = i;
+    open.length = w;
+    if (!w) { open.push(kept.length); kept.push(f); continue; }
+    const clash = kept[open[0]];
     if (SEV_RANK[f.severity] > SEV_RANK[clash.severity] ||
         (SEV_RANK[f.severity] === SEV_RANK[clash.severity] && (f.end - f.start) > (clash.end - clash.start))) {
-      kept[kept.indexOf(clash)] = f;
+      kept[open[0]] = f;
     }
   }
 

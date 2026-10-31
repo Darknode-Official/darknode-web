@@ -7,6 +7,7 @@ import * as domainguard from "../../public/js/exposure/domainguard-engine.js";
 import * as privaudit from "../../public/js/identity/privaudit-engine.js";
 import * as awareness from "../../public/js/compliance/awareness-engine.js";
 import * as dataflow from "../../public/js/compliance/dataflow-engine.js";
+import * as dlp from "../../public/js/dataprotect/dlp-engine.js";
 import { readFileSync } from "fs";
 
 const N = 150000;
@@ -34,6 +35,12 @@ group("large uploads (150k rows) do not overflow the call stack", () => {
   test("awareness history and data-flow inventory", () => {
     awareness.parseInput([{ name: "history.csv", text: csv("email,campaign,clicked,date", (i) => "u" + i + "@x.test,c1,yes,2026-01-01") }]);
     dataflow.parseInput([{ name: "ropa.csv", text: csv("activity,purpose,legal_basis,data_categories", (i) => "A" + i + ",billing,contract,email") }]);
+  });
+  test("DLP scan of 60k lines with a hit on each stays linear (was O(n^2) in the overlap de-dup)", () => {
+    const text = Array.from({ length: 60000 }, (_, i) => "card 4111 1111 1111 1111 ssn 123-45-" + (1000 + (i % 9000))).join("\n");
+    const t0 = Date.now(); const r = dlp.scan(text); const ms = Date.now() - t0;
+    assert.ok(r.findings.length >= 60000, "found the hits");
+    assert.ok(ms < 4000, "took " + ms + "ms");
   });
   test("no engine spreads an uploaded row list into push()", () => {
     const pats = [["risk/riskreg-engine.js", /push\(\.\.\.(rows|recs)\)/], ["risk/breachclock-engine.js", /rows\.push\(\.\.\.c\.rows/], ["identity/privaudit-engine.js", /rows\.push\(\.\.\.recs\)/],
