@@ -556,3 +556,19 @@ group("apispec: exports and contract", () => {
     assert.ok(r.pass, "failed: " + r.tests.filter((t) => !t.pass).map((t) => t.name).join(", "));
   });
 });
+
+group("apispec: GraphQL SDL sniffing stays linear", () => {
+  test("a file of quote marks is classified quickly (was exponential: 70 quotes froze the tab)", () => {
+    const t0 = Date.now();
+    for (const n of [60, 70, 5000]) parseFile("x.txt", '"'.repeat(n) + "\nx");
+    assert.ok(Date.now() - t0 < 500, "took " + (Date.now() - t0) + "ms");
+  });
+  test("real SDL openings are still detected without a .graphql name", () => {
+    for (const t of ["type Query { a: Int }", '"""Root\nquery"""\ntype Query { a: Int }', '"desc" type Query { a: Int }',
+      "# comment\nschema { query: Q }", "extend type Query { b: Int }", '# a\n"""b"""\n"c"\nenum E { A }'])
+      assert.ok(String(parseFile("x.txt", t).format).startsWith("graphql"), JSON.stringify(t) + " -> " + parseFile("x.txt", t).format);
+  });
+  test("text that merely starts with a type-like word is not SDL", () => {
+    assert.ok(!String(parseFile("x.txt", "typeface: 1").format).startsWith("graphql"));
+  });
+});

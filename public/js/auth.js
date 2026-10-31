@@ -2166,7 +2166,7 @@ function renderApp(user) {
     else if (sec === "vpnaudit") { import("/js/identity/vpnaudit.js?v=20261029e").then(m => live() && m.renderVpnAudit(main)); }
     else if (sec === "netexposure") { import("/js/exposure/netexposure.js?v=20261029e").then(m => live() && m.renderNetExposure(main)); }
     else if (sec === "licenseaudit") { import("/js/appsec/licenseaudit.js?v=20261030c").then(m => live() && m.renderLicenseAudit(main)); }
-    else if (sec === "apispec") { import("/js/appsec/apispec.js?v=20261029e").then(m => live() && m.renderApiSpec(main)); }
+    else if (sec === "apispec") { import("/js/appsec/apispec.js?v=20261030c").then(m => live() && m.renderApiSpec(main)); }
     else if (sec === "dataflow") { import("/js/compliance/dataflow.js?v=20261030c").then(m => live() && m.renderDataFlow(main)); }
     else if (sec === "awareness") { import("/js/compliance/awareness.js?v=20261030c").then(m => live() && m.renderAwareness(main)); }
     else if (sec === "pentestreg") { import("/js/ops/pentestreg.js?v=20261029e").then(m => live() && m.renderPentestReg(main)); }

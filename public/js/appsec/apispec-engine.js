@@ -497,7 +497,21 @@ function classifyObject(o) {
   return { format: "unknown", confidence: "low", reason: "no openapi, swagger, Postman info/item or __schema key" };
 }
 
-const SDL_START = /^\s*(?:"""[\s\S]*?"""\s*|"[^"\n]*"\s*|#[^\n]*\n\s*)*(?:extend\s+)?(?:type|schema|input|enum|interface|scalar|union|directive)\b/;
+// Does the text open like GraphQL SDL (after descriptions and comments)? A scanner, not one
+// regex: the regex form let a run of quote marks split into "" and """ pieces in exponentially
+// many ways, so a file opening with ~60 quotes froze the tab.
+function sdlStart(t) {
+  let i = 0;
+  const n = t.length;
+  for (;;) {
+    while (i < n && /\s/.test(t[i])) i++;
+    if (t.startsWith('"""', i)) { const j = t.indexOf('"""', i + 3); if (j < 0) return false; i = j + 3; continue; }
+    if (t[i] === '"') { const j = t.indexOf('"', i + 1), nl = t.indexOf("\n", i + 1); if (j < 0 || (nl >= 0 && nl < j)) return false; i = j + 1; continue; }
+    if (t[i] === "#") { const nl = t.indexOf("\n", i); if (nl < 0) return false; i = nl + 1; continue; }
+    break;
+  }
+  return /^(?:extend\s+)?(?:type|schema|input|enum|interface|scalar|union|directive)\b/.test(t.slice(i, i + 200));
+}
 
 /** Parse one file into a document model. Never throws. */
 export function parseFile(name, text) {
@@ -513,7 +527,7 @@ export function parseFile(name, text) {
     const c = classifyObject(o);
     return { ...base, ...c, syntax: "json", spec: o };
   }
-  if (isGqlName || SDL_START.test(t)) {
+  if (isGqlName || sdlStart(t)) {
     try {
       const gql = parseGraphqlSdl(t);
       return { ...base, format: "graphql-sdl", confidence: isGqlName || Object.keys(gql.types).length ? "high" : "medium", syntax: "graphql", gql };
