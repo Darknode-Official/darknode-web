@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE.
 //
 // Pure mapper: STRONGROOM fusion chains -> the common Finding shape (core/sink-map.js)
-// for the Security Graph (docs/STRONGROOM-FUSION-ENGINE.md §14). Each intrusion ->
+// for the Security Graph (docs/plans/STRONGROOM-FUSION-ENGINE.md §14). Each intrusion ->
 // fund-theft chain becomes one high/critical finding whose evidence lists the access
 // event and the payments it led to, linked to the vendors and identities involved.
 // Single-plane financial screens are not published here. Account numbers never leave.

@@ -48,11 +48,12 @@ npx serve public/      # serve the static site locally
 
 ## Deploy
 
+Follow [docs/RELEASE.md](docs/RELEASE.md): cut a `release/*` branch, run `npm run release:check`, preview, then deploy in this order. All docs are indexed in [docs/README.md](docs/README.md).
+
 ```bash
-firebase deploy --only hosting      # the static site
-firebase deploy --only functions    # the AI chat / pairing functions
-firebase deploy --only firestore:rules,storage:rules
-# the Cloudflare Worker proxy deploys separately:  cd worker && npx wrangler deploy --env=""   (staging: --env staging)
+firebase deploy --only firestore:rules,storage   # 1. rules
+# 2. the Cloudflare Worker: cd worker && npx wrangler deploy --env staging, then --env=""
+firebase deploy --only hosting      # 3. the static site
 ```
 
 ## Ecosystem

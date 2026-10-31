@@ -13,7 +13,7 @@
 // Veil is a research prototype for learning privacy engineering — it is not a
 // production anonymity network and must not be relied on for real-world safety.
 // Post-quantum hybrid handshake (X25519 + ML-KEM) and a real local mixnet are
-// separate modules on the roadmap (docs/veil-demo-plan.md).
+// separate modules on the roadmap (docs/plans/veil-demo-plan.md).
 //
 //   renderVeil(main) -> void
 // ============================================================================

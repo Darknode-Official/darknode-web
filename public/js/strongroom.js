@@ -3,7 +3,7 @@
 // STRONGROOM — Fund Protection (v1 bridgehead UI).
 //
 // A client-side command center for the cyber-financial FUSION engine
-// (docs/STRONGROOM-FUSION-ENGINE.md). You load your OWN ledger / payments export and,
+// (docs/plans/STRONGROOM-FUSION-ENGINE.md). You load your OWN ledger / payments export and,
 // optionally, a feed of access & identity events; the deterministic engine screens the
 // money for fraud schemes and, when both feeds are present, correlates them to surface the
 // intrusion -> fund-theft kill chain that single-plane tools miss.
