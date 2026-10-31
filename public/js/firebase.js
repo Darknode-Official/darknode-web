@@ -2,9 +2,9 @@
 // Firebase init for Darknode Web.
 // The apiKey here is NOT a secret (it only identifies the project); real protection
 // comes from the Firestore/Storage Security Rules in ../firebase/.
-if(!/^(darknode\.ai|www\.darknode\.ai|sentinel-b4194\.web\.app|sentinel-b4194-6173e\.web\.app|darknode-web-[a-z0-9]+\.onrender\.com|localhost|127\.0\.0\.1)$/.test(location.hostname)){throw new Error("unlicensed")}
+if(!/^(darknode\.ai|www\.darknode\.ai|sentinel-b4194\.web\.app|sentinel-b4194-6173e\.web\.app|darknode-web-[a-z0-9]+\.onrender\.com|sentinel-b4194(?:-6173e)?--[a-z0-9-]+\.web\.app|localhost|127\.0\.0\.1)$/.test(location.hostname)){throw new Error("unlicensed")}
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 // No Storage SDK: nothing in public/js uses it, and it was a whole extra module on the boot path.
@@ -40,7 +40,9 @@ export async function isAdminUser(user) {
 // session via signInWithCredential. (The matching client SECRET is never used in the browser.)
 export const GOOGLE_CLIENT_ID = "153127828172-806br8tvkb773hbo931incl0t8ipr0p0.apps.googleusercontent.com";
 
-export const app = initializeApp(firebaseConfig);
+// Reuse an app that is already up: right after a release, a module cached before it can
+// load this file under its previous URL, and a second initializeApp would throw.
+export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();

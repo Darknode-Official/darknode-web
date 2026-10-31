@@ -23,6 +23,11 @@ const SPEC = /(["'`])((?:\.{1,2}\/|\/)[^"'`?\s$]+?\.(?:m?js|css|json|txt|svg|png
 const TEXT = /\.(?:m?js|html)$/;
 // A module that builds specifiers at runtime (`import("./x.js" + V)`) declares its
 // buster once as `const V = "?v=..."`; it gets the whole-build hash and depends on it.
+// Pinned targets keep their source ?v= and a fixed version in the hash chain. firebase.js
+// is pinned until every client runs the service worker that revalidates unversioned
+// modules (shipped in the first build-based release): until then a stale cached copy
+// of an unversioned importer (saved.js) would load firebase.js under its old URL.
+export const PINNED = new Set(["js/firebase.js"]);
 const DYN_V = /const V = (["'])\?v=[A-Za-z0-9._-]+\1;/;
 const SKIP = [/\.(?:exe|deb|AppImage|dmg)$/, /(^|\/)\.git(\/|$)/, /(^|\/)node_modules(\/|$)/, /^firebase\//];
 
@@ -45,7 +50,7 @@ export function resolveSpec(from, spec) {
 // files: Map<relPath, text> for every text file; exists(rel) for any shipped file.
 // Returns Map<relPath, version> for every referenced target.
 // salt: Map<relPath, string> mixed into a file's own hash (the build hash for DYN_V files).
-export function computeVersions(files, exists, readBytes, salt = new Map()) {
+export function computeVersions(files, exists, readBytes, salt = new Map(), pinned = PINNED) {
   const deps = new Map();
   for (const [f, text] of files) {
     const d = new Set();
@@ -53,7 +58,7 @@ export function computeVersions(files, exists, readBytes, salt = new Map()) {
     deps.set(f, [...d].sort());
   }
   const raw = new Map();
-  const rawHash = (f) => { if (!raw.has(f)) raw.set(f, sha((files.has(f) ? files.get(f) : readBytes(f)) + (salt.get(f) || ""))); return raw.get(f); };
+  const rawHash = (f) => { if (!raw.has(f)) raw.set(f, pinned.has(f) ? "pinned" : sha((files.has(f) ? files.get(f) : readBytes(f)) + (salt.get(f) || ""))); return raw.get(f); };
   // Tarjan SCC (iterative), then hash components in reverse topological order.
   const index = new Map(), low = new Map(), onStack = new Set(), stack = [], comps = [];
   let i = 0;
@@ -87,10 +92,12 @@ export function computeVersions(files, exists, readBytes, salt = new Map()) {
   return version;
 }
 
-export function rewrite(from, text, version, buildHash = "") {
+export function rewrite(from, text, version, buildHash = "", pinned = PINNED) {
   if (buildHash) text = text.replace(DYN_V, (all, q) => "const V = " + q + "?v=" + buildHash.slice(0, 10) + q + ";");
   return text.replace(SPEC, (all, q, spec, esc) => {
-    const v = version.get(resolveSpec(from, spec));
+    const t = resolveSpec(from, spec);
+    if (pinned.has(t)) return all;
+    const v = version.get(t);
     return v ? q + spec + "?v=" + v + esc + q : all;
   });
 }
@@ -109,7 +116,7 @@ export function build({ src, out, check = false }) {
 
   // Service worker: cache name from the whole build; precache what index.html loads first.
   if (outText.has("sw.js") && outText.has("index.html")) {
-    const first = [...outText.get("index.html").matchAll(/<(?:script[^>]*\bsrc|link[^>]*\bhref)="(\/[^"]+\?v=[0-9a-f]{10})"/g)].map((m) => m[1]);
+    const first = [...outText.get("index.html").matchAll(/<(?:script[^>]*\bsrc|link[^>]*\bhref)="(\/[^"]+\?v=[A-Za-z0-9._-]+)"/g)].map((m) => m[1]);
     let sw = outText.get("sw.js");
     const cacheRe = /const CACHE = '[^']*';/;
     if (!cacheRe.test(sw)) throw new Error("sw.js: CACHE declaration not found");

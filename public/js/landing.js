@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
-(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","sentinel-b4194.web.app","sentinel-b4194-6173e.web.app","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d})&&!/^darknode-web-[a-z0-9]+\.onrender\.com$/.test(_h))throw document.body.innerHTML="",new Error("unlicensed")}());
+(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","sentinel-b4194.web.app","sentinel-b4194-6173e.web.app","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d})&&!/^darknode-web-[a-z0-9]+\.onrender\.com$/.test(_h)&&!/^sentinel-b4194(-6173e)?--[a-z0-9-]+\.web\.app$/.test(_h))throw document.body.innerHTML="",new Error("unlicensed")}());
 
 import { db } from "/js/firebase.js?v=20261021a";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";

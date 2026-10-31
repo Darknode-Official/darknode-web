@@ -51,9 +51,10 @@ group("build: end to end on a fixture tree", () => {
   const fixture = {
     "index.html": '<link rel="modulepreload" href="/js/app.js?v=1"><script type="module" src="/js/app.js?v=1"></script>',
     "sw.js": SW,
-    "js/app.js": 'import { f } from "/js/firebase.js?v=a"; import "./lazy.js?v=2"; const V = "?v=x"; import("./dyn.js" + V);',
-    "js/lazy.js": 'import { f } from "/js/firebase.js?v=a";',
-    "js/firebase.js": "export const f = 1;",
+    "js/app.js": 'import { f } from "/js/store.js?v=a"; import { g } from "/js/firebase.js?v=20261021a"; import "./lazy.js?v=2"; const V = "?v=x"; import("./dyn.js" + V);',
+    "js/lazy.js": 'import { f } from "/js/store.js?v=a";',
+    "js/store.js": "export const f = 1;",
+    "js/firebase.js": "export const g = 1;",
     "js/dyn.js": "export default 1;",
     "big.exe": "binary",
   };
@@ -63,8 +64,9 @@ group("build: end to end on a fixture tree", () => {
       const r = build({ src: join(root, "public"), out: join(root, "dist") });
       assert.deepEqual(r.unresolved, []);
       const app = readFileSync(join(root, "dist/js/app.js"), "utf8"), lazy = readFileSync(join(root, "dist/js/lazy.js"), "utf8");
-      const fb = app.match(/firebase\.js\?v=([0-9a-f]{10})/)[1];
-      assert.equal(lazy.match(/firebase\.js\?v=([0-9a-f]{10})/)[1], fb); // one module instance
+      const st = app.match(/store\.js\?v=([0-9a-f]{10})/)[1];
+      assert.equal(lazy.match(/store\.js\?v=([0-9a-f]{10})/)[1], st); // one module instance
+      assert.ok(app.includes('"/js/firebase.js?v=20261021a"')); // pinned
       assert.ok(app.includes('const V = "?v=' + r.buildHash.slice(0, 10) + '"'));
       const sw = readFileSync(join(root, "dist/sw.js"), "utf8");
       assert.ok(sw.includes("const CACHE = 'darknode-" + r.buildHash + "';"));
@@ -82,6 +84,15 @@ group("build: end to end on a fixture tree", () => {
       assert.notEqual(ra.buildHash, rb.buildHash);
       const ver = (root) => readFileSync(join(root, "dist/index.html"), "utf8").match(/app\.js\?v=([0-9a-f]{10})/)[1];
       assert.notEqual(ver(a), ver(b));
+    } finally { rmSync(a, { recursive: true, force: true }); rmSync(b, { recursive: true, force: true }); }
+  });
+  test("a pinned module keeps its URL, and changing it does not re-version its importers", () => {
+    const plain = { "index.html": '<script type="module" src="/js/app.js?v=1"></script>', "js/app.js": 'import { g } from "/js/firebase.js?v=20261021a";', "js/firebase.js": "export const g = 1;" };
+    const a = mk(plain), b = mk({ ...plain, "js/firebase.js": "export const g = 2;" });
+    try {
+      build({ src: join(a, "public"), out: join(a, "dist") }); build({ src: join(b, "public"), out: join(b, "dist") });
+      const ver = (root) => readFileSync(join(root, "dist/index.html"), "utf8").match(/app\.js\?v=([0-9a-f]{10})/)[1];
+      assert.equal(ver(a), ver(b));
     } finally { rmSync(a, { recursive: true, force: true }); rmSync(b, { recursive: true, force: true }); }
   });
   test("a ?v= specifier pointing at a missing file is reported", () => {

@@ -42,6 +42,15 @@ function cacheable(url, res) {
 // it in the background, and fall back to the cache when the network fails. Never answers an
 // asset request with the app shell.
 function assetResponse(e, url) {
+  // An unversioned URL (a deliberately unversioned module) can change in place, and a
+  // stale copy would import the previous versions of its dependencies next to the new
+  // ones. Revalidate it on every load (a 304 when unchanged); use the cache offline.
+  if (!/(^|[?&])v=/.test(url.search.slice(1))) {
+    return caches.open(CACHE).then(c => fetch(e.request, { cache: 'no-cache' }).then(res => {
+      if (cacheable(url, res)) c.put(e.request, res.clone());
+      return res;
+    }).catch(() => c.match(e.request).then(cached => cached || Response.error())));
+  }
   return caches.open(CACHE).then(c =>
     c.match(e.request).then(cached => {
       const fetched = fetch(e.request).then(res => {

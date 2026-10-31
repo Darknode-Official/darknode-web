@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // Source-available for learning only. Redistribution prohibited. See LICENSE.
-(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","darknode-official.github.io","sentinel-b4194.web.app","sentinel-b4194-6173e.web.app","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d})&&!/^darknode-web-[a-z0-9]+\.onrender\.com$/.test(_h))throw document.body.innerHTML="",new Error("unlicensed")}());
+(function(){var _h=location.hostname,_a=["darknode.ai","www.darknode.ai","darknode-official.github.io","sentinel-b4194.web.app","sentinel-b4194-6173e.web.app","localhost","127.0.0.1"];if(!_a.some(function(d){return _h===d})&&!/^darknode-web-[a-z0-9]+\.onrender\.com$/.test(_h)&&!/^sentinel-b4194(-6173e)?--[a-z0-9-]+\.web\.app$/.test(_h))throw document.body.innerHTML="",new Error("unlicensed")}());
 import { auth, db, googleProvider, githubProvider, isAdminUser, GOOGLE_CLIENT_ID } from "/js/firebase.js?v=20261021a";
 
 // Finish an OpenRouter account-link if we've just returned from its consent page
@@ -2851,7 +2851,7 @@ onAuthStateChanged(auth, async (user) => {
   try { if (!window.__dnScrubbed && window.dnKeys) { window.dnKeys.scrubLegacy(); window.__dnScrubbed = true; } } catch (_) {}
   // license verification
   const _hn = [0x64,0x61,0x72,0x6b,0x6e,0x6f,0x64,0x65,0x2e,0x61,0x69].map(c=>String.fromCharCode(c)).join("");
-  if(location.hostname!==_hn&&location.hostname!=="www."+_hn&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"){document.body.innerHTML="";return}
+  if(location.hostname!==_hn&&location.hostname!=="www."+_hn&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1"&&!/^sentinel-b4194(-6173e)?--[a-z0-9-]+\.web\.app$/.test(location.hostname)){document.body.innerHTML="";return}
   let fresh = false; try { fresh = sessionStorage.getItem("sw_fresh_signin") === "1"; if (fresh) sessionStorage.removeItem("sw_fresh_signin"); } catch (_) {}
   if (!user) {
     // Embedded tool frame (/<sec>?embed=1 inside the Deck): the parent tab is signed in,
