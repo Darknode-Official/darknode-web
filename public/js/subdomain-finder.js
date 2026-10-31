@@ -338,7 +338,7 @@ export function renderSubdomainFinder(main) {
   var scanDomain = '';
 
   main.innerHTML =
-    '<h1 class="pg-h1">Subdomain Finder</h1>' +
+    '<h1 class="pg-h1">Subdomain Enum</h1>' +
     '<p class="muted pg-sub">Subdomain enumeration (live crt.sh CT logs + DNS-over-HTTPS), takeover fingerprints, and typosquat permutation generation.</p>' +
     '<div class="tab-bar" id="sf-tabs">' +
       '<button class="tab active" data-tab="enum">Enumeration</button>' +

@@ -19,12 +19,12 @@ export function renderUrlDissector(container) {
     var h = '<div style="background:' + S.bg + ';color:' + S.text + ';font-family:' + S.mono + ';padding:20px;min-height:100vh;">';
     h += '<div style="text-align:center;margin-bottom:20px;border-bottom:1px solid ' + S.border + ';padding-bottom:12px;">';
     h += '<div style="font-size:24px;font-weight:800;letter-spacing:4px;color:' + S.accent + ';text-shadow:0 0 20px rgba(0,212,255,0.3);">URL DISSECTOR</div>';
-    h += '<div style="font-size:10px;color:' + S.dim + ';letter-spacing:2px;">DEEP URL ANALYSIS &amp; SECURITY ASSESSMENT</div></div>';
+    h += '<div style="font-size:12px;color:' + S.dim + ';letter-spacing:2px;">DEEP URL ANALYSIS &amp; SECURITY ASSESSMENT</div></div>';
 
     h += '<div style="display:flex;gap:4px;margin-bottom:16px;">';
     tabs.forEach(function(t) {
       var act = t === activeTab;
-      h += '<button onclick="window._udTab(\'' + t + '\')" style="flex:1;padding:8px;font-family:' + S.mono + ';font-size:10px;letter-spacing:1px;border:1px solid ' + (act ? S.accent : S.border) + ';background:' + (act ? S.accent + '15' : S.card) + ';color:' + (act ? S.accent : S.dim) + ';cursor:pointer;border-radius:4px;">' + t + '</button>';
+      h += '<button onclick="window._udTab(\'' + t + '\')" style="flex:1;padding:8px;font-family:' + S.mono + ';font-size:12px;letter-spacing:1px;border:1px solid ' + (act ? S.accent : S.border) + ';background:' + (act ? S.accent + '15' : S.card) + ';color:' + (act ? S.accent : S.dim) + ';cursor:pointer;border-radius:4px;">' + t + '</button>';
     });
     h += '</div>';
 
@@ -43,16 +43,16 @@ export function renderUrlDissector(container) {
   }
 
   function ta(id, ph, rows) {
-    return '<textarea id="' + id + '" placeholder="' + esc(ph) + '" rows="' + (rows || 5) + '" style="width:100%;box-sizing:border-box;background:#060a14;border:1px solid ' + S.border + ';color:' + S.accent + ';font-family:' + S.mono + ';font-size:11px;padding:10px;border-radius:4px;resize:vertical;" spellcheck="false"></textarea>';
+    return '<textarea id="' + id + '" placeholder="' + esc(ph) + '" rows="' + (rows || 5) + '" style="width:100%;box-sizing:border-box;background:#060a14;border:1px solid ' + S.border + ';color:' + S.accent + ';font-family:' + S.mono + ';font-size:12px;padding:10px;border-radius:4px;resize:vertical;" spellcheck="false"></textarea>';
   }
 
   function btn(label, onclick, color) {
     color = color || S.accent;
-    return '<button onclick="' + onclick + '" style="background:' + color + '15;border:1px solid ' + color + '44;color:' + color + ';font-family:' + S.mono + ';font-size:11px;padding:8px 16px;cursor:pointer;border-radius:4px;letter-spacing:1px;">' + label + '</button>';
+    return '<button onclick="' + onclick + '" style="background:' + color + '15;border:1px solid ' + color + '44;color:' + color + ';font-family:' + S.mono + ';font-size:12px;padding:8px 16px;cursor:pointer;border-radius:4px;letter-spacing:1px;">' + label + '</button>';
   }
 
   function badge(text, color) {
-    return '<span style="display:inline-block;font-size:8px;font-weight:bold;letter-spacing:1px;padding:2px 6px;border-radius:2px;background:' + color + '18;color:' + color + ';border:1px solid ' + color + '33;margin:1px 2px;">' + esc(text) + '</span>';
+    return '<span style="display:inline-block;font-size:12px;font-weight:bold;letter-spacing:1px;padding:2px 6px;border-radius:2px;background:' + color + '18;color:' + color + ';border:1px solid ' + color + '33;margin:1px 2px;">' + esc(text) + '</span>';
   }
 
   // ── ANALYZE ──
@@ -153,7 +153,7 @@ export function renderUrlDissector(container) {
     h += '</div>';
 
     // Components table
-    h += '<details open style="margin-bottom:10px;"><summary style="color:' + S.accent + ';font-size:11px;cursor:pointer;padding:6px 0;font-weight:bold;">COMPONENTS</summary>';
+    h += '<details open style="margin-bottom:10px;"><summary style="color:' + S.accent + ';font-size:12px;cursor:pointer;padding:6px 0;font-weight:bold;">COMPONENTS</summary>';
     h += '<div style="background:' + S.card + ';border:1px solid ' + S.border + ';border-radius:4px;padding:8px;">';
     var fields = [
       ['Protocol', r.parts.protocol, colors.protocol],
@@ -169,7 +169,7 @@ export function renderUrlDissector(container) {
     fields.push(['Fragment', r.parts.hash || '(none)', colors.hash]);
 
     fields.forEach(function(f) {
-      h += '<div style="display:flex;gap:8px;padding:3px 0;font-size:10px;border-bottom:1px solid ' + S.border + ';">';
+      h += '<div style="display:flex;gap:8px;padding:3px 0;font-size:12px;border-bottom:1px solid ' + S.border + ';">';
       h += '<span style="color:' + S.dim + ';min-width:90px;">' + f[0] + '</span>';
       h += '<span style="color:' + f[2] + ';word-break:break-all;">' + esc(f[1]) + '</span></div>';
     });
@@ -177,10 +177,10 @@ export function renderUrlDissector(container) {
 
     // Query parameters
     if (r.params.length > 0) {
-      h += '<details open style="margin-bottom:10px;"><summary style="color:' + S.accent + ';font-size:11px;cursor:pointer;padding:6px 0;font-weight:bold;">QUERY PARAMETERS (' + r.params.length + ')</summary>';
+      h += '<details open style="margin-bottom:10px;"><summary style="color:' + S.accent + ';font-size:12px;cursor:pointer;padding:6px 0;font-weight:bold;">QUERY PARAMETERS (' + r.params.length + ')</summary>';
       h += '<div style="background:' + S.card + ';border:1px solid ' + S.border + ';border-radius:4px;padding:8px;">';
       r.params.forEach(function(p) {
-        h += '<div style="display:flex;gap:8px;padding:3px 0;font-size:10px;border-bottom:1px solid ' + S.border + ';">';
+        h += '<div style="display:flex;gap:8px;padding:3px 0;font-size:12px;border-bottom:1px solid ' + S.border + ';">';
         h += '<span style="color:' + S.yellow + ';min-width:120px;font-weight:bold;">' + esc(p.key) + '</span>';
         h += '<span style="color:' + S.text + ';word-break:break-all;">' + esc(p.value) + '</span></div>';
       });
@@ -189,11 +189,11 @@ export function renderUrlDissector(container) {
 
     // Encodings
     if (r.encodings.length > 0) {
-      h += '<details open style="margin-bottom:10px;"><summary style="color:' + S.orange + ';font-size:11px;cursor:pointer;padding:6px 0;font-weight:bold;">ENCODINGS DETECTED (' + r.encodings.length + ')</summary>';
+      h += '<details open style="margin-bottom:10px;"><summary style="color:' + S.orange + ';font-size:12px;cursor:pointer;padding:6px 0;font-weight:bold;">ENCODINGS DETECTED (' + r.encodings.length + ')</summary>';
       h += '<div style="background:' + S.card + ';border:1px solid ' + S.border + ';border-radius:4px;padding:8px;">';
       r.encodings.forEach(function(e) {
         var ec = e.severity === 'high' ? S.red : e.severity === 'medium' ? S.orange : S.accent;
-        h += '<div style="padding:4px 0;font-size:10px;border-bottom:1px solid ' + S.border + ';">';
+        h += '<div style="padding:4px 0;font-size:12px;border-bottom:1px solid ' + S.border + ';">';
         h += badge(e.type, ec) + ' <span style="color:' + S.text + ';">' + esc(e.detail) + '</span></div>';
       });
       h += '</div></details>';
@@ -201,11 +201,11 @@ export function renderUrlDissector(container) {
 
     // Suspicions
     if (r.suspicions.length > 0) {
-      h += '<details open style="margin-bottom:10px;"><summary style="color:' + S.red + ';font-size:11px;cursor:pointer;padding:6px 0;font-weight:bold;">SECURITY FLAGS (' + r.suspicions.length + ')</summary>';
+      h += '<details open style="margin-bottom:10px;"><summary style="color:' + S.red + ';font-size:12px;cursor:pointer;padding:6px 0;font-weight:bold;">SECURITY FLAGS (' + r.suspicions.length + ')</summary>';
       h += '<div style="background:' + S.card + ';border:1px solid ' + S.border + ';border-radius:4px;padding:8px;">';
       r.suspicions.forEach(function(s) {
         var sc = s.severity === 'critical' ? S.red : s.severity === 'high' ? S.orange : s.severity === 'medium' ? S.yellow : S.green;
-        h += '<div style="padding:6px 8px;margin:3px 0;border-left:3px solid ' + sc + ';background:' + sc + '08;border-radius:0 4px 4px 0;font-size:10px;">';
+        h += '<div style="padding:6px 8px;margin:3px 0;border-left:3px solid ' + sc + ';background:' + sc + '08;border-radius:0 4px 4px 0;font-size:12px;">';
         h += badge(s.severity.toUpperCase(), sc) + ' <span style="color:' + S.text + ';font-weight:bold;">' + esc(s.flag) + '</span>';
         h += '<div style="color:' + S.dim + ';margin-top:2px;">' + esc(s.detail) + '</div></div>';
       });
@@ -213,7 +213,7 @@ export function renderUrlDissector(container) {
     }
 
     if (r.suspicions.length === 0 && r.encodings.length === 0) {
-      h += '<div style="padding:10px;text-align:center;color:' + S.green + ';font-size:11px;background:' + S.green + '08;border:1px solid ' + S.green + '33;border-radius:4px;">NO SUSPICIOUS PATTERNS DETECTED</div>';
+      h += '<div style="padding:10px;text-align:center;color:' + S.green + ';font-size:12px;background:' + S.green + '08;border:1px solid ' + S.green + '33;border-radius:4px;">NO SUSPICIOUS PATTERNS DETECTED</div>';
     }
 
     return h;
@@ -241,12 +241,12 @@ export function renderUrlDissector(container) {
     if (urls.length === 0) return;
     var results = urls.map(function(u) { return parseURL(u); });
 
-    var h = '<div style="font-size:11px;color:' + S.accent + ';margin-bottom:8px;font-weight:bold;">' + results.length + ' URLs ANALYZED</div>';
+    var h = '<div style="font-size:12px;color:' + S.accent + ';margin-bottom:8px;font-weight:bold;">' + results.length + ' URLs ANALYZED</div>';
     h += '<div style="overflow-x:auto;">';
-    h += '<table style="width:100%;border-collapse:collapse;font-size:10px;">';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
     h += '<tr style="border-bottom:2px solid ' + S.border + ';">';
     ['#', 'HOST', 'PATH', 'PARAMS', 'ENCODINGS', 'FLAGS', 'RISK'].forEach(function(th) {
-      h += '<th style="text-align:left;padding:6px;color:' + S.dim + ';font-size:9px;letter-spacing:1px;">' + th + '</th>';
+      h += '<th style="text-align:left;padding:6px;color:' + S.dim + ';font-size:12px;letter-spacing:1px;">' + th + '</th>';
     });
     h += '</tr>';
 
@@ -301,7 +301,7 @@ export function renderUrlDissector(container) {
       return;
     }
 
-    var h = '<div style="font-size:11px;color:' + S.accent + ';margin-bottom:8px;font-weight:bold;">STRUCTURAL COMPARISON</div>';
+    var h = '<div style="font-size:12px;color:' + S.accent + ';margin-bottom:8px;font-weight:bold;">STRUCTURAL COMPARISON</div>';
     h += '<div style="background:' + S.card + ';border:1px solid ' + S.border + ';border-radius:4px;padding:8px;">';
 
     var fields = ['protocol', 'hostname', 'port', 'pathname', 'search', 'hash', 'username', 'password'];
@@ -309,7 +309,7 @@ export function renderUrlDissector(container) {
       var v1 = r1.parts[f] || '', v2 = r2.parts[f] || '';
       var same = v1 === v2;
       var ic = same ? S.green : S.red;
-      h += '<div style="display:flex;gap:8px;padding:4px 0;font-size:10px;border-bottom:1px solid ' + S.border + ';align-items:center;">';
+      h += '<div style="display:flex;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px solid ' + S.border + ';align-items:center;">';
       h += '<span style="color:' + S.dim + ';min-width:80px;">' + f + '</span>';
       h += '<span style="color:' + ic + ';min-width:12px;">' + (same ? '=' : '≠') + '</span>';
       h += '<span style="flex:1;color:' + (same ? S.text : S.orange) + ';word-break:break-all;">' + esc(v1 || '(empty)') + '</span>';
@@ -324,13 +324,13 @@ export function renderUrlDissector(container) {
     r2.params.forEach(function(p) { if (allKeys[p.key]) allKeys[p.key][1] = p.value; else allKeys[p.key] = [null, p.value]; });
     var paramKeys = Object.keys(allKeys);
     if (paramKeys.length > 0) {
-      h += '<div style="margin-top:8px;font-size:11px;color:' + S.accent + ';font-weight:bold;margin-bottom:4px;">PARAMETER DIFF</div>';
+      h += '<div style="margin-top:8px;font-size:12px;color:' + S.accent + ';font-weight:bold;margin-bottom:4px;">PARAMETER DIFF</div>';
       h += '<div style="background:' + S.card + ';border:1px solid ' + S.border + ';border-radius:4px;padding:8px;">';
       paramKeys.forEach(function(k) {
         var v = allKeys[k];
         var status = v[0] === null ? 'ADDED' : v[1] === null ? 'REMOVED' : v[0] === v[1] ? 'SAME' : 'CHANGED';
         var sc = status === 'SAME' ? S.green : status === 'ADDED' ? S.accent : status === 'REMOVED' ? S.red : S.orange;
-        h += '<div style="display:flex;gap:8px;padding:3px 0;font-size:10px;border-bottom:1px solid ' + S.border + ';">';
+        h += '<div style="display:flex;gap:8px;padding:3px 0;font-size:12px;border-bottom:1px solid ' + S.border + ';">';
         h += badge(status, sc);
         h += '<span style="color:' + S.yellow + ';min-width:100px;">' + esc(k) + '</span>';
         h += '<span style="flex:1;color:' + S.text + ';word-break:break-all;">' + esc(v[0] || '-') + '</span>';
@@ -343,10 +343,10 @@ export function renderUrlDissector(container) {
     // Flag comparison
     h += '<div style="display:flex;gap:12px;margin-top:10px;">';
     h += '<div style="flex:1;padding:8px;background:' + S.card + ';border:1px solid ' + S.border + ';border-radius:4px;text-align:center;">';
-    h += '<div style="font-size:9px;color:' + S.dim + ';letter-spacing:1px;">URL #1 FLAGS</div>';
+    h += '<div style="font-size:12px;color:' + S.dim + ';letter-spacing:1px;">URL #1 FLAGS</div>';
     h += '<div style="font-size:20px;font-weight:bold;color:' + (r1.suspicions.length > 0 ? S.red : S.green) + ';">' + r1.suspicions.length + '</div></div>';
     h += '<div style="flex:1;padding:8px;background:' + S.card + ';border:1px solid ' + S.border + ';border-radius:4px;text-align:center;">';
-    h += '<div style="font-size:9px;color:' + S.dim + ';letter-spacing:1px;">URL #2 FLAGS</div>';
+    h += '<div style="font-size:12px;color:' + S.dim + ';letter-spacing:1px;">URL #2 FLAGS</div>';
     h += '<div style="font-size:20px;font-weight:bold;color:' + (r2.suspicions.length > 0 ? S.red : S.green) + ';">' + r2.suspicions.length + '</div></div>';
     h += '</div>';
 
@@ -367,7 +367,7 @@ export function renderUrlDissector(container) {
     var h = '<div style="background:' + S.card + ';border:1px solid ' + S.border + ';border-radius:4px;padding:12px;margin-bottom:12px;">';
     fields.forEach(function(f) {
       h += '<div style="margin-bottom:8px;">';
-      h += '<label style="font-size:9px;color:' + S.dim + ';letter-spacing:1px;display:block;margin-bottom:2px;">' + f[1].toUpperCase() + '</label>';
+      h += '<label style="font-size:12px;color:' + S.dim + ';letter-spacing:1px;display:block;margin-bottom:2px;">' + f[1].toUpperCase() + '</label>';
       h += inp(f[0], f[2]);
       h += '</div>';
     });
@@ -393,7 +393,7 @@ export function renderUrlDissector(container) {
     var url = proto + '//' + host + (port ? ':' + port : '') + (path || '/') + (query || '') + (frag || '');
 
     var h = '<div style="background:#060a14;border:1px solid ' + S.accent + '44;border-radius:4px;padding:10px;font-size:12px;word-break:break-all;color:' + S.accent + ';cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(url) + '</div>';
-    h += '<div style="font-size:9px;color:' + S.dim + ';margin-top:4px;">Click to copy</div>';
+    h += '<div style="font-size:12px;color:' + S.dim + ';margin-top:4px;">Click to copy</div>';
     var el = document.getElementById('ud-build-result');
     if (el) el.innerHTML = h;
   };
@@ -430,7 +430,7 @@ export function renderUrlDissector(container) {
     var lines = raw.split('\n').filter(function(l) { return l.trim(); });
     var result = lines.map(function(l) { return defangUrl(l.trim()); }).join('\n');
     var el = document.getElementById('ud-defang-result');
-    if (el) el.innerHTML = '<div style="background:#060a14;border:1px solid ' + S.green + '44;border-radius:4px;padding:10px;font-size:11px;color:' + S.green + ';white-space:pre-wrap;word-break:break-all;cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(result) + '</div><div style="font-size:9px;color:' + S.dim + ';margin-top:4px;">Click to copy</div>';
+    if (el) el.innerHTML = '<div style="background:#060a14;border:1px solid ' + S.green + '44;border-radius:4px;padding:10px;font-size:12px;color:' + S.green + ';white-space:pre-wrap;word-break:break-all;cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(result) + '</div><div style="font-size:12px;color:' + S.dim + ';margin-top:4px;">Click to copy</div>';
   };
 
   window._udRefang = function() {
@@ -438,7 +438,7 @@ export function renderUrlDissector(container) {
     var lines = raw.split('\n').filter(function(l) { return l.trim(); });
     var result = lines.map(function(l) { return refangUrl(l.trim()); }).join('\n');
     var el = document.getElementById('ud-defang-result');
-    if (el) el.innerHTML = '<div style="background:#060a14;border:1px solid ' + S.orange + '44;border-radius:4px;padding:10px;font-size:11px;color:' + S.orange + ';white-space:pre-wrap;word-break:break-all;cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(result) + '</div><div style="font-size:9px;color:' + S.dim + ';margin-top:4px;">Click to copy — CAUTION: these are live URLs</div>';
+    if (el) el.innerHTML = '<div style="background:#060a14;border:1px solid ' + S.orange + '44;border-radius:4px;padding:10px;font-size:12px;color:' + S.orange + ';white-space:pre-wrap;word-break:break-all;cursor:pointer;" onclick="navigator.clipboard.writeText(this.textContent)">' + esc(result) + '</div><div style="font-size:12px;color:' + S.dim + ';margin-top:4px;">Click to copy — CAUTION: these are live URLs</div>';
   };
 
   window._udTab = function(t) { activeTab = t; render(); };

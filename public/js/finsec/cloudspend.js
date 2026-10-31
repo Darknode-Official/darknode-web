@@ -197,7 +197,7 @@ export function renderCloudSpend(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Cloud Spend</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Cloud Spend</h1></div>',
     '<p class="', P, '-sub">Find cost anomalies in cloud billing data that point to abuse (crypto-mining on new GPU capacity, stolen credentials spinning up resources in unwatched regions or dormant accounts, data leaving through egress) or runaway spend, and join them to cloud audit findings. Robust median / MAD statistics, mapped to MITRE ATT&amp;CK T1496, T1578.002, T1535, T1537 and T1530. Runs entirely in your browser. Nothing is uploaded and nothing is fetched.</p>',
     '<div class="', P, '-two">',
     '<div class="', P, '-card"><h2>1. Billing exports</h2><div id="', P, '-drop"></div>',

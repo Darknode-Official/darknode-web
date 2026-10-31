@@ -102,8 +102,6 @@ export function renderAdversaryAI(main) {
     main.innerHTML =
       '<style>' +
       '.adv-wrap { font-family: inherit; }' +
-      '.adv-header { display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:2px solid var(--acc); }' +
-      '.adv-title { font-size:1.5rem; font-weight:800; color:var(--acc); margin:0; letter-spacing:.05em; }' +
       '.adv-tabs { display:flex; gap:2px; overflow-x:auto; padding:12px 0 0; }' +
       '.adv-tab { background:transparent; border:none; border-bottom:2px solid transparent; color:var(--mut); padding:10px 16px; font-size:.75rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; white-space:nowrap; font-family:inherit; }' +
       '.adv-tab:hover { color:var(--txt); }' +
@@ -124,10 +122,10 @@ export function renderAdversaryAI(main) {
       '.adv-analysis code { background:var(--bg); padding:1px 5px; border-radius:3px; font-size:.82em; }' +
       '</style>' +
       '<div class="adv-wrap">' +
-        '<div class="adv-header">' +
-          '<h1 class="adv-title">ADVERSARY MIND</h1>' +
-          '<span style="color:var(--mut);font-size:.75rem">AI Attack Prediction &amp; Defense Planning</span>' +
-        '</div>' +
+        '<div class="pg-head"><div>' +
+          '<h1 class="pg-h1">AI Defense Planner</h1>' +
+          '<p class="muted pg-sub">AI attack prediction and defense planning for your infrastructure.</p>' +
+        '</div></div>' +
         '<div class="adv-tabs">' +
           '<button class="adv-tab' + (activeTab === 'input' ? ' active' : '') + '" data-tab="input">Infrastructure</button>' +
           '<button class="adv-tab' + (activeTab === 'analysis' ? ' active' : '') + '" data-tab="analysis">Analysis</button>' +

@@ -121,7 +121,7 @@ export function renderCaAudit(main) {
 
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Conditional Access</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Conditional Access</h1></div>',
     '<p class="', P, '-sub">Audits Microsoft Entra Conditional Access policies and registration details, Okta sign-on and enrollment policies and Google Workspace 2-Step Verification reports for MFA gaps, legacy authentication, over-broad exclusions, weak sessions and administrators without phishing-resistant methods. Runs entirely in your browser. Nothing is uploaded and nothing is fetched live.</p>',
     '<div class="', P, '-card"><h2>Inputs<small>any subset; each file is detected automatically</small></h2><div class="', P, '-drop" id="', P, '-drop"></div>',
     '<div class="', P, '-files" id="', P, '-files"></div>',

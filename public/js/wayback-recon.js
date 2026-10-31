@@ -8,23 +8,23 @@ var _WB_CSS = '<style>' +
   '.wb-wrap{background:var(--card,#0b1120);color:var(--txt,#e7eefc);padding:20px;min-height:100vh}' +
   '.wb-head{text-align:center;margin-bottom:20px;border-bottom:1px solid var(--line,#283a5a);padding-bottom:14px}' +
   '.wb-title{font-size:24px;font-weight:800;color:var(--acc,#2563eb);letter-spacing:4px}' +
-  '.wb-subtitle{font-size:10px;color:var(--mut,#7a93b8);letter-spacing:2px}' +
+  '.wb-subtitle{font-size:12px;color:var(--mut,#7a93b8);letter-spacing:2px}' +
   '.wb-domain{flex:1;background:var(--card2,#0f1726);border:2px solid var(--line,#283a5a);border-radius:6px;color:var(--txt,#e7eefc);font-family:var(--font-mono);font-size:15px;padding:10px 14px;outline:none}' +
   '.wb-scan{background:color-mix(in srgb,var(--acc,#2563eb) 14%,transparent);border:2px solid var(--acc,#2563eb);color:var(--acc,#2563eb);font-family:inherit;font-size:13px;font-weight:bold;letter-spacing:2px;padding:10px 22px;cursor:pointer;border-radius:6px}' +
-  '.wb-status{font-size:10px;color:var(--mut,#7a93b8);margin-bottom:10px}' +
+  '.wb-status{font-size:12px;color:var(--mut,#7a93b8);margin-bottom:10px}' +
   '.wb-stat{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:6px;padding:10px;text-align:center}' +
   '.wb-stat-v{font-size:18px;font-weight:bold}' +
-  '.wb-stat-l{color:var(--mut,#7a93b8);font-size:8px;letter-spacing:1px;margin-top:2px}' +
-  '.wb-sum-lbl{color:var(--mut,#7a93b8);font-size:9px;letter-spacing:1px}' +
-  '.wb-summary-link{font-size:11px;cursor:pointer;padding:4px 0;font-weight:bold}' +
+  '.wb-stat-l{color:var(--mut,#7a93b8);font-size:12px;letter-spacing:1px;margin-top:2px}' +
+  '.wb-sum-lbl{color:var(--mut,#7a93b8);font-size:12px;letter-spacing:1px}' +
+  '.wb-summary-link{font-size:12px;cursor:pointer;padding:4px 0;font-weight:bold}' +
   '.wb-panel{background:var(--card,#0b1120);border:1px solid var(--line,#283a5a);border-radius:4px;padding:8px;margin-top:4px;max-height:200px;overflow-y:auto}' +
-  '.wb-row{display:flex;justify-content:space-between;font-size:10px;padding:2px 0;border-bottom:1px solid var(--line,#283a5a)}' +
+  '.wb-row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;border-bottom:1px solid var(--line,#283a5a)}' +
   '.wb-url{color:var(--txt-2,#9fb0cc);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--font-mono)}' +
-  '.wb-fbtn{font-family:var(--font-mono);font-size:9px;cursor:pointer;border-radius:3px;padding:3px 10px}' +
-  '.wb-search{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:3px;color:var(--txt-2,#9fb0cc);font-family:var(--font-mono);font-size:10px;padding:4px 8px;width:180px;outline:none}' +
-  '.wb-exp{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);color:var(--txt-2,#9fb0cc);padding:4px 10px;font-family:var(--font-mono);font-size:9px;cursor:pointer;border-radius:3px}' +
-  '.wb-th{text-align:left;padding:6px;color:var(--mut,#7a93b8);font-size:9px;letter-spacing:1px;border-bottom:2px solid var(--line,#283a5a);cursor:pointer;white-space:nowrap;user-select:none}' +
-  '.wb-errbox{color:#dc2626;font-size:11px;padding:12px;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);border-radius:6px}' +
+  '.wb-fbtn{font-family:var(--font-mono);font-size:12px;cursor:pointer;border-radius:3px;padding:3px 10px}' +
+  '.wb-search{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);border-radius:3px;color:var(--txt-2,#9fb0cc);font-family:var(--font-mono);font-size:12px;padding:4px 8px;width:180px;outline:none}' +
+  '.wb-exp{background:var(--card2,#0f1726);border:1px solid var(--line,#283a5a);color:var(--txt-2,#9fb0cc);padding:4px 10px;font-family:var(--font-mono);font-size:12px;cursor:pointer;border-radius:3px}' +
+  '.wb-th{text-align:left;padding:6px;color:var(--mut,#7a93b8);font-size:12px;letter-spacing:1px;border-bottom:2px solid var(--line,#283a5a);cursor:pointer;white-space:nowrap;user-select:none}' +
+  '.wb-errbox{color:#dc2626;font-size:12px;padding:12px;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);border-radius:6px}' +
   '</style>';
 
 export function renderWaybackRecon(container) {
@@ -163,7 +163,7 @@ export function renderWaybackRecon(container) {
     if (techs.length > 0) {
       h += '<div style="margin-bottom:10px;"><span class="wb-sum-lbl">DETECTED TECH: </span>';
       techs.forEach(function(t) {
-        h += '<span style="display:inline-block;background:' + t.color + '20;color:' + t.color + ';border:1px solid ' + t.color + '44;padding:2px 8px;border-radius:3px;font-size:9px;margin:2px 3px;">' + esc(t.tech) + '</span>';
+        h += '<span style="display:inline-block;background:' + t.color + '20;color:' + t.color + ';border:1px solid ' + t.color + '44;padding:2px 8px;border-radius:3px;font-size:12px;margin:2px 3px;">' + esc(t.tech) + '</span>';
       });
       h += '</div>';
     }
@@ -175,7 +175,7 @@ export function renderWaybackRecon(container) {
         var c = code.charAt(0) === '2' ? '#16a34a' : code.charAt(0) === '3' ? '#d97706' : code === '403' ? '#ea580c' : code.charAt(0) === '4' ? '#dc2626' : code.charAt(0) === '5' ? '#b91c1c' : '#64748b';
         h += '<div style="background:var(--card,#0b1120);border:1px solid ' + c + '44;border-radius:4px;padding:6px 10px;text-align:center;">' +
           '<div style="color:' + c + ';font-size:16px;font-weight:bold;">' + statuses[code] + '</div>' +
-          '<div style="color:' + c + ';font-size:10px;opacity:0.7;">' + esc(code) + '</div></div>';
+          '<div style="color:' + c + ';font-size:12px;opacity:0.7;">' + esc(code) + '</div></div>';
       });
       h += '</div></details>';
     }
@@ -199,10 +199,10 @@ export function renderWaybackRecon(container) {
         if (seenInt[r.original]) return;
         seenInt[r.original] = true;
         var tags = classifyUrl(r.original);
-        h += '<div style="display:flex;gap:6px;font-size:10px;padding:2px 0;border-bottom:1px solid var(--line,#283a5a);align-items:center;">';
+        h += '<div style="display:flex;gap:6px;font-size:12px;padding:2px 0;border-bottom:1px solid var(--line,#283a5a);align-items:center;">';
         tags.forEach(function(t) {
           var tc = t === 'SENSITIVE' ? '#dc2626' : t === 'BACKUP' ? '#ea580c' : t === 'CONFIG' ? '#d97706' : '#2563eb';
-          h += '<span style="color:' + tc + ';font-size:8px;background:' + tc + '15;border:1px solid ' + tc + '33;padding:0 4px;border-radius:2px;flex-shrink:0;">' + t + '</span>';
+          h += '<span style="color:' + tc + ';font-size:12px;background:' + tc + '15;border:1px solid ' + tc + '33;padding:0 4px;border-radius:2px;flex-shrink:0;">' + t + '</span>';
         });
         h += '<span class="wb-url">' + esc(r.original) + '</span>';
         h += '<span style="color:var(--mut,#7a93b8);flex-shrink:0;">' + esc(r.statuscode) + '</span></div>';
@@ -255,8 +255,8 @@ export function renderWaybackRecon(container) {
 
   function renderTable() {
     var rows = state.filtered;
-    var h = '<div style="font-size:9px;color:var(--mut,#7a93b8);margin-bottom:4px;">' + rows.length + ' results</div>';
-    h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:10px;font-family:var(--font-mono);">';
+    var h = '<div style="font-size:12px;color:var(--mut,#7a93b8);margin-bottom:4px;">' + rows.length + ' results</div>';
+    h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;font-family:var(--font-mono);">';
     h += '<thead><tr>';
     var cols = [
       { key: 'original', label: 'URL' },
@@ -280,16 +280,16 @@ export function renderWaybackRecon(container) {
       h += '<td style="padding:4px 6px;color:#a78bfa;white-space:nowrap;">' + formatTs(r.timestamp) + '</td>';
       h += '<td style="padding:4px 6px;color:' + sColor + ';font-weight:bold;">' + esc(sc) + '</td>';
       h += '<td style="padding:4px 6px;color:var(--mut,#7a93b8);">' + esc(r.mimetype || '') + '</td>';
-      h += '<td style="padding:4px 6px;color:var(--mut,#7a93b8);font-size:9px;">' + esc((r.digest || '').substring(0, 12)) + '</td>';
+      h += '<td style="padding:4px 6px;color:var(--mut,#7a93b8);font-size:12px;">' + esc((r.digest || '').substring(0, 12)) + '</td>';
       h += '<td style="padding:4px 6px;">';
       tags.forEach(function(t) {
         var tc = t === 'SENSITIVE' ? '#dc2626' : t === 'BACKUP' ? '#ea580c' : t === 'CONFIG' ? '#d97706' : '#2563eb';
-        h += '<span style="color:' + tc + ';font-size:7px;background:' + tc + '15;border:1px solid ' + tc + '33;padding:0 3px;border-radius:2px;margin-right:2px;">' + t + '</span>';
+        h += '<span style="color:' + tc + ';font-size:12px;background:' + tc + '15;border:1px solid ' + tc + '33;padding:0 3px;border-radius:2px;margin-right:2px;">' + t + '</span>';
       });
       h += '</td></tr>';
     });
     h += '</tbody></table></div>';
-    if (rows.length > 500) h += '<div style="color:var(--mut,#7a93b8);font-size:9px;text-align:center;margin-top:6px;">Showing 500 of ' + rows.length + '</div>';
+    if (rows.length > 500) h += '<div style="color:var(--mut,#7a93b8);font-size:12px;text-align:center;margin-top:6px;">Showing 500 of ' + rows.length + '</div>';
     resultsEl.innerHTML = h;
 
     resultsEl.querySelectorAll('th[data-col]').forEach(function(th) {
@@ -378,7 +378,7 @@ export function renderWaybackRecon(container) {
     } catch (e) {
       statusEl.textContent = 'Error: ' + e.message;
       statusEl.style.color = '#dc2626';
-      resultsEl.innerHTML = '<div class="wb-errbox">Scan failed: ' + esc(e.message) + '<br><span style="color:var(--mut,#7a93b8);font-size:9px;">Check that web.archive.org is in the CSP connect-src directive.</span></div>';
+      resultsEl.innerHTML = '<div class="wb-errbox">Scan failed: ' + esc(e.message) + '<br><span style="color:var(--mut,#7a93b8);font-size:12px;">Check that web.archive.org is in the CSP connect-src directive.</span></div>';
     }
 
     state.loading = false;

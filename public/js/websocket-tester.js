@@ -11,42 +11,42 @@ var WS_KEEP = 1000; // a busy stream (dozens of frames a second) would otherwise
 
 export function renderWebSocketTester(container) {
   var h = '';
-  h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:20px;min-height:500px;">';
-  h += '<h2 style="color:#00ddff;font-size:18px;letter-spacing:2px;margin:0 0 4px;">WEBSOCKET TESTER</h2>';
-  h += '<div style="color:#4a6a8a;font-size:11px;margin-bottom:20px;">Connect to any WebSocket endpoint, send messages, and monitor traffic</div>';
+  h += '<div>';
+  h += '<div class="pg-head"><div><h1 class="pg-h1">WebSocket Tester</h1>';
+  h += '<p class="muted pg-sub">Connect to any WebSocket endpoint, send messages and monitor traffic.</p></div></div>';
 
   // Connection
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:12px;">';
+  h += '<div class="card">';
   h += '<div style="display:flex;gap:8px;margin-bottom:8px;">';
-  h += '<input id="ws-url" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:12px;padding:8px 12px;" placeholder="wss://echo.websocket.org">';
-  h += '<button id="ws-connect-btn" onclick="_wsConnect()" style="background:#00ff8822;color:#00ff88;border:1px solid #00ff8844;padding:8px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Connect</button>';
-  h += '<button onclick="_wsDisconnect()" style="background:#ff444422;color:#ff4444;border:1px solid #ff444444;padding:8px 12px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:4px;">Close</button>';
+  h += '<input id="ws-url" style="flex:1;" placeholder="wss://echo.websocket.org">';
+  h += '<button class="btn" id="ws-connect-btn" onclick="_wsConnect()">Connect</button>';
+  h += '<button class="btn ghost" onclick="_wsDisconnect()">Close</button>';
   h += '</div>';
-  h += '<div id="ws-status" style="font-size:10px;color:#ff4444;">DISCONNECTED</div>';
+  h += '<div id="ws-status" style="font-size:12px;color:var(--bad);">DISCONNECTED</div>';
   h += '</div>';
 
   // Send
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:16px;margin-bottom:12px;">';
+  h += '<div class="card">';
   h += '<div style="display:flex;gap:8px;">';
-  h += '<textarea id="ws-message" style="flex:1;background:#080c14;border:1px solid #1a2a44;border-radius:4px;color:#c8d6e5;font-family:monospace;font-size:11px;padding:8px 10px;resize:vertical;height:60px;" placeholder="Message to send..."></textarea>';
+  h += '<textarea id="ws-message" style="flex:1;font-family:monospace;font-size:12px;resize:vertical;height:60px;" placeholder="Message to send..."></textarea>';
   h += '<div style="display:flex;flex-direction:column;gap:4px;">';
-  h += '<button onclick="_wsSend()" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;padding:6px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">Send</button>';
-  h += '<button onclick="_wsSendJSON()" style="background:#aa66ff22;color:#aa66ff;border:1px solid #aa66ff44;padding:6px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">JSON</button>';
-  h += '<button onclick="_wsClear()" style="background:#1a1a2a;color:#4a6a8a;border:1px solid #1a2a44;padding:6px 14px;font-family:monospace;font-size:10px;cursor:pointer;border-radius:4px;">CLEAR</button>';
+  h += '<button class="btn sm" onclick="_wsSend()">Send</button>';
+  h += '<button class="btn ghost sm" onclick="_wsSendJSON()">JSON</button>';
+  h += '<button class="btn ghost sm" onclick="_wsClear()">Clear</button>';
   h += '</div></div></div>';
 
   // Log
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:14px;">';
+  h += '<div class="card">';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
-  h += '<div style="color:#00aaff;font-size:12px;font-weight:bold;">MESSAGE LOG</div>';
-  h += '<div id="ws-frame-count" style="color:#4a6a8a;font-size:10px;">0 frames</div>';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;">Message log</div>';
+  h += '<div id="ws-frame-count" style="color:var(--mut);font-size:12px;">0 frames</div>';
   h += '</div>';
-  h += '<div id="ws-log" style="background:#060a10;border:1px solid #0d1525;border-radius:4px;padding:8px;max-height:400px;overflow-y:auto;font-size:10px;line-height:1.6;"></div>';
+  h += '<div id="ws-log" style="background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:8px;max-height:400px;overflow-y:auto;font-size:12px;line-height:1.6;"></div>';
   h += '</div>';
 
   // Quick test endpoints
-  h += '<div style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:12px;margin-top:12px;">';
-  h += '<div style="color:#4a6a8a;font-size:10px;margin-bottom:6px;">QUICK CONNECT:</div>';
+  h += '<div class="card">';
+  h += '<div style="color:var(--mut);font-size:12px;margin-bottom:6px;">Quick connect</div>';
   h += '<div style="display:flex;gap:4px;flex-wrap:wrap;">';
   var endpoints = [
     { url: 'wss://echo.websocket.org', label: 'Echo Server' },
@@ -55,7 +55,7 @@ export function renderWebSocketTester(container) {
     { url: 'wss://stream.binance.com:9443/ws/ethusdt@trade', label: 'Binance ETH' }
   ];
   for (var ep = 0; ep < endpoints.length; ep++) {
-    h += '<button onclick="document.getElementById(\'ws-url\').value=\'' + esc(endpoints[ep].url) + '\'" style="background:#0a1a28;border:1px solid #1a3050;color:#5a8aaa;padding:3px 8px;font-family:monospace;font-size:9px;cursor:pointer;border-radius:3px;">' + esc(endpoints[ep].label) + '</button>';
+    h += '<button onclick="document.getElementById(\'ws-url\').value=\'' + esc(endpoints[ep].url) + '\'" class="btn ghost sm">' + esc(endpoints[ep].label) + '</button>';
   }
   h += '</div></div>';
 
@@ -78,9 +78,9 @@ function _wsAddLog(type, data) {
 
   var entry = document.createElement('div');
   entry.style.cssText = 'margin:2px 0;padding:3px 6px;border-left:2px solid ' + color + ';background:' + color + '08;border-radius:0 3px 3px 0;cursor:pointer;';
-  entry.innerHTML = '<span style="color:#3a5a7a;margin-right:6px;">' + time + '</span>' +
+  entry.innerHTML = '<span style="color:var(--mut);margin-right:6px;">' + time + '</span>' +
     '<span style="color:' + color + ';margin-right:6px;">' + icon + ' ' + type.toUpperCase() + '</span>' +
-    '<span style="color:#c8d6e5;word-break:break-all;' + (isJSON ? 'font-style:italic;' : '') + '">' + esc(truncated) + '</span>';
+    '<span style="color:var(--txt);word-break:break-all;' + (isJSON ? 'font-style:italic;' : '') + '">' + esc(truncated) + '</span>';
   entry.onclick = function() {
     try { navigator.clipboard.writeText(data); entry.style.borderLeftColor = '#ffaa00'; setTimeout(function() { entry.style.borderLeftColor = color; }, 500); } catch (e) {}
   };

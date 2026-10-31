@@ -185,7 +185,7 @@ export function renderProxyHunt(main) {
   const area = (id, label, ph, help) => '<div class="' + P + '-field wide"><label for="' + P + "-" + id + '">' + esc(label) + '</label><textarea id="' + P + "-" + id + '" placeholder="' + esc(ph) + '" spellcheck="false"></textarea><small>' + esc(help) + "</small></div>";
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>Proxy Logs</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>Proxy Logs</h1></div>',
     '<p class="', P, '-sub">Find data leaving the company through the web gateway: uploads to personal storage, file transfer, paste sites, webmail and AI chat services; a shadow-SaaS inventory with user counts; anonymizers, remote-access tools, tunnels, direct-to-IP downloads and scripted clients. ', CATALOG.length, ' catalogued app domains. Runs entirely in your browser. Nothing is uploaded. The only request is the optional malicious-IP list at ', FEED_URL, ', a same-origin copy that is mirrored and dated, not live.</p>',
     '<div class="', P, '-card"><h2>1. Gateway and proxy logs</h2><div id="', P, '-drop"></div>',
     '<p class="', P, '-note">Accepted: Zscaler NSS web (LEEF, CEF, Splunk key=value, CSV), Squid access.log (native), Palo Alto URL Filtering and Traffic CSV exports or URL Filtering syslog, Netskope web transactions CSV, Cisco Umbrella proxy CSV, Cloudflare Gateway HTTP Logpush (JSON / NDJSON), or any CSV with ts, user, src_ip, dst_host, url, method, status, bytes_out, bytes_in, category, app, action, user_agent. Many files or a zip at once; up to 512 MB per file. Large logs are streamed and summarised per user, app and host, so memory stays near the size of the text itself.</p>',

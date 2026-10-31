@@ -7,33 +7,22 @@ var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, fu
 export function renderSSLInspector(container) {
   if (!container) return;
   var h = '';
-  h += '<div style="background:#0a0e14;color:#c8d6e5;font-family:\'Courier New\',monospace;padding:24px;min-height:80vh;">';
+  h += '<div class="ssl-wrap">';
 
   // Header
-  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">';
-  h += '<div>';
-  h += '<h2 style="margin:0;font-size:20px;color:#00d4ff;letter-spacing:2px;">SSL INSPECTOR</h2>';
-  h += '<div style="color:#4a6a8a;font-size:11px;letter-spacing:1px;margin-top:4px;">Certificate Transparency Search &bull; Subdomain Discovery &bull; Chain Analysis</div>';
-  h += '</div>';
-  h += '<div style="display:flex;gap:6px;">';
-  h += '<div style="background:#0a1a2a;border:1px solid #00d4ff33;border-radius:6px;padding:6px 14px;text-align:center;">';
-  h += '<div style="color:#556;font-size:8px;letter-spacing:1px;">SOURCE</div>';
-  h += '<div style="color:#00d4ff;font-size:12px;font-weight:bold;">crt.sh</div>';
-  h += '</div>';
-  h += '<div style="background:#0a1a2a;border:1px solid #00ff8833;border-radius:6px;padding:6px 14px;text-align:center;">';
-  h += '<div style="color:#556;font-size:8px;letter-spacing:1px;">API KEY</div>';
-  h += '<div style="color:#00ff88;font-size:12px;font-weight:bold;">NONE</div>';
-  h += '</div>';
+  h += '<div class="pg-head"><div>';
+  h += '<h1 class="pg-h1">SSL Inspector</h1>';
+  h += '<p class="muted pg-sub">Search Certificate Transparency logs for a domain\'s certificates, subdomains and issuance history. Source: crt.sh (no API key).</p>';
   h += '</div></div>';
 
   // Search bar
-  h += '<div style="display:flex;gap:8px;margin-bottom:20px;">';
-  h += '<input id="ssl-domain" type="text" placeholder="Domain" style="flex:1;background:#0c1525;border:1px solid #1a3a5c;border-radius:4px;padding:10px 14px;color:#c8d6e5;font-family:monospace;font-size:13px;outline:none;" onkeydown="if(event.key===\'Enter\')_sslSearch()">';
-  h += '<button onclick="_sslSearch()" style="background:#00d4ff22;color:#00d4ff;border:1px solid #00d4ff44;border-radius:4px;padding:10px 20px;font-family:monospace;font-size:12px;cursor:pointer;letter-spacing:1px;font-weight:bold;">Search</button>';
+  h += '<div style="display:flex;gap:8px;margin-bottom:16px;">';
+  h += '<input id="ssl-domain" type="text" placeholder="Domain" style="flex:1;" onkeydown="if(event.key===\'Enter\')_sslSearch()">';
+  h += '<button class="btn" onclick="_sslSearch()">Search</button>';
   h += '</div>';
 
   // Tabs
-  h += '<div id="ssl-tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:16px;">';
+  h += '<div id="ssl-tabs" class="seg" style="margin-bottom:16px;">';
   var tabs = [
     { id: 'certs', label: 'Certificates' },
     { id: 'subdomains', label: 'Subdomains' },
@@ -41,16 +30,15 @@ export function renderSSLInspector(container) {
     { id: 'analysis', label: 'Analysis' }
   ];
   for (var t = 0; t < tabs.length; t++) {
-    var active = t === 0 ? 'background:#00d4ff22;border-color:#00d4ff66;color:#00d4ff;' : 'background:#0a0e1a;border-color:#1a2a44;color:#556;';
-    h += '<button class="ssl-tab" data-tab="' + tabs[t].id + '" style="' + active + 'border:1px solid;border-radius:4px;padding:6px 14px;font-family:monospace;font-size:11px;cursor:pointer;letter-spacing:1px;">' + esc(tabs[t].label) + '</button>';
+    h += '<button class="ssl-tab' + (t === 0 ? ' on' : '') + '" data-tab="' + tabs[t].id + '">' + esc(tabs[t].label) + '</button>';
   }
   h += '</div>';
 
   // Results
-  h += '<div id="ssl-results" style="background:#0c1020;border:1px solid #1a2a44;border-radius:6px;padding:20px;min-height:300px;">';
-  h += '<div style="text-align:center;color:#4a6a8a;padding:60px 20px;">';
-  h += '<div style="font-size:13px;">Enter a domain to search Certificate Transparency logs</div>';
-  h += '<div style="font-size:10px;color:#3a5a7a;margin-top:6px;">Discovers subdomains, certificate history, and SSL chain information</div>';
+  h += '<div id="ssl-results" class="card" style="min-height:300px;">';
+  h += '<div style="text-align:center;color:var(--mut);padding:60px 20px;">';
+  h += '<div style="font-size:14px;">Enter a domain to search Certificate Transparency logs</div>';
+  h += '<div style="font-size:12px;margin-top:6px;">Discovers subdomains, certificate history, and SSL chain information</div>';
   h += '</div></div>';
 
   h += '</div>';
@@ -60,14 +48,8 @@ export function renderSSLInspector(container) {
   container.addEventListener('click', function(e) {
     if (e.target.classList.contains('ssl-tab')) {
       var allTabs = container.querySelectorAll('.ssl-tab');
-      for (var i = 0; i < allTabs.length; i++) {
-        allTabs[i].style.background = '#0a0e1a';
-        allTabs[i].style.borderColor = '#1a2a44';
-        allTabs[i].style.color = '#556';
-      }
-      e.target.style.background = '#00d4ff22';
-      e.target.style.borderColor = '#00d4ff66';
-      e.target.style.color = '#00d4ff';
+      for (var i = 0; i < allTabs.length; i++) allTabs[i].classList.remove('on');
+      e.target.classList.add('on');
       _sslRenderTab(e.target.getAttribute('data-tab'));
     }
   });
@@ -82,11 +64,11 @@ function _sslSearch() {
   if (!input || !results) return;
   var domain = input.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/:\d+$/, '');
   if (!domain || domain.indexOf('.') < 1) {
-    results.innerHTML = '<div style="color:#ff4444;padding:20px;text-align:center;">Enter a valid domain name</div>';
+    results.innerHTML = '<div style="color:var(--bad);padding:20px;text-align:center;">Enter a valid domain name</div>';
     return;
   }
   _sslData.domain = domain;
-  results.innerHTML = '<div style="text-align:center;padding:40px;color:#00d4ff;"><div style="font-size:14px;letter-spacing:2px;animation:pulse 1.5s ease-in-out infinite;">QUERYING CT LOGS FOR ' + esc(domain.toUpperCase()) + '...</div></div>';
+  results.innerHTML = '<div style="text-align:center;padding:40px;color:var(--acc);"><div style="font-size:14px;animation:pulse 1.5s ease-in-out infinite;">Querying CT logs for ' + esc(domain) + '...</div></div>';
   _sslActiveTab = 'certs';
 
   fetch('https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json')
@@ -108,10 +90,10 @@ function _sslSearch() {
       _sslRenderTab(_sslActiveTab);
     })
     .catch(function(err) {
-      results.innerHTML = '<div style="color:#ff4444;padding:20px;text-align:center;">' +
-        '<div style="font-size:14px;font-weight:bold;margin-bottom:8px;">CT LOG QUERY FAILED</div>' +
-        '<div style="font-size:11px;color:#aa6666;">' + esc(err.message) + '</div>' +
-        '<div style="font-size:10px;color:#556;margin-top:8px;">crt.sh may be temporarily unavailable or rate-limited</div>' +
+      results.innerHTML = '<div style="color:var(--bad);padding:20px;text-align:center;">' +
+        '<div style="font-size:14px;font-weight:bold;margin-bottom:8px;">CT log query failed</div>' +
+        '<div style="font-size:12px;color:var(--mut);">' + esc(err.message) + '</div>' +
+        '<div style="font-size:12px;color:var(--mut);margin-top:8px;">crt.sh may be temporarily unavailable or rate-limited</div>' +
         '</div>';
     });
 }
@@ -121,7 +103,7 @@ function _sslRenderTab(tabId) {
   var results = document.getElementById('ssl-results');
   if (!results) return;
   if (_sslData.certs.length === 0) {
-    results.innerHTML = '<div style="color:#556;padding:20px;text-align:center;">No data — search a domain first</div>';
+    results.innerHTML = '<div style="color:var(--mut);padding:20px;text-align:center;">No data — search a domain first</div>';
     return;
   }
   switch (tabId) {
@@ -136,16 +118,16 @@ function _sslRenderCerts(el) {
   var certs = _sslData.certs;
   var h = '';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
-  h += '<div style="color:#00d4ff;font-size:12px;letter-spacing:1px;">' + certs.length + ' CERTIFICATES FOUND</div>';
-  h += '<div style="display:flex;align-items:center;gap:10px;"><span style="color:#556;font-size:10px;">Domain: ' + esc(_sslData.domain) + '</span>' + _sslGraphBtnHTML() + '</div>';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;">' + certs.length + ' certificates found</div>';
+  h += '<div style="display:flex;align-items:center;gap:10px;"><span style="color:var(--mut);font-size:12px;">Domain: ' + esc(_sslData.domain) + '</span>' + _sslGraphBtnHTML() + '</div>';
   h += '</div>';
 
   h += '<div style="overflow-x:auto;">';
-  h += '<table style="width:100%;border-collapse:collapse;font-size:10px;">';
-  h += '<thead><tr style="border-bottom:2px solid #1a3a5c;">';
-  var headers = ['ID', 'COMMON NAME', 'ISSUER', 'NOT BEFORE', 'NOT AFTER', 'STATUS'];
+  h += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+  h += '<thead><tr style="border-bottom:2px solid var(--line);">';
+  var headers = ['ID', 'Common name', 'Issuer', 'Not before', 'Not after', 'Status'];
   for (var hi = 0; hi < headers.length; hi++) {
-    h += '<th style="text-align:left;padding:6px 8px;color:#00d4ff;font-size:9px;letter-spacing:1px;white-space:nowrap;">' + headers[hi] + '</th>';
+    h += '<th style="text-align:left;padding:6px 8px;color:var(--acc);font-size:12px;white-space:nowrap;">' + headers[hi] + '</th>';
   }
   h += '</tr></thead><tbody>';
 
@@ -159,17 +141,17 @@ function _sslRenderCerts(el) {
     var statusText = expired ? 'EXPIRED' : 'VALID';
     var rowBg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
 
-    h += '<tr style="border-bottom:1px solid #0d1525;background:' + rowBg + ';">';
-    h += '<td style="padding:5px 8px;color:#556;">' + esc(String(c.id || '')) + '</td>';
-    h += '<td style="padding:5px 8px;color:#c8d6e5;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(c.common_name || '') + '">' + esc(c.common_name || '--') + '</td>';
-    h += '<td style="padding:5px 8px;color:#8899aa;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(c.issuer_name || '') + '">' + esc((c.issuer_name || '').replace(/^.*O=/, '').replace(/,.*$/, '') || '--') + '</td>';
-    h += '<td style="padding:5px 8px;color:#6688aa;white-space:nowrap;">' + esc((c.not_before || '').substring(0, 10)) + '</td>';
-    h += '<td style="padding:5px 8px;color:#6688aa;white-space:nowrap;">' + esc((c.not_after || '').substring(0, 10)) + '</td>';
-    h += '<td style="padding:5px 8px;"><span style="color:' + statusColor + ';font-weight:bold;font-size:9px;letter-spacing:1px;">' + statusText + '</span></td>';
+    h += '<tr style="border-bottom:1px solid var(--line);background:' + rowBg + ';">';
+    h += '<td style="padding:5px 8px;color:var(--mut);">' + esc(String(c.id || '')) + '</td>';
+    h += '<td style="padding:5px 8px;color:var(--txt);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(c.common_name || '') + '">' + esc(c.common_name || '--') + '</td>';
+    h += '<td style="padding:5px 8px;color:var(--txt-2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(c.issuer_name || '') + '">' + esc((c.issuer_name || '').replace(/^.*O=/, '').replace(/,.*$/, '') || '--') + '</td>';
+    h += '<td style="padding:5px 8px;color:var(--mut);white-space:nowrap;">' + esc((c.not_before || '').substring(0, 10)) + '</td>';
+    h += '<td style="padding:5px 8px;color:var(--mut);white-space:nowrap;">' + esc((c.not_after || '').substring(0, 10)) + '</td>';
+    h += '<td style="padding:5px 8px;"><span style="color:' + statusColor + ';font-weight:bold;font-size:12px;">' + statusText + '</span></td>';
     h += '</tr>';
   }
   h += '</tbody></table></div>';
-  if (certs.length > 100) h += '<div style="color:#556;font-size:10px;margin-top:8px;text-align:center;">Showing first 100 of ' + certs.length + ' certificates</div>';
+  if (certs.length > 100) h += '<div style="color:var(--mut);font-size:12px;margin-top:8px;text-align:center;">Showing first 100 of ' + certs.length + ' certificates</div>';
   el.innerHTML = h;
 }
 
@@ -177,12 +159,12 @@ function _sslRenderSubdomains(el) {
   var subs = _sslData.subdomains;
   var h = '';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
-  h += '<div style="color:#00ff88;font-size:12px;letter-spacing:1px;">' + subs.length + ' UNIQUE SUBDOMAINS DISCOVERED</div>';
-  h += '<button onclick="_sslCopySubdomains()" style="background:#00ff8822;color:#00ff88;border:1px solid #00ff8844;border-radius:4px;padding:4px 12px;font-family:monospace;font-size:10px;cursor:pointer;">Copy All</button>';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;">' + subs.length + ' unique subdomains discovered</div>';
+  h += '<button class="btn ghost sm" onclick="_sslCopySubdomains()">Copy all</button>';
   h += '</div>';
 
   if (subs.length === 0) {
-    h += '<div style="color:#556;text-align:center;padding:30px;">No subdomains found in certificate SAN fields</div>';
+    h += '<div style="color:var(--mut);text-align:center;padding:30px;">No subdomains found in certificate SAN fields</div>';
     el.innerHTML = h;
     return;
   }
@@ -191,9 +173,9 @@ function _sslRenderSubdomains(el) {
   for (var i = 0; i < subs.length; i++) {
     var s = subs[i];
     var wildcard = s.name.indexOf('*.') === 0;
-    h += '<div style="background:#0a1018;border:1px solid #1a2a44;border-radius:3px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="navigator.clipboard.writeText(' + esc(JSON.stringify(s.name)) + ');this.style.borderColor=\'#00ff88\';var el=this;setTimeout(function(){el.style.borderColor=\'#1a2a44\';},500);">';
-    h += '<span style="color:' + (wildcard ? '#ffaa00' : '#c8d6e5') + ';font-size:11px;">' + (wildcard ? '<span style="color:#ffaa00;">*</span> ' : '') + esc(s.name) + '</span>';
-    h += '<span style="color:#556;font-size:9px;">' + s.certCount + ' cert' + (s.certCount > 1 ? 's' : '') + '</span>';
+    h += '<div style="background:var(--card2);border:1px solid var(--line);border-radius:3px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="navigator.clipboard.writeText(' + esc(JSON.stringify(s.name)) + ');this.style.borderColor=\'#00ff88\';var el=this;setTimeout(function(){el.style.borderColor=\'#1a2a44\';},500);">';
+    h += '<span style="color:' + (wildcard ? '#ffaa00' : '#c8d6e5') + ';font-size:12px;">' + (wildcard ? '<span style="color:var(--warn);">*</span> ' : '') + esc(s.name) + '</span>';
+    h += '<span style="color:var(--mut);font-size:12px;">' + s.certCount + ' cert' + (s.certCount > 1 ? 's' : '') + '</span>';
     h += '</div>';
   }
   h += '</div>';
@@ -204,7 +186,7 @@ function _sslCopySubdomains() {
   var text = _sslData.subdomains.map(function(s) { return s.name; }).join('\n');
   navigator.clipboard.writeText(text).then(function() {
     var btn = document.querySelector('[onclick="_sslCopySubdomains()"]');
-    if (btn) { btn.textContent = 'COPIED!'; setTimeout(function() { btn.textContent = 'COPY ALL'; }, 1500); }
+    if (btn) { btn.textContent = 'Copied'; setTimeout(function() { btn.textContent = 'Copy all'; }, 1500); }
   });
 }
 
@@ -222,28 +204,28 @@ function _sslRenderTimeline(el) {
   for (var y = 0; y < years.length; y++) { if (byYear[years[y]] > maxCount) maxCount = byYear[years[y]]; }
 
   var h = '';
-  h += '<div style="color:#aa66ff;font-size:12px;letter-spacing:1px;margin-bottom:14px;">CERTIFICATE ISSUANCE TIMELINE</div>';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin-bottom:14px;">Certificate issuance timeline</div>';
 
   if (years.length === 0) {
-    h += '<div style="color:#556;text-align:center;padding:30px;">No timeline data available</div>';
+    h += '<div style="color:var(--mut);text-align:center;padding:30px;">No timeline data available</div>';
     el.innerHTML = h;
     return;
   }
 
-  h += '<div style="display:flex;align-items:flex-end;gap:6px;height:150px;padding:0 10px;border-bottom:1px solid #1a3a5c;">';
+  h += '<div style="display:flex;align-items:flex-end;gap:6px;height:150px;padding:0 10px;border-bottom:1px solid var(--line);">';
   for (var yi = 0; yi < years.length; yi++) {
     var count = byYear[years[yi]];
     var pct = maxCount > 0 ? (count / maxCount * 100) : 0;
     var barH = Math.max(4, pct * 1.3);
     h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">';
-    h += '<div style="color:#aa66ff;font-size:9px;">' + count + '</div>';
-    h += '<div style="width:100%;max-width:40px;height:' + barH + 'px;background:linear-gradient(180deg,#aa66ff,#6633cc);border-radius:2px 2px 0 0;"></div>';
+    h += '<div style="color:var(--acc-2);font-size:12px;">' + count + '</div>';
+    h += '<div style="width:100%;max-width:40px;height:' + barH + 'px;background:linear-gradient(180deg,var(--acc-2),var(--acc-2));border-radius:2px 2px 0 0;"></div>';
     h += '</div>';
   }
   h += '</div>';
   h += '<div style="display:flex;gap:6px;padding:6px 10px;">';
   for (var yl = 0; yl < years.length; yl++) {
-    h += '<div style="flex:1;text-align:center;color:#556;font-size:9px;">' + years[yl] + '</div>';
+    h += '<div style="flex:1;text-align:center;color:var(--mut);font-size:12px;">' + years[yl] + '</div>';
   }
   h += '</div>';
 
@@ -255,14 +237,14 @@ function _sslRenderTimeline(el) {
   }
   var issuerList = Object.keys(issuers).map(function(k) { return { name: k, count: issuers[k] }; }).sort(function(a, b) { return b.count - a.count; }).slice(0, 10);
 
-  h += '<div style="color:#ffaa00;font-size:12px;letter-spacing:1px;margin:20px 0 10px;">TOP ISSUERS</div>';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin:20px 0 10px;">Top issuers</div>';
   for (var il = 0; il < issuerList.length; il++) {
     var iss = issuerList[il];
     var issPct = certs.length > 0 ? (iss.count / certs.length * 100).toFixed(1) : '0';
     h += '<div style="display:flex;align-items:center;gap:10px;margin:4px 0;">';
-    h += '<div style="width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#c8d6e5;font-size:10px;" title="' + esc(iss.name) + '">' + esc(iss.name) + '</div>';
-    h += '<div style="flex:1;height:6px;background:#1a2a3a;border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + issPct + '%;background:linear-gradient(90deg,#ffaa00,#ff6600);border-radius:3px;"></div></div>';
-    h += '<div style="color:#ffaa00;font-size:10px;min-width:50px;text-align:right;">' + iss.count + ' (' + issPct + '%)</div>';
+    h += '<div style="width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt);font-size:12px;" title="' + esc(iss.name) + '">' + esc(iss.name) + '</div>';
+    h += '<div style="flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + issPct + '%;background:linear-gradient(90deg,var(--warn),var(--warn));border-radius:3px;"></div></div>';
+    h += '<div style="color:var(--warn);font-size:12px;min-width:50px;text-align:right;">' + iss.count + ' (' + issPct + '%)</div>';
     h += '</div>';
   }
 
@@ -297,7 +279,7 @@ function _sslCertStats() {
 }
 
 function _sslGraphBtnHTML() {
-  return '<button onclick="_sslToGraph(this)" style="background:#00aaff22;color:#00aaff;border:1px solid #00aaff44;border-radius:4px;padding:4px 12px;font-family:monospace;font-size:10px;cursor:pointer;letter-spacing:1px;">Send to Security Graph</button>';
+  return '<button class="btn ghost sm" onclick="_sslToGraph(this)">Send to Security Graph</button>';
 }
 
 // Live crt.sh data: root DOMAIN, currently valid certificates (newest 50) as CERTIFICATE
@@ -331,9 +313,9 @@ function _sslToGraph(btn) {
       fr.entities.forEach(function(e) { gb.linkEntities(e.id, root.id, 'affects'); });
     }
     var created = rr.created + cr.created + fr.created, updated = rr.updated + cr.updated + fr.updated;
-    btn.textContent = 'SENT: ' + created + ' NEW, ' + updated + ' MERGED';
+    btn.textContent = 'Sent: ' + created + ' new, ' + updated + ' merged';
     gb.showGraphToast('Security Graph: ' + domain + ', ' + cr.entities.length + ' certificates, ' + fr.entities.length + ' findings');
-  }).catch(function() { btn.textContent = 'GRAPH UNAVAILABLE'; btn.disabled = false; });
+  }).catch(function() { btn.textContent = 'Graph unavailable'; btn.disabled = false; });
 }
 
 function _sslRenderAnalysis(el) {
@@ -354,31 +336,31 @@ function _sslRenderAnalysis(el) {
   }
 
   var h = '';
-  h += '<div style="color:#00d4ff;font-size:12px;letter-spacing:1px;margin-bottom:14px;">SECURITY ANALYSIS</div>';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;margin-bottom:14px;">Security analysis</div>';
 
   // Stats grid
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px;">';
   var stats = [
-    { label: 'TOTAL CERTS', value: certs.length, color: '#00d4ff' },
-    { label: 'VALID', value: valid, color: '#00ff88' },
-    { label: 'EXPIRED', value: expired, color: '#ff4444' },
-    { label: 'WILDCARDS', value: wildcards, color: '#ffaa00' },
-    { label: 'LAST 30 DAYS', value: recent30d, color: '#aa66ff' },
-    { label: 'SUBDOMAINS', value: _sslData.subdomains.length, color: '#00ff88' },
-    { label: 'UNIQUE ISSUERS', value: Object.keys(uniqueIssuers).length, color: '#ffaa00' }
+    { label: 'Total certs', value: certs.length, color: '#00d4ff' },
+    { label: 'Valid', value: valid, color: '#00ff88' },
+    { label: 'Expired', value: expired, color: '#ff4444' },
+    { label: 'Wildcards', value: wildcards, color: '#ffaa00' },
+    { label: 'Last 30 days', value: recent30d, color: '#aa66ff' },
+    { label: 'Subdomains', value: _sslData.subdomains.length, color: '#00ff88' },
+    { label: 'Unique issuers', value: Object.keys(uniqueIssuers).length, color: '#ffaa00' }
   ];
   for (var si = 0; si < stats.length; si++) {
     var st = stats[si];
-    h += '<div style="background:#0a1018;border:1px solid ' + st.color + '33;border-radius:4px;padding:10px;text-align:center;">';
+    h += '<div style="background:var(--card2);border:1px solid ' + st.color + '33;border-radius:4px;padding:10px;text-align:center;">';
     h += '<div style="color:' + st.color + ';font-size:20px;font-weight:bold;">' + st.value + '</div>';
-    h += '<div style="color:#556;font-size:8px;letter-spacing:1px;margin-top:2px;">' + st.label + '</div>';
+    h += '<div style="color:var(--mut);font-size:12px;margin-top:2px;">' + st.label + '</div>';
     h += '</div>';
   }
   h += '</div>';
 
   // Security findings
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
-  h += '<div style="color:#ff6644;font-size:12px;letter-spacing:1px;">FINDINGS</div>';
+  h += '<div style="color:var(--txt);font-size:14px;font-weight:600;">Findings</div>';
   h += _sslGraphBtnHTML();
   h += '</div>';
   var findings = _sslFindings({ total: certs.length, expired: expired, wildcards: wildcards, issuers: Object.keys(uniqueIssuers).length, recent30d: recent30d });
@@ -387,9 +369,9 @@ function _sslRenderAnalysis(el) {
   var sevColors = { HIGH: '#ff4444', MEDIUM: '#ff8800', LOW: '#ffcc00', INFO: '#00aaff' };
   for (var fi = 0; fi < findings.length; fi++) {
     var f = findings[fi];
-    h += '<div style="background:#0a1018;border-left:3px solid ' + sevColors[f.severity] + ';padding:8px 12px;margin:6px 0;border-radius:0 4px 4px 0;">';
-    h += '<span style="color:' + sevColors[f.severity] + ';font-size:9px;font-weight:bold;letter-spacing:1px;margin-right:8px;">[' + f.severity + ']</span>';
-    h += '<span style="color:#c8d6e5;font-size:11px;">' + esc(f.msg) + '</span>';
+    h += '<div style="background:var(--card2);border-left:3px solid ' + sevColors[f.severity] + ';padding:8px 12px;margin:6px 0;border-radius:0 4px 4px 0;">';
+    h += '<span style="color:' + sevColors[f.severity] + ';font-size:12px;font-weight:bold;margin-right:8px;">[' + f.severity + ']</span>';
+    h += '<span style="color:var(--txt);font-size:12px;">' + esc(f.msg) + '</span>';
     h += '</div>';
   }
 

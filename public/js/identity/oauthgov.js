@@ -161,7 +161,7 @@ export function renderOauthGov(main) {
   }
   main.innerHTML = [
     '<div class="', P, '-root">',
-    '<div class="', P, '-hd"><h1>OAuth Apps</h1><span class="', P, '-tag">Deck</span></div>',
+    '<div class="', P, '-hd"><h1>OAuth Apps</h1></div>',
     '<p class="', P, '-sub">Inventory every third-party and enterprise app that holds OAuth access to company data across Microsoft Entra, Google Workspace, Okta, Slack and GitHub; classify scopes by risk, separate user consent from admin consent, flag unverified publishers, dormant broad-scope grants and lookalike names, and derive the shadow-SaaS inventory. Runs entirely in your browser. Nothing is uploaded and nothing is fetched.</p>',
     '<div class="', P, '-card"><h2>1. Exports</h2><div id="', P, '-drop"></div>',
     '<p class="', P, '-note">Accepted: Entra servicePrincipals / oauth2PermissionGrants / appRoleAssignments JSON, Enterprise applications CSV, service principal sign-in CSV; Google third-party app access CSV and tokens.list JSON; Okta apps JSON/CSV; Slack Manage apps CSV and admin.apps.approved.list JSON; GitHub installations JSON and third-party access CSV. Drop several at once; zip archives are unpacked locally.</p>',

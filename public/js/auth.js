@@ -2012,7 +2012,7 @@ function renderApp(user) {
     if (prevH > 200) main.style.minHeight = prevH + "px";
     requestAnimationFrame(() => { main.style.minHeight = ""; });
     if (sec && sec !== "home" && sec !== "settings") { try { let r = JSON.parse(localStorage.getItem("dn_recent")||"[]"); r = r.filter(s=>s!==sec); r.unshift(sec); r = r.slice(0,8); localStorage.setItem("dn_recent", JSON.stringify(r)); } catch(_){} }
-    if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Tools</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
+    if (sec === "tools") { main.innerHTML = `<div class="pg-head"><div><h1 class="pg-h1">Scanner Suite</h1><p class="muted pg-sub">Search, filter, and open any tool in the catalog.</p></div></div><div id="tools"></div>`; import("/js/tools.js?v=20261013c").then(m => live() && m.renderTools(document.getElementById("tools"))); }
     else if (sec === "ai") { import("/js/webai.js?v=20261030d").then(m => live() && m.renderAI(main)); }
     else if (sec === "math") { _prevCleanup = renderQuelvra(main, more); }
     else if (sec === "payloads") { import("/js/labs.js?v=20261028c").then(m => live() && m.renderPayloads(main)); }

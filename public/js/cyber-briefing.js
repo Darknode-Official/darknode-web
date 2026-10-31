@@ -39,8 +39,7 @@ function injectStyles() {
 .cb-source-note { background: #0a1628; border: 1px solid #1e3a5f; border-radius: 6px; padding: 10px 14px; font-size: 12px; line-height: 1.55; margin-bottom: 16px; color: #93b4d8; }
 [data-style=pro] .cb-source-note { background: #f0f4ff; color: #1e3a5f; border-color: #dbeafe; }
 .cb-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
-.cb-header-left h1 { margin: 0 0 4px; font-size: 24px; font-family: 'JetBrains Mono', monospace; color: #fff; letter-spacing: 1px; }
-.cb-header-left .cb-subtitle { color: #667788; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+.cb-header-left .pg-sub { margin: 0; }
 .cb-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .cb-select { background: #0d1420; border: 1px solid #1e2d44; color: #c8d6e5; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-family: 'JetBrains Mono', monospace; cursor: pointer; appearance: none; -webkit-appearance: none; padding-right: 28px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23667788'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 .cb-select:focus { outline: none; border-color: #3b82f6; }
@@ -80,8 +79,6 @@ function injectStyles() {
 @media (max-width: 768px) { .cb-header { flex-direction: column; } }
 /* ── Pro Theme Overrides ── */
 [data-style=pro] .cb-wrap { color: #3f3f46; }
-[data-style=pro] .cb-header-left h1 { color: #18181b; }
-[data-style=pro] .cb-header-left .cb-subtitle { color: #71717a; }
 [data-style=pro] .cb-section { background: #fff; border-color: #e5e5e5; }
 [data-style=pro] .cb-section-title { color: #2563eb; border-bottom-color: #e5e5e5; }
 [data-style=pro] .cb-bluf { background: #f0f4ff; border-color: #dbeafe; border-left-color: #2563eb; }
@@ -338,8 +335,8 @@ export function renderCyberBriefing(container) {
 
   function controlsHtml() {
     let h = '<div class="cb-header"><div class="cb-header-left">';
-    h += '<h1>EXECUTIVE CYBER BRIEFING</h1>';
-    h += '<div class="cb-subtitle">Generated ' + esc(getNowISO()) + ' — live data from CISA KEV, FIRST EPSS and ransomware.live</div>';
+    h += '<h1 class="pg-h1">Cyber Briefing</h1>';
+    h += '<p class="muted pg-sub">Executive cyber briefing, generated ' + esc(getNowISO()) + '</p>';
     h += '</div><div class="cb-controls">';
     h += '<select class="cb-select" id="cb-audience">';
     AUDIENCES.forEach(a => { h += '<option value="' + esc(a.id) + '"' + (a.id === curAudience ? ' selected' : '') + '>' + esc(a.label) + '</option>'; });
@@ -352,10 +349,10 @@ export function renderCyberBriefing(container) {
 
   function bodyHtml() {
     if (loading) return '<div class="cb-loading">Assembling live briefing from CISA KEV, EPSS and ransomware.live…</div>';
-    if (error) return '<div class="cb-err"><strong>Could not assemble the briefing.</strong><br>' + esc(error) + '<br><br>This briefing uses only live data; no fictional or cached scenario is shown in its place. Use Refresh to try again.</div>';
+    if (error) return '<div class="cb-err"><strong>Could not assemble the briefing.</strong><br>' + esc(error) + '<br><br>Use Refresh to try again.</div>';
     if (!data) return '';
     let h = '';
-    h += '<div class="cb-source-note">This is a real operational briefing built at load time from public threat sources. Figures reflect the live catalogs; nothing is simulated.</div>';
+    h += '<div class="cb-source-note">Source: CISA KEV, FIRST EPSS, ransomware.live</div>';
     h += renderBLUF(data, figures, curAudience);
     h += renderStats(data, figures);
     h += renderEpssTop(data);
