@@ -29,11 +29,16 @@ export async function connectGitHub() {
   gh.addScope("read:org");
   let res;
   try {
-    const u = auth.currentUser;
+    // Inside a Deck tool frame this frame's own session can read as null while the Deck is
+    // signed in; use the Deck's user so connecting links GitHub instead of switching accounts.
+    let u = auth.currentUser;
+    try { if (!u && window.parent !== window && window.parent.__dnCurrentUser && window.parent.__dnCurrentUser.uid) u = window.parent.__dnCurrentUser; } catch (_) {}
+    if (u && (u.providerData || []).some((p) => p.providerId === "test")) throw Object.assign(new Error("Test Mode has no account to link GitHub to. Sign in, or use a personal access token."), { code: "dn/test-mode" });
     if (!u) res = await fa.signInWithPopup(auth, gh);
     else if (u.providerData.some((p) => p.providerId === "github.com")) res = await fa.reauthenticateWithPopup(u, gh);
     else res = await fa.linkWithPopup(u, gh);
   } catch (e) {
+    if (e && e.code === "dn/test-mode") throw e;
     const cred = e && e.code === "auth/credential-already-in-use" ? fa.GithubAuthProvider.credentialFromError(e) : null;
     if (!cred) throw new Error(e && e.code === "auth/popup-blocked" ? "The sign-in popup was blocked. Allow popups for this site and try again." : e && e.code === "auth/popup-closed-by-user" ? "GitHub sign-in was cancelled." : (e && e.message) || "GitHub sign-in failed.");
     res = { _cred: cred };

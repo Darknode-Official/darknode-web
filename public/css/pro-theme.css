@@ -2930,6 +2930,9 @@ body.landing #nav-start { white-space: nowrap !important; flex-shrink: 0; }
   font-size: 14px !important;
   margin-bottom: 24px !important;
 }
+[data-style=pro] .auth-card #pwform .btn {
+  justify-content: center !important; /* match the Google/GitHub buttons above */
+}
 [data-style=pro] .auth-back {
   color: #9ca3af !important;
   font-size: 13px !important;

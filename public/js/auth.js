@@ -569,8 +569,21 @@ const errText = (e) => {
     "auth/operation-not-allowed": "This sign-in method isn't enabled in Firebase yet.",
     "auth/too-many-requests": "Too many attempts — wait a bit and retry.",
     "auth/account-exists-with-different-credential": "That email is already registered with a different sign-in method — use that one.",
+    "auth/user-disabled": "This account has been suspended. Contact contact@darknode.ai.",
+    "auth/missing-password": "Enter your password.",
+    "auth/missing-email": "Enter your email address.",
+    "auth/network-request-failed": "Network error — check your connection and try again.",
+    "auth/popup-blocked": "Your browser blocked the sign-in window. Allow popups for darknode.ai and try again.",
+    "auth/unauthorized-domain": "Sign-in isn't enabled on this address. Use darknode.ai.",
+    "auth/credential-already-in-use": "That account is already linked to another Darknode user.",
+    "auth/requires-recent-login": "For security, sign out and sign in again, then retry.",
+    "auth/expired-action-code": "That link has expired. Request a new one.",
+    "auth/invalid-action-code": "That link is invalid or was already used.",
+    "auth/internal-error": "Sign-in failed on Google's side. Try again in a moment.",
   };
-  return map[e?.code] || e?.message || String(e);
+  if (map[e?.code]) return map[e.code];
+  const m = String(e?.message || e || "");
+  return /^Firebase:|auth\//.test(m) ? "Sign-in failed. Try again, or use another sign-in method." : m;
 };
 
 async function ensureUserDoc(user) {
@@ -786,7 +799,7 @@ function renderAuth(mode = "signin") {
         <a class="auth-back" id="authBack">&larr; Back</a>
         <div class="auth-logo"><img src="/logo-dark.svg?v=20261007b" alt=""></div>
         <h1>${isSignup ? "Create your account" : "Welcome back"}</h1>
-        <p class="auth-subtitle">${isSignup ? "Create your Darknode account." : "Sign in to your Darknode account."}</p>
+        <p class="auth-subtitle">${isSignup ? "Free to start. No credit card." : "Sign in to your Darknode account."}</p>
         <button class="btn google" id="google"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 001 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Continue with Google</button>
         <button class="btn github" id="github"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.42.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12.01 12.01 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>Continue with GitHub</button>
         <div class="or"><span></span>or<span></span></div>
@@ -930,7 +943,8 @@ function renderCodeVerify(user) {
       <input id="code" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code" style="text-align:center;letter-spacing:.4em;font-size:1.3rem">
       <button class="btn" id="verify">Verify</button>
       <button class="btn ghost" id="resend">Resend code</button>
-      <p id="err" class="auth-err"></p>`;
+      <p id="err" class="auth-err"></p>
+    </section>`;
   const setMsg = (m, ok) => { const e = document.getElementById("err"); e.textContent = m; e.className = ok ? "auth-ok" : "auth-err"; };
   const resendBtn = document.getElementById("resend");
   let cd = 0, timer = null;
@@ -2823,7 +2837,9 @@ getRedirectResult(auth).then((result) => {
   if (result && result.user) {
     try { sessionStorage.setItem("sw_fresh_signin", "1"); } catch (_) {}
   }
-}).catch(() => {});
+}).catch((e) => {
+  if (e && e.code && e.code !== "auth/no-auth-event") showToast(errText(e), "error", 8000);
+});
 onAuthStateChanged(auth, async (user) => {
   // Idempotent: the same signed-in user while the app is up is a no-op (no re-render),
   // and a transient null (a cross-window storage sync) is re-checked before tearing
@@ -2916,6 +2932,7 @@ onAuthStateChanged(auth, async (user) => {
   const tosAccepted = !!ud.tosAccepted && ud.tosVersion === TOS_VERSION;
   const tosReturning = !!ud.tosAccepted && !tosAccepted;
   if (!tosAccepted) {
+    dismissBoot(); // on a reload the boot screen is still up and would cover the gate
     view.innerHTML = `
       <div class="tos-gate">
         <h1>${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
@@ -3044,15 +3061,21 @@ onAuthStateChanged(auth, async (user) => {
           <button class="btn lg" id="tosAgree">I Agree</button>
           <button class="btn lg ghost" id="tosDecline">Decline &amp; Sign Out</button>
         </div>
+        <p id="tosErr" class="auth-err" role="alert"></p>
       </div>`;
-    document.getElementById("tosAgree").onclick = async () => {
-      await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosVersion: TOS_VERSION, tosAcceptedAt: serverTimestamp() }, { merge: true });
+    document.getElementById("tosAgree").onclick = async (ev) => {
+      const btn = ev.currentTarget; btn.disabled = true;
+      try {
+        await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosVersion: TOS_VERSION, tosAcceptedAt: serverTimestamp() }, { merge: true });
+      } catch (e) {
+        btn.disabled = false;
+        document.getElementById("tosErr").textContent = "Couldn't save your acceptance. Check your connection and try again.";
+        return;
+      }
       try { sessionStorage.setItem("dn_gate", user.uid); } catch (_) {}
       renderApp(user); loadAnnouncement();
     };
-    document.getElementById("tosDecline").onclick = async () => {
-      await signOut(auth);
-    };
+    document.getElementById("tosDecline").onclick = () => doLogout();
     return;
   }
 
