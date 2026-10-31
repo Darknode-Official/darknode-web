@@ -806,6 +806,7 @@ const CSS = `
 .dk-health .d{width:7px;height:7px;border-radius:50%;background:#12a85f}
 .dk-health.warn{border-color:rgba(245,181,68,.35);background:rgba(245,181,68,.12);color:#c99320}
 .dk-health.warn .d{background:#b7791f}
+.dk-health.pending .d{background:#9aa3b2}
 @media(max-width:1510px){.dk-brand .dk-wsname{display:none}}
 @media(max-width:1600px){.dk-clock{display:none}}
 @media(max-width:1180px){.dk-health .t{display:none}.dk-crumb .cg,.dk-crumb .cs{display:none}}
@@ -1848,7 +1849,7 @@ export function renderDeck(host, opts) {
       <div class="dk-crumb" id="dkCrumb" aria-live="polite"></div>
       <button class="dk-hsearch" id="dkHSearch" data-explain="hdr.search" aria-label="Search">${IC_SEARCH}<span class="hs">Search tools, scenes and actions</span><kbd>Ctrl K</kbd></button>
       <div class="dk-right">
-        <button class="dk-health" id="dkHealth" data-explain="hdr.health" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed live</span></button>
+        <button class="dk-health pending" id="dkHealth" data-explain="hdr.health" title="Live CVE feed status"><span class="d"></span><span class="t">Threat feed</span></button>
         <button class="dk-icbtn dk-lbtn ai" id="dkAsstBtn" data-explain="hdr.assistant" title="Darknode AI assistant" aria-label="Darknode AI assistant">${IC.spark}<span class="lb">Ask AI</span></button>
         <button class="dk-icbtn" id="dkFindBtn" data-explain="hdr.search" title="Search (Ctrl K)" aria-label="Search">${IC_SEARCH}</button>
         <button class="dk-icbtn dk-lbtn" id="dkNew" aria-haspopup="true" aria-expanded="false" data-explain="hdr.new" title="Quick create" aria-label="Quick create">${IC.plus}<span class="lb">New</span></button>
@@ -2683,7 +2684,7 @@ export function renderDeck(host, opts) {
     try { pop.style.right = "auto"; pop.style.left = Math.max(10, btn.getBoundingClientRect().left / zoomOf()) + "px"; } catch (_) {}
     pop.classList.add("on"); btn.setAttribute("aria-expanded", "true");
   }
-  function setHealth(ok, text){ health.classList.toggle("warn", !ok); const t = health.querySelector(".t"); if (t) t.textContent = text; }
+  function setHealth(ok, text){ health.classList.remove("pending"); health.classList.toggle("warn", !ok); const t = health.querySelector(".t"); if (t) t.textContent = text; }
   function updateBadge(){ const n = mergedNotifs().filter(notifUnseen).length; if (n > 0) { badge.hidden = false; badge.textContent = n > 9 ? "9+" : String(n); } else { badge.hidden = true; badge.textContent = ""; } }
   function pushNotif(text){ if (!text) return; notifs.unshift({ text: String(text), ts: Date.now() }); if (notifs.length > 40) notifs.length = 40; updateBadge(); if (popBell.classList.contains("on")) buildBellMenu(); if (curScene === "activity") renderActivity(); }
   function buildNewMenu(){
@@ -3078,7 +3079,7 @@ export function renderDeck(host, opts) {
           </div></div>
         </div>
         <div>
-          <div class="dk-ovp"><h2 data-explain="panel.threat">${IC.radar} Threat level <span class="mo" role="button" tabindex="0" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
+          <div class="dk-ovp"><h2 data-explain="panel.threat">${IC.radar} New CVEs by severity <span class="mo" role="button" tabindex="0" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
           <div class="dk-ovp"><h2 data-explain="panel.notes">${IC.note} Notes <span class="mo" role="button" tabindex="0" id="dkNotesClear">Clear</span></h2>
             <textarea class="dk-notes" id="dkNotes" aria-label="Notes" placeholder="Jot an IP, a hypothesis, a to-do"></textarea>
             <div class="dk-notef"><span id="dkNotesSaved">Saved on this device</span><span id="dkNotesCount"></span></div>

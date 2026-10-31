@@ -19,7 +19,6 @@ const TOOLS = {
 // opens in the Deck's own tool frame via ctx.openTool (the same path as the Tool
 // Library), so nothing is reimplemented here.
 const WEB_TOOLS = [
-  { sec: "xsslab", label: "Web Security Lab", desc: "Try XSS, injection and other web attacks against a safe in-browser target." },
   { sec: "cspevaluator", label: "CSP Evaluator", desc: "Paste a Content-Security-Policy and find the gaps an attacker could use." },
   { sec: "corstester", label: "CORS Tester", desc: "Check whether a site's cross-origin rules let other pages read its data." },
   { sec: "headeranalyzer", label: "Header Analyzer", desc: "Grade a site's HTTP security headers and see what to add." },
@@ -43,7 +42,7 @@ export const SPACES = {
       { id: "secrets", label: "Code secrets", mod: "secrets", mode: "single", c: "#b00020", desc: "Find keys and passwords in your project before you push it." },
       { id: "data", label: "Safe to share?", mod: "data", mode: "single", c: "#7c3aed", desc: "Check text for personal data and credentials; get a redacted copy." },
       { id: "certs", label: "Certificates", mod: "certs", mode: "single", c: "#2f9e56", desc: "See when your site's certificates expire, before visitors get warnings." },
-      { id: "webkit", label: "Web toolkit", kind: "gallery", c: "#e8590c", desc: "Hands-on web-security tools: XSS lab, CSP and CORS checks, headers, cookies, API and WebSocket testers." },
+      { id: "webkit", label: "Web toolkit", kind: "gallery", c: "#e8590c", desc: "Hands-on web-security tools: CSP and CORS checks, headers, cookies, API and WebSocket testers." },
     ],
     steps: [["domain", "Check your domain"], ["certs", "Add your domains to certificate watch"], ["secrets", "Scan a project for secrets"], ["data", "Check something before you share it"]],
   },
