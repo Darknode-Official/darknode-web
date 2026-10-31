@@ -180,8 +180,8 @@ var RX_CSS =
   'textarea.rx-input{min-height:120px;resize:vertical;line-height:1.6}' +
   '.rx-flags{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}' +
   '.rx-flag{padding:4px 10px;border:1px solid var(--line,#333);background:var(--card,#161b22);color:var(--mut,#888);border-radius:4px;cursor:pointer;font-family:monospace;font-size:.85rem}' +
-  '.rx-flag.on{border-color:var(--acc,#00d4ff);color:var(--acc,#00d4ff);background:rgba(0,212,255,.08)}' +
-  '.rx-match{background:rgba(0,212,255,.2);border-radius:2px;padding:0 1px}' +
+  '.rx-flag.on{border-color:var(--acc,#00d4ff);color:var(--acc,#00d4ff);background:color-mix(in srgb,var(--acc) 8%,transparent)}' +
+  '.rx-match{background:color-mix(in srgb,var(--acc) 20%,transparent);border-radius:2px;padding:0 1px}' +
   '.rx-table{width:100%;border-collapse:collapse;font-size:.82rem}' +
   '.rx-table th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line,#333);color:var(--mut,#888);font-weight:500}' +
   '.rx-table td{padding:5px 10px;border-bottom:1px solid var(--line,#222);font-family:monospace}' +
@@ -194,8 +194,8 @@ var RX_CSS =
   '.rx-lib-pat{font-family:monospace;font-size:.75rem;color:var(--acc,#00d4ff);margin-top:2px;word-break:break-all}' +
   '.rx-lib-desc{font-size:.75rem;color:var(--mut,#888);margin-top:2px}' +
   '.rx-explain{margin:10px 0;padding:10px;background:var(--card,#161b22);border:1px solid var(--line,#333);border-radius:4px}' +
-  '.rx-explain-token{display:inline-block;margin:2px 4px 2px 0;padding:2px 6px;background:rgba(0,212,255,.1);border-radius:3px;font-family:monospace;font-size:.82rem;cursor:help}' +
-  '.rx-warn{padding:8px 12px;background:rgba(255,180,0,.1);border:1px solid rgba(255,180,0,.3);border-radius:4px;font-size:.82rem;margin:8px 0}' +
+  '.rx-explain-token{display:inline-block;margin:2px 4px 2px 0;padding:2px 6px;background:color-mix(in srgb,var(--acc) 10%,transparent);border-radius:3px;font-family:monospace;font-size:.82rem;cursor:help}' +
+  '.rx-warn{padding:8px 12px;background:color-mix(in srgb,var(--warn) 10%,transparent);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);border-radius:4px;font-size:.82rem;margin:8px 0}' +
   '.rx-ops{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}' +
   '.rx-op-btn{padding:5px 12px;background:var(--card,#161b22);border:1px solid var(--line,#333);color:var(--txt,#ccc);border-radius:4px;cursor:pointer;font-size:.8rem}' +
   '.rx-op-btn:hover{border-color:var(--acc,#00d4ff)}' +
@@ -203,9 +203,7 @@ var RX_CSS =
   '.rx-ref-row{display:flex;gap:8px;font-size:.78rem;padding:2px 0}' +
   '.rx-ref-pat{font-family:monospace;color:var(--acc,#00d4ff);min-width:80px}' +
   '.rx-ref-desc{color:var(--mut,#888)}' +
-  '.rx-tabs{display:flex;gap:0;border-bottom:1px solid var(--line,#333);margin-bottom:12px;flex-wrap:wrap}' +
-  '.rx-tab{padding:7px 14px;cursor:pointer;border:none;background:none;color:var(--mut,#888);font-size:.83rem;border-bottom:2px solid transparent}' +
-  '.rx-tab.on{color:var(--acc,#00d4ff);border-bottom-color:var(--acc,#00d4ff)}' +
+  '.rx-tbar{margin-bottom:12px;flex-wrap:wrap}' +
   '.rx-panel{display:none}.rx-panel.on{display:block}' +
   '.rx-result-box{padding:10px;background:var(--card,#161b22);border:1px solid var(--line,#333);border-radius:4px;font-family:monospace;font-size:.82rem;max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}' +
   '</style>';
@@ -214,14 +212,14 @@ var RX_CSS =
 export function renderRegexLab(main) {
   var TABS = [
     { id: "tester", label: "Tester" },
-    { id: "library", label: "Pattern Library" },
+    { id: "library", label: "Pattern library" },
     { id: "explain", label: "Explainer" },
     { id: "operations", label: "Operations" },
-    { id: "reference", label: "Quick Reference" }
+    { id: "reference", label: "Quick reference" }
   ];
 
   var tabsHtml = TABS.map(function(t) {
-    return '<button class="rx-tab' + (t.id === "tester" ? " on" : "") + '" data-tab="' + t.id + '">' + esc(t.label) + '</button>';
+    return '<button class="rx-tb' + (t.id === "tester" ? " on" : "") + '" data-tab="' + t.id + '">' + esc(t.label) + '</button>';
   }).join("");
 
   var panelsHtml = TABS.map(function(t) {
@@ -230,16 +228,16 @@ export function renderRegexLab(main) {
 
   main.innerHTML = RX_CSS +
     '<div class="rx-wrap">' +
-    '<h1 class="pg-h1">Regex Lab</h1>' +
-    '<p class="muted pg-sub">' + REGEX_LIBRARY.length + ' security patterns. Interactive builder, explainer, and tester — everything in your browser.</p>' +
-    '<div class="rx-tabs">' + tabsHtml + '</div>' +
+    '<div class="pg-head"><div><h1 class="pg-h1">Regex Lab</h1>' +
+    '<p class="muted pg-sub">Test, explain, and apply regular expressions, with a library of ' + REGEX_LIBRARY.length + ' security patterns. Runs in your browser.</p></div></div>' +
+    '<div class="seg rx-tbar">' + tabsHtml + '</div>' +
     panelsHtml +
     '</div>';
 
-  main.querySelector(".rx-tabs").onclick = function(e) {
-    var btn = e.target.closest(".rx-tab");
+  main.querySelector(".rx-tbar").onclick = function(e) {
+    var btn = e.target.closest(".rx-tb");
     if (!btn) return;
-    main.querySelectorAll(".rx-tab").forEach(function(t) { t.classList.toggle("on", t === btn); });
+    main.querySelectorAll(".rx-tb").forEach(function(t) { t.classList.toggle("on", t === btn); });
     main.querySelectorAll(".rx-panel").forEach(function(p) { p.classList.toggle("on", p.dataset.panel === btn.dataset.tab); });
   };
 
@@ -256,8 +254,8 @@ export function renderRegexLab(main) {
   // ── Tester ──
   var testerPanel = main.querySelector("#rx-tester");
   testerPanel.innerHTML =
-    '<label style="font-size:.82rem;color:var(--mut)">Regular Expression</label>' +
-    '<input class="rx-input" id="rx-pattern" placeholder="Enter regex pattern...">' +
+    '<label style="font-size:.82rem;color:var(--mut)">Regular expression</label>' +
+    '<input class="rx-input" id="rx-pattern" placeholder="Pattern">' +
     '<div class="rx-flags" id="rx-flags">' +
       '<button class="rx-flag on" data-flag="g">g</button>' +
       '<button class="rx-flag on" data-flag="i">i</button>' +
@@ -266,11 +264,11 @@ export function renderRegexLab(main) {
       '<button class="rx-flag" data-flag="u">u</button>' +
     '</div>' +
     '<div id="rx-warn-area"></div>' +
-    '<label style="font-size:.82rem;color:var(--mut)">Test String</label>' +
-    '<textarea class="rx-input" id="rx-test" placeholder="Enter test string..."></textarea>' +
+    '<label style="font-size:.82rem;color:var(--mut)">Test string</label>' +
+    '<textarea class="rx-input" id="rx-test" placeholder="Text to test"></textarea>' +
     '<div style="font-size:.82rem;color:var(--mut);margin:6px 0" id="rx-match-info"></div>' +
     '<div id="rx-highlighted" style="margin:8px 0;padding:10px;background:var(--card);border:1px solid var(--line);border-radius:4px;font-family:monospace;font-size:.85rem;white-space:pre-wrap;word-break:break-all;min-height:40px"></div>' +
-    '<h4 style="margin:12px 0 6px;font-size:.85rem">Match Table</h4>' +
+    '<h4 style="color:var(--txt);font-size:14px;font-weight:600;margin:12px 0 6px">Match table</h4>' +
     '<div style="overflow-x:auto"><table class="rx-table" id="rx-match-table"><tr><td class="muted">No matches yet</td></tr></table></div>';
 
   var patInput = testerPanel.querySelector("#rx-pattern");
@@ -310,9 +308,9 @@ export function renderRegexLab(main) {
     var re;
     try { re = new RegExp(pattern, curFlags); }
     catch (err) {
-      info.innerHTML = '<span style="color:#f44">Invalid: ' + esc(err.message) + '</span>';
+      info.innerHTML = '<span style="color:var(--bad)">Invalid: ' + esc(err.message) + '</span>';
       highlighted.innerHTML = esc(testStr);
-      table.innerHTML = '<tr><td style="color:#f44">' + esc(err.message) + '</td></tr>';
+      table.innerHTML = '<tr><td style="color:var(--bad)">' + esc(err.message) + '</td></tr>';
       return;
     }
 
@@ -373,13 +371,13 @@ export function renderRegexLab(main) {
   REGEX_LIBRARY.forEach(function(r) { if (cats.indexOf(r.cat) < 0) cats.push(r.cat); });
 
   libPanel.innerHTML =
-    '<h3 style="margin:0 0 10px">Security Regex Library</h3>' +
+    '<h3 style="color:var(--txt);font-size:14px;font-weight:600;margin:0 0 10px">Security regex library</h3>' +
     '<p class="muted" style="font-size:.82rem;margin-bottom:10px">' + REGEX_LIBRARY.length + ' patterns — click to load into tester.</p>' +
     '<div class="rx-lib-cats"><button class="rx-lib-cat on" data-cat="all">All</button>' +
     cats.map(function(c) { return '<button class="rx-lib-cat" data-cat="' + esc(c) + '">' + esc(c) + '</button>'; }).join("") + '</div>' +
     '<div id="rx-lib-items">' + REGEX_LIBRARY.map(function(r) {
       return '<div class="rx-lib-item" data-cat="' + esc(r.cat) + '" data-pat="' + esc(r.pattern) + '">' +
-        '<div class="rx-lib-name">' + esc(r.name) + ' <span style="font-size:.7rem;color:var(--mut)">' + esc(r.cat) + '</span></div>' +
+        '<div class="rx-lib-name">' + esc(r.name) + ' <span style="font-size:12px;color:var(--mut)">' + esc(r.cat) + '</span></div>' +
         '<div class="rx-lib-pat">' + esc(r.pattern) + '</div>' +
         '<div class="rx-lib-desc">' + esc(r.desc) + '</div></div>';
     }).join("") + '</div>';
@@ -398,16 +396,16 @@ export function renderRegexLab(main) {
     var item = e.target.closest(".rx-lib-item");
     if (!item) return;
     setPattern(item.dataset.pat);
-    main.querySelectorAll(".rx-tab").forEach(function(t) { t.classList.toggle("on", t.dataset.tab === "tester"); });
+    main.querySelectorAll(".rx-tb").forEach(function(t) { t.classList.toggle("on", t.dataset.tab === "tester"); });
     main.querySelectorAll(".rx-panel").forEach(function(p) { p.classList.toggle("on", p.dataset.panel === "tester"); });
   };
 
   // ── Explainer ──
   var explPanel = main.querySelector("#rx-explain");
   explPanel.innerHTML =
-    '<h3 style="margin:0 0 10px">Regex Explainer</h3>' +
+    '<h3 style="color:var(--txt);font-size:14px;font-weight:600;margin:0 0 10px">Regex explainer</h3>' +
     '<p class="muted" style="font-size:.82rem;margin-bottom:10px">Paste a regex to see it broken down token by token.</p>' +
-    '<input class="rx-input" id="rx-explain-input" placeholder="Paste a regex pattern...">' +
+    '<input class="rx-input" id="rx-explain-input" placeholder="Pattern">' +
     '<div class="rx-explain" id="rx-explain-out"><span class="muted">Enter a pattern above</span></div>';
 
   explPanel.querySelector("#rx-explain-input").oninput = function() {
@@ -423,12 +421,12 @@ export function renderRegexLab(main) {
   // ── Operations ──
   var opsPanel = main.querySelector("#rx-operations");
   opsPanel.innerHTML =
-    '<h3 style="margin:0 0 10px">Regex Operations</h3>' +
+    '<h3 style="color:var(--txt);font-size:14px;font-weight:600;margin:0 0 10px">Regex operations</h3>' +
     '<label style="font-size:.82rem;color:var(--mut)">Pattern</label>' +
-    '<input class="rx-input" id="rx-ops-pat" placeholder="Regex pattern...">' +
-    '<label style="font-size:.82rem;color:var(--mut);margin-top:8px">Input Text</label>' +
-    '<textarea class="rx-input" id="rx-ops-text" placeholder="Input text..."></textarea>' +
-    '<label style="font-size:.82rem;color:var(--mut);margin-top:8px">Replacement (for Replace)</label>' +
+    '<input class="rx-input" id="rx-ops-pat" placeholder="Pattern">' +
+    '<label style="font-size:.82rem;color:var(--mut);margin-top:8px">Input text</label>' +
+    '<textarea class="rx-input" id="rx-ops-text" placeholder="Text"></textarea>' +
+    '<label style="font-size:.82rem;color:var(--mut);margin-top:8px">Replacement (for replace)</label>' +
     '<input class="rx-input" id="rx-ops-repl" placeholder="Replacement ($1, $2 for groups)">' +
     '<div class="rx-ops">' +
       '<button class="rx-op-btn" data-op="extract">Extract All</button>' +
@@ -459,7 +457,7 @@ export function renderRegexLab(main) {
 
   // ── Reference ──
   var refPanel = main.querySelector("#rx-reference");
-  var refHtml = '<h3 style="margin:0 0 10px">Quick Reference</h3>';
+  var refHtml = '<h3 style="color:var(--txt);font-size:14px;font-weight:600;margin:0 0 10px">Quick reference</h3>';
   Object.keys(QUICK_REF).forEach(function(section) {
     refHtml += '<div class="rx-ref-title">' + esc(section) + '</div>';
     QUICK_REF[section].forEach(function(entry) {

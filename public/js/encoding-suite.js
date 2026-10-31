@@ -425,52 +425,39 @@ function parseASN1(hexStr) {
 // Styles
 // ---------------------------------------------------------------------------
 const ENC_STYLES = `
-  .enc-wrap { font-family: var(--mono, 'JetBrains Mono', monospace); color: var(--txt, #e0e6ed); max-width: 1100px; margin: 0 auto; padding: 24px; }
-  .enc-title { font-family: var(--sans, 'Sora', system-ui, sans-serif); font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, #7c5cff, #00d4ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .enc-sub { color: var(--txt-2, #8899aa); font-size: 0.85rem; margin-bottom: 24px; font-family: var(--sans, 'Sora', system-ui, sans-serif); }
-  .enc-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border, #1a2233); margin-bottom: 20px; flex-wrap: wrap; }
-  .enc-tab { padding: 8px 14px; cursor: pointer; font-size: 0.78rem; border: none; background: transparent; color: var(--txt-2, #8899aa); border-bottom: 2px solid transparent; transition: all 0.15s; font-family: inherit; }
-  .enc-tab:hover { color: var(--txt, #e0e6ed); background: rgba(124,92,255,0.05); }
-  .enc-tab.active { color: #7c5cff; border-bottom-color: #7c5cff; }
+  .enc-wrap { color: var(--txt); }
+  .enc-tabs { margin-bottom: 16px; flex-wrap: wrap; }
   .enc-panel { display: none; }
   .enc-panel.active { display: block; }
-  .enc-card { background: var(--card, #0d1117); border: 1px solid var(--border, #1a2233); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
-  .enc-card h3 { font-size: 1rem; font-weight: 600; margin: 0 0 12px; color: var(--txt, #e0e6ed); font-family: var(--sans, 'Sora', system-ui, sans-serif); }
+  .enc-card { margin-bottom: 16px; }
+  .enc-card h3 { font-size: 14px; font-weight: 600; margin: 0 0 12px; color: var(--txt); }
   .enc-dual { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .enc-label { display: block; font-size: 0.73rem; color: var(--txt-2, #8899aa); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .enc-input, .enc-textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; background: var(--input-bg, #161b22); border: 1px solid var(--border, #1a2233); border-radius: 6px; color: var(--txt, #e0e6ed); font-family: inherit; font-size: 0.85rem; outline: none; transition: border-color 0.15s; }
-  .enc-input:focus, .enc-textarea:focus { border-color: #7c5cff; }
+  .enc-label { display: block; font-size: 12px; color: var(--mut); margin-bottom: 4px; }
+  .enc-input, .enc-textarea { width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-size: 13px; }
   .enc-textarea { resize: vertical; min-height: 100px; }
-  .enc-select { padding: 8px 12px; background: var(--input-bg, #161b22); border: 1px solid var(--border, #1a2233); border-radius: 6px; color: var(--txt, #e0e6ed); font-family: inherit; font-size: 0.85rem; outline: none; cursor: pointer; }
-  .enc-btn { padding: 8px 18px; border: none; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 600; transition: all 0.15s; }
-  .enc-btn-primary { background: linear-gradient(135deg, #7c5cff, #5a3fdd); color: #fff; }
-  .enc-btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
-  .enc-btn-ghost { background: transparent; color: #7c5cff; border: 1px solid rgba(124,92,255,0.3); }
-  .enc-btn-ghost:hover { background: rgba(124,92,255,0.1); }
-  .enc-output { background: #0a0e16; border: 1px solid var(--border, #1a2233); border-radius: 6px; padding: 12px; font-size: 0.82rem; word-break: break-all; margin-top: 8px; min-height: 36px; position: relative; white-space: pre-wrap; }
-  .enc-copy-btn { position: absolute; top: 6px; right: 6px; padding: 4px 10px; font-size: 0.7rem; background: rgba(124,92,255,0.15); color: #7c5cff; border: none; border-radius: 4px; cursor: pointer; font-family: inherit; }
-  .enc-copy-btn:hover { background: rgba(124,92,255,0.3); }
+  .enc-select { font-size: 13px; }
+  .enc-output { background: var(--card2); border: 1px solid var(--line); border-radius: 6px; padding: 12px; font-family: var(--font-mono); font-size: 13px; word-break: break-all; margin-top: 8px; min-height: 36px; position: relative; white-space: pre-wrap; }
+  .enc-copy-btn { position: absolute; top: 6px; right: 6px; padding: 4px 10px; font-size: 12px; background: var(--card); color: var(--txt-2); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .enc-copy-btn:hover { color: var(--txt); }
   .enc-swap { display: flex; align-items: center; justify-content: center; padding: 8px; }
-  .enc-swap-btn { background: none; border: 1px solid var(--border, #1a2233); border-radius: 4px; width: 36px; height: 36px; cursor: pointer; color: var(--txt-2, #8899aa); font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-  .enc-swap-btn:hover { border-color: #7c5cff; color: #7c5cff; background: rgba(124,92,255,0.08); }
+  .enc-swap-btn { background: none; border: 1px solid var(--line); border-radius: 4px; width: 36px; height: 36px; cursor: pointer; color: var(--txt-2); font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .enc-swap-btn:hover { border-color: var(--acc); color: var(--acc); }
   .enc-jwt-section { margin-top: 12px; }
-  .enc-jwt-header { font-size: 0.75rem; color: var(--txt-2, #8899aa); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-  .enc-jwt-json { background: #0a0e16; border: 1px solid var(--border, #1a2233); border-radius: 6px; padding: 12px; font-size: 0.82rem; white-space: pre-wrap; overflow-x: auto; }
-  .enc-asn1-tree { font-size: 0.78rem; line-height: 1.6; }
-  .enc-asn1-node { padding-left: 20px; border-left: 1px solid rgba(124,92,255,0.2); margin-left: 8px; }
-  .enc-asn1-tag { color: #7c5cff; font-weight: 600; }
-  .enc-asn1-name { color: #00d4ff; }
-  .enc-asn1-len { color: var(--txt-2, #8899aa); font-size: 0.72rem; }
-  .enc-asn1-val { color: #00c853; }
-  .enc-caesar-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 12px; }
-  .enc-caesar-table th { text-align: left; padding: 6px 10px; background: #0a0e16; color: var(--txt-2, #8899aa); font-weight: 500; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
-  .enc-caesar-table td { padding: 6px 10px; border-bottom: 1px solid rgba(26,34,51,0.3); }
-  .enc-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; background: rgba(124,92,255,0.15); color: #7c5cff; }
-  .enc-info { font-size: 0.78rem; color: var(--txt-2, #8899aa); margin: 4px 0 12px; }
+  .enc-jwt-header { font-size: 12px; color: var(--mut); margin-bottom: 4px; }
+  .enc-jwt-json { background: var(--card2); border: 1px solid var(--line); border-radius: 6px; padding: 12px; font-family: var(--font-mono); font-size: 13px; white-space: pre-wrap; overflow-x: auto; }
+  .enc-asn1-tree { font-family: var(--font-mono); font-size: 13px; line-height: 1.6; }
+  .enc-asn1-node { padding-left: 20px; border-left: 1px solid var(--line); margin-left: 8px; }
+  .enc-asn1-tag { color: var(--acc); font-weight: 600; }
+  .enc-asn1-name { color: var(--txt); }
+  .enc-asn1-len { color: var(--mut); font-size: 12px; }
+  .enc-asn1-val { color: var(--ok); }
+  .enc-caesar-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .enc-caesar-table th { text-align: left; padding: 6px 10px; background: var(--card2); color: var(--mut); font-weight: 500; font-size: 12px; }
+  .enc-caesar-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); }
+  .enc-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; border: 1px solid var(--line); color: var(--txt-2); }
+  .enc-info { font-size: 12px; color: var(--mut); margin: 4px 0 12px; }
   @media (max-width: 700px) {
     .enc-dual { grid-template-columns: 1fr; }
-    .enc-tabs { gap: 0; }
-    .enc-tab { padding: 6px 8px; font-size: 0.7rem; }
   }
 `;
 
@@ -480,23 +467,23 @@ const ENC_STYLES = `
 function buildCodecPanel(id, label, encodeFn, decodeFn, opts) {
   opts = opts || {};
   return `
-    <div class="enc-card">
+    <div class="enc-card card">
       <h3>${label}</h3>
       ${opts.info ? '<div class="enc-info">' + opts.info + '</div>' : ""}
       <div class="enc-dual">
         <div>
           <label class="enc-label">Plain text</label>
-          <textarea class="enc-textarea" id="${id}-plain" placeholder="Type text to encode...">${opts.defaultText || ""}</textarea>
+          <textarea class="enc-textarea" id="${id}-plain" placeholder="Text to encode">${opts.defaultText || ""}</textarea>
         </div>
         <div>
           <label class="enc-label">Encoded</label>
-          <textarea class="enc-textarea" id="${id}-encoded" placeholder="Paste encoded text to decode..."></textarea>
+          <textarea class="enc-textarea" id="${id}-encoded" placeholder="Encoded text to decode"></textarea>
         </div>
       </div>
       ${opts.extraControls || ""}
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <button class="enc-btn enc-btn-primary" data-action="encode" data-codec="${id}">Encode →</button>
-        <button class="enc-btn enc-btn-ghost" data-action="decode" data-codec="${id}">← Decode</button>
+        <button class="btn" data-action="encode" data-codec="${id}">Encode →</button>
+        <button class="btn ghost" data-action="decode" data-codec="${id}">← Decode</button>
         ${opts.extraButtons || ""}
       </div>
     </div>`;
@@ -512,10 +499,10 @@ export function renderEncodingSuite(container) {
 
   container.innerHTML = `
     <div class="enc-wrap">
-      <div class="enc-title">Encoding Suite</div>
-      <div class="enc-sub">Encode, decode, and transform data between formats — entirely in your browser</div>
-      <div class="enc-tabs" id="enc-tabs">
-        <button class="enc-tab active" data-panel="base64">Base64</button>
+      <div class="pg-head"><div><h1 class="pg-h1">Encoding Suite</h1>
+      <p class="muted pg-sub">Encode, decode and transform data between formats, entirely in your browser.</p></div></div>
+      <div class="enc-tabs seg" id="enc-tabs">
+        <button class="enc-tab active on" data-panel="base64">Base64</button>
         <button class="enc-tab" data-panel="url">URL</button>
         <button class="enc-tab" data-panel="html">HTML</button>
         <button class="enc-tab" data-panel="hex">Hex</button>
@@ -531,51 +518,51 @@ export function renderEncodingSuite(container) {
       </div>
 
       <div class="enc-panel active" id="epanel-base64">
-        ${buildCodecPanel("b64", "Base64 Encoding", null, null, {
+        ${buildCodecPanel("b64", "Base64 encoding", null, null, {
           info: "RFC 4648 Base64 encoding. Handles Unicode via UTF-8 encoding."
         })}
       </div>
 
       <div class="enc-panel" id="epanel-url">
-        ${buildCodecPanel("url", "URL Encoding (encodeURIComponent)", null, null, {
+        ${buildCodecPanel("url", "URL encoding (encodeURIComponent)", null, null, {
           info: "RFC 3986 percent-encoding. Encodes all characters that are not unreserved.",
-          extraButtons: '<button class="enc-btn enc-btn-ghost" data-action="urlencode-all" data-codec="url">Encode All Chars</button><button class="enc-btn enc-btn-ghost" data-action="urlencode-double" data-codec="url">Double Encode</button>'
+          extraButtons: '<button class="btn ghost" data-action="urlencode-all" data-codec="url">Encode all chars</button><button class="btn ghost" data-action="urlencode-double" data-codec="url">Double encode</button>'
         })}
       </div>
 
       <div class="enc-panel" id="epanel-html">
-        ${buildCodecPanel("html", "HTML Entity Encoding", null, null, {
+        ${buildCodecPanel("html", "HTML entity encoding", null, null, {
           info: "Encode special HTML characters as named or numeric entities to prevent XSS.",
-          extraButtons: '<button class="enc-btn enc-btn-ghost" data-action="htmlencode-all" data-codec="html">All → Decimal</button><button class="enc-btn enc-btn-ghost" data-action="htmlencode-hex" data-codec="html">All → Hex</button>'
+          extraButtons: '<button class="btn ghost" data-action="htmlencode-all" data-codec="html">All → Decimal</button><button class="btn ghost" data-action="htmlencode-hex" data-codec="html">All → Hex</button>'
         })}
       </div>
 
       <div class="enc-panel" id="epanel-hex">
-        ${buildCodecPanel("hex", "Hexadecimal Encoding", null, null, {
+        ${buildCodecPanel("hex", "Hexadecimal encoding", null, null, {
           info: "Convert text to hex byte representation and back.",
-          extraButtons: '<button class="enc-btn enc-btn-ghost" data-action="hex-spaces" data-codec="hex">With Spaces</button><button class="enc-btn enc-btn-ghost" data-action="hex-0x" data-codec="hex">\\x Prefix</button>'
+          extraButtons: '<button class="btn ghost" data-action="hex-spaces" data-codec="hex">With spaces</button><button class="btn ghost" data-action="hex-0x" data-codec="hex">\\x prefix</button>'
         })}
       </div>
 
       <div class="enc-panel" id="epanel-binary">
-        <div class="enc-card">
+        <div class="enc-card card">
           <h3>Binary / Octal / Decimal</h3>
           <div class="enc-info">Convert text to and from binary, octal, or decimal byte representation.</div>
           <label class="enc-label">Input text</label>
           <textarea class="enc-textarea" id="bin-plain" placeholder="Hello"></textarea>
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-            <button class="enc-btn enc-btn-primary" id="bin-to-bin">→ Binary</button>
-            <button class="enc-btn enc-btn-primary" id="bin-to-oct">→ Octal</button>
-            <button class="enc-btn enc-btn-primary" id="bin-to-dec">→ Decimal</button>
+            <button class="btn" id="bin-to-bin">→ Binary</button>
+            <button class="btn" id="bin-to-oct">→ Octal</button>
+            <button class="btn" id="bin-to-dec">→ Decimal</button>
           </div>
           <div class="enc-output" id="bin-output" style="margin-top:12px;"></div>
           <div style="margin-top:16px;">
             <label class="enc-label">Encoded input (auto-detects binary/octal/decimal)</label>
             <textarea class="enc-textarea" id="bin-encoded" placeholder="01001000 01100101 01101100 01101100 01101111"></textarea>
             <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-              <button class="enc-btn enc-btn-ghost" id="bin-from-bin">Binary →</button>
-              <button class="enc-btn enc-btn-ghost" id="bin-from-oct">Octal →</button>
-              <button class="enc-btn enc-btn-ghost" id="bin-from-dec">Decimal →</button>
+              <button class="btn ghost" id="bin-from-bin">Binary →</button>
+              <button class="btn ghost" id="bin-from-oct">Octal →</button>
+              <button class="btn ghost" id="bin-from-dec">Decimal →</button>
             </div>
             <div class="enc-output" id="bin-decode-output" style="margin-top:8px;"></div>
           </div>
@@ -594,28 +581,28 @@ export function renderEncodingSuite(container) {
       </div>
 
       <div class="enc-panel" id="epanel-caesar">
-        <div class="enc-card">
-          <h3>Caesar Cipher</h3>
+        <div class="enc-card card">
+          <h3>Caesar cipher</h3>
           <div class="enc-info">Shift each letter by N positions. ROT13 is Caesar with shift=13.</div>
           <label class="enc-label">Text</label>
           <textarea class="enc-textarea" id="caesar-text" placeholder="The quick brown fox jumps over the lazy dog"></textarea>
           <div style="display:flex;gap:12px;align-items:center;margin-top:12px;">
             <label class="enc-label" style="min-width:50px;">Shift</label>
-            <input type="range" style="flex:1;accent-color:#7c5cff;" id="caesar-shift" min="0" max="25" value="3">
-            <span id="caesar-shift-val" style="min-width:30px;text-align:right;color:#7c5cff;font-weight:600;">3</span>
+            <input type="range" style="flex:1;accent-color:var(--acc);" id="caesar-shift" min="0" max="25" value="3">
+            <span id="caesar-shift-val" style="min-width:30px;text-align:right;color:var(--acc);font-weight:600;">3</span>
           </div>
           <div style="display:flex;gap:8px;margin-top:12px;">
-            <button class="enc-btn enc-btn-primary" id="caesar-enc">Encrypt</button>
-            <button class="enc-btn enc-btn-ghost" id="caesar-dec">Decrypt</button>
-            <button class="enc-btn enc-btn-ghost" id="caesar-brute">Brute Force (all 26)</button>
+            <button class="btn" id="caesar-enc">Encrypt</button>
+            <button class="btn ghost" id="caesar-dec">Decrypt</button>
+            <button class="btn ghost" id="caesar-brute">Brute force (all 26)</button>
           </div>
           <div class="enc-output" id="caesar-output" style="margin-top:12px;"></div>
         </div>
       </div>
 
       <div class="enc-panel" id="epanel-vigenere">
-        <div class="enc-card">
-          <h3>Vigenère Cipher</h3>
+        <div class="enc-card card">
+          <h3>Vigenère cipher</h3>
           <div class="enc-info">Polyalphabetic substitution cipher using a keyword. Much stronger than Caesar.</div>
           <div class="enc-dual">
             <div>
@@ -628,49 +615,49 @@ export function renderEncodingSuite(container) {
             </div>
           </div>
           <div style="display:flex;gap:8px;margin-top:12px;">
-            <button class="enc-btn enc-btn-primary" id="vig-enc">Encrypt</button>
-            <button class="enc-btn enc-btn-ghost" id="vig-dec">Decrypt</button>
+            <button class="btn" id="vig-enc">Encrypt</button>
+            <button class="btn ghost" id="vig-dec">Decrypt</button>
           </div>
           <div class="enc-output" id="vig-output" style="margin-top:12px;"></div>
         </div>
       </div>
 
       <div class="enc-panel" id="epanel-morse">
-        ${buildCodecPanel("morse", "Morse Code", null, null, {
+        ${buildCodecPanel("morse", "Morse code", null, null, {
           info: "International Morse Code. Words separated by \" / \", letters by spaces."
         })}
       </div>
 
       <div class="enc-panel" id="epanel-nato">
-        ${buildCodecPanel("nato", "NATO Phonetic Alphabet", null, null, {
+        ${buildCodecPanel("nato", "NATO phonetic alphabet", null, null, {
           info: "ICAO/NATO spelling alphabet for unambiguous verbal communication."
         })}
       </div>
 
       <div class="enc-panel" id="epanel-unicode">
-        ${buildCodecPanel("unicode", "Unicode Escape", null, null, {
+        ${buildCodecPanel("unicode", "Unicode escape", null, null, {
           info: "Convert characters to \\uXXXX escape sequences and back."
         })}
       </div>
 
       <div class="enc-panel" id="epanel-jwt">
-        <div class="enc-card">
-          <h3>JWT Decoder</h3>
+        <div class="enc-card card">
+          <h3>JWT decoder</h3>
           <div class="enc-info">Decode a JSON Web Token to inspect its header, payload, and signature. No verification (needs server-side secret).</div>
           <label class="enc-label">JWT Token</label>
-          <textarea class="enc-textarea" id="jwt-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>
-          <button class="enc-btn enc-btn-primary" id="jwt-decode" style="margin-top:12px;">Decode JWT</button>
+          <textarea class="enc-textarea" id="jwt-input" placeholder="eyJhbGciOi..."></textarea>
+          <button class="btn" id="jwt-decode" style="margin-top:12px;">Decode JWT</button>
           <div id="jwt-output"></div>
         </div>
       </div>
 
       <div class="enc-panel" id="epanel-asn1">
-        <div class="enc-card">
-          <h3>ASN.1/DER Viewer</h3>
+        <div class="enc-card card">
+          <h3>ASN.1 / DER viewer</h3>
           <div class="enc-info">Parse a DER-encoded hex string and display its ASN.1 TLV (Tag-Length-Value) structure.</div>
           <label class="enc-label">DER Hex</label>
           <textarea class="enc-textarea" id="asn1-input" placeholder="30 13 02 01 05 16 0e 41 6e 79 62 6f 64 79 20 74 68 65 72 65 3f"></textarea>
-          <button class="enc-btn enc-btn-primary" id="asn1-parse" style="margin-top:12px;">Parse</button>
+          <button class="btn" id="asn1-parse" style="margin-top:12px;">Parse</button>
           <div id="asn1-output"></div>
         </div>
       </div>
@@ -680,9 +667,9 @@ export function renderEncodingSuite(container) {
   // --- Tab switching ---
   container.querySelectorAll(".enc-tab").forEach(tab => {
     tab.addEventListener("click", () => {
-      container.querySelectorAll(".enc-tab").forEach(t => t.classList.remove("active"));
+      container.querySelectorAll(".enc-tab").forEach(t => t.classList.remove("active", "on"));
       container.querySelectorAll(".enc-panel").forEach(p => p.classList.remove("active"));
-      tab.classList.add("active");
+      tab.classList.add("active", "on");
       const panel = container.querySelector("#epanel-" + tab.dataset.panel);
       if (panel) panel.classList.add("active");
     });
@@ -788,15 +775,15 @@ export function renderEncodingSuite(container) {
   container.querySelector("#jwt-decode").addEventListener("click", () => {
     const token = container.querySelector("#jwt-input").value;
     const out = container.querySelector("#jwt-output");
-    if (!token.trim()) { out.innerHTML = '<div class="enc-output" style="color:#f44336;">Paste a JWT token</div>'; return; }
+    if (!token.trim()) { out.innerHTML = '<div class="enc-output" style="color:var(--bad);">Paste a JWT</div>'; return; }
     const result = decodeJWT(token);
-    if (result.error) { out.innerHTML = '<div class="enc-output" style="color:#f44336;">' + result.error + '</div>'; return; }
+    if (result.error) { out.innerHTML = '<div class="enc-output" style="color:var(--bad);">' + result.error + '</div>'; return; }
     let html = '<div style="margin-top:16px;">';
-    html += '<div class="enc-jwt-section"><div class="enc-jwt-header" style="color:#f44336;">Header</div><div class="enc-jwt-json" style="border-color:rgba(244,67,54,0.3);">' + htmlEncode(JSON.stringify(result.header, null, 2) || "") + '</div></div>';
-    html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header" style="color:#7c5cff;">Payload</div><div class="enc-jwt-json" style="border-color:rgba(124,92,255,0.3);">' + htmlEncode(JSON.stringify(result.payload, null, 2) || "") + '</div></div>';
-    html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header" style="color:#00d4ff;">Signature</div><div class="enc-jwt-json" style="border-color:rgba(0,212,255,0.3);">' + htmlEncode(result.signatureBase64Url) + '</div></div>';
+    html += '<div class="enc-jwt-section"><div class="enc-jwt-header">Header</div><div class="enc-jwt-json">' + htmlEncode(JSON.stringify(result.header, null, 2) || "") + '</div></div>';
+    html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header">Payload</div><div class="enc-jwt-json">' + htmlEncode(JSON.stringify(result.payload, null, 2) || "") + '</div></div>';
+    html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header">Signature (not verified)</div><div class="enc-jwt-json">' + htmlEncode(result.signatureBase64Url) + '</div></div>';
     if (Object.keys(result.claims).length) {
-      html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header">Parsed Claims</div><div class="enc-jwt-json">' + htmlEncode(JSON.stringify(result.claims, null, 2)) + '</div></div>';
+      html += '<div class="enc-jwt-section" style="margin-top:12px;"><div class="enc-jwt-header">Parsed claims</div><div class="enc-jwt-json">' + htmlEncode(JSON.stringify(result.claims, null, 2)) + '</div></div>';
     }
     html += '</div>';
     out.innerHTML = html;
@@ -806,7 +793,7 @@ export function renderEncodingSuite(container) {
   container.querySelector("#asn1-parse").addEventListener("click", () => {
     const hex = container.querySelector("#asn1-input").value;
     const out = container.querySelector("#asn1-output");
-    if (!hex.trim()) { out.innerHTML = '<div class="enc-output" style="color:#f44336;">Paste DER hex data</div>'; return; }
+    if (!hex.trim()) { out.innerHTML = '<div class="enc-output" style="color:var(--bad);">Paste DER hex data</div>'; return; }
     const nodes = parseASN1(hex);
     let html = '<div class="enc-asn1-tree" style="margin-top:16px;">';
     for (const n of nodes) {
@@ -816,7 +803,7 @@ export function renderEncodingSuite(container) {
       html += `<span class="enc-asn1-name">${n.tagName}</span> `;
       html += `<span class="enc-asn1-len">(${n.length} bytes)</span>`;
       if (n.valueStr) html += ` <span class="enc-asn1-val">= ${htmlEncode(n.valueStr)}</span>`;
-      if (n.valueHex && !n.constructed) html += `<div style="font-size:0.72rem;color:var(--txt-2,#667);margin-top:2px;">${n.valueHex}</div>`;
+      if (n.valueHex && !n.constructed) html += `<div style="font-size:12px;color:var(--mut);margin-top:2px;">${n.valueHex}</div>`;
       html += '</div>';
     }
     html += '</div>';

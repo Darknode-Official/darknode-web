@@ -37,18 +37,18 @@ var _haSecurityHeaders = [
 ];
 
 function _haGradeFromScore(score) {
-  if (score >= 90) return { grade: 'A', color: '#00ff88', label: 'EXCELLENT' };
-  if (score >= 80) return { grade: 'B', color: '#00cc66', label: 'GOOD' };
-  if (score >= 65) return { grade: 'C', color: '#ffcc00', label: 'AVERAGE' };
-  if (score >= 50) return { grade: 'D', color: '#ff8800', label: 'BELOW AVERAGE' };
-  if (score >= 30) return { grade: 'E', color: '#ff4444', label: 'POOR' };
-  return { grade: 'F', color: '#ff0000', label: 'CRITICAL' };
+  if (score >= 90) return { grade: 'A', color: '#00ff88', label: 'Excellent' };
+  if (score >= 80) return { grade: 'B', color: '#00cc66', label: 'Good' };
+  if (score >= 65) return { grade: 'C', color: '#ffcc00', label: 'Average' };
+  if (score >= 50) return { grade: 'D', color: '#ff8800', label: 'Below average' };
+  if (score >= 30) return { grade: 'E', color: '#ff4444', label: 'Poor' };
+  return { grade: 'F', color: '#ff0000', label: 'Critical' };
 }
 
 // Disclosure headers: the secure state is absence.
 var _haDisclosure = [
   { name: 'Server', note: 'consider hiding this' },
-  { name: 'X-Powered-By', note: 'REMOVE THIS — reveals technology stack' },
+  { name: 'X-Powered-By', note: 'remove — reveals the technology stack' },
   { name: 'X-AspNet-Version', note: 'remove — reveals the exact framework version' },
   { name: 'X-AspNetMvc-Version', note: 'remove — reveals the exact framework version' }
 ];
@@ -192,14 +192,14 @@ function _haRender(resultsEl, info) {
       var status, statusColor, statusLabel;
       if (value) {
         if (hdr.weak && hdr.weak(value)) {
-          status = 'weak'; statusColor = '#ffcc00'; statusLabel = 'WEAK';
+          status = 'weak'; statusColor = '#ffcc00'; statusLabel = 'Weak';
           earnedWeight += hdr.weight * 0.5;
         } else {
-          status = 'present'; statusColor = '#00ff88'; statusLabel = 'PRESENT';
+          status = 'present'; statusColor = '#00ff88'; statusLabel = 'Present';
           earnedWeight += hdr.weight;
         }
       } else {
-        status = 'missing'; statusColor = hdr.critical ? '#ff4444' : '#ff8844'; statusLabel = 'MISSING';
+        status = 'missing'; statusColor = hdr.critical ? '#ff4444' : '#ff8844'; statusLabel = 'Missing';
       }
 
       results.push({ header: hdr, value: value, status: status, color: statusColor, label: statusLabel });

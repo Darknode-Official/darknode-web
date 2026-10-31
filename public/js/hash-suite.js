@@ -671,11 +671,11 @@ function identifyHash(input) {
   const matches = [];
   for (const ht of HASH_TYPES) {
     if (ht.regex.test(trimmed)) {
-      matches.push({ ...ht, confidence: ht.len === trimmed.length ? "high" : ht.len === null ? "high" : "medium" });
+      matches.push({ ...ht, confidence: ht.len === null ? "format match" : "length match" });
     }
   }
   if (matches.length > 1) {
-    matches.sort((a, b) => (a.confidence === "high" ? 0 : 1) - (b.confidence === "high" ? 0 : 1));
+    matches.sort((a, b) => (a.confidence === "format match" ? 0 : 1) - (b.confidence === "format match" ? 0 : 1));
   }
   return matches;
 }
@@ -731,7 +731,7 @@ function formatTime(seconds) {
   if (seconds < 31536000)       return Math.round(seconds / 2592000) + " months";
   if (seconds < 31536000000)    return Math.round(seconds / 31536000) + " years";
   if (seconds < 31536000000000) return Math.round(seconds / 31536000000) + " millennia";
-  return "heat death of the universe";
+  return "longer than the age of the universe";
 }
 
 // ---------------------------------------------------------------------------
@@ -794,7 +794,8 @@ function formatNumber(n) {
 // Bcrypt / Scrypt Cost Calculator
 // ---------------------------------------------------------------------------
 function bcryptCostEstimate(costFactor) {
-  const baseTimeMs = 0.2;
+  // Rough single-core baseline: bcrypt cost 12 (4096 rounds) takes about 250 ms.
+  const baseTimeMs = 0.06;
   const iterations = Math.pow(2, costFactor);
   const timeMs = baseTimeMs * iterations;
   const hashesPerSec = 1000 / timeMs;
@@ -892,63 +893,50 @@ async function hashFile(file, algorithm, progressCallback) {
 // Styles
 // ---------------------------------------------------------------------------
 const HASH_STYLES = `
-  .hs-wrap { font-family: var(--mono, 'JetBrains Mono', monospace); color: var(--txt, #e0e6ed); max-width: 1100px; margin: 0 auto; padding: 24px; }
-  .hs-title { font-family: var(--sans, 'Sora', system-ui, sans-serif); font-size: 1.75rem; font-weight: 700; margin-bottom: 8px; background: linear-gradient(135deg, #00d4ff, #7c5cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .hs-subtitle { color: var(--txt-2, #8899aa); font-size: 0.85rem; margin-bottom: 24px; font-family: var(--sans, 'Sora', system-ui, sans-serif); }
-  .hs-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border, #1a2233); margin-bottom: 20px; flex-wrap: wrap; }
-  .hs-tab { padding: 8px 16px; cursor: pointer; font-size: 0.8rem; border: none; background: transparent; color: var(--txt-2, #8899aa); border-bottom: 2px solid transparent; transition: all 0.15s; font-family: inherit; }
-  .hs-tab:hover { color: var(--txt, #e0e6ed); background: rgba(0,212,255,0.05); }
-  .hs-tab.active { color: #00d4ff; border-bottom-color: #00d4ff; }
+  .hs-wrap { color: var(--txt); }
+  .hs-tabs { margin-bottom: 16px; flex-wrap: wrap; }
   .hs-panel { display: none; }
   .hs-panel.active { display: block; }
-  .hs-card { background: var(--card, #0d1117); border: 1px solid var(--border, #1a2233); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
-  .hs-card h3 { font-size: 1rem; font-weight: 600; margin: 0 0 12px; color: var(--txt, #e0e6ed); font-family: var(--sans, 'Sora', system-ui, sans-serif); }
+  .hs-card { margin-bottom: 16px; }
+  .hs-card h3 { font-size: 14px; font-weight: 600; margin: 0 0 12px; color: var(--txt); }
   .hs-input-group { margin-bottom: 12px; }
-  .hs-label { display: block; font-size: 0.75rem; color: var(--txt-2, #8899aa); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .hs-input, .hs-textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; background: var(--input-bg, #161b22); border: 1px solid var(--border, #1a2233); border-radius: 6px; color: var(--txt, #e0e6ed); font-family: inherit; font-size: 0.85rem; outline: none; transition: border-color 0.15s; }
-  .hs-input:focus, .hs-textarea:focus { border-color: #00d4ff; }
+  .hs-label { display: block; font-size: 12px; color: var(--mut); margin-bottom: 4px; }
+  .hs-input, .hs-textarea { width: 100%; box-sizing: border-box; font-family: var(--font-mono); font-size: 13px; }
   .hs-textarea { resize: vertical; min-height: 80px; }
-  .hs-select { padding: 8px 12px; background: var(--input-bg, #161b22); border: 1px solid var(--border, #1a2233); border-radius: 6px; color: var(--txt, #e0e6ed); font-family: inherit; font-size: 0.85rem; outline: none; cursor: pointer; }
-  .hs-btn { padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.8rem; font-weight: 600; transition: all 0.15s; }
-  .hs-btn-primary { background: linear-gradient(135deg, #00d4ff, #0090b3); color: #000; }
-  .hs-btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
-  .hs-btn-ghost { background: transparent; color: #00d4ff; border: 1px solid rgba(0,212,255,0.3); }
-  .hs-btn-ghost:hover { background: rgba(0,212,255,0.1); }
-  .hs-output { background: #0a0e16; border: 1px solid var(--border, #1a2233); border-radius: 6px; padding: 12px; font-size: 0.82rem; word-break: break-all; margin-top: 8px; min-height: 36px; position: relative; user-select: all; }
-  .hs-copy-btn { position: absolute; top: 6px; right: 6px; padding: 4px 10px; font-size: 0.7rem; background: rgba(0,212,255,0.15); color: #00d4ff; border: none; border-radius: 4px; cursor: pointer; font-family: inherit; }
-  .hs-copy-btn:hover { background: rgba(0,212,255,0.3); }
+  .hs-select { font-size: 13px; }
+  .hs-output { background: var(--card2); border: 1px solid var(--line); border-radius: 6px; padding: 12px; font-family: var(--font-mono); font-size: 13px; word-break: break-all; margin-top: 8px; min-height: 36px; position: relative; user-select: all; }
+  .hs-copy-btn { position: absolute; top: 6px; right: 6px; padding: 4px 10px; font-size: 12px; background: var(--card); color: var(--txt-2); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .hs-copy-btn:hover { color: var(--txt); }
   .hs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-  .hs-results-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 12px; }
-  .hs-results-table th { text-align: left; padding: 8px 12px; background: #0a0e16; border-bottom: 1px solid var(--border, #1a2233); color: var(--txt-2, #8899aa); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.7rem; }
-  .hs-results-table td { padding: 8px 12px; border-bottom: 1px solid rgba(26,34,51,0.5); vertical-align: top; }
-  .hs-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
-  .hs-badge-green { background: rgba(0,200,83,0.15); color: #00c853; }
-  .hs-badge-yellow { background: rgba(255,183,77,0.15); color: #ffb74d; }
-  .hs-badge-red { background: rgba(244,67,54,0.15); color: #f44336; }
-  .hs-badge-blue { background: rgba(0,212,255,0.15); color: #00d4ff; }
-  .hs-badge-purple { background: rgba(124,92,255,0.15); color: #7c5cff; }
-  .hs-meter { height: 8px; background: #161b22; border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .hs-results-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .hs-results-table th { text-align: left; padding: 8px 12px; background: var(--card2); border-bottom: 1px solid var(--line); color: var(--mut); font-weight: 500; font-size: 12px; }
+  .hs-results-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .hs-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; border: 1px solid currentColor; }
+  .hs-badge-green { color: var(--ok); }
+  .hs-badge-yellow { color: var(--warn); }
+  .hs-badge-red { color: var(--bad); }
+  .hs-badge-blue { color: var(--acc); }
+  .hs-badge-purple { color: var(--acc-2); }
+  .hs-meter { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; margin-top: 6px; }
   .hs-meter-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
-  .hs-file-drop { border: 2px dashed var(--border, #1a2233); border-radius: 8px; padding: 40px; text-align: center; color: var(--txt-2, #8899aa); cursor: pointer; transition: all 0.15s; }
-  .hs-file-drop:hover, .hs-file-drop.dragover { border-color: #00d4ff; background: rgba(0,212,255,0.05); color: #00d4ff; }
+  .hs-file-drop { border: 2px dashed var(--line); border-radius: 8px; padding: 40px; text-align: center; color: var(--txt-2); cursor: pointer; }
+  .hs-file-drop:hover, .hs-file-drop.dragover { border-color: var(--acc); color: var(--acc); }
   .hs-file-drop input { display: none; }
-  .hs-progress { width: 100%; height: 4px; background: #161b22; border-radius: 2px; margin-top: 8px; overflow: hidden; display: none; }
+  .hs-progress { width: 100%; height: 4px; background: var(--line); border-radius: 2px; margin-top: 8px; overflow: hidden; display: none; }
   .hs-progress.active { display: block; }
-  .hs-progress-bar { height: 100%; background: linear-gradient(90deg, #00d4ff, #7c5cff); border-radius: 2px; transition: width 0.3s; width: 0; }
+  .hs-progress-bar { height: 100%; background: var(--acc); border-radius: 2px; transition: width 0.3s; width: 0; }
   .hs-compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-  .hs-match { color: #00c853; font-weight: 600; }
-  .hs-nomatch { color: #f44336; font-weight: 600; }
-  .hs-info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(26,34,51,0.3); }
-  .hs-info-label { color: var(--txt-2, #8899aa); font-size: 0.8rem; }
-  .hs-info-value { color: var(--txt, #e0e6ed); font-size: 0.85rem; font-weight: 500; }
+  .hs-match { color: var(--ok); font-weight: 600; }
+  .hs-nomatch { color: var(--bad); font-weight: 600; }
+  .hs-info-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .hs-info-label { color: var(--mut); font-size: 13px; }
+  .hs-info-value { color: var(--txt); font-size: 13px; font-weight: 500; }
   .hs-slider-group { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-  .hs-slider { flex: 1; accent-color: #00d4ff; }
-  .hs-slider-val { min-width: 40px; text-align: right; font-size: 0.85rem; color: #00d4ff; font-weight: 600; }
+  .hs-slider { flex: 1; accent-color: var(--acc); }
+  .hs-slider-val { min-width: 40px; text-align: right; font-size: 13px; color: var(--acc); font-weight: 600; }
   @media (max-width: 700px) {
     .hs-grid { grid-template-columns: 1fr; }
     .hs-compare-row { grid-template-columns: 1fr; }
-    .hs-tabs { gap: 0; }
-    .hs-tab { padding: 6px 10px; font-size: 0.72rem; }
   }
 `;
 
@@ -962,28 +950,28 @@ export function renderHashSuite(container) {
 
   container.innerHTML = `
     <div class="hs-wrap">
-      <div class="hs-title">Hash Suite</div>
-      <div class="hs-subtitle">Compute, identify, compare, and analyze cryptographic hashes — entirely in your browser</div>
+      <div class="pg-head"><div><h1 class="pg-h1">Hash Suite</h1>
+      <p class="muted pg-sub">Compute, identify and compare hashes, and estimate password and KDF strength, entirely in your browser.</p></div></div>
 
-      <div class="hs-tabs" id="hs-tabs">
-        <button class="hs-tab active" data-panel="compute">Compute</button>
+      <div class="hs-tabs seg" id="hs-tabs">
+        <button class="hs-tab active on" data-panel="compute">Compute</button>
         <button class="hs-tab" data-panel="identify">Identify</button>
         <button class="hs-tab" data-panel="compare">Compare</button>
-        <button class="hs-tab" data-panel="file">File Hash</button>
+        <button class="hs-tab" data-panel="file">File hash</button>
         <button class="hs-tab" data-panel="hmac">HMAC</button>
-        <button class="hs-tab" data-panel="entropy">Password Entropy</button>
-        <button class="hs-tab" data-panel="rainbow">Rainbow Table</button>
-        <button class="hs-tab" data-panel="cost">KDF Cost</button>
+        <button class="hs-tab" data-panel="entropy">Password entropy</button>
+        <button class="hs-tab" data-panel="rainbow">Rainbow table</button>
+        <button class="hs-tab" data-panel="cost">KDF cost</button>
         <button class="hs-tab" data-panel="reference">Reference</button>
       </div>
 
       <!-- COMPUTE PANEL -->
       <div class="hs-panel active" id="panel-compute">
-        <div class="hs-card">
-          <h3>Compute Hash</h3>
+        <div class="hs-card card">
+          <h3>Compute hash</h3>
           <div class="hs-input-group">
-            <label class="hs-label">Input Text</label>
-            <textarea class="hs-textarea" id="compute-input" placeholder="Type or paste text to hash..."></textarea>
+            <label class="hs-label">Input text</label>
+            <textarea class="hs-textarea" id="compute-input" placeholder="Text to hash"></textarea>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <select class="hs-select" id="compute-algo">
@@ -998,8 +986,8 @@ export function renderHashSuite(container) {
               <option value="HEX">Hex (UPPERCASE)</option>
               <option value="base64">Base64</option>
             </select>
-            <button class="hs-btn hs-btn-primary" id="compute-btn">Hash</button>
-            <button class="hs-btn hs-btn-ghost" id="compute-clear">Clear</button>
+            <button class="btn" id="compute-btn">Hash</button>
+            <button class="btn ghost" id="compute-clear">Clear</button>
           </div>
           <div id="compute-output"></div>
         </div>
@@ -1007,45 +995,44 @@ export function renderHashSuite(container) {
 
       <!-- IDENTIFY PANEL -->
       <div class="hs-panel" id="panel-identify">
-        <div class="hs-card">
-          <h3>Identify Hash Type</h3>
+        <div class="hs-card card">
+          <h3>Identify hash type</h3>
           <div class="hs-input-group">
             <label class="hs-label">Paste a hash</label>
-            <input class="hs-input" id="identify-input" placeholder="e.g. 5d41402abc4b2a76b9719d911017c592">
+            <input class="hs-input" id="identify-input" placeholder="Hash value">
           </div>
-          <button class="hs-btn hs-btn-primary" id="identify-btn">Identify</button>
+          <button class="btn" id="identify-btn">Identify</button>
           <div id="identify-output"></div>
         </div>
       </div>
 
       <!-- COMPARE PANEL -->
       <div class="hs-panel" id="panel-compare">
-        <div class="hs-card">
-          <h3>Compare Hashes</h3>
-          <p style="font-size:0.8rem;color:var(--txt-2,#8899aa);margin:0 0 12px;">Paste two hashes to check if they match (constant-time comparison).</p>
+        <div class="hs-card card">
+          <h3>Compare hashes</h3>
+          <p style="font-size:12px;color:var(--mut);margin:0 0 12px;">Paste two hashes to check whether they match.</p>
           <div class="hs-compare-row">
             <div class="hs-input-group">
               <label class="hs-label">Hash A</label>
-              <input class="hs-input" id="compare-a" placeholder="First hash...">
+              <input class="hs-input" id="compare-a" placeholder="First hash">
             </div>
             <div class="hs-input-group">
               <label class="hs-label">Hash B</label>
-              <input class="hs-input" id="compare-b" placeholder="Second hash...">
+              <input class="hs-input" id="compare-b" placeholder="Second hash">
             </div>
           </div>
-          <button class="hs-btn hs-btn-primary" id="compare-btn">Compare</button>
+          <button class="btn" id="compare-btn">Compare</button>
           <div id="compare-output"></div>
         </div>
       </div>
 
       <!-- FILE HASH PANEL -->
       <div class="hs-panel" id="panel-file">
-        <div class="hs-card">
-          <h3>File Hash Calculator</h3>
+        <div class="hs-card card">
+          <h3>File hash calculator</h3>
           <div class="hs-file-drop" id="file-drop">
-            <div style="font-size:1.2rem;margin-bottom:8px;color:var(--acc);font-family:var(--mono)">[FILE]</div>
-            <div>Drag &amp; drop a file here, or <strong>click to browse</strong></div>
-            <div style="font-size:0.75rem;margin-top:4px;">All processing happens in your browser — nothing is uploaded</div>
+                        <div>Drag &amp; drop a file here, or <strong>click to browse</strong></div>
+            <div style="font-size:12px;margin-top:4px;">The file is read in your browser and never uploaded.</div>
             <input type="file" id="file-input">
           </div>
           <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
@@ -1063,15 +1050,15 @@ export function renderHashSuite(container) {
 
       <!-- HMAC PANEL -->
       <div class="hs-panel" id="panel-hmac">
-        <div class="hs-card">
-          <h3>HMAC Generator</h3>
+        <div class="hs-card card">
+          <h3>HMAC generator</h3>
           <div class="hs-input-group">
-            <label class="hs-label">Secret Key</label>
-            <input class="hs-input" id="hmac-key" placeholder="Enter secret key..." type="password">
+            <label class="hs-label">Secret key</label>
+            <input class="hs-input" id="hmac-key" placeholder="Secret key" type="password">
           </div>
           <div class="hs-input-group">
             <label class="hs-label">Message</label>
-            <textarea class="hs-textarea" id="hmac-msg" placeholder="Enter message to authenticate..."></textarea>
+            <textarea class="hs-textarea" id="hmac-msg" placeholder="Message to authenticate"></textarea>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
             <select class="hs-select" id="hmac-algo">
@@ -1079,7 +1066,7 @@ export function renderHashSuite(container) {
               <option value="sha1">HMAC-SHA1</option>
               <option value="sha256" selected>HMAC-SHA256</option>
             </select>
-            <button class="hs-btn hs-btn-primary" id="hmac-btn">Generate HMAC</button>
+            <button class="btn" id="hmac-btn">Generate HMAC</button>
           </div>
           <div id="hmac-output"></div>
         </div>
@@ -1087,12 +1074,13 @@ export function renderHashSuite(container) {
 
       <!-- PASSWORD ENTROPY PANEL -->
       <div class="hs-panel" id="panel-entropy">
-        <div class="hs-card">
-          <h3>Password Entropy Calculator</h3>
+        <div class="hs-card card">
+          <h3>Password entropy estimate</h3>
+          <p style="font-size:12px;color:var(--mut);margin:0 0 12px;">Estimated from length and character classes only. A password built from words or one that appears in a leak can be far weaker than this suggests.</p>
           <div class="hs-input-group">
             <label class="hs-label">Password</label>
             <div style="position:relative;">
-              <input class="hs-input" id="entropy-input" placeholder="Type a password to analyze..." type="text" autocomplete="off">
+              <input class="hs-input" id="entropy-input" placeholder="Password" type="text" autocomplete="off">
             </div>
           </div>
           <div id="entropy-output"></div>
@@ -1101,9 +1089,9 @@ export function renderHashSuite(container) {
 
       <!-- RAINBOW TABLE PANEL -->
       <div class="hs-panel" id="panel-rainbow">
-        <div class="hs-card">
-          <h3>Rainbow Table Size Estimator</h3>
-          <p style="font-size:0.8rem;color:var(--txt-2,#8899aa);margin:0 0 16px;">Estimate the storage needed for a rainbow table attack on a given keyspace.</p>
+        <div class="hs-card card">
+          <h3>Rainbow table size estimator</h3>
+          <p style="font-size:12px;color:var(--mut);margin:0 0 16px;">Estimate the storage needed for a rainbow table attack on a given keyspace.</p>
           <div class="hs-grid">
             <div>
               <div class="hs-slider-group">
@@ -1143,11 +1131,12 @@ export function renderHashSuite(container) {
 
       <!-- KDF COST PANEL -->
       <div class="hs-panel" id="panel-cost">
-        <div class="hs-card">
-          <h3>KDF Cost Calculator</h3>
+        <div class="hs-card card">
+          <h3>KDF cost estimate</h3>
+          <p style="font-size:12px;color:var(--mut);margin:0 0 12px;">Times are rough estimates from a fixed baseline (bcrypt cost 12 at about 250 ms on one core, scrypt at about 50,000 block operations per ms), not a measurement of your hardware. Benchmark on your own servers before choosing a cost.</p>
           <div class="hs-grid">
             <div>
-              <h3 style="font-size:0.9rem;">bcrypt</h3>
+              <h3>bcrypt</h3>
               <div class="hs-slider-group">
                 <label class="hs-label" style="min-width:100px;">Cost factor</label>
                 <input type="range" class="hs-slider" id="bcrypt-cost" min="4" max="20" value="12">
@@ -1156,7 +1145,7 @@ export function renderHashSuite(container) {
               <div id="bcrypt-output"></div>
             </div>
             <div>
-              <h3 style="font-size:0.9rem;">scrypt</h3>
+              <h3>scrypt</h3>
               <div class="hs-slider-group">
                 <label class="hs-label" style="min-width:100px;">N (CPU/mem)</label>
                 <select class="hs-select" id="scrypt-n">
@@ -1190,14 +1179,14 @@ export function renderHashSuite(container) {
 
       <!-- REFERENCE PANEL -->
       <div class="hs-panel" id="panel-reference">
-        <div class="hs-card">
-          <h3>Hash Algorithm Reference</h3>
+        <div class="hs-card card">
+          <h3>Hash algorithm reference</h3>
           <table class="hs-results-table">
             <thead>
               <tr>
                 <th>Algorithm</th>
                 <th>Bits</th>
-                <th>Hex Length</th>
+                <th>Hex length</th>
                 <th>Category</th>
                 <th>Status</th>
               </tr>
@@ -1205,8 +1194,8 @@ export function renderHashSuite(container) {
             <tbody id="ref-table-body"></tbody>
           </table>
         </div>
-        <div class="hs-card" style="margin-top:16px;">
-          <h3>Hash Comparison Chart</h3>
+        <div class="hs-card card" style="margin-top:16px;">
+          <h3>Hash comparison chart</h3>
           <table class="hs-results-table">
             <thead>
               <tr><th>Property</th><th>MD5</th><th>SHA-1</th><th>SHA-256</th><th>SHA-512</th><th>SHA-3</th><th>BLAKE3</th></tr>
@@ -1228,8 +1217,8 @@ export function renderHashSuite(container) {
             </tbody>
           </table>
         </div>
-        <div class="hs-card" style="margin-top:16px;">
-          <h3>Password Hashing Comparison</h3>
+        <div class="hs-card card" style="margin-top:16px;">
+          <h3>Password hashing comparison</h3>
           <table class="hs-results-table">
             <thead>
               <tr><th>Property</th><th>bcrypt</th><th>scrypt</th><th>Argon2id</th><th>PBKDF2</th></tr>
@@ -1247,8 +1236,8 @@ export function renderHashSuite(container) {
             </tbody>
           </table>
         </div>
-        <div class="hs-card" style="margin-top:16px;">
-          <h3>Known Hash Attacks Timeline</h3>
+        <div class="hs-card card" style="margin-top:16px;">
+          <h3>Known hash attacks timeline</h3>
           <table class="hs-results-table">
             <thead><tr><th>Year</th><th>Algorithm</th><th>Attack</th><th>Impact</th></tr></thead>
             <tbody>
@@ -1272,9 +1261,9 @@ export function renderHashSuite(container) {
   const tabs = container.querySelectorAll(".hs-tab");
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
+      tabs.forEach(t => t.classList.remove("active", "on"));
       container.querySelectorAll(".hs-panel").forEach(p => p.classList.remove("active"));
-      tab.classList.add("active");
+      tab.classList.add("active", "on");
       const panel = container.querySelector("#panel-" + tab.dataset.panel);
       if (panel) panel.classList.add("active");
     });
@@ -1312,7 +1301,7 @@ export function renderHashSuite(container) {
     const algo = container.querySelector("#compute-algo").value;
     const fmt = container.querySelector("#compute-format").value;
     const out = container.querySelector("#compute-output");
-    if (!input) { out.innerHTML = '<div class="hs-output" style="color:#f44336;">Enter text to hash</div>'; return; }
+    if (!input) { out.innerHTML = '<div class="hs-output" style="color:var(--bad);">Enter text to hash</div>'; return; }
 
     function formatHash(hex) {
       if (fmt === "HEX") return hex.toUpperCase();
@@ -1326,7 +1315,7 @@ export function renderHashSuite(container) {
       const sha256 = formatHash(SHA256.hash(input));
       const sha512 = formatHash(SHA512.hash(input));
       out.innerHTML = `
-        <div class="hs-card" style="margin-top:12px;">
+        <div class="hs-card card" style="margin-top:12px;">
           <div class="hs-info-row"><span class="hs-info-label">MD5</span></div>
           <div class="hs-output">${md5}<button class="hs-copy-btn">Copy</button></div>
           <div class="hs-info-row" style="margin-top:12px;"><span class="hs-info-label">SHA-1</span></div>
@@ -1357,17 +1346,17 @@ export function renderHashSuite(container) {
   container.querySelector("#identify-btn").addEventListener("click", () => {
     const input = container.querySelector("#identify-input").value;
     const out = container.querySelector("#identify-output");
-    if (!input.trim()) { out.innerHTML = '<div class="hs-output" style="color:#f44336;">Paste a hash to identify</div>'; return; }
+    if (!input.trim()) { out.innerHTML = '<div class="hs-output" style="color:var(--bad);">Paste a hash to identify</div>'; return; }
     const matches = identifyHash(input);
     if (matches.length === 0) {
-      out.innerHTML = '<div class="hs-output" style="color:#ffb74d;">No known hash format matches this input. Length: ' + input.trim().length + ' characters.</div>';
+      out.innerHTML = '<div class="hs-output" style="color:var(--warn);">No known hash format matches this input. Length: ' + input.trim().length + ' characters.</div>';
       return;
     }
-    let html = `<div style="margin-top:12px;font-size:0.8rem;color:var(--txt-2,#8899aa);">Input length: ${input.trim().length} characters &middot; ${matches.length} possible match${matches.length > 1 ? "es" : ""}</div>`;
-    html += '<table class="hs-results-table"><thead><tr><th>Algorithm</th><th>Category</th><th>Bits</th><th>Confidence</th><th>Description</th></tr></thead><tbody>';
+    let html = `<div style="margin-top:12px;font-size:12px;color:var(--mut);">Input length: ${input.trim().length} characters &middot; ${matches.length} possible match${matches.length > 1 ? "es" : ""}</div>`;
+    html += '<table class="hs-results-table"><thead><tr><th>Algorithm</th><th>Category</th><th>Bits</th><th>Match</th><th>Description</th></tr></thead><tbody>';
     for (const m of matches) {
-      const badge = m.confidence === "high" ? "hs-badge-green" : "hs-badge-yellow";
-      html += `<tr><td><strong>${m.name}</strong></td><td>${m.category}</td><td>${m.bits || "—"}</td><td><span class="hs-badge ${badge}">${m.confidence}</span></td><td style="font-size:0.75rem;">${m.desc}</td></tr>`;
+      const badge = m.confidence === "format match" ? "hs-badge-green" : "hs-badge-yellow";
+      html += `<tr><td><strong>${m.name}</strong></td><td>${m.category}</td><td>${m.bits || "—"}</td><td><span class="hs-badge ${badge}">${m.confidence}</span></td><td style="font-size:12px;">${m.desc}</td></tr>`;
     }
     html += "</tbody></table>";
     out.innerHTML = html;
@@ -1380,16 +1369,16 @@ export function renderHashSuite(container) {
     // hex digests compare case-insensitively; base64 digests are case-sensitive
     if (/^[0-9a-f]+$/i.test(a) && /^[0-9a-f]+$/i.test(b)) { a = a.toLowerCase(); b = b.toLowerCase(); }
     const out = container.querySelector("#compare-output");
-    if (!a || !b) { out.innerHTML = '<div class="hs-output" style="color:#f44336;">Enter both hashes</div>'; return; }
+    if (!a || !b) { out.innerHTML = '<div class="hs-output" style="color:var(--bad);">Enter both hashes</div>'; return; }
     const match = a === b;
-    let html = `<div class="hs-output" style="border-color:${match ? "#00c853" : "#f44336"};">`;
-    html += match ? '<span class="hs-match">MATCH — Hashes are identical</span>' : '<span class="hs-nomatch">NO MATCH — Hashes differ</span>';
+    let html = `<div class="hs-output" style="border-color:${match ? "var(--ok)" : "var(--bad)"};">`;
+    html += match ? '<span class="hs-match">Match: the hashes are identical</span>' : '<span class="hs-nomatch">No match: the hashes differ</span>';
     if (!match && a.length === b.length) {
       let diffCount = 0;
       for (let i = 0; i < a.length; i++) { if (a[i] !== b[i]) diffCount++; }
-      html += `<div style="margin-top:8px;font-size:0.8rem;color:var(--txt-2,#8899aa);">Same length (${a.length}). ${diffCount} character${diffCount > 1 ? "s" : ""} differ.</div>`;
+      html += `<div style="margin-top:8px;font-size:12px;color:var(--mut);">Same length (${a.length}). ${diffCount} character${diffCount > 1 ? "s" : ""} differ.</div>`;
     } else if (!match) {
-      html += `<div style="margin-top:8px;font-size:0.8rem;color:var(--txt-2,#8899aa);">Hash A: ${a.length} chars, Hash B: ${b.length} chars</div>`;
+      html += `<div style="margin-top:8px;font-size:12px;color:var(--mut);">Hash A: ${a.length} chars, Hash B: ${b.length} chars</div>`;
     }
     html += "</div>";
     out.innerHTML = html;
@@ -1419,7 +1408,7 @@ export function renderHashSuite(container) {
     try {
       const result = await hashFile(file, algo, (pct) => { progressBar.style.width = pct + "%"; });
       out.innerHTML = `
-        <div class="hs-card" style="margin-top:12px;">
+        <div class="hs-card card" style="margin-top:12px;">
           <div class="hs-info-row"><span class="hs-info-label">File</span><span class="hs-info-value">${hsEsc(result.filename)}</span></div>
           <div class="hs-info-row"><span class="hs-info-label">Size</span><span class="hs-info-value">${result.sizeFormatted} (${result.size.toLocaleString()} bytes)</span></div>
           <div class="hs-info-row"><span class="hs-info-label">Type</span><span class="hs-info-value">${hsEsc(result.type)}</span></div>
@@ -1429,7 +1418,7 @@ export function renderHashSuite(container) {
         </div>`;
       attachCopy(out);
     } catch (err) {
-      out.innerHTML = '<div class="hs-output" style="color:#f44336;">Error: ' + hsEsc(err.message) + '</div>';
+      out.innerHTML = '<div class="hs-output" style="color:var(--bad);">Error: ' + hsEsc(err.message) + '</div>';
     }
     setTimeout(() => { progress.classList.remove("active"); }, 500);
   }
@@ -1440,10 +1429,10 @@ export function renderHashSuite(container) {
     const msg = container.querySelector("#hmac-msg").value;
     const algo = container.querySelector("#hmac-algo").value;
     const out = container.querySelector("#hmac-output");
-    if (!key || !msg) { out.innerHTML = '<div class="hs-output" style="color:#f44336;">Enter both key and message</div>'; return; }
+    if (!key || !msg) { out.innerHTML = '<div class="hs-output" style="color:var(--bad);">Enter both key and message</div>'; return; }
     const hmac = computeHMAC(algo, key, msg);
     out.innerHTML = `
-      <div class="hs-card" style="margin-top:12px;">
+      <div class="hs-card card" style="margin-top:12px;">
         <div class="hs-info-row"><span class="hs-info-label">Algorithm</span><span class="hs-info-value">HMAC-${algo.toUpperCase()}</span></div>
         <div class="hs-output">${hmac}<button class="hs-copy-btn">Copy</button></div>
       </div>`;
@@ -1458,21 +1447,21 @@ export function renderHashSuite(container) {
     if (!pw) { out.innerHTML = ""; return; }
     const result = calcEntropy(pw);
     const strengthColors = {
-      "none": "#666", "very weak": "#f44336", "weak": "#ff9800",
-      "reasonable": "#ffb74d", "strong": "#4caf50", "very strong": "#00c853", "excellent": "#00d4ff"
+      "none": "var(--mut)", "very weak": "var(--bad)", "weak": "var(--bad)",
+      "reasonable": "var(--warn)", "strong": "var(--ok)", "very strong": "var(--ok)", "excellent": "var(--ok)"
     };
     const pct = Math.min(100, (result.entropy / 128) * 100);
     let html = `
-      <div class="hs-card" style="margin-top:12px;">
-        <div class="hs-info-row"><span class="hs-info-label">Entropy</span><span class="hs-info-value">${result.entropy} bits</span></div>
+      <div class="hs-card card" style="margin-top:12px;">
+        <div class="hs-info-row"><span class="hs-info-label">Estimated entropy</span><span class="hs-info-value">${result.entropy} bits</span></div>
         <div class="hs-meter"><div class="hs-meter-fill" style="width:${pct}%;background:${strengthColors[result.strength]};"></div></div>
-        <div class="hs-info-row"><span class="hs-info-label">Strength</span><span class="hs-info-value" style="color:${strengthColors[result.strength]};text-transform:uppercase;font-size:0.8rem;">${result.strength}</span></div>
+        <div class="hs-info-row"><span class="hs-info-label">Strength</span><span class="hs-info-value" style="color:${strengthColors[result.strength]};">${result.strength}</span></div>
         <div class="hs-info-row"><span class="hs-info-label">Length</span><span class="hs-info-value">${result.length} characters</span></div>
         <div class="hs-info-row"><span class="hs-info-label">Charset pool</span><span class="hs-info-value">${result.charset} characters</span></div>
-        <div class="hs-info-row"><span class="hs-info-label">Crack time (10B/s)</span><span class="hs-info-value">${result.crackTime}</span></div>`;
+        <div class="hs-info-row"><span class="hs-info-label">Brute-force time at 10 billion guesses/s</span><span class="hs-info-value">${result.crackTime}</span></div>`;
     if (result.patterns.length) {
       html += '<div style="margin-top:12px;"><span class="hs-label">Warnings</span>';
-      for (const p of result.patterns) html += `<div style="font-size:0.8rem;color:#ffb74d;margin:4px 0;">${p}</div>`;
+      for (const p of result.patterns) html += `<div style="font-size:13px;color:var(--warn);margin:4px 0;">${p}</div>`;
       html += "</div>";
     }
     html += "</div>";
@@ -1494,13 +1483,13 @@ export function renderHashSuite(container) {
     const result = estimateRainbowTable(charset, maxLen, hashBits, chain, tables);
     const out = container.querySelector("#rt-output");
     out.innerHTML = `
-      <div class="hs-card">
+      <div class="hs-card card">
         <div class="hs-info-row"><span class="hs-info-label">Keyspace</span><span class="hs-info-value">${result.keyspaceFormatted}</span></div>
         <div class="hs-info-row"><span class="hs-info-label">Chains</span><span class="hs-info-value">${result.numChains.toLocaleString()}</span></div>
         <div class="hs-info-row"><span class="hs-info-label">Chain length</span><span class="hs-info-value">${result.chainLength.toLocaleString()}</span></div>
         <div class="hs-info-row"><span class="hs-info-label">Single table</span><span class="hs-info-value">${result.singleTableFormatted}</span></div>
-        <div class="hs-info-row"><span class="hs-info-label">Total (${result.numTables} table${result.numTables > 1 ? "s" : ""})</span><span class="hs-info-value" style="color:#00d4ff;font-weight:700;">${result.totalFormatted}</span></div>
-        <div class="hs-info-row"><span class="hs-info-label">Success rate</span><span class="hs-info-value">${result.successRate}</span></div>
+        <div class="hs-info-row"><span class="hs-info-label">Total (${result.numTables} table${result.numTables > 1 ? "s" : ""})</span><span class="hs-info-value" style="color:var(--acc);font-weight:700;">${result.totalFormatted}</span></div>
+        <div class="hs-info-row"><span class="hs-info-label">Approximate success rate</span><span class="hs-info-value">${result.successRate}</span></div>
         <div class="hs-info-row"><span class="hs-info-label">Compute time</span><span class="hs-info-value">${result.computeTime} (at 1B hashes/s)</span></div>
       </div>`;
   }
@@ -1519,10 +1508,9 @@ export function renderHashSuite(container) {
     out.innerHTML = `
       <div style="margin-top:12px;">
         <div class="hs-info-row"><span class="hs-info-label">Iterations</span><span class="hs-info-value">${result.iterations.toLocaleString()}</span></div>
-        <div class="hs-info-row"><span class="hs-info-label">Time / hash</span><span class="hs-info-value">${result.timePerHash}</span></div>
-        <div class="hs-info-row"><span class="hs-info-label">H/s (CPU)</span><span class="hs-info-value">${result.hashesPerSecCPU.toLocaleString()}</span></div>
-        <div class="hs-info-row"><span class="hs-info-label">H/s (GPU)</span><span class="hs-info-value">${result.hashesPerSecGPU.toLocaleString()}</span></div>
-        <div class="hs-info-row"><span class="hs-info-label">Verdict</span><span class="hs-info-value" style="font-size:0.78rem;">${result.recommendation}</span></div>
+        <div class="hs-info-row"><span class="hs-info-label">Est. time / hash (one core)</span><span class="hs-info-value">${result.timePerHash}</span></div>
+        <div class="hs-info-row"><span class="hs-info-label">Est. hashes/s (one core)</span><span class="hs-info-value">${result.hashesPerSecCPU.toLocaleString()}</span></div>
+        <div class="hs-info-row"><span class="hs-info-label">Verdict</span><span class="hs-info-value" style="font-size:13px;">${result.recommendation}</span></div>
       </div>`;
   }
   function updateScrypt() {
@@ -1537,9 +1525,9 @@ export function renderHashSuite(container) {
       <div style="margin-top:12px;">
         <div class="hs-info-row"><span class="hs-info-label">Memory</span><span class="hs-info-value">${result.memory}</span></div>
         <div class="hs-info-row"><span class="hs-info-label">CPU cost</span><span class="hs-info-value">${result.cpuCost}</span></div>
-        <div class="hs-info-row"><span class="hs-info-label">Time / hash</span><span class="hs-info-value">${result.timePerHash}</span></div>
-        <div class="hs-info-row"><span class="hs-info-label">Verdict</span><span class="hs-info-value" style="font-size:0.78rem;">${result.recommendation}</span></div>
-        <div style="margin-top:8px;font-size:0.75rem;color:var(--txt-2,#8899aa);">${result.comparison.advantage}</div>
+        <div class="hs-info-row"><span class="hs-info-label">Est. time / hash</span><span class="hs-info-value">${result.timePerHash}</span></div>
+        <div class="hs-info-row"><span class="hs-info-label">Verdict</span><span class="hs-info-value" style="font-size:13px;">${result.recommendation}</span></div>
+        <div style="margin-top:8px;font-size:12px;color:var(--mut);">${result.comparison.advantage}</div>
       </div>`;
   }
   container.querySelector("#bcrypt-cost").addEventListener("input", updateBcrypt);
@@ -1563,7 +1551,7 @@ export function renderHashSuite(container) {
     };
     const badge = statusColors[ht.category] || "hs-badge-blue";
     const row = document.createElement("tr");
-    row.innerHTML = `<td><strong>${ht.name}</strong></td><td>${ht.bits || "var"}</td><td>${ht.len || "—"}</td><td><span class="hs-badge ${badge}">${ht.category}</span></td><td style="font-size:0.75rem;">${ht.desc}</td>`;
+    row.innerHTML = `<td><strong>${ht.name}</strong></td><td>${ht.bits || "var"}</td><td>${ht.len || "—"}</td><td><span class="hs-badge ${badge}">${ht.category}</span></td><td style="font-size:12px;">${ht.desc}</td>`;
     refBody.appendChild(row);
   }
 }

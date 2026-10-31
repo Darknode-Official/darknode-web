@@ -99,7 +99,7 @@ function _blRenderCards(breaches, container) {
       h += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">';
       for (var f = 0; f < b.flags.length; f++) {
         var fc = b.flags[f] === 'verified' ? '#16a34a' : (b.flags[f] === 'unverified' ? '#d97706' : '#dc2626');
-        h += '<span style="background:' + fc + '18;color:' + fc + ';font-size:12px;font-family:\'Segoe UI\',system-ui,sans-serif;padding:1px 5px;border-radius:2px;border:1px solid ' + fc + '33;">' + esc(b.flags[f].toUpperCase()) + '</span>';
+        h += '<span style="background:' + fc + '18;color:' + fc + ';font-size:12px;font-family:\'Segoe UI\',system-ui,sans-serif;padding:1px 5px;border-radius:2px;border:1px solid ' + fc + '33;">' + esc(b.flags[f]) + '</span>';
       }
       h += '</div>';
     }
@@ -157,13 +157,13 @@ function _blRenderDashboard() {
 
   // Filters
   h += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">';
-  h += '<input id="bl-search" type="text" placeholder="Search company or domain..." oninput="_blDoFilter()" style="flex:1;min-width:200px;">';
+  h += '<input id="bl-search" type="text" placeholder="Company or domain" oninput="_blDoFilter()" style="flex:1;min-width:200px;">';
   h += '<select id="bl-year" onchange="_blDoFilter()">';
-  h += '<option value="all">All Years</option>';
+  h += '<option value="all">All years</option>';
   for (var y = sortedYears.length - 1; y >= 0; y--) { h += '<option value="' + esc(sortedYears[y]) + '">' + esc(sortedYears[y]) + '</option>'; }
   h += '</select>';
   h += '<select id="bl-data" onchange="_blDoFilter()">';
-  h += '<option value="all">All Data Types</option>';
+  h += '<option value="all">All data types</option>';
   Object.keys(dataClasses).sort().forEach(function(d) { h += '<option value="' + esc(d) + '">' + esc(d) + '</option>'; });
   h += '</select>';
   h += '</div>';
@@ -184,7 +184,7 @@ export function renderBreachLookup(container) {
   h += '<div class="pg-head"><div><h1 class="pg-h1">Breach Lookup</h1>';
   h += '<p class="muted pg-sub">Browse the public breach catalog: which sites were breached, when, and what data was exposed. Search by company or domain. Source: Have I Been Pwned.</p></div></div>';
   h += '<p class="muted" style="font-size:13px;margin:0 0 16px;">Checking whether a specific email address appears in a breach needs a paid HIBP API key and is not part of this tool.</p>';
-  h += '<div id="bl-body"><div style="color:var(--mut,#7a93b8);font-family:\'Segoe UI\',system-ui,sans-serif;font-size:12px;text-align:center;padding:40px;">Loading live breach catalog&hellip;</div></div>';
+  h += '<div id="bl-body"><div style="color:var(--mut,#7a93b8);font-family:\'Segoe UI\',system-ui,sans-serif;font-size:12px;text-align:center;padding:40px;">Loading the breach catalog&hellip;</div></div>';
   h += '</div>';
   container.innerHTML = h;
   _blLoad();

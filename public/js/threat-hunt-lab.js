@@ -353,24 +353,24 @@ export function renderThreatHuntLab(main) {
       '<style>' +
       '.thl-scenarios { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; margin-top:16px; }' +
       '.thl-card { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:14px; cursor:pointer; transition:all .15s; }' +
-      '.thl-card:hover { border-color:#00e676; }' +
-      '.thl-diff { font-size:.65rem; padding:2px 6px; border-radius:3px; font-weight:600; letter-spacing:.04em; }' +
-      '.thl-diff-Easy { background:rgba(0,230,118,0.15); color:#00e676; }' +
-      '.thl-diff-Medium { background:rgba(255,214,0,0.15); color:#ffd600; }' +
-      '.thl-diff-Hard { background:rgba(255,145,0,0.15); color:#ff9100; }' +
-      '.thl-diff-Expert { background:rgba(255,23,68,0.15); color:#ff1744; }' +
-      '.thl-log-line { padding:3px 8px; font-size:.72rem; font-family:var(--mono,monospace); cursor:pointer; border-left:3px solid transparent; transition:background .1s; white-space:pre-wrap; word-break:break-all; }' +
-      '.thl-log-line:hover { background:rgba(255,255,255,.03); }' +
-      '.thl-log-line.marked { border-left-color:#ff1744; background:rgba(255,23,68,.06); }' +
-      '.thl-log-line.highlight { background:rgba(0,229,255,.08); }' +
-      '.thl-ioc-found { color:#00e676; }' +
+      '.thl-card:hover { border-color:var(--acc); }' +
+      '.thl-diff { font-size:12px; padding:2px 6px; border-radius:3px; font-weight:600; }' +
+      '.thl-diff-Easy { background:color-mix(in srgb,var(--ok) 15%,transparent); color:var(--ok); }' +
+      '.thl-diff-Medium { background:color-mix(in srgb,var(--warn) 15%,transparent); color:var(--warn); }' +
+      '.thl-diff-Hard { background:color-mix(in srgb,var(--warn) 25%,transparent); color:var(--warn); }' +
+      '.thl-diff-Expert { background:color-mix(in srgb,var(--bad) 15%,transparent); color:var(--bad); }' +
+      '.thl-log-line { padding:3px 8px; font-size:12px; font-family:var(--font-mono,monospace); cursor:pointer; border-left:3px solid transparent; transition:background .1s; white-space:pre-wrap; word-break:break-all; }' +
+      '.thl-log-line:hover { background:color-mix(in srgb,var(--txt) 4%,transparent); }' +
+      '.thl-log-line.marked { border-left-color:var(--bad); background:color-mix(in srgb,var(--bad) 6%,transparent); }' +
+      '.thl-log-line.highlight { background:color-mix(in srgb,var(--acc) 8%,transparent); }' +
+      '.thl-ioc-found { color:var(--ok); }' +
       '.thl-ioc-missing { color:var(--mut); }' +
       '.thl-tools-panel { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:12px; }' +
       '</style>' +
       '<div>' +
         '<div class="pg-head"><div>' +
           '<h1 class="pg-h1">Threat Hunt Lab</h1>' +
-          '<p class="muted pg-sub">Find the attacker in the logs.</p>' +
+          '<p class="muted pg-sub">Practice exercises: find the attacker in scripted log samples written for training.</p>' +
         '</div></div>' +
         '<div id="thl-content"></div>' +
       '</div>';
@@ -381,18 +381,18 @@ export function renderThreatHuntLab(main) {
   }
 
   function renderScenarioList(container) {
-    var html = '<p class="muted" style="font-size:.85rem;margin:12px 0 16px">Interactive threat hunting challenges. Analyze realistic logs, find the hidden IOCs, and identify the attacker. Click a scenario to start.</p>';
+    var html = '<p class="muted" style="font-size:13px;margin:12px 0 16px">Each scenario is a fixed training dataset, not data from your environment. Analyze the logs, find the hidden IOCs, and identify the attacker. Click a scenario to start.</p>';
     html += '<div class="thl-scenarios">';
     SCENARIOS.forEach(function(s) {
       var score = scores[s.id];
-      var scoreHtml = score !== undefined ? '<div style="font-size:.72rem;color:#00e676;margin-top:6px">Best: ' + score + '%</div>' : '';
+      var scoreHtml = score !== undefined ? '<div style="font-size:12px;color:var(--ok);margin-top:6px">Best: ' + score + '%</div>' : '';
       html += '<div class="thl-card" data-id="' + s.id + '">' +
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
           '<span style="font-weight:700">' + esc(s.name) + '</span>' +
           '<span class="thl-diff thl-diff-' + s.difficulty + '">' + esc(s.difficulty) + '</span>' +
         '</div>' +
-        '<div style="font-size:.78rem;color:var(--mut)">' + esc(s.description) + '</div>' +
-        '<div style="font-size:.68rem;color:var(--acc);margin-top:6px">MITRE: ' + s.mitre.join(', ') + '</div>' +
+        '<div style="font-size:13px;color:var(--mut)">' + esc(s.description) + '</div>' +
+        '<div style="font-size:12px;color:var(--acc);margin-top:6px">MITRE: ' + s.mitre.join(', ') + '</div>' +
         scoreHtml +
       '</div>';
     });
@@ -419,30 +419,30 @@ export function renderThreatHuntLab(main) {
 
     var html = '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:12px">' +
       '<button class="btn sm ghost" id="thl-back">Back</button>' +
-      '<h2 style="font-size:1rem;margin:0;flex:1">' + esc(s.name) + '</h2>' +
+      '<h2 style="color:var(--txt);font-size:14px;font-weight:600;margin:0;flex:1">' + esc(s.name) + '</h2>' +
       '<span class="thl-diff thl-diff-' + s.difficulty + '">' + esc(s.difficulty) + '</span>' +
-      '<span style="font-size:.82rem;font-weight:600;color:' + (foundCount === totalIOCs ? '#00e676' : 'var(--acc)') + '">' + foundCount + '/' + totalIOCs + ' IOCs found</span>' +
-      '<span style="font-size:.82rem;color:var(--mut)">Score: ' + score + '%</span>' +
+      '<span style="font-size:13px;font-weight:600;color:' + (foundCount === totalIOCs ? 'var(--ok)' : 'var(--acc)') + '">' + foundCount + '/' + totalIOCs + ' IOCs found</span>' +
+      '<span style="font-size:13px;color:var(--mut)">Score: ' + score + '%</span>' +
     '</div>';
 
-    html += '<p style="font-size:.85rem;margin:0 0 12px">' + esc(s.description) + '</p>';
+    html += '<p style="font-size:13px;margin:0 0 12px">' + esc(s.description) + '</p>';
 
     // IOC checklist
     html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">';
     s.iocs.forEach(function(ioc, idx) {
       var found = foundIOCs[idx];
-      html += '<div style="font-size:.72rem;padding:4px 10px;border:1px solid ' + (found ? '#00e676' : 'var(--line)') + ';border-radius:3px;color:' + (found ? '#00e676' : 'var(--mut)') + '">' +
-        (found ? '[FOUND] ' : '[?] ') + esc(ioc.type) + ': ' + (found ? esc(ioc.value) : '???') +
+      html += '<div style="font-size:12px;padding:4px 10px;border:1px solid ' + (found ? 'var(--ok)' : 'var(--line)') + ';border-radius:3px;color:' + (found ? 'var(--ok)' : 'var(--mut)') + '">' +
+        (found ? 'Found: ' : 'Not found: ') + esc(ioc.type) + ': ' + (found ? esc(ioc.value) : '???') +
       '</div>';
     });
     html += '</div>';
 
     // Controls
     html += '<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">' +
-      '<input type="text" id="thl-search" placeholder="Search logs..." value="' + esc(searchTerm) + '" style="background:var(--card);color:var(--txt);border:1px solid var(--line);padding:6px 12px;border-radius:4px;font-size:.78rem;flex:1;font-family:inherit">' +
+      '<input type="text" id="thl-search" placeholder="Search logs" value="' + esc(searchTerm) + '" style="background:var(--card);color:var(--txt);border:1px solid var(--line);padding:6px 12px;border-radius:4px;font-size:13px;flex:1;font-family:inherit">' +
       '<button class="btn sm ghost" id="thl-hint">Hint (' + (totalIOCs - foundCount) + ' remaining)</button>' +
-      '<button class="btn sm ghost" id="thl-check">Check Answers</button>' +
-      '<button class="btn sm" id="thl-solve">Reveal Solution</button>' +
+      '<button class="btn sm ghost" id="thl-check">Check answers</button>' +
+      '<button class="btn sm" id="thl-solve">Reveal solution</button>' +
     '</div>';
 
     // Log viewer
@@ -451,19 +451,19 @@ export function renderThreatHuntLab(main) {
       var isMarked = markedLines[idx];
       var matchesSearch = searchTerm && line.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1;
       html += '<div class="thl-log-line' + (isMarked ? ' marked' : '') + (matchesSearch ? ' highlight' : '') + '" data-idx="' + idx + '">' +
-        '<span style="color:var(--mut);font-size:.65rem;margin-right:8px">' + (idx + 1) + '</span>' + esc(line) + '</div>';
+        '<span style="color:var(--mut);font-size:12px;margin-right:8px">' + (idx + 1) + '</span>' + esc(line) + '</div>';
     });
     html += '</div>';
 
     // Analysis tools
-    html += '<div style="margin-top:12px"><h3 style="font-size:.85rem;margin:0 0 8px">Analysis Tools</h3>' +
+    html += '<div style="margin-top:12px"><h3 style="color:var(--txt);font-size:14px;font-weight:600;margin:0 0 8px">Analysis tools</h3>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
-        '<div class="thl-tools-panel"><div style="font-size:.78rem;font-weight:600;margin-bottom:6px">IP Reputation</div>' +
-          '<input type="text" id="thl-ip-check" placeholder="Enter IP..." style="background:var(--bg);color:var(--txt);border:1px solid var(--line);padding:4px 8px;border-radius:3px;font-size:.75rem;width:100%;margin-bottom:4px;font-family:inherit">' +
-          '<div id="thl-ip-result" style="font-size:.72rem;color:var(--mut)"></div></div>' +
-        '<div class="thl-tools-panel"><div style="font-size:.78rem;font-weight:600;margin-bottom:6px">Base64 Decoder</div>' +
-          '<input type="text" id="thl-b64" placeholder="Paste base64..." style="background:var(--bg);color:var(--txt);border:1px solid var(--line);padding:4px 8px;border-radius:3px;font-size:.75rem;width:100%;margin-bottom:4px;font-family:inherit">' +
-          '<div id="thl-b64-result" style="font-size:.72rem;color:var(--acc);word-break:break-all"></div></div>' +
+        '<div class="thl-tools-panel"><div style="font-size:13px;font-weight:600;margin-bottom:6px">Scenario IP check</div>' +
+          '<input type="text" id="thl-ip-check" placeholder="IP address" style="background:var(--bg);color:var(--txt);border:1px solid var(--line);padding:4px 8px;border-radius:3px;font-size:13px;width:100%;margin-bottom:4px;font-family:inherit">' +
+          '<div id="thl-ip-result" style="font-size:12px;color:var(--mut)"></div></div>' +
+        '<div class="thl-tools-panel"><div style="font-size:13px;font-weight:600;margin-bottom:6px">Base64 decoder</div>' +
+          '<input type="text" id="thl-b64" placeholder="Base64 text" style="background:var(--bg);color:var(--txt);border:1px solid var(--line);padding:4px 8px;border-radius:3px;font-size:13px;width:100%;margin-bottom:4px;font-family:inherit">' +
+          '<div id="thl-b64-result" style="font-size:12px;color:var(--acc);word-break:break-all"></div></div>' +
       '</div></div>';
 
     container.innerHTML = html;
@@ -528,9 +528,9 @@ export function renderThreatHuntLab(main) {
       var ip = e.target.value.trim();
       var result = container.querySelector('#thl-ip-result');
       if (!ip) { result.textContent = ''; return; }
-      if (KNOWN_BAD_IPS.indexOf(ip) !== -1) result.innerHTML = '<span style="color:#ff1744;font-weight:600">MALICIOUS</span> — known bad IP in threat database';
-      else if (isRfc1918(ip)) result.innerHTML = '<span style="color:var(--acc)">INTERNAL</span> — RFC 1918 private address';
-      else result.innerHTML = '<span style="color:#ffd600">UNKNOWN</span> — not in local threat database';
+      if (KNOWN_BAD_IPS.indexOf(ip) !== -1) result.innerHTML = '<span style="color:var(--bad);font-weight:600">Flagged</span> — on this lab\'s scenario indicator list (training data, not a live reputation feed)';
+      else if (isRfc1918(ip)) result.innerHTML = '<span style="color:var(--acc)">Internal</span> — RFC 1918 private address';
+      else result.innerHTML = '<span style="color:var(--warn)">Not listed</span> — not on this lab\'s scenario indicator list';
     };
 
     container.querySelector('#thl-b64').onkeyup = function(e) {

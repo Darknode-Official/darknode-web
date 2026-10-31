@@ -5,7 +5,7 @@ const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 function osToast(msg, type) { try { (window.showToast || function () {})(msg, type || "info"); } catch (_) {} }
 
-// ── Platform Database for Username Checking (200+) ──
+// ── Profile-URL templates for username lookups ──
 const PLATFORMS = {
   "Social Media": [
     { name: "Twitter/X", url: "https://x.com/{}", check: "Profile page" },
@@ -396,16 +396,16 @@ const SOCIAL_GUIDE = {
 // ── Main Render ──
 export function renderOSINTDashboard(main, more) {
   var tabs = [
-    { id: "profile", label: "Target Profile" },
-    { id: "username", label: "Username Checker" },
-    { id: "dorks", label: "Google Dorks" },
+    { id: "profile", label: "Target profile" },
+    { id: "username", label: "Username links" },
+    { id: "dorks", label: "Google dorks" },
     { id: "email", label: "Email OSINT" },
-    { id: "domain", label: "Domain Intel" },
-    { id: "social", label: "Social Media" },
+    { id: "domain", label: "Domain intel" },
+    { id: "social", label: "Social media" },
     { id: "metadata", label: "Metadata" },
-    { id: "tools", label: "Tool Directory" },
+    { id: "tools", label: "Tool directory" },
     { id: "timeline", label: "Timeline" },
-    { id: "subdomains", label: "Subdomain List" },
+    { id: "subdomains", label: "Subdomain list" },
   ];
 
   var tabBtns = tabs.map(function(t) {
@@ -414,7 +414,7 @@ export function renderOSINTDashboard(main, more) {
 
   main.innerHTML =
     '<div class="pg-head"><div><h1 class="pg-h1">OSINT Dashboard</h1>' +
-    '<p class="muted pg-sub">Open-source intelligence research organizer — target profiling, username checking, Google dorks, tool directory, and investigation timeline. All lookups are passive; data stored locally.</p></div></div>' +
+    '<p class="muted pg-sub">Open-source intelligence research organizer — target profiling, username profile links, Google dorks, tool directory, and investigation timeline. All lookups are passive; data stored locally.</p></div></div>' +
     '<div class="cs-filter" id="osint-tabs">' + tabBtns + '</div>' +
     '<div id="osint-content" style="margin-top:16px"></div>';
 
@@ -449,7 +449,7 @@ function renderProfile(el) {
   try { profiles = JSON.parse(localStorage.getItem(acctKey("osint_profiles")) || "[]"); } catch (_) {}
 
   el.innerHTML =
-    '<h2 class="pg-h2">Target Profile Builder</h2>' +
+    '<h2 class="pg-h2">Target profile builder</h2>' +
     '<p class="muted" style="margin-bottom:16px">Create investigation profiles to organize your OSINT findings. All data stays in your browser.</p>' +
     '<div class="arse-card" style="cursor:default;padding:16px;margin-bottom:16px">' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
@@ -461,7 +461,7 @@ function renderProfile(el) {
         '<input id="tp-ip" placeholder="IP address" style="padding:6px 10px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
       '</div>' +
       '<textarea id="tp-notes" placeholder="Notes..." rows="2" style="width:100%;margin-top:8px;padding:6px 10px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px;resize:vertical"></textarea>' +
-      '<button class="btn" id="tp-add" style="margin-top:8px;padding:6px 16px">Save Profile</button>' +
+      '<button class="btn" id="tp-add" style="margin-top:8px;padding:6px 16px">Save profile</button>' +
     '</div>' +
     '<div id="tp-list"></div>';
 
@@ -475,7 +475,7 @@ function renderProfile(el) {
       if (p.phone) fields.push("Phone: " + p.phone);
       if (p.ip) fields.push("IP: " + p.ip);
       return '<div class="arse-card" style="cursor:default;margin-bottom:8px">' +
-        '<div class="an" style="display:flex;justify-content:space-between">' + esc(p.name || "Unnamed") + '<button class="btn" data-pdel="' + i + '" style="padding:1px 6px;font-size:.7rem;background:#f44336">x</button></div>' +
+        '<div class="an" style="display:flex;justify-content:space-between">' + esc(p.name || "Unnamed") + '<button class="btn ghost sm" data-pdel="' + i + '" style="padding:1px 6px;font-size:.75rem" aria-label="Delete">Delete</button></div>' +
         '<div style="font-size:.78rem;color:var(--mut);margin-top:4px">' + fields.map(function(f) { return esc(f); }).join(" &middot; ") + '</div>' +
         (p.notes ? '<div style="font-size:.78rem;margin-top:4px;color:var(--txt)">' + esc(p.notes) + '</div>' : '') +
       '</div>';
@@ -516,11 +516,11 @@ function renderUsername(el) {
   var totalPlatforms = cats.reduce(function(a, c) { return a + PLATFORMS[c].length; }, 0);
 
   el.innerHTML =
-    '<h2 class="pg-h2">Username Checker</h2>' +
-    '<p class="muted" style="margin-bottom:16px">Check a username across ' + totalPlatforms + ' platforms organized by category. Links open in new tabs.</p>' +
+    '<h2 class="pg-h2">Username links</h2>' +
+    '<p class="muted" style="margin-bottom:16px">Builds profile and search links for a username on ' + totalPlatforms + ' platforms. Nothing is checked automatically; open a link to see whether the account exists.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:16px">' +
-      '<input id="uc-input" placeholder="Enter username to check..." style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px;font-size:1rem">' +
-      '<button class="btn" id="uc-go" style="padding:8px 20px">Check</button>' +
+      '<input id="uc-input" placeholder="Username" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px;font-size:1rem">' +
+      '<button class="btn" id="uc-go" style="padding:8px 20px">Build links</button>' +
     '</div>' +
     '<div id="uc-results"></div>';
 
@@ -534,7 +534,7 @@ function renderUsername(el) {
         return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)">' +
           '<span style="font-weight:600;font-size:.82rem;min-width:120px">' + esc(p.name) + '</span>' +
           (isLink ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" style="color:var(--acc);font-size:.78rem;word-break:break-all">' + esc(url) + ' &#8599;</a>' : '<span class="muted" style="font-size:.78rem">' + esc(url) + '</span>') +
-          '<span class="muted" style="font-size:.7rem;margin-left:auto">' + esc(p.check) + '</span>' +
+          '<span class="muted" style="font-size:.75rem;margin-left:auto">' + esc(p.check) + '</span>' +
         '</div>';
       }).join("");
       return '<div class="arse-card" style="cursor:default;margin-bottom:12px">' +
@@ -555,7 +555,7 @@ function renderDorks(el) {
   var totalDorks = cats.reduce(function(a, c) { return a + GOOGLE_DORKS[c].length; }, 0);
 
   el.innerHTML =
-    '<h2 class="pg-h2">Google Dork Builder</h2>' +
+    '<h2 class="pg-h2">Google dork builder</h2>' +
     '<p class="muted" style="margin-bottom:16px">' + totalDorks + ' pre-built Google dorks. Enter a target domain to generate search queries.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:16px">' +
       '<input id="gd-domain" placeholder="Target domain (e.g., example.com)" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
@@ -576,7 +576,7 @@ function renderDorks(el) {
         var searchUrl = "https://www.google.com/search?q=" + encodeURIComponent(q);
         return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)">' +
           '<code style="flex:1;font-size:.78rem;color:var(--txt);word-break:break-all">' + esc(q) + '</code>' +
-          '<a href="' + esc(searchUrl) + '" target="_blank" rel="noopener" class="btn" style="padding:2px 10px;font-size:.72rem;text-decoration:none;flex-shrink:0">Search</a>' +
+          '<a href="' + esc(searchUrl) + '" target="_blank" rel="noopener" class="btn" style="padding:2px 10px;font-size:.75rem;text-decoration:none;flex-shrink:0">Search</a>' +
         '</div>';
       }).join("");
       return '<div class="arse-card" style="cursor:default;margin-bottom:12px">' +
@@ -631,14 +631,14 @@ function emailPermutations(first, last) {
 
 function renderEmail(el) {
   el.innerHTML =
-    '<h2 class="pg-h2">Email Address Check</h2>' +
+    '<h2 class="pg-h2">Email address check</h2>' +
     '<p class="muted" style="margin-bottom:10px">Splits an address into its parts, classifies the provider and resolves the domain\'s live MX records (DNS-over-HTTPS) to identify who handles its mail. No breach database is queried.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">' +
       '<input id="em-addr" type="email" placeholder="Email address" spellcheck="false" style="flex:1;min-width:200px;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
       '<button class="btn" id="em-check" style="padding:8px 16px">Check</button>' +
     '</div>' +
     '<div id="em-result" style="margin-bottom:20px"></div>' +
-    '<h2 class="pg-h2">Address Permutations</h2>' +
+    '<h2 class="pg-h2">Address permutations</h2>' +
     '<p class="muted" style="margin-bottom:10px">Likely address formats for a person, for scoping phishing exposure or confirming an organisation\'s naming convention. Add the organisation\'s own domain, common providers, or both.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
       '<input id="em-first" placeholder="First name" style="flex:1;min-width:140px;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
@@ -651,7 +651,7 @@ function renderEmail(el) {
       '<button class="btn" id="em-gen" style="padding:6px 14px">Generate</button>' +
     '</div>' +
     '<div id="em-perms" style="margin-bottom:20px"></div>' +
-    '<h2 class="pg-h2">Email OSINT Reference</h2>' +
+    '<h2 class="pg-h2">Email OSINT reference</h2>' +
     '<p class="muted" style="margin-bottom:16px">Techniques and tools for investigating email addresses.</p>' +
     '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">MX Lookup</div><div class="ad" style="font-size:.82rem;margin-top:6px">Query the MX records of the email domain to identify the mail provider. <code>dig MX domain.com</code> or <code>nslookup -type=mx domain.com</code>. Common providers: Google Workspace (aspmx.l.google.com), Microsoft 365 (*.mail.protection.outlook.com), Proton Mail, Zoho, custom mail servers.</div></div>' +
     '<div class="arse-card" style="cursor:default;margin-bottom:12px"><div class="an">SMTP Verification</div><div class="ad" style="font-size:.82rem;margin-top:6px">Connect to the mail server and use VRFY or RCPT TO to check if an address exists (many servers block this). <code>telnet mail.domain.com 25</code> then <code>VRFY user@domain.com</code>. Note: This may trigger alerts.</div></div>' +
@@ -666,7 +666,7 @@ function renderEmail(el) {
     var addr = el.querySelector("#em-addr").value.trim().toLowerCase();
     var out = el.querySelector("#em-result");
     var m = addr.match(/^([^\s@]+)@([a-z0-9.-]+\.[a-z]{2,})$/);
-    if (!m) { out.innerHTML = '<span style="color:#f44336">Enter a full address such as name@domain.tld.</span>'; return; }
+    if (!m) { out.innerHTML = '<span style="color:var(--bad)">Enter a full address such as name@domain.tld.</span>'; return; }
     var local = m[1], domain = m[2];
     var type = DISPOSABLE_MAIL.indexOf(domain) >= 0 ? "Disposable / throwaway" : PRIVACY_MAIL.indexOf(domain) >= 0 ? "Privacy-focused provider" : FREE_MAIL.indexOf(domain) >= 0 ? "Free consumer provider" : "Custom domain (likely an organisation or personal domain)";
     var base = row("Local part", '<code>' + esc(local) + '</code>' + (local.indexOf("+") >= 0 ? ' <span class="muted">(plus-addressing tag: ' + esc(local.split("+")[1]) + ')</span>' : "")) +
@@ -681,13 +681,13 @@ function renderEmail(el) {
       var mx = ((d && d.Answer) || []).filter(function(a) { return a.type === 15; }).map(function(a) {
         var p = String(a.data).split(/\s+/); return { pref: Number(p[0]), host: (p[1] || "").toLowerCase() };
       }).sort(function(a, b) { return a.pref - b.pref; });
-      if (!mx.length) { mxHost.innerHTML = row("MX records", '<span style="color:#f44336">none: this domain cannot receive mail' + (d && d.Status === 3 ? " (domain does not exist)" : "") + '</span>'); return; }
+      if (!mx.length) { mxHost.innerHTML = row("MX records", '<span style="color:var(--bad)">none: this domain cannot receive mail' + (d && d.Status === 3 ? " (domain does not exist)" : "") + '</span>'); return; }
       var providers = {};
       mx.forEach(function(r) { MX_PROVIDERS.forEach(function(p) { if (p[0].test(r.host)) providers[p[1]] = 1; }); });
       var prov = Object.keys(providers);
       mxHost.innerHTML = row("MX records", mx.map(function(r) { return '<code>' + r.pref + " " + esc(r.host) + '</code>'; }).join(" ")) +
         row("Mail handled by", prov.length ? esc(prov.join(", ")) : '<span class="muted">self-hosted or an unlisted provider</span>');
-    } catch (e) { mxHost.innerHTML = row("MX records", '<span style="color:#f44336">Lookup failed: ' + esc(e && e.message ? e.message : String(e)) + '</span>'); }
+    } catch (e) { mxHost.innerHTML = row("MX records", '<span style="color:var(--bad)">Lookup failed: ' + esc(e && e.message ? e.message : String(e)) + '</span>'); }
   }
   el.querySelector("#em-check").onclick = check;
   el.querySelector("#em-addr").addEventListener("keydown", function(e) { if (e.key === "Enter") check(); });
@@ -695,7 +695,7 @@ function renderEmail(el) {
   el.querySelector("#em-gen").onclick = function() {
     var out = el.querySelector("#em-perms");
     var perms = emailPermutations(el.querySelector("#em-first").value.trim(), el.querySelector("#em-last").value.trim());
-    if (!perms.length) { out.innerHTML = '<span style="color:#f44336">Enter both a first and a last name.</span>'; return; }
+    if (!perms.length) { out.innerHTML = '<span style="color:var(--bad)">Enter both a first and a last name.</span>'; return; }
     var doms = [];
     var own = el.querySelector("#em-dom").value.trim().toLowerCase().replace(/^@/, "").replace(/^[a-z]+:\/\//, "").replace(/\/.*$/, "");
     if (own) doms.push(own);
@@ -704,7 +704,7 @@ function renderEmail(el) {
     doms.forEach(function(d) { perms.forEach(function(u) { list.push(u + "@" + d); }); });
     out.innerHTML = '<div class="arse-card" style="cursor:default">' +
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><span class="muted">' + perms.length + ' formats' + (doms.length ? ' x ' + doms.length + ' domain' + (doms.length > 1 ? "s" : "") : ' (usernames only: add a domain or provider for full addresses)') + ' = ' + list.length + '</span>' +
-      '<button class="btn" id="em-copy" style="padding:2px 10px;font-size:.72rem">Copy all</button><button class="btn" id="em-csv" style="padding:2px 10px;font-size:.72rem">Export CSV</button></div>' +
+      '<button class="btn" id="em-copy" style="padding:2px 10px;font-size:.75rem">Copy all</button><button class="btn" id="em-csv" style="padding:2px 10px;font-size:.75rem">Export CSV</button></div>' +
       '<div style="max-height:300px;overflow-y:auto;font-family:var(--mono,monospace);font-size:.78rem;line-height:1.6;columns:16rem">' + list.map(esc).join("<br>") + '</div></div>';
     out.querySelector("#em-copy").onclick = function() {
       navigator.clipboard.writeText(list.join("\n")).then(function() { osToast("Copied " + list.length + " entries", "success"); }, function() { osToast("Copy failed", "error"); });
@@ -726,11 +726,11 @@ function renderEmail(el) {
 // No fabricated/sample data — each section shows real upstream results or an honest error.
 function renderDomain(el) {
   el.innerHTML =
-    '<h2 class="pg-h2">Domain Intelligence</h2>' +
+    '<h2 class="pg-h2">Domain intelligence</h2>' +
     '<p class="muted" style="margin-bottom:16px">Live passive recon on a domain — Certificate Transparency subdomains, DNS records, registration (RDAP) and HTTP response headers. All requests run through the Darknode proxy; results are real upstream data.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:16px">' +
       '<input id="di-domain" placeholder="Target domain (e.g., example.com)" style="flex:1;padding:8px 12px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px;font-size:1rem">' +
-      '<button class="btn" id="di-run" style="padding:8px 20px">Run Lookups</button>' +
+      '<button class="btn" id="di-run" style="padding:8px 20px">Run lookups</button>' +
     '</div>' +
     '<div id="di-results"></div>';
 
@@ -738,11 +738,11 @@ function renderDomain(el) {
 
   function card(title, bodyHtml, note) {
     return '<div class="arse-card" style="cursor:default;margin-bottom:12px">' +
-      '<div class="an">' + esc(title) + (note ? ' <span class="muted" style="font-size:.72rem;font-weight:400">' + esc(note) + '</span>' : '') + '</div>' +
+      '<div class="an">' + esc(title) + (note ? ' <span class="muted" style="font-size:.75rem;font-weight:400">' + esc(note) + '</span>' : '') + '</div>' +
       '<div class="ad" style="font-size:.82rem;margin-top:6px">' + bodyHtml + '</div></div>';
   }
   function errLine(e) {
-    return '<span style="color:#f44336">Lookup failed: ' + esc((e && e.message) ? e.message : String(e)) + '</span>';
+    return '<span style="color:var(--bad)">Lookup failed: ' + esc((e && e.message) ? e.message : String(e)) + '</span>';
   }
   function cleanDomain(v) {
     return String(v || "").trim().toLowerCase()
@@ -870,7 +870,7 @@ function renderSocial(el) {
   }).join("");
 
   el.innerHTML =
-    '<h2 class="pg-h2">Social Media Investigation Guide</h2>' +
+    '<h2 class="pg-h2">Social media investigation guide</h2>' +
     '<p class="muted" style="margin-bottom:16px">Platform-specific techniques for social media OSINT.</p>' + cards;
 }
 
@@ -879,7 +879,7 @@ function renderMetadata(el) {
   var types = Object.keys(METADATA_REF);
   var cards = types.map(function(t) {
     var items = METADATA_REF[t].map(function(m) {
-      return '<span style="display:inline-block;padding:2px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.72rem;margin:2px">' + esc(m) + '</span>';
+      return '<span style="display:inline-block;padding:2px 8px;background:var(--bg);border:1px solid var(--line);border-radius:2px;font-size:.75rem;margin:2px">' + esc(m) + '</span>';
     }).join("");
     return '<div class="arse-card" style="cursor:default;margin-bottom:12px">' +
       '<div class="an">' + esc(t) + '</div>' +
@@ -888,7 +888,7 @@ function renderMetadata(el) {
   }).join("");
 
   el.innerHTML =
-    '<h2 class="pg-h2">Metadata Extraction Reference</h2>' +
+    '<h2 class="pg-h2">Metadata extraction reference</h2>' +
     '<p class="muted" style="margin-bottom:16px">What metadata can be extracted from different file types. Use ExifTool, mat2, or online viewers.</p>' + cards +
     '<div class="arse-card" style="cursor:default;margin-top:12px;padding:16px">' +
       '<h3 style="margin:0 0 8px;font-size:.9rem">ExifTool Quick Reference</h3>' +
@@ -921,7 +921,7 @@ function renderToolDir(el) {
   }).join("");
 
   el.innerHTML =
-    '<h2 class="pg-h2">OSINT Tool Directory</h2>' +
+    '<h2 class="pg-h2">OSINT tool directory</h2>' +
     '<p class="muted" style="margin-bottom:16px">' + totalTools + ' tools organized by use case. Opens in new tab.</p>' + cards;
 }
 
@@ -931,7 +931,7 @@ function renderTimeline(el) {
   try { events = JSON.parse(localStorage.getItem(acctKey("osint_timeline")) || "[]"); } catch (_) {}
 
   el.innerHTML =
-    '<h2 class="pg-h2">Investigation Timeline</h2>' +
+    '<h2 class="pg-h2">Investigation timeline</h2>' +
     '<p class="muted" style="margin-bottom:16px">Build a timeline of events for your investigation. Stored in browser.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:16px">' +
       '<input id="tl-date" type="datetime-local" style="padding:6px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
@@ -941,7 +941,7 @@ function renderTimeline(el) {
     '</div>' +
     '<div id="tl-list"></div>';
 
-  var typeColors = { Finding: "var(--acc)", Action: "#4caf50", Communication: "#2196f3", Evidence: "#ff9800", Note: "var(--mut)" };
+  var typeColors = { Finding: "var(--acc)", Action: "var(--ok)", Communication: "var(--acc-2)", Evidence: "var(--warn)", Note: "var(--mut)" };
 
   function renderEvents() {
     if (!events.length) { el.querySelector("#tl-list").innerHTML = '<p class="muted">No events yet.</p>'; return; }
@@ -954,7 +954,7 @@ function renderTimeline(el) {
           '<div style="font-size:.75rem;color:var(--mut)">' + esc(new Date(ev.date).toLocaleString()) + ' &middot; <span style="color:' + (typeColors[ev.type] || "var(--mut)") + '">' + esc(ev.type) + '</span></div>' +
           '<div style="font-size:.85rem;margin-top:2px">' + esc(ev.event) + '</div>' +
         '</div>' +
-        '<button class="btn" data-tdel="' + realIdx + '" style="padding:1px 6px;font-size:.7rem;background:#f44336;align-self:center">x</button>' +
+        '<button class="btn ghost sm" data-tdel="' + realIdx + '" style="padding:1px 6px;font-size:.75rem;align-self:center" aria-label="Delete">Delete</button>' +
       '</div>';
     }).join("");
     el.querySelector("#tl-list").innerHTML = html;
@@ -983,11 +983,11 @@ function renderTimeline(el) {
 // ── Subdomain Wordlist Tab ──
 function renderSubdomains(el) {
   el.innerHTML =
-    '<h2 class="pg-h2">Subdomain Wordlist</h2>' +
+    '<h2 class="pg-h2">Subdomain wordlist</h2>' +
     '<p class="muted" style="margin-bottom:16px">' + SUBDOMAIN_WORDLIST.length + ' common subdomains for brute-force enumeration. Copy and use with tools like Subfinder, Amass, or ffuf.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:12px">' +
       '<input id="sw-filter" placeholder="Filter..." style="flex:1;padding:6px 10px;background:var(--bg);border:1px solid var(--line);color:var(--txt);border-radius:2px">' +
-      '<button class="btn" id="sw-copy">Copy All</button>' +
+      '<button class="btn" id="sw-copy">Copy all</button>' +
     '</div>' +
     '<div id="sw-list" style="background:var(--card);border:1px solid var(--line);padding:12px;font-size:.78rem;font-family:var(--mono,monospace);max-height:500px;overflow-y:auto;border-radius:2px;white-space:pre-wrap;color:var(--mut)"></div>';
 
@@ -1001,7 +1001,7 @@ function renderSubdomains(el) {
   el.querySelector("#sw-copy").onclick = function() {
     navigator.clipboard.writeText(SUBDOMAIN_WORDLIST.join("\n")).then(function() {
       el.querySelector("#sw-copy").textContent = "Copied!";
-      setTimeout(function() { el.querySelector("#sw-copy").textContent = "Copy All"; }, 2000);
+      setTimeout(function() { el.querySelector("#sw-copy").textContent = "Copy all"; }, 2000);
     });
   };
 }

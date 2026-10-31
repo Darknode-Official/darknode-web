@@ -153,7 +153,7 @@ group("asn-explorer", () => {
       els["asn-input"].value = "AS044477";
       globalThis._asnLookup(); await tick();
       assert.equal(asked[0], "https://stat.ripe.net/data/as-overview/data.json?resource=AS44477");
-      assert.ok(/SUSPICIOUS/.test(els["asn-results"].innerHTML));
+      assert.ok(/On reference list/.test(els["asn-results"].innerHTML));
     });
   });
 });
