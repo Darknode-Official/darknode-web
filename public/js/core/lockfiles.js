@@ -208,7 +208,7 @@ function tomlPackages(text) {
   });
   return out.map((p) => {
     const body = p.body.join("\n");
-    const str = (key) => (body.match(new RegExp("^\\s*" + key + "\\s*=\\s*\"([^\"]*)\"", "m")) || [])[1];
+    const str = (key) => (body.match(new RegExp("^[^\\S\\n\\r\\u2028\\u2029]*" + key + "\\s*=\\s*\"([^\"]*)\"", "m")) || [])[1];
     const arr = (body.match(/^[^\S\n\r\u2028\u2029]*dependencies\s*=\s*\[([\s\S]*?)\]/m) || [])[1] || "";
     return { line: p.line, name: str("name"), version: str("version"), source: str("source") || "", category: str("category"), deps: [...arr.matchAll(/"([^"]+)"/g)].map((m) => m[1].split(" ")) };
   });

@@ -1580,7 +1580,7 @@ function perContainer(fn, groups = ["initContainers", "containers", "ephemeralCo
     const hits = [];
     for (const { ct, group } of containersOf(spec)) {
       if (!groups.includes(group)) continue;
-      const after = ct.name ? new RegExp("^\\s*-?\\s*name\\s*:\\s*[\"']?" + reEsc(ct.name) + "[\"']?\\s*$") : null;
+      const after = ct.name ? new RegExp("^\\s*(?:-\\s*)?name\\s*:\\s*[\"']?" + reEsc(ct.name) + "[\"']?\\s*$") : null;
       for (const h of fn(ct, spec, c) || []) { h.detail = "container " + (ct.name || "?") + ": " + h.detail; if (after && !h.after) h.after = after; hits.push(h); }
     }
     return hits;
