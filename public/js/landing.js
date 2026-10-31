@@ -63,17 +63,6 @@ export function renderLanding(view, actions) {
             Star on GitHub
           </a>
         </div>
-        <div class="hero-trust">
-          <div class="trust-item"><span class="trust-n" data-count="720000" data-suffix="+" data-format="comma">0</span><span class="trust-l">Lines of code</span></div>
-          <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="980" data-suffix="+" data-format="comma">0</span><span class="trust-l">Security tools</span></div>
-          <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="33">0</span><span class="trust-l">Analysis engines</span></div>
-          <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n" data-count="20">0</span><span class="trust-l">Tool categories</span></div>
-          <div class="trust-sep"></div>
-          <div class="trust-item"><span class="trust-n trust-n-static">$0</span><span class="trust-l">Open-core</span></div>
-        </div>
         <div class="hero-built-with">
           <span class="built-label">Built with</span>
           <div class="built-pills">
@@ -560,7 +549,7 @@ export function renderLanding(view, actions) {
           </div>
           <div class="nx-arch-connector"></div>
           <div class="nx-arch-layer nx-arch-l5">
-            <div class="nx-arch-footer-band">88 modules &mdash; 720,000+ lines of code across the Darknode ecosystem</div>
+            <div class="nx-arch-footer-band">Ships in the Darknode CLI &mdash; runs in your own terminal with your own engine credentials</div>
           </div>
         </div>
 
@@ -1118,7 +1107,6 @@ testing methodology for 10.10.14.7:
             <p class="price-desc">The full open-core platform. No limits, no trials, no paywalls.</p>
             <ul class="price-features">
               <li>Every scanning and analysis tool (no limits)</li>
-              <li>PROMETHEUS, SENTINEL EYE, HYDRA, AEGIS &mdash; full access</li>
               <li>Nexus AI assistant (BYOK &mdash; Claude, GPT, Gemini, Ollama)</li>
               <li>Security knowledge base: 1,400+ topics and references</li>
               <li>CLI, desktop app, and Darknode OS</li>
@@ -1209,7 +1197,7 @@ testing methodology for 10.10.14.7:
               <span class="faq-toggle" aria-hidden="true">+</span>
             </button>
             <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. The open-core platform &mdash; HYDRA, AEGIS, SENTINEL EYE, PROMETHEUS, PHANTOM, CITADEL, ORACLE, SPECTRE, the Security Assessment Console, every scanning and analysis tool, the CLI, the desktop app, and Darknode OS &mdash; is free to run on your own infrastructure with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI assistant using your own API key or a free local model like Ollama. Paid Team and Enterprise plans (coming soon) add features like automated scan scheduling, vulnerability tracking, report generation, and collaboration, but the core platform stays free to self-host.</div>
+              <div class="faq-a-inner">Yes. The open-core platform &mdash; every scanning and analysis tool in the Deck, the CLI, the desktop app, and Darknode OS &mdash; is free to run on your own infrastructure with no time limits, no trials, and no paywalls. You also get full access to the Nexus AI assistant using your own API key or a free local model like Ollama. Paid Team and Enterprise plans (coming soon) add features like automated scan scheduling, vulnerability tracking, report generation, and collaboration, but the core platform stays free to self-host.</div>
             </div>
           </div>
 
