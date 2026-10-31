@@ -2029,11 +2029,11 @@ function renderApp(user) {
     else if (sec === "packetcraft") { import("/js/packet-crafter.js?v=20261030b").then(m => live() && m.renderPacketCrafter(main)); }
     else if (sec === "binanalyze") { import("/js/binary-analyzer.js?v=20261030b").then(m => live() && m.renderBinaryAnalyzer(main)); }
     else if (sec === "netmap") { import("/js/network-mapper.js?v=20261030b").then(m => live() && m.renderNetworkMapper(main)); }
-    else if (sec === "loganalyze") { import("/js/log-analyzer.js").then(m => live() && m.renderLogAnalyzer(main)); }
+    else if (sec === "loganalyze") { import("/js/log-analyzer.js?v=20261030c").then(m => live() && m.renderLogAnalyzer(main)); }
     else if (sec === "credaudit") { import("/js/credential-auditor.js?v=20261029a").then(m => live() && m.renderCredentialAuditor(main)); }
     else if (sec === "memforensics") { import("/js/memory-forensics.js?v=20261030b").then(m => live() && m.renderMemoryForensics(main)); }
     else if (sec === "stego") { import("/js/steganography.js?v=20261030b").then(m => live() && m.renderSteganography(main)); }
-    else if (sec === "regexlab") { import("/js/regex-lab.js").then(m => live() && m.renderRegexLab(main)); }
+    else if (sec === "regexlab") { import("/js/regex-lab.js?v=20261030c").then(m => live() && m.renderRegexLab(main)); }
     else if (sec === "encoding") { import("/js/encoding-suite.js?v=20261030b").then(m => live() && m.renderEncodingSuite(main)); }
     else if (sec === "threatmodel") { import("/js/threat-modeler.js?v=20261028c").then(m => live() && m.renderThreatModeler(main)); }
     else if (sec === "osint") { import("/js/osint-dashboard.js?v=20261029c").then(m => live() && m.renderOSINTDashboard(main, more)); }
@@ -2086,12 +2086,12 @@ function renderApp(user) {
     else if (sec === "emailheader") { import("/js/email-header.js?v=20261029e").then(m => live() && m.renderEmailHeader(main)); }
     else if (sec === "dossier") { import("/js/target-dossier.js").then(m => live() && m.renderDossier(main)); }
     else if (sec === "payloadstudio") { import("/js/payload-studio.js?v=20261013m").then(m => live() && m.renderPayloadStudio(main)); }
-    else if (sec === "sigma") { import("/js/sigma-builder.js?v=20261029c").then(m => live() && m.renderSigmaBuilder(main)); }
-    else if (sec === "iocenrich") { import("/js/ioc-enrichment.js?v=20261028a").then(m => live() && m.renderIocEnrichment(main)); }
+    else if (sec === "sigma") { import("/js/sigma-builder.js?v=20261030c").then(m => live() && m.renderSigmaBuilder(main)); }
+    else if (sec === "iocenrich") { import("/js/ioc-enrichment.js?v=20261030c").then(m => live() && m.renderIocEnrichment(main)); }
     else if (sec === "embedsdk") { import("/js/embed-sdk.js").then(m => live() && m.renderEmbedSDK(main)); }
     else if (sec === "mcpconnect") { import("/js/mcp-connector.js?v=20261029d").then(m => live() && m.renderMcpConnector(main)); }
     else if (sec === "cvsscalc") { import("/js/cvss-calculator.js?v=20261028c").then(m => live() && m.renderCvssCalculator(main)); }
-    else if (sec === "yarabuilder") { import("/js/yara-builder.js").then(m => live() && m.renderYaraBuilder(main)); }
+    else if (sec === "yarabuilder") { import("/js/yara-builder.js?v=20261030c").then(m => live() && m.renderYaraBuilder(main)); }
     else if (sec === "emailauth") { import("/js/email-auth.js").then(m => live() && m.renderEmailAuth(main)); }
     else if (sec === "cookieinspect") { import("/js/cookie-inspector.js?v=20261029e").then(m => live() && m.renderCookieInspector(main)); }
     else if (sec === "securitytxt") { import("/js/security-txt.js?v=20261030b").then(m => live() && m.renderSecurityTxt(main)); }
@@ -2107,7 +2107,7 @@ function renderApp(user) {
     else if (sec === "cvetimeline") { import("/js/cve-timeline.js?v=20261029c").then(m => live() && m.renderCveTimeline(main)); }
     else if (sec === "dataviz") { import("/js/data-viz.js?v=20261029c").then(m => live() && m.renderDataViz(main)); }
     else if (sec === "forensicstoolkit") { import("/js/forensics-toolkit.js?v=20261030b").then(m => live() && m.renderForensicsToolkit(main)); }
-    else if (sec === "hashsuite") { import("/js/hash-suite.js").then(m => live() && m.renderHashSuite(main)); }
+    else if (sec === "hashsuite") { import("/js/hash-suite.js?v=20261030c").then(m => live() && m.renderHashSuite(main)); }
     else if (sec === "networktools") { import("/js/network-tools.js").then(m => live() && m.renderNetworkTools(main)); }
     else if (sec === "packetanalyzer") { import("/js/packet-analyzer.js?v=20261029c").then(m => live() && m.renderPacketAnalyzer(main)); }
     else if (sec === "payloadgen") { import("/js/payload-gen.js?v=20260924b").then(m => live() && m.renderPayloadGen(main)); }

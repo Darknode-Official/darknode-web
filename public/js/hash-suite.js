@@ -648,7 +648,7 @@ const HASH_TYPES = [
   { name: "Adler-32",      len: 8,   regex: /^[a-f0-9]{8}$/i,                        category: "Checksum",   bits: 32,   desc: "Adler-32. Faster than CRC32 but weaker error detection." },
   { name: "MD4",           len: 32,  regex: /^[a-f0-9]{32}$/i,                       category: "Broken",     bits: 128,  desc: "Message Digest 4. Predecessor to MD5; severely broken." },
   { name: "NTLM",         len: 32,  regex: /^[a-f0-9]{32}$/i,                        category: "Windows",    bits: 128,  desc: "Windows NTLM hash (MD4 of UTF-16LE password). Very fast to crack." },
-  { name: "MySQL 4.1+",   len: 40,  regex: /^\*[a-f0-9]{40}$/i,                      category: "Database",   bits: 160,  desc: "MySQL password hash. SHA1(SHA1(password)) with * prefix." },
+  { name: "MySQL 4.1+",   len: 41,  regex: /^\*[a-f0-9]{40}$/i,                      category: "Database",   bits: 160,  desc: "MySQL password hash. SHA1(SHA1(password)) with * prefix." },
   { name: "bcrypt",        len: null, regex: /^\$2[aby]?\$\d{2}\$[./A-Za-z0-9]{53}$/, category: "KDF",       bits: 184,  desc: "Adaptive password hash. Cost factor makes brute-force expensive." },
   { name: "scrypt",        len: null, regex: /^\$s0\$/,                               category: "KDF",        bits: 256,  desc: "Memory-hard password KDF. Resistant to GPU/ASIC attacks." },
   { name: "Argon2",        len: null, regex: /^\$argon2(id?|d)\$/,                    category: "KDF",        bits: 256,  desc: "Winner of Password Hashing Competition. Recommended for new systems." },
@@ -1375,8 +1375,10 @@ export function renderHashSuite(container) {
 
   // --- Compare panel ---
   container.querySelector("#compare-btn").addEventListener("click", () => {
-    const a = container.querySelector("#compare-a").value.trim().toLowerCase();
-    const b = container.querySelector("#compare-b").value.trim().toLowerCase();
+    let a = container.querySelector("#compare-a").value.trim();
+    let b = container.querySelector("#compare-b").value.trim();
+    // hex digests compare case-insensitively; base64 digests are case-sensitive
+    if (/^[0-9a-f]+$/i.test(a) && /^[0-9a-f]+$/i.test(b)) { a = a.toLowerCase(); b = b.toLowerCase(); }
     const out = container.querySelector("#compare-output");
     if (!a || !b) { out.innerHTML = '<div class="hs-output" style="color:#f44336;">Enter both hashes</div>'; return; }
     const match = a === b;

@@ -28,8 +28,12 @@ var RESERVED = {
   contains: 1, entrypoint: 1, false: 1, filesize: 1, for: 1, fullword: 1, global: 1,
   import: 1, in: 1, include: 1, "int16": 1, "int32": 1, "int8": 1, matches: 1, meta: 1,
   nocase: 1, not: 1, of: 1, or: 1, "private": 1, rule: 1, strings: 1, them: 1, "true": 1,
-  "uint16": 1, "uint32": 1, "uint8": 1, wide: 1, xor: 1
+  "uint16": 1, "uint32": 1, "uint8": 1, wide: 1, xor: 1,
+  defined: 1, endswith: 1, icontains: 1, iendswith: 1, iequals: 1, istartswith: 1, none: 1,
+  startswith: 1, "int16be": 1, "int32be": 1, "int8be": 1, "uint16be": 1, "uint32be": 1, "uint8be": 1
 };
+// YARA keywords are case-sensitive ("All" is a valid name), and "constructor" is not a keyword.
+function isReserved(w) { return Object.prototype.hasOwnProperty.call(RESERVED, w); }
 
 // text / regex string modifiers (what applies to each type)
 var TEXT_MODS = ["nocase", "wide", "ascii", "fullword", "xor", "base64"];
@@ -142,7 +146,7 @@ function hexProblems(raw) {
   if (!v) return ["hex string is empty"];
   var probs = [];
   // strip jumps and groups for the byte check
-  var tokens = v.split(/\s+/);
+  var tokens = v.replace(/[()|]|\[[^\]]*\]/g, " $& ").trim().split(/\s+/);
   tokens.forEach(function (t) {
     // allow group/jump tokens
     if (/^[()|]$/.test(t)) return;
@@ -151,7 +155,7 @@ function hexProblems(raw) {
     var core = t.replace(/^[()]+|[()]+$/g, "");
     if (core === "") return;
     // each remaining token should be a 2-char byte or ?? pair (may include single-nibble wildcard like 4?)
-    if (!/^([0-9A-F?]{2})$/.test(core)) {
+    if (!/^(?:[0-9A-F?]{2})+$/.test(core)) {
       probs.push("invalid hex token '" + t + "' (expect byte pairs like 4D or wildcards like ?? / 4?)");
     }
   });
@@ -178,13 +182,24 @@ function escTextValue(v) {
   return String(v || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"')
     .replace(/\t/g, "\\t").replace(/\r/g, "\\r").replace(/\n/g, "\\n");
 }
+// escape each "/" not already escaped, so "http://x" stays one YARA regex literal
+function escRegexSlashes(p) {
+  var out = "", bs = false;
+  for (var i = 0; i < p.length; i++) {
+    var c = p[i];
+    if (bs) { out += c; bs = false; }
+    else if (c === "\\") { out += c; bs = true; }
+    else out += c === "/" ? "\\/" : c;
+  }
+  return out;
+}
 function stringLine(s) {
   var id = (s.id || "$s").trim();
   if (s.type === "hex") {
     return id + " = { " + normalizeHex(s.value) + " }";
   }
   if (s.type === "regex") {
-    var pat = String(s.value || "").replace(/^\/|\/$/g, "");
+    var pat = escRegexSlashes(String(s.value || "").replace(/^\/|\/$/g, ""));
     var mods = activeMods(s);
     return id + " = /" + pat + "/" + (mods.length ? " " + mods.join(" ") : "");
   }
@@ -274,14 +289,14 @@ export function validateYara(st) {
     err("Rule name is required.", "name");
   } else if (!NAME_RE.test(nm)) {
     err("Rule name '" + nm + "' is not a valid identifier (letters, digits, underscore; cannot start with a digit).", "name");
-  } else if (RESERVED[nm.toLowerCase()]) {
+  } else if (isReserved(nm)) {
     err("Rule name '" + nm + "' is a reserved YARA keyword.", "name");
   }
 
   // tags must each be valid identifiers (and not reserved words)
   String(st.tags || "").trim().split(/\s+/).filter(Boolean).forEach(function (t) {
     if (!NAME_RE.test(t)) err("Tag '" + t + "' is not a valid identifier.", "tags");
-    else if (RESERVED[t.toLowerCase()]) warn("Tag '" + t + "' is a reserved YARA keyword.", "tags");
+    else if (isReserved(t)) warn("Tag '" + t + "' is a reserved YARA keyword.", "tags");
   });
 
   // strings
@@ -292,7 +307,7 @@ export function validateYara(st) {
     var where = "string:" + (id || ("#" + (i + 1)));
     if (!id) err("String #" + (i + 1) + " is missing an identifier.", where);
     else if (!STRID_RE.test(id)) err("String identifier '" + id + "' must start with $ and use only letters, digits or underscore.", where);
-    else if (ids.indexOf(id) >= 0) err("Duplicate string identifier '" + id + "'.", where);
+    else if (id !== "$" && ids.indexOf(id) >= 0) err("Duplicate string identifier '" + id + "'.", where);
     else ids.push(id);
 
     if (s.type === "hex") {
@@ -301,6 +316,10 @@ export function validateYara(st) {
       try { new RegExp(String(s.value).replace(/^\/|\/$/g, "")); }
       catch (e) { err("String " + (id || ("#" + (i + 1))) + ": invalid regex — " + e.message, where); }
     } else {
+      var am = activeMods(s);
+      var has = function (m) { return am.indexOf(m) >= 0; };
+      if (has("xor") && (has("nocase") || has("base64"))) err("String " + (id || ("#" + (i + 1))) + ": xor cannot be combined with " + (has("nocase") ? "nocase" : "base64") + ".", where);
+      if (has("base64") && (has("nocase") || has("fullword"))) err("String " + (id || ("#" + (i + 1))) + ": base64 cannot be combined with " + (has("nocase") ? "nocase" : "fullword") + ".", where);
       var tv = String(s.value || "");
       if (tv.trim().length > 0 && tv.length < 3) {
         warn("String " + (id || ("#" + (i + 1))) + " text '" + tv + "' is very short and may match too broadly.", where);
@@ -541,8 +560,8 @@ export function renderYaraBuilder(main) {
 
   function updateNameWarn() {
     var nm = (state.name || "").trim();
-    if (nm && (!NAME_RE.test(nm) || RESERVED[nm.toLowerCase()])) {
-      nameWarn.textContent = RESERVED[nm.toLowerCase()]
+    if (nm && (!NAME_RE.test(nm) || isReserved(nm))) {
+      nameWarn.textContent = isReserved(nm)
         ? "'" + nm + "' is a reserved YARA keyword."
         : "Invalid identifier — use letters, digits, underscore; cannot start with a digit.";
       nameWarn.classList.add("show");

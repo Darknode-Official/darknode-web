@@ -16,7 +16,7 @@ import { esc } from '/js/shared.js';
 /* ---- extraction patterns ------------------------------------------------ */
 
 var PATTERNS = {
-  ipv4:   { label: 'IPv4', regex: /(?:^|[^\d.])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?![\d.])/g },
+  ipv4:   { label: 'IPv4', regex: /(?:^|[^\d.])(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?!\d|\.\d)/g },
   ipv6:   { label: 'IPv6', regex: /(?:^|[\s,;|"'(<\[])((?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?::[0-9a-fA-F]{1,4}){1,6}|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:))(?=[\s,;|"')>\]]|$)/gm },
   url:    { label: 'URL', regex: /\bhttps?:\/\/[^\s<>"'`)\]}]+/gi },
   email:  { label: 'Email', regex: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g },
@@ -63,6 +63,9 @@ var SAMPLE_TEXT = [
 
 function refang(text) {
   return String(text || '')
+    // "user at evil dot com": a bare "at" is refanged only when a defanged dot follows, so prose
+    // such as "beacon seen at evil.example.com" keeps its domain instead of becoming an email
+    .replace(/\s+at\s+(?=[a-z0-9-]+(?:\s+dot\s+|\s*[\[({](?:dot|\.)[\])}]))/gi, '@')
     .replace(/\(dot\)/gi, '.')
     .replace(/\[dot\]/gi, '.')
     .replace(/\{dot\}/gi, '.')
@@ -72,7 +75,6 @@ function refang(text) {
     .replace(/\s+dot\s+/gi, '.')
     .replace(/\[at\]/gi, '@')
     .replace(/\(at\)/gi, '@')
-    .replace(/\s+at\s+/gi, '@')
     .replace(/\[@\]/g, '@')
     .replace(/\[:\]/g, ':')
     .replace(/\(:\)/g, ':')
@@ -501,7 +503,7 @@ export function renderIocEnrichment(main) {
       else if (r.type === 'sha1') pattern = "[file:hashes.'SHA-1' = " + q(v) + ']';
       else if (r.type === 'sha256') pattern = "[file:hashes.'SHA-256' = " + q(v) + ']';
       else if (r.type === 'mac') pattern = '[mac-addr:value = ' + q(v.replace(/-/g, ':')) + ']';
-      else if (r.type === 'registry') pattern = '[windows-registry-key:key = ' + q(v) + ']';
+      else if (r.type === 'registry') pattern = '[windows-registry-key:key = ' + q(fullHive(v)) + ']';
       else if (r.type === 'filepath') {
         var cut = Math.max(v.lastIndexOf('\\'), v.lastIndexOf('/'));
         pattern = '[file:name = ' + q(v.slice(cut + 1)) + (cut > 0 ? ' AND file:parent_directory_ref.path = ' + q(v.slice(0, cut)) : '') + ']';
@@ -511,6 +513,11 @@ export function renderIocEnrichment(main) {
         name: PATTERNS[r.type].label + ': ' + v, description: r.risk.level + ' (heuristic): ' + r.risk.reason, pattern: pattern, pattern_type: 'stix' });
     });
     return JSON.stringify({ type: 'bundle', id: 'bundle--' + uuid(), objects: objects }, null, 2);
+  }
+  // STIX 2.1 windows-registry-key: the hive must be spelled out (HKEY_LOCAL_MACHINE, not HKLM)
+  function fullHive(k) {
+    var H = { hklm: 'HKEY_LOCAL_MACHINE', hkcu: 'HKEY_CURRENT_USER', hkcr: 'HKEY_CLASSES_ROOT', hku: 'HKEY_USERS', hkcc: 'HKEY_CURRENT_CONFIG' };
+    return String(k).replace(/^(HKLM|HKCU|HKCR|HKU|HKCC)(?=\\)/i, function (h) { return H[h.toLowerCase()]; });
   }
   var GRAPH_TYPE = { ipv4: 'IP', ipv6: 'IP', domain: 'DOMAIN', cve: 'VULNERABILITY' };
   function graphItems(list) {

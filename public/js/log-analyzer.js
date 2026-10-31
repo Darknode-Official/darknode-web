@@ -10,7 +10,7 @@ const APACHE_COMMON_RE = /^(\S+) (\S+) (\S+) \[([^\]]+)\] "([A-Z]+) ([^\s"]+)\s*
 const APACHE_ERROR_RE = /^\[([^\]]+)\] \[([^\]]+)\] (?:\[([^\]]+)\] )?(.+)/;
 const NGINX_ERROR_RE = /^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) \[(\w+)\] (\d+)#(\d+): (.+)/;
 const SYSLOG_RFC3164_RE = /^<(\d+)>(\w{3}\s+\d+\s+\d{2}:\d{2}:\d{2}) (\S+) (\S+?)(?:\[(\d+)\])?: (.+)/;
-const SYSLOG_RFC5424_RE = /^<(\d+)>(\d+) (\S+) (\S+) (\S+) (\S+) (\S+) (?:\[([^\]]*)\])?\s*(.*)/;
+const SYSLOG_RFC5424_RE = /^<(\d+)>(\d+) (\S+) (\S+) (\S+) (\S+) (\S+) (?:\[([^\]]*)\]|-(?= |$))?\s*(.*)/;
 const AUTH_FAILED_RE = /(?:Failed password|authentication failure|Access denied|Invalid user|FAILED LOGIN)/i;
 const AUTH_SUCCESS_RE = /(?:Accepted password|Accepted publickey|session opened|Successful login)/i;
 const SUDO_RE = /sudo[:\[].*(?:COMMAND|USER|TTY)/i;
@@ -2012,7 +2012,7 @@ const YARA_RULES = [
    SECTION 2: PARSING FUNCTIONS
    ============================================================ */
 
-function parseApacheAccess(text) {
+export function parseApacheAccess(text) {
   const lines = text.split('\n').filter(l => l.trim());
   const results = [];
   for (const line of lines) {
@@ -2100,7 +2100,7 @@ function detectBruteForce(entries, threshold = 5) {
   return suspects.sort((a, b) => b.count - a.count);
 }
 
-function parseSyslog(text) {
+export function parseSyslog(text) {
   const lines = text.split('\n').filter(l => l.trim());
   const results = [];
   for (const line of lines) {
@@ -2197,10 +2197,10 @@ function classifyUserAgent(ua) {
   return { label: 'Unknown', category: 'unknown' };
 }
 
-function detectPatterns(entries) {
+export function detectPatterns(entries) {
   const findings = [];
   // Burst detection: more than 10 entries from same IP within what appears sequential
-  const ipSequences = {};
+  const ipSequences = Object.create(null);
   for (let i = 0; i < entries.length; i++) {
     const ip = entries[i].ip;
     if (!ip) continue;
@@ -2218,7 +2218,7 @@ function detectPatterns(entries) {
     }
   }
   // Scanning detection: same IP hitting many different URLs
-  const ipUrls = {};
+  const ipUrls = Object.create(null);
   for (const e of entries) {
     if (e.ip && e.url) {
       if (!ipUrls[e.ip]) ipUrls[e.ip] = new Set();
@@ -2236,7 +2236,7 @@ function detectPatterns(entries) {
     }
   }
   // Error rate detection
-  const ipErrors = {};
+  const ipErrors = Object.create(null);
   for (const e of entries) {
     if (e.ip && e.status >= 400) {
       ipErrors[e.ip] = (ipErrors[e.ip] || 0) + 1;
@@ -2447,7 +2447,7 @@ Example:
 
   container.querySelector('#la-apache-urls').onclick = () => {
     const entries = parseApacheAccess(inp.value);
-    const urlCounts = {};
+    const urlCounts = Object.create(null);
     for (const e of entries) {
       urlCounts[e.url] = (urlCounts[e.url] || 0) + 1;
     }
@@ -2478,7 +2478,7 @@ Example:
 
   container.querySelector('#la-apache-ua').onclick = () => {
     const entries = parseApacheAccess(inp.value);
-    const uaCounts = {};
+    const uaCounts = Object.create(null);
     for (const e of entries) {
       if (e.useragent) uaCounts[e.useragent] = (uaCounts[e.useragent] || 0) + 1;
     }
@@ -2550,7 +2550,7 @@ Example:
 
   container.querySelector('#la-error-severity').onclick = () => {
     const entries = parseApacheError(inp.value);
-    const byLevel = {};
+    const byLevel = Object.create(null);
     for (const e of entries) {
       const lev = e.level.toLowerCase();
       byLevel[lev] = (byLevel[lev] || 0) + 1;
@@ -2563,7 +2563,7 @@ Example:
   };
 }
 
-function renderAuthLogTab(container) {
+export function renderAuthLogTab(container) {
   container.innerHTML = `
     <h2 class="pg-h2">Authentication Log Analyzer</h2>
     <p class="muted">Paste auth.log / secure log entries. Detects brute force attempts, successful logins, sudo usage, and account lockouts.</p>
@@ -2647,7 +2647,7 @@ Oct 11 14:33:01 server sudo: admin : TTY=pts/0 ; PWD=/home/admin ; USER=root ; C
     const entries = parseAuthLog(inp.value).filter(e => e.type === 'failed');
     if (entries.length === 0) { out.textContent = 'No failed attempts found.'; return; }
     let result = `FAILED AUTHENTICATION ATTEMPTS (${entries.length} total)\n${'='.repeat(60)}\n\n`;
-    const byUser = {};
+    const byUser = Object.create(null);
     for (const e of entries) {
       const u = e.user || 'unknown';
       byUser[u] = (byUser[u] || 0) + 1;
@@ -2779,7 +2779,7 @@ Example (RFC 5424):
   };
 }
 
-function renderJSONLogTab(container) {
+export function renderJSONLogTab(container) {
   container.innerHTML = `
     <h2 class="pg-h2">JSON Log Parser</h2>
     <p class="muted">Paste JSON log lines (one JSON object per line, or a JSON array). Auto-detects fields and supports filtering and searching.</p>
@@ -2817,10 +2817,11 @@ Example:
   container.querySelector('#la-json-fields').onclick = () => {
     const entries = parseJSON(inp.value);
     if (entries.length === 0) { out.textContent = 'No valid JSON entries found.'; return; }
-    const fieldCounts = {};
-    const fieldTypes = {};
-    const fieldSamples = {};
+    const fieldCounts = Object.create(null);
+    const fieldTypes = Object.create(null);
+    const fieldSamples = Object.create(null);
     for (const e of entries) {
+      if (!e || typeof e !== 'object') continue; // a line such as "null" or "42" has no fields
       for (const [k, v] of Object.entries(e)) {
         fieldCounts[k] = (fieldCounts[k] || 0) + 1;
         fieldTypes[k] = typeof v;
@@ -2842,8 +2843,9 @@ Example:
     const key = container.querySelector('#la-json-filter-key').value.trim();
     const val = container.querySelector('#la-json-filter-val').value.trim();
     if (!key) { out.textContent = 'Enter a field name to filter on.'; return; }
-    const re = new RegExp(val, 'i');
-    const filtered = entries.filter(e => e[key] !== undefined && re.test(String(e[key])));
+    let re;
+    try { re = new RegExp(val, 'i'); } catch (err) { out.textContent = 'Invalid filter regex: ' + err.message; return; }
+    const filtered = entries.filter(e => e && typeof e === 'object' && Object.prototype.hasOwnProperty.call(e, key) && re.test(String(e[key])));
     let result = `Filtered ${filtered.length} of ${entries.length} entries where "${key}" matches "${val}":\n\n`;
     for (const e of filtered.slice(0, 50)) {
       result += JSON.stringify(e, null, 2) + '\n\n';
@@ -2855,7 +2857,8 @@ Example:
     const entries = parseJSON(inp.value);
     const q = container.querySelector('#la-json-search').value.trim();
     if (!q) { out.textContent = 'Enter a search term.'; return; }
-    const re = new RegExp(q, 'i');
+    let re;
+    try { re = new RegExp(q, 'i'); } catch (err) { out.textContent = 'Invalid search regex: ' + err.message; return; }
     const matched = entries.filter(e => re.test(JSON.stringify(e)));
     let result = `Search "${q}": ${matched.length} of ${entries.length} entries matched:\n\n`;
     for (const e of matched.slice(0, 50)) {

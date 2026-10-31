@@ -155,12 +155,13 @@ function yamlScalar(v) {
     /[:#{}\[\],&*!|>'"%@`]/.test(v) ||
     /^[-?]/.test(v) ||
     /^(true|false|null|yes|no|on|off|~)$/i.test(v) ||
-    /^[0-9.+-]+$/.test(v);
+    /^[0-9.+-]+$/.test(v) ||
+    /^[-+]?(?:0x[0-9a-f_]+|0o[0-7_]+|0b[01_]+|\.?[0-9][0-9_]*(?:\.[0-9_]*)?(?:e[-+]?[0-9]+)?|\.(?:inf|nan))$/i.test(v); // 0xc000006d, 1e3, .inf load as numbers
   if (needs) return "'" + v.replace(/'/g, "''") + "'";
   return v;
 }
 
-function buildYaml(st) {
+export function buildYaml(st) {
   var L = [];
   L.push("title: " + yamlScalar(st.title));
   L.push("id: " + (st.id || ""));
@@ -195,7 +196,7 @@ function buildYaml(st) {
     if (!rows.length) { L.push("        # (no fields)"); return; }
     rows.forEach(function (r) {
       var key = (r.field || "").trim();
-      if (r.op && r.op !== "equals") key += "|" + r.op;
+      if (r.op && r.op !== "equals") key += "|" + (r.op === "all" ? "contains|all" : r.op); // the "all" choice is contains|all; a bare |all means every value must equal
       var val = r.value != null ? r.value : "";
       var parts = String(val).split("\n").filter(function (x) { return x.trim() !== ""; });
       if (parts.length > 1) {
@@ -221,7 +222,7 @@ function buildYaml(st) {
 }
 
 // ── validation ──
-function validate(st) {
+export function validate(st) {
   var problems = [];
   if (!st.title || !st.title.trim()) problems.push("Title is required.");
   if (!st.id || !/^[0-9a-f-]{36}$/i.test(st.id)) problems.push("A valid rule id (UUID) is required.");

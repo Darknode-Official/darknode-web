@@ -29,7 +29,7 @@ var REGEX_LIBRARY = [
   { cat: "Credentials", name: "GitHub Token (classic)", pattern: "ghp_[0-9a-zA-Z]{36}", desc: "GitHub personal access token" },
   { cat: "Credentials", name: "GitHub Token (fine-grained)", pattern: "github_pat_[0-9a-zA-Z_]{82}", desc: "GitHub fine-grained PAT" },
   { cat: "Credentials", name: "Slack Token", pattern: "xox[bpsorta]-[0-9a-zA-Z\\-]{10,250}", desc: "Slack bot/user/app token" },
-  { cat: "Credentials", name: "Stripe Secret Key", pattern: "<STRIPE_SECRET_KEY>", desc: "Stripe live secret key" },
+  { cat: "Credentials", name: "Stripe Secret Key", pattern: "sk_live_[0-9a-zA-Z]{24,}", desc: "Stripe live secret key" },
   { cat: "Credentials", name: "Google API Key", pattern: "AIza[0-9A-Za-z\\-_]{35}", desc: "Google API key" },
   { cat: "Credentials", name: "Generic API Key", pattern: "(?:api[_\\-]?key|apikey|api_secret)\\s*[:=]\\s*['\"]?([0-9a-zA-Z\\-_]{16,64})['\"]?", desc: "Generic API key in config files" },
   { cat: "Credentials", name: "Generic Password", pattern: "(?:password|passwd|pwd|secret)\\s*[:=]\\s*['\"]?([^\\s'\"]{4,64})['\"]?", desc: "Password assignments in config" },
