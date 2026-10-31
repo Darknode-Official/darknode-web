@@ -1472,7 +1472,7 @@ testing methodology for 10.10.14.7:
     if (wrap) {
       let maxW = 0;
       const orig = rotateEl.textContent;
-      for (const w of words) { rotateEl.textContent = w; maxW = Math.max(maxW, rotateEl.offsetWidth); }
+      for (const w of words) { rotateEl.textContent = w; maxW = Math.max(maxW, rotateEl.scrollWidth); } // scrollWidth: the word box spans the wrap (0 wide until sized)
       rotateEl.textContent = orig;
       wrap.style.minWidth = maxW + "px";
     }

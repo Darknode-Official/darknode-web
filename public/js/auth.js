@@ -1058,7 +1058,9 @@ function applyLogo(key) {
   if (!LOGO_VARIANTS[key]) return;
   try { localStorage.setItem("sw_logo", key); } catch (_) {}
   const mark = document.querySelector(".brand-mark");
-  if (mark) { mark.src = "data:image/svg+xml," + encodeURIComponent(logoSvg(key).replace(/currentColor/g, "#F2F5F9")); }
+  // Ink follows the header: dark strokes on the white Professional header, light on dark ones.
+  const ink = /^(dark|classic)$/.test(document.documentElement.getAttribute("data-style") || "") ? "#F2F5F9" : "#101722";
+  if (mark) { mark.src = "data:image/svg+xml," + encodeURIComponent(logoSvg(key).replace(/currentColor/g, ink)); }
   let fav = document.querySelector('link[rel="icon"]');
   if (!fav) { fav = document.createElement("link"); fav.rel = "icon"; document.head.appendChild(fav); }
   fav.href = "data:image/svg+xml," + encodeURIComponent(logoFavSvg(key));
