@@ -24,6 +24,8 @@ export const ROUTES = [
   { id: "graph", prefix: "/api/graph/", auth: "user" },
   { id: "monitor", prefix: "/api/monitor/", auth: "user" },
   { id: "keys", prefix: "/api/keys/", auth: "user" },
+  { id: "digest-unsub", path: "/api/digest/unsubscribe", methods: ["GET", "POST"], auth: "none" },
+  { id: "digest", prefix: "/api/digest/", auth: "user" },
   { id: "ingest", prefix: "/api/v1/ingest/", auth: "key", scope: "ingest:write" },
   { id: "findings", prefix: "/api/v1/findings/", auth: "key", scope: "findings:read" },
 ];

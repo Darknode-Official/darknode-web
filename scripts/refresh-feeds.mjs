@@ -67,6 +67,20 @@ function transformCisaKev(body) {
   return { updated: nowIso(), source: "CISA KEV", count: data.length, data };
 }
 
+// KEV entries added in the last 14 days, for the weekly email digest. Kept tiny so the
+// free-plan Worker can read it inside its CPU limit (the 500-row file is ~400 KB).
+function transformCisaKevRecent(body) {
+  const src = JSON.parse(body);
+  const vulns = Array.isArray(src.vulnerabilities) ? src.vulnerabilities : null;
+  if (!vulns || !vulns.length) throw new Error("CISA KEV: missing or empty vulnerabilities array");
+  const since = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+  const data = vulns.filter((v) => String(v.dateAdded || "") >= since).map((v) => ({
+    cve: v.cveID, vendor: v.vendorProject, product: v.product, name: v.vulnerabilityName,
+    dateAdded: v.dateAdded, dueDate: v.dueDate, ransomware: v.knownRansomwareCampaignUse === "Known",
+  })).sort((a, b) => String(b.dateAdded).localeCompare(String(a.dateAdded)));
+  return { updated: nowIso(), source: "CISA KEV (last 14 days)", catalogVersion: src.catalogVersion || "", since, count: data.length, data };
+}
+
 // Full KEV catalog, compact (cve + dates + ransomware flag only), for tools that
 // MATCH CVEs against KEV (vulnimport, EPSS union). cisa-kev.json stays the 500
 // newest with descriptions for the dashboards that render it.
@@ -196,6 +210,11 @@ const FEEDS = [
     file: "cisa-kev-index.json",
     url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
     transform: transformCisaKevIndex,
+  },
+  {
+    file: "kev-recent.json",
+    url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+    transform: transformCisaKevRecent,
   },
   {
     file: "malicious-ips.json",
