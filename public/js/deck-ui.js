@@ -31,6 +31,7 @@ import { bus, EVENTS } from "/js/core/bus.js";
 import { isSimulated } from "/js/core/posture.js";
 import { tierFrom, rank, planLabel, TIERS, PLAN_GROUP, PLAN_ITEM } from "/js/core/entitlements.js?v=20261029c";
 import * as findings from "/js/core/findings.js?v=20261028a";
+import { loadKevCatalog } from "/js/core/kev-feed.js?v=20261101a";
 import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/ui/explain.js?v=20261027b";
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor, activityKey } from "/js/security-graph.js"; // singleton: never version
@@ -232,6 +233,19 @@ function loadPins(){ try { const v = JSON.parse(localStorage.getItem(userKey(LS_
 function savePins(p){ try { localStorage.setItem(userKey(LS_PINS), JSON.stringify(p)); } catch (_) {} }
 function loadNotes(){ try { return localStorage.getItem(userKey(LS_NOTES)) || ""; } catch (_) { return ""; } }
 function saveNotes(t){ try { localStorage.setItem(userKey(LS_NOTES), t); } catch (_) {} }
+// When this account last had the Deck open, for "Since your last visit". A gap of 30+ minutes
+// starts a new visit; inside one visit the start point stays fixed across re-renders. 0 = first.
+function visitStart(){
+  const k = userKey("dn_deck_seen"), now = Date.now();
+  let prev = 0;
+  try {
+    const last = +localStorage.getItem(k) || 0, held = sessionStorage.getItem(k + "_prev");
+    if (held != null && last && now - last < 1800000) prev = +held || 0;
+    else { prev = last; sessionStorage.setItem(k + "_prev", String(prev)); }
+    localStorage.setItem(k, String(now));
+  } catch (_) {}
+  return prev;
+}
 
 // ---- top-bar + workspace icons (kept tiny, stroked, on-theme) ----
 const IC = {
@@ -1566,6 +1580,23 @@ textarea.dk-kitio{min-height:120px}
 @media(max-width:600px){.dk[data-ui=deck] .dk-kit{flex-direction:column}.dk[data-ui=deck] .dk-kitnav{width:auto;max-height:34vh;padding:12px 16px;border-right:0;border-bottom:1px solid var(--dk-line)}.dk[data-ui=deck] .dk-kitmain{padding:16px}.dk[data-ui=deck] .dk-kobar{flex-wrap:wrap;row-gap:4px}.dk[data-ui=deck] .dk-kcopy{white-space:nowrap}}
 .dk[data-ui=deck] .dk-notif>.dk-nempty{padding:14px 16px 16px}
 .dk[data-ui=deck] :is(.dk-intcard .meta p,.dk-natbl td.it span,.dk-qacard span:not(.qi),.dk-cloudcard span){display:block;-webkit-line-clamp:unset;overflow:visible}
+.dk[data-ui=deck] .dk-since h2 .src{margin-left:auto;font-weight:500;font-size:12.5px;color:var(--dk-mut)}
+.dk[data-ui=deck] .dk-sngrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 28px}
+.dk[data-ui=deck] .dk-sncol{min-width:0;display:flex;flex-direction:column;gap:2px}
+.dk[data-ui=deck] .dk-sncol h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--dk-tx2);margin:0 0 6px;display:flex;gap:8px;align-items:center}
+.dk[data-ui=deck] .dk-sncol h3 b{font-weight:600;color:var(--dk-acc)}
+.dk[data-ui=deck] .dk-sncol .dk-nempty{padding:8px 0}
+.dk[data-ui=deck] .dk-sncol>.mo{color:var(--dk-acc);font-size:13px;cursor:pointer;margin-top:6px}
+.dk[data-ui=deck] .dk-sncol>.dk-tibtn{align-self:flex-start;margin-top:4px}
+.dk[data-ui=deck] .dk-snrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--dk-line2);padding:9px 2px;font:inherit;color:var(--dk-tx);cursor:pointer;min-width:0}
+.dk[data-ui=deck] .dk-snrow:hover{background:var(--dk-accbg)}
+.dk[data-ui=deck] .dk-snrow .id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;font-weight:600;flex:none}
+.dk[data-ui=deck] .dk-snrow .nm{flex:1;min-width:0;font-size:13px;color:var(--dk-tx2);overflow-wrap:anywhere}
+.dk[data-ui=deck] .dk-snrow .nm small{display:block;color:var(--dk-mut);font-size:12px}
+.dk[data-ui=deck] .dk-snrow .dt{flex:none;font-size:12px;color:var(--dk-mut)}
+.dk[data-ui=deck] .dk-snrow .lv{flex:none;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:5px;color:#fff;background:#86837c}
+.dk[data-ui=deck] .dk-snrow .lv.bad{background:#e0383a}.dk[data-ui=deck] .dk-snrow .lv.warn{background:#b58100}
+@media (max-width:760px){.dk[data-ui=deck] .dk-sngrid{grid-template-columns:1fr}.dk[data-ui=deck] .dk-since h2{flex-wrap:wrap}.dk[data-ui=deck] .dk-since h2 .src{margin-left:0;width:100%}}
 .dk[data-ui=deck] .dk-compnote{max-width:none}
 .dk[data-ui=deck] .dk-onbd-steps{display:flex;flex-flow:row wrap;align-items:stretch;gap:10px}.dk[data-ui=deck] .dk-onbd-steps>*{flex:1 1 260px;min-width:0}
 .dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(4,minmax(0,1fr))!important}
@@ -3050,6 +3081,43 @@ export function renderDeck(host, opts) {
     paintChips(); fill();
   }
   // ---------- Overview workspace ----------
+  // "Since your last visit": what changed in the real feeds and in this account's own saved
+  // checks while they were away. Every row is real data; the panel hides when there is nothing.
+  let _visitPrev = null;
+  function fillSince(el){
+    const box = el.querySelector("#dkSince"); if (!box) return;
+    if (_visitPrev === null) _visitPrev = visitStart();
+    const prev = _visitPrev, now = Date.now(), DAY = 86400000;
+    const fresh = !prev || now - prev > 30 * DAY; // first visit or long gone: show the last 7 days
+    const fromTs = fresh ? now - 7 * DAY : prev;
+    const fromDay = new Date(fromTs).toISOString().slice(0, 10);
+    // the account's saved checks that are failing or stale, newest first
+    const checks = [];
+    const TAB = { domain: "Domain check", portfolio: "Domain portfolio", certs: "Certificates", phish: "Link check", secrets: "Secret scan", data: "Data check" };
+    const spaces = ["personal"].concat(isLocked("scene:enterprise") ? [] : ["enterprise"]);
+    Promise.all([import("/js/deck/native/ui.js").then((m) => m.readRuns).catch(() => null), loadKevCatalog().catch(() => null)]).then(([readRuns, kev]) => {
+      if (!box.isConnected) return;
+      if (readRuns) for (const sp of spaces) for (const r of readRuns(sp)) {
+        if (!r || !TAB[r.tool] || r.tool === "phish" || r.tool === "data") continue; // one-off checks, nothing to re-run
+        const age = now - (r.at || 0), bad = r.level === "bad" || r.level === "warn";
+        if (bad || age > 7 * DAY) checks.push({ sp, r, bad, age });
+      }
+      checks.sort((a, b) => (b.bad - a.bad) || (b.age - a.age));
+      const kevNew = kev ? kev.vulnerabilities.filter((v) => (v.dateAdded || "") >= fromDay).sort((a, b) => (b.dateAdded || "").localeCompare(a.dateAdded || "")) : [];
+      const actNew = notifs.filter((a) => !a.sim && a.ts > fromTs).length;
+      const hasRuns = readRuns && spaces.some((sp) => readRuns(sp).length);
+      if (!kevNew.length && !checks.length && hasRuns) { box.hidden = true; return; }
+      const when = fresh ? "the last 7 days" : timeAgo(prev).replace(" ago", "") + " ago";
+      const kevRows = kevNew.slice(0, 5).map((v) => `<button class="dk-snrow" type="button" data-cve="${esc(v.cveID)}"><span class="id">${esc(v.cveID)}</span><span class="nm">${esc([v.vendorProject, v.product].filter(Boolean).join(" ") || v.vulnerabilityName)}</span>${v.knownRansomwareCampaignUse === "Known" ? '<span class="dk-kevb">Ransomware</span>' : ""}<span class="dt">${esc(v.dateAdded)}</span></button>`).join("");
+      const kevCol = `<div class="dk-sncol"><h3>Added to CISA KEV <b>${kevNew.length}</b></h3>${kevRows || `<div class="dk-nempty">No new known-exploited vulnerabilities since ${fresh ? "a week ago" : "you were last here"}.</div>`}${kevNew.length > 5 ? `<span class="mo" role="button" tabindex="0" data-scene="threat">${kevNew.length - 5} more in Threat &amp; vulns</span>` : ""}</div>`;
+      const ckRows = checks.slice(0, 5).map((c) => `<button class="dk-snrow" type="button" data-sp="${c.sp}" data-tab="${esc(c.r.tool)}"${c.r.tool === "domain" ? ` data-target="${esc(c.r.target || "")}"` : ""}><span class="lv ${c.bad ? (c.r.level === "bad" ? "bad" : "warn") : "old"}">${c.bad ? (c.r.level === "bad" ? "Failing" : "Warning") : "Stale"}</span><span class="nm">${esc(TAB[c.r.tool])}: ${esc(c.r.target || "")}<small>${esc(c.r.summary || "")}</small></span><span class="dt">${esc(timeAgo(c.r.at || 0))}</span></button>`).join("");
+      const ckCol = `<div class="dk-sncol"><h3>Your checks${checks.length ? ` <b>${checks.length}</b>` : ""}</h3>${ckRows || (hasRuns ? `<div class="dk-nempty">Every saved check is passing and was run this week.</div>` : `<div class="dk-nempty">Save your domains in Personal and this column flags certificates about to expire and grades that slipped, each time you come back.</div><button class="dk-tibtn on" type="button" data-sp="personal" data-tab="certs">Watch my certificates</button>`)}</div>`;
+      box.innerHTML = `<h2>Since your last visit <span class="src">${fresh ? "Last 7 days" : "Last here " + esc(when)}${actNew ? ` · ${actNew} new activit${actNew === 1 ? "y" : "ies"}` : ""}</span></h2><div class="dk-sngrid">${kevCol}${ckCol}</div>`;
+      box.hidden = false;
+      box.querySelectorAll("[data-cve]").forEach((b) => b.onclick = () => openCveDetail(b.dataset.cve));
+      box.querySelectorAll("[data-sp]").forEach((b) => b.onclick = () => openSpaceTool(b.dataset.sp, b.dataset.tab, b.dataset.target || undefined));
+    });
+  }
   function renderOverview(){
     const el = sceneEls.overview;
     const s = readStats();
@@ -3089,6 +3157,7 @@ export function renderDeck(host, opts) {
       </form>
       <div class="dk-askhint">Triage a CVE, draft a runbook, explain a finding or review a config.</div>
       ${onbCard}
+      <div class="dk-ovp dk-since" id="dkSince" hidden></div>
       <div class="dk-kpis dk-kpis6">
         <div class="dk-start" id="dkStart" hidden>
           <b>Measure your exposure</b>
@@ -3251,6 +3320,7 @@ export function renderDeck(host, opts) {
       const st = el.querySelector("#dkStart"); if (st) { st.hidden = !!real.length; el.querySelectorAll('[data-k="exposure"],[data-k="hot"]').forEach((k) => { k.hidden = !real.length; }); }
       recomputeExposure();
     }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; sig.real = 0; recomputeExposure(); });
+    fillSince(el);
     // async: CISA KEV catalog size
     fetchKev().then((k) => {
       const kn = el.querySelector('[data-k="kev"] .kn'); if (kn) kn.textContent = (k.total || 0).toLocaleString();
