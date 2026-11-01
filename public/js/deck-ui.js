@@ -183,6 +183,7 @@ const ICONS = {
   search: SVG('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>'),
   alert: SVG('<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
   server: SVG('<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>'),
+  clock: SVG('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
   key: SVG('<circle cx="8" cy="8" r="4"/><path d="m11 11 9 9M17 17l2-2M15 19l2-2"/>'),
   terminal: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/>'),
 };
@@ -197,16 +198,22 @@ const ICON_RULES = [
   [/\bmap\b|geo|globe|sentinel|satellite|\bsat\b|track|location|navarch|maritime/i, "map"],
   [/\bai\b|chat|assistant|oracle|prompt|\bllm\b|model|agent|spectre/i, "cpu"],
   [/doc|report|checklist|playbook|note|policy|template|guide|crosswalk|case/i, "file"],
+  [/crypt|aes-|chacha|ecdsa|ed25519|x25519|pkcs|\bpem\b|nonce|keypair|hmac|totp|hotp|pkce|passphrase|\bpin\b|htpasswd|prime|modular|euclid|totient|jacobi|gf\(|xor|kasiski|coincidence|letter frequency|hamming|luhn|thumbprint/i, "key"],
+  [/time|utc|timeline|chain-of-custody/i, "clock"],
+  [/\blog\b|logs?\b|grok|splunk|kql|logstash|\bcef\b|sysmon|\bjq\b|regex|extract|ioc|de-obfusc|defang/i, "search"],
+  [/aws|gcp|gcs|azure|\bs3\b|kubernetes|imds|\barn\b|bucket|container/i, "server"],
+  [/binary|\bpe\b|\belf\b|mach-o|strings|endian|syscall|memory|packer|magic bytes|volatility|sleuth|plaso|mobile/i, "cpu"],
   [/graph|visual|tree|chart|diagram|constellation|mapper/i, "graph"],
   [/search|lookup|query|enrich|investig/i, "search"],
   [/alert|risk|score|calc|cost|impact|cvss|severity/i, "alert"],
   [/server|host|scan|infra|cloud|service|\bapi\b|network-map/i, "server"],
   [/\bkey\b|token|crypto/i, "key"],
 ];
+// The tool's own name decides its icon; the category is only a fallback. Matching both as
+// one string let the category win ("Recon & OSINT" -> eye), so a whole category shared one icon.
 function toolIcon(label, group){
-  const s = ((label || "") + " " + (group || "")).toLowerCase();
-  for (let i = 0; i < ICON_RULES.length; i++) if (ICON_RULES[i][0].test(s)) return ICONS[ICON_RULES[i][1]];
-  return ICONS.terminal;
+  const pick = (s) => { s = (s || "").toLowerCase(); for (let i = 0; i < ICON_RULES.length; i++) if (ICON_RULES[i][0].test(s)) return ICONS[ICON_RULES[i][1]]; return null; };
+  return pick(label) || pick(group) || ICONS.terminal;
 }
 
 function loadConns(){ try { return JSON.parse(localStorage.getItem(acctKey(LS_CONN)) || "{}") || {}; } catch (_) { return {}; } }
