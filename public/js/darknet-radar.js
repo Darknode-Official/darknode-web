@@ -8,6 +8,7 @@
 //     the wild (the vulnerabilities these groups weaponise).
 // Nothing is simulated; every row is labelled with its real source.
 import { dnFetchJSON, proxyConfigured } from "/js/net.js";
+import { loadKevCatalog } from "/js/core/kev-feed.js?v=20261101a";
 
 var esc = function(s) {
   return String(s != null ? s : '').replace(/[&<>"']/g, function(c) {
@@ -141,7 +142,7 @@ async function _drLoadTab(key) {
   try {
     if (key === 'victims') st.data = await dnFetchJSON(RANSOM_VICTIMS_URL, { timeout: 25000 });
     else if (key === 'groups') st.data = await dnFetchJSON(RANSOM_GROUPS_URL, { timeout: 25000 });
-    else if (key === 'kev') { var d = await dnFetchJSON(KEV_URL, { timeout: 25000, max: 4000000 }); st.data = (d && d.vulnerabilities) || []; }
+    else if (key === 'kev') { var d = await loadKevCatalog(); st.data = d.vulnerabilities; }
     st.error = '';
   } catch (err) {
     st.error = String((err && err.message) || err);
