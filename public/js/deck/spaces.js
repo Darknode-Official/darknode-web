@@ -74,9 +74,9 @@ function homeHTML(id, S) {
   if (id === "personal") {
     const dom = by("domain")[0], cert = by("certs")[0], sec = by("secrets")[0];
     const phish = by("phish"), risky = phish.filter((r) => r.level === "bad").length;
-    kpis = kpi(dom ? esc(dom.grade || "-") : "-", dom ? "Domain grade: " + dom.target : "Domain not checked yet", dom ? LVL_C[dom.level] : "#8a93a6")
-      + kpi(cert ? (cert.counts && (cert.counts.expired + cert.counts.urgent + cert.counts.soon)) || 0 : "-", cert ? "Certificates expiring within 30 days" : "Certificates not checked", cert ? LVL_C[cert.level] : "#8a93a6")
-      + kpi(sec ? (sec.counts && sec.counts.secrets) || 0 : "-", sec ? "Secrets in last code scan" : "Code not scanned yet", sec ? LVL_C[sec.level] : "#8a93a6")
+    kpis = kpi(dom ? esc(dom.grade || "—") : "—", dom ? "Domain grade: " + dom.target : "Domain not checked yet", dom ? LVL_C[dom.level] : "#8a93a6")
+      + kpi(cert ? (cert.counts && (cert.counts.expired + cert.counts.urgent + cert.counts.soon)) || 0 : "—", cert ? "Certificates expiring within 30 days" : "Certificates not checked", cert ? LVL_C[cert.level] : "#8a93a6")
+      + kpi(sec ? (sec.counts && sec.counts.secrets) || 0 : "—", sec ? "Secrets in last code scan" : "Code not scanned yet", sec ? LVL_C[sec.level] : "#8a93a6")
       + kpi(phish.length, "Links and emails checked" + (risky ? ", " + risky + " flagged" : ""), risky ? "#b00020" : phish.length ? "#2f9e56" : "#8a93a6");
   } else {
     // the latest grade of each domain in the saved portfolio: re-runs, and domains since
@@ -86,9 +86,9 @@ function homeHTML(id, S) {
     const avg = graded.length ? Math.round(graded.reduce((a, r) => a + r.score, 0) / graded.length) : null;
     const weak = doms.filter((r) => r.level === "bad").length;
     const cert = by("certs")[0], phish = by("phish"), secrets = by("secrets"), data = by("data");
-    kpis = kpi(avg == null ? "-" : avg, graded.length ? "Avg domain score, " + graded.length + " graded" : "No domains graded", avg == null ? "#8a93a6" : avg >= 80 ? "#2f9e56" : avg >= 60 ? "#b58100" : "#b00020")
+    kpis = kpi(avg == null ? "—" : avg, graded.length ? "Avg domain score, " + graded.length + " graded" : "No domains graded", avg == null ? "#8a93a6" : avg >= 80 ? "#2f9e56" : avg >= 60 ? "#b58100" : "#b00020")
       + kpi(weak, "Domains graded D or F", weak ? "#b00020" : "#2f9e56")
-      + kpi(cert ? (cert.counts && (cert.counts.expired + cert.counts.urgent + cert.counts.soon)) || 0 : "-", cert ? "Certificates expiring within 30 days" : "Fleet not loaded", cert ? LVL_C[cert.level] : "#8a93a6")
+      + kpi(cert ? (cert.counts && (cert.counts.expired + cert.counts.urgent + cert.counts.soon)) || 0 : "—", cert ? "Certificates expiring within 30 days" : "Fleet not loaded", cert ? LVL_C[cert.level] : "#8a93a6")
       + kpi(phish.length + data.length + secrets.length, "Triage and reviews completed", "#2552c6");
   }
   // in the Organization, only domains still in the portfolio, as the KPIs count them
@@ -149,6 +149,7 @@ export function mountSpace(el, id, ctx = {}) {
     const show = async (tab) => {
       const t = S.tabs.find((x) => x.id === tab) || S.tabs[0];
       st.cur = t.id; try { localStorage.setItem(LS, t.id); } catch (_) {}
+      el.querySelector(".ns").dataset.tab = t.id; // phones show a compact hero off the Home tab
       if (ctx.onTab) ctx.onTab(t.id); // the host keeps the address bar on this tab
       el.querySelectorAll(".ns-tab").forEach((b) => { const on = b.dataset.tab === t.id; b.classList.toggle("on", on); b.setAttribute("aria-selected", String(on)); });
       { // on a phone the strip scrolls sideways: keep the active tab in view, re-checked when its size settles (font load, rotation)

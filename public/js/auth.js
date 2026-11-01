@@ -1755,6 +1755,27 @@ function renderApp(user) {
   try {
     if (new URLSearchParams(location.search).get("embed") === "1") {
       document.body.classList.add("dn-embed");
+      // Phones: long tab strips scroll sideways (deck-base.css). Tools that re-render on tab
+      // change reset that scroll, hiding the active tab, so keep it in view. Only the strip's
+      // own scrollLeft moves, never the page.
+      try {
+        const mq = matchMedia("(max-width: 560px)");
+        let queued = false;
+        const keepTabsInView = () => {
+          queued = false;
+          if (!mq.matches) return;
+          document.querySelectorAll(".seg").forEach(seg => {
+            if (seg.scrollWidth <= seg.clientWidth + 1) return;
+            const on = seg.querySelector(":scope > :is(.on, .active, [aria-selected=true])");
+            if (!on) return;
+            const l = on.getBoundingClientRect().left - seg.getBoundingClientRect().left + seg.scrollLeft, r = l + on.offsetWidth;
+            if (l < seg.scrollLeft) seg.scrollLeft = l - 8;
+            else if (r > seg.scrollLeft + seg.clientWidth) seg.scrollLeft = r - seg.clientWidth + 8;
+          });
+        };
+        new MutationObserver(() => { if (!queued && mq.matches) { queued = true; requestAnimationFrame(keepTabsInView); } })
+          .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-selected"] });
+      } catch (_) {}
       // Tool bridge (D8): forward in-frame tool results to the host for an instant refresh, and
       // let tools ask the host to open an entity/tool. Additive and same-origin; the storage-event
       // path still runs, so this is a speed-up, not a dependency.

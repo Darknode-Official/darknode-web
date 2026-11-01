@@ -119,7 +119,8 @@ export function injectStyle() {
 .dk[data-ui=deck] .ns-tile:hover{border-color:var(--ns-mut)}
 .dk[data-ui=deck] .ns-tile em{color:var(--ns-tx)}
 .ns-hero p{margin:0;max-width:72ch;opacity:.9;font-size:14.5px}
-.ns-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 18px;padding:6px;border:1px solid var(--ns-line);border-radius:12px;background:var(--ns-surf)}
+@media(max-width:600px){.dk[data-ui=deck] .ns:not([data-tab=home]) .ns-hero{padding:16px 18px;margin-bottom:12px}.dk[data-ui=deck] .ns:not([data-tab=home]) .ns-hero p{display:none}.dk[data-ui=deck] .ns:not([data-tab=home]) .ns-hero h1{font-size:20px;margin-bottom:0}}
+.ns-tabs{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 0 18px;padding:6px;border:1px solid var(--ns-line);border-radius:12px;background:var(--ns-surf)}
 .ns-tab{appearance:none;border:0;background:transparent;color:var(--ns-tx2);font:inherit;font-size:13.5px;font-weight:600;padding:9px 14px;border-radius:8px;cursor:pointer;white-space:nowrap}
 .ns-tab:hover{background:var(--ns-bg);color:var(--ns-tx)}
 .ns-tab.on{background:var(--ns-acc);color:#fff}
