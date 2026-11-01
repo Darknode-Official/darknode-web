@@ -1550,9 +1550,9 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-setgrid>*{break-inside:avoid;margin:0 0 18px;width:100%;box-sizing:border-box}
 @media(min-width:721px) and (max-width:1100px){.dk[data-ui=deck] .dk-ovgrid3>:nth-child(3):last-child{grid-column:1/-1}}
 @media(min-width:1001px) and (max-width:1200px){.dk[data-ui=deck] .dk-top{grid-template-columns:auto auto minmax(0,1fr) minmax(0,300px) auto}}
+@media(max-width:600px){.dk[data-ui=deck] .dk-kit{flex-direction:column}.dk[data-ui=deck] .dk-kitnav{width:auto;max-height:34vh;padding:12px 16px;border-right:0;border-bottom:1px solid var(--dk-line)}.dk[data-ui=deck] .dk-kitmain{padding:16px}.dk[data-ui=deck] .dk-kobar{flex-wrap:wrap;row-gap:4px}.dk[data-ui=deck] .dk-kcopy{white-space:nowrap}}
 .dk[data-ui=deck] .dk-compnote{max-width:none}
-.dk[data-ui=deck] .dk-onbd-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
-.dk[data-ui=deck] .dk-onbd-step{height:100%}
+.dk[data-ui=deck] .dk-onbd-steps{display:flex;flex-flow:row wrap;align-items:stretch;gap:10px}.dk[data-ui=deck] .dk-onbd-steps>*{flex:1 1 260px;min-width:0}
 .dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(4,minmax(0,1fr))!important}
 .dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]){grid-column:span 2;grid-row:span 2;justify-content:center;padding:20px 22px}
 .dk[data-ui=deck] .dk-kpis6:has(>.dk-start:not([hidden]))>.dk-kpi{min-height:0}
@@ -1644,7 +1644,7 @@ textarea.dk-kitio{min-height:120px}
    integrations show a slim meter instead of a large ring. Tokens only, no new colours. */
 .dk[data-ui=deck] :is(.dk-actform input,.dk-notes){background:var(--dk-bg)!important;border:1px solid var(--dk-line)!important;color:var(--dk-tx)!important;border-radius:8px}
 .dk[data-ui=deck] :is(.dk-actform input,.dk-notes):focus{border-color:var(--dk-acc)!important;box-shadow:0 0 0 3px var(--dk-accbg)!important}
-.dk[data-ui=deck] :is(.dk-actform input,.dk-notes)::placeholder{color:var(--dk-mut)}
+.dk[data-ui=deck] :is(.dk-actform input,.dk-notes,.dk-kitio)::placeholder{color:var(--dk-mut)!important}
 .dk[data-ui=deck] .dk-notes{min-height:112px}
 .dk[data-ui=deck] .dk-notef{color:var(--dk-mut);font-size:12px}
 .dk[data-ui=deck] .dk-qa{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
@@ -4865,6 +4865,12 @@ export function renderDeck(host, opts) {
     const pinned = pins.filter((sec) => secLabel[sec]);
     if (pinned.length) html += navGroup("pinned", "Pinned", `<button class="dk-nvh dk-nvhx" data-navtg="pinned">${chap("P")}<span class="gt">Pinned</span></button>`, pinned.map((sec) => navBtn("tool", sec, secLabel[sec], toolIcon(secLabel[sec]))).join(""), pinned.length);
     nav.innerHTML = html;
+    // In rail mode the text labels are display:none, which leaves icon-only buttons nameless
+    // for screen readers; give each one an explicit name from its label.
+    nav.querySelectorAll(".dk-nv:not([aria-label]), .dk-nvh:not([aria-label])").forEach((b) => {
+      const l = b.dataset.l || (b.querySelector(".gt") || {}).textContent;
+      if (l) b.setAttribute("aria-label", l.trim());
+    });
     applyNavCollapse();
   }
   // Collapsible groups: a chevron beside each chapter folds its items away so the
@@ -4918,7 +4924,7 @@ export function renderDeck(host, opts) {
     root.classList.toggle("nav-rail", rail);
     if (!phone) root.classList.remove("nav-open");
     const cb = $("#dkSbCollapse");
-    if (cb) { cb.querySelector(".nl").textContent = rail ? "Expand" : "Collapse"; cb.dataset.l = rail ? "Expand navigation" : "Collapse navigation"; }
+    if (cb) { cb.querySelector(".nl").textContent = rail ? "Expand" : "Collapse"; cb.dataset.l = rail ? "Expand navigation" : "Collapse navigation"; cb.setAttribute("aria-label", cb.dataset.l); }
   }
   function toggleNav(){
     if (root.classList.contains("nav-phone")) { root.classList.toggle("nav-open"); return; }
