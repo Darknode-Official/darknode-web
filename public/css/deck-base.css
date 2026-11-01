@@ -535,3 +535,7 @@ html[data-embed] body select.tk-f,
 html[data-embed] body .cve-ghost,
 html[data-embed] body .cb-copy,
 html[data-embed] body .pka-sample { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif !important; }
+
+/* The Deck frame already has its own header bar, so the tool page's top padding stacked on
+   the content's own and left a ~46px gap under the header. */
+html[data-embed] body.dn-embed .app-main { padding-top: 0 !important; }

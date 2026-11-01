@@ -346,6 +346,7 @@ function cacheKey(domain, selectors) { return domain + "\u0000" + selectors.join
 var EA_CSS =
   '<style>' +
   '.ea-wrap{color:var(--txt)}' +
+  '.ea-wrap>.panel{padding-top:16px}' +
   '.ea-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}' +
   '.ea-bar .ea-field{flex:1 1 260px;min-width:0}' +
   '.ea-bar .ea-field.ea-narrow{flex:0 1 220px}' +
