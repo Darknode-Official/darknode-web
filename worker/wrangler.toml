@@ -2,11 +2,17 @@ name = "darknode-proxy"
 main = "worker.js"
 compatibility_date = "2024-11-01"
 
+# Weekly email digest: Mondays 14:00 UTC (worker/digest.js). Staging has no cron.
+[triggers]
+crons = ["0 14 * * 1"]
+
 # Non-secret config. Set DARKNODE_URL here (or as a secret) once your GPU-hosted
 # Darknode model is up; until then the flagship falls back to Gemini.
 [vars]
 GEMINI_FALLBACK_MODEL = "gemini-flash-lite-latest"
 FIREBASE_PROJECT_ID = "sentinel-b4194"
+DIGEST_CRON = "on"
+DIGEST_API_BASE = "https://darknode-proxy.darknode-ai.workers.dev"
 # DARKNODE_URL = "https://your-gpu-box/v1/chat/completions"
 
 # Secrets are NOT stored here. Set them once with:
@@ -74,9 +80,14 @@ new_sqlite_classes = ["RateLimiterDO"]
 [env.staging]
 name = "darknode-proxy-staging"
 
+[env.staging.triggers]
+crons = []
+
 [env.staging.vars]
 GEMINI_FALLBACK_MODEL = "gemini-flash-lite-latest"
 FIREBASE_PROJECT_ID = "sentinel-b4194"
+DIGEST_CRON = "off"
+DIGEST_API_BASE = "https://darknode-proxy-staging.darknode-ai.workers.dev"
 
 [[env.staging.durable_objects.bindings]]
 name = "VAULT"

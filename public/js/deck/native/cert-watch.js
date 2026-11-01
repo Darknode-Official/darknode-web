@@ -68,6 +68,10 @@ export function mount(el, { space, mode }) {
     });
     const s = render(0);
     go.disabled = false; csv.disabled = false;
+    // the results themselves, for the weekly email digest (deck/digest-client.js)
+    writeList(space, "certres", s.list.filter((e) => e && e.domain).map((e) => ({ domain: e.domain, notAfter: e.notAfter || "", issuer: e.issuer || "" })));
+    writeList(space, "certresAt", [Date.now()]);
+    import("/js/deck/digest-client.js").then((m) => m.syncDigestIfOn()).catch(() => {});
     recordRun(space, { tool: "certs", target: list.length + " domain" + (list.length === 1 ? "" : "s"),
       summary: s.alerting ? s.alerting + " expiring within 30 days or expired" : s.counts.unknown ? s.counts.unknown + " could not be checked" : "All certificates healthy" + (s.soonest != null ? ", soonest in " + s.soonest + " days" : ""),
       level: s.counts.expired || s.counts.urgent ? "bad" : s.alerting || s.counts.unknown ? "warn" : "good", counts: s.counts });

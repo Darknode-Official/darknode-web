@@ -3321,6 +3321,7 @@ export function renderDeck(host, opts) {
       recomputeExposure();
     }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; sig.real = 0; recomputeExposure(); });
     fillSince(el);
+    import("/js/deck/digest-client.js").then((m) => m.syncDigestIfOn()).catch(() => {});
     // async: CISA KEV catalog size
     fetchKev().then((k) => {
       const kn = el.querySelector('[data-k="kev"] .kn'); if (kn) kn.textContent = (k.total || 0).toLocaleString();
@@ -4277,6 +4278,37 @@ export function renderDeck(host, opts) {
   // page: workspace identity, appearance, data and account. Every control here is
   // real — no placeholder switches. The legacy /settings iframe stays reachable only
   // as a deep fallback (openTool("settings")).
+  // Settings: the weekly email digest (server side in worker/digest.js)
+  function wireDigest(el){
+    const on = el.querySelector("#dkDigOn"), tb = el.querySelector("#dkDigTest"), st = el.querySelector("#dkDigSt");
+    if (!on) return;
+    const watchLine = (m, d) => {
+      const w = m.localWatch(), n = (w.certs || []).length;
+      return n ? "Watching " + n + " certificate" + (n === 1 ? "" : "s") + (w.certsAt ? ", last checked " + new Date(w.certsAt).toLocaleDateString() : "") + "." + (d && d.lastSent ? " Last digest sent " + new Date(d.lastSent).toLocaleDateString() + "." : "")
+        : "No certificates watched yet. Add your domains in Personal, Certificates, and the digest includes them.";
+    };
+    const paint = (v) => { on.disabled = false; on.classList.toggle("on", !!v); on.textContent = v ? "On" : "Off"; };
+    import("/js/deck/digest-client.js").then((m) => {
+      m.getDigest().then((d) => {
+        if (!el.isConnected) return;
+        paint(d.on); m.rememberDigest(d.on); tb.disabled = !d.verified;
+        st.textContent = d.verified ? watchLine(m, d) : "Verify your email address to use the digest.";
+        if (!d.verified) on.disabled = !d.on;
+      }).catch((e) => { on.textContent = "Unavailable"; st.textContent = (e && e.status === 401) ? "Sign in with your account to use the email digest." : String((e && e.message) || "Could not load the digest setting."); });
+      on.onclick = () => {
+        const want = !on.classList.contains("on");
+        on.disabled = true; on.textContent = "Saving";
+        m.saveDigest(want).then((r) => { paint(r.on); toast(r.on ? "Weekly digest on. The first one arrives Monday." : "Weekly digest off."); st.textContent = watchLine(m); })
+          .catch((e) => { paint(!want); toast(String((e && e.message) || "Could not save")); });
+      };
+      tb.onclick = () => {
+        tb.disabled = true; tb.textContent = "Sending";
+        m.sendDigestTest().then((r) => { st.textContent = "Test sent to " + r.to + ". Check your inbox (and spam folder)."; })
+          .catch((e) => { st.textContent = String((e && e.message) || "Could not send the test."); })
+          .finally(() => { tb.disabled = false; tb.textContent = "Send test"; });
+      };
+    }).catch(() => { on.textContent = "Unavailable"; });
+  }
   function renderSettings(){
     const el = sceneEls.settings;
     const dense = root.classList.contains("dense");
@@ -4319,6 +4351,18 @@ export function renderDeck(host, opts) {
             <div class="m"><div class="t">Cool tool UI <span style="font-size:11px;color:#6b7589">(beta)</span></div><div class="s">Reskins embedded tools with gradients and rounded controls. Owner pilot — reloads open tools when changed.</div></div>
             <button class="dk-settog${cool ? " on" : ""}" id="dkSetCool">${cool ? "On" : "Off"}</button>
           </div>` : ""}
+        </div>
+
+        <div class="dk-ovp" id="dkDigest">
+          <h2>${IC.note} Weekly email digest</h2>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Monday digest</div><div class="s">Each Monday: vulnerabilities CISA confirmed as exploited that week, and any certificate you watch that has expired or expires within 30 days. Sent to ${esc(user.email || "your account email")}.</div></div>
+            <button class="dk-settog" id="dkDigOn" disabled>Loading</button>
+          </div>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Send a test now</div><div class="s" id="dkDigSt">See exactly what arrives in your inbox.</div></div>
+            <button class="dk-settog" id="dkDigTest" disabled>Send test</button>
+          </div>
         </div>
 
         <div class="dk-ovp">
@@ -4370,6 +4414,7 @@ export function renderDeck(host, opts) {
     nameIn.addEventListener("change", commitWs);
     accIn.addEventListener("change", commitWs);
 
+    wireDigest(el);
     el.querySelector("#dkSetDense").onclick = (e) => { const d = root.classList.toggle("dense"); try { localStorage.setItem("dn_deck_density", d ? "compact" : "comfortable"); } catch (_) {} e.target.classList.toggle("on", d); e.target.textContent = d ? "Compact" : "Comfortable"; };
     el.querySelector("#dkSetExplain").onclick = (e) => { const on = !explainEnabled(); setExplainEnabled(on); e.target.classList.toggle("on", on); e.target.textContent = on ? "On" : "Off"; toast("Hover explanations " + (on ? "on" : "off")); };
     const prevSel = el.querySelector("#dkSetPreview");
