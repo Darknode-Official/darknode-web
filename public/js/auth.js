@@ -462,13 +462,15 @@ function dismissBoot() {
   // soon as it is ready (a short floor so the fade never cuts a frame).
   let returning = false;
   try { returning = localStorage.getItem("sw_booted") === "1"; localStorage.setItem("sw_booted", "1"); } catch (_) {}
-  const quick = returning && isPro; // plain backdrop, no logo (data-boot-quick): just fade it out
-  const floor = quick ? 0 : returning ? 250 : (isPro ? 1200 : 2200);
+  // Returning visitors see the same logo and bar, on the colour of the page they last saw
+  // (data-boot-quick / data-boot-dark), held just long enough to register.
+  const quick = returning && isPro;
+  const floor = quick ? 700 : returning ? 700 : (isPro ? 1200 : 2200);
   const delay = Math.max(0, floor - elapsed);
   setTimeout(() => {
     const inner = b.querySelector(".boot-inner"); if (inner) inner.classList.add("exit");
-    setTimeout(() => { b.style.opacity = "0"; }, quick ? 0 : 150);
-    setTimeout(() => { b.remove(); afterBoot(); }, quick ? 170 : 650);
+    setTimeout(() => { b.style.opacity = "0"; }, quick ? 60 : 150);
+    setTimeout(() => { b.remove(); afterBoot(); }, quick ? 360 : 650);
   }, delay);
 }
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>

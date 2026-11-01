@@ -57,14 +57,19 @@
 [data-boot=pro] .boot-pro{display:flex;flex-direction:column;align-items:center;gap:28px}
 [data-boot=pro] .boot-grid,[data-boot=pro] .boot-sweep,[data-boot=pro] .boot-ring{display:none!important}
 /* Returning visitors: no logo flash, just the colour of the page they last saw (--boot-bg, recorded on pagehide by auth.js), gone as soon as the shell is ready. */
-[data-boot=pro][data-boot-quick] #bootscreen{background:var(--boot-bg,#f4f6fa);transition:opacity .15s ease}
-[data-boot=pro][data-boot-quick] .boot-pro{display:none!important}
+[data-boot=pro][data-boot-quick] #bootscreen{background:var(--boot-bg,#f4f6fa);transition:opacity .25s ease}
+[data-boot-quick] .boot-pro>*{animation-duration:.3s!important;animation-delay:0s!important}
+[data-boot-dark] .boot-pro-logo{color:#f3f3f3}
+[data-boot-dark] .boot-pro-icon img{content:url(/logo-light.svg)}
+[data-boot-dark] .boot-pro-sub,[data-boot-dark] .boot-pro-pct{color:#8a8f98}
+[data-boot-dark] .boot-pro-bar{background:rgba(255,255,255,.14)}
+[data-boot-dark] .boot-pro-bar>span{background:#f3f3f3}
 .boot-pro-icon{width:56px;height:56px;opacity:0;animation:bootProIn .6s ease .1s forwards}
 .boot-pro-icon svg{width:100%;height:100%}
 .boot-pro-logo{font-size:clamp(1.4rem,3.5vw,2rem);font-weight:700;letter-spacing:.02em;color:#111;opacity:0;animation:bootProIn .5s ease .3s forwards}
 .boot-pro-sub{font-size:.75rem;color:#aaa;letter-spacing:.14em;text-transform:uppercase;opacity:0;animation:bootProIn .5s ease .5s forwards}
 .boot-pro-bar{width:min(280px,60vw);height:2px;background:#e5e5e5;border-radius:1px;overflow:hidden;opacity:0;animation:bootProIn .4s ease .6s forwards}
-.boot-pro-bar>span{display:block;height:100%;width:0;background:#111;transition:width .4s ease}
+.boot-pro-bar>span{display:block;height:100%;width:0;background:#111}
 .boot-pro-pct{font-size:.7rem;color:#bbb;font-variant-numeric:tabular-nums;opacity:0;animation:bootProIn .4s ease .7s forwards}
 @keyframes bootProIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes bootProPulse{0%,100%{opacity:1}50%{opacity:.5}}

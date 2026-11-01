@@ -12883,3 +12883,36 @@ html[data-style="pro"] .app-main a.pt-guide-dl:not(#_) { color: #fff !important;
 html[data-style="pro"] .app-main pre.code-block { background: #1e293b !important; color: #e2e8f0 !important; }
 /* Data-viz heatmap cells set their own white text on a coloured fill */
 html[data-style="pro"] .app-main table td[style*="color: rgb(255, 255, 255)"] { color: #fff !important; }
+
+/* ---- Landing hero v2 (2026-11-01): copy on the left, live CISA KEV panel on the right.
+   Same palette as the hero above; only the layout changes. ---- */
+[data-style=pro] .hero .hx-grid{display:grid!important;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:56px;align-items:center;width:100%;text-align:left}
+[data-style=pro] .hero .hx-copy{min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+[data-style=pro] .hero .hx-copy .hero-h1{text-align:left!important;margin-left:0!important;margin-right:0!important}
+[data-style=pro] .hero .hx-copy .hero-sub{text-align:left!important;margin-left:0!important;margin-right:0!important;max-width:560px!important}
+[data-style=pro] .hero .hx-copy .hero-cta{justify-content:flex-start!important}
+[data-style=pro] .hero .hx-copy .hero-built-with{justify-content:flex-start!important;margin-left:0!important}
+[data-style=pro] .hero .hx-copy .built-pills{justify-content:flex-start!important}
+[data-style=pro] .hero .hx-live{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 18px 40px -18px rgba(15,23,42,.18);overflow:hidden;text-align:left}
+[data-style=pro] .hero .hx-live-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid #e2e8f0;font-size:.92rem;color:#0f172a}
+[data-style=pro] .hero .hx-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.15);flex:none}
+[data-style=pro] .hero .hx-src{margin-left:auto;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#64748b}
+[data-style=pro] .hero .hx-live-b{min-height:250px}
+[data-style=pro] .hero .hx-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid #f1f5f9;text-decoration:none;color:#0f172a;transition:background .15s}
+[data-style=pro] .hero .hx-row:hover{background:#eff6ff}
+[data-style=pro] .hero .hx-cve{font:600 .8rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:#1d4ed8;white-space:nowrap}
+[data-style=pro] .hero .hx-what{font-size:.86rem;color:#334155;overflow-wrap:anywhere}
+[data-style=pro] .hero .hx-rw{display:inline-block;margin-left:6px;font-size:.66rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:1px 6px;vertical-align:1px}
+[data-style=pro] .hero .hx-when{font-size:.76rem;color:#64748b;font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-style=pro] .hero .hx-live-msg{padding:24px 18px;color:#64748b;font-size:.88rem}
+[data-style=pro] .hero .hx-live-f{padding:12px 18px;background:#f8fafc;color:#64748b;font-size:.8rem;line-height:1.5}
+@media(max-width:960px){
+  [data-style=pro] .hero .hx-grid{grid-template-columns:minmax(0,1fr);gap:36px}
+  [data-style=pro] .hero .hx-copy{align-items:center;text-align:center}
+  [data-style=pro] .hero .hx-copy .hero-h1,[data-style=pro] .hero .hx-copy .hero-sub{text-align:center!important;margin-left:auto!important;margin-right:auto!important}
+  [data-style=pro] .hero .hx-copy .hero-cta,[data-style=pro] .hero .hx-copy .hero-built-with,[data-style=pro] .hero .hx-copy .built-pills{justify-content:center!important}
+  [data-style=pro] .hero .hx-live-b{min-height:0}
+}
+[data-style=pro] .hero .hx-copy .hero-rotate-wrap,[data-style=pro] .hero .hx-copy .hero-rotate{text-align:left!important}
+[data-style=pro] body.landing .hero{padding:64px 24px 56px!important;min-height:0!important}
+@media(max-width:960px){[data-style=pro] .hero .hx-copy .hero-rotate-wrap,[data-style=pro] .hero .hx-copy .hero-rotate{text-align:center!important}[data-style=pro] body.landing .hero{padding:44px 16px 40px!important}}
