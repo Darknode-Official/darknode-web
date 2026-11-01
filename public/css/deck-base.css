@@ -551,3 +551,12 @@ html[data-embed] body .hs-input-group > .hs-label { text-align: left !important;
 html[data-embed] body :is(.enc-wrap, .ft-wrap) { border: 0 !important; background: transparent !important; }
 html[data-embed] body :is(.enc-panel, .hs-panel):has(> .card:only-child) { border: 0 !important; padding: 0 !important; background: transparent !important; }
 html[data-embed] body .ft-input + .btn { margin-top: 8px !important; }
+
+/* Phones: long segmented tab strips wrapped into 3-4 rows and pushed the tool below the fold;
+   keep them on one row that scrolls sideways. Hash Suite control rows split evenly in two. */
+@media (max-width: 560px) {
+  html[data-embed] body .seg:has(> :nth-child(4)) { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto !important; max-width: 100%; scrollbar-width: none; overscroll-behavior-x: contain; }
+  html[data-embed] body .seg:has(> :nth-child(4))::-webkit-scrollbar { display: none; }
+  html[data-embed] body .seg:has(> :nth-child(4)) > * { flex: none !important; white-space: nowrap !important; }
+  html[data-embed] body .hs-card > div[style*="flex-wrap"] > :is(select, button) { flex: 1 1 calc(50% - 4px) !important; min-width: 0 !important; }
+}
