@@ -618,16 +618,27 @@ const EVIDENCE_TYPES = [
 // ============================================================================
 // STIX/TAXII FEED DATA (for Intel tab expansion)
 // ============================================================================
-const STIX_FEEDS = [
-  { name: 'AlienVault OTX', url: 'https://otx.alienvault.com/taxii2/', type: 'TAXII 2.1', status: 'Active', iocs: 15420, lastSync: '2026-09-13 14:00 UTC', categories: ['IP','Domain','Hash','URL'] },
-  { name: 'CISA Known Exploited Vulns', url: 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json', type: 'JSON Feed', status: 'Active', iocs: 1120, lastSync: '2026-09-13 12:00 UTC', categories: ['CVE'] },
-  { name: 'Abuse.ch URLhaus', url: 'https://urlhaus-api.abuse.ch/v1/', type: 'REST API', status: 'Active', iocs: 84230, lastSync: '2026-09-13 13:30 UTC', categories: ['URL','Domain'] },
-  { name: 'Abuse.ch MalwareBazaar', url: 'https://bazaar.abuse.ch/api/', type: 'REST API', status: 'Active', iocs: 234500, lastSync: '2026-09-13 13:45 UTC', categories: ['Hash','Malware'] },
-  { name: 'Abuse.ch ThreatFox', url: 'https://threatfox-api.abuse.ch/api/v1/', type: 'REST API', status: 'Active', iocs: 67800, lastSync: '2026-09-13 14:00 UTC', categories: ['IP','Domain','Hash','URL'] },
-  { name: 'MISP Default Feeds', url: 'https://www.misp-project.org/feeds/', type: 'MISP JSON', status: 'Active', iocs: 125000, lastSync: '2026-09-13 11:00 UTC', categories: ['IP','Domain','Hash','Email'] },
-  { name: 'VirusTotal Livehunt', url: 'https://www.virustotal.com/api/v3/', type: 'REST API', status: 'Configured', iocs: 0, lastSync: 'N/A', categories: ['Hash','URL','Domain'] },
-  { name: 'Mandiant Advantage', url: 'https://api.intelligence.mandiant.com/', type: 'REST API', status: 'Configured', iocs: 0, lastSync: 'N/A', categories: ['APT','Malware','CVE'] },
+// The feeds Darknode's daily refresh-feeds workflow really pulls. Counts and sync times are
+// read from the files themselves, so a feed that stopped updating shows as stale.
+const LIVE_FEEDS = [
+  { file: 'cisa-kev-index.json', name: 'CISA Known Exploited Vulns', type: 'JSON Feed', categories: ['CVE'] },
+  { file: 'epss-top.json', name: 'FIRST EPSS (top scores)', type: 'CSV Feed', categories: ['CVE'] },
+  { file: 'malicious-ips.json', name: 'FireHOL + IPSUM', type: 'Blocklist', categories: ['IP'] },
 ];
+let _feedStatus = null;
+function loadFeedStatus() {
+  if (_feedStatus) return _feedStatus;
+  _feedStatus = Promise.all(LIVE_FEEDS.map(function (f) {
+    return fetch('/data/feeds/' + f.file, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(function (d) {
+      var rows = Array.isArray(d.data) ? d.data : [];
+      var t = Date.parse(d.updated || '');
+      return Object.assign({}, f, { count: parseInt(d.count, 10) || rows.length, updated: isNaN(t) ? null : t, stale: isNaN(t) || Date.now() - t > 3 * 86400000, rows: rows });
+    }).catch(function (e) { return Object.assign({}, f, { error: String(e.message || e), count: 0, rows: [] }); });
+  }));
+  _feedStatus.catch(function () { _feedStatus = null; });
+  return _feedStatus;
+}
+function feedTime(t) { return t ? new Date(t).toISOString().slice(0, 16).replace('T', ' ') + ' UTC' : 'unknown'; }
 
 
 
@@ -1555,7 +1566,7 @@ const SECURITY_TOOLS_CATEGORIES = [
 // SHELLCODE_TEMPLATES, ROP_GADGETS, AD_ATTACK_PATHS,
 // AD_ATTACKS_DB, CLOUD_PRIVESC_PATHS, CONTAINER_ESCAPES,
 // HUNT_HYPOTHESES, HUNT_PLAYBOOKS, WARROOM_TEMPLATES, EVIDENCE_TYPES,
-// STIX_FEEDS, YARA_RULES, PORT_REFERENCE,
+// LIVE_FEEDS, YARA_RULES, PORT_REFERENCE,
 // FORENSIC_ARTIFACTS, OSINT_TOOLS, PROTOCOL_SIGNATURES,
 // PERSISTENCE_MECHANISMS, VULNERABLE_CONFIGS, MALWARE_FAMILIES,
 // HASH_TYPES, WINDOWS_EVENTS, LATERAL_MOVEMENT_TECHNIQUES,
@@ -2332,17 +2343,26 @@ export function renderAegis(main) {
             '</div>' +
           '</div>' +
           '<div class="ag-panel" style="margin-top:10px">' +
-            '<div class="ag-panel-h"><span style="color:var(--acc)">IOC AUTO-CORRELATOR</span></div>' +
+            '<div class="ag-panel-h"><span style="color:var(--acc)">LIVE FEED TOTALS</span></div>' +
             '<div class="ag-panel-b">' +
-              '<p style="color:var(--mut);font-size:.7rem;margin:0 0 8px">Cross-references IOCs across multiple feeds to identify overlapping threat indicators and campaign linkages.</p>' +
-              '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-                '<div class="ag-stat" style="flex:1;min-width:100px"><div class="ag-stat-v" style="color:var(--acc)">' + STIX_FEEDS.reduce(function(s,f){return s+f.iocs},0).toLocaleString() + '</div><div class="ag-stat-l">Total IOCs</div></div>' +
-                '<div class="ag-stat" style="flex:1;min-width:100px"><div class="ag-stat-v" style="color:#00e676">' + STIX_FEEDS.filter(function(f){return f.status==='Active'}).length + '</div><div class="ag-stat-l">Active Feeds</div></div>' +
-                '<div class="ag-stat" style="flex:1;min-width:100px"><div class="ag-stat-v" style="color:#ff1744">847</div><div class="ag-stat-l">Correlated</div></div>' +
-                '<div class="ag-stat" style="flex:1;min-width:100px"><div class="ag-stat-v" style="color:#ffd600">23</div><div class="ag-stat-l">Campaigns</div></div>' +
+              '<p style="color:var(--mut);font-size:.7rem;margin:0 0 8px">Read from the threat feeds Darknode refreshes daily. Open the Feeds tab for each source and its last sync.</p>' +
+              '<div style="display:flex;gap:8px;flex-wrap:wrap" id="ag-feedtot">' +
+                '<div class="ag-stat" style="flex:1;min-width:100px"><div class="ag-stat-v" style="color:var(--acc)" data-ft="ind">…</div><div class="ag-stat-l">Indicators loaded</div></div>' +
+                '<div class="ag-stat" style="flex:1;min-width:100px"><div class="ag-stat-v" style="color:#00e676" data-ft="cur">…</div><div class="ag-stat-l">Feeds current</div></div>' +
+                '<div class="ag-stat" style="flex:1;min-width:100px"><div class="ag-stat-v" style="color:#ff1744" data-ft="ran">…</div><div class="ag-stat-l">KEV used by ransomware</div></div>' +
+                '<div class="ag-stat" style="flex:1;min-width:100px"><div class="ag-stat-v" style="color:#ffd600" data-ft="ep">…</div><div class="ag-stat-l">CVEs above 50% EPSS</div></div>' +
               '</div>' +
             '</div>' +
           '</div>';
+        loadFeedStatus().then(function (fs) {
+          var box = ic.querySelector('#ag-feedtot'); if (!box || !box.isConnected) return;
+          var by = function (file) { return fs.filter(function (f) { return f.file === file; })[0] || { rows: [] }; };
+          var set = function (k, v) { var e = box.querySelector('[data-ft="' + k + '"]'); if (e) e.textContent = v; };
+          set('ind', fs.reduce(function (s, f) { return s + (f.count || 0); }, 0).toLocaleString());
+          set('cur', fs.filter(function (f) { return !f.error && !f.stale; }).length + ' of ' + fs.length);
+          set('ran', by('cisa-kev-index.json').rows.filter(function (v) { return v && v.ransomware === 'Known'; }).length.toLocaleString());
+          set('ep', by('epss-top.json').rows.filter(function (v) { return v && v.epss >= 0.5; }).length.toLocaleString());
+        });
 
         ic.querySelector('#ag-ioccheck').onclick = function() {
           var input = ic.querySelector('#ag-iocin').value.trim().split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
@@ -2477,16 +2497,19 @@ export function renderAegis(main) {
       } else if (tab === 'feeds') {
         ic.innerHTML =
           '<div class="ag-panel">' +
-            '<div class="ag-panel-h"><span style="color:var(--acc)">STIX/TAXII THREAT FEEDS</span><span style="flex:1"></span><span style="color:var(--mut)">' + STIX_FEEDS.length + ' feeds</span></div>' +
-            '<div class="ag-panel-b">' +
-              '<table class="ag-tbl"><thead><tr><th>Feed Name</th><th>Type</th><th>Status</th><th>IOCs</th><th>Last Sync</th><th>Categories</th></tr></thead><tbody>' +
-              STIX_FEEDS.map(function(f) {
-                var stColor = f.status === 'Active' ? '#00e676' : '#ffd600';
-                return '<tr><td style="font-weight:600">' + esc(f.name) + '</td><td style="color:var(--mut);font-size:.62rem">' + esc(f.type) + '</td><td><span class="ag-badge" style="background:' + stColor + '22;color:' + stColor + ';border:1px solid ' + stColor + '44">' + esc(f.status) + '</span></td><td style="font-variant-numeric:tabular-nums">' + f.iocs.toLocaleString() + '</td><td style="color:var(--mut);font-size:.62rem">' + esc(f.lastSync) + '</td><td style="font-size:.62rem">' + f.categories.join(', ') + '</td></tr>';
-              }).join('') +
-              '</tbody></table>' +
-            '</div>' +
+            '<div class="ag-panel-h"><span style="color:var(--acc)">LIVE THREAT FEEDS</span><span style="flex:1"></span><span style="color:var(--mut)">' + LIVE_FEEDS.length + ' feeds, refreshed daily</span></div>' +
+            '<div class="ag-panel-b" id="ag-feedtbl"><div style="color:var(--mut);font-size:.72rem;padding:12px 0">Reading feed status…</div></div>' +
           '</div>';
+        loadFeedStatus().then(function (fs) {
+          var box = ic.querySelector('#ag-feedtbl'); if (!box || !box.isConnected) return;
+          box.innerHTML = '<table class="ag-tbl"><thead><tr><th>Feed Name</th><th>Type</th><th>Status</th><th>Records</th><th>Last Sync</th><th>Categories</th></tr></thead><tbody>' +
+            fs.map(function (f) {
+              var st = f.error ? 'Unavailable' : f.stale ? 'Stale' : 'Current';
+              var stColor = st === 'Current' ? '#00e676' : st === 'Stale' ? '#ffd600' : '#ff1744';
+              return '<tr><td style="font-weight:600">' + esc(f.name) + '</td><td style="color:var(--mut);font-size:.62rem">' + esc(f.type) + '</td><td><span class="ag-badge" style="background:' + stColor + '22;color:' + stColor + ';border:1px solid ' + stColor + '44">' + st + '</span></td><td style="font-variant-numeric:tabular-nums">' + (f.error ? '-' : f.count.toLocaleString()) + '</td><td style="color:var(--mut);font-size:.62rem">' + esc(f.error ? f.error : feedTime(f.updated)) + '</td><td style="font-size:.62rem">' + f.categories.join(', ') + '</td></tr>';
+            }).join('') + '</tbody></table>' +
+            '<p style="color:var(--mut);font-size:.68rem;margin:10px 0 0">abuse.ch ThreatFox, URLhaus and Feodo Tracker now require an API key and are not connected.</p>';
+        });
       } else if (tab === 'darkweb') {
         ic.innerHTML =
           '<div class="ag-panel">' +

@@ -9,6 +9,7 @@
 // every figure and row is derived from the fetched data and labelled with its
 // source. If a source cannot be reached, an honest error is shown instead.
 import { dnFetchJSON, proxyConfigured } from "/js/net.js";
+import { loadKevCatalog } from "/js/core/kev-feed.js?v=20261101a";
 
 const esc = (s) => String(s != null ? s : "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -88,7 +89,7 @@ function epssPct(v) {
 // DATA ASSEMBLY (all real)
 // ═══════════════════════════════════════════════════════════════════════════════
 async function assembleBriefing() {
-  const kevData = await dnFetchJSON(KEV_URL, { timeout: 25000, max: 4000000 });
+  const kevData = await loadKevCatalog();
   const allKev = (kevData && kevData.vulnerabilities) || [];
   const cutoff = daysAgoISODate(30);
   let recentKev = allKev.filter(v => String(v.dateAdded || "") >= cutoff);
@@ -119,7 +120,7 @@ async function assembleBriefing() {
     victimsError = String((err && err.message) || err);
   }
 
-  return { allKev, recentKev, epss, victims, victimsError, cutoff };
+  return { allKev, kevTotal: kevData.count || allKev.length, recentKev, epss, victims, victimsError, cutoff };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -171,7 +172,7 @@ function renderStats(d, fig) {
     { value: fig.topEpss ? fig.topEpss.pct.toFixed(0) + '%' : 'n/a', label: 'Top EPSS', color: 'var(--warn)' },
     { value: d.victims.length, label: 'Recent leak-site posts', color: 'var(--warn)' },
     { value: fig.groupCount, label: 'Groups posting', color: 'var(--acc)' },
-    { value: d.allKev.length, label: 'KEV catalog total', color: 'var(--acc)' }
+    { value: d.kevTotal || d.allKev.length, label: 'KEV catalog total', color: 'var(--acc)' }
   ];
   let h = '<div class="cb-stats-row">';
   stats.forEach(s => {
@@ -263,7 +264,7 @@ function generateExportText(d, fig, audience) {
   t += sep + '\n\n';
   t += 'BOTTOM LINE UP FRONT\n' + line + '\n';
   t += aud.lead + '\n';
-  t += '- KEV in scope: ' + d.recentKev.length + ' (catalog total ' + d.allKev.length + ')\n';
+  t += '- KEV in scope: ' + d.recentKev.length + ' (catalog total ' + (d.kevTotal || d.allKev.length) + ')\n';
   t += '- Ransomware-linked: ' + fig.ransomKev.length + '\n';
   if (fig.topEpss) t += '- Highest EPSS: ' + fig.topEpss.cve + ' (' + fig.topEpss.pct.toFixed(1) + '%)\n';
   t += '- Recent ransomware victims: ' + d.victims.length + ' across ' + fig.groupCount + ' groups\n\n';
