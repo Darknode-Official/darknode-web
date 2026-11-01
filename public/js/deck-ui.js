@@ -183,6 +183,7 @@ const ICONS = {
   search: SVG('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>'),
   alert: SVG('<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
   server: SVG('<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/>'),
+  clock: SVG('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
   key: SVG('<circle cx="8" cy="8" r="4"/><path d="m11 11 9 9M17 17l2-2M15 19l2-2"/>'),
   terminal: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/>'),
 };
@@ -197,16 +198,22 @@ const ICON_RULES = [
   [/\bmap\b|geo|globe|sentinel|satellite|\bsat\b|track|location|navarch|maritime/i, "map"],
   [/\bai\b|chat|assistant|oracle|prompt|\bllm\b|model|agent|spectre/i, "cpu"],
   [/doc|report|checklist|playbook|note|policy|template|guide|crosswalk|case/i, "file"],
+  [/crypt|aes-|chacha|ecdsa|ed25519|x25519|pkcs|\bpem\b|nonce|keypair|hmac|totp|hotp|pkce|passphrase|\bpin\b|htpasswd|prime|modular|euclid|totient|jacobi|gf\(|xor|kasiski|coincidence|letter frequency|hamming|luhn|thumbprint/i, "key"],
+  [/time|utc|timeline|chain-of-custody/i, "clock"],
+  [/\blog\b|logs?\b|grok|splunk|kql|logstash|\bcef\b|sysmon|\bjq\b|regex|extract|ioc|de-obfusc|defang/i, "search"],
+  [/aws|gcp|gcs|azure|\bs3\b|kubernetes|imds|\barn\b|bucket|container/i, "server"],
+  [/binary|\bpe\b|\belf\b|mach-o|strings|endian|syscall|memory|packer|magic bytes|volatility|sleuth|plaso|mobile/i, "cpu"],
   [/graph|visual|tree|chart|diagram|constellation|mapper/i, "graph"],
   [/search|lookup|query|enrich|investig/i, "search"],
   [/alert|risk|score|calc|cost|impact|cvss|severity/i, "alert"],
   [/server|host|scan|infra|cloud|service|\bapi\b|network-map/i, "server"],
   [/\bkey\b|token|crypto/i, "key"],
 ];
+// The tool's own name decides its icon; the category is only a fallback. Matching both as
+// one string let the category win ("Recon & OSINT" -> eye), so a whole category shared one icon.
 function toolIcon(label, group){
-  const s = ((label || "") + " " + (group || "")).toLowerCase();
-  for (let i = 0; i < ICON_RULES.length; i++) if (ICON_RULES[i][0].test(s)) return ICONS[ICON_RULES[i][1]];
-  return ICONS.terminal;
+  const pick = (s) => { s = (s || "").toLowerCase(); for (let i = 0; i < ICON_RULES.length; i++) if (ICON_RULES[i][0].test(s)) return ICONS[ICON_RULES[i][1]]; return null; };
+  return pick(label) || pick(group) || ICONS.terminal;
 }
 
 function loadConns(){ try { return JSON.parse(localStorage.getItem(acctKey(LS_CONN)) || "{}") || {}; } catch (_) { return {}; } }
@@ -1537,6 +1544,21 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-kpi .ks{margin-top:8px;font-size:12px;color:var(--dk-mut);font-weight:400}
 .dk[data-ui=deck] .dk-start{grid-column:span 2;background:var(--dk-surf);border:1px solid var(--dk-line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .dk[data-ui=deck] .dk-start[hidden]{display:none}
+/* No findings yet: the start panel spans 2 columns x 2 rows and the four live KPIs sit 2x2 beside it, instead of four tall cards stretched to the panel's height with their bottom halves empty */
+@media(max-width:560px){.dk[data-ui=deck] .dk-grid.dkx{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.dk[data-ui=deck] .dk-grid.dkx>.dk-gcard{flex-direction:column;align-items:flex-start;gap:9px;min-height:0;padding:12px 34px 12px 12px}.dk[data-ui=deck] .dk-grid.dkx>.dk-gcard .gt{font-size:13px;overflow-wrap:anywhere}}
+.dk[data-ui=deck] .dk-setgrid{display:block;columns:3 320px;column-gap:18px}
+.dk[data-ui=deck] .dk-setgrid>*{break-inside:avoid;margin:0 0 18px;width:100%;box-sizing:border-box}
+@media(min-width:721px) and (max-width:1100px){.dk[data-ui=deck] .dk-ovgrid3>:nth-child(3):last-child{grid-column:1/-1}}
+@media(min-width:1001px) and (max-width:1200px){.dk[data-ui=deck] .dk-top{grid-template-columns:auto auto minmax(0,1fr) minmax(0,300px) auto}}
+.dk[data-ui=deck] .dk-compnote{max-width:none}
+.dk[data-ui=deck] .dk-onbd-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.dk[data-ui=deck] .dk-onbd-step{height:100%}
+.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]){grid-column:span 2;grid-row:span 2;justify-content:center;padding:20px 22px}
+.dk[data-ui=deck] .dk-kpis6:has(>.dk-start:not([hidden]))>.dk-kpi{min-height:0}
+.dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]) .dk-actform input{flex:1 1 140px;min-width:0}
+@media(max-width:720px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(2,minmax(0,1fr))!important}.dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]){grid-row:auto}}
+@media(max-width:520px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:1fr!important}}
 .dk[data-ui=deck] .dk-start b{font-size:15px;font-weight:600}
 .dk[data-ui=deck] .dk-start p{font-size:13px;color:var(--dk-tx2);line-height:1.5;margin:0 0 6px}
 @media(max-width:520px){.dk[data-ui=deck] .dk-start{grid-column:auto}.dk[data-ui=deck] .dk-start .dk-actform input{flex:1 1 100%;width:100%}}

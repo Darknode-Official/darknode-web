@@ -273,7 +273,8 @@ var CV_CSS =
   '.cv-mlabel{font-size:.82rem;font-weight:600;color:var(--txt)}' +
   '.cv-mabbr{font-family:var(--font-mono);font-size:12px;color:var(--acc)}' +
   '.cv-mhelp{font-size:12px;color:var(--mut);flex:1 1 100%;margin-top:2px}' +
-  '.cv-seg{display:flex;flex-wrap:wrap;gap:6px}' +
+  '.cv-seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}' +
+  '@media(max-width:520px){.cv-seg:has(>.cv-opt:nth-child(4)){grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr))}}' +
   '.cv-opt{flex:1 1 auto;min-width:68px;background:var(--card2);border:1px solid var(--line);color:var(--txt-2);border-radius:5px;padding:8px 10px;font-size:.82rem;font-family:inherit;cursor:pointer;text-align:center;transition:border-color .12s,background .12s,color .12s}' +
   '.cv-opt:hover{border-color:var(--acc);color:var(--txt)}' +
   '.cv-opt:focus-visible{outline:2px solid var(--acc);outline-offset:2px}' +
