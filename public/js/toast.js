@@ -36,7 +36,7 @@ function ensureStyles() {
     @keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
     @keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
     @keyframes toastBump{0%{transform:scale(1)}35%{transform:scale(1.04)}100%{transform:scale(1)}}
-    @media(max-width:480px){.toast-stack{right:8px;left:8px;max-width:none}}`;
+    @media(max-width:480px){.toast-stack{right:8px!important;left:8px!important;bottom:8px!important;max-width:none!important;align-items:stretch!important}}`;
   document.head.appendChild(s);
 }
 
