@@ -1,0 +1,171 @@
+{
+ "updated": "2026-11-01T18:11:11.752Z",
+ "source": "CISA KEV (last 14 days)",
+ "catalogVersion": "2026.10.30",
+ "since": "2026-10-18",
+ "count": 18,
+ "data": [
+  {
+   "cve": "CVE-2026-118527",
+   "vendor": "Ivanti",
+   "product": "Connect Secure",
+   "name": "Ivanti Connect Secure Generation of Predictable Numbers or Identifiers Vulnerability",
+   "dateAdded": "2026-10-30",
+   "dueDate": "2026-11-13",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-111357",
+   "vendor": "Ivanti",
+   "product": "Connect Secure",
+   "name": "Ivanti Connect Secure Missing Authentication for Critical Function Vulnerability",
+   "dateAdded": "2026-10-30",
+   "dueDate": "2026-11-02",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-97229",
+   "vendor": "GitLab",
+   "product": "Community Edition and Enterprise Edition",
+   "name": "GitLab Community Edition and Enterprise Edition Integer Overflow or Wraparound Vulnerability",
+   "dateAdded": "2026-10-29",
+   "dueDate": "2026-11-01",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-76418",
+   "vendor": "Cisco",
+   "product": "Secure Firewall ASA Software and Cisco Secure FTD Software",
+   "name": "Cisco Secure Firewall ASA Software and Cisco Secure FTD Software Unchecked Return Value to NULL Pointer Dereference Vulnerability",
+   "dateAdded": "2026-10-29",
+   "dueDate": "2026-11-01",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-41709",
+   "vendor": "Broadcom",
+   "product": "VMware ESX",
+   "name": "Broadcom VMWare ESX Insufficient Logging Vulnerability",
+   "dateAdded": "2026-10-28",
+   "dueDate": "2026-11-11",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-46300",
+   "vendor": "Linux",
+   "product": "Kernel",
+   "name": "Linux Kernel Missing Initialization of a Variable Vulnerability",
+   "dateAdded": "2026-10-28",
+   "dueDate": "2026-10-31",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-48356",
+   "vendor": "Adobe",
+   "product": "Commerce and Magento",
+   "name": "Adobe Commerce and Magento Unrestricted Upload of File with Dangerous Type Vulnerability",
+   "dateAdded": "2026-10-27",
+   "dueDate": "2026-11-10",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-111497",
+   "vendor": "Google",
+   "product": "Brotli",
+   "name": "Google Brotli Unchecked Return Value Vulnerability",
+   "dateAdded": "2026-10-27",
+   "dueDate": "2026-11-10",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-109618",
+   "vendor": "PHP Group",
+   "product": "PHP",
+   "name": "PHP Memory Corruption Vulnerability",
+   "dateAdded": "2026-10-26",
+   "dueDate": "2026-10-29",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-109619",
+   "vendor": "PHP Group",
+   "product": "PHP",
+   "name": "PHP Stale Internal Request-State Vulnerability",
+   "dateAdded": "2026-10-26",
+   "dueDate": "2026-10-29",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-114625",
+   "vendor": "Arista",
+   "product": "VeloCloud Orchestrator",
+   "name": "Arista VeloCloud Orchestrator SQL Injection Vulnerability",
+   "dateAdded": "2026-10-23",
+   "dueDate": "2026-10-26",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-110447",
+   "vendor": "Collabora",
+   "product": "Collabora Online – Built-in CODE Server",
+   "name": "Collabora Online – Built-in CODE Server OS Command Injection Vulnerability",
+   "dateAdded": "2026-10-23",
+   "dueDate": "2026-10-26",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-106931",
+   "vendor": "EG Secure Solutions",
+   "product": "SiteGuard Server Edition",
+   "name": "EG Secure Solutions SiteGuard Server Edition OS Command Injection Vulnerability",
+   "dateAdded": "2026-10-20",
+   "dueDate": "2026-10-23",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-96656",
+   "vendor": "Plex",
+   "product": "Media Server",
+   "name": "Plex Media Server External Control of File Name or Path Vulnerability",
+   "dateAdded": "2026-10-20",
+   "dueDate": "2026-10-23",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-96655",
+   "vendor": "Plex",
+   "product": "Media Server",
+   "name": "Plex Media Server Server-Side Request Forgery (SSRF) Vulnerability",
+   "dateAdded": "2026-10-20",
+   "dueDate": "2026-11-03",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-96654",
+   "vendor": "Plex",
+   "product": "Media Server",
+   "name": "Plex Media Server Improper Neutralization of Encoded URI Schemes in a Web Page Vulnerability",
+   "dateAdded": "2026-10-20",
+   "dueDate": "2026-10-23",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-96652",
+   "vendor": "Plex",
+   "product": "Media Server",
+   "name": "Plex Media Server Server-Side Request Forgery (SSRF) Vulnerability",
+   "dateAdded": "2026-10-20",
+   "dueDate": "2026-11-03",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-110936",
+   "vendor": "Siemens",
+   "product": "Software Center",
+   "name": "Siemens Software Center Uncontrolled Search Path Element Vulnerability",
+   "dateAdded": "2026-10-20",
+   "dueDate": "2026-11-03",
+   "ransomware": false
+  }
+ ]
+}

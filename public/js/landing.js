@@ -45,7 +45,23 @@ async function appResolveAsset(os) {
   return null;
 }
 
+// Hero side panel: the newest CISA KEV additions from the daily same-origin feed. Real data
+// only; on failure the panel says so instead of showing anything made up.
+function loadHeroLive(view) {
+  const box = view.querySelector("#hxLiveB"); if (!box) return;
+  const e = (x) => String(x == null ? "" : x).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  fetch("/data/feeds/kev-recent.json", { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+    if (!box.isConnected) return;
+    const rows = (d && Array.isArray(d.data) ? d.data : []).slice(0, 5);
+    if (!rows.length) { box.innerHTML = '<div class="hx-live-msg">No new entries in the last two weeks.</div>'; return; }
+    box.innerHTML = rows.map((v) => `<a class="hx-row" href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(v.cve)}" target="_blank" rel="noopener"><span class="hx-cve">${e(v.cve)}</span><span class="hx-what">${e([v.vendor, v.product].filter(Boolean).join(" "))}${v.ransomware ? ' <span class="hx-rw">Ransomware</span>' : ""}</span><span class="hx-when">${e(String(v.dateAdded || "").slice(5))}</span></a>`).join("");
+    const f = view.querySelector("#hxLiveF");
+    if (f && d.count) f.textContent = d.count + " added to the catalog in the last 14 days" + (d.catalogVersion ? " (version " + d.catalogVersion + ")" : "") + ". The Deck matches them against what you run.";
+  }).catch(() => { if (box.isConnected) box.innerHTML = '<div class="hx-live-msg">The live feed could not be loaded right now.</div>'; });
+}
+
 export function renderLanding(view, actions) {
+  setTimeout(() => loadHeroLive(view), 0);
   view.innerHTML = `
 
     <!-- ====== HERO ====== -->
@@ -53,6 +69,7 @@ export function renderLanding(view, actions) {
       <div class="hero-mesh"></div>
       <div class="hero-grain"></div>
       <div class="wrap hero-inner">
+        <div class="hx-grid"><div class="hx-copy">
         <div class="hero-badge"><span class="badge-dot"></span> Runs air-gapped &middot; Deterministic &middot; Your data stays yours</div>
         <h1 class="hero-h1">Find the real risks in your<br><span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">code</span></span></h1>
         <p class="hero-sub">Darknode scans your code, cloud, dependencies, configs and records for real vulnerabilities and risks — with accurate, explainable, deterministic engines that run on your own infrastructure. No black-box AI deciding severity, no data leaving your estate.</p>
@@ -73,6 +90,13 @@ export function renderLanding(view, actions) {
             <span class="built-pill">Firebase</span>
             <span class="built-pill">Linux</span>
           </div>
+        </div>
+        </div>
+        <aside class="hx-live" id="hxLive" aria-label="Newly exploited vulnerabilities">
+          <div class="hx-live-h"><span class="hx-dot"></span><b>Newly exploited</b><span class="hx-src">CISA KEV</span></div>
+          <div class="hx-live-b" id="hxLiveB"><div class="hx-live-msg">Loading the live feed…</div></div>
+          <div class="hx-live-f" id="hxLiveF">Real vulnerabilities attackers are using now, refreshed daily. The Deck matches them against what you run.</div>
+        </aside>
         </div>
       </div>
     </section>

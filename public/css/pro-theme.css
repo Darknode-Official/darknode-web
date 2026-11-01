@@ -12883,3 +12883,88 @@ html[data-style="pro"] .app-main a.pt-guide-dl:not(#_) { color: #fff !important;
 html[data-style="pro"] .app-main pre.code-block { background: #1e293b !important; color: #e2e8f0 !important; }
 /* Data-viz heatmap cells set their own white text on a coloured fill */
 html[data-style="pro"] .app-main table td[style*="color: rgb(255, 255, 255)"] { color: #fff !important; }
+
+/* ---- Landing hero v2 (2026-11-01): copy on the left, live CISA KEV panel on the right.
+   Same palette as the hero above; only the layout changes. ---- */
+[data-style=pro] .hero .hx-grid{display:grid!important;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:56px;align-items:center;width:100%;text-align:left}
+[data-style=pro] .hero .hx-copy{min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+[data-style=pro] .hero .hx-copy .hero-h1{text-align:left!important;margin-left:0!important;margin-right:0!important}
+[data-style=pro] .hero .hx-copy .hero-sub{text-align:left!important;margin-left:0!important;margin-right:0!important;max-width:560px!important}
+[data-style=pro] .hero .hx-copy .hero-cta{justify-content:flex-start!important}
+[data-style=pro] .hero .hx-copy .hero-built-with{justify-content:flex-start!important;margin-left:0!important}
+[data-style=pro] .hero .hx-copy .built-pills{justify-content:flex-start!important}
+[data-style=pro] .hero .hx-live{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 18px 40px -18px rgba(15,23,42,.18);overflow:hidden;text-align:left}
+[data-style=pro] .hero .hx-live-h{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid #e2e8f0;font-size:.92rem;color:#0f172a}
+[data-style=pro] .hero .hx-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.15);flex:none}
+[data-style=pro] .hero .hx-src{margin-left:auto;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#64748b}
+[data-style=pro] .hero .hx-live-b{min-height:250px}
+[data-style=pro] .hero .hx-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid #f1f5f9;text-decoration:none;color:#0f172a;transition:background .15s}
+[data-style=pro] .hero .hx-row:hover{background:#eff6ff}
+[data-style=pro] .hero .hx-cve{font:600 .8rem/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:#1d4ed8;white-space:nowrap}
+[data-style=pro] .hero .hx-what{font-size:.86rem;color:#334155;overflow-wrap:anywhere}
+[data-style=pro] .hero .hx-rw{display:inline-block;margin-left:6px;font-size:.66rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;padding:1px 6px;vertical-align:1px}
+[data-style=pro] .hero .hx-when{font-size:.76rem;color:#64748b;font-variant-numeric:tabular-nums;white-space:nowrap}
+[data-style=pro] .hero .hx-live-msg{padding:24px 18px;color:#64748b;font-size:.88rem}
+[data-style=pro] .hero .hx-live-f{padding:12px 18px;background:#f8fafc;color:#64748b;font-size:.8rem;line-height:1.5}
+@media(max-width:960px){
+  [data-style=pro] .hero .hx-grid{grid-template-columns:minmax(0,1fr);gap:36px}
+  [data-style=pro] .hero .hx-copy{align-items:center;text-align:center}
+  [data-style=pro] .hero .hx-copy .hero-h1,[data-style=pro] .hero .hx-copy .hero-sub{text-align:center!important;margin-left:auto!important;margin-right:auto!important}
+  [data-style=pro] .hero .hx-copy .hero-cta,[data-style=pro] .hero .hx-copy .hero-built-with,[data-style=pro] .hero .hx-copy .built-pills{justify-content:center!important}
+  [data-style=pro] .hero .hx-live-b{min-height:0}
+}
+[data-style=pro] .hero .hx-copy .hero-rotate-wrap,[data-style=pro] .hero .hx-copy .hero-rotate{text-align:left!important}
+[data-style=pro] body.landing .hero{padding:64px 24px 56px!important;min-height:0!important}
+@media(max-width:960px){[data-style=pro] .hero .hx-copy .hero-rotate-wrap,[data-style=pro] .hero .hx-copy .hero-rotate{text-align:center!important}[data-style=pro] body.landing .hero{padding:44px 16px 40px!important}}
+
+/* ---- Landing v3 (2026-11-01): bold layout pass. Same palette (navy #0f172a -> blue #1e3a8a/#2563eb,
+   orange CTA); dark full-bleed hero, editorial left-aligned section heads, bento products with a
+   feature tile, dark featured price card. ---- */
+[data-style=pro] body.landing .hero{background:radial-gradient(900px 520px at 85% 10%,rgba(37,99,235,.35),transparent 60%),linear-gradient(160deg,#0b1220 0%,#0f172a 45%,#1e3a8a 100%)!important;padding:96px 24px 104px!important;border-bottom:none!important;overflow:hidden}
+[data-style=pro] body.landing .hero .hero-mesh,[data-style=pro] body.landing .hero .hero-grain{display:none!important}
+[data-style=pro] body.landing .hero::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:56px 56px;mask-image:linear-gradient(180deg,#000 30%,transparent 95%);-webkit-mask-image:linear-gradient(180deg,#000 30%,transparent 95%)}
+[data-style=pro] body.landing .hero .hx-grid{position:relative;z-index:1;max-width:1320px;margin:0 auto}
+[data-style=pro] body.landing .hero .hero-badge{background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.18)!important;color:#dbeafe!important}
+[data-style=pro] body.landing .hero .hero-h1{color:#fff!important;-webkit-text-fill-color:#fff!important;font-size:clamp(2.8rem,6.2vw,5.6rem)!important;line-height:.98!important;letter-spacing:-.035em!important;font-weight:800!important}
+[data-style=pro] body.landing .hero .hero-rotate{color:#60a5fa!important;-webkit-text-fill-color:#60a5fa!important}
+[data-style=pro] body.landing .hero .hero-sub{color:#cbd5e1!important;font-size:1.15rem!important}
+[data-style=pro] body.landing .hero .hero-cta .btn.ghost{background:transparent!important;color:#fff!important;border:1px solid rgba(255,255,255,.35)!important}
+[data-style=pro] body.landing .hero .hero-cta .btn.ghost:hover{background:rgba(255,255,255,.08)!important}
+[data-style=pro] body.landing .hero .built-label{color:#94a3b8!important}
+[data-style=pro] body.landing .hero .built-pill{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.14)!important;color:#cbd5e1!important}
+[data-style=pro] body.landing .hero .hx-live{background:rgba(15,23,42,.72);border:1px solid rgba(148,163,184,.25);box-shadow:0 30px 80px -20px rgba(0,0,0,.6);backdrop-filter:blur(8px)}
+[data-style=pro] body.landing .hero .hx-live-h{color:#f8fafc;border-bottom-color:rgba(148,163,184,.2)}
+[data-style=pro] body.landing .hero .hx-src,[data-style=pro] body.landing .hero .hx-when{color:#94a3b8}
+[data-style=pro] body.landing .hero .hx-row{color:#e2e8f0;border-bottom-color:rgba(148,163,184,.12)}
+[data-style=pro] body.landing .hero .hx-row:hover{background:rgba(37,99,235,.18)}
+[data-style=pro] body.landing .hero .hx-cve{color:#93c5fd}
+[data-style=pro] body.landing .hero .hx-what{color:#e2e8f0}
+[data-style=pro] body.landing .hero .hx-rw{background:rgba(185,28,28,.2);border-color:rgba(248,113,113,.4);color:#fca5a5}
+[data-style=pro] body.landing .hero .hx-live-msg{color:#94a3b8}
+[data-style=pro] body.landing .hero .hx-live-f{background:rgba(255,255,255,.04);color:#94a3b8}
+/* Editorial section heads: left-aligned, big, with a rule. */
+[data-style=pro] body.landing .section>.wrap>.sec-label{display:block!important;width:auto!important;background:none!important;border:none!important;border-top:2px solid #0f172a!important;border-radius:0!important;padding:14px 0 0!important;margin:0 0 18px!important;text-align:left!important;color:#2563eb!important;font-size:.78rem!important;letter-spacing:.16em!important}
+[data-style=pro] body.landing .section>.wrap>.sec-title{text-align:left!important;font-size:clamp(2.2rem,4.4vw,3.8rem)!important;line-height:1.02!important;letter-spacing:-.03em!important;max-width:900px!important;margin-left:0!important;margin-right:0!important}
+[data-style=pro] body.landing .section>.wrap>.sec-sub{text-align:left!important;margin-left:0!important;margin-right:0!important;max-width:640px!important;font-size:1.08rem!important}
+[data-style=pro] body.landing .section{padding-top:112px!important;padding-bottom:112px!important}
+/* Products: bento with a dark feature tile. */
+[data-style=pro] body.landing #products .bento{grid-template-columns:1.5fr 1fr 1fr!important;gap:16px!important}
+[data-style=pro] body.landing #products .bento-card{border-radius:18px!important}
+[data-style=pro] body.landing #products .bento-card:first-child{grid-row:span 2;background:linear-gradient(160deg,#0f172a,#1e3a8a)!important;border-color:transparent!important;color:#e2e8f0!important;padding:40px!important;display:flex;flex-direction:column;justify-content:flex-end;min-height:360px}
+[data-style=pro] body.landing #products .bento-card:first-child h3{color:#fff!important;font-size:2.2rem!important;letter-spacing:-.02em}
+[data-style=pro] body.landing #products .bento-card:first-child p{color:#cbd5e1!important;font-size:1.05rem!important}
+[data-style=pro] body.landing #products .bento-card:first-child .bento-icon{background:rgba(255,255,255,.1)!important;color:#93c5fd!important;width:56px!important;height:56px!important;margin-bottom:auto!important}
+[data-style=pro] body.landing #products .bento-card:first-child .bento-tag{background:rgba(255,255,255,.1)!important;color:#dbeafe!important;border-color:transparent!important;align-self:flex-start}
+/* Pricing: featured plan becomes a dark card. */
+[data-style=pro] body.landing .price-card{border-radius:18px!important}
+[data-style=pro] body.landing .price-card.featured{background:linear-gradient(165deg,#0f172a,#1e3a8a)!important;border-color:transparent!important;transform:translateY(-12px);box-shadow:0 30px 60px -24px rgba(15,23,42,.55)!important}
+[data-style=pro] body.landing .price-card.featured .price-tier,[data-style=pro] body.landing .price-card.featured .price-amount{color:#fff!important;-webkit-text-fill-color:#fff!important}
+[data-style=pro] body.landing .price-card.featured .price-period,[data-style=pro] body.landing .price-card.featured .price-desc,[data-style=pro] body.landing .price-card.featured li{color:#cbd5e1!important}
+[data-style=pro] body.landing .price-card.featured .btn{background:#fff!important;color:#0f172a!important;border-color:#fff!important}
+@media(max-width:960px){
+  [data-style=pro] body.landing .hero{padding:56px 16px 64px!important}
+  [data-style=pro] body.landing .section{padding-top:72px!important;padding-bottom:72px!important}
+  [data-style=pro] body.landing #products .bento{grid-template-columns:minmax(0,1fr)!important}
+  [data-style=pro] body.landing #products .bento-card:first-child{grid-row:auto;min-height:0;padding:28px!important}
+  [data-style=pro] body.landing .price-card.featured{transform:none}
+}

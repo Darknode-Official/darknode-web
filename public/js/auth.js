@@ -462,13 +462,15 @@ function dismissBoot() {
   // soon as it is ready (a short floor so the fade never cuts a frame).
   let returning = false;
   try { returning = localStorage.getItem("sw_booted") === "1"; localStorage.setItem("sw_booted", "1"); } catch (_) {}
-  const quick = returning && isPro; // plain backdrop, no logo (data-boot-quick): just fade it out
-  const floor = quick ? 0 : returning ? 250 : (isPro ? 1200 : 2200);
+  // Returning visitors see the same logo and bar, on the colour of the page they last saw
+  // (data-boot-quick / data-boot-dark), held just long enough to register.
+  const quick = returning && isPro;
+  const floor = quick ? 700 : returning ? 700 : (isPro ? 1200 : 2200);
   const delay = Math.max(0, floor - elapsed);
   setTimeout(() => {
     const inner = b.querySelector(".boot-inner"); if (inner) inner.classList.add("exit");
-    setTimeout(() => { b.style.opacity = "0"; }, quick ? 0 : 150);
-    setTimeout(() => { b.remove(); afterBoot(); }, quick ? 170 : 650);
+    setTimeout(() => { b.style.opacity = "0"; }, quick ? 60 : 150);
+    setTimeout(() => { b.remove(); afterBoot(); }, quick ? 360 : 650);
   }, delay);
 }
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
@@ -3046,6 +3048,7 @@ onAuthStateChanged(auth, async (user) => {
             <li><strong>Legal basis:</strong> legitimate interest (providing the service) and your consent (accepting these terms).</li>
             <li><strong>Data retention:</strong> your data is retained while your account is active. After deletion, data is purged within 30 days, except where retention is required by law.</li>
             <li><strong>Integration relay:</strong> Deck integrations with providers that do not accept calls from a browser (such as VirusTotal, Shodan or AbuseIPDB) send your API key and the value you look up through Darknode's edge relay to that provider only. The relay uses the key for that one request and does not log or store the key, the value or the result; the provider processes them under its own terms. Keys stay in your browser, under your account.</li>
+            <li><strong>Weekly email digest (optional):</strong> only if you turn it on, we store your watched domains and latest certificate-check results to build a weekly email, sent to your account email through our email provider (Resend). You can turn it off at any time in Settings or from the unsubscribe link.</li>
             <li><strong>No selling or sharing:</strong> we do not sell, rent, or share your personal data with third parties for marketing purposes.</li>
             <li><strong>Cookies:</strong> we use only essential cookies and localStorage for session management and user preferences. We do not use tracking cookies or third-party analytics.</li>
             <li><strong>International transfers:</strong> data is processed and stored in Google Cloud data centers. By using the Platform, you consent to transfer of data to servers that may be outside your country of residence.</li>
