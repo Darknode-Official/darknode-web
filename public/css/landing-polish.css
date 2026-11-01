@@ -1,0 +1,78 @@
+/* Copyright (c) 2026 Darknode-Official. All rights reserved. See LICENSE. */
+/* Landing layout polish. Loaded last; layout, spacing and alignment only. Every colour
+   here is copied from an existing landing rule (bento icon tile, card borders, footer
+   text), so the palette is unchanged. */
+
+/* Wider content column: 1100px left wide empty margins and squeezed the 4 pricing cards. */
+html body.landing .wrap { max-width: 1240px !important; } /* beats the pro theme's 1100px !important */
+
+/* ---- Shared: cards whose last row is short sit centred instead of left-aligned orphans ---- */
+html body.landing .rag-grid,
+html body.landing .gov-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; }
+html body.landing .rag-grid > .rag-card,
+html body.landing .gov-grid > .gov-card { flex: 0 1 calc((100% - 36px) / 3); min-width: 0; display: flex; flex-direction: column; }
+@media (max-width: 980px) {
+  html body.landing .rag-grid > .rag-card,
+  html body.landing .gov-grid > .gov-card { flex-basis: calc((100% - 18px) / 2); }
+}
+@media (max-width: 640px) {
+  html body.landing .rag-grid > .rag-card,
+  html body.landing .gov-grid > .gov-card { flex-basis: 100%; }
+}
+
+/* ---- Top accent lines span the full card edge (they were inset ~20px each side) ---- */
+html body.landing .rag-card,
+html body.landing .nx-hl { position: relative; overflow: hidden; }
+html body.landing .rag-card::before,
+html body.landing .nx-hl::before { left: 0; right: 0; height: 3px; }
+
+/* ---- Knowledge-base cards ---- */
+html body.landing .rag-card { padding: 22px 22px 20px; }
+html body.landing .rag-card-head { align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+html body.landing .rag-card h3 { margin: 0; line-height: 1.3; }
+html body.landing .rag-card .sev { flex-shrink: 0; margin-top: 2px; }
+html body.landing .rag-card p { margin: 0 0 16px; flex: 1; }
+/* one box, not a box inside a box; long payloads wrap instead of being clipped */
+html body.landing .rag-code { margin-top: auto; overflow: visible; }
+html body.landing .rag-code code { display: block; background: none !important; border: 0 !important; padding: 0 !important; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12.5px; line-height: 1.55; }
+
+/* ---- Nexus layers: the header added its own 24px on top of the card padding, so titles sat
+   indented past the pills below them ---- */
+html body.landing .nx-arch-header { padding: 0 !important; margin-bottom: 12px; } /* pro theme pads every [class$="-header"] with !important */
+
+/* ---- Icon tiles: OS and government cards use the same tile as the product cards ---- */
+html body.landing .os-card-icon,
+html body.landing .gov-icon {
+  width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; background: rgb(239, 246, 255) !important; border: 1px solid rgb(191, 219, 254) !important;
+  color: rgb(24, 24, 27) !important; margin-bottom: 18px; font-size: 0; /* exactly the product-card (.bento-icon) tile */
+}
+html body.landing .os-card-icon svg,
+html body.landing .gov-icon svg { width: 24px; height: 24px; }
+html body.landing .gov-card { padding: 26px 24px; }
+
+/* ---- "Four steps": text starts level with its step number instead of floating mid-row ---- */
+html body.landing .tlv-body { align-items: start; }
+html body.landing .tlv-text { padding-top: 8px; }
+
+/* ---- Footer: brand + readable tagline, grouped link columns, bottom legal row ---- */
+html body.landing .land-footer { padding: 0; }
+html body.landing .land-footer-inner.lf-grid {
+  display: grid !important; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px; padding: 48px 24px 32px !important; align-items: start !important;
+}
+html body.landing .lf-brand .land-footer-brand { display: block; font-size: 1.15rem; font-weight: 700; color: rgb(15, 23, 42); margin-bottom: 10px; }
+html body.landing .lf-tag { margin: 0; max-width: 420px; font-size: .9rem; line-height: 1.6; color: rgb(113, 113, 122); }
+html body.landing .lf-col { display: flex; flex-direction: column; gap: 10px; }
+html body.landing .lf-col h4 { margin: 0 0 4px; font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgb(15, 23, 42); }
+html body.landing .lf-col a { color: rgb(82, 82, 91); font-size: .9rem; text-decoration: none; width: fit-content; }
+html body.landing .lf-col a:hover { color: rgb(37, 99, 235); text-decoration: underline; }
+html body.landing .lf-bottom {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px;
+  padding: 18px 24px 28px; /* divider drawn inset to the text edges; .wrap's auto margins stay intact */
+  background: linear-gradient(rgb(238, 238, 238), rgb(238, 238, 238)) no-repeat 24px 0 / calc(100% - 48px) 1px; font-size: .8rem; color: rgb(113, 113, 122);
+}
+@media (max-width: 760px) {
+  html body.landing .land-footer-inner.lf-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 28px; }
+  html body.landing .lf-brand { grid-column: 1 / -1; }
+}
