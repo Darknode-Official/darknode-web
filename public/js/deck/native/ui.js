@@ -191,7 +191,7 @@ export function injectStyle() {
 .ns-two{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px}
 @media(max-width:1000px){.ns-two{grid-template-columns:1fr}}
 .ns-steps{counter-reset:s;list-style:none;margin:0;padding:0}
-.ns-steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--ns-line);font-size:13.5px}
+.ns-steps li{counter-increment:s;display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--ns-line);font-size:13.5px}
 .ns-steps li:last-child{border-bottom:0}
 .ns-steps li::before{content:counter(s);flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--ns-bg);border:1px solid var(--ns-line);font-weight:800;font-size:12px}
 .ns-steps li.done::before{content:"\\2713";background:#2f9e56;border-color:#2f9e56;color:#fff}
