@@ -522,10 +522,14 @@ body.app #view{max-width:none;padding:0;margin:0}
 @media(max-width:800px){.dash-extras{grid-template-columns:minmax(0,1fr)}}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .panel>*:not(.panel-h):not(.data-table){padding-left:18px;padding-right:18px;box-sizing:border-box}
-.panel>.btn,.panel>.set-btns,.panel>button{margin-left:18px;margin-right:18px;padding-left:16px;padding-right:16px}
+.panel>.btn,.panel>button{margin-left:18px;margin-right:18px;padding-left:16px;padding-right:16px}
 .panel>*:last-child{padding-bottom:16px}
 .panel>.btn:last-child,.panel>button:last-child,.panel>.set-btns:last-child,.panel>.adm-msg:last-child{margin-bottom:16px;padding-bottom:0}
 .panel>.data-table{width:100%}
+/* a hidden/empty status line as the last child must not strip the bottom padding off the content above it */
+.panel:has(>.adm-msg:last-child:empty){padding-bottom:16px}
+.adm-err{padding:8px 12px!important;margin:0}
+.panel>.adm-msg:not(:empty){margin:0 18px 16px;padding:8px 12px!important}
 .panel-h{padding:14px 18px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 40%,var(--card));display:flex;align-items:center;justify-content:space-between;gap:12px}
 .panel-h .pg-h2{margin:0;font-size:.85rem;text-transform:uppercase;letter-spacing:.04em}
 .data-table{width:100%;border-collapse:collapse;font-size:.8rem}
@@ -600,6 +604,7 @@ body.app #view{max-width:none;padding:0;margin:0}
 @media(max-width:1000px){.adm-cols{grid-template-columns:minmax(0,1fr)}}
 .adm-cols .panel>input,.adm-cols .panel>textarea,.adm-cols .panel>select{box-sizing:border-box;width:calc(100% - 36px);margin-left:18px}
 .adm-cols .panel>.row{margin-left:18px;margin-right:18px}
+.adm-cols .panel>.panel-h+*{margin-top:12px!important}
 .btn.danger.sm{background:transparent;color:var(--bad);border:1px solid color-mix(in srgb,var(--bad) 45%,var(--line))}
 .btn.danger.sm:hover{background:color-mix(in srgb,var(--bad) 14%,transparent)}
 .user-row{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:11px 8px;border-bottom:1px solid var(--line)}

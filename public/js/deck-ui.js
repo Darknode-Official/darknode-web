@@ -491,6 +491,19 @@ async function fetchKev(){
   _kevPromise = (async () => {
     // The full catalog is ~1.8 MB, so request the proxy's large-body cap.
     let list = [], total = 0;
+    // First choice: the same-origin index the daily refresh-feeds workflow writes from the real
+    // CISA catalog (~175 KB). The proxy path below parses ~1.8 MB, which overruns the free
+    // Worker's CPU limit (Cloudflare 1102, no CORS headers), so it is only a fallback.
+    try {
+      const r = await fetch("/data/feeds/cisa-kev-index.json", { cache: "no-cache" });
+      const d = r.ok ? await r.json() : null;
+      if (d && Array.isArray(d.data) && d.data.length) {
+        list = d.data.filter((v) => v && v.cve).map((v) => ({ cveID: v.cve, dateAdded: v.dateAdded, knownRansomwareCampaignUse: v.ransomware ? "Known" : undefined }));
+        total = parseInt(d.count, 10) || list.length;
+        const set = new Set(list.map((v) => v.cveID));
+        const res = { set, list, total, asOf: d.catalogVersion || d.updated || "" }; _kevCache = res; _kevAt = Date.now(); return res;
+      }
+    } catch (_) { /* fall through to the live catalog */ }
     try {
       const d = await dnFetchJSON(KEV_URL, { timeout: 30000, max: 4000000 });
       list = (d && d.vulnerabilities) || [];
@@ -1552,6 +1565,7 @@ textarea.dk-kitio{min-height:120px}
 @media(min-width:1001px) and (max-width:1200px){.dk[data-ui=deck] .dk-top{grid-template-columns:auto auto minmax(0,1fr) minmax(0,300px) auto}}
 @media(max-width:600px){.dk[data-ui=deck] .dk-kit{flex-direction:column}.dk[data-ui=deck] .dk-kitnav{width:auto;max-height:34vh;padding:12px 16px;border-right:0;border-bottom:1px solid var(--dk-line)}.dk[data-ui=deck] .dk-kitmain{padding:16px}.dk[data-ui=deck] .dk-kobar{flex-wrap:wrap;row-gap:4px}.dk[data-ui=deck] .dk-kcopy{white-space:nowrap}}
 .dk[data-ui=deck] .dk-notif>.dk-nempty{padding:14px 16px 16px}
+.dk[data-ui=deck] :is(.dk-intcard .meta p,.dk-natbl td.it span,.dk-qacard span:not(.qi),.dk-cloudcard span){display:block;-webkit-line-clamp:unset;overflow:visible}
 .dk[data-ui=deck] .dk-compnote{max-width:none}
 .dk[data-ui=deck] .dk-onbd-steps{display:flex;flex-flow:row wrap;align-items:stretch;gap:10px}.dk[data-ui=deck] .dk-onbd-steps>*{flex:1 1 260px;min-width:0}
 .dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(4,minmax(0,1fr))!important}
@@ -1595,7 +1609,7 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-natbl th:last-child,.dk[data-ui=deck] .dk-natbl td:last-child{padding-right:0}
 .dk[data-ui=deck] .dk-natbl td.sv{width:1%;white-space:nowrap}
 .dk[data-ui=deck] .dk-natbl td.it b{display:block;font-weight:500;color:var(--dk-tx);overflow-wrap:anywhere}
-.dk[data-ui=deck] .dk-natbl td.it span{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;color:var(--dk-mut);font-size:12.5px;margin-top:2px}
+.dk[data-ui=deck] .dk-natbl td.it span{display:block;color:var(--dk-mut);font-size:12.5px;margin-top:2px}
 .dk[data-ui=deck] .dk-natbl td.so{width:1%;white-space:nowrap;color:var(--dk-tx2);font-size:12.5px}
 .dk[data-ui=deck] .dk-natbl td.ac{width:1%;text-align:right;white-space:nowrap}
 .dk[data-ui=deck] .dk-natbl .dk-tibtn{height:30px}
