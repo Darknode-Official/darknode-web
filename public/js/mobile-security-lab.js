@@ -150,13 +150,13 @@ export function renderMobileSecurityLab(main) {
 
   function render() {
     var tabsHtml = TABS.map(function(t) {
-      return '<button class="tab' + (activeTab === t.id ? ' on' : '') + '" data-tab="' + t.id + '">' + esc(t.label) + '</button>';
+      return '<button style="white-space:nowrap;flex:none" class="tab' + (activeTab === t.id ? ' on' : '') + '" data-tab="' + t.id + '">' + esc(t.label) + '</button>';
     }).join('');
 
     main.innerHTML =
       '<div class="pg-head"><div><h1 class="pg-h1">Mobile Security</h1>' +
       '<p class="muted pg-sub">Android manifest permission check plus an Android and iOS testing reference: OWASP Mobile Top 10, ADB commands, Frida scripts and pentest methodology.</p></div></div>' +
-      '<div class="seg msl-tabs" style="overflow-x:auto;flex-wrap:nowrap">' + tabsHtml + '</div>' +
+      '<div class="seg msl-tabs" style="overflow-x:auto;flex-wrap:nowrap;max-width:100%">' + tabsHtml + '</div>' +
       '<div id="msl-content" style="margin-top:12px"></div>';
 
     main.querySelector('.msl-tabs').onclick = function(e) {

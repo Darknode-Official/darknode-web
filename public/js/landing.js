@@ -676,7 +676,7 @@ export function renderLanding(view, actions) {
             <div class="price-tier">Free</div>
             <div class="price-amount">$0<span class="price-period">/forever</span></div>
             <p class="price-desc">The full browser toolbox for solo practitioners and evaluation.</p>
-            <ul class="price-features">
+            <ul class="price-features compact">
               <li>Every browser-based security tool</li>
               <li>Personal space: domain, link, secret and data checks</li>
               <li>Local-only security graph &amp; cases</li>
@@ -851,27 +851,27 @@ export function renderLanding(view, actions) {
         <p class="sec-sub">Tools designed for SOC analysts, CISOs, and GRC teams. From executive briefings to NIST, FedRAMP, and HIPAA compliance mapping.</p>
         <div class="gov-grid">
           <div class="gov-card">
-            <div class="gov-icon">[B]</div>
+            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg></div>
             <h3>Executive Cyber Briefing</h3>
             <p>Generate PDB-style intelligence reports with BLUF summaries, threat actor tracking, sector risk matrices, and classification banners.</p>
           </div>
           <div class="gov-card">
-            <div class="gov-icon">[V]</div>
+            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
             <h3>Vulnerability Triage Engine</h3>
             <p>SSVC decision trees, CISA KEV integration, BOD 22-01 compliance tracking, and remediation SLA calculators for federal systems.</p>
           </div>
           <div class="gov-card">
-            <div class="gov-icon">[$]</div>
+            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 19h8"/></svg></div>
             <h3>Incident Cost Calculator</h3>
             <p>Planning estimates from IBM Cost of a Data Breach figures, with sector multipliers, regulatory fine estimation, and insurance gap analysis.</p>
           </div>
           <div class="gov-card">
-            <div class="gov-icon">[C]</div>
+            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h11M9 12h11M9 19h11"/><path d="M4 5l1 1 2-2M4 12l1 1 2-2M4 19l1 1 2-2"/></svg></div>
             <h3>Federal Compliance Mapper</h3>
             <p>Cross-walk NIST 800-53, CSF 2.0, FedRAMP, CMMC 2.0, FISMA, and HIPAA. Gap analysis with POA&amp;M generation and ATO checklists.</p>
           </div>
           <div class="gov-card">
-            <div class="gov-icon">[A]</div>
+            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
             <h3>Adversary Playbook Builder</h3>
             <p>MITRE ATT&amp;CK emulation planning with detection coverage heatmaps, purple team exercise generation, and STIX 2.1 export.</p>
           </div>
@@ -901,19 +901,29 @@ export function renderLanding(view, actions) {
 
     <!-- Footer -->
     <footer class="land-footer">
-      <div class="wrap land-footer-inner">
-        <div class="land-footer-left">
+      <div class="wrap land-footer-inner lf-grid">
+        <div class="lf-brand">
           <span class="land-footer-brand">Darknode</span>
-          <p style="font-size:.72rem;color:inherit;opacity:.5;margin:0 0 4px">Security and data-integrity platform for companies &mdash; scan your code, cloud, dependencies, and records. For authorized use on systems you own or are permitted to assess.</p>
-          <span class="land-footer-copy">&copy; 2026 Darknode. All rights reserved.</span>
+          <p class="lf-tag">Security and data-integrity platform for companies &mdash; scan your code, cloud, dependencies, and records.</p>
         </div>
-        <div class="land-footer-links">
+        <nav class="lf-col" aria-label="Product">
+          <h4>Product</h4>
+          <a href="/features" data-nav="section">Features</a>
+          <a href="/pricing" data-nav="section">Pricing</a>
+          <a href="/darknode-os" data-nav="section">Darknode OS</a>
+          <a href="/faq" data-nav="section" data-section="faq">FAQ</a>
+        </nav>
+        <nav class="lf-col" aria-label="Open source">
+          <h4>Open source</h4>
           <a href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
           <a href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">CLI</a>
-          <a href="${GITHUB}/darknode-os" target="_blank" rel="noopener">OS</a>
           <a href="${GITHUB}/nexus" target="_blank" rel="noopener">Nexus</a>
-          <a href="/faq" data-nav="section" data-section="faq">FAQ</a>
-        </div>
+          <a href="${GITHUB}/darknode-os" target="_blank" rel="noopener">OS</a>
+        </nav>
+      </div>
+      <div class="wrap lf-bottom">
+        <span class="land-footer-copy">&copy; 2026 Darknode. All rights reserved.</span>
+        <span>For authorized use on systems you own or are permitted to assess.</span>
       </div>
     </footer>
 `;

@@ -582,7 +582,7 @@ ${E} .ai2-bar{margin-top:10px!important}
 ${E} .ai2-tool{width:34px;height:34px!important;min-width:34px!important;padding:0!important;border-radius:50%!important;border:0!important;color:#5f5c56!important;background:transparent!important;box-shadow:none!important}
 ${E} .ai2-tool-txt{width:auto;border-radius:999px!important;padding:0 12px!important;font-size:13px!important;font-weight:500!important;text-transform:none!important;letter-spacing:0!important}
 ${E} :is(.ai2-tool,.ai2-model):hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
-${E} .ai2-model{border:0!important;background:transparent!important;font-size:13px!important;font-weight:500!important;color:#3f3d3a!important;padding:0 26px 0 10px!important;height:34px!important;border-radius:999px!important;max-width:240px;box-shadow:none!important}
+${E} .ai2-model{border:0!important;background:transparent!important;font-size:13px!important;font-weight:500!important;color:#3f3d3a!important;padding:0 26px 0 10px!important;height:34px!important;border-radius:999px!important;max-width:320px;box-shadow:none!important}
 ${E} .ai2-mmenu{background:#f4f3f0!important;border:1px solid rgba(0,0,0,.12)!important;color:#1d1c1a!important;box-shadow:0 8px 24px rgba(0,0,0,.12)!important}
 ${E} .ai2-mgroup{color:#8a877f!important}
 ${E} .ai2-mopt{font-size:13px!important;color:#3f3d3a!important}

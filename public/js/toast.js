@@ -8,7 +8,7 @@ function ensureContainer() {
   container = document.createElement("div");
   container.className = "toast-stack";
   Object.assign(container.style, {
-    position: "fixed", top: "72px", right: "20px", zIndex: "100001", // above the fixed Deck (99999) and its dialogs (100000)
+    position: "fixed", bottom: "20px", right: "20px", zIndex: "100001", // bottom-right: top-right sat over the account, notification and create menus; above the fixed Deck (99999) and its dialogs (100000)
     display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px", pointerEvents: "none", maxWidth: "380px"
   });
   document.body.appendChild(container);
@@ -36,7 +36,7 @@ function ensureStyles() {
     @keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
     @keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
     @keyframes toastBump{0%{transform:scale(1)}35%{transform:scale(1.04)}100%{transform:scale(1)}}
-    @media(max-width:480px){.toast-stack{right:8px;left:8px;max-width:none}}`;
+    @media(max-width:480px){.toast-stack{right:8px!important;left:8px!important;bottom:8px!important;max-width:none!important;align-items:stretch!important}}`;
   document.head.appendChild(s);
 }
 

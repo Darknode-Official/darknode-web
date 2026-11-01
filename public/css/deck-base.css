@@ -527,3 +527,15 @@
   font-size: .88rem;
   line-height: 1.55;
 }
+
+/* UI-text controls use the UI font. The pro theme sets monospace on every .tk-f control and a
+   few tools set it on plain buttons; values that are code (CIDRs, domains, regex flags, YARA
+   snippets, hash/IP inputs) keep monospace. */
+html[data-embed] body select.tk-f,
+html[data-embed] body .cve-ghost,
+html[data-embed] body .cb-copy,
+html[data-embed] body .pka-sample { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif !important; }
+
+/* The Deck frame already has its own header bar, so the tool page's top padding stacked on
+   the content's own and left a ~46px gap under the header. */
+html[data-embed] body.dn-embed .app-main { padding-top: 0 !important; }

@@ -521,7 +521,7 @@ html:is([data-style=pro], [data-style=dark]) body.app {
     font-weight: 700;
     color: var(--txt-2);
   }
-  & .app-main :is(.tab, [role=tab]):is(.active, .on, [aria-selected=true]) { color: var(--acc) !important; }
+  & .app-main :is(.tab, [role=tab]):is(.active, .on, [aria-selected=true]):not(.seg > *) { /* filled .seg tabs use their own on-accent text */ color: var(--acc) !important; }
 
   /* footer */
   & .app-foot { background: var(--bg) !important; border-top: 1px solid var(--line) !important; }
