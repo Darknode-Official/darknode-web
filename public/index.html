@@ -60,7 +60,6 @@
 [data-boot=pro][data-boot-quick] #bootscreen{background:var(--boot-bg,#f4f6fa);transition:opacity .25s ease}
 [data-boot-quick] .boot-pro>*{animation-duration:.3s!important;animation-delay:0s!important}
 [data-boot-dark] .boot-pro-logo{color:#f3f3f3}
-[data-boot-dark] .boot-pro-icon img{content:url(/logo-light.svg)}
 [data-boot-dark] .boot-pro-sub,[data-boot-dark] .boot-pro-pct{color:#8a8f98}
 [data-boot-dark] .boot-pro-bar{background:rgba(255,255,255,.14)}
 [data-boot-dark] .boot-pro-bar>span{background:#f3f3f3}
@@ -76,9 +75,8 @@ html[data-boot=pro] #bootscreen{background:#0f172a!important}
 html[data-boot=pro] .boot-pro{flex-direction:row!important;gap:18px!important}
 html[data-boot=pro] .boot-pro>*{animation:none!important;opacity:1!important;transform:none!important}
 html[data-boot=pro] .boot-pro-icon{width:44px;height:44px}
-html[data-boot=pro] .boot-pro-icon img{content:url(/logo-light.svg);width:44px;height:44px}
 html[data-boot=pro] .boot-pro-logo{font-size:0;line-height:0}
-html[data-boot=pro] .boot-pro-logo img{height:31px;width:auto;display:block}
+html[data-boot=pro] .boot-pro-logo svg{height:31px;width:auto;display:block}
 html[data-boot=pro] .boot-pro-sub,html[data-boot=pro] .boot-pro-pct{display:none!important}
 html[data-boot=pro] .boot-pro-bar{position:fixed;top:0;left:0;width:100%;height:2px;background:transparent;border-radius:0}
 html[data-boot=pro] .boot-pro-bar>span{background:#f59e0b}
@@ -120,8 +118,8 @@ html[data-boot=pro] .boot-pro-bar>span{background:#f59e0b}
     <div class="boot-sweep"></div>
     <!-- Professional boot -->
     <div class="boot-pro">
-      <div class="boot-pro-icon"><img src="/logo-dark.svg?v=20261007b" alt="" width="56" height="56"></div>
-      <div class="boot-pro-logo"><img src="/wordmark.svg" alt="Darknode" width="132" height="24"></div>
+      <div class="boot-pro-icon"><svg width="44" height="44" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><g fill="none" stroke="#F2F5F9" stroke-width="5" stroke-linejoin="round"><rect x="12" y="12" width="30" height="30" rx="8"/><rect x="58" y="12" width="30" height="30" rx="8"/><rect x="12" y="58" width="30" height="30" rx="8"/><rect x="58" y="58" width="30" height="30" rx="8"/></g><rect x="65" y="65" width="16" height="16" rx="4" fill="#EAB308"/></svg></div>
+      <div class="boot-pro-logo" aria-label="Darknode"><svg height="31" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 548 100"><g fill="none" stroke="#F2F5F9" stroke-width="18" stroke-linecap="butt" stroke-linejoin="miter"><path d="M9,91 V9 H26 A23,41 0 0 1 26,91 Z"/><path d="M9,91 V33 L23,9 H35 L49,33 V91" transform="translate(70,0)"/><path d="M9,60 H49" transform="translate(70,0)"/><path d="M9,91 V9 H26 A21,20 0 0 1 26,49 H9" transform="translate(140,0)"/><path d="M28,49 L49,91" transform="translate(140,0)"/><path d="M9,9 V91" transform="translate(210,0)"/><path d="M49,11 L13,50 L49,89" transform="translate(210,0)"/><path d="M9,91 V9 L49,91 V9" transform="translate(280,0)"/><ellipse cx="29" cy="50" rx="20" ry="41" transform="translate(350,0)"/><path d="M9,91 V9 H26 A23,41 0 0 1 26,91 Z" transform="translate(420,0)"/><path d="M49,9 H9 V91 H49" transform="translate(490,0)"/><path d="M9,50 H40" transform="translate(490,0)"/></g></svg></div>
       <div class="boot-pro-sub">Cybersecurity Platform</div>
       <div class="boot-pro-bar"><span id="bootbar-pro"></span></div>
       <div class="boot-pro-pct" id="bootpct-pro">0%</div>
