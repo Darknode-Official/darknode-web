@@ -76,3 +76,16 @@ html body.landing .lf-bottom {
   html body.landing .land-footer-inner.lf-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 28px; }
   html body.landing .lf-brand { grid-column: 1 / -1; }
 }
+
+/* ---- Dedicated pages (/features, /pricing, /faq ...) ---- */
+/* "Back to home" lines up with the page content instead of sitting 80px further in */
+html body.landing .dedicated-page-header { max-width: 1240px; margin: 0 auto !important; box-sizing: border-box; }
+/* no empty strip with a doubled divider between the last section and the footer */
+html body.landing .land-footer { margin-top: 0 !important; }
+/* Header: "Log in" and "Get Started" share one height (they were 36 vs 42px, 34 vs 44px on phones) */
+html body.landing #nav-signin,
+html body.landing #nav-start { display: inline-flex !important; align-items: center; justify-content: center; box-sizing: border-box; height: 40px !important; min-height: 0 !important; }
+@media (max-width: 640px) {
+  html body.landing #nav-signin,
+  html body.landing #nav-start { height: 36px !important; }
+}

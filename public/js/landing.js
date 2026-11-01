@@ -676,7 +676,7 @@ export function renderLanding(view, actions) {
             <div class="price-tier">Free</div>
             <div class="price-amount">$0<span class="price-period">/forever</span></div>
             <p class="price-desc">The full browser toolbox for solo practitioners and evaluation.</p>
-            <ul class="price-features">
+            <ul class="price-features compact">
               <li>Every browser-based security tool</li>
               <li>Personal space: domain, link, secret and data checks</li>
               <li>Local-only security graph &amp; cases</li>
