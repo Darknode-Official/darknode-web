@@ -1597,6 +1597,30 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-snrow .lv{flex:none;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:5px;color:#fff;background:#86837c}
 .dk[data-ui=deck] .dk-snrow .lv.bad{background:#e0383a}.dk[data-ui=deck] .dk-snrow .lv.warn{background:#b58100}
 @media (max-width:760px){.dk[data-ui=deck] .dk-sngrid{grid-template-columns:1fr}.dk[data-ui=deck] .dk-since h2{flex-wrap:wrap}.dk[data-ui=deck] .dk-since h2 .src{margin-left:0;width:100%}}
+/* Overview v2: KPI strip up top, then a working column and an "at a glance" rail. */
+.dk[data-ui=deck] .dk-ovlay{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,380px);gap:18px;align-items:start;margin-top:6px}
+.dk[data-ui=deck] .dk-ovmain,.dk[data-ui=deck] .dk-ovrail{min-width:0;display:flex;flex-direction:column;gap:18px}
+.dk[data-ui=deck] .dk-ovlay .dk-ovp{margin:0}
+.dk[data-ui=deck] .dk-ovmain>.dk-roles:empty{display:none}
+.dk[data-ui=deck] .dk-ovrail .dk-ovp{padding:16px 18px}
+.dk[data-ui=deck] .dk-ovrail .dk-ovp h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--dk-tx2)}
+.dk[data-ui=deck] .dk-ovrail .dk-ovp h2 .mo{text-transform:none;letter-spacing:0}
+.dk[data-ui=deck] .dk-ovrail .dk-notes{min-height:120px}
+@media(max-width:1180px){.dk[data-ui=deck] .dk-ovlay{grid-template-columns:minmax(0,1fr)}}
+.dk[data-ui=deck] .dk-ovmain{container-type:inline-size}
+@container (max-width:780px){.dk[data-ui=deck] .dk-sngrid{grid-template-columns:minmax(0,1fr);row-gap:22px}}
+/* Sidebar v2: plain section labels instead of numbered serif chapters, every section open,
+   items flush with a filled marker for the current page. */
+.dk[data-ui=deck] .dk-nvh{font:600 11px/1 "Inter",system-ui,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--ix-dim);padding:20px 10px 8px;align-items:center}
+.dk[data-ui=deck] .dk-nvh .no{display:none}
+.dk[data-ui=deck] .dk-nvhb:hover,.dk[data-ui=deck] .dk-nvhb.on,.dk[data-ui=deck] .dk-nvhb:focus-visible{color:var(--ix-tx)}
+.dk[data-ui=deck] .dk-nvhb .ov{top:20px}
+.dk[data-ui=deck] .dk-nvtg{margin-top:12px}
+.dk[data-ui=deck] .dk-nvi{margin-left:0;padding-left:0;border-left:0}
+.dk[data-ui=deck] .dk-nv{min-height:34px;padding:6px 10px;margin:1px 0}
+.dk[data-ui=deck] .dk-nv.on{background:rgba(255,255,255,.08);border-radius:7px}
+.dk[data-ui=deck] .dk-nv.on::before{left:0;top:8px;bottom:8px;width:3px}
+.dk[data-ui=deck] .dk-nvg0 .dk-nv{font-weight:500;color:var(--ix-tx)}
 .dk[data-ui=deck] .dk-compnote{max-width:none}
 .dk[data-ui=deck] .dk-onbd-steps{display:flex;flex-flow:row wrap;align-items:stretch;gap:10px}.dk[data-ui=deck] .dk-onbd-steps>*{flex:1 1 260px;min-width:0}
 .dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(4,minmax(0,1fr))!important}
@@ -3157,7 +3181,6 @@ export function renderDeck(host, opts) {
       </form>
       <div class="dk-askhint">Triage a CVE, draft a runbook, explain a finding or review a config.</div>
       ${onbCard}
-      <div class="dk-ovp dk-since" id="dkSince" hidden></div>
       <div class="dk-kpis dk-kpis6">
         <div class="dk-start" id="dkStart" hidden>
           <b>Measure your exposure</b>
@@ -3172,37 +3195,36 @@ export function renderDeck(host, opts) {
         ${kpi("graph", "—", "Graph entities", IC.grid, "", "invest", "Real entities, samples excluded")}
       </div>
       <div class="dk-expnote" id="dkExpNote" hidden></div>
-      <div class="dk-roles" id="dkRoles"></div>
-      <div class="dk-ovp dk-rolefocus" id="dkRoleFocus" hidden></div>
-      <div class="dk-ovp"><h2 data-explain="panel.actions">${IC.bolt} Needs attention <span class="mo" role="button" tabindex="0" data-scene="findings">All findings</span></h2><div id="dkTopAct"><div class="dk-loading"><span class="sp"></span>Ranking what needs attention…</div></div></div>
-      <div class="dk-ovgrid3">
+      <div class="dk-ovlay">
+        <div class="dk-ovmain">
+          <div class="dk-ovp dk-since" id="dkSince" hidden></div>
+          <div class="dk-roles" id="dkRoles"></div>
+          <div class="dk-ovp dk-rolefocus" id="dkRoleFocus" hidden></div>
+          <div class="dk-ovp"><h2 data-explain="panel.actions">${IC.bolt} Needs attention <span class="mo" role="button" tabindex="0" data-scene="findings">All findings</span></h2><div id="dkTopAct"><div class="dk-loading"><span class="sp"></span>Ranking what needs attention…</div></div></div>
+            <div class="dk-ovp"><h2 data-explain="panel.activity">${IC.pulse} Recent activity <span class="mo" role="button" tabindex="0" data-scene="activity">View all</span></h2><div class="dk-ovact">${actRows}</div></div>
+            <div class="dk-ovp"><h2 data-explain="panel.quick">${IC.grid} Quick actions</h2><div class="dk-qa">
+              <button class="dk-qacard" data-scene="personal"><span class="qi" style="--a:#2552c6">${IC.shield}</span><b>Check your own exposure</b><span>Domains, certificates, leaked secrets and phishing links.</span></button>
+              <button class="dk-qacard" data-tool="codescan"><span class="qi" style="--a:#3f78ff">${IC.term}</span><b>Scan a codebase</b><span>Connect GitHub and jump to each vulnerable line.</span></button>
+              <button class="dk-qacard" data-tool="strongroom"><span class="qi" style="--a:#f59e0b">${IC.bolt}</span><b>Trace intrusion to theft</b><span>Link breach signals to suspicious payments in a ledger.</span></button>
+              <button class="dk-qacard" data-scene="con"><span class="qi" style="--a:#12a85f">${IC.link}</span><b>Connect a provider</b><span>Link an AI model or intel source.</span></button>
+              <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>New investigation</b><span>Open the investigation workspace.</span></button>
+              <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Security graph</b><span>Entities and their relationships.</span></button>
+              <button class="dk-qacard" data-scene="surface"><span class="qi" style="--a:#f0484a">${IC.radar}</span><b>Map an attack surface</b><span>Enter a domain for a real external footprint.</span></button>
+              <button class="dk-qacard" data-scene="cloud"><span class="qi" style="--a:#12935a">${IC.grid}</span><b>Run a cloud posture check</b><span>Lint IAM, buckets, security groups, K8s and Dockerfiles.</span></button>
+            </div></div>
+        </div>
+        <aside class="dk-ovrail" aria-label="At a glance">
+          <div class="dk-ovp"><h2 data-explain="panel.threat">${IC.radar} New CVEs by severity <span class="mo" role="button" tabindex="0" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
         <div class="dk-ovp"><h2 data-explain="panel.pins">${IC.star} Pinned tools <span class="mo" role="button" tabindex="0" data-scene="tools">All tools</span></h2><div id="dkPins" class="dk-pins"></div></div>
         <div class="dk-ovp"><h2 data-explain="panel.system">${IC.radar} System status</h2><div id="dkSys" class="dk-sys"></div></div>
         <div class="dk-ovp"><h2 data-explain="panel.integrations">${IC.link} Integrations <span class="mo" role="button" tabindex="0" data-scene="con">Manage</span></h2>
           <div class="dk-gauge dk-intg"><div class="gmeta"><b>${linked.length}<small>of ${INTEGRATIONS.length} linked</small></b><div class="dk-meter"><i style="--p:${pct}%"></i></div><p>${linked.length ? esc(linked.slice(0, 5).map((i) => i.name).join(", ")) + (linked.length > 5 ? "…" : "") : "Connect AI models and threat-intel sources to power the Deck."}</p></div></div>
         </div>
-      </div>
-      <div class="dk-ovgrid">
-        <div>
-          <div class="dk-ovp"><h2 data-explain="panel.activity">${IC.pulse} Recent activity <span class="mo" role="button" tabindex="0" data-scene="activity">View all</span></h2><div class="dk-ovact">${actRows}</div></div>
-          <div class="dk-ovp"><h2 data-explain="panel.quick">${IC.grid} Quick actions</h2><div class="dk-qa">
-            <button class="dk-qacard" data-scene="personal"><span class="qi" style="--a:#2552c6">${IC.shield}</span><b>Check your own exposure</b><span>Domains, certificates, leaked secrets and phishing links.</span></button>
-            <button class="dk-qacard" data-tool="codescan"><span class="qi" style="--a:#3f78ff">${IC.term}</span><b>Scan a codebase</b><span>Connect GitHub and jump to each vulnerable line.</span></button>
-            <button class="dk-qacard" data-tool="strongroom"><span class="qi" style="--a:#f59e0b">${IC.bolt}</span><b>Trace intrusion to theft</b><span>Link breach signals to suspicious payments in a ledger.</span></button>
-            <button class="dk-qacard" data-scene="con"><span class="qi" style="--a:#12a85f">${IC.link}</span><b>Connect a provider</b><span>Link an AI model or intel source.</span></button>
-            <button class="dk-qacard" data-tool="investigation"><span class="qi" style="--a:#9b5cf0">${IC.folder}</span><b>New investigation</b><span>Open the investigation workspace.</span></button>
-            <button class="dk-qacard" data-tool="secgraph"><span class="qi" style="--a:#4f86ff">${IC.grid}</span><b>Security graph</b><span>Entities and their relationships.</span></button>
-            <button class="dk-qacard" data-scene="surface"><span class="qi" style="--a:#f0484a">${IC.radar}</span><b>Map an attack surface</b><span>Enter a domain for a real external footprint.</span></button>
-            <button class="dk-qacard" data-scene="cloud"><span class="qi" style="--a:#12935a">${IC.grid}</span><b>Run a cloud posture check</b><span>Lint IAM, buckets, security groups, K8s and Dockerfiles.</span></button>
-          </div></div>
-        </div>
-        <div>
-          <div class="dk-ovp"><h2 data-explain="panel.threat">${IC.radar} New CVEs by severity <span class="mo" role="button" tabindex="0" data-scene="threat">Threat &amp; vulns</span></h2><div id="dkOvThreat"><div class="dk-loading"><span class="sp"></span>Loading live CVE feed…</div></div></div>
           <div class="dk-ovp"><h2 data-explain="panel.notes">${IC.note} Notes <span class="mo" role="button" tabindex="0" id="dkNotesClear">Clear</span></h2>
             <textarea class="dk-notes" id="dkNotes" aria-label="Notes" placeholder="Jot an IP, a hypothesis, a to-do"></textarea>
             <div class="dk-notef"><span id="dkNotesSaved">Saved on this device</span><span id="dkNotesCount"></span></div>
           </div>
-        </div>
+        </aside>
       </div>`;
     pruneLocked(el);
     el.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
@@ -3321,6 +3343,7 @@ export function renderDeck(host, opts) {
       recomputeExposure();
     }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; sig.real = 0; recomputeExposure(); });
     fillSince(el);
+    import("/js/deck/digest-client.js").then((m) => m.syncDigestIfOn()).catch(() => {});
     // async: CISA KEV catalog size
     fetchKev().then((k) => {
       const kn = el.querySelector('[data-k="kev"] .kn'); if (kn) kn.textContent = (k.total || 0).toLocaleString();
@@ -4277,6 +4300,37 @@ export function renderDeck(host, opts) {
   // page: workspace identity, appearance, data and account. Every control here is
   // real — no placeholder switches. The legacy /settings iframe stays reachable only
   // as a deep fallback (openTool("settings")).
+  // Settings: the weekly email digest (server side in worker/digest.js)
+  function wireDigest(el){
+    const on = el.querySelector("#dkDigOn"), tb = el.querySelector("#dkDigTest"), st = el.querySelector("#dkDigSt");
+    if (!on) return;
+    const watchLine = (m, d) => {
+      const w = m.localWatch(), n = (w.certs || []).length;
+      return n ? "Watching " + n + " certificate" + (n === 1 ? "" : "s") + (w.certsAt ? ", last checked " + new Date(w.certsAt).toLocaleDateString() : "") + "." + (d && d.lastSent ? " Last digest sent " + new Date(d.lastSent).toLocaleDateString() + "." : "")
+        : "No certificates watched yet. Add your domains in Personal, Certificates, and the digest includes them.";
+    };
+    const paint = (v) => { on.disabled = false; on.classList.toggle("on", !!v); on.textContent = v ? "On" : "Off"; };
+    import("/js/deck/digest-client.js").then((m) => {
+      m.getDigest().then((d) => {
+        if (!el.isConnected) return;
+        paint(d.on); m.rememberDigest(d.on); tb.disabled = !d.verified;
+        st.textContent = d.verified ? watchLine(m, d) : "Verify your email address to use the digest.";
+        if (!d.verified) on.disabled = !d.on;
+      }).catch((e) => { on.textContent = "Unavailable"; st.textContent = (e && e.status === 401) ? "Sign in with your account to use the email digest." : String((e && e.message) || "Could not load the digest setting."); });
+      on.onclick = () => {
+        const want = !on.classList.contains("on");
+        on.disabled = true; on.textContent = "Saving";
+        m.saveDigest(want).then((r) => { paint(r.on); toast(r.on ? "Weekly digest on. The first one arrives Monday." : "Weekly digest off."); st.textContent = watchLine(m); })
+          .catch((e) => { paint(!want); toast(String((e && e.message) || "Could not save")); });
+      };
+      tb.onclick = () => {
+        tb.disabled = true; tb.textContent = "Sending";
+        m.sendDigestTest().then((r) => { st.textContent = "Test sent to " + r.to + ". Check your inbox (and spam folder)."; })
+          .catch((e) => { st.textContent = String((e && e.message) || "Could not send the test."); })
+          .finally(() => { tb.disabled = false; tb.textContent = "Send test"; });
+      };
+    }).catch(() => { on.textContent = "Unavailable"; });
+  }
   function renderSettings(){
     const el = sceneEls.settings;
     const dense = root.classList.contains("dense");
@@ -4319,6 +4373,18 @@ export function renderDeck(host, opts) {
             <div class="m"><div class="t">Cool tool UI <span style="font-size:11px;color:#6b7589">(beta)</span></div><div class="s">Reskins embedded tools with gradients and rounded controls. Owner pilot — reloads open tools when changed.</div></div>
             <button class="dk-settog${cool ? " on" : ""}" id="dkSetCool">${cool ? "On" : "Off"}</button>
           </div>` : ""}
+        </div>
+
+        <div class="dk-ovp" id="dkDigest">
+          <h2>${IC.note} Weekly email digest</h2>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Monday digest</div><div class="s">Each Monday: vulnerabilities CISA confirmed as exploited that week, and any certificate you watch that has expired or expires within 30 days. Sent to ${esc(user.email || "your account email")}.</div></div>
+            <button class="dk-settog" id="dkDigOn" disabled>Loading</button>
+          </div>
+          <div class="dk-setrow">
+            <div class="m"><div class="t">Send a test now</div><div class="s" id="dkDigSt">See exactly what arrives in your inbox.</div></div>
+            <button class="dk-settog" id="dkDigTest" disabled>Send test</button>
+          </div>
         </div>
 
         <div class="dk-ovp">
@@ -4370,6 +4436,7 @@ export function renderDeck(host, opts) {
     nameIn.addEventListener("change", commitWs);
     accIn.addEventListener("change", commitWs);
 
+    wireDigest(el);
     el.querySelector("#dkSetDense").onclick = (e) => { const d = root.classList.toggle("dense"); try { localStorage.setItem("dn_deck_density", d ? "compact" : "comfortable"); } catch (_) {} e.target.classList.toggle("on", d); e.target.textContent = d ? "Compact" : "Comfortable"; };
     el.querySelector("#dkSetExplain").onclick = (e) => { const on = !explainEnabled(); setExplainEnabled(on); e.target.classList.toggle("on", on); e.target.textContent = on ? "On" : "Off"; toast("Hover explanations " + (on ? "on" : "off")); };
     const prevSel = el.querySelector("#dkSetPreview");
@@ -4970,7 +5037,7 @@ export function renderDeck(host, opts) {
   function applyNavCollapse(){
     root.querySelectorAll("#dkSbNav .dk-nvg[data-g]").forEach((g) => {
       const active = !!g.querySelector(".dk-nv.on, .dk-nvhb.on");
-      const folded = (navCol ? !!navCol[g.dataset.g] : true) && !active;
+      const folded = (navCol ? !!navCol[g.dataset.g] : false) && !active; // no saved choice: everything shows
       g.classList.toggle("col", folded);
       g.querySelectorAll("[data-navtg]").forEach((b) => b.setAttribute("aria-expanded", String(!folded)));
     });

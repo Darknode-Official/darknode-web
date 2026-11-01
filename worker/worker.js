@@ -26,6 +26,7 @@ import { readCapped } from "./body-cap.js";
 import { handleIntel } from "./intel.js";
 import { matchRoute, authenticate, authorize, attachPrincipal, rateCheck, ipCeiling, requestId, withHeaders } from "./auth.js";
 import { GEMINI_MODELS, CLAUDE_PLAN, userTier, planDenied } from "./plan.js";
+import { handleDigest, handleUnsubscribe, runDigest } from "./digest.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
 export { MonitorDO } from "./monitor.js";
@@ -692,6 +693,10 @@ export default {
     try { res = await route(request, env, rid); } catch (_) { res = json({ error: "Internal error." }, 500); }
     return withHeaders(res, { "x-request-id": rid });
   },
+  // Weekly email digest (cron in wrangler.toml; production only, gated by DIGEST_CRON).
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runDigest(env).catch((e) => console.error(JSON.stringify({ type: "digest-error", message: String((e && e.message) || e).slice(0, 300) }))));
+  },
 };
 
 // GET /api/v1/health — liveness for uptime checks. Reports which bindings exist,
@@ -762,6 +767,8 @@ async function route(request, env, rid) {
       case "graph": return handleGraph(request, env, rest, json);
       case "monitor": return handleMonitor(request, env, rest, json);
       case "keys": return handleKeys(request, env, rest, json);
+      case "digest-unsub": return handleUnsubscribe(request, env);
+      case "digest": return handleDigest(request, env, rest, json, principal);
       case "ingest": return handleIngest(request, env, rest, json, "ingest");
       case "findings": return handleIngest(request, env, rest, json, "findings");
     }
