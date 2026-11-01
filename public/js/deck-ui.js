@@ -1545,6 +1545,9 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-start{grid-column:span 2;background:var(--dk-surf);border:1px solid var(--dk-line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .dk[data-ui=deck] .dk-start[hidden]{display:none}
 /* No findings yet: the start panel spans 2 columns x 2 rows and the four live KPIs sit 2x2 beside it, instead of four tall cards stretched to the panel's height with their bottom halves empty */
+.dk[data-ui=deck] .dk-compnote{max-width:none}
+.dk[data-ui=deck] .dk-onbd-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.dk[data-ui=deck] .dk-onbd-step{height:100%}
 .dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(4,minmax(0,1fr))!important}
 .dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]){grid-column:span 2;grid-row:span 2;justify-content:center;padding:20px 22px}
 .dk[data-ui=deck] .dk-kpis6:has(>.dk-start:not([hidden]))>.dk-kpi{min-height:0}
