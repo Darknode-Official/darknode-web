@@ -71,15 +71,17 @@
 .boot-pro-bar{width:min(280px,60vw);height:2px;background:#e5e5e5;border-radius:1px;overflow:hidden;opacity:0;animation:bootProIn .4s ease .6s forwards}
 .boot-pro-bar>span{display:block;height:100%;width:0;background:#111}
 .boot-pro-pct{font-size:.7rem;color:#bbb;font-variant-numeric:tabular-nums;opacity:0;animation:bootProIn .4s ease .7s forwards}
-/* Boot v3 (2026-11-01): one unmistakable navy splash for everyone, matching the landing hero. */
-html[data-boot=pro] #bootscreen{background:radial-gradient(700px 420px at 80% 10%,rgba(37,99,235,.35),transparent 60%),linear-gradient(160deg,#0b1220,#0f172a 45%,#1e3a8a)!important}
-html[data-boot=pro] .boot-pro-icon{width:88px;height:88px}
-html[data-boot=pro] .boot-pro-icon img{content:url(/logo-light.svg);width:88px;height:88px}
-html[data-boot=pro] .boot-pro-logo{color:#fff;font-size:clamp(2.2rem,5vw,3.4rem);letter-spacing:-.02em;font-weight:800}
-html[data-boot=pro] .boot-pro-sub{color:#93c5fd;font-size:.8rem;letter-spacing:.28em}
-html[data-boot=pro] .boot-pro-bar{width:min(360px,70vw);height:3px;background:rgba(255,255,255,.14);border-radius:2px}
-html[data-boot=pro] .boot-pro-bar>span{background:linear-gradient(90deg,#60a5fa,#fff)}
-html[data-boot=pro] .boot-pro-pct{color:#94a3b8}
+/* Boot v4: flat navy, the header lockup (mark + wordmark), a hairline loader on the top edge. No glow, no tagline, no counter. */
+html[data-boot=pro] #bootscreen{background:#0f172a!important}
+html[data-boot=pro] .boot-pro{flex-direction:row!important;gap:18px!important}
+html[data-boot=pro] .boot-pro>*{animation:none!important;opacity:1!important;transform:none!important}
+html[data-boot=pro] .boot-pro-icon{width:44px;height:44px}
+html[data-boot=pro] .boot-pro-icon img{content:url(/logo-light.svg);width:44px;height:44px}
+html[data-boot=pro] .boot-pro-logo{font-size:0;line-height:0}
+html[data-boot=pro] .boot-pro-logo img{height:31px;width:auto;display:block}
+html[data-boot=pro] .boot-pro-sub,html[data-boot=pro] .boot-pro-pct{display:none!important}
+html[data-boot=pro] .boot-pro-bar{position:fixed;top:0;left:0;width:100%;height:2px;background:transparent;border-radius:0}
+html[data-boot=pro] .boot-pro-bar>span{background:#f59e0b}
 @keyframes bootProIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes bootProPulse{0%,100%{opacity:1}50%{opacity:.5}}
 .boot-inner{position:relative;text-align:center}
@@ -119,7 +121,7 @@ html[data-boot=pro] .boot-pro-pct{color:#94a3b8}
     <!-- Professional boot -->
     <div class="boot-pro">
       <div class="boot-pro-icon"><img src="/logo-dark.svg?v=20261007b" alt="" width="56" height="56"></div>
-      <div class="boot-pro-logo">Darknode</div>
+      <div class="boot-pro-logo"><img src="/wordmark.svg" alt="Darknode" width="132" height="24"></div>
       <div class="boot-pro-sub">Cybersecurity Platform</div>
       <div class="boot-pro-bar"><span id="bootbar-pro"></span></div>
       <div class="boot-pro-pct" id="bootpct-pro">0%</div>
