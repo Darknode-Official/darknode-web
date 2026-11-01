@@ -539,3 +539,9 @@ html[data-embed] body .pka-sample { font-family: Inter, -apple-system, BlinkMacS
 /* The Deck frame already has its own header bar, so the tool page's top padding stacked on
    the content's own and left a ~46px gap under the header. */
 html[data-embed] body.dn-embed .app-main { padding-top: 0 !important; }
+
+/* Identity Matrix panels had a border but no inner padding, so inputs sat on the edge. */
+html[data-embed] body .im-panel { padding: 16px 18px !important; }
+/* Hash Suite input groups laid the label beside the textarea inside a padless bordered box. */
+html[data-embed] body .hs-input-group { display: flex !important; flex-direction: column !important; align-items: stretch !important; gap: 6px !important; border: 0 !important; }
+html[data-embed] body .hs-input-group > .hs-label { text-align: left !important; }
