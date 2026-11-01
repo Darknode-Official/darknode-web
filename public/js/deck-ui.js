@@ -1551,6 +1551,7 @@ textarea.dk-kitio{min-height:120px}
 @media(min-width:721px) and (max-width:1100px){.dk[data-ui=deck] .dk-ovgrid3>:nth-child(3):last-child{grid-column:1/-1}}
 @media(min-width:1001px) and (max-width:1200px){.dk[data-ui=deck] .dk-top{grid-template-columns:auto auto minmax(0,1fr) minmax(0,300px) auto}}
 @media(max-width:600px){.dk[data-ui=deck] .dk-kit{flex-direction:column}.dk[data-ui=deck] .dk-kitnav{width:auto;max-height:34vh;padding:12px 16px;border-right:0;border-bottom:1px solid var(--dk-line)}.dk[data-ui=deck] .dk-kitmain{padding:16px}.dk[data-ui=deck] .dk-kobar{flex-wrap:wrap;row-gap:4px}.dk[data-ui=deck] .dk-kcopy{white-space:nowrap}}
+.dk[data-ui=deck] .dk-notif>.dk-nempty{padding:14px 16px 16px}
 .dk[data-ui=deck] .dk-compnote{max-width:none}
 .dk[data-ui=deck] .dk-onbd-steps{display:flex;flex-flow:row wrap;align-items:stretch;gap:10px}.dk[data-ui=deck] .dk-onbd-steps>*{flex:1 1 260px;min-width:0}
 .dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(4,minmax(0,1fr))!important}
@@ -2733,7 +2734,7 @@ export function renderDeck(host, opts) {
   }
   function buildBellMenu(){
     const rows = mergedNotifs();
-    popBell.innerHTML = `<div class="dk-pop-h">Notifications <button id="dkNClear">Mark all read</button></div>
+    popBell.innerHTML = `<div class="dk-pop-h">Notifications ${rows.length ? `<button id="dkNClear">Mark all read</button>` : ""}</div>
       <div class="dk-notif">${rows.length ? rows.map((x) => `<div class="dk-nrow${notifUnseen(x) ? "" : " seen"}"><span class="nd"></span><div><div class="nt">${esc(x.text)}${x.acct ? `<span class="nk">Account</span>` : ""}</div><div class="na">${timeAgo(x.ts)}</div></div></div>`).join("") : `<div class="dk-nempty">No notifications yet. Platform events — tools run, graph entities added — stream in here live.</div>`}</div>`;
     const clr = popBell.querySelector("#dkNClear");
     if (clr) clr.onclick = () => {
