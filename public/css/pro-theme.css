@@ -12946,7 +12946,7 @@ html[data-style="pro"] .app-main table td[style*="color: rgb(255, 255, 255)"] { 
 [data-style=pro] body.landing .section>.wrap>.sec-label{display:block!important;width:auto!important;background:none!important;border:none!important;border-top:2px solid #0f172a!important;border-radius:0!important;padding:14px 0 0!important;margin:0 0 18px!important;text-align:left!important;color:#2563eb!important;font-size:.78rem!important;letter-spacing:.16em!important}
 [data-style=pro] body.landing .section>.wrap>.sec-title{text-align:left!important;font-size:clamp(2.2rem,4.4vw,3.8rem)!important;line-height:1.02!important;letter-spacing:-.03em!important;max-width:900px!important;margin-left:0!important;margin-right:0!important}
 [data-style=pro] body.landing .section>.wrap>.sec-sub{text-align:left!important;margin-left:0!important;margin-right:0!important;max-width:640px!important;font-size:1.08rem!important}
-[data-style=pro] body.landing .section{padding-top:112px!important;padding-bottom:112px!important}
+[data-style=pro] body.landing .section{padding-top:84px!important;padding-bottom:84px!important}
 /* Products: bento with a dark feature tile. */
 [data-style=pro] body.landing #products .bento{grid-template-columns:1.5fr 1fr 1fr!important;gap:16px!important}
 [data-style=pro] body.landing #products .bento-card{border-radius:18px!important}
@@ -12967,4 +12967,22 @@ html[data-style="pro"] .app-main table td[style*="color: rgb(255, 255, 255)"] { 
   [data-style=pro] body.landing #products .bento{grid-template-columns:minmax(0,1fr)!important}
   [data-style=pro] body.landing #products .bento-card:first-child{grid-row:auto;min-height:0;padding:28px!important}
   [data-style=pro] body.landing .price-card.featured{transform:none}
+}
+
+/* ===== Landing v4 (2026-11-01): plain labels, no tilt, no card top bars, full bento ===== */
+html[data-style=pro] body.landing .section .wrap .sec-label,html[data-style=pro] body.landing .sec-label.sec-label{letter-spacing:0!important;text-transform:none!important;font-size:14px!important;font-weight:600!important}
+html[data-style=pro] body.landing .hero-badge,
+html[data-style=pro] body.landing .nx-arch-label,
+html[data-style=pro] body.landing .nx-arch-footer-band{letter-spacing:0!important}
+html[data-style=pro] body.landing .built-label,
+html[data-style=pro] body.landing .hx-src,
+html[data-style=pro] body.landing .nx-arch-tag,
+html[data-style=pro] body.landing footer h4{letter-spacing:0!important;text-transform:none!important}
+html[data-style=pro] body.landing .term-window{transform:none!important}
+html[data-style=pro] body.landing .nx-hl::before,
+html[data-style=pro] body.landing .rag-card::before{display:none!important}
+html[data-style=pro] body.landing #products .bento-card:first-child .bento-icon{margin-bottom:18px!important}
+@media(min-width:961px){
+  html[data-style=pro] body.landing #products .bento-card:first-child{grid-row:span 3!important}
+  html[data-style=pro] body.landing #products .bento-card:nth-child(6):last-child{grid-column:span 2!important}
 }
