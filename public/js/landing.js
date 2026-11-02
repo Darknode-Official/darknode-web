@@ -14,7 +14,7 @@ const GITHUB = "https://github.com/Darknode-Official";
 // Flip to true once darknode-app publishes a release with installers
 // (.AppImage / .dmg / Setup.exe). Until then the desktop-app card shows the
 // platform tag instead of a download button, so we never link to an empty page.
-const APP_DL_LIVE = false;
+const APP_DL_LIVE = true;
 const APP_REPO = "Darknode-Official/darknode-app";
 const APP_RELEASES = "https://github.com/" + APP_REPO + "/releases/latest";
 const APP_OS_LABEL = { linux: "Linux", mac: "macOS", windows: "Windows" };

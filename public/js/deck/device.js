@@ -73,6 +73,8 @@ export function mountDevice(el, ctx) {
     <div class="dv-grid">
       <section class="dv-card"><h2>Device</h2><p class="dv-sub">Read from the operating system.</p><dl class="dv-kv" id="dvSys"><dt>Loading</dt><dd></dd></dl></section>
       <section class="dv-card"><h2>Local AI models</h2><p class="dv-sub">Models installed in Ollama on this computer. Prompts to them never leave the machine.</p><div id="dvModels" class="dv-note">Checking…</div></section>
+      ${typeof nat.update === "function" ? `<section class="dv-card wide"><h2>App updates</h2><p class="dv-sub">Checks the published releases for a newer Darknode desktop app.</p>
+        <div class="dv-row"><span class="dv-note" id="dvUpd" style="flex:1;min-width:0">Checking…</span><button class="dv-btn" id="dvUpdCheck">Check again</button><button class="dv-btn pri" id="dvUpdGet" hidden>Download update</button></div></section>` : ""}
       <section class="dv-card wide"><h2>Workstation hardening audit</h2><p class="dv-sub">Real checks against this computer's settings (disk encryption, firewall, updates, screen lock, SSH, listening services and more), mapped to CIS benchmarks.</p>
         <div class="dv-row"><button class="dv-btn pri" id="dvAudit">Run audit</button><button class="dv-btn" id="dvAuditAsk" hidden>Ask the Assistant how to fix these</button></div>
         <div id="dvAuditOut"></div></section>
@@ -97,6 +99,11 @@ export function mountDevice(el, ctx) {
     box.innerHTML = r.models.map((m) => `<div class="dv-model"><b>${E(m.name)}</b><span>${E([m.params, m.family, gb(m.size)].filter(Boolean).join(" · "))}</span></div>`).join("");
   }, () => {});
 
+  if (typeof nat.update === "function") {
+    el.querySelector("#dvUpdCheck").onclick = checkUpdate;
+    el.querySelector("#dvUpdGet").onclick = () => { const u = S.updUrl; if (u && window.darknode.openExternal) window.darknode.openExternal(u); };
+    checkUpdate();
+  }
   el.querySelector("#dvAudit").onclick = runAudit;
   el.querySelector("#dvAuditAsk").onclick = () => {
     const bad = ((S.audit && S.audit.results) || []).filter((r) => r.status === "fail" || r.status === "warn");
@@ -106,6 +113,19 @@ export function mountDevice(el, ctx) {
   el.querySelectorAll("[data-lk]").forEach((b) => { b.onclick = () => lookup(b.dataset.lk); });
   el.querySelector("#dvHost").onkeydown = (e) => { if (e.key === "Enter") lookup("dns"); };
   el.querySelectorAll("[data-nt]").forEach((b) => { b.onclick = () => { try { nat.open(b.dataset.nt); } catch (_) {} }; });
+}
+
+async function checkUpdate() {
+  const el = S.el, box = el && el.querySelector("#dvUpd"), get = el && el.querySelector("#dvUpdGet");
+  if (!box || S.busy.upd) return;
+  S.busy.upd = true; box.textContent = "Checking…"; get.hidden = true;
+  let r = null; try { r = await N().update(); } catch (_) { r = null; }
+  S.busy.upd = false;
+  if (!box.isConnected) return;
+  if (!r || !r.ok) { box.textContent = "Could not reach the release server. Check your connection and try again."; return; }
+  S.updUrl = r.url || "https://github.com/Darknode-Official/darknode-app/releases/latest";
+  if (r.update) { box.textContent = "Version " + r.latest + " is available. You have " + r.current + ". Download it, then install it over this version."; get.hidden = false; }
+  else box.textContent = "You have the latest version (" + r.current + ").";
 }
 
 const ORDER = { fail: 0, warn: 1, error: 2, pass: 3, na: 4 };

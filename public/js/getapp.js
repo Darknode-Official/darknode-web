@@ -16,7 +16,7 @@ const REL_DL = TAG === "latest" ? RELEASES + "/latest/download" : RELEASES + "/d
 // Until then the CLI is offered via `git clone` (works today, Node 18+).
 // NPM_SUSPENDED: npm account temporarily suspended — npm:false hides the "npm install" card and
 // makes every CLI download fall back to git clone / from-source. Flip npm back to true to restore.
-const PUBLISHED = { desktopApp: false, cliBinaries: false, npm: false };
+const PUBLISHED = { desktopApp: true, cliBinaries: false, npm: false };
 // Inside the desktop app there is nothing to download for the app itself.
 if (isDesktop()) PUBLISHED.desktopApp = false;
 
@@ -30,7 +30,7 @@ const META = [
   { re: /Setup.*\.exe$/i, group: "Desktop app", os: "Windows", fmt: ".exe installer", cmd: (f) => `double-click ${f}` },
   { re: /cli-linux$/, group: "Terminal edition (CLI)", os: "Linux", fmt: "CLI binary", cmd: (f, u) => `curl -L ${u} -o darknode && chmod +x darknode && ./darknode` },
   { re: /cli-windows\.exe$/i, group: "Terminal edition (CLI)", os: "Windows", fmt: "CLI .exe", cmd: (f, u) => `curl.exe -L ${u} -o darknode.exe; .\\darknode.exe` },
-  { re: /\.dmg$/, group: "Desktop app", os: "macOS", fmt: ".dmg (Apple Silicon + Intel)", cmd: (f) => `open ${f}   # then drag Darknode to Applications` },
+  { re: /\.dmg$/, group: "Desktop app", os: "macOS", fmt: ".dmg (Apple Silicon)", cmd: (f) => `open ${f}   # then drag Darknode to Applications` },
   { re: /-macos-arm64$/, group: "Terminal edition (CLI)", os: "macOS · Apple Silicon", fmt: "CLI binary", cmd: (f, u) => `curl -L ${u} -o darknode && chmod +x darknode && codesign --sign - darknode && ./darknode` },
   { re: /-macos-x64$/, group: "Terminal edition (CLI)", os: "macOS · Intel", fmt: "CLI binary", cmd: (f, u) => `curl -L ${u} -o darknode && chmod +x darknode && codesign --sign - darknode && ./darknode` },
 ];
@@ -41,9 +41,11 @@ const SITE = "https://darknode.ai";
 const OS_REPO = "https://github.com/Darknode-Official/darknode-os";
 const NEXUS_REPO = "https://github.com/Darknode-Official/darknode-cli";
 // Run the CLI straight from source — the install path that works today.
+// From a git clone, Nexus runs through the CLI entry point; npm puts `nexus` on PATH.
+const NEXUS_CMD = PUBLISHED.npm ? "nexus" : "node darknode.js nexus";
 const CLI_CLONE = "git clone " + NEXUS_REPO + " && cd darknode-cli && node darknode.js";
 const APP_EDITIONS = [
-  { name: "Netinstall", tag: "lightest · ~95 MB", desc: "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", steps: ["Install the .deb / AppImage / .exe from the Builds tab.", "Open any tool — Darknode sets it up on first use."] },
+  { name: "Netinstall", tag: "lightest · ~110 MB", desc: "Just the app. Every tool auto-configures itself the first time you launch it — nothing pre-downloaded.", steps: ["Install the .deb / AppImage / .exe from the Builds tab.", "Open any tool — Darknode sets it up on first use."] },
   { name: "Slim", tag: "recommended", desc: "The app plus the essential toolset: recon, web, and password tools.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash -s -- recon web passwords`] },
   { name: "Full", tag: "everything + AI", desc: "The app, the complete arsenal (all 10 categories), and local AI models.", steps: ["Install the app from the Builds tab.", `curl -sL ${SITE}/arsenal.sh | bash`, "Local AI (Ollama + models) is set up automatically on first launch."] },
 ];
@@ -68,7 +70,7 @@ export function renderDownloads(main) {
     <div class="dl-hero-grid">
     <div class="card dl-hero" style="border-color:color-mix(in srgb,var(--acc) 45%,transparent)">
       <h2 class="pg-h2" style="margin:0 0 6px">Nexus &mdash; AI coding agent</h2>
-      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Claude Code) built into the CLI: it edits files and runs commands using the AI engine you choose &mdash; local models through Ollama (nothing leaves your machine) or a cloud engine such as Claude. Install the CLI, then run <code data-cmd>nexus</code>.</p>
+      <p class="muted" style="font-size:.85rem;margin:0 0 10px">A terminal AI coder (like Claude Code) built into the CLI: it edits files and runs commands using the AI engine you choose &mdash; local models through Ollama (nothing leaves your machine) or a cloud engine such as Claude. Install the CLI, then run <code data-cmd>${NEXUS_CMD}</code>.</p>
       <div class="dl-feat">
         <div class="dl-feat-i"><b>Edits your code</b><span>Reads, writes and refactors files across the repo, then runs the commands to verify.</span></div>
         <div class="dl-feat-i"><b>Local or cloud models</b><span>The Ollama engine runs fully on your machine with no API cost. The Claude engine is a cloud service: your prompts and code go to Anthropic.</span></div>
@@ -240,10 +242,10 @@ const APP_DOCS = [
     what: "The standard Windows installer (NSIS). Sets up the app, a Start-menu shortcut and an uninstaller.",
     best: "you're on Windows 10 or 11 and want the graphical app.",
     req: "Windows 10/11 64-bit. Local AI features use Ollama, which the Darknode CLI installs for you.",
-    steps: [ { t: "Download and double-click the installer from the Builds tab (named Darknode.Setup.&lt;version&gt;.exe), then follow the prompts." }, { t: "Launch “Darknode” from the Start menu." } ],
+    steps: [ { t: "Download and double-click the installer from the Builds tab (named Darknode-Setup-&lt;version&gt;.exe), then follow the prompts." }, { t: "Launch “Darknode” from the Start menu." } ],
     trouble: "SmartScreen may warn on a new unsigned build — choose “More info → Run anyway”. It's the same binary published on GitHub Releases." },
-  { title: "Desktop app — macOS (.dmg)", os: "macOS", fmt: ".dmg · Apple Silicon + Intel",
-    what: "The Darknode desktop app as a native macOS <code>.dmg</code> (universal — Apple Silicon and Intel). Same AI Assistant, VM runner, recon tools and live terminals as every other platform.",
+  { title: "Desktop app — macOS (.dmg)", os: "macOS", fmt: ".dmg · Apple Silicon",
+    what: "The Darknode desktop app as a native macOS <code>.dmg</code> for Apple Silicon Macs (M1 and later; there is no Intel build yet). Same AI Assistant, VM runner, recon tools and live terminals as every other platform.",
     best: "you're on macOS 12+ and want the graphical app.",
     req: "macOS 12 (Monterey) or newer, ~300&nbsp;MB free. Local AI uses Ollama (<code>brew install ollama</code>).",
     steps: [ { t: "Download the .dmg from the Builds tab, open it, and drag Darknode to Applications:", cmd: `open Darknode-*.dmg` }, { t: "First launch: right-click the app → Open (unsigned build) to clear Gatekeeper once." } ],
@@ -310,7 +312,7 @@ export function renderDownloadDocs(main) {
     ${APP_DOCS.map(dlDoc).join("")}` : ``}
 
     <h2 class="pg-h2" style="margin-top:22px">Terminal edition &amp; Nexus</h2>
-    <p class="muted" style="font-size:.85rem;margin:-4px 0 12px">The full toolkit plus <b>Nexus</b> &mdash; the AI coding agent with a live token/cost meter, <code>/undo</code> checkpoints, and a hybrid local+cloud engine. Run <code data-cmd>nexus</code> after installing.</p>
+    <p class="muted" style="font-size:.85rem;margin:-4px 0 12px">The full toolkit plus <b>Nexus</b> &mdash; the AI coding agent with a live token/cost meter, <code>/undo</code> checkpoints, and a hybrid local+cloud engine. Run <code data-cmd>${NEXUS_CMD}</code> after installing.</p>
     ${CLI_DOCS.filter((d) => !d.need || PUBLISHED[d.need]).map(dlDoc).join("")}
 
     <h2 class="pg-h2" style="margin-top:22px">Setup editions (how much tooling)</h2>
