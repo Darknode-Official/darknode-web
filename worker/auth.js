@@ -8,6 +8,7 @@
 // the Firebase token a second time.
 import { verifyIdToken } from "./vault-auth.js";
 import { isSuspended } from "./gate.js";
+import { takeQuota } from "./quota.js";
 
 // auth: "none" (anyone, the token is not even read), "user" (Firebase ID token),
 // "key" (a dk_ workspace API key; the IngestDO verifies the hash and its scopes).
@@ -150,10 +151,19 @@ export const ipCeiling = (ip, limiter = local) => limiter.take("ceil:" + ip, LIM
 
 // One instance per principal. State lives in memory only: a sliding window does not
 // need to survive eviction, and skipping storage keeps each check a single cheap call.
+// The /quota path is the exception: daily message counts (quota.js) are kept in this
+// object's storage, since they must outlast an eviction.
 export class RateLimiterDO {
-  constructor() { this.limiter = new WindowLimiter(1); }
+  constructor(state) { this.limiter = new WindowLimiter(1); this.storage = state && state.storage; }
   async fetch(request) {
-    const limit = Math.max(1, Math.min(10000, parseInt(new URL(request.url).searchParams.get("limit"), 10) || LIMITS.user));
+    const u = new URL(request.url);
+    if (u.pathname === "/quota") {
+      const day = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get("day") || "") ? u.searchParams.get("day") : new Date().toISOString().slice(0, 10);
+      const lim = Math.max(1, Math.min(100000, parseInt(u.searchParams.get("limit"), 10) || 1));
+      const out = await takeQuota(this.storage, day, lim);
+      return new Response(JSON.stringify(out), { headers: { "Content-Type": "application/json" } });
+    }
+    const limit = Math.max(1, Math.min(10000, parseInt(u.searchParams.get("limit"), 10) || LIMITS.user));
     const wait = this.limiter.take("p", limit);
     return new Response(JSON.stringify({ ok: wait === 0, retryAfter: wait }), { headers: { "Content-Type": "application/json" } });
   }
