@@ -30,7 +30,7 @@ const META = [
   { re: /Setup.*\.exe$/i, group: "Desktop app", os: "Windows", fmt: ".exe installer", cmd: (f) => `double-click ${f}` },
   { re: /cli-linux$/, group: "Terminal edition (CLI)", os: "Linux", fmt: "CLI binary", cmd: (f, u) => `curl -L ${u} -o darknode && chmod +x darknode && ./darknode` },
   { re: /cli-windows\.exe$/i, group: "Terminal edition (CLI)", os: "Windows", fmt: "CLI .exe", cmd: (f, u) => `curl.exe -L ${u} -o darknode.exe; .\\darknode.exe` },
-  { re: /\.dmg$/, group: "Desktop app", os: "macOS", fmt: ".dmg (Apple Silicon)", cmd: (f) => `open ${f}   # then drag Darknode to Applications` },
+  { re: /\.dmg$/, group: "Desktop app", os: "macOS", fmt: ".dmg (Apple Silicon and Intel)", cmd: (f) => `open ${f}   # then drag Darknode to Applications` },
   { re: /-macos-arm64$/, group: "Terminal edition (CLI)", os: "macOS · Apple Silicon", fmt: "CLI binary", cmd: (f, u) => `curl -L ${u} -o darknode && chmod +x darknode && codesign --sign - darknode && ./darknode` },
   { re: /-macos-x64$/, group: "Terminal edition (CLI)", os: "macOS · Intel", fmt: "CLI binary", cmd: (f, u) => `curl -L ${u} -o darknode && chmod +x darknode && codesign --sign - darknode && ./darknode` },
 ];
@@ -160,21 +160,22 @@ export function renderDownloads(main) {
       <span class="dl-os">${esc(m.os)}</span>
       <span class="dl-fmt">${esc(m.fmt)}${ver ? " · v" + esc(ver) : ""} · ${esc(fmtSize(a.size))}</span></a>`; };
   const fallback = () => {
-    builds.innerHTML = `<p class="muted" style="margin:0 0 10px">Live release info unavailable &mdash; download directly:</p>
+    builds.innerHTML = `<p class="muted" style="margin:0 0 10px">Live release info could not be loaded. Every installer is on the latest release page:</p>
       <div class="dl-btnrow">
-        <a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${REL_DL}/Darknode-cli-linux" download><span class="dl-os">Linux</span><span class="dl-fmt">Nexus CLI</span></a>
-        <a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${REL_DL}/Darknode-cli-windows.exe" download><span class="dl-os">Windows</span><span class="dl-fmt">Nexus CLI</span></a>
-        <a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${REL_DL}/Darknode-cli-macos-arm64" download><span class="dl-os">macOS · Apple Silicon</span><span class="dl-fmt">Nexus CLI</span></a>
-        <a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${REL_DL}/Darknode-cli-macos-x64" download><span class="dl-os">macOS · Intel</span><span class="dl-fmt">Nexus CLI</span></a>
+        <a class="dl-osbtn" style="border-radius:var(--btn-radius,4px)" href="${RELEASES}/latest" target="_blank" rel="noopener"><span class="dl-os">Linux, Windows, macOS</span><span class="dl-fmt">Desktop app &middot; GitHub Releases</span></a>
       </div>`;
   };
   // Only fetch live builds when a builds section is actually rendered (i.e. some
   // installer/binary is published). Otherwise there is nothing to populate.
-  if (builds && !window._dnRelCached) {
-    window._dnRelCached = true;
+  // One lookup per page load (GitHub's anonymous API limit is 60/hour); revisits reuse it.
+  if (builds && !window._dnRelP) {
     const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 8000);
-    fetch("https://api.github.com/repos/" + REPO + "/releases/" + TAG, { signal: ctrl.signal })
-      .catch(function(e){console.warn(e)}).then((r) => r.ok ? r.json() : Promise.reject("no-release"))
+    window._dnRelP = fetch("https://api.github.com/repos/" + REPO + "/releases/" + TAG, { signal: ctrl.signal })
+      .then((r) => r.ok ? r.json() : Promise.reject("no-release"));
+    window._dnRelP.catch(() => { window._dnRelP = null; });
+  }
+  if (builds) {
+    window._dnRelP
       .then((rel) => {
         const all = rel.assets || [];
         // one button per platform/format — the LATEST version only (by semver, then upload time)
@@ -193,8 +194,6 @@ export function renderDownloads(main) {
         }).join("");
       })
       .catch(fallback);
-  } else if (builds) {
-    fallback();
   }
 
   main.addEventListener("click", (e) => {
@@ -244,8 +243,8 @@ const APP_DOCS = [
     req: "Windows 10/11 64-bit. Local AI features use Ollama, which the Darknode CLI installs for you.",
     steps: [ { t: "Download and double-click the installer from the Builds tab (named Darknode-Setup-&lt;version&gt;.exe), then follow the prompts." }, { t: "Launch “Darknode” from the Start menu." } ],
     trouble: "SmartScreen may warn on a new unsigned build — choose “More info → Run anyway”. It's the same binary published on GitHub Releases." },
-  { title: "Desktop app — macOS (.dmg)", os: "macOS", fmt: ".dmg · Apple Silicon",
-    what: "The Darknode desktop app as a native macOS <code>.dmg</code> for Apple Silicon Macs (M1 and later; there is no Intel build yet). Same AI Assistant, VM runner, recon tools and live terminals as every other platform.",
+  { title: "Desktop app — macOS (.dmg)", os: "macOS", fmt: ".dmg · Apple Silicon and Intel",
+    what: "The Darknode desktop app as a native macOS <code>.dmg</code>. One universal build runs natively on Apple Silicon (M1 and later) and on Intel Macs. Same AI Assistant, VM runner, recon tools and live terminals as every other platform.",
     best: "you're on macOS 12+ and want the graphical app.",
     req: "macOS 12 (Monterey) or newer, ~300&nbsp;MB free. Local AI uses Ollama (<code>brew install ollama</code>).",
     steps: [ { t: "Download the .dmg from the Builds tab, open it, and drag Darknode to Applications:", cmd: `open Darknode-*.dmg` }, { t: "First launch: right-click the app → Open (unsigned build) to clear Gatekeeper once." } ],

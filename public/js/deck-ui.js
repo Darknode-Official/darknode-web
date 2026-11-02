@@ -263,6 +263,7 @@ const IC = {
   chevd: SVG('<path d="m6 9 6 6 6-6"/>'),
   gear: SVG('<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/>'),
   logout: SVG('<path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h9"/>'),
+  dl: SVG('<path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/>'),
   ext: SVG('<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M19 14v5H5V5h5"/>'),
   star: SVG('<path d="M12 3.5l2.6 5.27 5.82.85-4.21 4.1.99 5.78L12 16.77l-5.2 2.73.99-5.78-4.21-4.1 5.82-.85Z"/>'),
   note: SVG('<path d="M5 3h10l4 4v14H5Z"/><path d="M15 3v4h4"/><path d="M9 12h6M9 16h4"/>'),
@@ -1781,7 +1782,7 @@ export function renderDeck(host, opts) {
     "payloads", "payloadgen", "payloadstudio", "packetcraft", "privesc", "cracklab",
     "xsslab", "pentestconsole",
     "favicon", "reconplanner", "netmap", "stego",
-    "math", "dataviz", "engines", "education", "downloads", "dlguide", "setup", "privatecloud", "embedsdk"
+    "math", "dataviz", "engines", "education", "setup", "privatecloud", "embedsdk"
   ]);
   // Full pages and mini utilities come from two catalogs; categories that mean the same
   // thing are folded into one so the library never lists the same discipline twice.
@@ -1811,7 +1812,7 @@ export function renderDeck(host, opts) {
     { id: "finsec", g: "Fraud & Abuse", items: [["tool", "strongroom", "Payment Fraud", IC.coins], ["tool", "payees", "Payee Changes", IC.shield], ["tool", "cloudspend", "Cloud Spend", IC.gauge]] },
     { id: "risk", g: "Risk & Resilience", items: [["tool", "breachclock", "Breach Deadlines", IC.bell], ["tool", "riskreg", "Risk Register", IC.scale], ["tool", "vendorrisk", "Vendors", IC.nodes], ["tool", "backupready", "Backups", IC.folder]] },
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "AI Risk Mapping", IC.map], ["tool", "dlp", "Sensitive Data", IC.eye], ["tool", "leakprobe", "Exposed Keys", IC.key], ["tool", "evidence", "Audit Evidence", IC.book], ["tool", "dataflow", "Data Inventory", IC.folder], ["tool", "awareness", "Security Training", IC.pulse]] },
-    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
+    { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["tool", "downloads", "Downloads", IC.dl], ["scene", "assistant", "Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
   ];
   // Desktop app only: the app's native tools (real shell, sockets, VMs, local files) open
   // in their own window. A browser never shows this group.
