@@ -456,6 +456,8 @@ addEventListener("pagehide", () => {
 function dismissBoot() {
   if (window.__boot) window.__boot.set(100);
   const b = document.getElementById("bootscreen"); if (!b) { afterBoot(); return; }
+  // The desktop app opens straight into the workspace: no splash.
+  if (isDesktop()) { b.remove(); afterBoot(); return; }
   const elapsed = performance.now() - _bootStart;
   const isPro = document.documentElement.getAttribute("data-boot") === "pro";
   // First visit keeps the full brand animation; a returning visitor gets the shell as
@@ -1674,23 +1676,18 @@ let _appUid = null, _appGuest = false;
 let _navTok = 0;
 const _appH = { on: false, show: () => {}, saveFrame: () => {}, hasTyped: () => false };
 // Desktop app home: the Deck, with no console behind it and no console exit (onSignOut
-// puts the Deck in primary mode). Access keeps the web's rule, the admin custom claim
-// (resolved into _isAdmin from the signed ID token; Security Rules enforce it server-side).
-// Any other account gets an honest notice instead of a fallback UI.
+// puts the Deck in primary mode). Access matches the web Deck: every signed-in account,
+// with the same plan gating; admin powers still come from the signed admin claim.
 function renderDesktopHome(user) {
   const note = (title, body, retry) => {
     view.innerHTML = `<div class="dsk-drag" aria-hidden="true"></div><div class="dsk-note" role="status"><h1>${title}</h1><p>${body}</p><div class="dsk-acts">${retry ? '<button class="btn" id="dskRetry">Try again</button>' : ""}<button class="btn ghost" id="dskOut">Sign out</button></div></div>`;
     view.querySelector("#dskOut").onclick = doLogout;
     const r = view.querySelector("#dskRetry"); if (r) r.onclick = () => renderDesktopHome(user);
   };
-  if (!_isAdmin) {
-    const who = auth.currentUser ? esc(user.email || "this account") : "Test Mode (no account)";
-    note("Desktop workspace not available yet", `The Darknode desktop workspace is not enabled for ${who} yet. Nothing about your account or data has changed. Sign out to use a different account, or keep using Darknode at darknode.ai.`);
-    return;
-  }
   view.innerHTML = "";
+  // Same access as the web Deck (plan gating included); the app opens on the Assistant.
   import("/js/deck/launch.js?v=20261030d")
-    .then((m) => m.openDeck(user, { isOwner: true, onSignOut: () => { m.closeDeck(); doLogout(); } }))
+    .then((m) => m.openDeck(user, { isOwner: _isAdmin, startScene: "assistant", onSignOut: () => { m.closeDeck(); doLogout(); } }))
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
 // Web home: the Deck is the only signed-in UI and owns every darknode.ai/<page> link.

@@ -36,6 +36,7 @@ import { attachExplain, EXPLAIN, explainEnabled, setExplainEnabled } from "/js/u
 import { startGraphSync, stopGraphSync } from "/js/graph-sync.js";
 import { storeKeyFor, activityKey } from "/js/security-graph.js"; // singleton: never version
 import { acctKey } from "/js/core/account.js";
+import { has as desktopHas } from "/js/core/desktop.js";
 import { readRuns } from "/js/deck/native/ui.js"; // same URL the space tools import
 import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261018i";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
@@ -1808,6 +1809,9 @@ export function renderDeck(host, opts) {
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "AI Risk Mapping", IC.map], ["tool", "dlp", "Sensitive Data", IC.eye], ["tool", "leakprobe", "Exposed Keys", IC.key], ["tool", "evidence", "Audit Evidence", IC.book], ["tool", "dataflow", "Data Inventory", IC.folder], ["tool", "awareness", "Security Training", IC.pulse]] },
     { g: "Platform", items: [["scene", "con", "Integrations", IC.plug], ["scene", "tools", "Tool Library", IC.grid], ["scene", "toolkit", "Toolkit", IC.wrench], ["scene", "assistant", "Assistant", IC.spark], ["scene", "team", "Team", IC.nodes], ["scene", "plans", "Plans", IC.star]].concat(opts.isOwner ? [["tool", "admin", "Admin", IC.key]] : []) },
   ];
+  // Desktop app only: the app's native tools (real shell, sockets, VMs, local files) open
+  // in their own window. A browser never shows this group.
+  if (desktopHas("native")) NAV_DEF.push({ id: "native", g: "This computer", items: [["native", "runner", "Terminal", IC.term], ["native", "scanner", "Port Scanner", IC.radar], ["native", "fuzzer", "Web Fuzzer", IC.search], ["native", "vms", "Virtual Machines", IC.grid], ["native", "forensics", "File Forensics", IC.eye], ["native", "loot", "Saved Output", IC.folder], ["native", "home", "All Native Tools", IC.wrench]] });
   // Plan gating: every sidebar entry needs a minimum plan (group default, item override).
   // Entries above the plan are simply not shown: removed from the sidebar, the Tool
   // Library and search. Library tools outside the sidebar stay free, as on the console.
@@ -2177,6 +2181,8 @@ export function renderDeck(host, opts) {
   root.addEventListener("click", (e) => {
     const nav = e.target.closest("[data-scene]");
     if (nav && !nav.classList.contains("dk-tab") && nav.dataset.scene) { go(nav.dataset.scene, nav.dataset.sect); return; }
+    const nt = e.target.closest(".dk-nv[data-native]");
+    if (nt) { try { window.darknode.native.open(nt.dataset.native); } catch (_) { toast("Native tools are not available in this window."); } return; }
     const tl = e.target.closest("span[data-tool],a[data-tool],.dk-nv[data-tool]");
     if (tl && tl.dataset.tool) { e.preventDefault(); openTool(tl.dataset.tool, secLabel[tl.dataset.tool] || tl.textContent.trim()); }
   });
@@ -5129,6 +5135,8 @@ export function renderDeck(host, opts) {
   // ---------- boot: restore the last workspace ----------
   let initial = "overview";
   try { const sv = localStorage.getItem(LS_SCENE); if (sv && SCENES[sv]) initial = sv; } catch (_) {}
+  // the desktop app always opens on a fixed page (the Assistant), not the last one
+  if (opts.startScene && SCENES[opts.startScene]) initial = opts.startScene;
   // a page link (/surface, /area/code) opens that page; / restores the last one
   const route0 = primary ? routeOf(location.pathname) : null;
   if (route0 && route0.scene !== "overview") initial = route0.scene;

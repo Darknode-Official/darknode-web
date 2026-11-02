@@ -524,6 +524,12 @@ function aiModal({ title, desc, fields = [], submitText = "Save", extra = [] } =
   });
 }
 
+// True inside the Darknode desktop app: the top frame carries the app's desktop object
+// (this page usually runs as the Deck's same-origin Assistant frame). UX switch only.
+function inDesktopApp() {
+  try { const d = window.top && window.top.darknode && window.top.darknode.desktop; return !!(d && Array.isArray(d.caps)); } catch (_) { return false; }
+}
+
 export function renderAI(main) {
   const models = availableModels();
   const saved = (() => { try { return localStorage.getItem(MODEL_KEY) || ""; } catch (_) { return ""; } })();
@@ -532,6 +538,8 @@ export function renderAI(main) {
   const defaultModel = models.find((m) => (m.provider + ":" + m.id) === saved)
     || models.find((m) => m.id === saved)  // back-compat: older builds stored id only
     || (prefProv && models.find((m) => m.provider === prefProv && m.group === "Connected"))
+    // The desktop app defaults to Claude (Darknode's server key; signed-in, plan-gated as on the web).
+    || (inDesktopApp() && (models.find((m) => m.id === "claude-opus-5-5") || models.find((m) => m.id === "claude-sonnet-5-5")))
     || models.find((m) => m.id === DEFAULT_MODEL_ID)
     || models[0];
 
