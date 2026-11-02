@@ -96,30 +96,52 @@ export function buildDigest({ kev = [], prefs = {}, now = Date.now(), unsubUrl =
   t.push("", "Open the Deck: " + SITE + "/overview", "", "You get this because you turned on the weekly digest in Darknode settings.", "Unsubscribe: " + unsubUrl);
 
   // ---- html ----
-  const row = (l, r, warn) => `<tr><td style="padding:8px 0;border-top:1px solid #eceae4;font:600 13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;color:${warn ? "#c62828" : "#1d1c1a"}">${l}</td><td style="padding:8px 0 8px 12px;border-top:1px solid #eceae4;font:13px/1.4 -apple-system,Segoe UI,Roboto,sans-serif;color:#56544f">${r}</td></tr>`;
-  const h2 = (s) => `<h2 style="margin:24px 0 8px;font:700 12px/1.3 -apple-system,Segoe UI,Roboto,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#56544f">${s}</h2>`;
-  let body = "";
+  // Table layout + inline styles only (Gmail/Outlook strip <style> and ignore flex/grid).
+  // Brand header, a one-line summary (also the inbox preheader), sentence-case section
+  // heads with counts, status pills, and a footer with settings + unsubscribe.
+  const F = "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif";
+  const MONO = "SFMono-Regular,Menlo,Consolas,monospace";
+  const pill = (txt, warn) => `<span style="display:inline-block;padding:2px 8px;border:1px solid ${warn ? "#c62828" : "#e6e4de"};border-radius:999px;font:600 12px/1.4 ${F};color:${warn ? "#c62828" : "#56544f"};white-space:nowrap">${txt}</span>`;
+  const head = (title, n, note) => `<tr><td style="padding:28px 0 10px"><span style="font:700 15px/1.3 ${F};color:#1d1c1a">${title}</span>${n != null ? `<span style="font:600 13px/1.3 ${F};color:#86837c">&nbsp;&nbsp;${n}</span>` : ""}${note ? `<div style="margin-top:3px;font:13px/1.4 ${F};color:#86837c">${note}</div>` : ""}</td></tr>`;
+  const certShort = (c) => c.daysLeft === null ? "unreadable" : c.daysLeft < 0 ? "expired" : c.daysLeft === 0 ? "today" : c.daysLeft + (c.daysLeft === 1 ? " day" : " days");
+  const summaryBits = [];
+  const urgent = certs.filter((c) => c.daysLeft === null || c.daysLeft <= 7).length;
+  if (urgent) summaryBits.push(urgent + " certificate" + (urgent === 1 ? " needs" : "s need") + " attention");
+  else if (certs.length) summaryBits.push(certs.length + " certificate" + (certs.length === 1 ? "" : "s") + " expire" + (certs.length === 1 ? "s" : "") + " within 30 days");
+  summaryBits.push(week.length ? week.length + " vulnerabilit" + (week.length === 1 ? "y was" : "ies were") + " added to CISA's exploited list" : "no new vulnerabilities on CISA's exploited list");
+  const summary = summaryBits.join(" and ") + ".";
+  const summaryText = summary.charAt(0).toUpperCase() + summary.slice(1);
+  let rows = "";
   if (certs.length || stale) {
-    body += h2("Certificates" + (checkDate ? ` <span style="font-weight:500;text-transform:none;letter-spacing:0">as of your check on ${esc(checkDate)}</span>` : ""));
-    if (certs.length) body += `<table role="presentation" width="100%" cellspacing="0" cellpadding="0">${certs.map((c) => row(esc(c.domain), esc(certLabel(c)), c.daysLeft === null || c.daysLeft <= 7)).join("")}</table>`;
-    if (stale) body += `<p style="margin:10px 0 0;font:13px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#56544f">Your last certificate check was ${checkAge} days ago. <a href="${SITE}/personal/certs" style="color:#2552c6">Re-run it</a>.</p>`;
+    rows += head("Certificates", certs.length || null, checkDate ? "As of your check on " + esc(checkDate) : "");
+    if (certs.length) rows += `<tr><td><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${certs.map((c) => {
+      const warn = c.daysLeft === null || c.daysLeft <= 7;
+      return `<tr><td style="padding:11px 0;border-top:1px solid #eceae4;font:600 14px/1.4 ${F};color:#1d1c1a;word-break:break-all">${esc(c.domain)}<div style="font:400 13px/1.4 ${F};color:#86837c">${esc(certLabel(c))}</div></td><td align="right" style="padding:11px 0 11px 12px;border-top:1px solid #eceae4;vertical-align:middle">${pill(esc(certShort(c)), warn)}</td></tr>`;
+    }).join("")}</table></td></tr>`;
+    if (stale) rows += `<tr><td style="padding:12px 0 0;font:13px/1.5 ${F};color:#56544f">Your last certificate check was ${checkAge} days ago. <a href="${SITE}/personal/certs" style="color:#2552c6;font-weight:600">Re-run it</a></td></tr>`;
   }
-  body += h2(`Added to CISA Known Exploited Vulnerabilities this week (${week.length})`);
-  body += week.length
-    ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0">${week.slice(0, 15).map((v) => row(
-        `<a href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(v.cve)}" style="color:#1d1c1a;text-decoration:none;font-family:Menlo,Consolas,monospace">${esc(v.cve)}</a>`,
-        esc([v.vendor, v.product].filter(Boolean).join(" ")) + (v.ransomware ? ' <span style="color:#c62828;font-weight:600">used in ransomware</span>' : "") + `<br><span style="color:#86837c">added ${esc(v.dateAdded)}${v.dueDate ? ", federal patch deadline " + esc(v.dueDate) : ""}</span>`)).join("")}</table>` +
-      (week.length > 15 ? `<p style="margin:10px 0 0;font:13px -apple-system,Segoe UI,Roboto,sans-serif"><a href="${SITE}/threat" style="color:#2552c6">${week.length - 15} more in the Deck</a></p>` : "")
-    : `<p style="margin:0;font:13px -apple-system,Segoe UI,Roboto,sans-serif;color:#56544f">None this week.</p>`;
-  const html = `<!doctype html><html><body style="margin:0;background:#f7f7f4"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f7f4"><tr><td align="center" style="padding:24px 12px">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border:1px solid #e6e4de;border-radius:10px"><tr><td style="padding:24px 28px">
-<div style="font:700 18px/1.3 -apple-system,Segoe UI,Roboto,sans-serif;color:#1d1c1a">Your weekly digest</div>
-<div style="margin-top:4px;font:13px -apple-system,Segoe UI,Roboto,sans-serif;color:#86837c">${esc(new Date(now).toISOString().slice(0, 10))}${test ? " · test send" : ""}</div>
-${body}
-<p style="margin:28px 0 0"><a href="${SITE}/overview" style="display:inline-block;background:#2552c6;color:#fff;text-decoration:none;font:600 14px -apple-system,Segoe UI,Roboto,sans-serif;padding:10px 18px;border-radius:7px">Open the Deck</a></p>
-</td></tr></table>
-<p style="max-width:600px;margin:14px auto 0;font:12px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;color:#86837c">You get this because you turned on the weekly digest in Darknode settings. <a href="${esc(unsubUrl)}" style="color:#86837c">Unsubscribe</a>.</p>
-</td></tr></table></body></html>`;
+  rows += head("Newly exploited vulnerabilities", week.length, "Added to CISA's Known Exploited Vulnerabilities catalog in the last 7 days");
+  rows += week.length
+    ? `<tr><td><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${week.slice(0, 15).map((v) =>
+        `<tr><td style="padding:11px 0;border-top:1px solid #eceae4"><div style="font:600 14px/1.4 ${F};color:#1d1c1a">${esc([v.vendor, v.product].filter(Boolean).join(" ")) || esc(v.cve)}${v.ransomware ? "&nbsp; " + pill("used in ransomware", true) : ""}</div><div style="margin-top:2px;font:13px/1.5 ${F};color:#86837c"><a href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(v.cve)}" style="color:#2552c6;text-decoration:none;font-family:${MONO}">${esc(v.cve)}</a> &middot; added ${esc(v.dateAdded)}${v.dueDate ? " &middot; federal patch deadline " + esc(v.dueDate) : ""}</div></td></tr>`).join("")}</table></td></tr>` +
+      (week.length > 15 ? `<tr><td style="padding:12px 0 0;font:13px ${F}"><a href="${SITE}/threat" style="color:#2552c6;font-weight:600">See ${week.length - 15} more in the Deck</a></td></tr>` : "")
+    : `<tr><td style="padding:11px 0;border-top:1px solid #eceae4;font:13px/1.5 ${F};color:#56544f">None this week.</td></tr>`;
+  const date = new Date(now).toISOString().slice(0, 10);
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>Darknode weekly digest</title></head>
+<body style="margin:0;padding:0;background:#f7f7f4">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f7f7f4">${esc(summaryText)}</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f7f4"><tr><td align="center" style="padding:28px 12px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px">
+<tr><td style="padding:0 4px 14px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td style="font:800 16px/1 ${F};color:#1d1c1a;letter-spacing:-.01em">Darknode</td><td align="right" style="font:13px/1 ${F};color:#86837c">${esc(date)}${test ? " &middot; test send" : ""}</td></tr></table></td></tr>
+<tr><td style="background:#ffffff;border:1px solid #e6e4de;border-radius:12px;padding:28px 28px 30px">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+<tr><td style="font:700 22px/1.25 ${F};color:#1d1c1a;letter-spacing:-.01em">Your weekly security digest</td></tr>
+<tr><td style="padding-top:8px;font:15px/1.5 ${F};color:#56544f">${esc(summaryText)}</td></tr>
+${rows}
+<tr><td style="padding-top:28px"><a href="${SITE}/overview" style="display:inline-block;background:#2552c6;color:#ffffff;text-decoration:none;font:600 14px/1 ${F};padding:12px 20px;border-radius:8px">Open the Deck</a></td></tr>
+</table></td></tr>
+<tr><td style="padding:16px 4px 0;font:12px/1.6 ${F};color:#86837c">You get this because you turned on the weekly digest in Darknode settings.<br><a href="${SITE}/settings" style="color:#86837c">Digest settings</a> &middot; <a href="${esc(unsubUrl)}" style="color:#86837c">Unsubscribe</a> &middot; <a href="${SITE}" style="color:#86837c">darknode.ai</a></td></tr>
+</table></td></tr></table></body></html>`;
   return { subject, html, text: t.join("\n"), empty };
 }
 
@@ -243,7 +265,7 @@ export async function handleDigest(request, env, rest, json, principal) {
   }
 }
 
-const page = (title, msg) => new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><body style="font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;background:#f7f7f4;color:#1d1c1a;display:grid;place-items:center;min-height:90vh;margin:0;padding:0 16px"><div style="max-width:440px;background:#fff;border:1px solid #e6e4de;border-radius:10px;padding:24px 28px"><h1 style="font-size:18px;margin:0 0 8px">${esc(title)}</h1><p style="margin:0;color:#56544f">${msg}</p></div>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+const page = (title, msg) => new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(title)} · Darknode</title><body style="margin:0;font:15px/1.55 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f7f7f4;color:#1d1c1a;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;box-sizing:border-box"><main style="width:100%;max-width:440px"><div style="font-weight:800;font-size:16px;letter-spacing:-.01em;margin:0 4px 14px">Darknode</div><div style="background:#fff;border:1px solid #e6e4de;border-radius:12px;padding:28px"><h1 style="font-size:20px;line-height:1.3;margin:0 0 8px;letter-spacing:-.01em">${esc(title)}</h1><p style="margin:0;color:#56544f">${msg}</p><p style="margin:22px 0 0"><a href="${SITE}" style="display:inline-block;background:#2552c6;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 18px;border-radius:8px">Go to Darknode</a></p></div></main></body></html>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 
 export async function handleUnsubscribe(request, env) {
   const u = new URL(request.url), uid = u.searchParams.get("u") || "", t = u.searchParams.get("t") || "";
