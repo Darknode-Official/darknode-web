@@ -513,6 +513,7 @@ export function renderEmailAuth(main) {
   }
 
   function cardShell(key, meta, analysis) {
+    meta = meta[key] || meta; // callers pass the whole cardsMeta() map
     var body = analysis
       ? (recordHtml(key, analysis, meta.empty) + renderFindings(analysis.findings))
       : '<div class="ea-loading"><span class="ea-spin"></span><span>Resolving…</span></div>';
