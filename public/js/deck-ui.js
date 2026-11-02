@@ -1366,8 +1366,8 @@ textarea.dk-kitio{min-height:120px}
 .dk-plangrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:16px;margin-bottom:22px}
 .dk-plancard{position:relative;display:flex;flex-direction:column;padding:22px 20px;border-radius:14px;background:rgba(23,33,56,.025);border:1px solid rgba(23,33,56,.1)}
 .dk-plancard.feat{border-color:var(--a);box-shadow:0 0 0 1px var(--a)}
-.dk-plantag{position:absolute;top:-10px;left:20px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--a);padding:4px 9px;border-radius:7px}
-.dk-planname{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#5a6680}
+.dk-plantag{position:absolute;top:-10px;left:20px;font-size:12px;font-weight:600;color:#fff;background:var(--a);padding:4px 9px;border-radius:7px}
+.dk-planname{font-size:15px;font-weight:600;color:#5a6680}
 .dk-planprice{font-size:30px;font-weight:800;color:#141c2e;margin:6px 0 2px;line-height:1}
 .dk-planprice span{font-size:12.5px;font-weight:600;color:#6b7589;margin-left:4px}
 .dk-planblurb{font-size:12.8px;color:#5a6680;line-height:1.5;margin:8px 0 14px;min-height:38px}
