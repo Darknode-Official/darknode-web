@@ -1688,6 +1688,16 @@ function renderDesktopHome(user) {
   // Same access as the web Deck (plan gating included); the app opens on the Assistant.
   import("/js/deck/launch.js?v=20261030d")
     .then((m) => m.openDeck(user, { isOwner: _isAdmin, startScene: "assistant", onSignOut: () => { m.closeDeck(); doLogout(); } }))
+    .then(() => {
+      // Tell the user once per launch when a newer desktop app is published.
+      const nat = window.darknode && window.darknode.native;
+      if (!nat || typeof nat.update !== "function") return;
+      nat.update().then((r) => {
+        if (!r || !r.ok || !r.update) return;
+        const t = window.showToast || window.dnToast;
+        if (typeof t === "function") t("Darknode " + r.latest + " is available. Open This Computer to download it.");
+      }, () => {});
+    })
     .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
 }
 // Web home: the Deck is the only signed-in UI and owns every darknode.ai/<page> link.
