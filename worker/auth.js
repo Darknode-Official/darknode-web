@@ -160,7 +160,7 @@ export class RateLimiterDO {
     if (u.pathname === "/quota") {
       const day = /^\d{4}-\d{2}-\d{2}$/.test(u.searchParams.get("day") || "") ? u.searchParams.get("day") : new Date().toISOString().slice(0, 10);
       const lim = Math.max(1, Math.min(100000, parseInt(u.searchParams.get("limit"), 10) || 1));
-      const out = await takeQuota(this.storage, day, lim);
+      const out = await takeQuota(this.storage, day, lim, u.searchParams.get("refund") === "1");
       return new Response(JSON.stringify(out), { headers: { "Content-Type": "application/json" } });
     }
     const limit = Math.max(1, Math.min(10000, parseInt(u.searchParams.get("limit"), 10) || LIMITS.user));

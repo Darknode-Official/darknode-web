@@ -163,7 +163,7 @@ node darknode.js nexus init                 # optional: scaffold .nexus/ project
         <li><strong>Retention &amp; deletion.</strong> You may request deletion of your account data at any time via Settings or by contacting the maintainers.</li>
         <li><strong>In-browser tools.</strong> Most analysis runs in your browser. Check history and saved domain lists in the Deck spaces are kept in your browser's local storage, unless you turn on the weekly email digest. Live checks against a domain you enter are fetched through our edge proxy and are not stored.</li>
         <li><strong>Weekly email digest.</strong> Off unless you turn it on in Settings. While it is on we store your watched domains and your latest certificate-check results (domain, expiry date, issuer) on our servers to build the email, and send it to your account email through our email provider, Resend. Turn it off in Settings or with the unsubscribe link in any digest.</li>
-        <li><strong>AI assistant.</strong> Questions to the built-in assistant pass through our edge proxy to the model provider and are not logged or stored by us.</li>
+        <li><strong>AI assistant.</strong> Questions to the built-in assistant pass through our edge proxy to the model provider and are not logged or stored by us. To apply the daily message limits we keep a count of messages for the current UTC day, per account (or per IP address when you are not signed in); the count holds no message content and is cleared the next day.</li>
         <li><strong>Integrations.</strong> A Deck integration is connected only after a live test of your key, which stays in your browser. Lookups to providers that block browser calls (such as VirusTotal or Shodan) pass your key and the looked-up value through our edge relay to that provider only; we do not log or store the key, the value or the result. The assistant asks before each lookup unless you choose Always allow.</li>
         <li><strong>Cookies.</strong> Only functional cookies/localStorage for auth and preferences.</li>
       </ul>`;
@@ -213,6 +213,9 @@ function _dcSwitchTab(id, container) {
     });
   }
 }
+
+// The privacy and acceptable-use text, for the public legal pages (legal.js).
+export function docSectionHTML(id) { return renderSection(id); }
 
 export function renderDocs(main) {
   _dcCurrentTab = 'getting-started';

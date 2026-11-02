@@ -2,6 +2,7 @@
 import { hostAllowed } from "../../worker/net-guard.js";
 import { test, assert, group } from "../harness.mjs";
 import worker from "../../worker/worker.js";
+import { _resetLocalQuota } from "../../worker/quota.js";
 import { runCheck } from "../../worker/checks.js";
 
 let ipN = 0;
@@ -30,6 +31,36 @@ group("worker audit", () => {
       assert.equal(r.status, 400, provider);
       assert.ok(JSON.parse(r.body).error.startsWith("Unknown provider"), provider);
     }
+  });
+
+  test("/api/chat: refused or failed requests do not use up the daily allowance", async () => {
+    _resetLocalQuota();
+    const send = async (provider, model, upstream) => {
+      const realFetch = globalThis.fetch;
+      globalThis.fetch = upstream || (async () => { throw new Error("no network in tests"); });
+      try {
+        const r = await worker.fetch(new Request("https://w.test/api/chat", { method: "POST", body: JSON.stringify({ provider, model, messages: [{ role: "user", content: "hi" }] }), headers: { "cf-connecting-ip": "198.51.100.77" } }), { GEMINI_KEY: "k" });
+        return r.status;
+      } finally { globalThis.fetch = realFetch; }
+    };
+    // unknown model and removed providers: refused before anything is counted
+    for (let i = 0; i < 12; i++) assert.equal(await send("gemini", "no-such-model"), 400);
+    for (const p of ["groq", "openrouter", "mistral"]) assert.equal(await send(p, "m"), 400, p);
+    // upstream failure: charged, then refunded
+    const down = async () => new Response("{}", { status: 500 });
+    for (let i = 0; i < 22; i++) assert.ok((await send("gemini", "gemini-flash-latest", down)) >= 500, "failure " + i);
+    // the anonymous allowance (20) is still untouched, so a working request goes through
+    const ok = async () => new Response("data: {}\n\n", { status: 200, headers: { "content-type": "text/event-stream" } });
+    assert.equal(await send("gemini", "gemini-flash-latest", ok), 200);
+  });
+
+  test("/api/fetch asks Cloudflare DoH for dns-json (it answers 400 otherwise)", async () => {
+    let accept = "";
+    const up = async (u, init) => { accept = new Headers(init.headers).get("accept"); return new Response('{"Status":0}', { status: 200, headers: { "content-type": "application/dns-json" } }); };
+    await call("/api/fetch?url=" + encodeURIComponent("https://cloudflare-dns.com/dns-query?name=example.com&type=A"), {}, up);
+    assert.equal(accept, "application/dns-json");
+    await call("/api/fetch?url=https://example.com/", {}, up);
+    assert.equal(accept, "*/*");
   });
 
   test("/api/fetch reports truncated:true when the body is cut to the cap below the read ceiling", async () => {
