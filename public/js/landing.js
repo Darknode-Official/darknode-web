@@ -702,8 +702,10 @@ export function renderLanding(view, actions) {
             <p class="price-desc">The full browser toolbox for solo practitioners and evaluation.</p>
             <ul class="price-features compact">
               <li>Every browser-based security tool</li>
+              <li>Quick Checks: email security, headers, certificates, DNS, breaches, CVEs</li>
               <li>Personal space: domain, link, secret and data checks</li>
-              <li>Local-only security graph &amp; cases</li>
+              <li>Live vulnerability feed (CVE and known-exploited)</li>
+              <li>Local-only security graph &amp; case files</li>
               <li>Darknode AI assistant: 50 messages a day</li>
               <li>1 workspace, 1 seat</li>
             </ul>

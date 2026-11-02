@@ -1801,6 +1801,9 @@ export function renderDeck(host, opts) {
   const NAV_DEF = [
     { g: "", items: [["scene", "overview", "Overview", IC.home]] },
     { id: "spaces", g: "Spaces", items: [["scene", "personal", "Personal", IC.shield], ["scene", "enterprise", "Organization", IC.brief]] },
+    // Quick single-target checks every plan gets (real lookups; the Personal space runs a few
+    // of them in one go). Nothing here is gated, so a Free sidebar is more than Overview.
+    { id: "checks", g: "Quick Checks", items: [["tool", "emailauth", "Email Security", IC.link], ["tool", "headeranalyzer", "Website Headers", IC.shield], ["tool", "sslinspector", "Certificate Search", IC.cert], ["tool", "cookieinspect", "Cookies", IC.eye], ["tool", "dns", "DNS Lookup", IC.search], ["tool", "techfingerprint", "Tech Fingerprint", IC.gear], ["tool", "breachlookup", "Breach Lookup", IC.alert], ["tool", "cvesearch", "CVE Search", IC.book], ["tool", "emailheader", "Email Header Analyzer", IC.hook], ["tool", "securitytxt", "security.txt", IC.note]] },
     { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Vulnerabilities", IC.alert], ["tool", "posture", "Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificates", IC.cert], ["tool", "fwaudit", "Firewall Audit", IC.shield], ["tool", "vulnimport", "Scan Imports", IC.alert], ["tool", "fleetcomply", "Devices", IC.gauge], ["tool", "dmarcreports", "DMARC Reports", IC.link], ["tool", "domainguard", "Domains", IC.radar], ["tool", "netexposure", "Network Scans", IC.nodes]] },
     { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-ins", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access", IC.shield], ["tool", "privaudit", "Privileged Access", IC.key], ["tool", "nhi", "Service Accounts", IC.gear], ["tool", "jml", "Joiners & Leavers", IC.check], ["tool", "oauthgov", "OAuth Apps", IC.plug], ["tool", "vpnaudit", "VPN & Remote Access", IC.lock]] },
     { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Dependencies", IC.branch], ["tool", "threatforest", "Attack Trees", IC.tree], ["tool", "iacscan", "Infrastructure as Code", IC.code], ["tool", "k8saudit", "Kubernetes", IC.nodes], ["tool", "licenseaudit", "Licenses", IC.scale], ["tool", "apispec", "API Definitions", IC.plug]] },
@@ -4156,7 +4159,7 @@ export function renderDeck(host, opts) {
     const PLANS = [
       { id: "free", name: "Free", price: "$0", unit: "forever", tag: "", a: "#2552c6",
         blurb: "The full browser toolbox for solo practitioners and evaluation.",
-        feats: ["Every browser-based security tool", "Personal space: domain, link, secret and data checks", "Local-only security graph & cases", "Darknode AI assistant: 50 messages a day", "1 workspace, 1 seat"],
+        feats: ["Every browser-based security tool", "Quick Checks: email security, headers, certificates, DNS, breaches, CVEs", "Personal space: domain, link, secret and data checks", "Live vulnerability feed (CVE and known-exploited)", "Local-only security graph & case files", "Darknode AI assistant: 50 messages a day", "1 workspace, 1 seat"],
         cta: "Current plan", cur: true },
       { id: "pro", name: "Pro", price: "$29", unit: "per user / month", tag: "Recommended", a: "#2552c6",
         blurb: "For professionals who need history, exports and the strongest AI models.",
@@ -5027,7 +5030,7 @@ export function renderDeck(host, opts) {
       if (!grp.g) return `<div class="dk-nvg dk-nvg0">${items}</div>`;
       const n = String(++no).padStart(2, "0");
       const gid = grp.id || grp.g;
-      const head = SECTIONS[grp.id] ? `<button class="dk-nvh dk-nvhb${navKey === "section:" + grp.id ? " on" : ""}" data-scene="section" data-sect="${grp.id}" data-explain="nav.section">${chap(n)}<span class="gt">${esc(grp.g)}</span><span class="ov">Overview</span></button>` : `<button class="dk-nvh dk-nvhx" data-navtg="${esc(gid)}">${chap(n)}<span class="gt">${esc(grp.g)}</span></button>`;
+      const head = SECTIONS[grp.id] && !isLocked("section:" + grp.id) ? `<button class="dk-nvh dk-nvhb${navKey === "section:" + grp.id ? " on" : ""}" data-scene="section" data-sect="${grp.id}" data-explain="nav.section">${chap(n)}<span class="gt">${esc(grp.g)}</span><span class="ov">Overview</span></button>` : `<button class="dk-nvh dk-nvhx" data-navtg="${esc(gid)}">${chap(n)}<span class="gt">${esc(grp.g)}</span></button>`;
       return navGroup(gid, grp.g, head, items, grp.items.length);
     }).join("");
     const pinned = pins.filter((sec) => secLabel[sec]);
