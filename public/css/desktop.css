@@ -42,3 +42,6 @@ html[data-desktop] .dsk-note h1 { font-size: 22px; margin: 0 0 8px; letter-spaci
 html[data-desktop] .dsk-note p { margin: 0 0 20px; color: #3f3d3a; overflow-wrap: anywhere; }
 html[data-desktop] .dsk-note .dsk-acts { display: flex; gap: 10px; flex-wrap: wrap; }
 html[data-desktop] #view:has(> .dsk-note) { min-height: calc(100vh - 48px); }
+
+/* No splash in the app: the workspace paints as soon as it is ready. */
+html[data-desktop] #bootscreen { display: none !important; }
