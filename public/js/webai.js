@@ -406,9 +406,23 @@ function streamFor(provider, model, messages, onToken, signal) {
 
 // --- helpers ---
 
+// A single-line shell command from a code block, or "" (desktop app only).
+function termCommand(lang, code) {
+  if (!inDesktopApp() || !/^(|bash|sh|shell|zsh|console|terminal|powershell|ps1|cmd)$/i.test(lang)) return "";
+  const c = String(code || "").trim().replace(/^\$\s+/, "");
+  if (!c || c.length > 1000 || /[\r\n]/.test(c) || /[\x00-\x08\x0b-\x1f\x7f]/.test(c)) return "";
+  return c;
+}
+
 function mdToHtml(t) {
   return String(t).split("```").map((seg, i) => {
-    if (i % 2 === 1) { const code = seg.replace(/^[\w+-]*\n/, ""); return `<pre class="code-block"><button class="cb-copy">copy</button><code>${esc(code)}</code></pre>`; }
+    if (i % 2 === 1) {
+      const lang = (/^([\w+-]*)\n/.exec(seg) || [])[1] || "";
+      const code = seg.replace(/^[\w+-]*\n/, "");
+      // Desktop app: a one-line shell command can be typed into a real terminal (never run for you).
+      const run = termCommand(lang, code) ? `<button class="cb-run" title="Type this command into a terminal on this computer. It runs only when you press Enter there.">Run in Terminal</button>` : "";
+      return `<pre class="code-block">${run}<button class="cb-copy">copy</button><code>${esc(code)}</code></pre>`;
+    }
     return esc(seg).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
   }).join("");
 }
@@ -611,6 +625,8 @@ ${E} .ai2-main .msg pre{position:relative;margin:4px 0 14px!important;padding-ri
 ${E} .ai2-main .msg pre code{color:#1d1c1a!important;background:transparent!important;font-family:ui-monospace,"JetBrains Mono",SFMono-Regular,Menlo,monospace!important}
 ${E} .ai2-main .cb-copy{position:absolute;top:8px;right:8px;text-transform:none!important;letter-spacing:0!important;font-size:12px!important;font-weight:500!important;color:#6b6862!important;background:transparent!important;border:0!important;border-radius:6px!important;padding:3px 8px!important;box-shadow:none!important}
 ${E} .ai2-main .cb-copy:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
+${E} .ai2-main .cb-run{position:absolute;top:8px;right:62px;font:inherit;font-size:12px;font-weight:600;color:#1d1c1a;background:transparent;border:1px solid rgba(0,0,0,.18);border-radius:6px;padding:2px 8px;cursor:pointer}
+${E} .ai2-main .cb-run:hover{background:rgba(0,0,0,.06)}
 ${E} .ai2-main .msg :not(pre)>code{background:rgba(0,0,0,.06)!important;border-radius:5px!important;padding:1px 5px!important}
 ${E} .msg-tools{margin-top:6px!important;gap:2px!important}
 ${E} .mt{border:0!important;background:transparent!important;color:#8a877f!important;font-size:12px!important;padding:4px 8px!important;border-radius:6px!important}
@@ -1122,6 +1138,12 @@ ${E} .mt:hover{background:rgba(0,0,0,.06)!important;color:#1d1c1a!important}
     const bp = e.target.closest("[data-p]"); if (bp) { insert(PRESETS[+bp.dataset.p][1]); return; }
     const nav = e.target.closest("[data-sec]");
     if (nav) { const it = document.querySelector('.side-item[data-sec="' + nav.dataset.sec + '"]'); if (it) it.click(); return; }
+    const rb = e.target.closest(".cb-run");
+    if (rb) {
+      const cmd = termCommand("", rb.parentElement.querySelector("code").textContent);
+      try { if (cmd) window.top.darknode.native.open("runner", { type: cmd }); rb.textContent = "Typed in Terminal"; setTimeout(() => (rb.textContent = "Run in Terminal"), 1600); } catch (_) {}
+      return;
+    }
     const cb = e.target.closest(".cb-copy"); if (!cb) return; const code = cb.parentElement.querySelector("code"); navigator.clipboard?.writeText(code.textContent).then(() => { cb.textContent = "copied"; setTimeout(() => (cb.textContent = "copy"), 1000); });
   });
 

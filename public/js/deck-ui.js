@@ -48,6 +48,7 @@ const corrMod = lazyMod("/js/deck/correlations.js?v=20261029c");
 const monMod = lazyMod("/js/deck/monitors.js?v=20261029d");
 const keysMod = lazyMod("/js/deck/apikeys.js?v=20261030d");
 const auditMod = lazyMod("/js/deck/audit.js?v=20261028a");
+const deviceMod = lazyMod("/js/deck/device.js?v=20261101a");
 import { snapshot as metricsSnapshot, trendDelta } from "/js/core/metrics.js?v=20261027c";
 import { recordSnapshot, readTrend, baselineBefore } from "/js/deck/trend-store.js?v=20261028b";
 import { frameworkMap } from "/js/core/framework-map.js?v=20261028a";
@@ -1811,7 +1812,7 @@ export function renderDeck(host, opts) {
   ];
   // Desktop app only: the app's native tools (real shell, sockets, VMs, local files) open
   // in their own window. A browser never shows this group.
-  if (desktopHas("native")) NAV_DEF.push({ id: "native", g: "This computer", items: [["native", "runner", "Terminal", IC.term], ["native", "scanner", "Port Scanner", IC.radar], ["native", "fuzzer", "Web Fuzzer", IC.search], ["native", "vms", "Virtual Machines", IC.grid], ["native", "forensics", "File Forensics", IC.eye], ["native", "loot", "Saved Output", IC.folder], ["native", "home", "All Native Tools", IC.wrench]] });
+  if (desktopHas("native")) NAV_DEF.push({ id: "native", g: "This computer", items: [["scene", "device", "This Computer", IC.gauge], ["native", "runner", "Terminal", IC.term], ["native", "scanner", "Port Scanner", IC.radar], ["native", "fuzzer", "Web Fuzzer", IC.search], ["native", "vms", "Virtual Machines", IC.grid], ["native", "forensics", "File Forensics", IC.eye], ["native", "loot", "Saved Output", IC.folder], ["native", "home", "All Native Tools", IC.wrench]] });
   // Plan gating: every sidebar entry needs a minimum plan (group default, item override).
   // Entries above the plan are simply not shown: removed from the sidebar, the Tool
   // Library and search. Library tools outside the sidebar stay free, as on the console.
@@ -2006,6 +2007,7 @@ export function renderDeck(host, opts) {
     <div class="dk-scene dk-inv" id="dkMonitors" hidden></div>
 
     <div class="dk-scene dk-inv" id="dkApiKeys" hidden></div>
+    <div class="dk-scene dk-inv" id="dkDevice" hidden></div>
     <div class="dk-scene dk-inv" id="dkAudit" hidden></div>
 
     <div class="dk-scene dk-inv dk-sect" id="dkSection" hidden></div>
@@ -2068,7 +2070,7 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", inventory: "#dkInventory", correlations: "#dkCorrelations", monitors: "#dkMonitors", apikeys: "#dkApiKeys", audit: "#dkAudit", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports", team: "#dkTeam", personal: "#dkPersonal", enterprise: "#dkEnterprise" };
+  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", inventory: "#dkInventory", correlations: "#dkCorrelations", monitors: "#dkMonitors", apikeys: "#dkApiKeys", device: "#dkDevice", audit: "#dkAudit", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports", team: "#dkTeam", personal: "#dkPersonal", enterprise: "#dkEnterprise" };
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
@@ -2160,6 +2162,7 @@ export function renderDeck(host, opts) {
     else if (scene === "personal" || scene === "enterprise") mountSpaceScene(scene, arg);
     else if (scene === "reports") renderReports();
     else if (scene === "assistant") openAssistant();
+    else if (scene === "device") renderDevice();
   }
   // Native spaces; `open` = { tab, target } jumps straight to a tool (and runs it on target).
   function mountSpaceScene(id, open){
@@ -4049,6 +4052,7 @@ export function renderDeck(host, opts) {
   function renderMonitors(){ lazyScene(sceneEls.monitors, monMod, (m) => m.mountMonitors(sceneEls.monitors, { esc, IC, toast })); }
   function renderApiKeys(){ lazyScene(sceneEls.apikeys, keysMod, (m) => m.mountApiKeys(sceneEls.apikeys, { esc, IC, toast })); }
   function renderAudit(){ lazyScene(sceneEls.audit, auditMod, (m) => m.mountAudit(sceneEls.audit, { esc, IC, toast })); }
+  function renderDevice(){ lazyScene(sceneEls.device, deviceMod, (m) => m.mountDevice(sceneEls.device, { esc, IC, toast, askAI })); }
 
   // ---------- Section overview pages (one per sidebar group) ----------
   // What each section covers in the graph, and which integrations feed it. Coverage is
@@ -4921,7 +4925,7 @@ export function renderDeck(host, opts) {
   // ---------- keyboard & shortcuts ----------
   // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
   const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant", f: "findings", r: "reports", w: "team", p: "plans", ",": "settings", v: "inventory", x: "correlations", b: "monitors", y: "apikeys", u: "audit" };
-  const SCENE_TITLE = { overview: "Overview", surface: "Attack Surface", threat: "Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings", inventory: "Asset Inventory", correlations: "Correlations", monitors: "Monitors", apikeys: "API & Ingest", audit: "Audit Log" };
+  const SCENE_TITLE = { overview: "Overview", surface: "Attack Surface", threat: "Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings", inventory: "Asset Inventory", correlations: "Correlations", monitors: "Monitors", apikeys: "API & Ingest", device: "This Computer", audit: "Audit Log" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
     const nav = Object.entries(GOTO).filter(([, sc]) => !isLocked("scene:" + sc)).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");
