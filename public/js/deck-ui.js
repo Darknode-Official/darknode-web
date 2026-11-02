@@ -1583,7 +1583,7 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-since h2 .src{margin-left:auto;font-weight:500;font-size:12.5px;color:var(--dk-mut)}
 .dk[data-ui=deck] .dk-sngrid{display:grid;grid-template-columns:1fr 1fr;gap:12px 28px}
 .dk[data-ui=deck] .dk-sncol{min-width:0;display:flex;flex-direction:column;gap:2px}
-.dk[data-ui=deck] .dk-sncol h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--dk-tx2);margin:0 0 6px;display:flex;gap:8px;align-items:center}
+.dk[data-ui=deck] .dk-sncol h3{font-size:13px;font-weight:600;color:var(--dk-tx2);margin:0 0 6px;display:flex;gap:8px;align-items:center}
 .dk[data-ui=deck] .dk-sncol h3 b{font-weight:600;color:var(--dk-acc)}
 .dk[data-ui=deck] .dk-sncol .dk-nempty{padding:8px 0}
 .dk[data-ui=deck] .dk-sncol>.mo{color:var(--dk-acc);font-size:13px;cursor:pointer;margin-top:6px}
@@ -1603,7 +1603,7 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-ovlay .dk-ovp{margin:0}
 .dk[data-ui=deck] .dk-ovmain>.dk-roles:empty{display:none}
 .dk[data-ui=deck] .dk-ovrail .dk-ovp{padding:16px 18px}
-.dk[data-ui=deck] .dk-ovrail .dk-ovp h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--dk-tx2)}
+.dk[data-ui=deck] .dk-ovrail .dk-ovp h2{font-size:14px;color:var(--dk-tx)}
 .dk[data-ui=deck] .dk-ovrail .dk-ovp h2 .mo{text-transform:none;letter-spacing:0}
 .dk[data-ui=deck] .dk-ovrail .dk-notes{min-height:120px}
 @media(max-width:1180px){.dk[data-ui=deck] .dk-ovlay{grid-template-columns:minmax(0,1fr)}}
@@ -1624,7 +1624,7 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-compnote{max-width:none}
 .dk[data-ui=deck] .dk-onbd-steps{display:flex;flex-flow:row wrap;align-items:stretch;gap:10px}.dk[data-ui=deck] .dk-onbd-steps>*{flex:1 1 260px;min-width:0}
 .dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(4,minmax(0,1fr))!important}
-.dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]){grid-column:span 2;grid-row:span 2;justify-content:center;padding:20px 22px}
+.dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]){grid-column:span 2;grid-row:span 2;justify-content:flex-start;padding:20px 22px}
 .dk[data-ui=deck] .dk-kpis6:has(>.dk-start:not([hidden]))>.dk-kpi{min-height:0}
 .dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]) .dk-actform input{flex:1 1 140px;min-width:0}
 @media(max-width:720px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(2,minmax(0,1fr))!important}.dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]){grid-row:auto}}
@@ -3295,7 +3295,7 @@ export function renderDeck(host, opts) {
       if (sig.real != null) {
         if (!sig.real) {
           if (kn) kn.textContent = "—";
-          lines.push(`<b>Your exposure: not measured yet</b> — no real findings in this workspace. Map your attack surface or scan a codebase to measure it.`);
+          // the "Measure your exposure" card already says this; no duplicate line
         } else {
           // Exposure score v2: the SAME documented metrics-engine score the Board report and
           // the trend store use, so every surface agrees. The sparkline is drawn from the real
