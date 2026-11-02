@@ -704,7 +704,7 @@ export function renderLanding(view, actions) {
               <li>Every browser-based security tool</li>
               <li>Personal space: domain, link, secret and data checks</li>
               <li>Local-only security graph &amp; cases</li>
-              <li>Darknode AI assistant</li>
+              <li>Darknode AI assistant: 50 messages a day</li>
               <li>1 workspace, 1 seat</li>
             </ul>
             <button class="btn lg" id="price-free">Get started free</button>
@@ -719,6 +719,7 @@ export function renderLanding(view, actions) {
               <li>Exposure and Application Security tools, findings and reports</li>
               <li>Unlimited saved findings &amp; reports</li>
               <li>Premium AI models: Claude Fable 5.1, Claude Opus 5.5, Darknode Max</li>
+              <li>500 AI messages a day (150 on Claude)</li>
               <li>Cloud sync across devices</li>
               <li>Email support</li>
             </ul>
@@ -732,6 +733,7 @@ export function renderLanding(view, actions) {
               <li>Everything in Pro, plus:</li>
               <li>Organization space, Identity, Security Operations, Fraud &amp; Abuse</li>
               <li>Shared team workspaces &amp; roles</li>
+              <li>1,000 AI messages a day per user</li>
               <li>Integrations (ticketing, chat webhooks)</li>
               <li>Activity &amp; audit log</li>
             </ul>

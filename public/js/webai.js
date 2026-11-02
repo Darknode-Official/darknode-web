@@ -345,13 +345,16 @@ async function streamGemini(model, messages, onToken, signal) {
 async function streamProxy(provider, model, messages, onToken, signal, opts = {}) {
   let r;
   const headers = { "Content-Type": "application/json" };
-  if (opts.auth) {
+  // Signed-in users always send their token: the server counts daily messages per
+  // account (more than the per-IP allowance for visitors). Required for Claude.
+  let token = "";
+  try {
     const { auth } = await import("/js/firebase.js?v=20261021a");
     const user = auth && auth.currentUser;
-    const token = user && await user.getIdToken().catch(() => "");
-    if (!token) throw new Error("Sign in to use Claude models.");
-    headers.Authorization = "Bearer " + token;
-  }
+    token = (user && await user.getIdToken().catch(() => "")) || "";
+  } catch (_) { token = ""; }
+  if (opts.auth && !token) throw new Error("Sign in to use Claude models.");
+  if (token) headers.Authorization = "Bearer " + token;
   try {
     r = await fetch(proxyUrl(), { method: "POST", signal, headers, body: JSON.stringify({ provider, model, messages }) });
   } catch (e) {
@@ -361,7 +364,7 @@ async function streamProxy(provider, model, messages, onToken, signal, opts = {}
   if (opts.auth && !r.ok) { let msg = ""; try { msg = (await r.json()).error || ""; } catch (_) {} throw new Error(msg || ("AI service " + r.status)); }
   if (r.status === 404) throw new Error("The free AI service isn't available here yet. Add your own API key in Settings → API Keys, or run the app with the AI proxy deployed.");
   if (r.status === 401 || r.status === 403) throw new Error("The free Darknode AI service is temporarily unavailable (its key needs renewing). Add your own API key in Settings → API Keys to keep using AI, or try again later.");
-  if (r.status === 429) throw new Error("Rate limit reached — wait a moment or switch to a different model.");
+  if (r.status === 429) { let msg = ""; try { msg = (await r.json()).error || ""; } catch (_) {} throw new Error(msg ? String(msg).slice(0, 300) : "Rate limit reached — wait a moment or switch to a different model."); }
   // The Worker answers errors as {error: "<plain sentence>"}; show just that. Anything
   // else (an HTML error page from the edge, say) gets a generic line, never raw markup.
   if (!r.ok) { let msg = ""; try { msg = (await r.json()).error || ""; } catch (_) {} throw new Error(msg ? String(msg).slice(0, 200) : "The AI service returned an error (HTTP " + r.status + "). Try again in a moment."); }

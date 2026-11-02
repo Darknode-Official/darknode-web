@@ -26,6 +26,7 @@ import { readCapped } from "./body-cap.js";
 import { handleIntel } from "./intel.js";
 import { matchRoute, authenticate, authorize, attachPrincipal, rateCheck, ipCeiling, requestId, withHeaders } from "./auth.js";
 import { GEMINI_MODELS, CLAUDE_PLAN, userTier, planDenied } from "./plan.js";
+import { chargeQuota, quotaMessage } from "./quota.js";
 import { handleDigest, handleUnsubscribe, runDigest } from "./digest.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
@@ -502,7 +503,7 @@ function streamBack(upstream, isGemini, opts = {}) {
 // (`wrangler secret put ANTHROPIC_KEY`): it is never in the repo, never sent to a
 // browser, and only this function reads it. Because every call spends real credits:
 // signed-in users only (admins only when CLAUDE_ACCESS="admin"), a per-user limit of
-// CLAUDE_PER_MIN calls a minute, an allow-listed model set, and capped input/output.
+// CLAUDE_PER_MIN calls a minute, a daily Claude allowance by plan (quota.js), an allow-listed model set, and capped input/output.
 // Upstream error bodies are not forwarded (they can describe the account).
 export const CLAUDE_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]);
 const CLAUDE_PER_MIN = 6, CLAUDE_MAX_INPUT_CHARS = 120000, CLAUDE_MAX_TOKENS = 4096;
@@ -558,10 +559,10 @@ export function withPromptCache(body) {
 // Exported for tests: the Messages API SSE -> the reader's OpenAI-style SSE.
 export const claudeStream = (upstream, opts = {}) => streamBack(upstream, false, { ...opts, format: "anthropic" });
 
-async function handleClaude(request, env, model, msgs, opts) {
+async function handleClaude(request, env, model, msgs, opts, pre, ip = "") {
   if (!env.ANTHROPIC_KEY) return json({ error: "Claude is not configured on this deployment." }, 503);
   if (!CLAUDE_MODELS.has(model)) return json({ error: "Unknown Claude model." }, 400);
-  const a = await authenticate(request, env);
+  const a = pre && !pre.error ? pre : await authenticate(request, env);
   if (a.error) return json({ error: a.error }, a.status);
   const p = a.principal;
   if (p.kind !== "user") return json({ error: "Sign in to use Claude models." }, 401);
@@ -570,6 +571,8 @@ async function handleClaude(request, env, model, msgs, opts) {
   if (planMsg) return json({ error: planMsg, code: "plan_required" }, 403);
   const wait = await rateCheck(env, { kind: "user", uid: "claude:" + p.uid }, "", undefined, CLAUDE_PER_MIN);
   if (wait) return withHeaders(json({ error: "Claude limit reached (" + CLAUDE_PER_MIN + " messages a minute). Try again shortly." }, 429), { "Retry-After": String(wait) });
+  const cq = await chargeQuota(env, p, ip, "claude", await userTier(env.FIREBASE_PROJECT_ID, p));
+  if (cq && !cq.ok) return withHeaders(json({ error: quotaMessage("claude", cq), code: "quota" }, 429), { "Retry-After": String(cq.resetIn) });
   const plain = toClaudeBody(model, msgs);
   if (!plain.messages.length) return json({ error: "Missing messages" }, 400);
   if (JSON.stringify(plain).length > CLAUDE_MAX_INPUT_CHARS) return json({ error: "Conversation too long for Claude here. Start a new chat." }, 413);
@@ -785,6 +788,16 @@ async function route(request, env, rid) {
     const cfg = Object.prototype.hasOwnProperty.call(PROVIDERS, provider) ? PROVIDERS[provider] : null;
     if (!cfg) return json({ error: "Unknown provider: " + provider }, 400);
 
+    // Daily message limits (quota.js). The chat route needs no sign-in, so the token is
+    // optional here: signed-in callers are counted per account and plan, everyone else
+    // per IP. A bad or expired token counts as not signed in; a suspended account is refused.
+    const who = await authenticate(request, env);
+    if (who.status === 403) return json({ error: who.error }, 403);
+    const chatter = who.principal && who.principal.kind === "user" ? who.principal : { kind: "anonymous" };
+    const chatTier = chatter.kind === "user" ? await userTier(env.FIREBASE_PROJECT_ID, chatter) : "free";
+    const quota = await chargeQuota(env, chatter, ip, "messages", chatTier);
+    if (quota && !quota.ok) return withHeaders(json({ error: quotaMessage("messages", quota), code: "quota" }, 429), { "Retry-After": String(quota.resetIn) });
+
     // Citations default ON (website); the desktop app sends cite:false.
     const cite = !(body && body.cite === false);
 
@@ -797,7 +810,7 @@ async function route(request, env, rid) {
       const opts = { cite, fetchedSources };
 
       if (provider === "darknode") return await handleDarknode(cfg, env, model, msgs, opts);
-      if (provider === "anthropic") return await handleClaude(request, env, model, msgs, opts);
+      if (provider === "anthropic") return await handleClaude(request, env, model, msgs, opts, who, ip);
       // Only the listed Gemini models run on the owner's key; the stronger ones need a paid plan.
       if (provider === "gemini") {
         const need = GEMINI_MODELS.get(model);
