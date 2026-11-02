@@ -2630,9 +2630,9 @@ export function renderDeck(host, opts) {
     go(curScene || "overview");
   }
   // Owner plan preview: rebuild the whole Deck so every list is cut for that plan.
-  function setPreviewTier(t){
+  function setPreviewTier(t, scene){
     try { if (t) localStorage.setItem(LS_PREVIEW, t); else localStorage.removeItem(LS_PREVIEW); } catch (_) {}
-    teardown(); swapped = renderDeck(host, opts);
+    teardown(); swapped = renderDeck(host, scene ? { ...opts, startScene: scene } : opts);
   }
   $("#dkWBack").onclick = closeTool;
   $("#dkWFull").onclick = () => { const s = curSec; if (primary) { window.open("/" + s, "_blank", "noopener"); return; } teardown(); onOpen(s); };
@@ -4173,22 +4173,27 @@ export function renderDeck(host, opts) {
     ];
     // CTA depends on the effective tier: your current plan, something already
     // included below it, or an upgrade you can request (never self-grant).
+    // The owner picks any plan here instead (it only changes what the Deck shows; the
+    // owner account keeps full access on the server).
     const ctaFor = (id) => {
       if (id === planTier) return { label: "Current plan", cur: true };
+      if (opts.isOwner) return { label: "Use " + planLabel(id), owner: true };
       if (rank(planTier) > rank(id)) return { label: "Included", cur: true };
       if (id === "enterprise") return { label: "Contact sales", req: false };
       return { label: "Request upgrade", req: true };
     };
     el.innerHTML = `
       <div class="dk-ti-head"><h1>Plans &amp; billing</h1></div>
-      <div class="dk-compnote">Preview pricing — checkout isn't live yet. You're on the <b>${esc(planLabel(planTier))}</b> plan. Upgrades are requested here and granted manually; no payment is taken.</div>
+      ${opts.isOwner
+        ? `<div class="dk-compnote">Owner account: pick any plan to use the Deck exactly as a customer on it does. You're using <b>${esc(planLabel(planTier))}</b>${planTier !== realTier ? `; your account plan is ${esc(planLabel(realTier))}` : ""}. Your account keeps full access on the server either way.</div>`
+        : `<div class="dk-compnote">Preview pricing — checkout isn't live yet. You're on the <b>${esc(planLabel(planTier))}</b> plan. Upgrades are requested here and granted manually; no payment is taken.</div>`}
       <div class="dk-plangrid">${PLANS.map((p) => { const c = ctaFor(p.id); return `
         <div class="dk-plancard${p.tag ? " feat" : ""}${p.id === planTier ? " iscur" : ""}" style="--a:${p.a}" data-explain="plan.${p.id}">
           ${p.id === planTier ? `<span class="dk-plantag">Current</span>` : p.tag ? `<span class="dk-plantag">${esc(p.tag)}</span>` : ""}
           <div class="dk-planname">${esc(p.name)}</div>
           <div class="dk-planprice">${esc(p.price)}${p.unit ? `<span>${esc(p.unit)}</span>` : ""}</div>
           <div class="dk-planblurb">${esc(p.blurb)}</div>
-          <button class="dk-planbtn${c.cur ? " cur" : ""}" data-plan="${esc(p.id)}" data-req="${c.req ? "1" : ""}"${c.cur ? " disabled" : ""}>${esc(c.label)}</button>
+          <button class="dk-planbtn${c.cur ? " cur" : ""}" data-plan="${esc(p.id)}" data-req="${c.req ? "1" : ""}" data-owner="${c.owner ? "1" : ""}"${c.cur ? " disabled" : ""}>${esc(c.label)}</button>
           <ul class="dk-planfeats">${p.feats.map((f) => `<li>${IC.check}<span>${esc(f)}</span></li>`).join("")}</ul>
         </div>`; }).join("")}
       </div>
@@ -4197,6 +4202,7 @@ export function renderDeck(host, opts) {
       </div>`;
     el.querySelectorAll(".dk-planbtn:not(.cur)").forEach((b) => b.onclick = async () => {
       const plan = b.dataset.plan;
+      if (b.dataset.owner) { setPreviewTier(plan === realTier ? "" : plan, "plans"); toast("Using the " + planLabel(plan) + " plan"); return; }
       if (plan === "enterprise") { try { window.open("mailto:sales@darknode.ai?subject=" + encodeURIComponent("Darknode Enterprise enquiry"), "_blank", "noopener"); } catch (_) {} return; }
       if (typeof opts.onUpgradeRequest !== "function") { toast("Upgrade requests aren't available in this context."); return; }
       const note = window.dnPrompt ? await window.dnPrompt("Request " + planLabel(plan), { desc: "We'll review and get back to you. Add anything about your team or needs (optional).", placeholder: "e.g. 6 analysts, needs SSO", textarea: true, submitText: "Send request" }) : "";
