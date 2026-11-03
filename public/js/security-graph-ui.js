@@ -235,7 +235,19 @@ html[data-style="dark"] .sgu-select,html[data-style="classic"] .sgu-select{backg
         `)}
       </div>`;
 
-    main.querySelector('#sgu-search').oninput = (e) => { _searchQ = e.target.value; _page = 0; render(); };
+    // render() rebuilds the panel, which would drop focus after every keystroke: wait for
+    // a pause in typing, then put focus and the caret back in the new search box.
+    main.querySelector('#sgu-search').oninput = (e) => {
+      _searchQ = e.target.value; _page = 0;
+      clearTimeout(main._sguSearchT);
+      main._sguSearchT = setTimeout(() => {
+        const live = main.querySelector('#sgu-search');
+        const pos = live ? live.selectionStart : _searchQ.length;
+        render();
+        const el = main.querySelector('#sgu-search');
+        if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (_) {} }
+      }, 180);
+    };
     main.querySelector('#sgu-sev').onchange = (e) => { _sevFilter = e.target.value || null; _page = 0; render(); };
     main.querySelector('#sgu-status').onchange = (e) => { _statusFilter = e.target.value || null; _page = 0; render(); };
 

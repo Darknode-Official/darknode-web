@@ -83,7 +83,12 @@ function fetchDoH(url, signal) {
 }
 
 // Status 0 = NOERROR, 3 = NXDOMAIN. Answer entries carry the TXT in .data.
+// Any other status (2 SERVFAIL, 5 REFUSED, ...) is a lookup failure, not "no records":
+// throw so the caller tries the fallback resolver and, failing that, reports an error.
+var RCODE = { 1: "FORMERR", 2: "SERVFAIL", 4: "NOTIMP", 5: "REFUSED" };
 function parseDoH(json) {
+  var st = json ? json.Status : -1;
+  if (typeof st === "number" && st !== 0 && st !== 3) throw new Error("DNS lookup failed (" + (RCODE[st] || "status " + st) + ")");
   var out = [];
   var answers = (json && json.Answer) || [];
   answers.forEach(function (a) {
@@ -152,7 +157,7 @@ function analyzeSPF(txts) {
   var allPolicy = null, includes = 0, lookups = 0, worst = "PASS";
 
   tokens.forEach(function (tok) {
-    var m = /^([+\-~?]?)(all|include|a|mx|ptr|exists|ip4|ip6|redirect|exp)([:=].*)?$/i.exec(tok);
+    var m = /^([+\-~?]?)(all|include|a|mx|ptr|exists|ip4|ip6|redirect|exp)([:=/].*)?$/i.exec(tok);
     if (!m && !/^redirect=|^exp=/i.test(tok)) {
       findings.push({ kind: "warn", text: "Unrecognised mechanism/term: " + tok });
       if (worst === "PASS") worst = "WARN";
@@ -170,7 +175,10 @@ function analyzeSPF(txts) {
     }
   });
 
-  if (allPolicy === "-all") {
+  var hasRedirect = tokens.some(function (t) { return /^redirect=/i.test(t); });
+  if (!allPolicy && hasRedirect) {
+    findings.push({ kind: "info", text: "No 'all' here; the policy comes from the redirect= target record, so check that record's ending." });
+  } else if (allPolicy === "-all") {
     findings.push({ kind: "good", text: "Ends with -all (fail / hard reject) — strongest SPF posture." });
   } else if (allPolicy === "~all") {
     findings.push({ kind: "warn", text: "Ends with ~all (softfail). Mail from unlisted servers is accepted but marked. Consider -all once confident." });

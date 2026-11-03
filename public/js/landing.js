@@ -948,6 +948,12 @@ export function renderLanding(view, actions) {
           <a href="${GITHUB}/nexus" target="_blank" rel="noopener">Nexus</a>
           <a href="${GITHUB}/darknode-os" target="_blank" rel="noopener">OS</a>
         </nav>
+        <nav class="lf-col" aria-label="Legal">
+          <h4>Legal</h4>
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/acceptable-use">Acceptable Use</a>
+        </nav>
       </div>
       <div class="wrap lf-bottom">
         <span class="land-footer-copy">&copy; 2026 Darknode. All rights reserved.</span>
@@ -1275,13 +1281,15 @@ export function renderLanding(view, actions) {
 
   // Public tool pages: published open data that needs no account. The sitemap and the app
   // manifest link these, so a signed-out visitor must get the tool, not the home page.
-  const PUBLIC_TOOLS = { "/crosswalk": { title: "GenAI Security Crosswalk", load: () => import("/js/crosswalk.js?v=20261029c").then((m) => m.renderCrosswalk) } };
+  const legal = (id) => () => import("/js/legal.js?v=20261102a").then((m) => (mount) => m.renderLegal(mount, id));
+  const PUBLIC_TOOLS = { "/crosswalk": { title: "GenAI Security Crosswalk", load: () => import("/js/crosswalk.js?v=20261029c").then((m) => m.renderCrosswalk) },
+    "/terms": { title: "Terms of Service", load: legal("terms"), note: "" }, "/privacy": { title: "Privacy Policy", load: legal("privacy"), note: "" }, "/acceptable-use": { title: "Acceptable Use Policy", load: legal("aup"), note: "" } };
   const pub = PUBLIC_TOOLS[location.pathname];
   if (pub) {
     view.querySelectorAll(".section, .hero, .cta-final").forEach((sec) => { sec.hidden = true; });
     const page = document.createElement("section");
     page.className = "section dn-pubtool";
-    page.innerHTML = '<div class="wrap"><div class="dedicated-page-header dn-pubbar"><a class="dedicated-back" href="/"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to home</a><span class="dn-pubnote">Free to use, no account needed.</span><button class="btn sm" type="button">Sign in for the full platform</button></div><div class="dn-pubmain"></div></div>';
+    page.innerHTML = '<div class="wrap"><div class="dedicated-page-header dn-pubbar"><a class="dedicated-back" href="/"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to home</a><span class="dn-pubnote">' + (pub.note ?? "Free to use, no account needed.") + '</span><button class="btn sm" type="button">Sign in for the full platform</button></div><div class="dn-pubmain"></div></div>';
     page.querySelector(".dedicated-back").addEventListener("click", (e) => { e.preventDefault(); window.location.href = "/"; });
     page.querySelector(".dn-pubbar .btn").addEventListener("click", () => actions && actions.onSignIn && actions.onSignIn());
     view.prepend(page);

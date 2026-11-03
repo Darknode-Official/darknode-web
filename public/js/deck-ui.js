@@ -102,7 +102,6 @@ const INTEGRATIONS = [
   { id: "hybrid",     name: "Hybrid Analysis", domain: "hybrid-analysis.com", kind: "sec", accent: "#2b6cb0", connect: "key", blurb: "Free malware sandbox powered by CrowdStrike Falcon." },
   { id: "pulsedive",  name: "Pulsedive",     domain: "pulsedive.com",      kind: "sec", accent: "#5b53d6", connect: "key",  blurb: "Threat intelligence on indicators, feeds and risk scoring." },
   { id: "zoomeye",    name: "ZoomEye",       domain: "zoomeye.org",        kind: "sec", accent: "#3b5bdb", connect: "key",  blurb: "Cyberspace search engine for exposed hosts, services and devices." },
-  { id: "binaryedge", name: "BinaryEdge",    domain: "binaryedge.io",      kind: "sec", accent: "#e8590c", connect: "key",  blurb: "Internet scanning data, exposed services and risk scoring." },
   { id: "netlas",     name: "Netlas",        domain: "netlas.io",          kind: "sec", accent: "#1098ad", connect: "key",  blurb: "Attack-surface discovery over internet-wide scan data." },
   { id: "fullhunt",   name: "FullHunt",      domain: "fullhunt.io",        kind: "sec", accent: "#f03e3e", connect: "key",  blurb: "Attack-surface management and exposure monitoring." },
   { id: "intelx",     name: "Intelligence X",domain: "intelx.io",          kind: "sec", accent: "#364fc7", connect: "key",  blurb: "OSINT search across leaks, darkweb, document and selector data." },
@@ -3684,7 +3683,8 @@ export function renderDeck(host, opts) {
     surface.dns(d).then((rec) => {
       const row = (k) => (rec[k] && rec[k].length) ? `<div class="dk-dnsrow"><span class="t">${k}</span><span class="v">${rec[k].slice(0, 8).map((x) => `<span class="ln" title="${esc(x)}">${esc(x)}${k === "MX" && /^0 \.$/.test(x) ? " (null MX: accepts no email)" : ""}</span>`).join("")}</span></div>` : "";
       const html = ["A", "AAAA", "MX", "NS", "TXT"].map(row).join("");
-      bd("dns").innerHTML = html || `<div class="dk-tnone">No DNS records resolved.</div>`;
+      const failNote = rec.failed && rec.failed.length ? `<div class="dk-tnone">Lookup failed for ${esc(rec.failed.join(", "))}; those records may exist.</div>` : "";
+      bd("dns").innerHTML = (html || (failNote ? "" : `<div class="dk-tnone">No DNS records resolved.</div>`)) + failNote;
       const ips = [].concat(rec.A || [], rec.AAAA || []);
       addGraphBtn("dns", ips.map((ip) => ({ type: "IP", name: ip, data: { source: "DoH", domain: d } })), "DNS");
       // Owning network for the first address (BGP origin + registry netblock)
@@ -3883,7 +3883,7 @@ export function renderDeck(host, opts) {
   const INT_GROUPS = [
     { title: "AI Models", ids: ai.map((i) => i.id) },
     { title: "Threat Intelligence", ids: ["virustotal", "greynoise", "abuseipdb", "otx", "abusech", "urlscan", "pulsedive", "intelx", "misp", "mitre"] },
-    { title: "Attack Surface & Recon", ids: ["shodan", "censys", "securitytrails", "zoomeye", "binaryedge", "netlas", "fullhunt", "ipinfo", "hunter", "maltego"] },
+    { title: "Attack Surface & Recon", ids: ["shodan", "censys", "securitytrails", "zoomeye", "netlas", "fullhunt", "ipinfo", "hunter", "maltego"] },
     { title: "Exposure & Breach", ids: ["hibp", "dehashed"] },
     { title: "Malware Sandbox", ids: ["hybrid", "anyrun"] },
     { title: "Vulnerability", ids: ["nvd", "circl", "exploitdb"] }
@@ -4062,7 +4062,7 @@ export function renderDeck(host, opts) {
   // What each section covers in the graph, and which integrations feed it. Coverage is
   // shown honestly: unconnected sources are listed greyed out with a Connect action.
   const SECTIONS = {
-    exposure: { title: "Exposure", blurb: "What attackers can see and reach: your external footprint, cloud configuration and the vulnerabilities that matter this week.", types: ["ASSET", "DOMAIN", "IP", "PORT", "SERVICE", "CERTIFICATE", "ENDPOINT"], match: /attack surface|vanguard|subdomain|dns|ssl|http|exposure|posture|scorecard|certificate monitor|tls/i, ints: ["shodan", "censys", "securitytrails", "zoomeye", "binaryedge", "netlas", "fullhunt", "ipinfo", "hibp"], pub: "Certificate transparency (crt.sh), public DNS, RDAP registries and BGP routing data for Attack Surface; NVD, CISA KEV and FIRST EPSS for Vulnerabilities." },
+    exposure: { title: "Exposure", blurb: "What attackers can see and reach: your external footprint, cloud configuration and the vulnerabilities that matter this week.", types: ["ASSET", "DOMAIN", "IP", "PORT", "SERVICE", "CERTIFICATE", "ENDPOINT"], match: /attack surface|vanguard|subdomain|dns|ssl|http|exposure|posture|scorecard|certificate monitor|tls/i, ints: ["shodan", "censys", "securitytrails", "zoomeye", "netlas", "fullhunt", "ipinfo", "hibp"], pub: "Certificate transparency (crt.sh), public DNS, RDAP registries and BGP routing data for Attack Surface; NVD, CISA KEV and FIRST EPSS for Vulnerabilities." },
     code: { title: "Application Security", blurb: "Secrets, risky code and vulnerable dependencies in the software you build, and the attack paths they open.", types: ["SOFTWARE"], match: /code scanner|supply|threatforest|attack tree|\bcode\b/i, ints: [], pub: "The GitHub API for repository contents and OSV.dev for dependency advisories, both used by the Code Scanner." },
     detect: { title: "Security Operations", blurb: "Alerts, indicators, incidents and cases: everything your tools have recorded, and the work to run it down.", types: ["ALERT", "INCIDENT", "CASE", "INVESTIGATION", "INDICATOR", "EVIDENCE", "THREAT_ACTOR", "MALWARE", "CAMPAIGN", "DETECTION", "EVENT", "FINDING", "VULNERABILITY"], ints: ["virustotal", "greynoise", "abuseipdb", "otx", "abusech", "urlscan", "pulsedive", "misp", "mitre", "hybrid", "anyrun", "intelx"] },
     finsec: { title: "Fraud & Abuse", blurb: "Attacks that end in stolen money: intrusion-to-fund-theft detection, payee bank-change control against invoice fraud, and cloud spend anomalies.", types: [], match: /strongroom|fund protection|vault|treasury|sanction|payee|vendor/i, ints: [] },

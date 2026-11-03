@@ -27,10 +27,12 @@ export const secondsToReset = (now = Date.now()) => {
 };
 
 // Storage-side step, run inside the Durable Object (single-threaded per id, so the
-// read-then-write cannot race). -> { ok, used, limit }
-export async function takeQuota(storage, day, limit) {
+// read-then-write cannot race). -> { ok, used, limit }. With refund, gives back one
+// message (a request that failed on our side or upstream should not cost the caller).
+export async function takeQuota(storage, day, limit, refund = false) {
   const key = "q:" + day;
   const used = (await storage.get(key)) | 0;
+  if (refund) { if (used > 0) await storage.put(key, used - 1); return { ok: true, used: Math.max(0, used - 1), limit }; }
   if (used >= limit) return { ok: false, used, limit };
   await storage.put(key, used + 1);
   // First message of a new day: earlier days' counters are no longer needed.
@@ -41,8 +43,9 @@ export async function takeQuota(storage, day, limit) {
 // In-memory fallback for when the Durable Object is unreachable (per isolate, so a
 // little generous, but it keeps a hard ceiling instead of failing open).
 const _mem = new Map();
-function takeLocal(id, day, limit) {
+function takeLocal(id, day, limit, refund = false) {
   const k = id + "|" + day, used = _mem.get(k) | 0;
+  if (refund) { if (used > 0) _mem.set(k, used - 1); return { ok: true, used: Math.max(0, used - 1), limit }; }
   if (_mem.size > 20000) _mem.clear();
   if (used >= limit) return { ok: false, used, limit };
   _mem.set(k, used + 1);
@@ -50,21 +53,29 @@ function takeLocal(id, day, limit) {
 }
 
 // Count one message. -> null when exempt, else { ok, used, limit, remaining, resetIn }.
+const quotaId = (principal, ip, kind) => "quota:" + kind + ":" + (principal && principal.kind === "user" && principal.uid ? "u:" + principal.uid : "ip:" + (ip || "unknown"));
+async function step(env, id, day, limit, refund) {
+  if (env && env.RATE) {
+    try {
+      const res = await env.RATE.get(env.RATE.idFromName(id)).fetch("https://rate/quota?limit=" + limit + "&day=" + day + (refund ? "&refund=1" : ""));
+      return await res.json();
+    } catch (_) { /* fall through to the per-isolate counter */ }
+  }
+  return takeLocal(id, day, limit, refund);
+}
+
 export async function chargeQuota(env, principal, ip, kind, tier, now = Date.now()) {
   if (isExempt(principal)) return null;
   const tierName = quotaTier(principal, tier);
   const limit = dailyLimit(kind, tierName);
-  const who = principal && principal.kind === "user" && principal.uid ? "u:" + principal.uid : "ip:" + (ip || "unknown");
-  const id = "quota:" + kind + ":" + who, day = utcDay(now);
-  let out;
-  if (limit <= 0) out = { ok: false, used: 0, limit: 0 };
-  else if (env && env.RATE) {
-    try {
-      const res = await env.RATE.get(env.RATE.idFromName(id)).fetch("https://rate/quota?limit=" + limit + "&day=" + day);
-      out = await res.json();
-    } catch (_) { out = takeLocal(id, day, limit); }
-  } else out = takeLocal(id, day, limit);
+  const out = limit <= 0 ? { ok: false, used: 0, limit: 0 } : await step(env, quotaId(principal, ip, kind), utcDay(now), limit, false);
   return { ...out, tier: tierName, remaining: Math.max(0, limit - (out.used | 0)), resetIn: secondsToReset(now) };
+}
+
+// Give back one message charged by chargeQuota (same principal, ip, kind and day).
+export async function refundQuota(env, principal, ip, kind, now = Date.now()) {
+  if (isExempt(principal)) return;
+  try { await step(env, quotaId(principal, ip, kind), utcDay(now), 1, true); } catch (_) {}
 }
 
 export function quotaMessage(kind, q) {

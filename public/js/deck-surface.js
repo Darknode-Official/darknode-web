@@ -23,8 +23,10 @@ async function doh(name, type) {
   // Answer also carries the CNAME chain (www -> apex): keep only the requested type, so an alias
   // target never shows up as an "A record" / IP. A long TXT record arrives as "chunk" "chunk".
   const want = { A: 1, NS: 2, MX: 15, TXT: 16, AAAA: 28 }[type];
-  const parse = (j) => ((j && j.Answer) || []).filter((a) => !want || a.type == null || a.type === want)
-    .map((a) => String(a.data || "").replace(/^"|"$/g, "").replace(/"\s+"/g, "")).filter(Boolean);
+  // Status 0 = NOERROR, 3 = NXDOMAIN (genuinely no records). SERVFAIL/REFUSED etc. are
+  // failed lookups: throw so the other resolver is tried and the caller can say so.
+  const parse = (j) => { const st = j ? j.Status : -1; if (typeof st === "number" && st !== 0 && st !== 3) throw new Error("DNS lookup for " + type + " failed (status " + st + ")."); return ((j && j.Answer) || []).filter((a) => !want || a.type == null || a.type === want)
+    .map((a) => String(a.data || "").replace(/^"|"$/g, "").replace(/"\s+"/g, "")).filter(Boolean); };
   try {
     return parse(await dnFetchJSON("https://dns.google/resolve?name=" + encodeURIComponent(name) + "&type=" + type, { timeout: 15000 }));
   } catch (_) {
@@ -32,12 +34,17 @@ async function doh(name, type) {
   }
 }
 
-// A/AAAA/MX/NS/TXT for a domain. Individual record failures degrade to [].
+// A/AAAA/MX/NS/TXT for a domain. A type whose lookup failed is [] and listed in
+// out.failed, so the caller can tell "no records" from "could not look up"; if every
+// type failed, this throws.
 export async function dns(domain) {
   const d = clean(domain);
   const types = ["A", "AAAA", "MX", "NS", "TXT"];
-  const out = {};
-  await Promise.all(types.map(async (t) => { try { out[t] = await doh(d, t); } catch (_) { out[t] = []; } }));
+  const out = {}, failed = [];
+  let lastErr = null;
+  await Promise.all(types.map(async (t) => { try { out[t] = await doh(d, t); } catch (e) { out[t] = []; failed.push(t); lastErr = e; } }));
+  if (failed.length === types.length) throw lastErr || new Error("DNS lookups failed.");
+  Object.defineProperty(out, "failed", { value: types.filter((t) => failed.includes(t)), enumerable: false });
   return out;
 }
 
@@ -45,6 +52,11 @@ export async function dns(domain) {
 export async function rdap(domain) {
   const d = clean(domain);
   const j = await dnFetchJSON("https://rdap.org/domain/" + encodeURIComponent(d), { timeout: 20000 });
+  // RDAP errors come back as JSON too ({ errorCode, title }); never render them as a record.
+  if (!j || j.errorCode || (!j.handle && !j.ldhName && !j.events)) {
+    const code = j && j.errorCode;
+    throw new Error(code === 404 ? "No registration record found for " + d + " (RDAP 404)." : "Registration lookup failed" + (code ? " (RDAP " + code + ")." : "."));
+  }
   const ev = {};
   (j.events || []).forEach((e) => { if (e.eventAction) ev[e.eventAction] = String(e.eventDate || "").slice(0, 10); });
   const registrar = ((j.entities || []).find((e) => (e.roles || []).includes("registrar")) || {});
@@ -143,8 +155,9 @@ export async function securityTxt(domain) {
 export async function emailAuth(domain) {
   const d = clean(domain);
   const [txt, dmarcTxt] = await Promise.all([
-    doh(d, "TXT").catch(() => []),
-    doh("_dmarc." + d, "TXT").catch(() => [])
+    // A failed lookup must not read as "SPF/DMARC missing": let it reject.
+    doh(d, "TXT"),
+    doh("_dmarc." + d, "TXT")
   ]);
   const spfs = txt.filter((t) => /^v=spf1(\s|$)/i.test(t)), dmarcs = dmarcTxt.filter((t) => /^v=DMARC1\s*(;|$)/i.test(t));
   const spf = spfs[0] || "", dmarc = dmarcs[0] || "";

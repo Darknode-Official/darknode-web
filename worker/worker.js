@@ -26,7 +26,7 @@ import { readCapped } from "./body-cap.js";
 import { handleIntel } from "./intel.js";
 import { matchRoute, authenticate, authorize, attachPrincipal, rateCheck, ipCeiling, requestId, withHeaders } from "./auth.js";
 import { GEMINI_MODELS, CLAUDE_PLAN, userTier, planDenied } from "./plan.js";
-import { chargeQuota, quotaMessage } from "./quota.js";
+import { chargeQuota, refundQuota, quotaMessage } from "./quota.js";
 import { handleDigest, handleUnsubscribe, runDigest } from "./digest.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
@@ -49,9 +49,6 @@ Identity: you are Darknode AI, built and operated by Darknode. Refer to yourself
 
 const PROVIDERS = {
   darknode: { url: (env) => env.DARKNODE_URL || "", envKey: "DARKNODE_KEY", format: "openai", optionalKey: true },
-  groq: { url: () => "https://api.groq.com/openai/v1/chat/completions", envKey: "GROQ_KEY", format: "openai" },
-  openrouter: { url: () => "https://openrouter.ai/api/v1/chat/completions", envKey: "OPENROUTER_KEY", format: "openai", headers: { "HTTP-Referer": "https://darknode.ai", "X-Title": "Darknode AI" } },
-  mistral: { url: () => "https://api.mistral.ai/v1/chat/completions", envKey: "MISTRAL_KEY", format: "openai" },
   // Claude on the server-held ANTHROPIC_KEY secret; handled by handleClaude (not the
   // OpenAI/Gemini path) because it is signed-in only and separately rate-limited.
   anthropic: { url: () => "https://api.anthropic.com/v1/messages", envKey: "ANTHROPIC_KEY", format: "anthropic" },
@@ -251,6 +248,9 @@ async function handleFetch(request) {
     ? { "User-Agent": ua, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.9" }
     : { "User-Agent": "DarknodeRecon/1.0 (+https://darknode.ai)", "Accept": "*/*" };
   if (origin.length <= 256 && /^(null|https?:\/\/[a-z0-9.-]+(:\d{1,5})?)$/i.test(origin)) reqHeaders.Origin = origin;
+  // Cloudflare's DNS-over-HTTPS JSON API answers 400 unless asked for dns-json, which
+  // made every client's Cloudflare fallback resolver fail through this proxy.
+  try { if (/^(cloudflare-dns\.com|1\.1\.1\.1|1\.0\.0\.1)$/i.test(new URL(target).hostname)) reqHeaders.Accept = "application/dns-json"; } catch (_) {}
   let current = target;
   const chain = [];
   for (let hop = 0; hop < 5; hop++) {
@@ -559,20 +559,20 @@ export function withPromptCache(body) {
 // Exported for tests: the Messages API SSE -> the reader's OpenAI-style SSE.
 export const claudeStream = (upstream, opts = {}) => streamBack(upstream, false, { ...opts, format: "anthropic" });
 
-async function handleClaude(request, env, model, msgs, opts, pre, ip = "") {
+// Everything that can refuse a Claude request before it costs anything. -> Response | null
+async function claudeGate(env, model, p, tier) {
   if (!env.ANTHROPIC_KEY) return json({ error: "Claude is not configured on this deployment." }, 503);
   if (!CLAUDE_MODELS.has(model)) return json({ error: "Unknown Claude model." }, 400);
-  const a = pre && !pre.error ? pre : await authenticate(request, env);
-  if (a.error) return json({ error: a.error }, a.status);
-  const p = a.principal;
   if (p.kind !== "user") return json({ error: "Sign in to use Claude models." }, 401);
   if (env.CLAUDE_ACCESS === "admin" && !(p.claims && p.claims.admin === true)) return json({ error: "Claude models are limited to administrators on this deployment." }, 403);
-  const planMsg = planDenied(CLAUDE_PLAN.get(model) || "pro", await userTier(env.FIREBASE_PROJECT_ID, p));
+  const planMsg = planDenied(CLAUDE_PLAN.get(model) || "pro", tier);
   if (planMsg) return json({ error: planMsg, code: "plan_required" }, 403);
   const wait = await rateCheck(env, { kind: "user", uid: "claude:" + p.uid }, "", undefined, CLAUDE_PER_MIN);
   if (wait) return withHeaders(json({ error: "Claude limit reached (" + CLAUDE_PER_MIN + " messages a minute). Try again shortly." }, 429), { "Retry-After": String(wait) });
-  const cq = await chargeQuota(env, p, ip, "claude", await userTier(env.FIREBASE_PROJECT_ID, p));
-  if (cq && !cq.ok) return withHeaders(json({ error: quotaMessage("claude", cq), code: "quota" }, 429), { "Retry-After": String(cq.resetIn) });
+  return null;
+}
+
+async function handleClaude(env, model, msgs, opts) {
   const plain = toClaudeBody(model, msgs);
   if (!plain.messages.length) return json({ error: "Missing messages" }, 400);
   if (JSON.stringify(plain).length > CLAUDE_MAX_INPUT_CHARS) return json({ error: "Conversation too long for Claude here. Start a new chat." }, 413);
@@ -632,7 +632,7 @@ Rules:
 - EVERYTHING ELSE (explanations, advice, writing, general knowledge): answer it in "answer", concise, correct and friendly, in markdown. If everything is covered by steps, "answer" is null.
 - Output JSON only: no code fences around the JSON, no extra prose.`;
 
-async function handleSmart(request, env) {
+async function handleSmart(request, env, ip = "") {
   // Try the dedicated Smart key first, then the shared Gemini key, so one valid
   // Google key keeps Smart mode working even when SMART_KEY is stale or unset.
   const keys = [...new Set([env.SMART_KEY, env.GEMINI_KEY, env.GEMINI_KEY_2].filter(Boolean))];
@@ -652,6 +652,19 @@ async function handleSmart(request, env) {
     contents.push({ role: "model", parts: [{ text: String(h.a || "(answered)").slice(0, 600) }] });
   }
   contents.push({ role: "user", parts: [{ text: input }] });
+  // Smart mode runs on the owner's Google key like chat, so it shares the daily message
+  // allowance (quota.js): per account when signed in, else per IP. Failures are refunded.
+  const who = await authenticate(request, env);
+  if (who.status === 403) return json({ error: who.error }, 403);
+  const asker = who.principal && who.principal.kind === "user" ? who.principal : { kind: "anonymous" };
+  const quota = await chargeQuota(env, asker, ip, "messages", asker.kind === "user" ? await userTier(env.FIREBASE_PROJECT_ID, asker) : "free");
+  if (quota && !quota.ok) return withHeaders(json({ error: quotaMessage("messages", quota), code: "quota" }, 429), { "Retry-After": String(quota.resetIn) });
+  const res = await smartAsk(env, keys, contents);
+  if (quota && res.status >= 400) await refundQuota(env, asker, ip, "messages");
+  return res;
+}
+
+async function smartAsk(env, keys, contents) {
   const req = { systemInstruction: { parts: [{ text: SMART_SYS }] }, contents, generationConfig: { temperature: 0.2, responseMimeType: "application/json", maxOutputTokens: 8192 } };
   // Primary model, then fallbacks when one is overloaded, missing or unreachable.
   // Overload (503) and quota (429) are per model, so move down the chain on either.
@@ -764,7 +777,7 @@ async function route(request, env, rid) {
       case "health": return handleHealth(env);
       case "client-errors": return handleClientError(request, rid);
       case "fetch": return handleFetch(request);
-      case "smart": return handleSmart(request, env);
+      case "smart": return handleSmart(request, env, ip);
       case "intel": return handleIntel(request, json);
       case "vault": return handleVault(request, env, rest, json);
       case "graph": return handleGraph(request, env, rest, json);
@@ -786,7 +799,7 @@ async function route(request, env, rid) {
     if (!provider || !model || !messages) return json({ error: "Missing provider, model, or messages" }, 400);
 
     const cfg = Object.prototype.hasOwnProperty.call(PROVIDERS, provider) ? PROVIDERS[provider] : null;
-    if (!cfg) return json({ error: "Unknown provider: " + provider }, 400);
+    if (!cfg) return json({ error: "Unknown provider: " + String(provider).slice(0, 40) }, 400);
 
     // Daily message limits (quota.js). The chat route needs no sign-in, so the token is
     // optional here: signed-in callers are counted per account and plan, everyone else
@@ -795,8 +808,37 @@ async function route(request, env, rid) {
     if (who.status === 403) return json({ error: who.error }, 403);
     const chatter = who.principal && who.principal.kind === "user" ? who.principal : { kind: "anonymous" };
     const chatTier = chatter.kind === "user" ? await userTier(env.FIREBASE_PROJECT_ID, chatter) : "free";
+
+    // Refuse what can be refused before anything is counted: an unknown model or a
+    // model above the caller's plan must not use up a daily message.
+    if (provider === "anthropic") {
+      const denied = await claudeGate(env, model, chatter, chatTier);
+      if (denied) return denied;
+    } else if (provider === "gemini") {
+      const need = GEMINI_MODELS.get(model);
+      if (!need) return json({ error: "Unknown model: " + String(model).slice(0, 60) + ". Pick another model." }, 400);
+      if (need !== "free") {
+        if (chatter.kind !== "user") return json({ error: "Sign in to use this model.", code: "plan_required" }, 401);
+        const planMsg = planDenied(need, chatTier);
+        if (planMsg) return json({ error: planMsg, code: "plan_required" }, 403);
+      }
+    }
     const quota = await chargeQuota(env, chatter, ip, "messages", chatTier);
     if (quota && !quota.ok) return withHeaders(json({ error: quotaMessage("messages", quota), code: "quota" }, 429), { "Retry-After": String(quota.resetIn) });
+    const charged = quota ? ["messages"] : [];
+    if (provider === "anthropic") {
+      const cq = await chargeQuota(env, chatter, ip, "claude", chatTier);
+      if (cq && !cq.ok) {
+        await refundQuota(env, chatter, ip, "messages");
+        return withHeaders(json({ error: quotaMessage("claude", cq), code: "quota" }, 429), { "Retry-After": String(cq.resetIn) });
+      }
+      if (cq) charged.push("claude");
+    }
+    // A request that fails before any answer streams back costs the caller nothing.
+    const settle = async (res) => {
+      if (res.status >= 400) for (const k of charged) await refundQuota(env, chatter, ip, k);
+      return res;
+    };
 
     // Citations default ON (website); the desktop app sends cite:false.
     const cite = !(body && body.cite === false);
@@ -809,24 +851,12 @@ async function route(request, env, rid) {
       msgs = applyCiteDirective(msgs, cite);
       const opts = { cite, fetchedSources };
 
-      if (provider === "darknode") return await handleDarknode(cfg, env, model, msgs, opts);
-      if (provider === "anthropic") return await handleClaude(request, env, model, msgs, opts, who, ip);
-      // Only the listed Gemini models run on the owner's key; the stronger ones need a paid plan.
-      if (provider === "gemini") {
-        const need = GEMINI_MODELS.get(model);
-        if (!need) return json({ error: "Unknown model: " + String(model).slice(0, 60) + ". Pick another model." }, 400);
-        if (need !== "free") {
-          const a = await authenticate(request, env);
-          if (a.error) return json({ error: a.error }, a.status);
-          if (a.principal.kind !== "user") return json({ error: "Sign in to use this model.", code: "plan_required" }, 401);
-          const planMsg = planDenied(need, await userTier(env.FIREBASE_PROJECT_ID, a.principal));
-          if (planMsg) return json({ error: planMsg, code: "plan_required" }, 403);
-        }
-      }
+      if (provider === "darknode") return await settle(await handleDarknode(cfg, env, model, msgs, opts));
+      if (provider === "anthropic") return await settle(await handleClaude(env, model, msgs, opts));
       // Gemini chat falls back to SMART_KEY the same way /api/smart does, so one valid
       // Google key powers both routes and the two secrets never have to stay in sync.
       const key = env[cfg.envKey] || (provider === "gemini" ? env.SMART_KEY || env.GEMINI_KEY_2 : undefined);
-      if (!key && !cfg.optionalKey) { console.warn("chat: no server key for " + provider); return json({ error: "This model is not available right now. Pick another model." }, 503); }
+      if (!key && !cfg.optionalKey) { console.warn("chat: no server key for " + provider); return settle(json({ error: "This model is not available right now. Pick another model." }, 503)); }
       // Google Search grounding roughly doubles time-to-first-token, so turn it on
       // only when the question actually looks time-sensitive (see geminiSearchOn):
       // fast for the common case, grounded when recency matters. GEMINI_SEARCH="1"
@@ -834,11 +864,11 @@ async function route(request, env, rid) {
       const { upstream, isGemini } = provider === "gemini"
         ? await callGemini(env, model, msgs, key, { search: geminiSearchOn(env, msgs) })
         : await callUpstream(cfg, env, model, msgs, key, {});
-      if (!upstream.ok) return upstreamError(upstream, "chat/" + provider);
-      if (!upstream.body) return json({ error: "The AI model didn't answer. Try again in a moment." }, 502);
+      if (!upstream.ok) return settle(await upstreamError(upstream, "chat/" + provider));
+      if (!upstream.body) return settle(json({ error: "The AI model didn't answer. Try again in a moment." }, 502));
       return streamBack(upstream, isGemini, opts);
     } catch (e) {
       console.warn("chat: " + ((e && e.message) || e));
-      return json({ error: "Something went wrong on our side. Try again in a moment." }, 500);
+      return settle(json({ error: "Something went wrong on our side. Try again in a moment." }, 500));
     }
 }
