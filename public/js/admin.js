@@ -310,6 +310,18 @@ export async function renderAdmin(main, user) {
     try {
       const snap = await getDocs(collection(db, "users"));
       users = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+      // Firebase Auth accounts with no users/{uid} doc (an email sign-up that never verified
+      // never writes one). Listed by the Worker with its service account; owner only.
+      try {
+        const { api } = await import("/js/core/api.js");
+        const r = await api("/api/admin/users");
+        const have = new Map(users.map((u) => [u.uid, u]));
+        for (const a of (r && r.users) || []) {
+          const u = have.get(a.uid);
+          if (u) { u.emailVerified = a.emailVerified; u.disabled = a.disabled; continue; }
+          users.push({ uid: a.uid, email: a.email, name: a.name, provider: a.providers.join(", ") || "email", createdAt: a.createdAt, lastLoginAt: a.lastLoginAt, lastSeen: a.lastLoginAt, emailVerified: a.emailVerified, disabled: a.disabled, authOnly: true });
+        }
+      } catch (_) { /* Worker unreachable: the Firestore list still shows */ }
       $("#stUsers").textContent = users.length;
       const toMs = (ts) => ts && ts.toMillis ? ts.toMillis() : (ts && ts.toDate ? ts.toDate().getTime() : (typeof ts === "number" ? (ts < 1e12 ? ts * 1000 : ts) : 0));
       const now = Date.now(), day = 864e5, midnight = new Date(); midnight.setHours(0, 0, 0, 0);
@@ -347,7 +359,7 @@ export async function renderAdmin(main, user) {
       return `<div class="user-row" data-uid="${esc(u.uid)}">
         ${avatar}
         <div class="ur-main">
-          <div class="ur-name">${esc(u.name || "(no name)")} ${provBadge}${isOwner ? '<span class="owner-badge">OWNER</span>' : ""}${banned ? '<span class="chip chip-danger">banned</span>' : ""}</div>
+          <div class="ur-name">${esc(u.name || "(no name)")} ${provBadge}${isOwner ? '<span class="owner-badge">OWNER</span>' : ""}${banned ? '<span class="chip chip-danger">banned</span>' : ""}${u.emailVerified === false ? '<span class="chip">email not verified</span>' : ""}${u.authOnly ? '<span class="chip">no profile yet</span>' : ""}${u.disabled ? '<span class="chip chip-danger">disabled</span>' : ""}</div>
           <div class="ur-mail muted">${esc(u.email || u.uid)}</div>
           <div class="ur-meta muted">last seen ${esc(fmtDate(u.lastSeen))}${u.createdAt ? " · joined " + esc(fmtDate(u.createdAt)) : ""}</div>
         </div>
