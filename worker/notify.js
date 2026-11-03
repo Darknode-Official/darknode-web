@@ -95,8 +95,12 @@ export async function deliver(channel, alert, deps = {}) {
   const bodyStr = JSON.stringify(build(alert));
   const headers = { "content-type": "application/json" };
   if (channel.type === "webhook" && channel.secret) {
+    const ts = String(Date.now());
     headers["x-darknode-signature"] = "sha256=" + (await signBody(bodyStr, channel.secret));
-    headers["x-darknode-timestamp"] = String(Date.now());
+    headers["x-darknode-timestamp"] = ts;
+    // v2 also covers the timestamp ("<ts>.<body>"), so a captured delivery cannot be
+    // replayed later with a fresh timestamp. v1 stays for receivers already verifying it.
+    headers["x-darknode-signature-v2"] = "sha256=" + (await signBody(ts + "." + bodyStr, channel.secret));
   }
   try {
     // redirect:"manual": fetch follows redirects by default, so a public URL answering 307 would

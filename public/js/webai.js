@@ -363,7 +363,9 @@ async function streamProxy(provider, model, messages, onToken, signal, opts = {}
   }
   if (opts.auth && !r.ok) { let msg = ""; try { msg = (await r.json()).error || ""; } catch (_) {} throw new Error(msg || ("AI service " + r.status)); }
   if (r.status === 404) throw new Error("The free AI service isn't available here yet. Add your own API key in Settings → API Keys, or run the app with the AI proxy deployed.");
-  if (r.status === 401 || r.status === 403) throw new Error("The free Darknode AI service is temporarily unavailable (its key needs renewing). Add your own API key in Settings → API Keys to keep using AI, or try again later.");
+  // 401/403 are usually about the caller (sign in, plan, suspended account) and the
+  // Worker says which; only a bare 401/403 with no message means the service itself.
+  if (r.status === 401 || r.status === 403) { let msg = ""; try { msg = (await r.json()).error || ""; } catch (_) {} throw new Error(msg ? String(msg).slice(0, 300) : "The free Darknode AI service is temporarily unavailable. Add your own API key in Settings → API Keys to keep using AI, or try again later."); }
   if (r.status === 429) { let msg = ""; try { msg = (await r.json()).error || ""; } catch (_) {} throw new Error(msg ? String(msg).slice(0, 300) : "Rate limit reached — wait a moment or switch to a different model."); }
   // The Worker answers errors as {error: "<plain sentence>"}; show just that. Anything
   // else (an HTML error page from the edge, say) gets a generic line, never raw markup.

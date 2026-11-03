@@ -1,5 +1,5 @@
 import { test, assert } from "../harness.mjs";
-import { chargeQuota, takeQuota, quotaMessage, dailyLimit, isExempt, secondsToReset, utcDay, DAILY_MESSAGES, DAILY_CLAUDE, _resetLocalQuota } from "../../worker/quota.js";
+import { chargeQuota, refundQuota, takeQuota, quotaMessage, dailyLimit, isExempt, secondsToReset, utcDay, DAILY_MESSAGES, DAILY_CLAUDE, _resetLocalQuota } from "../../worker/quota.js";
 import { RateLimiterDO } from "../../worker/auth.js";
 
 function memStorage() {
@@ -66,4 +66,21 @@ test("messages are plain and name the reset", () => {
   assert.ok(/150 Claude messages/.test(quotaMessage("claude", { tier: "pro", limit: 150, resetIn: 7200 })));
   assert.equal(utcDay(NOON), "2026-11-01");
   assert.equal(secondsToReset(Date.UTC(2026, 10, 1, 23, 59, 59, 500)), 1);
+});
+
+test("a refund gives one message back and never goes below zero", async () => {
+  const st = memStorage();
+  await takeQuota(st, "2026-11-01", 2); await takeQuota(st, "2026-11-01", 2);
+  assert.equal((await takeQuota(st, "2026-11-01", 2)).ok, false);
+  assert.deepEqual(await takeQuota(st, "2026-11-01", 2, true), { ok: true, used: 1, limit: 2 });
+  assert.equal((await takeQuota(st, "2026-11-01", 2)).ok, true);
+  await takeQuota(st, "2026-11-02", 2, true);
+  assert.equal(st.m.get("q:2026-11-02") | 0, 0);
+  // chargeQuota/refundQuota round trip through the Durable Object
+  const objs = new Map();
+  const RATE = { idFromName: (n) => n, get: (id) => { if (!objs.has(id)) objs.set(id, new RateLimiterDO({ storage: memStorage() })); return objs.get(id); } };
+  const u = user("rr");
+  await chargeQuota({ RATE }, u, "", "messages", "free", NOON);
+  await refundQuota({ RATE }, u, "", "messages", NOON);
+  assert.equal((await chargeQuota({ RATE }, u, "", "messages", "free", NOON)).used, 1);
 });

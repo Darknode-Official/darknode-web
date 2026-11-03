@@ -25,8 +25,16 @@ export async function smartInterpret(input, history = []) {
     input: String(input || "").slice(0, 6000),
     history: (history || []).slice(-6).filter((h) => h && h.q).map((h) => ({ q: String(h.q).slice(0, 2000), a: String(h.a || "").slice(0, 600) })),
   };
+  // Signed-in users send their token so the server counts Smart mode against their
+  // account's daily allowance rather than the smaller per-IP one for visitors.
+  const headers = { "Content-Type": "application/json" };
+  try {
+    const { auth } = await import("/js/firebase.js?v=20261021a");
+    const t = auth && auth.currentUser && await auth.currentUser.getIdToken().catch(() => "");
+    if (t) headers.Authorization = "Bearer " + t;
+  } catch (_) {}
   let r;
-  try { r = await fetch(smartUrl(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); }
+  try { r = await fetch(smartUrl(), { method: "POST", headers, body: JSON.stringify(body) }); }
   catch (_) { return { ok: false, error: "Smart mode could not connect. Check your connection, or turn Smart mode off to keep working on-device." }; }
   let j = null; try { j = await r.json(); } catch (_) { j = null; }
   if (!r.ok || !j || j.error) return { ok: false, error: (j && j.error) || ("Smart mode had a problem (" + r.status + "). Try again in a moment.") };

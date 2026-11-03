@@ -17,7 +17,10 @@ async function _deDoh(name, type, extra) {
     try {
       const r = await fetch(u(name, type, extra), { headers: { accept: 'application/dns-json' } });
       if (!r.ok) { lastErr = new Error('HTTP ' + r.status); continue; }
-      return await r.json();
+      const j = await r.json();
+      // 0 NOERROR / 3 NXDOMAIN are answers; SERVFAIL, REFUSED etc. are failed lookups.
+      if (j && typeof j.Status === 'number' && j.Status !== 0 && j.Status !== 3) { lastErr = new Error('DNS status ' + j.Status); continue; }
+      return j;
     } catch (e) { lastErr = e; }
   }
   throw lastErr || new Error('DoH lookup failed');
@@ -43,13 +46,14 @@ function _deParseAnswer(type, a) {
 
 async function _deDohRecords(domain) {
   const records = {};
-  const q = async (name, type) => {
+  const failed = new Set();
+  const q = async (name, type, label) => {
     try { return _deAnswers(await _deDoh(name, type), type).map(a => _deParseAnswer(type, a)); }
-    catch { return []; }
+    catch { if (label) failed.add(label); return []; }
   };
   const [A, AAAA, MX, NS, TXT, SOA, CAA, dmarc, cnApex, cnWww] = await Promise.all([
-    q(domain, 'A'), q(domain, 'AAAA'), q(domain, 'MX'), q(domain, 'NS'), q(domain, 'TXT'),
-    q(domain, 'SOA'), q(domain, 'CAA'), q('_dmarc.' + domain, 'TXT'), q(domain, 'CNAME'), q('www.' + domain, 'CNAME')
+    q(domain, 'A', 'A'), q(domain, 'AAAA', 'AAAA'), q(domain, 'MX', 'MX'), q(domain, 'NS', 'NS'), q(domain, 'TXT', 'TXT'),
+    q(domain, 'SOA', 'SOA'), q(domain, 'CAA', 'CAA'), q('_dmarc.' + domain, 'TXT', 'DMARC'), q(domain, 'CNAME'), q('www.' + domain, 'CNAME')
   ]);
   const srvNames = ['_sip._tcp', '_sips._tcp', '_xmpp-server._tcp', '_xmpp-client._tcp', '_ldap._tcp', '_autodiscover._tcp', '_caldavs._tcp'];
   const srv = (await Promise.all(srvNames.map(s => q(s + '.' + domain, 'SRV')))).flat();
@@ -59,6 +63,8 @@ async function _deDohRecords(domain) {
     PTR = await q(rev, 'PTR');
   }
   Object.assign(records, { A, AAAA, MX, NS, TXT: TXT.concat(dmarc), CNAME: cnApex.concat(cnWww), SOA, SRV: srv, PTR, CAA });
+  // Record types whose lookup failed (vs. genuinely empty), for the Records view to flag.
+  Object.defineProperty(records, 'failed', { value: [...failed], enumerable: false });
   return records;
 }
 
@@ -389,10 +395,11 @@ export function renderDNSEnum(container) {
     return { tested: true, success: false, server: ns.join(', '), nameservers: ns, records: [], message: 'Transfer refused or failed on all tested nameservers (' + ns.join(', ') + ').' };
   }
 
+  let _scanGen = 0;
   async function runScan() {
     const domain = inp.value.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*/, '');
     if (!domain || !domain.includes('.')) return;
-    currentDomain = domain;
+    const gen = ++_scanGen, R = {};
 
     const isLive = window._bridge && window._bridge.connected && window._bridge.hasTool('dig');
     scanLive = true;
@@ -407,34 +414,38 @@ export function renderDNSEnum(container) {
     if (isLive) {
       status.textContent = 'Querying DNS records (local agent)...';
       bar.style.width = '20%';
-      recordsData = await _deLiveRecords(domain);
+      R.records = await _deLiveRecords(domain);
       bar.style.width = '45%';
       status.textContent = 'Enumerating subdomains (local agent)...';
-      subdomainData = (await _deLiveSubs(domain)).map(s => ({ subdomain: s.name, status: 'FOUND', ip: s.ip && s.ip !== '-' ? s.ip : null, ports: [], headers: null }));
+      R.subs = (await _deLiveSubs(domain)).map(s => ({ subdomain: s.name, status: 'FOUND', ip: s.ip && s.ip !== '-' ? s.ip : null, ports: [], headers: null }));
       bar.style.width = '70%';
       status.textContent = 'Attempting zone transfer (dig axfr)...';
-      zoneData = await _deLiveAXFR(domain, recordsData.NS);
+      R.zone = await _deLiveAXFR(domain, R.records.NS);
     } else {
       status.textContent = 'Querying DNS records over DNS-over-HTTPS...';
       bar.style.width = '20%';
-      recordsData = await _deDohRecords(domain);
+      R.records = await _deDohRecords(domain);
       bar.style.width = '50%';
       const list = wrap.querySelector('#deSubList').value === 'full' ? DE_FULL_SUBS : DE_QUICK_SUBS;
       status.textContent = 'Checking ' + list.length + ' common subdomain names...';
-      subdomainData = await _deDohSubdomains(domain, list, (done, total, hits) => {
+      R.subs = await _deDohSubdomains(domain, list, (done, total, hits) => {
         status.textContent = 'Subdomains: ' + done + ' / ' + total + ' checked, ' + hits + ' found';
         bar.style.width = (50 + Math.round(25 * done / total)) + '%';
       });
       bar.style.width = '75%';
-      zoneData = _deZoneTransferInfo(domain, recordsData.NS);
+      R.zone = _deZoneTransferInfo(domain, R.records.NS);
     }
     status.textContent = 'Comparing Google and Cloudflare answers...';
-    resolverData = await _deResolverCompare(domain);
+    R.resolver = await _deResolverCompare(domain);
     status.textContent = 'Checking DNSSEC (DS / DNSKEY / AD flag)...';
-    dnssecData = await _deDNSSECReal(domain);
+    R.dnssec = await _deDNSSECReal(domain);
     bar.style.width = '100%';
     status.textContent = 'Complete';
 
+    // A newer scan started while this one ran: drop these results instead of mixing them in.
+    if (gen !== _scanGen) return;
+    currentDomain = domain;
+    recordsData = R.records; subdomainData = R.subs; zoneData = R.zone; resolverData = R.resolver; dnssecData = R.dnssec;
     renderContent();
   }
 
@@ -491,8 +502,10 @@ export function renderDNSEnum(container) {
     if (!recordsData) { content.innerHTML = '<div class="de-empty">No data — run a scan first</div>'; return; }
     let totalRecords = 0;
     for (const t of DE_RECORD_TYPES) totalRecords += (recordsData[t]||[]).length;
+    const failed = recordsData.failed || [];
+    const failNote = failed.length ? `<div class="de-panel"><div class="de-status-line">Lookup failed for ${esc(failed.join(', '))}. Those records may exist; run the scan again.</div></div>` : '';
 
-    let html = `<div class="de-stats">
+    let html = failNote + `<div class="de-stats">
       <div class="de-stat"><div class="de-stat-val">${totalRecords}</div><div class="de-stat-label">Total records</div></div>
       <div class="de-stat"><div class="de-stat-val">${DE_RECORD_TYPES.filter(t=>(recordsData[t]||[]).length>0).length}</div><div class="de-stat-label">Record types</div></div>
       <div class="de-stat"><div class="de-stat-val">${(recordsData.TXT||[]).length}</div><div class="de-stat-label">TXT entries</div></div>

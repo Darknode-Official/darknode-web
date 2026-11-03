@@ -422,10 +422,13 @@ function renderOverviewTab(panel, inv, main, show) {
   };
 
   panel.querySelector('#inv-o-delete').onclick = async () => {
-    if (!(await window.dnConfirm('Delete investigation', 'Delete this investigation and all related findings/events? This cannot be undone.', { danger: true }))) return;
+    if (!(await window.dnConfirm('Delete investigation', 'Delete this investigation? Findings and events that belong only to it are deleted too; ones also linked elsewhere in the graph are kept. This cannot be undone.', { danger: true }))) return;
     const related = getRelated(inv.id);
+    // Only remove findings/events this case owns outright. One that is also linked to
+    // an asset, scan or another case is shared graph data and stays (deleteEntity on
+    // the case drops the link itself).
     related.forEach(r => {
-      if (r.type === 'EVENT' || r.type === 'FINDING') deleteEntity(r.id);
+      if ((r.type === 'EVENT' || r.type === 'FINDING') && getRelationships(r.id).every(x => x.fromId === inv.id || x.toId === inv.id)) deleteEntity(r.id);
     });
     deleteEntity(inv.id);
     _currentView = 'list';
@@ -641,7 +644,8 @@ function renderFindingsTab(panel, inv, main, show) {
   const findings = getRelated(inv.id).filter(r => r.type === 'FINDING');
   findings.sort((a, b) => {
     const sevOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4 };
-    return (sevOrder[a.severity] ?? 5) - (sevOrder[b.severity] ?? 5);
+    const rank = (f) => sevOrder[String(f.severity || '').toUpperCase()] ?? 5;
+    return rank(a) - rank(b);
   });
 
   panel.innerHTML = `
@@ -672,7 +676,7 @@ function renderFindingsTab(panel, inv, main, show) {
     <div id="inv-findings-list">
       ${findings.length === 0
         ? '<div class="inv-empty">No findings yet.</div>'
-        : findings.map(f => `<div class="inv-finding" style="border-left-color:${SEV_COLORS[f.severity] || '#8b5cf6'}">
+        : findings.map(f => `<div class="inv-finding" style="border-left-color:${SEV_COLORS[String(f.severity || "").toUpperCase()] || '#8b5cf6'}">
             <h4>${sevBadge(f.severity)} ${esc(f.name)}</h4>
             <p>${esc(f.data.description || '')}</p>
             ${f.data.remediation ? `<p style="color:var(--ok,#22c55e)"><strong>Remediation:</strong> ${esc(f.data.remediation)}</p>` : ''}
@@ -836,7 +840,7 @@ export function openAddToInvestigation(entity) {
   const existing = document.querySelector('.inv-modal-overlay');
   if (existing) existing.remove();
 
-  const investigations = listEntities({ type: 'INVESTIGATION' });
+  const investigations = listEntities({ type: WORK_TYPES });
   investigations.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 
   const overlay = document.createElement('div');
