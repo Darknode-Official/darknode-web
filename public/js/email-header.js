@@ -118,8 +118,20 @@ function parseAuth(val) {
   var results = { spf: 'none', dkim: 'none', dmarc: 'none', spfDetail: '', dkimDetail: '', dmarcDetail: '' };
   var spf = val.match(/spf=(\w+)(?:\s*\(([^)]*)\))?/i);
   if (spf) { results.spf = spf[1].toLowerCase(); results.spfDetail = spf[2] || ''; }
-  var dkim = val.match(/dkim=(\w+)/i);
-  if (dkim) { results.dkim = dkim[1].toLowerCase(); }
+  // Every DKIM result with its signing domain (header.d=, or the domain of header.i=);
+  // one passing signature is enough for DKIM to count as pass.
+  results.dkimSigs = [];
+  var dre = /dkim=(\w+)([^;]*)/gi, dm;
+  while ((dm = dre.exec(val))) {
+    var dd = (/header\.d=([\w.-]+)/i.exec(dm[2]) || /header\.i=[^@\s;]*@([\w.-]+)/i.exec(dm[2]) || [])[1] || '';
+    results.dkimSigs.push({ result: dm[1].toLowerCase(), domain: dd.toLowerCase() });
+  }
+  if (results.dkimSigs.length) {
+    var good = results.dkimSigs.filter(function(x) { return x.result === 'pass'; });
+    results.dkim = good.length ? 'pass' : results.dkimSigs[0].result;
+    results.dkimDetail = results.dkimSigs.filter(function(x) { return x.domain; }).map(function(x) { return x.domain + ' (' + x.result + ')'; }).join(', ');
+    if (results.dkimDetail) results.dkimDetail = 'Signing domain: ' + results.dkimDetail;
+  }
   var dmarc = val.match(/dmarc=(\w+)(?:\s*\(([^)]*)\))?/i);
   if (dmarc) { results.dmarc = dmarc[1].toLowerCase(); results.dmarcDetail = dmarc[2] || ''; }
   return results;
@@ -159,7 +171,15 @@ function detectSuspicious(headers, hops, auth) {
     var pol = ((auth.dmarcDetail.match(/\bp=(\w+)/i) || [])[1] || '').toLowerCase();
     flags.push({ severity: 'critical', text: 'DMARC check failed. ' + (pol === 'reject' ? 'The domain asks receivers to reject this email.' : pol === 'quarantine' ? 'The domain asks receivers to send this email to spam.' : pol === 'none' ? 'The domain only monitors (p=none), so it was not blocked.' : 'The From domain could not be verified.') });
   }
+  if (auth.spf === 'softfail') flags.push({ severity: 'medium', text: 'SPF softfail. The sending server is not listed as authorized for the envelope domain, and the domain only asks for this to be marked, not rejected.' });
   if (auth.dkim === 'fail') flags.push({ severity: 'high', text: 'DKIM signature failed. Email may have been altered in transit.' });
+  if (auth.dkim === 'pass' && auth.dmarc !== 'pass' && from) {
+    var fD = addrDomain(from);
+    var signers = (auth.dkimSigs || []).filter(function(x) { return x.result === 'pass' && x.domain; }).map(function(x) { return x.domain; });
+    if (fD && signers.length && !signers.some(function(d) { return sameOrg(d, fD); })) {
+      flags.push({ severity: 'high', text: 'DKIM passed, but the signature is from ' + esc(signers.join(', ')) + ', not the From domain (' + esc(fD) + '). It proves nothing about the visible sender.' });
+    }
+  }
   if (/urgent|immediate|wire transfer|confidential|act now|verify your account|suspended/i.test(subject)) {
     flags.push({ severity: 'medium', text: 'Subject line contains urgency/social engineering language: "' + esc(subject.substring(0, 60)) + '"' });
   }
@@ -282,7 +302,7 @@ export function renderEmailHeader(container) {
           contentHtml += '<div class="eh-hop">' +
             '<div class="eh-hop-num">' + (i + 1) + '</div>' +
             '<div class="eh-hop-info">' +
-              '<div class="eh-hop-server">' + esc(h.from || 'Origin') + ' → ' + esc(h.by || '?') + '</div>' +
+              '<div class="eh-hop-server">' + esc(h.from || (i === 0 ? 'Origin' : 'Internal handoff')) + ' → ' + esc(h.by || '?') + '</div>' +
               '<div class="eh-hop-detail">' +
                 (h.ip ? 'IP: <strong>' + esc(h.ip) + '</strong> · ' : '') +
                 (h.proto ? 'Protocol: ' + esc(h.proto) + ' · ' : '') +
