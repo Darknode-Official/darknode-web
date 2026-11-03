@@ -2948,6 +2948,9 @@ onAuthStateChanged(auth, async (user) => {
   // Email/password users must verify — a 6-digit code when EmailJS is configured, else the Firebase link.
   const providerEmailPw = user.providerData.some((p) => p.providerId === "password");
   if (providerEmailPw) {
+    // Write the profile before the verification gate, so a sign-up that never verifies
+    // still shows in the admin user list.
+    ensureUserDoc(user);
     if (emailConfigured()) {
       const udoc = await getDoc(doc(db, "users", user.uid)).catch(() => null);
       if (!(udoc && udoc.exists() && udoc.data().codeVerified)) { renderCodeVerify(user); return; }

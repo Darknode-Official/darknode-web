@@ -167,7 +167,7 @@ async function unsubUrl(env, uid) {
 }
 
 let _tok = null; // { token, exp }
-async function googleToken(env) {
+export async function googleToken(env) {
   if (_tok && _tok.exp > Date.now() + 60000) return _tok.token;
   const sa = readSA(env);
   if (!sa) throw new Error("FIREBASE_SA is not set");
