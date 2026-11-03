@@ -68,3 +68,25 @@ export function hostAllowed(u) {
   }
   return true;
 }
+
+// Cloudflare's published edge ranges (cloudflare.com/ips-v4, /ips-v6). A Worker's outbound
+// fetch comes back with Cloudflare's own `server: cloudflare`, `cf-ray` and `cf-cache-status`
+// whatever the origin is, so the fetch proxy uses this to tell a site really behind
+// Cloudflare from one whose headers Cloudflare stamped on the way through.
+const CF_V4 = ["173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "141.101.64.0/18", "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20", "197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13", "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22"]
+  .map((c) => { const [ip, bits] = c.split("/"); const n = ip.split(".").reduce((a, o) => a * 256 + Number(o), 0); const m = Number(bits); return [n - (n % 2 ** (32 - m)), 2 ** (32 - m)]; });
+// [first hextet, second hextet, prefix bits beyond the first 16]
+const CF_V6 = [[0x2400, 0xcb00, 16], [0x2606, 0x4700, 16], [0x2803, 0xf800, 16], [0x2405, 0xb500, 16], [0x2405, 0x8100, 16], [0x2a06, 0x98c0, 13], [0x2c0f, 0xf248, 16]];
+
+export function ipOnCloudflare(ip) {
+  const s = String(ip || "").trim().toLowerCase();
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(s)) {
+    const n = s.split(".").reduce((a, o) => a * 256 + Number(o), 0);
+    return CF_V4.some(([base, size]) => n >= base && n < base + size);
+  }
+  if (!s.includes(":")) return false;
+  const head = s.split("::")[0].split(":");
+  if (head.length < 2 || !head[0] || !head[1]) return false; // the first two hextets must be spelled out
+  const a = parseInt(head[0], 16), b = parseInt(head[1], 16);
+  return CF_V6.some(([x, y, bits]) => a === x && (b >> (16 - bits)) === (y >> (16 - bits)));
+}

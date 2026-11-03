@@ -1,6 +1,6 @@
 // Unit tests for worker/net-guard.js — the shared SSRF host guard.
 import { test, group, assert } from "../harness.mjs";
-import { hostAllowed, ipv4Private, normalizeIpv4 } from "../../worker/net-guard.js";
+import { hostAllowed, ipv4Private, normalizeIpv4, ipOnCloudflare } from "../../worker/net-guard.js";
 
 const allowed = (url) => hostAllowed(new URL(url));
 
@@ -68,5 +68,14 @@ group("net-guard/hostAllowed", () => {
     assert.ok(ipv4Private("100.64.0.1"));   // CGNAT
     assert.ok(ipv4Private("224.0.0.1"));     // multicast
     assert.notOk(ipv4Private("8.8.8.8"));
+  });
+});
+
+group("net-guard/ipOnCloudflare", () => {
+  test("addresses inside Cloudflare's published ranges, including the range edges", () => {
+    for (const ip of ["104.16.0.1", "172.67.1.1", "131.0.75.255", "2606:4700::6810:84e5", "2a06:98c7::1"]) assert.ok(ipOnCloudflare(ip), ip);
+  });
+  test("other hosts are not, so the proxy drops Cloudflare's stamped headers for them", () => {
+    for (const ip of ["199.36.158.100", "142.250.72.4", "131.0.76.0", "2a06:98d0::1", "2001:db8::1", "::1", "", "not-an-ip"]) assert.notOk(ipOnCloudflare(ip), ip);
   });
 });

@@ -28,12 +28,15 @@ var _haSecurityHeaders = [
   { name: 'X-Frame-Options', weight: 10, critical: false, desc: 'Prevents clickjacking by controlling iframe embedding.', rec: 'Add: X-Frame-Options: DENY (or SAMEORIGIN)', weak: function(v) { return v && v.toLowerCase() === 'allowall'; } },
   { name: 'Referrer-Policy', weight: 8, critical: false, desc: 'Controls what referrer information is sent with requests.', rec: 'Add: Referrer-Policy: strict-origin-when-cross-origin', weak: function(v) { return v && (v.toLowerCase() === 'unsafe-url' || v.toLowerCase() === 'no-referrer-when-downgrade'); } },
   { name: 'Permissions-Policy', weight: 8, critical: false, desc: 'Controls which browser features the site can use (camera, microphone, geolocation).', rec: 'Add: Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()' },
-  { name: 'X-XSS-Protection', weight: 5, critical: false, desc: 'Legacy XSS filter. Modern browsers use CSP instead, but still good to have.', rec: 'Add: X-XSS-Protection: 0 (or rely on CSP instead). Note: deprecated in modern browsers.' },
+  // Optional headers are shown but never lower the grade: X-XSS-Protection is retired (enabling
+  // the old filter caused leaks, so OWASP says omit it or send 0), and COEP/CORP only matter for
+  // cross-origin isolation; require-corp breaks sites that load third-party fonts, sign-in or CDNs.
+  { name: 'X-XSS-Protection', weight: 5, optional: true, critical: false, desc: 'Legacy XSS filter, removed from modern browsers. Not needed; CSP replaces it. If sent, it should be 0.', rec: 'Leave it out, or send X-XSS-Protection: 0. A value of 1 turns on the old filter, which could itself leak data.', weak: function(v) { return v && !/^\s*0\s*$/.test(v); } },
   { name: 'Cross-Origin-Opener-Policy', weight: 7, critical: false, desc: 'Isolates browsing context to prevent Spectre-style attacks.', rec: 'Add: Cross-Origin-Opener-Policy: same-origin' },
-  { name: 'Cross-Origin-Resource-Policy', weight: 7, critical: false, desc: 'Controls which origins can load this resource.', rec: 'Add: Cross-Origin-Resource-Policy: same-origin (or same-site)' },
-  { name: 'Cross-Origin-Embedder-Policy', weight: 5, critical: false, desc: 'Ensures all sub-resources are loaded with CORS or CORP headers.', rec: 'Add: Cross-Origin-Embedder-Policy: require-corp' },
-  { name: 'X-DNS-Prefetch-Control', weight: 3, critical: false, desc: 'Controls DNS prefetching which can leak browsing information.', rec: 'Add: X-DNS-Prefetch-Control: off' },
-  { name: 'X-Permitted-Cross-Domain-Policies', weight: 2, critical: false, desc: 'Controls Adobe Flash/PDF cross-domain policy loading.', rec: 'Add: X-Permitted-Cross-Domain-Policies: none' }
+  { name: 'Cross-Origin-Resource-Policy', weight: 7, optional: true, critical: false, desc: 'Controls which origins can load this resource.', rec: 'Add: Cross-Origin-Resource-Policy: same-origin (or same-site)' },
+  { name: 'Cross-Origin-Embedder-Policy', weight: 5, optional: true, critical: false, desc: 'Ensures all sub-resources are loaded with CORS or CORP headers. Only needed for cross-origin isolation (SharedArrayBuffer, high-resolution timers).', rec: 'Only if the site needs cross-origin isolation: Cross-Origin-Embedder-Policy: require-corp (or credentialless). It blocks third-party resources that do not opt in.' },
+  { name: 'X-DNS-Prefetch-Control', weight: 3, optional: true, critical: false, desc: 'Controls DNS prefetching which can leak browsing information.', rec: 'Add: X-DNS-Prefetch-Control: off' },
+  { name: 'X-Permitted-Cross-Domain-Policies', weight: 2, optional: true, critical: false, desc: 'Controls Adobe Flash/PDF cross-domain policy loading.', rec: 'Add: X-Permitted-Cross-Domain-Policies: none' }
 ];
 
 function _haGradeFromScore(score) {
@@ -104,7 +107,7 @@ async function _haAnalyze(url) {
     var headers = {};
     var rawHeaders = resp.headers || {};
     Object.keys(rawHeaders).forEach(function(key) { headers[key.toLowerCase()] = rawHeaders[key]; });
-    _haRender(resultsEl, { url: url, headers: headers, status: resp.status, statusText: resp.statusText || '', finalUrl: resp.finalUrl || url, timing: Math.round(performance.now() - start), redirects: resp.redirectChain || [], source: 'proxy' });
+    _haRender(resultsEl, { url: url, headers: headers, status: resp.status, statusText: resp.statusText || '', finalUrl: resp.finalUrl || url, timing: Math.round(performance.now() - start), redirects: resp.redirectChain || [], masked: resp.masked || [], source: 'proxy' });
   } catch (e) {
     resultsEl.innerHTML = _haBox('Analysis failed', e.message || 'Request failed', 'The target could not be reached through the Darknode proxy (the host may be down, private, or blocking automated requests). No results are shown — nothing is guessed.');
   }
@@ -160,7 +163,7 @@ function _haToGraph(btn) {
   var host = (hostIn ? hostIn.value : '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/[\/:].*$/, '') || _haHostOf(g.url);
   var tags = ['http-headers', g.source === 'pasted' ? 'pasted' : 'live'];
   var label = host || 'pasted headers';
-  var items = g.results.filter(function(r) { return r.status !== 'present'; }).map(function(r) {
+  var items = g.results.filter(function(r) { return r.status === 'missing' || r.status === 'weak'; }).map(function(r) {
     return { type: 'FINDING', name: r.header.name + ' header ' + (r.status === 'missing' ? 'missing' : 'weak') + ' (' + label + ')',
       data: { header: r.header.name, value: r.value || '', check: r.status, domain: host, grade: g.grade, score: g.score, recommendation: r.header.rec },
       opts: { tags: tags.concat('security-header'), severity: _haSeverity(r) } };
@@ -187,6 +190,12 @@ function _haRender(resultsEl, info) {
       var hdr = _haSecurityHeaders[i];
       var key = hdr.name.toLowerCase();
       var value = headers[key] || null;
+      if (hdr.optional) {
+        // Shown for completeness; a missing optional header costs nothing, a weak one is flagged.
+        var ow = value && hdr.weak && hdr.weak(value);
+        results.push({ header: hdr, value: value, status: ow ? 'weak' : value ? 'present' : 'optional', color: ow ? '#ffcc00' : value ? '#00ff88' : '#8a93a6', label: ow ? 'Weak' : value ? 'Present' : 'Optional' });
+        continue;
+      }
       totalWeight += hdr.weight;
 
       var status, statusColor, statusLabel;
@@ -231,6 +240,7 @@ function _haRender(resultsEl, info) {
     h += '<div style="font-size:12px;color:var(--mut);font-family:monospace;">' + (info.status ? 'HTTP ' + esc(String(info.status)) + ' ' + esc(info.statusText || '') + ' | ' : '') + 'Score: ' + score + '/100 | Headers checked: ' + _haSecurityHeaders.length + (info.timing != null ? ' | ' + info.timing + 'ms' : '') + ' | Source: ' + srcLabel + '</div>';
     if (!isHTTPS) h += '<div style="color:var(--bad);font-size:12px;font-family:monospace;margin-top:4px;">WARNING: Not using HTTPS (-20 points)</div>';
     for (var di = 0; di < disclosed.length; di++) h += '<div style="color:var(--warn);font-size:12px;font-family:monospace;margin-top:2px;word-break:break-all;">' + esc(disclosed[di].name) + ': ' + esc(disclosed[di].value) + ' (' + esc(disclosed[di].note) + ')</div>';
+    if ((info.masked || []).indexOf('server') !== -1) h += '<div style="color:var(--txt-2);font-size:12px;font-family:monospace;margin-top:2px;">Server: not readable through the proxy (Cloudflare replaces it in transit). Use the local agent or paste curl -sI output to check it.</div>';
     if (/^3\d\d$/.test(String(info.status)) && headers['location']) h += '<div style="color:var(--txt-2);font-size:12px;font-family:monospace;margin-top:2px;word-break:break-all;">Redirects to: ' + esc(headers['location']) + ' (headers graded on this redirect response)</div>';
     if (info.redirects && info.redirects.length) h += '<div style="color:var(--txt-2);font-size:12px;font-family:monospace;margin-top:2px;word-break:break-all;">Redirect chain: ' + info.redirects.map(function(hop) { return esc(typeof hop === 'string' ? hop : ((hop.status != null ? hop.status + ' ' : '') + (hop.url || hop.from || '') + (hop.location || hop.to ? ' -> ' + (hop.location || hop.to) : ''))); }).join(' | ') + '</div>';
     if (headers['allow']) h += '<div style="color:var(--txt-2);font-size:12px;font-family:monospace;margin-top:2px;">Advertised methods (Allow): ' + esc(headers['allow']) + '</div>';
@@ -258,14 +268,16 @@ function _haRender(resultsEl, info) {
         h += '<div style="font-family:monospace;font-size:12px;color:var(--txt-2);word-break:break-all;margin:4px 0;padding:4px 8px;background:var(--card2);border-radius:3px;">' + esc(res.value.substring(0, 300)) + (res.value.length > 300 ? '...' : '') + '</div>';
       }
       h += '<div style="font-family:monospace;font-size:12px;color:var(--mut);margin-top:2px;">' + esc(res.header.desc) + '</div>';
-      if (res.status !== 'present') {
+      if (res.status === 'optional') {
+        h += '<div style="font-family:monospace;font-size:12px;color:var(--mut);margin-top:4px;">Not graded. ' + esc(res.header.rec) + '</div>';
+      } else if (res.status !== 'present') {
         h += '<div style="font-family:monospace;font-size:12px;color:var(--warn);margin-top:4px;">Recommendation: ' + esc(res.header.rec) + '</div>';
       }
       h += '</div>';
     }
 
     // Send issues to the Security Graph
-    var issueCount = results.filter(function(x) { return x.status !== 'present'; }).length + disclosed.length;
+    var issueCount = results.filter(function(x) { return x.status === 'missing' || x.status === 'weak'; }).length + disclosed.length;
     if (issueCount) {
       h += '<div style="display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap;">';
       if (info.source === 'pasted' && !_haHostOf(url)) h += '<input id="ha-graph-host" type="text" placeholder="Domain (optional, links findings)" style="flex:1;min-width:180px;">';

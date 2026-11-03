@@ -1,6 +1,26 @@
 // Copyright (c) 2026 Darknode-Official. All rights reserved.
 // SSL Inspector — Certificate Transparency search, subdomain discovery, issuance analysis
-// Uses crt.sh public API (no key required, CORS-friendly JSON output)
+// Uses crt.sh through the Darknode proxy, with SSLMate Cert Spotter as a fallback when crt.sh
+// is down or too slow (it often is, and a direct browser call then fails with a CORS error).
+
+import { dnFetchJSON } from "/js/net.js";
+
+// Cert Spotter issuances -> crt.sh-shaped rows, so every tab below works on either source.
+function _sslFromCertspotter(arr) {
+  return (Array.isArray(arr) ? arr : []).map(function(x) {
+    var names = x.dns_names || [];
+    return { id: x.id || '', common_name: names[0] || '', name_value: names.join('\n'), issuer_name: (x.issuer && (x.issuer.name || x.issuer.friendly_name)) || '', not_before: x.not_before || '', not_after: x.not_after || '', serial_number: x.cert_sha256 || '' };
+  });
+}
+function _sslFetchCerts(domain) {
+  return dnFetchJSON('https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json', { timeout: 30000, max: 4000000 })
+    .then(function(rows) { if (!Array.isArray(rows)) throw new Error('crt.sh returned no list'); return { rows: rows, source: 'crt.sh' }; })
+    .catch(function(e1) {
+      return dnFetchJSON('https://api.certspotter.com/v1/issuances?domain=' + encodeURIComponent(domain) + '&include_subdomains=true&expand=dns_names&expand=issuer&expand=not_before&expand=not_after', { timeout: 20000 })
+        .then(function(arr) { return { rows: _sslFromCertspotter(arr), source: 'Cert Spotter (unexpired certificates only; crt.sh did not answer)' }; })
+        .catch(function(e2) { throw new Error('crt.sh: ' + (e1 && e1.message || e1) + ' / Cert Spotter: ' + (e2 && e2.message || e2)); });
+    });
+}
 
 var esc = function(s) { return String(s != null ? s : '').replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
 
@@ -12,7 +32,7 @@ export function renderSSLInspector(container) {
   // Header
   h += '<div class="pg-head"><div>';
   h += '<h1 class="pg-h1">SSL Inspector</h1>';
-  h += '<p class="muted pg-sub">Search Certificate Transparency logs for a domain\'s certificates, subdomains and issuance history. Source: crt.sh (no API key).</p>';
+  h += '<p class="muted pg-sub">Search Certificate Transparency logs for a domain\'s certificates, subdomains and issuance history. Source: crt.sh, or Cert Spotter when crt.sh is down (no API key).</p>';
   h += '</div></div>';
 
   // Search bar
@@ -71,10 +91,11 @@ function _sslSearch() {
   results.innerHTML = '<div style="text-align:center;padding:40px;color:var(--acc);"><div style="font-size:14px;animation:pulse 1.5s ease-in-out infinite;">Querying CT logs for ' + esc(domain) + '...</div></div>';
   _sslActiveTab = 'certs';
 
-  fetch('https://crt.sh/?q=%25.' + encodeURIComponent(domain) + '&output=json')
-    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(function(data) {
-      _sslData.certs = data || [];
+  _sslFetchCerts(domain)
+    .then(function(res) {
+      if (_sslData.domain !== domain) return; // a newer search started meanwhile
+      _sslData.certs = res.rows;
+      _sslData.source = res.source;
       // Extract unique subdomains from name_value fields
       var subMap = {};
       for (var i = 0; i < _sslData.certs.length; i++) {
@@ -93,7 +114,7 @@ function _sslSearch() {
       results.innerHTML = '<div style="color:var(--bad);padding:20px;text-align:center;">' +
         '<div style="font-size:14px;font-weight:bold;margin-bottom:8px;">CT log query failed</div>' +
         '<div style="font-size:12px;color:var(--mut);">' + esc(err.message) + '</div>' +
-        '<div style="font-size:12px;color:var(--mut);margin-top:8px;">crt.sh may be temporarily unavailable or rate-limited</div>' +
+        '<div style="font-size:12px;color:var(--mut);margin-top:8px;">Neither certificate-transparency source answered. Try again in a minute.</div>' +
         '</div>';
     });
 }
@@ -119,7 +140,7 @@ function _sslRenderCerts(el) {
   var h = '';
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
   h += '<div style="color:var(--txt);font-size:14px;font-weight:600;">' + certs.length + ' certificates found</div>';
-  h += '<div style="display:flex;align-items:center;gap:10px;"><span style="color:var(--mut);font-size:12px;">Domain: ' + esc(_sslData.domain) + '</span>' + _sslGraphBtnHTML() + '</div>';
+  h += '<div style="display:flex;align-items:center;gap:10px;"><span style="color:var(--mut);font-size:12px;">Domain: ' + esc(_sslData.domain) + (_sslData.source ? ' | Source: ' + esc(_sslData.source) : '') + '</span>' + _sslGraphBtnHTML() + '</div>';
   h += '</div>';
 
   h += '<div style="overflow-x:auto;">';
@@ -294,7 +315,7 @@ function _sslToGraph(btn) {
     .slice(0, 50);
   var findings = _sslFindings(_sslCertStats());
   var sevMap = { CRITICAL: 'critical', HIGH: 'high', MEDIUM: 'medium', LOW: 'low', INFO: 'info' };
-  var tags = ['ssl', 'ct-log', 'crt.sh'];
+  var tags = ['ssl', 'ct-log', /^Cert Spotter/.test(_sslData.source || '') ? 'certspotter' : 'crt.sh'];
   btn.disabled = true;
   import('/js/graph-bridge.js?v=20261028c').then(function(gb) {
     var rr = gb.sendToGraph('SSL Inspector', [{ type: 'DOMAIN', name: domain, data: { ctCertificates: _sslData.certs.length, ctSubdomains: _sslData.subdomains.length }, opts: { tags: tags } }], undefined, true);
