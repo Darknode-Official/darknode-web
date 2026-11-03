@@ -62,6 +62,8 @@ async function _deDohRecords(domain) {
     const rev = A[0].value.split('.').reverse().join('.') + '.in-addr.arpa';
     PTR = await q(rev, 'PTR');
   }
+  const byPri = (a, b) => (a.priority - b.priority) || a.value.localeCompare(b.value);
+  MX.sort(byPri); srv.sort((a, b) => a.name.localeCompare(b.name) || byPri(a, b));
   Object.assign(records, { A, AAAA, MX, NS, TXT: TXT.concat(dmarc), CNAME: cnApex.concat(cnWww), SOA, SRV: srv, PTR, CAA });
   // Record types whose lookup failed (vs. genuinely empty), for the Records view to flag.
   Object.defineProperty(records, 'failed', { value: [...failed], enumerable: false });

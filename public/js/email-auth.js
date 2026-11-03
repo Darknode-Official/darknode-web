@@ -307,8 +307,58 @@ function analyzeDKIM(results) {
 
 // ── LOOKUP JOBS — glue transport to parsers; resolve { net, result } ──
 // net=false means the lookup failed at the transport level (not cached, so a retry can succeed).
+// The RFC 7208 limit of 10 DNS lookups counts the lookups inside every include: and
+// redirect= target too, so the top-level count from analyzeSPF is only a lower bound.
+// Fetch the include chain and replace that estimate with the real total.
+var SPF_LIMIT_RE = /^(include: count = |SPF allows a maximum of 10|Close to the SPF 10)/;
+function spfTargets(txts) {
+  var out = [];
+  (txts || []).forEach(function (t) {
+    if (!/^v=spf1(\s|$)/i.test(String(t).trim())) return;
+    String(t).split(/\s+/).forEach(function (tok) {
+      var m = tok.replace(/^[-~?+]/, "").match(/^(?:include:|redirect=)(.+)$/i);
+      if (m && !/%\{/.test(m[1])) out.push(m[1].toLowerCase().replace(/\.$/, ""));
+    });
+  });
+  return out;
+}
+function spfDeepCount(domain, txts, result, signal) {
+  var records = {}, queue = spfTargets(txts), seen = new Set([domain]), q = 0;
+  records[domain] = txts;
+  function step() {
+    var batch = [];
+    while (queue.length && batch.length < 8 && q < 40) { var n = queue.shift(); if (!seen.has(n)) { seen.add(n); batch.push(n); q++; } }
+    if (!batch.length) return Promise.resolve();
+    return Promise.all(batch.map(function (n) {
+      return dohTXT(n, signal).then(function (r) { if (r.ok) { records[n] = r.txt; queue.push.apply(queue, spfTargets(r.txt)); } });
+    })).then(step);
+  }
+  return step().then(function () {
+    return import("/js/exposure/dmarcreports-engine.js").then(function (m) {
+      var t = m.spfTotalLookups(domain, records);
+      var f = result.findings.filter(function (x) { return !SPF_LIMIT_RE.test(x.text); });
+      var unresolved = t.unresolved.length ? " " + t.unresolved.length + " include(s) could not be resolved, so the real number may be higher." : "";
+      f.push({ kind: "info", text: "DNS lookups counted through every include and redirect: " + t.total + " of the 10 allowed." + unresolved });
+      var status = result.status;
+      if (t.total > 10) {
+        f.push({ kind: "bad", text: "This SPF record needs " + t.total + " DNS lookups including nested includes; receivers stop at 10 and return permerror, so SPF fails for all mail. Flatten or remove includes." });
+        status = "FAIL";
+      } else if (t.total >= 8) {
+        f.push({ kind: "warn", text: "Close to the SPF limit: " + t.total + " of 10 DNS lookups including nested includes." });
+        if (status === "PASS") status = "WARN";
+      }
+      return { status: status, record: result.record, findings: f };
+    });
+  }).catch(function () { return result; }); // keep the top-level estimate if the walk fails
+}
+
 function spfJob(domain, signal) {
   return dohTXT(domain, signal).then(function (r) {
+    if (r.ok) {
+      var base = analyzeSPF(r.txt);
+      if (!base.record) return { net: true, result: base };
+      return spfDeepCount(domain, r.txt, base, signal).then(function (res) { return { net: true, result: res }; });
+    }
     return r.ok
       ? { net: true, result: analyzeSPF(r.txt) }
       : { net: false, result: { status: "FAIL", record: null, findings: [{ kind: "bad", text: "SPF lookup failed: " + r.error }] } };

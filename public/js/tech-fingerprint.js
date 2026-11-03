@@ -175,9 +175,11 @@ window._tfScan = async function() {
     // Server info
     var server = hdr.get('server');
     var poweredBy = hdr.get('x-powered-by');
-    if (server || poweredBy || generator) {
+    var serverMasked = !server && (resp.masked || []).indexOf('server') !== -1;
+    if (server || serverMasked || poweredBy || generator) {
       h += '<div style="padding:8px;background:var(--card2);border-radius:4px;margin-bottom:10px;font-size:12px;">';
       if (server) h += '<div><span style="color:var(--mut);">Server:</span> <span style="color:var(--ok);">' + esc(server) + '</span></div>';
+      if (serverMasked) h += '<div><span style="color:var(--mut);">Server:</span> not readable through the proxy (Cloudflare replaces it in transit)</div>';
       if (poweredBy) h += '<div><span style="color:var(--mut);">X-Powered-By:</span> <span style="color:var(--warn);">' + esc(poweredBy) + '</span></div>';
       if (generator) h += '<div><span style="color:var(--mut);">Meta generator:</span> <span style="color:var(--acc-2);">' + esc(generator) + '</span></div>';
       h += '</div>';

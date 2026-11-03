@@ -21,7 +21,7 @@ import { handleVault } from "./vault.js";
 import { handleGraph } from "./graph.js";
 import { handleMonitor } from "./monitor.js";
 import { handleKeys, handleIngest } from "./ingest.js";
-import { hostAllowed } from "./net-guard.js";
+import { hostAllowed, ipOnCloudflare } from "./net-guard.js";
 import { readCapped } from "./body-cap.js";
 import { handleIntel } from "./intel.js";
 import { matchRoute, authenticate, authorize, attachPrincipal, rateCheck, ipCeiling, requestId, withHeaders } from "./auth.js";
@@ -193,6 +193,28 @@ async function safeFetchUrl(rawUrl) {
   return { url: rawUrl, error: "too many redirects" };
 }
 
+// Is this host really served from Cloudflare? Resolves A (then AAAA) over DoH and checks the
+// published ranges. null when it cannot tell; cached per isolate for 10 minutes.
+const _cfHostCache = new Map();
+async function hostOnCloudflare(host) {
+  const h = String(host || "").toLowerCase().replace(/^\[|\]$/g, "");
+  if (/^[\d.]+$/.test(h) || h.includes(":")) return ipOnCloudflare(h);
+  const hit = _cfHostCache.get(h);
+  if (hit && hit.exp > Date.now()) return hit.v;
+  let v = null;
+  try {
+    for (const [type, num] of [["A", 1], ["AAAA", 28]]) {
+      const r = await fetch("https://cloudflare-dns.com/dns-query?name=" + encodeURIComponent(h) + "&type=" + type, { headers: { Accept: "application/dns-json" } });
+      if (!r.ok) break;
+      const ips = (((await r.json()) || {}).Answer || []).filter((a) => a.type === num).map((a) => a.data);
+      if (ips.length) { v = ips.some(ipOnCloudflare); break; }
+    }
+  } catch (_) { v = null; }
+  if (_cfHostCache.size > 500) _cfHostCache.clear();
+  _cfHostCache.set(h, { v, exp: Date.now() + 600000 });
+  return v;
+}
+
 // Generic SSRF-guarded fetch proxy for the browser tools (recon/OSINT/HTTP
 // inspection). Unlike safeFetchUrl (tuned for AI text enrichment) this preserves
 // the REAL response status + headers so tools like header-analyzer, http-probe
@@ -282,7 +304,14 @@ async function handleFetch(request) {
     // A body cut to `cap` is truncated too, not only one cut at the read ceiling.
     if (full.length > cap) truncated = true;
     const text = full.slice(0, cap);
-    return json({ url: u.href, finalUrl: u.href, status: res.status, statusText: res.statusText || "", contentType: ct, headers, redirectChain: chain, body: text, bytes, truncated });
+    // Cloudflare stamps its own server / cf-ray / cf-cache-status on every Worker subrequest,
+    // replacing the origin's Server header. Keep them only for hosts really behind Cloudflare.
+    let masked;
+    if (/^cloudflare$/i.test(headers["server"] || "") && (await hostOnCloudflare(u.hostname)) === false) {
+      delete headers["server"]; delete headers["cf-ray"]; delete headers["cf-cache-status"];
+      masked = ["server"];
+    }
+    return json({ url: u.href, finalUrl: u.href, status: res.status, statusText: res.statusText || "", contentType: ct, headers, redirectChain: chain, body: text, bytes, truncated, ...(masked ? { masked } : {}) });
   }
   return json({ error: "too many redirects" }, 502);
 }

@@ -46,9 +46,15 @@ group("ssl-inspector", () => {
       let onTab; const c = mk("c"); c.addEventListener = (t, f) => { onTab = f; };
       renderSSLInspector(c);
       let asked = "";
-      setGlobal("fetch", async (u) => { asked = u; return { ok: true, json: async () => rows }; });
+      // CT sources are fetched through the Darknode proxy (crt.sh sends no CORS headers).
+      globalThis.DARKNODE_PROXY_URL = "https://proxy.test/api/chat";
+      setGlobal("fetch", async (u) => {
+        asked = new URL(u).searchParams.get("url");
+        return { ok: true, json: async () => ({ status: 200, body: JSON.stringify(rows) }) };
+      });
       els["ssl-domain"].value = input;
-      globalThis._sslSearch(); await tick();
+      globalThis._sslSearch(); for (let i = 0; i < 5; i++) await tick();
+      delete globalThis.DARKNODE_PROXY_URL;
       onTab({ target: { classList: { contains: () => true, add() {}, remove() {} }, style: {}, getAttribute: () => "subdomains" } });
       out = { asked, html: els["ssl-results"].innerHTML };
     });
