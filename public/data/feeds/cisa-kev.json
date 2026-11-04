@@ -1,8 +1,19 @@
 {
- "updated": "2026-11-03T12:53:14.520Z",
+ "updated": "2026-11-04T13:06:13.248Z",
  "source": "CISA KEV",
  "count": 500,
  "data": [
+  {
+   "cve": "CVE-2026-119977",
+   "vendor": "WordPress",
+   "product": "WordPress Core",
+   "name": "WordPress WordPress Core Time-of-check Time-of-use (TOCTOU) Race Condition Vulnerability",
+   "description": "WordPress WordPress Core contains a time-of-check time-of-use (TOCTOU) race condition vulnerability that could allow unauthenticated attackers to execute code on the server during the upgrade window. This is due to predictable, web-accessible staging paths used during full-package core upgrades.",
+   "dateAdded": "2026-11-03",
+   "dueDate": "2026-11-06",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
   {
    "cve": "CVE-2026-118527",
    "vendor": "Ivanti",
@@ -5487,17 +5498,6 @@
    "product": "DSL CPE Devices",
    "name": "Zyxel DSL CPE OS Command Injection Vulnerability",
    "description": "Multiple Zyxel DSL CPE devices contain a post-authentication command injection vulnerability in the management commands that could allow an authenticated attacker to execute OS commands via Telnet.",
-   "dateAdded": "2025-02-11",
-   "dueDate": "2025-03-04",
-   "action": "The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization if a current mitigation is unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2024-40890",
-   "vendor": "Zyxel",
-   "product": "DSL CPE Devices",
-   "name": "Zyxel DSL CPE OS Command Injection Vulnerability",
-   "description": "Multiple Zyxel DSL CPE devices contain a post-authentication command injection vulnerability in the CGI program that could allow an authenticated attacker to execute OS commands via a crafted HTTP request.",
    "dateAdded": "2025-02-11",
    "dueDate": "2025-03-04",
    "action": "The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization if a current mitigation is unavailable.",

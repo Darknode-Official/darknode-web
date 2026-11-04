@@ -1,10 +1,19 @@
 {
- "updated": "2026-11-03T12:53:14.679Z",
+ "updated": "2026-11-04T13:06:13.355Z",
  "source": "CISA KEV (last 14 days)",
- "catalogVersion": "2026.10.30",
- "since": "2026-10-20",
- "count": 18,
+ "catalogVersion": "2026.11.03",
+ "since": "2026-10-21",
+ "count": 13,
  "data": [
+  {
+   "cve": "CVE-2026-119977",
+   "vendor": "WordPress",
+   "product": "WordPress Core",
+   "name": "WordPress WordPress Core Time-of-check Time-of-use (TOCTOU) Race Condition Vulnerability",
+   "dateAdded": "2026-11-03",
+   "dueDate": "2026-11-06",
+   "ransomware": false
+  },
   {
    "cve": "CVE-2026-118527",
    "vendor": "Ivanti",
@@ -111,60 +120,6 @@
    "name": "Collabora Online – Built-in CODE Server OS Command Injection Vulnerability",
    "dateAdded": "2026-10-23",
    "dueDate": "2026-10-26",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-106931",
-   "vendor": "EG Secure Solutions",
-   "product": "SiteGuard Server Edition",
-   "name": "EG Secure Solutions SiteGuard Server Edition OS Command Injection Vulnerability",
-   "dateAdded": "2026-10-20",
-   "dueDate": "2026-10-23",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-96656",
-   "vendor": "Plex",
-   "product": "Media Server",
-   "name": "Plex Media Server External Control of File Name or Path Vulnerability",
-   "dateAdded": "2026-10-20",
-   "dueDate": "2026-10-23",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-96655",
-   "vendor": "Plex",
-   "product": "Media Server",
-   "name": "Plex Media Server Server-Side Request Forgery (SSRF) Vulnerability",
-   "dateAdded": "2026-10-20",
-   "dueDate": "2026-11-03",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-96654",
-   "vendor": "Plex",
-   "product": "Media Server",
-   "name": "Plex Media Server Improper Neutralization of Encoded URI Schemes in a Web Page Vulnerability",
-   "dateAdded": "2026-10-20",
-   "dueDate": "2026-10-23",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-96652",
-   "vendor": "Plex",
-   "product": "Media Server",
-   "name": "Plex Media Server Server-Side Request Forgery (SSRF) Vulnerability",
-   "dateAdded": "2026-10-20",
-   "dueDate": "2026-11-03",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-110936",
-   "vendor": "Siemens",
-   "product": "Software Center",
-   "name": "Siemens Software Center Uncontrolled Search Path Element Vulnerability",
-   "dateAdded": "2026-10-20",
-   "dueDate": "2026-11-03",
    "ransomware": false
   }
  ]
