@@ -1,10 +1,19 @@
 {
- "updated": "2026-11-04T13:06:13.355Z",
+ "updated": "2026-11-05T13:19:30.380Z",
  "source": "CISA KEV (last 14 days)",
- "catalogVersion": "2026.11.03",
- "since": "2026-10-21",
- "count": 13,
+ "catalogVersion": "2026.11.04",
+ "since": "2026-10-22",
+ "count": 14,
  "data": [
+  {
+   "cve": "CVE-2024-27834",
+   "vendor": "Apple",
+   "product": "Multiple Products",
+   "name": "Apple Multiple Products Improper Authentication Vulnerability",
+   "dateAdded": "2026-11-04",
+   "dueDate": "2026-11-18",
+   "ransomware": false
+  },
   {
    "cve": "CVE-2026-119977",
    "vendor": "WordPress",
