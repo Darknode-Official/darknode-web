@@ -23,7 +23,11 @@ var C_WARN = "var(--warn)";
 var C_FAIL = "var(--bad)";
 
 // common DKIM selectors to probe when the user does not supply one
-var DEFAULT_SELECTORS = ["default", "google", "selector1", "selector2", "k1", "dkim", "s1", "mail"];
+// (Google Workspace, Microsoft 365, Mailchimp/Mandrill, SendGrid, Resend, Proton,
+// Fastmail, iCloud, Zoho, Mailjet, Postmark and generic names). Amazon SES uses
+// random per-domain tokens, so it can only be found with a selector you enter.
+var DEFAULT_SELECTORS = ["default", "google", "selector1", "selector2", "k1", "k2", "k3", "dkim", "s1", "s2", "mail", "smtp",
+  "resend", "mandrill", "protonmail", "protonmail2", "fm1", "fm2", "sig1", "zmail", "mailjet", "pm"];
 var EXAMPLE_DOMAINS = ["google.com", "github.com", "paypal.com", "microsoft.com"];
 
 function toast(msg) {
@@ -280,8 +284,9 @@ function analyzeDKIM(results) {
   var status;
   if (!hits.length) {
     status = "NOT FOUND";
-    findings.push({ kind: "warn", text: "No DKIM record found for the common selectors tried (" +
-      results.map(function (r) { return r.selector; }).join(", ") + ")." });
+    findings.push({ kind: "warn", text: results.length > 8
+      ? "No DKIM record found under any of the " + results.length + " common selectors tried."
+      : "No DKIM record found for the selector" + (results.length === 1 ? "" : "s") + " tried (" + results.map(function (r) { return r.selector; }).join(", ") + ")." });
     findings.push({ kind: "tip", text: "This does not mean DKIM is missing — many providers use a custom selector. Check a signed message's DKIM-Signature header for its s= value and enter it above." });
     return { status: status, records: [], findings: findings };
   }
@@ -491,7 +496,7 @@ function scoreFor(status) {
 }
 
 // ── render ──
-export { analyzeSPF, analyzeDMARC, analyzeDKIM };
+export { analyzeSPF, analyzeDMARC, analyzeDKIM, DEFAULT_SELECTORS };
 
 export function renderEmailAuth(main) {
   main.innerHTML = EA_CSS +
@@ -512,7 +517,7 @@ export function renderEmailAuth(main) {
     '<div class="ea-chips" id="ea-chips">' +
     EXAMPLE_DOMAINS.map(function (d) { return '<button class="ea-chip" type="button" data-d="' + esc(d) + '">' + esc(d) + '</button>'; }).join("") +
     '</div>' +
-    '<p class="ea-hint">Leave the selector blank to probe common ones: ' + DEFAULT_SELECTORS.join(", ") + '. SPF and DMARC are always checked at the root and _dmarc.</p>' +
+    '<p class="ea-hint">Leave the selector blank to probe ' + DEFAULT_SELECTORS.length + ' common ones (Google, Microsoft 365, Mailchimp, SendGrid, Resend, Proton, Fastmail, iCloud, Zoho, Mailjet, Postmark). SPF and DMARC are always checked at the root and _dmarc.</p>' +
     '</div>' +
 
     '<div id="ea-out"></div>' +
@@ -597,7 +602,7 @@ export function renderEmailAuth(main) {
     var pill = card.querySelector(".ea-pill");
     if (pill) { pill.textContent = analysis.status; pill.setAttribute("style", pillCss(analysis.status)); }
     var body = card.querySelector(".ea-body");
-    if (body) body.innerHTML = recordHtml(key, analysis, meta.empty) + renderFindings(analysis.findings);
+    if (body) body.innerHTML = recordHtml(key, analysis, (meta[key] || meta).empty) + renderFindings(analysis.findings);
   }
 
   function renderSummary(domain, spf, dmarc, dkim) {
