@@ -11,7 +11,8 @@ import { buildGraphWrite } from "./monitor-graph.js";
 import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
 import { requireUser } from "./auth.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
-import { userTier, featureDenied } from "./plan.js";
+import { featureDenied } from "./plan.js";
+import { workspaceTier } from "./plan-share.js";
 import { readCapped } from "./body-cap.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -315,7 +316,7 @@ export async function handleMonitor(request, env, wid, json) {
   // so someone who downgrades can still see and clean up what they had.
   let op = ""; try { op = String((JSON.parse(bodyText || "{}") || {}).op || ""); } catch (_) {}
   if (MON_PAID_OPS.has(op)) {
-    const planMsg = featureDenied("monitors", await userTier(projectId, who));
+    const planMsg = featureDenied("monitors", await workspaceTier(env, wid, who));
     if (planMsg) return json({ error: planMsg, plan: true }, 402);
   }
   const stub = env.MONITOR.get(env.MONITOR.idFromName(wid));
