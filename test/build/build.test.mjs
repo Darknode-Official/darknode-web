@@ -4,7 +4,7 @@ import { test, group, assert } from "../harness.mjs";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
-import { computeVersions, rewrite, resolveSpec, build } from "../../scripts/build.mjs";
+import { computeVersions, rewrite, resolveSpec, build, moduleGraph, addModulePreloads } from "../../scripts/build.mjs";
 
 const V = (files) => computeVersions(new Map(Object.entries(files)), (f) => f in files, () => "");
 
@@ -103,5 +103,32 @@ group("build: end to end on a fixture tree", () => {
   test("the real public/ tree builds with no unresolved specifiers", () => {
     const here = dirname(new URL(import.meta.url).pathname);
     assert.deepEqual(build({ src: join(here, "../../public"), out: "", check: true }).unresolved, []);
+  });
+});
+
+group("build: modulepreload for the page's module graph", () => {
+  const texts = new Map(Object.entries({
+    "js/app.js": 'import { a } from "/js/a.js?v=1";\nimport {\n  b,\n} from "./b.js";\nexport * from "./c.js";\nimport("/js/lazy.js");\nimport(/* preload */ "/js/eager.js");\nconst s = "import x from \'/js/not.js\'";',
+    "js/a.js": 'import "/js/deep/d.js";', "js/b.js": "", "js/c.js": "", "js/deep/d.js": 'import "../a.js?v=1";', "js/eager.js": "", "js/lazy.js": "",
+  }));
+  const html = '<head>\n  <link rel="modulepreload" href="/js/app.js?v=1">\n  <link rel="stylesheet" href="/s.css">\n</head><script type="module" src="/js/app.js?v=1"></script>';
+  test("collects static imports transitively plus marked dynamic ones, with their exact URLs", () => {
+    assert.deepEqual(moduleGraph(html, texts), ["/js/app.js?v=1", "/js/a.js?v=1", "/js/deep/d.js", "/js/b.js", "/js/c.js", "/js/eager.js"]);
+  });
+  test("adds links after the last modulepreload, skipping ones already there", () => {
+    const out = addModulePreloads(html, texts);
+    assert.equal((out.match(/href="\/js\/app\.js\?v=1"/g) || []).length, 1);
+    assert.ok(out.includes('<link rel="modulepreload" href="/js/app.js?v=1">\n  <link rel="modulepreload" href="/js/a.js?v=1">'));
+    assert.ok(out.includes('href="/js/eager.js">\n  <link rel="stylesheet"'));
+    assert.ok(!out.includes("lazy.js") && !out.includes("not.js"));
+  });
+  test("the real index.html preloads auth.js's whole static graph", () => {
+    const here = dirname(new URL(import.meta.url).pathname);
+    const out = mkdtempSync(join(tmpdir(), "dn-pre-"));
+    try {
+      build({ src: join(here, "../../public"), out });
+      const page = readFileSync(join(out, "index.html"), "utf8");
+      for (const m of ["firebase.js", "legal.js", "tools-manifest.js", "core/account.js", "toolkit.js"]) assert.ok(new RegExp('rel="modulepreload" href="/js/' + m.replace(".", "\\.")).test(page), m);
+    } finally { rmSync(out, { recursive: true, force: true }); }
   });
 });
