@@ -38,7 +38,7 @@ import { storeKeyFor, activityKey } from "/js/security-graph.js"; // singleton: 
 import { acctKey } from "/js/core/account.js";
 import { has as desktopHas } from "/js/core/desktop.js";
 import { readRuns } from "/js/deck/native/ui.js"; // same URL the space tools import
-import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember } from "/js/workspaces.js?v=20261018i";
+import { myWorkspaces, createWorkspace, activeWorkspace, setActiveWorkspace, listMembers, setMember, getWorkspacePlanShare, setWorkspacePlanShare } from "/js/workspaces.js?v=20261018i";
 import { ROLE_LABEL, ROLES, canDo, ROLE_HELP } from "/js/core/workspace-roles.js";
 // Work-queue scenes load on first visit (about 120 KB the Overview never needs).
 const lazyMod = (url) => { let p; return () => (p ||= import(url).catch((e) => { p = null; throw e; })); };
@@ -1822,7 +1822,10 @@ export function renderDeck(host, opts) {
   // The owner can preview the Deck as any plan (Settings); nobody else can change it here.
   const LS_PREVIEW = "dn_deck_preview_tier";
   const realTier = tierFrom(opts.tier, opts.isOwner);
-  let planTier = realTier;
+  // A team workspace whose owner shares their plan lends it to every member while that
+  // workspace is active (launch.js reads it; the Worker re-checks it on every paid request).
+  const lentTier = TIERS.includes(opts.sharedTier) && rank(opts.sharedTier) > rank(realTier) ? opts.sharedTier : "";
+  let planTier = lentTier || realTier;
   if (opts.isOwner) { try { const p = localStorage.getItem(LS_PREVIEW); if (TIERS.includes(p)) planTier = p; } catch (_) {} }
   try { window.__dnTier = planTier; } catch (_) {} // webai lists paid models from this (the Worker enforces it)
   const needTier = {}, navName = {}, navIcon = {}; // navName keeps the names of entries the plan hides
@@ -2902,6 +2905,13 @@ export function renderDeck(host, opts) {
     } else { lastSyncState = "local"; }
     updateWsChip(wid, name);
     closeAllMenus();
+    // The sidebar is built for one plan. If the new workspace lends a different plan than
+    // the one this Deck was built for, rebuild it (the active workspace is remembered).
+    if (!opts.isOwner || planTier === realTier) {
+      let lend = "";
+      if (wid) { try { const sh = await getWorkspacePlanShare(wid); if (sh.on && rank(sh.tier) > rank(realTier)) lend = sh.tier; } catch (_) {} }
+      if (lend !== lentTier) { location.reload(); return; }
+    }
     // Re-arm the once-per-load guards so the newly-active workspace gets its own
     // daily trend snapshot and CI-ingest drain this session (were stuck true from
     // the previous workspace, so a switch skipped both until a full page reload).
@@ -4170,7 +4180,7 @@ export function renderDeck(host, opts) {
         cta: "Upgrade to Pro" },
       { id: "team", name: "Team", price: "$79", unit: "per user / month", tag: "", a: "#2552c6",
         blurb: "Shared workspaces, roles and one audit trail for the whole team.",
-        feats: ["Everything in Pro", "Organization space, Identity, Security Operations, Fraud & Abuse", "Shared team workspaces & roles", "1,000 AI messages a day per user", "Integrations (ticketing, chat webhooks)", "Activity & audit log"],
+        feats: ["Everything in Pro", "Organization space, Identity, Security Operations, Fraud & Abuse", "Shared team workspaces & roles", "Optionally share your plan with workspace members", "1,000 AI messages a day per user", "Integrations (ticketing, chat webhooks)", "Activity & audit log"],
         cta: "Start Team trial" },
       { id: "enterprise", name: "Enterprise", price: "Custom", unit: "", tag: "", a: "#2552c6",
         blurb: "Scale, compliance and deployment on your terms.",
@@ -4192,7 +4202,7 @@ export function renderDeck(host, opts) {
       <div class="dk-ti-head"><h1>Plans &amp; billing</h1></div>
       ${opts.isOwner
         ? `<div class="dk-compnote">Owner account: pick any plan to use the Deck exactly as a customer on it does. You're using <b>${esc(planLabel(planTier))}</b>${planTier !== realTier ? `; your account plan is ${esc(planLabel(realTier))}` : ""}. Your account keeps full access on the server either way.</div>`
-        : `<div class="dk-compnote">Preview pricing — checkout isn't live yet. You're on the <b>${esc(planLabel(planTier))}</b> plan. Upgrades are requested here and granted manually; no payment is taken.</div>`}
+        : `<div class="dk-compnote">Preview pricing — checkout isn't live yet. You're on the <b>${esc(planLabel(planTier))}</b> plan${lentTier ? ` in this workspace, shared by its owner; your own plan is ${esc(planLabel(realTier))}` : ""}. Upgrades are requested here and granted manually; no payment is taken.</div>`}
       <div class="dk-plangrid">${PLANS.map((p) => { const c = ctaFor(p.id); return `
         <div class="dk-plancard${p.tag ? " feat" : ""}${p.id === planTier ? " iscur" : ""}" style="--a:${p.a}" data-explain="plan.${p.id}">
           ${p.id === planTier ? `<span class="dk-plantag">Current</span>` : p.tag ? `<span class="dk-plantag">${esc(p.tag)}</span>` : ""}
@@ -4273,6 +4283,13 @@ export function renderDeck(host, opts) {
           <p>Share this with a teammate's workspace owner so they can add you — or add teammates below using the id they share with you.</p>
           <div class="dk-setrow" style="border-bottom:0"><input class="dk-setin mono" id="dkTeamMyId" readonly value="${esc(myUid || "")}" style="flex:1"><button class="dk-tibtn" id="dkTeamCopy">Copy user id</button></div>
         </div>
+        ${myRole === "owner" ? `<div class="dk-ovp">
+          <h2>${IC.shield} Plan</h2>
+          <div class="dk-setrow" style="border-bottom:0">
+            <div class="m"><div class="t">Let members use my plan</div><div class="s" id="dkShareNote">Members get your ${esc(planLabel(realTier))} plan's tools, sync, monitors and API keys inside this workspace only. Their personal workspace and AI chat stay on their own plan. Turning it off takes effect within a minute.</div></div>
+            ${rank(realTier) >= rank("team") ? `<button class="dk-settog" id="dkSharePlan" disabled>Off</button>` : `<button class="dk-settog" id="dkSharePlanUp">Team plan</button>`}
+          </div>
+        </div>` : (lentTier ? `<div class="dk-ovp"><h2>${IC.shield} Plan</h2><p>The workspace owner shares their ${esc(planLabel(lentTier))} plan with this workspace. Its tools are available to you here.</p></div>` : "")}
         <div class="dk-ovp">
           <h2>${IC.nodes} Members</h2>
           <table class="dk-natbl"><thead><tr><th>Name</th><th>User id</th><th>Role</th><th></th></tr></thead><tbody>${rows}</tbody></table>
@@ -4294,6 +4311,20 @@ export function renderDeck(host, opts) {
           <h2>${IC.book} Membership log <span class="dk-mut" style="font-weight:400">— append-only</span></h2>
           <table class="dk-natbl"><thead><tr><th>When</th><th>Changed by</th><th>Member</th><th>New role</th></tr></thead><tbody>${logRows}</tbody></table>
         </div>`;
+      const shareBtn = el.querySelector("#dkSharePlan");
+      if (shareBtn) {
+        const paint = (on) => { shareBtn.classList.toggle("on", on); shareBtn.textContent = on ? "On" : "Off"; };
+        getWorkspacePlanShare(wid).then((sh) => { paint(sh.on && sh.by === myUid); shareBtn.disabled = false; }).catch(() => { shareBtn.disabled = false; });
+        shareBtn.onclick = async () => {
+          const on = !shareBtn.classList.contains("on");
+          shareBtn.disabled = true;
+          try { await setWorkspacePlanShare(wid, on, realTier); paint(on); toast(on ? "Members can now use your plan in this workspace" : "Members are back on their own plans"); }
+          catch (e) { toast("Could not change plan sharing. " + String((e && e.message) || e), "error"); }
+          shareBtn.disabled = false;
+        };
+      }
+      const shareUp = el.querySelector("#dkSharePlanUp");
+      if (shareUp) shareUp.onclick = () => { toast("Sharing your plan with a workspace needs the Team plan"); go("plans"); };
       const cp = el.querySelector("#dkTeamCopy"); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText(myUid || ""); toast("User id copied"); } catch (_) { toast("Copy failed", "error"); } };
       const save = async (uid, role, label) => {
         try { await setMember(wid, uid, role, label); toast("Membership updated"); renderTeam(); }

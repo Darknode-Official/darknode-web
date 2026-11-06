@@ -29,6 +29,16 @@ export async function openDeck(user, extra = {}) {
       onboarding = d.onboarding || {};
     } catch (_) {}
   }
+  // Plan sharing: when the remembered active workspace is a team whose owner shares their
+  // plan, the Deck is built for that plan. Non-fatal (falls back to the user's own plan).
+  let sharedTier = "";
+  if (user) {
+    try {
+      const ws = await import("/js/workspaces.js?v=20261018i");
+      const wid = ws.activeWorkspace();
+      if (wid && wid !== user.uid) { const sh = await ws.getWorkspacePlanShare(wid); if (sh.on) sharedTier = sh.tier; }
+    } catch (_) {}
+  }
   // Durable account notifications (A6): the owner's own recent account-level
   // messages (e.g. a granted upgrade). Low-volume subcollection; non-fatal.
   let accountNotifs = [];
@@ -46,6 +56,7 @@ export async function openDeck(user, extra = {}) {
     user: user ? { uid: user.uid || "", displayName: user.displayName || "", email: user.email || "", photoURL: user.photoURL || "" } : null,
     isOwner: false,
     tier: deckTier,
+    sharedTier,
     workspace: wsProfile,
     onboarding,
     accountNotifs,

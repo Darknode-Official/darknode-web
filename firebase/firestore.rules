@@ -309,6 +309,7 @@ service cloud.firestore {
     function wMember(wid)   { return signedIn() && exists(/databases/$(database)/documents/workspaces/$(wid)/members/$(request.auth.uid)) && wRole(wid) != 'removed'; }
     function wOwner(wid)    { return wMember(wid) && wRole(wid) == 'owner'; }
     function wManager(wid)  { return wMember(wid) && (wRole(wid) == 'owner' || wRole(wid) == 'admin'); }
+    function wOwnPlan()     { return request.auth.token.get('admin', false) == true ? 'enterprise' : get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('tier', 'free'); }
     function wFounding(wid) { return !exists(wPath(wid)) && getAfter(wPath(wid)).data.createdBy == request.auth.uid; }
 
     match /workspaces/{wid} {
@@ -329,6 +330,14 @@ service cloud.firestore {
                     && request.resource.data.name is string
                     && request.resource.data.name.size() > 0
                     && request.resource.data.name.size() <= 80;
+      // Plan sharing: only the owner turns it on or off, it is always recorded under their own
+      // uid, and the plan shown to members must be the owner's real one (the Worker re-checks
+      // the live plan on every paid request; this copy is for display).
+      allow update: if wOwner(wid)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sharePlan', 'sharePlanBy', 'sharePlanTier'])
+                    && request.resource.data.sharePlan is bool
+                    && request.resource.data.sharePlanBy == request.auth.uid
+                    && request.resource.data.sharePlanTier == wOwnPlan();
       allow delete: if false;
 
       match /members/{uid} {

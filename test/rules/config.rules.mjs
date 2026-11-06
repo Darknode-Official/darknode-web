@@ -38,7 +38,7 @@ const sla = { critical: 15, high: 30, medium: 90, low: 180, info: null, kev: 7 }
 const put = (db, path, by, extra = {}) => db.doc(path).set({ value: sla, by, ts: ts(), ...extra });
 
 const A = as("alice"), B = as("bob"), C = as("carol"), V = as("vic"), E = as("erin");
-const W = "cfgTeam1234";
+const W = "cfgTeam1234567890ABC";
 const P = `workspaces/${W}/config/sla`;
 
 await t("alice founds the workspace", assertSucceeds(found(A, W, "alice")));

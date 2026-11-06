@@ -71,7 +71,8 @@ export function planDenied(need, tier) {
 
 // Paid platform features, enforced on the server against the CALLER'S OWN plan (the owner
 // chose per-user plans, matching the per-user pricing): a team workspace member needs Team
-// themselves; the workspace owner's plan does not cover them. Mirrors the Deck's
+// themselves, unless the workspace owner chooses to share their plan with the workspace
+// (worker/plan-share.js; personal workspaces always use the caller's own plan). Mirrors the Deck's
 // PLAN_ITEM / PLAN_GROUP (public/js/core/entitlements.js) and the Plans page.
 export const FEATURE_PLAN = {
   sync: { need: "pro", name: "Cloud sync" },

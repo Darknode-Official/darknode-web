@@ -113,3 +113,21 @@ export async function setMember(wid, uid, role, label) {
   b.set(fns.doc(db, "workspaces", wid, "memberLog", logId), { uid, role, by: u.uid, ts: fns.serverTimestamp() });
   await b.commit();
 }
+
+// Plan sharing (team workspaces only): the owner can let members use the owner's plan inside
+// this workspace. Returns { on, by, tier }. The Worker re-checks the owner's live plan on
+// every paid request, so `tier` here is only what the Deck shows.
+export async function getWorkspacePlanShare(wid) {
+  const { db, fns } = await deps();
+  const w = await fns.getDoc(fns.doc(db, "workspaces", wid));
+  const d = w.exists() ? w.data() : {};
+  return { on: d.sharePlan === true, by: d.sharePlanBy || "", tier: d.sharePlanTier || "free" };
+}
+
+// Owner only (Security Rules). `tier` must be the owner's own plan or the write is refused.
+export async function setWorkspacePlanShare(wid, on, tier) {
+  const { auth, db, fns } = await deps();
+  const u = auth.currentUser;
+  if (!u) throw new Error("Sign in first.");
+  await fns.updateDoc(fns.doc(db, "workspaces", wid), { sharePlan: !!on, sharePlanBy: u.uid, sharePlanTier: String(tier || "free") });
+}
