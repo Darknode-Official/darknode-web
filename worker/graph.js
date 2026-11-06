@@ -20,7 +20,8 @@
 import { wins } from "../public/js/core/graph-merge.js";
 import { mergeToolData, nextStatus, toolSeverity } from "../public/js/core/sink-map.js";
 import { requireUser } from "./auth.js";
-import { resolveWorkspaceRole, canDo } from "./workspace.js";
+import { resolveWorkspaceRole, canDo, isPersonalWorkspace } from "./workspace.js";
+import { userTier, featureDenied } from "./plan.js";
 import { readCapped } from "./body-cap.js";
 import { chainAppend, chainVerify, GENESIS, pad } from "./audit-chain.js";
 
@@ -248,6 +249,8 @@ export async function handleGraph(request, env, wid, json) {
   try { role = await resolveWorkspaceRole(projectId, wid, who.uid, who.token); }
   catch (e) { return json({ error: e.message }, 502); }
   if (!role) return json({ error: "You are not a member of this workspace." }, 403);
+  const planMsg = featureDenied(isPersonalWorkspace(wid, who.uid) ? "sync" : "teamSync", await userTier(projectId, who));
+  if (planMsg) return json({ error: planMsg, plan: true }, 402);
   // The audit log is a trust surface, not operational data: only owners and admins read it.
   const isAudit = request.method === "GET" && new URL(request.url).searchParams.has("audit");
   if (isAudit) {
