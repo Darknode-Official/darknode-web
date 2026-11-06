@@ -6,7 +6,7 @@ import { auth, db, googleProvider, githubProvider, isAdminUser, GOOGLE_CLIENT_ID
 // Finish an OpenRouter account-link if we've just returned from its consent page
 // (?code in the URL). Runs once on load, independent of auth; stores the user's
 // minted key before anything renders. The promise lets the deck re-open cleanly.
-window.__orConnect = import("/js/openrouter-connect.js?v=20261028c")
+window.__orConnect = import(/* preload */ "/js/openrouter-connect.js?v=20261028c")
   .then((m) => m.completeOpenRouterConnect()).catch(() => ({ done: false }));
 
 // Cached super-admin flag for the current session, read from the signed ID token
@@ -53,7 +53,7 @@ import {
   doc, getDoc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 let MORE = [], CATALOG = [], CATEGORIES = [];
-import("/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
+import(/* preload */ "/js/toolkit.js").then(m => { MORE = m.MORE; CATALOG = m.CATALOG; CATEGORIES = m.CATEGORIES; });
 import { startTour, tourDone } from "/js/tour.js";
 // Desktop app (packaged site on the app's own origin): no marketing landing, native
 // Google sign-in, title bar tinted to match. See js/core/desktop.js.
@@ -337,7 +337,7 @@ let _learnHub = null;
 async function loadLearnHub() { if (!_learnHub) { _learnHub = await import("/js/learn-hub.js?v=20261017f"); } return _learnHub; }
 import { emailConfigured, sendCode, sendLoginAlert, genCode, hashCode, deviceInfo } from "/js/notify.js?v=20261017d";
 import { initSaved } from "/js/saved.js";
-import("/js/shell-bridge.js").then(m => {
+import(/* preload */ "/js/shell-bridge.js").then(m => {
   window.shellIsConnected = m.shellIsConnected;
   window.shellConnect = m.shellConnect;
   window.shellStatus = m.shellStatus;

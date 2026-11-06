@@ -102,6 +102,41 @@ export function rewrite(from, text, version, buildHash = "", pinned = PINNED) {
   });
 }
 
+// Static `import`/`export ... from` at the start of a line, plus dynamic imports the
+// author marks as always-needed with `import(/* preload */ "...")`.
+const STATIC_IMPORT = /^[ \t]*(?:import[ \t]*(?:[^'"();]*?\bfrom[ \t]*)?|export[ \t]+[^'"();]*?\bfrom[ \t]*)(["'])((?:\.{1,2}\/|\/)[^"'\n]+)\1/gm;
+const PRELOAD_IMPORT = /\bimport\(\s*\/\*\s*preload\s*\*\/\s*(["'])((?:\.{1,2}\/|\/)[^"'\n]+)\1/g;
+
+// Every module an HTML page's module entries load up front, as the exact URLs the
+// imports use, so the browser can fetch the whole graph at once instead of level by level.
+export function moduleGraph(html, texts) {
+  const seen = new Set();
+  const visit = (url) => {
+    if (seen.has(url)) return;
+    seen.add(url);
+    const [path] = url.split("?"), from = path.slice(1), text = texts.get(from);
+    if (text == null) return;
+    for (const re of [STATIC_IMPORT, PRELOAD_IMPORT]) for (const m of text.matchAll(re)) {
+      const [p, q] = m[2].split("?");
+      visit("/" + resolveSpec(from, p) + (q ? "?" + q : ""));
+    }
+  };
+  for (const m of html.matchAll(/<script\b[^>]*\btype="module"[^>]*\bsrc="(\/[^"]+)"/g)) visit(m[1]);
+  return [...seen];
+}
+
+// Adds a modulepreload for every graph module the page does not already preload,
+// right after its last existing modulepreload.
+export function addModulePreloads(html, texts) {
+  const have = new Set([...html.matchAll(/<link\b[^>]*\brel="modulepreload"[^>]*\bhref="([^"]+)"/g)].map((m) => m[1]));
+  const add = moduleGraph(html, texts).filter((u) => !have.has(u) && texts.has(u.split("?")[0].slice(1)));
+  if (!add.length) return html;
+  const last = [...html.matchAll(/^([ \t]*)<link\b[^>]*\brel="modulepreload"[^>]*>[ \t]*$/gm)].pop();
+  if (!last) return html;
+  const at = last.index + last[0].length;
+  return html.slice(0, at) + add.map((u) => "\n" + last[1] + '<link rel="modulepreload" href="' + u + '">').join("") + html.slice(at);
+}
+
 export function build({ src, out, check = false }) {
   const list = walk(src);
   const files = new Map(list.filter((f) => TEXT.test(f)).map((f) => [f, readFileSync(join(src, f), "utf8")]));
@@ -113,6 +148,8 @@ export function build({ src, out, check = false }) {
   const unresolved = [];
   for (const [f, text] of files) for (const m of text.matchAll(SPEC)) if (!shipped.has(resolveSpec(f, m[2]))) unresolved.push(f + " -> " + m[2]);
   const outText = new Map([...files].map(([f, t]) => [f, rewrite(f, t, version, salt.has(f) ? buildHash : "")]));
+
+  if (outText.has("index.html")) outText.set("index.html", addModulePreloads(outText.get("index.html"), outText));
 
   // Service worker: cache name from the whole build; precache what index.html loads first.
   if (outText.has("sw.js") && outText.has("index.html")) {
