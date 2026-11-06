@@ -91,6 +91,23 @@ await t("founder alice demotes co-owner erin to admin", assertSucceeds(setRole(A
 await t("founder alice is still owner", assertSucceeds(roleIs(A, "alice", "owner")));
 await t("erin is now admin", assertSucceeds(roleIs(A, "erin", "admin")));
 
+// Plan sharing: only an owner sets it, under their own uid, with their real plan.
+await env.withSecurityRulesDisabled(async (c) => {
+  await c.firestore().doc("users/alice").set({ tier: "team" });
+  await c.firestore().doc("users/bob").set({ tier: "enterprise" });
+});
+const share = (db, by, tier, on = true) => db.doc(`workspaces/${W}`).update({ sharePlan: on, sharePlanBy: by, sharePlanTier: tier });
+await t("owner alice shares her real Team plan", assertSucceeds(share(A, "alice", "team")));
+await t("owner alice CANNOT claim a higher plan than hers", assertFails(share(A, "alice", "enterprise")));
+await t("owner alice CANNOT share under someone else's uid", assertFails(share(A, "bob", "enterprise")));
+await t("analyst bob (enterprise account) CANNOT turn sharing on", assertFails(share(B, "bob", "enterprise")));
+await t("admin erin CANNOT turn sharing off", assertFails(share(E, "erin", "free", false)));
+await t("sharing cannot ride along with a rename", assertFails(A.doc(`workspaces/${W}`).update({ sharePlan: false, sharePlanBy: "alice", sharePlanTier: "team", name: "X" })));
+await t("sharePlan must be a boolean", assertFails(A.doc(`workspaces/${W}`).update({ sharePlan: "yes", sharePlanBy: "alice", sharePlanTier: "team" })));
+await t("owner alice turns sharing off", assertSucceeds(share(A, "alice", "team", false)));
+await t("an admin-claim owner shares Enterprise", assertSucceeds(env.authenticatedContext("alice", { admin: true }).firestore().doc(`workspaces/${W}`).update({ sharePlan: true, sharePlanBy: "alice", sharePlanTier: "enterprise" })));
+await t("member dave reads the sharing fields", assertSucceeds(as("dave").doc(`workspaces/${W}`).get()));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
