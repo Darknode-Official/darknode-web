@@ -69,4 +69,22 @@ export function planDenied(need, tier) {
   return "This model is part of the " + (PLAN_LABEL[need] || need) + " plan. Pick another model, or request an upgrade under Plans.";
 }
 
+// Paid platform features, enforced on the server against the CALLER'S OWN plan (the owner
+// chose per-user plans, matching the per-user pricing): a team workspace member needs Team
+// themselves; the workspace owner's plan does not cover them. Mirrors the Deck's
+// PLAN_ITEM / PLAN_GROUP (public/js/core/entitlements.js) and the Plans page.
+export const FEATURE_PLAN = {
+  sync: { need: "pro", name: "Cloud sync" },
+  teamSync: { need: "team", name: "Shared team workspaces" },
+  monitors: { need: "pro", name: "Continuous monitoring" },
+  apiKeys: { need: "team", name: "API keys and CI ingest" },
+};
+
+// null when allowed, else the message to show.
+export function featureDenied(feature, tier) {
+  const f = FEATURE_PLAN[feature];
+  if (!f || planRank(tier) >= planRank(f.need)) return null;
+  return f.name + " is part of the " + (PLAN_LABEL[f.need] || f.need) + " plan. Request an upgrade under Plans.";
+}
+
 export function _resetPlanCache() { _cache.clear(); }

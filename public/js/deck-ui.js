@@ -1831,6 +1831,8 @@ export function renderDeck(host, opts) {
     for (const [kind, id, label, icon] of grp.items) { navName[kind + ":" + id] = label; navIcon[kind + ":" + id] = icon; if (id !== "admin") needTier[kind + ":" + id] = PLAN_ITEM[id] || PLAN_GROUP[grp.id] || "free"; }
   }
   const isLocked = (key) => rank(planTier) < rank(needTier[key] || "free");
+  // Personal cloud sync is a Pro feature; the Worker refuses it below Pro (worker/plan.js).
+  const syncAllowed = () => rank(planTier) >= rank("pro");
   for (let i = NAV_DEF.length - 1; i >= 0; i--) {
     NAV_DEF[i].items = NAV_DEF[i].items.filter(([kind, id]) => !isLocked(kind + ":" + id));
     if (!NAV_DEF[i].items.length) NAV_DEF.splice(i, 1);
@@ -2894,7 +2896,7 @@ export function renderDeck(host, opts) {
     // Restart cloud sync for the new workspace. A team ALWAYS syncs — that is how its
     // members share one graph; the personal workspace syncs only if opted in (B1).
     try { stopGraphSync(); } catch (_) {}
-    if (wid || syncEnabled()) {
+    if (wid || (syncEnabled() && syncAllowed())) {
       const syncWid = wid || (user && user.uid);
       try { startGraphSync({ workspaceId: syncWid }).catch(() => {}); } catch (_) {}
     } else { lastSyncState = "local"; }
@@ -2979,7 +2981,7 @@ export function renderDeck(host, opts) {
   // the harness / when signed out or the proxy is absent — startGraphSync reports "local".
   { const _aw = activeWorkspace();
     if (_aw) { try { startGraphSync({ workspaceId: _aw }).catch(() => {}); } catch (_) {} }
-    else if (syncEnabled()) { try { startGraphSync().catch(() => {}); } catch (_) {} } }
+    else if (syncEnabled() && syncAllowed()) { try { startGraphSync().catch(() => {}); } catch (_) {} } }
 
   // Pull any findings a CI pipeline sent to the ingest API into the graph, once per
   // session, through the normal sink. No-op without the proxy / sign-in / write role.
@@ -4427,7 +4429,7 @@ export function renderDeck(host, opts) {
           </div>
           <div class="dk-setrow">
             <div class="m"><div class="t">Cloud sync <span class="dk-syncstat" id="dkSyncStat" data-state="${esc(lastSyncState)}">${esc(SYNC_LABEL[lastSyncState] || "Local only")}</span></div><div class="s">Back up your personal security graph and keep it in sync across your devices. Off by default — nothing leaves this browser until you turn it on. Team workspaces always sync (that is how members share one graph). Sample data is never synced.</div></div>
-            <button class="dk-settog${syncEnabled() ? " on" : ""}" id="dkSetSync">${syncEnabled() ? "On" : "Off"}</button>
+            ${syncAllowed() ? `<button class="dk-settog${syncEnabled() ? " on" : ""}" id="dkSetSync">${syncEnabled() ? "On" : "Off"}</button>` : `<button class="dk-settog" id="dkSetSyncPlan">Pro plan</button>`}
           </div>
           <div class="dk-setrow">
             <div class="m"><div class="t">Reset local Deck state</div><div class="s">Clears connections, pins, notes and layout in this browser. Does not touch your account or the security graph.</div></div>
@@ -4466,6 +4468,8 @@ export function renderDeck(host, opts) {
     el.querySelector("#dkSetPlans").onclick = () => go("plans");
     el.querySelector("#dkSetExport").onclick = () => exportDeckState();
     el.querySelector("#dkSetImport").onclick = () => importDeckState();
+    const syncPlanBtn = el.querySelector("#dkSetSyncPlan");
+    if (syncPlanBtn) syncPlanBtn.onclick = () => { toast("Cloud sync is part of the Pro plan"); go("plans"); };
     const syncBtn = el.querySelector("#dkSetSync");
     if (syncBtn) syncBtn.onclick = async () => {
       const turningOn = !syncEnabled();

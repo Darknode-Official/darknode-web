@@ -11,6 +11,7 @@ import { buildGraphWrite } from "./monitor-graph.js";
 import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
 import { requireUser } from "./auth.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
+import { userTier, featureDenied } from "./plan.js";
 import { readCapped } from "./body-cap.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -295,6 +296,8 @@ const MON_ID = WID;
 
 // Route: POST /api/monitor/<wid>  { op, ... }. Same auth as the graph: a Firebase ID
 // token, workspace role from Firestore. list needs read; everything else needs write.
+const MON_PAID_OPS = new Set(["upsert", "run", "test"]);
+
 export async function handleMonitor(request, env, wid, json) {
   if (!env.MONITOR) return json({ error: "Monitoring is not configured on this deployment." }, 503);
   if (!MON_ID.test(wid)) return json({ error: "Invalid workspace id" }, 400);
@@ -308,6 +311,13 @@ export async function handleMonitor(request, env, wid, json) {
   if (!role) return json({ error: "You are not a member of this workspace." }, 403);
   const bodyText = await readCapped(request, 256 * 1024);
   if (bodyText === null) return json({ error: "Request too large." }, 413);
+  // Adding, editing or running a monitor needs the plan; list, pause and delete stay open
+  // so someone who downgrades can still see and clean up what they had.
+  let op = ""; try { op = String((JSON.parse(bodyText || "{}") || {}).op || ""); } catch (_) {}
+  if (MON_PAID_OPS.has(op)) {
+    const planMsg = featureDenied("monitors", await userTier(projectId, who));
+    if (planMsg) return json({ error: planMsg, plan: true }, 402);
+  }
   const stub = env.MONITOR.get(env.MONITOR.idFromName(wid));
   const res = await stub.fetch("https://monitor/", { method: "POST", body: bodyText || "{}", headers: { "Content-Type": "application/json", "x-mon-uid": who.uid, "x-mon-role": role, "x-mon-wid": wid } });
   return json(await res.json(), res.status);

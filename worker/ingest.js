@@ -8,6 +8,7 @@ import { generateKey, hashKey, keyIdOf, keyPrefix, normalizeScopes, hasScope, ti
 import { ingestToFindings } from "../public/js/ingest/formats.js";
 import { requireUser, presentedKey } from "./auth.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
+import { userTier, featureDenied } from "./plan.js";
 import { readCapped } from "./body-cap.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -170,7 +171,7 @@ async function authWorkspace(request, env, wid, json) {
   try { role = await resolveWorkspaceRole(projectId, wid, who.uid, who.token); }
   catch (e) { return { err: json({ error: e.message }, 502) }; }
   if (!role) return { err: json({ error: "You are not a member of this workspace." }, 403) };
-  return { uid: who.uid, role };
+  return { uid: who.uid, role, principal: who };
 }
 
 // POST /api/keys/<wid>  { op: list|create|revoke|drain|peek }  (Firebase token)
@@ -181,6 +182,13 @@ export async function handleKeys(request, env, wid, json) {
   const a = await authWorkspace(request, env, wid, json); if (a.err) return a.err;
   const text = await readCapped(request, 64 * 1024);
   if (text === null) return json({ error: "Request too large." }, 413);
+  // Creating a key needs the plan; list, revoke, peek and drain stay open so a downgraded
+  // account can still revoke its keys and pull findings already sent.
+  let op = ""; try { op = String((JSON.parse(text || "{}") || {}).op || ""); } catch (_) {}
+  if (op === "create") {
+    const planMsg = featureDenied("apiKeys", await userTier(env.FIREBASE_PROJECT_ID, a.principal));
+    if (planMsg) return json({ error: planMsg, plan: true }, 402);
+  }
   const stub = env.INGEST.get(env.INGEST.idFromName(wid));
   const res = await stub.fetch("https://ingest/", { method: "POST", body: text || "{}", headers: { "Content-Type": "application/json", "x-ing-uid": a.uid, "x-ing-role": a.role } });
   return json(await res.json(), res.status);
