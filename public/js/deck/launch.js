@@ -48,6 +48,9 @@ export async function openDeck(user, extra = {}) {
       accountNotifs = nsnap.docs.map((dd) => { const n = dd.data() || {}; return { id: dd.id, text: n.text || "", ts: typeof n.ts === "number" ? n.ts : 0, kind: n.kind || "", read: !!n.read }; });
     } catch (_) {}
   }
+  // Inside the desktop app: report app + VM usage to the owner's admin panel (at most
+  // every 6 hours; Settings > Share app usage turns it off). A no-op in a browser.
+  if (user) import("/js/usage-ping.js?v=1").then((m) => m.pingAppUsage()).catch(() => {});
   // Never stack Decks: dispose the previous mount (root + listeners) first.
   if (_deckOff) { try { _deckOff(); } catch (_) {} _deckOff = null; }
   document.querySelectorAll("body > .dk").forEach((n) => n.remove());

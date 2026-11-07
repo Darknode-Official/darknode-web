@@ -1,6 +1,6 @@
 import { esc } from '/js/shared.js';
 
-const UPDATED = "October 2026";
+const UPDATED = "November 2026";
 
 const CMD_GROUPS = [
   ["Engines & models", [
@@ -38,6 +38,7 @@ const CMD_GROUPS = [
     ["/guard enforce|warn|off", "preflight destructive shell commands"],
     ["/secrets /scan <host>", "scan the repo for leaked credentials · quick port scan"],
     ["/redact /offline", "mask secrets before cloud sends · force local-only"],
+    ["/shareusage on|off", "signed in: report version + OS to Darknode every 6h (on by default)"],
   ]],
   ["Context & session", [
     ["@file · !cmd · #note", "inline a file · run a shell command · save a memory"],
@@ -50,7 +51,7 @@ const CMD_GROUPS = [
 ];
 
 const CHANGELOG = [
-  ["3.3.x", "Live integrations: Deck security integrations are connected only after a live key test, through a relay to fixed provider endpoints (VirusTotal, Shodan, AbuseIPDB, GreyNoise, OTX, urlscan, SecurityTrails, ipinfo, Have I Been Pwned, Hunter, Pulsedive, Hybrid Analysis, plus keyless NVD and CIRCL CVE). The Deck Assistant can run lookups on connected integrations, asking first each time unless you choose Always allow. Text boxes no longer refill from saved lists on reload; a Load saved list button brings them back on request. A full bug sweep fixed about 90 issues across the Deck, the business tools, the flagship tools and all 780 quick utilities, among them wrong file hashes for binary files, a strict CSP graded as broken, missed SQL injection and display-name spoofing, the ASN Explorer (moved from the retired BGPView to RIPEstat), and spreadsheet formula injection in CSV exports."],
+  ["3.3.x", "Live integrations: Deck security integrations are connected only after a live key test, through a relay to fixed provider endpoints (VirusTotal, Shodan, AbuseIPDB, GreyNoise, OTX, urlscan, SecurityTrails, ipinfo, Have I Been Pwned, Hunter, Pulsedive, Hybrid Analysis, plus keyless NVD and CIRCL CVE). The Deck Assistant can run lookups on connected integrations, asking first each time unless you choose Always allow. Text boxes no longer refill from saved lists on reload; a Load saved list button brings them back on request. A full bug sweep fixed about 90 issues across the Deck, the business tools, the flagship tools and all 780 quick utilities, among them wrong file hashes for binary files, a strict CSP graded as broken, missed SQL injection and display-name spoofing, the ASN Explorer (moved from the retired BGPView to RIPEstat), and spreadsheet formula injection in CSV exports. Nexus background sessions (nexus bg / attach / sessions); signed-in Nexus and desktop app report version, OS and VM counts every 6 hours (/shareusage off, or Settings > Share app usage)."],
   ["3.2.x", "Business security platform: the Darknode Deck with native Personal and Organization spaces (domain posture grading, certificate watch, link and email phishing checks, code-secret scanning, sensitive-data checks with redaction, domain portfolios and fleet views), a Web toolkit tab linking the hands-on web-security tools, plan-based tool availability, team workspaces, and removal of the off-topic financial tools."],
   ["3.1.x", "Web console line: flagship platforms (PHANTOM packet/network ops, CITADEL SOC console, ORACLE threat-intel engine, SPECTRE cloud posture, CRUCIBLE defensive wargaming, NAVARCH maritime defense), a platform-wide Security Graph that cross-links findings, the Sentinel Eye 3D threat globe, 125 security tools plus 780 quick utilities, the Professional theme, the Darknode assistant (Help button in the top bar), and Nexus AI integration."],
   ["2.29.x", "Nexus multi-engine agent: /cowork model tiering, /lean /effort /cheap /estimate, local RAG (/index), /race /ensemble /bench, /plan /watch /agents (worktree-isolated), /guard /secrets /scan /redact /offline, git checkpoints (/undo /redo /rewind), MCP + hooks, ~56 commands. NEXUS.md now reaches the Claude engine; plan mode is truly read-only."],
@@ -165,6 +166,7 @@ node darknode.js nexus init                 # optional: scaffold .nexus/ project
         <li><strong>Weekly email digest.</strong> Off unless you turn it on in Settings. While it is on we store your watched domains and your latest certificate-check results (domain, expiry date, issuer) on our servers to build the email, and send it to your account email through our email provider, Resend. Turn it off in Settings or with the unsubscribe link in any digest.</li>
         <li><strong>AI assistant.</strong> Questions to the built-in assistant pass through our edge proxy to the model provider and are not logged or stored by us. To apply the daily message limits we keep a count of messages for the current UTC day, per account (or per IP address when you are not signed in); the count holds no message content and is cleared the next day.</li>
         <li><strong>Integrations.</strong> A Deck integration is connected only after a live test of your key, which stays in your browser. Lookups to providers that block browser calls (such as VirusTotal or Shodan) pass your key and the looked-up value through our edge relay to that provider only; we do not log or store the key, the value or the result. The assistant asks before each lookup unless you choose Always allow.</li>
+        <li><strong>Product usage.</strong> Signed in to Nexus or the desktop app, it tells us about every 6 hours that your account uses it, with the app version and operating system; the desktop app also sends how many virtual machines it holds and when one last started, never their names, disks or contents. Turn it off with <code class="dc-code">/shareusage off</code> in Nexus or Settings &gt; Share app usage in the app. Signed out, nothing is sent.</li>
         <li><strong>Cookies.</strong> Only functional cookies/localStorage for auth and preferences.</li>
       </ul>`;
 

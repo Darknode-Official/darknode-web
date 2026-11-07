@@ -4389,6 +4389,7 @@ export function renderDeck(host, opts) {
     const dense = root.classList.contains("dense");
     const expOn = explainEnabled();
     const cool = coolOn();
+    let usageShareOn = (() => { try { return localStorage.getItem("dn_usage_off") !== "1"; } catch (_) { return true; } })();
     el.innerHTML = `
       <div class="dk-ti-head"><h1>Settings</h1></div>
       <div class="dk-setgrid">
@@ -4418,6 +4419,10 @@ export function renderDeck(host, opts) {
             <div class="m"><div class="t">Hover explanations</div><div class="s">Rest on anything for 1 second to see a plain-language explanation.</div></div>
             <button class="dk-settog${expOn ? " on" : ""}" id="dkSetExplain">${expOn ? "On" : "Off"}</button>
           </div>
+          ${window.darknode && window.darknode.desktop ? `<div class="dk-setrow">
+            <div class="m"><div class="t">Share app usage</div><div class="s">Tells Darknode which app version you run and how many virtual machines it holds, at most every 6 hours, so we know what to support. Never the VMs' contents.</div></div>
+            <button class="dk-settog${usageShareOn ? " on" : ""}" id="dkSetUsage">${usageShareOn ? "On" : "Off"}</button>
+          </div>` : ""}
           ${opts.isOwner ? `<div class="dk-setrow">
             <div class="m"><div class="t">Preview as plan</div><div class="s">See the Deck exactly as a user on that plan does: tools above the plan are hidden. Owner only; your real plan is ${esc(planLabel(realTier))}.</div></div>
             <select class="dk-setin" id="dkSetPreview" style="width:160px">${["", ...TIERS].map((t) => `<option value="${t}"${t === (planTier !== realTier ? planTier : "") ? " selected" : ""}>${t ? planLabel(t) : "Off (" + planLabel(realTier) + ")"}</option>`).join("")}</select>
@@ -4494,6 +4499,8 @@ export function renderDeck(host, opts) {
     el.querySelector("#dkSetExplain").onclick = (e) => { const on = !explainEnabled(); setExplainEnabled(on); e.target.classList.toggle("on", on); e.target.textContent = on ? "On" : "Off"; toast("Hover explanations " + (on ? "on" : "off")); };
     const prevSel = el.querySelector("#dkSetPreview");
     if (prevSel) prevSel.onchange = () => setPreviewTier(prevSel.value);
+    const usageBtn = el.querySelector("#dkSetUsage");
+    if (usageBtn) usageBtn.onclick = (e) => { const on = !usageShareOn; usageShareOn = on; try { on ? localStorage.removeItem("dn_usage_off") : localStorage.setItem("dn_usage_off", "1"); } catch (_) {} e.target.classList.toggle("on", on); e.target.textContent = on ? "On" : "Off"; };
     const coolBtn = el.querySelector("#dkSetCool");
     if (coolBtn) coolBtn.onclick = (e) => { const on = !coolOn(); try { localStorage.setItem("dn_cool_ui", on ? "1" : "0"); } catch (_) {} reloadToolsForCool(); e.target.classList.toggle("on", on); e.target.textContent = on ? "On" : "Off"; };
     el.querySelector("#dkSetPlans").onclick = () => go("plans");

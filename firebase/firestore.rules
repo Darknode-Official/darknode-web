@@ -61,6 +61,13 @@ service cloud.firestore {
       allow write: if isOwner();
     }
 
+    // Product usage heartbeats (Nexus, desktop app, app VMs), written only by the Worker
+    // with the service account (POST /api/v1/usage). The owner's admin panel reads them.
+    match /usage/{uid} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
     // Feedback / bug reports: any signed-in user submits one for their own uid.
     // Shape + size are validated so a doc can't be stuffed with arbitrary fields
     // or oversized payloads. Only the owner reads & manages.
