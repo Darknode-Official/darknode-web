@@ -85,6 +85,14 @@ for (const f of ["status", "codeVerified", "tier", "plan", "admin"])
 await t("bob cannot create a user doc with status", assertFails(B.doc("users/bob").set({ email: "bob@test.darknode.ai", status: "allowed" })));
 await t("the owner may set status", assertSucceeds(ADM.doc("users/alice").set({ status: "allowed" }, { merge: true })));
 
+// usage/{uid}: product heartbeats written only by the Worker (service account); owner reads.
+await env.withSecurityRulesDisabled((c) => c.firestore().doc("usage/alice").set({ email: "a@test.darknode.ai", nexus: { version: "2.56.0" } }));
+await t("the owner reads usage", assertSucceeds(ADM.collection("usage").get()));
+await t("alice cannot read her own usage doc", assertFails(A.doc("usage/alice").get()));
+await t("alice cannot list usage", assertFails(A.collection("usage").get()));
+await t("alice cannot write her usage doc", assertFails(A.doc("usage/alice").set({ nexus: { version: "9" } }, { merge: true })));
+await t("even the owner cannot write usage from a client", assertFails(ADM.doc("usage/bob").set({ app: {} })));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

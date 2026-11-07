@@ -84,6 +84,12 @@ export async function renderAdmin(main, user) {
           <div id="uList"><p class="muted">Loading users…</p></div>
         </div>
         <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Nexus, desktop app &amp; VMs</h2>
+            <button class="btn ghost sm" id="usRefresh">Refresh</button></div>
+          <input class="tk-search" id="usSearch" placeholder="Search by email…">
+          <div id="usList"><p class="muted">Loading usage…</p></div>
+        </div>
+        <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Recent new-device sign-ins</h2></div>
           <div id="loginList"><p class="muted">…</p></div>
         </div>
@@ -621,7 +627,23 @@ export async function renderAdmin(main, user) {
     dmsg("exported " + users.length + " users");
   };
 
-  await Promise.all([loadWl(), loadUsers(), loadAnn()]);
+  // ---- who uses Nexus, the desktop app and its VMs (usage/{uid}, written by the Worker) ----
+  const usState = { tab: "nexus", q: "" };
+  let usDocs = [];
+  async function loadUsage() {
+    const host = $("#usList");
+    try {
+      const [mod, snap] = await Promise.all([import("/js/admin-usage.js?v=1"), getDocs(collection(db, "usage"))]);
+      usDocs = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+      const draw = () => mod.render(host, usDocs, usState, esc);
+      host.onclick = (e) => { const t = e.target.closest("[data-utab]"); if (t) { usState.tab = t.dataset.utab; draw(); } };
+      $("#usSearch").oninput = (e) => { usState.q = e.target.value; draw(); };
+      draw();
+    } catch (e) { host.innerHTML = `<p class="adm-err">Couldn't load usage: ${esc(e.message)}. Make sure Firestore rules are deployed.</p>`; }
+  }
+  $("#usRefresh").onclick = loadUsage;
+
+  await Promise.all([loadWl(), loadUsers(), loadAnn(), loadUsage()]);
 
   // ---- Analytics ----
   async function loadAnalytics() {

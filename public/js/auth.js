@@ -2970,7 +2970,7 @@ onAuthStateChanged(auth, async (user) => {
   const udoc = await getDoc(doc(db, "users", user.uid)).catch(() => null);
   // Terms are versioned: bumping TOS_VERSION asks every account to accept the new text,
   // including accounts that accepted an earlier version (they also see what changed).
-  const TOS_VERSION = "2026-10-31";
+  const TOS_VERSION = "2026-11-07";
   const ud = udoc && udoc.exists() ? udoc.data() : {};
   const tosAccepted = !!ud.tosAccepted && ud.tosVersion === TOS_VERSION;
   const tosReturning = !!ud.tosAccepted && !tosAccepted;
@@ -2981,9 +2981,9 @@ onAuthStateChanged(auth, async (user) => {
         <h1>${tosReturning ? "We updated our Terms of Service" : "Terms of Service"}</h1>
         <p class="tos-sub">${tosReturning ? "Please review the changes and accept to keep using Darknode." : "Please read and accept before continuing."}</p>
         ${tosReturning ? `<div class="tos-update">
-          <strong>What changed (October 31, 2026)</strong>
+          <strong>What changed (November 7, 2026)</strong>
           <ul>
-            <li>Signed-in users can pick Claude models in the built-in assistant. Those messages go through Darknode's edge proxy to Anthropic, which processes them under its own terms; Darknode does not log or store them. Claude use is rate-limited per account.</li>
+            <li>When you are signed in to the Nexus terminal agent or the desktop app, it now tells us about every 6 hours that your account uses it, with the app version and operating system. The desktop app also reports how many virtual machines it holds and when one last started, never their names, disks or contents. Turn it off with /shareusage off in Nexus or Settings &gt; Share app usage in the app (Section 14).</li>
           </ul></div>` : ""}
         <div class="tos-box" id="tosBox" tabindex="0">
           ${TOS_HTML}
