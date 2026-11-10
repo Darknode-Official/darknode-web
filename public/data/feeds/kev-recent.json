@@ -1,10 +1,46 @@
 {
- "updated": "2026-11-09T14:03:49.220Z",
+ "updated": "2026-11-10T13:37:12.890Z",
  "source": "CISA KEV (last 14 days)",
- "catalogVersion": "2026.11.06",
- "since": "2026-10-26",
- "count": 13,
+ "catalogVersion": "2026.11.09",
+ "since": "2026-10-27",
+ "count": 15,
  "data": [
+  {
+   "cve": "CVE-2026-102895",
+   "vendor": "GPUStack",
+   "product": "GPUStack",
+   "name": "GPUStack Improper Authentication Vulnerability",
+   "dateAdded": "2026-11-09",
+   "dueDate": "2026-11-12",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-123158",
+   "vendor": "OpenBSD",
+   "product": "OpenSSH",
+   "name": "OpenBSD OpenSSH Unexpected Status Code or Return Value Vulnerability",
+   "dateAdded": "2026-11-09",
+   "dueDate": "2026-11-12",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-116779",
+   "vendor": "SignalWire",
+   "product": "FreeSwitch",
+   "name": "SignalWire FreeSwitch Code Injection Vulnerability",
+   "dateAdded": "2026-11-09",
+   "dueDate": "2026-11-12",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-123218",
+   "vendor": "IBM",
+   "product": "Aspera Faspex",
+   "name": "IBM Aspera Faspex Incorrect Authorization Vulnerability",
+   "dateAdded": "2026-11-09",
+   "dueDate": "2026-11-12",
+   "ransomware": false
+  },
   {
    "cve": "CVE-2026-19868",
    "vendor": "SonicWall",
@@ -102,24 +138,6 @@
    "name": "Google Brotli Unchecked Return Value Vulnerability",
    "dateAdded": "2026-10-27",
    "dueDate": "2026-11-10",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-109618",
-   "vendor": "PHP Group",
-   "product": "PHP",
-   "name": "PHP Memory Corruption Vulnerability",
-   "dateAdded": "2026-10-26",
-   "dueDate": "2026-10-29",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-109619",
-   "vendor": "PHP Group",
-   "product": "PHP",
-   "name": "PHP Stale Internal Request-State Vulnerability",
-   "dateAdded": "2026-10-26",
-   "dueDate": "2026-10-29",
    "ransomware": false
   }
  ]

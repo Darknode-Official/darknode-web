@@ -1,8 +1,52 @@
 {
- "updated": "2026-11-09T14:03:49.030Z",
+ "updated": "2026-11-10T13:37:12.754Z",
  "source": "CISA KEV",
  "count": 500,
  "data": [
+  {
+   "cve": "CVE-2026-102895",
+   "vendor": "GPUStack",
+   "product": "GPUStack",
+   "name": "GPUStack Improper Authentication Vulnerability",
+   "description": "GPUStack contains an improper authentication vulnerability which could allow unauthenticated administrative access, including user and model changes, persistent administrator API-key creation, disclosure of worker and cloud-provider secrets, and code execution through POST /v2/inference-backends/from-yaml.",
+   "dateAdded": "2026-11-09",
+   "dueDate": "2026-11-12",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-123158",
+   "vendor": "OpenBSD",
+   "product": "OpenSSH",
+   "name": "OpenBSD OpenSSH Unexpected Status Code or Return Value Vulnerability",
+   "description": "OpenBSD OpenSSH on Linux contains an unexpected status code or return value vulnerability that could allow for authentication bypass.",
+   "dateAdded": "2026-11-09",
+   "dueDate": "2026-11-12",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-116779",
+   "vendor": "SignalWire",
+   "product": "FreeSwitch",
+   "name": "SignalWire FreeSwitch Code Injection Vulnerability",
+   "description": "SignalWire FreeSwitch contains a code injection vulnerability that permits configuration and credential disclosure, arbitrary call control, and command execution.",
+   "dateAdded": "2026-11-09",
+   "dueDate": "2026-11-12",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-123218",
+   "vendor": "IBM",
+   "product": "Aspera Faspex",
+   "name": "IBM Aspera Faspex Incorrect Authorization Vulnerability",
+   "description": "IBM Aspera Faspex contains an incorrect authorization vulnerability that could allow an authenticated user to craft a specific message to bypass authorization, causing privilege escalations.",
+   "dateAdded": "2026-11-09",
+   "dueDate": "2026-11-12",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
   {
    "cve": "CVE-2026-19868",
    "vendor": "SonicWall",
@@ -5456,50 +5500,6 @@
    "description": "Craft CMS contains a code injection vulnerability caused by improper validation of the database backup path, ultimately enabling remote code execution.",
    "dateAdded": "2025-02-20",
    "dueDate": "2025-03-13",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-0108",
-   "vendor": "Palo Alto Networks",
-   "product": "PAN-OS",
-   "name": "Palo Alto Networks PAN-OS Authentication Bypass Vulnerability",
-   "description": "Palo Alto Networks PAN-OS contains an authentication bypass vulnerability in its management web interface. This vulnerability allows an unauthenticated attacker with network access to the management web interface to bypass the authentication normally required and invoke certain PHP scripts.",
-   "dateAdded": "2025-02-18",
-   "dueDate": "2025-03-11",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2024-53704",
-   "vendor": "SonicWall",
-   "product": "SonicOS",
-   "name": "SonicWall SonicOS SSLVPN Improper Authentication Vulnerability",
-   "description": "SonicWall SonicOS contains an improper authentication vulnerability in the SSLVPN authentication mechanism that allows a remote attacker to bypass authentication.",
-   "dateAdded": "2025-02-18",
-   "dueDate": "2025-03-11",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Known"
-  },
-  {
-   "cve": "CVE-2024-57727",
-   "vendor": "SimpleHelp ",
-   "product": "SimpleHelp",
-   "name": "SimpleHelp Path Traversal Vulnerability",
-   "description": "SimpleHelp remote support software contains multiple path traversal vulnerabilities that allow unauthenticated remote attackers to download arbitrary files from the SimpleHelp host via crafted HTTP requests. These files may include server configuration files and hashed user passwords.",
-   "dateAdded": "2025-02-13",
-   "dueDate": "2025-03-06",
-   "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Known"
-  },
-  {
-   "cve": "CVE-2025-24200",
-   "vendor": "Apple",
-   "product": "iOS and iPadOS",
-   "name": "Apple iOS and iPadOS Incorrect Authorization Vulnerability",
-   "description": "Apple iOS and iPadOS contains an incorrect authorization vulnerability that allows a physical attacker to disable USB Restricted Mode on a locked device.",
-   "dateAdded": "2025-02-12",
-   "dueDate": "2025-03-05",
    "action": "Apply mitigations per vendor instructions or discontinue use of the product if mitigations are unavailable.",
    "ransomware": "Unknown"
   }
