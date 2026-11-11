@@ -1,10 +1,64 @@
 {
- "updated": "2026-11-10T13:37:12.890Z",
+ "updated": "2026-11-11T12:49:41.892Z",
  "source": "CISA KEV (last 14 days)",
- "catalogVersion": "2026.11.09",
- "since": "2026-10-27",
- "count": 15,
+ "catalogVersion": "2026.11.10",
+ "since": "2026-10-28",
+ "count": 19,
  "data": [
+  {
+   "cve": "CVE-2026-124194",
+   "vendor": "Microsoft",
+   "product": "Office",
+   "name": "Microsoft Office Outlook Missing User Interaction for Potentially Unsafe Action Vulnerability",
+   "dateAdded": "2026-11-10",
+   "dueDate": "2026-11-24",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-111793",
+   "vendor": "Openwave Messaging Limited",
+   "product": "Webtop Media Transcoder",
+   "name": "Openwave Messaging Limited Webtop Media Transcoder Incorrect Resource Transfer Between Spheres Vulnerability",
+   "dateAdded": "2026-11-10",
+   "dueDate": "2026-11-24",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-20320",
+   "vendor": "Cisco",
+   "product": "BroadWorks",
+   "name": "Cisco BroadWorks Improper Restriction of XML External Entity Reference Vulnerability",
+   "dateAdded": "2026-11-10",
+   "dueDate": "2026-11-24",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-111560",
+   "vendor": "Barracuda Networks",
+   "product": "Multiple Products",
+   "name": "Barracuda Networks Multiple Products OS Command Injection Vulnerability",
+   "dateAdded": "2026-11-10",
+   "dueDate": "2026-11-13",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-116606",
+   "vendor": "Barracuda Networks",
+   "product": "Barracuda Email Security Gateway (ESG)",
+   "name": "Barracuda Networks Email Security Gateway (ESG) Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+   "dateAdded": "2026-11-10",
+   "dueDate": "2026-11-13",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-125350",
+   "vendor": "Google",
+   "product": "Chromium",
+   "name": "Google Chromium Use-After-Free Vulnerability",
+   "dateAdded": "2026-11-10",
+   "dueDate": "2026-11-24",
+   "ransomware": false
+  },
   {
    "cve": "CVE-2026-102895",
    "vendor": "GPUStack",
@@ -120,24 +174,6 @@
    "name": "Linux Kernel Missing Initialization of a Variable Vulnerability",
    "dateAdded": "2026-10-28",
    "dueDate": "2026-10-31",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-48356",
-   "vendor": "Adobe",
-   "product": "Commerce and Magento",
-   "name": "Adobe Commerce and Magento Unrestricted Upload of File with Dangerous Type Vulnerability",
-   "dateAdded": "2026-10-27",
-   "dueDate": "2026-11-10",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-111497",
-   "vendor": "Google",
-   "product": "Brotli",
-   "name": "Google Brotli Unchecked Return Value Vulnerability",
-   "dateAdded": "2026-10-27",
-   "dueDate": "2026-11-10",
    "ransomware": false
   }
  ]
