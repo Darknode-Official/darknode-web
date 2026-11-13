@@ -1,9 +1,9 @@
 {
- "updated": "2026-11-12T13:52:20.002Z",
+ "updated": "2026-11-13T13:15:02.615Z",
  "source": "CISA KEV (last 14 days)",
  "catalogVersion": "2026.11.10",
- "since": "2026-10-29",
- "count": 17,
+ "since": "2026-10-30",
+ "count": 15,
  "data": [
   {
    "cve": "CVE-2026-124194",
@@ -138,24 +138,6 @@
    "name": "Ivanti Connect Secure Missing Authentication for Critical Function Vulnerability",
    "dateAdded": "2026-10-30",
    "dueDate": "2026-11-02",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-97229",
-   "vendor": "GitLab",
-   "product": "Community Edition and Enterprise Edition",
-   "name": "GitLab Community Edition and Enterprise Edition Integer Overflow or Wraparound Vulnerability",
-   "dateAdded": "2026-10-29",
-   "dueDate": "2026-11-01",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-76418",
-   "vendor": "Cisco",
-   "product": "Secure Firewall ASA Software and Cisco Secure FTD Software",
-   "name": "Cisco Secure Firewall ASA Software and Cisco Secure FTD Software Unchecked Return Value to NULL Pointer Dereference Vulnerability",
-   "dateAdded": "2026-10-29",
-   "dueDate": "2026-11-01",
    "ransomware": false
   }
  ]
