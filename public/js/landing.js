@@ -404,6 +404,25 @@ export function renderLanding(view, actions) {
           </div>
         </div>
 
+        <!-- Standout commands -->
+        <div class="nx-cmds">
+          <div class="nx-cmds-head"><h3>Commands worth knowing</h3><a href="https://github.com/Darknode-Official/darknode-cli/blob/main/docs/NEXUS-COMMANDS.md" target="_blank" rel="noopener">See every command</a></div>
+          <div class="nx-cmds-grid">
+            <div class="nx-cmd"><code>/cheap</code><span>Turns on only the savers that cannot lower answer quality: same model, fewer billed tokens.</span></div>
+            <div class="nx-cmd"><code>/warm</code><span>Shows the prompt-cache countdown and what your next message costs warm vs cold.</span></div>
+            <div class="nx-cmd"><code>/race</code><span>Sends one prompt to every engine at once so you can keep the best answer.</span></div>
+            <div class="nx-cmd"><code>/review</code><span>A different engine gives a second opinion on the last answer.</span></div>
+            <div class="nx-cmd"><code>/codereview</code><span>Parallel reviewers, each finding checked by a verifier, ranked by severity.</span></div>
+            <div class="nx-cmd"><code>/guard</code><span>Checks destructive shell commands before they run.</span></div>
+            <div class="nx-cmd"><code>/undo</code><span>Git checkpoints before every turn that changes files, so any turn can be rolled back.</span></div>
+            <div class="nx-cmd"><code>nexus bg</code><span>Runs sessions in the background; nexus attach takes one over later.</span></div>
+          </div>
+          <div class="nx-cheap" data-nx-cheap>
+            <h4>What <code>/cheap</code> saves, by model</h4>
+            <p class="nx-cmds-foot">Loading the measurement...</p>
+          </div>
+        </div>
+
         <!-- Collapsible module list -->
         <details class="nx-details">
           <summary>See the main modules &darr;</summary>
@@ -1023,6 +1042,24 @@ export function renderLanding(view, actions) {
     }
   } else {
     counterEls.forEach(el => animateCounter(el));
+  }
+
+  // /cheap before-and-after table: real replay data, loaded when the Nexus section is near.
+  const cheapBox = view.querySelector("[data-nx-cheap]");
+  if (cheapBox) {
+    const escT = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const fillCheap = () => fetch("/data/nexus-cheap-replay.json").then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
+      const usd = (n) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      cheapBox.querySelector(".nx-cmds-foot").remove();
+      cheapBox.insertAdjacentHTML("beforeend",
+        '<div class="nx-cheap-scroll"><table class="nx-cheap-t"><thead><tr><th>Model</th><th>Without /cheap</th><th>With /cheap</th><th>Saved</th></tr></thead><tbody>' +
+        d.models.map((m) => "<tr><td>" + escT(m.label) + "</td><td>" + usd(m.before) + "</td><td>" + usd(m.after) + "</td><td><strong>" + usd(m.saved) + " (" + m.pct + "%)</strong></td></tr>").join("") +
+        '</tbody></table></div><p class="nx-cmds-foot">Measured on ' + d.sample.calls.toLocaleString("en-US") + " real requests from " + d.sample.sessions + " sessions over " + d.period.days + " days, replayed with and without /cheap and priced at each model\u2019s list rates. Keep-alive pings are charged. Most of the saving comes from keeping the prompt cache warm through breaks, so it assumes Nexus stays open; your share depends on how often you step away.</p>");
+    }).catch(() => { cheapBox.remove(); });
+    if ("IntersectionObserver" in window) {
+      const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { io.disconnect(); fillCheap(); } }, { rootMargin: "400px" });
+      io.observe(cheapBox);
+    } else fillCheap();
   }
 
   // Hero text rotation

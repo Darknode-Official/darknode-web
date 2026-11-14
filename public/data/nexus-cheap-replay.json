@@ -1,0 +1,62 @@
+{
+  "measured": "2026-11-14",
+  "period": {
+    "days": 14,
+    "from": "2026-10-31",
+    "to": "2026-11-14"
+  },
+  "sample": {
+    "sessions": 146,
+    "calls": 16999,
+    "rebuildsAfterBreaks": 33,
+    "rebuildsAvoided": 22,
+    "keepWarmPings": 129
+  },
+  "method": "Real main-thread Claude Code calls from one developer's sessions, priced at each model's list rates (same tokens on every model). After = keep-warm and unused-skill trimming applied, keep-alive pings charged. Assumes Nexus stays open during breaks.",
+  "models": [
+    {
+      "model": "haiku 5.5",
+      "label": "Claude Haiku 5.5",
+      "before": 172.45,
+      "after": 167.51,
+      "saved": 4.94,
+      "pct": 2.9,
+      "keepWarmSaved": 3.15,
+      "pingCost": 0.97,
+      "skillSaved": 2.76
+    },
+    {
+      "model": "sonnet 5.5",
+      "label": "Claude Sonnet 5.5",
+      "before": 545.48,
+      "after": 524.02,
+      "saved": 21.46,
+      "pct": 3.9,
+      "keepWarmSaved": 13.56,
+      "pingCost": 2.1,
+      "skillSaved": 10
+    },
+    {
+      "model": "opus 5.5",
+      "label": "Claude Opus 5.5",
+      "before": 1090.95,
+      "after": 1048.03,
+      "saved": 42.92,
+      "pct": 3.9,
+      "keepWarmSaved": 27.11,
+      "pingCost": 4.19,
+      "skillSaved": 20
+    },
+    {
+      "model": "fable 5.2",
+      "label": "Claude Fable 5.2",
+      "before": 1670.01,
+      "after": 1591.79,
+      "saved": 78.22,
+      "pct": 4.7,
+      "keepWarmSaved": 54.93,
+      "pingCost": 4.31,
+      "skillSaved": 27.6
+    }
+  ]
+}
