@@ -1,10 +1,28 @@
 {
- "updated": "2026-11-13T13:15:02.615Z",
+ "updated": "2026-11-14T12:19:12.516Z",
  "source": "CISA KEV (last 14 days)",
- "catalogVersion": "2026.11.10",
- "since": "2026-10-30",
+ "catalogVersion": "2026.11.13",
+ "since": "2026-10-31",
  "count": 15,
  "data": [
+  {
+   "cve": "CVE-2026-114713",
+   "vendor": "UnrealIRCd",
+   "product": "UnrealIRCd",
+   "name": "UnrealIRCd Improper Neutralization of Delimiters Vulnerability",
+   "dateAdded": "2026-11-13",
+   "dueDate": "2026-11-16",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-123039",
+   "vendor": "Check Point",
+   "product": "Multiple Products",
+   "name": "Check Point Multiple Products Incorrect Permission Assignment for Critical Resource Vulnerability",
+   "dateAdded": "2026-11-13",
+   "dueDate": "2026-11-16",
+   "ransomware": false
+  },
   {
    "cve": "CVE-2026-124194",
    "vendor": "Microsoft",
@@ -120,24 +138,6 @@
    "name": "WordPress WordPress Core Time-of-check Time-of-use (TOCTOU) Race Condition Vulnerability",
    "dateAdded": "2026-11-03",
    "dueDate": "2026-11-06",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-118527",
-   "vendor": "Ivanti",
-   "product": "Connect Secure",
-   "name": "Ivanti Connect Secure Generation of Predictable Numbers or Identifiers Vulnerability",
-   "dateAdded": "2026-10-30",
-   "dueDate": "2026-11-13",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-111357",
-   "vendor": "Ivanti",
-   "product": "Connect Secure",
-   "name": "Ivanti Connect Secure Missing Authentication for Critical Function Vulnerability",
-   "dateAdded": "2026-10-30",
-   "dueDate": "2026-11-02",
    "ransomware": false
   }
  ]
