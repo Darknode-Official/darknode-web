@@ -1,16 +1,17 @@
 // Nexus — showcase page for `nexus`, the terminal AI coding agent built
-// into the Darknode CLI: multi-engine (Claude / local Ollama / OpenCode), private,
+// into the Darknode CLI: multi-engine (Claude Code, Gemini, Codex, OpenCode, Aider, local Ollama), private,
 // git-native, security-aware, single dependency-free binary.
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 // features shown in the grid: [command/label, title, description, tag?]
 const FEATURES = [
-  ["/race", "Race cloud vs local", "Run the same prompt on Claude <b>and</b> your local model at once, see every answer, keep the best. No other agent does this.", "unique"],
-  ["/review", "Cross-engine second opinion", "Have a <b>different</b> model critique the last answer for bugs and security holes before you ship it.", "unique"],
-  ["hybrid", "Hybrid cost-saver", "Local model does the routine work, Claude only the hard parts — often cutting your Claude bill by well over half.", ""],
-  ["/watch", "Auto-fix loop", "Give it a test or build command; it runs, reads the failure, fixes the code, and re-runs until green.", "unique"],
-  ["/redact", "Cloud privacy layer", "Masks API keys, tokens and private keys <b>before</b> anything is sent to a cloud engine. Your local runs never leave the box.", "unique"],
+  ["/race", "Race every engine", "Run the same prompt on every engine at once, cloud and local, see every answer and keep the best.", ""],
+  ["/review", "Cross-engine second opinion", "Have a <b>different</b> model critique the last answer for bugs and security holes before you ship it.", ""],
+  ["/cheap", "Lossless cost saver", "Keeps the prompt cache warm through breaks and stops sending unused skill descriptions: the same answers for fewer billed tokens. <a href=\"/docs#doc-cost\">Measured savings by model</a>.", ""],
+  ["/cowork", "Split the work", "A strong model writes the code while a cheaper or free local model handles tests, builds and commit messages.", ""],
+  ["/watch", "Auto-fix loop", "Give it a test or build command; it runs, reads the failure, fixes the code, and re-runs until green.", ""],
+  ["/redact", "Cloud privacy layer", "Masks API keys, tokens and private keys <b>before</b> anything is sent to a cloud engine. Your local runs never leave the box.", ""],
   ["/undo", "Git checkpoints", "A safe checkpoint before every turn — <b>/undo</b>, <b>/redo</b> and <b>/rewind N</b> restore your files instantly.", ""],
   ["meter", "Live cost & context meter", "Real token usage, dollar cost and context % in the status bar, plus <b>/budget</b> to hard-cap spend.", ""],
   ["/agents", "Parallel sub-agents", "Fan independent tasks out across the engine at once — <code>/agents a ;; b ;; c</code>.", ""],
@@ -58,7 +59,7 @@ export function renderCliCoder(main) {
     <section class="nx-hero">
       <span class="nx-badge">nexus · terminal AI agent</span>
       <h1 class="nx-title">Code with cloud and local AI —<br>on your terms.</h1>
-      <p class="nx-sub">Nexus is a single dependency-free binary that drives <b>Claude</b>, your <b>local</b> models, or <b>OpenCode</b> from one terminal UI. It reads &amp; writes files, runs commands, checkpoints every change, shows your real cost live, and keeps your secrets off the cloud.</p>
+      <p class="nx-sub">Nexus is a single dependency-free binary that drives six engines (<b>Claude Code</b>, <b>Gemini</b>, <b>Codex</b>, <b>OpenCode</b>, <b>Aider</b> and your <b>local</b> Ollama models) from one terminal UI. It reads &amp; writes files, runs commands, checkpoints every change, shows your real cost live, and keeps your secrets off the cloud.</p>
       <div class="nx-cta">
         <!-- NPM_SUSPENDED: restore <code>npm i -g darknode-cli</code> here when the npm account is back -->
         <pre class="code-block cta-cmd"><button class="cb-copy">copy</button><code>git clone https://github.com/Darknode-Official/darknode-cli &amp;&amp; cd darknode-cli &amp;&amp; node darknode.js nexus</code></pre>
@@ -85,26 +86,25 @@ export function renderCliCoder(main) {
       ${CMDS.map((c) => `<span class="nx-chip"><b>${esc(c)}</b></span>`).join("")}
     </div>
 
-    <h2 class="nx-h2">Nexus vs Claude Code</h2>
+    <h2 class="nx-h2">What Nexus adds on top of the engines it drives</h2>
+    <p class="nx-sub">Nexus runs the agent CLIs you already use (it drives Claude Code for the Claude engine) and adds these to every one of them:</p>
     <div style="overflow-x:auto">
     <table class="cmp-table">
-      <thead><tr><th></th><th>Nexus</th><th>Claude Code</th></tr></thead>
+      <thead><tr><th>Adds</th><th>Command</th></tr></thead>
       <tbody>
-        <tr><td>Engines</td><td class="yes">Claude, local Ollama, or OpenCode</td><td>Claude only</td></tr>
-        <tr><td>Works offline / free option</td><td class="yes">Yes (local models)</td><td>No</td></tr>
-        <tr><td>Race cloud vs local in one keystroke</td><td class="yes">Yes (/race)</td><td>No</td></tr>
-        <tr><td>Cross-engine second opinion</td><td class="yes">Yes (/review)</td><td>No</td></tr>
-        <tr><td>Hybrid cost-saver</td><td class="yes">Yes</td><td>No</td></tr>
-        <tr><td>Live token, context &amp; real cost meter</td><td class="yes">Always on</td><td>Partial</td></tr>
-        <tr><td>Spend cap that halts runaway cost</td><td class="yes">Yes (/budget)</td><td>No</td></tr>
-        <tr><td>Secrets masked before cloud sends</td><td class="yes">Yes (/redact)</td><td>No</td></tr>
-        <tr><td>Git checkpoints · undo · redo · rewind</td><td class="yes">Yes</td><td>Interactive only</td></tr>
-        <tr><td>Auto test-fix loop</td><td class="yes">Yes (/watch)</td><td>Manual</td></tr>
-        <tr><td>MCP servers &amp; project hooks</td><td class="yes">Yes</td><td>Yes</td></tr>
-        <tr><td>Nexus-driven parallel sub-agents</td><td class="yes">Yes (/agents)</td><td>Its own</td></tr>
-        <tr><td>Security toolkit (scan, recon, VM labs)</td><td class="yes">Yes</td><td>No</td></tr>
-        <tr><td>Dependencies</td><td class="yes">Zero — one self-contained file</td><td>npm dependency tree</td></tr>
-        <tr><td>Price</td><td class="yes">Free</td><td>Subscription</td></tr>
+        <tr><td>Six engines behind one set of commands</td><td class="yes">/engine</td></tr>
+        <tr><td>Same prompt on every engine, keep the best</td><td class="yes">/race</td></tr>
+        <tr><td>A different engine reviews the last answer</td><td class="yes">/review</td></tr>
+        <tr><td>Savers that cannot lower answer quality</td><td class="yes">/cheap</td></tr>
+        <tr><td>Prompt-cache countdown, warm vs cold cost</td><td class="yes">/warm</td></tr>
+        <tr><td>Per-turn cost at exact list prices</td><td class="yes">/turns</td></tr>
+        <tr><td>Spend cap checked within turns</td><td class="yes">/budget</td></tr>
+        <tr><td>Secrets masked before cloud sends</td><td class="yes">/redact</td></tr>
+        <tr><td>Destructive commands checked first</td><td class="yes">/guard</td></tr>
+        <tr><td>Git checkpoints on every engine</td><td class="yes">/undo /redo /rewind</td></tr>
+        <tr><td>Find the turn that broke your tests</td><td class="yes">/bisect</td></tr>
+        <tr><td>Run until the tests pass</td><td class="yes">/watch</td></tr>
+        <tr><td>Background sessions you can attach to</td><td class="yes">nexus bg</td></tr>
       </tbody>
     </table>
     </div>

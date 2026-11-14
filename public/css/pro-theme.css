@@ -2364,6 +2364,8 @@ body.landing #nav-start { white-space: nowrap !important; flex-shrink: 0; }
   padding: 24px !important;
   box-shadow: none !important;
 }
+[data-style=pro] .nx-cmds { background: #fff !important; border: 1px solid #e5e5e5 !important; border-radius: 8px !important; box-shadow: none !important; }
+[data-style=pro] .nx-cmd { border-bottom-color: #f0f0f0 !important; }
 [data-style=pro] .nx-hl:hover {
   border-color: #ccc !important;
   transform: none !important;
@@ -6396,6 +6398,8 @@ html[data-style=dark].crt body::after {
 [data-style=pro] .dc-details summary::before { color: #2563eb !important; }
 [data-style=pro] .dc-details[open] { border-color: #bfdbfe !important; }
 [data-style=pro] .dc-breadcrumb a { color: #2563eb !important; }
+[data-style=pro] .dc-filter { background: #fff !important; border-color: #e2e8f0 !important; color: #18181b !important; }
+[data-style=pro] .dc-table th { border-bottom-color: #e2e8f0 !important; color: #64748b !important; }
 [data-style=pro] .dc-ol li strong, [data-style=pro] .dc-ul li strong { color: #18181b !important; }
 
 /* =====================================================================
