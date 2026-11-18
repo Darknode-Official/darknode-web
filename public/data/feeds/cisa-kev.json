@@ -1,8 +1,19 @@
 {
- "updated": "2026-11-17T14:41:06.317Z",
+ "updated": "2026-11-18T14:18:22.572Z",
  "source": "CISA KEV",
  "count": 500,
  "data": [
+  {
+   "cve": "CVE-2026-115731",
+   "vendor": "Perforce",
+   "product": "Puppet Enterprise",
+   "name": "Perforce Puppet Enterprise Deserialization of Untrusted Data Vulnerability",
+   "description": "Perforce Puppet Enterprise contains a deserialization of untrusted data vulnerability in Puppet’s report-processing code that allows a client with any CA-signed agent certificate to execute arbitrary code on the Puppet Server as the service user by submitting a report containing a crafted rich-data type through a PUT request. If the certificate authority automatically signs requests without strong verification, an unauthenticated network attacker can obtain a valid certificate and exploit the vulnerability.",
+   "dateAdded": "2026-11-17",
+   "dueDate": "2026-12-01",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
   {
    "cve": "CVE-2026-114713",
    "vendor": "UnrealIRCd",
@@ -1666,7 +1677,7 @@
   },
   {
    "cve": "CVE-2026-48558",
-   "vendor": "SimpleHelp ",
+   "vendor": "SimpleHelp",
    "product": "SimpleHelp",
    "name": "SimpleHelp Authentication Bypass Vulnerability",
    "description": "SimpleHelp contains an authentication bypass vulnerability in the OIDC authentication flow. When OIDC authentication is configured, identity tokens submitted during login are accepted without verifying their cryptographic signature. In a vulnerable configuration, a remote, unauthenticated attacker can submit a forged token containing arbitrary identity claims to obtain a fully authenticated technician session. In some configurations, this may also allow bypass of multi-factor authentication.",
@@ -2205,7 +2216,7 @@
   },
   {
    "cve": "CVE-2024-57728",
-   "vendor": "SimpleHelp ",
+   "vendor": "SimpleHelp",
    "product": "SimpleHelp",
    "name": "SimpleHelp Path Traversal Vulnerability",
    "description": "SimpleHelp contains a path traversal vulnerability that allows admin users to upload arbitrary files anywhere on the file system by uploading a crafted zip file (i.e. zip slip). This can be exploited to execute arbitrary code on the host in the context of the SimpleHelp server user.",
@@ -2216,7 +2227,7 @@
   },
   {
    "cve": "CVE-2024-57726",
-   "vendor": "SimpleHelp ",
+   "vendor": "SimpleHelp",
    "product": "SimpleHelp",
    "name": "SimpleHelp Missing Authorization Vulnerability",
    "description": "SimpleHelp contains a missing authorization vulnerability that could allow low-privileged technicians to create API keys with excessive permissions. These API keys can be used to escalate privileges to the server admin role.",
@@ -3437,7 +3448,7 @@
   },
   {
    "cve": "CVE-2025-66644",
-   "vendor": "Array Networks ",
+   "vendor": "Array Networks",
    "product": "ArrayOS AG",
    "name": "Array Networks ArrayOS AG OS Command Injection Vulnerability",
    "description": "Array Networks ArrayOS AG contains an OS command injection vulnerability that could allow an attacker to execute arbitrary commands.",
@@ -5487,17 +5498,6 @@
    "product": "Pentaho Business Analytics (BA) Server",
    "name": "Hitachi Vantara Pentaho BA Server Special Element Injection Vulnerability",
    "description": "Hitachi Vantara Pentaho BA Server contains a special element injection vulnerability that allows an attacker to inject Spring templates into properties files, allowing for arbitrary command execution.",
-   "dateAdded": "2025-03-03",
-   "dueDate": "2025-03-24",
-   "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2022-43939",
-   "vendor": "Hitachi Vantara",
-   "product": "Pentaho Business Analytics (BA) Server",
-   "name": "Hitachi Vantara Pentaho BA Server Authorization Bypass Vulnerability",
-   "description": "Hitachi Vantara Pentaho BA Server contains a use of non-canonical URL paths for authorization decisions vulnerability that enables an attacker to bypass authorization.",
    "dateAdded": "2025-03-03",
    "dueDate": "2025-03-24",
    "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
