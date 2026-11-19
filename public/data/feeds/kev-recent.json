@@ -1,10 +1,46 @@
 {
- "updated": "2026-11-18T14:18:22.753Z",
+ "updated": "2026-11-19T14:31:04.865Z",
  "source": "CISA KEV (last 14 days)",
- "catalogVersion": "2026.11.17",
- "since": "2026-11-04",
- "count": 15,
+ "catalogVersion": "2026.11.18",
+ "since": "2026-11-05",
+ "count": 18,
  "data": [
+  {
+   "cve": "CVE-2024-10441",
+   "vendor": "Synology",
+   "product": "DiskStation Manager (DSM)",
+   "name": "Synology DiskStation Manager (DSM) Improper Encoding or Escaping of Output Vulnerability",
+   "dateAdded": "2026-11-18",
+   "dueDate": "2026-11-21",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-40217",
+   "vendor": "BerriAI",
+   "product": "LiteLLM",
+   "name": "BerriAI LiteLLM Unprotected Alternate Channel Vulnerability",
+   "dateAdded": "2026-11-18",
+   "dueDate": "2026-12-02",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-90817",
+   "vendor": "Vanderbilt University",
+   "product": "Research Electronic Data Capture (REDCap)",
+   "name": "Vanderbilt University Research Electronic Data Capture (REDCap) Code Injection Vulnerability",
+   "dateAdded": "2026-11-18",
+   "dueDate": "2026-11-21",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-90436",
+   "vendor": "Apache",
+   "product": "Axis",
+   "name": "Apache Axis Unsafe Reflection Vulnerability",
+   "dateAdded": "2026-11-18",
+   "dueDate": "2026-11-21",
+   "ransomware": false
+  },
   {
    "cve": "CVE-2026-115731",
    "vendor": "Perforce",
@@ -129,15 +165,6 @@
    "name": "SonicWall SonicOS SSLVPN Use of Single-factor Authentication Vulnerability",
    "dateAdded": "2026-11-06",
    "dueDate": "2026-11-20",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2024-27834",
-   "vendor": "Apple",
-   "product": "Multiple Products",
-   "name": "Apple Multiple Products Improper Authentication Vulnerability",
-   "dateAdded": "2026-11-04",
-   "dueDate": "2026-11-18",
    "ransomware": false
   }
  ]
