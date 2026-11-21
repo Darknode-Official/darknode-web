@@ -1,10 +1,46 @@
 {
- "updated": "2026-11-20T14:09:54.868Z",
+ "updated": "2026-11-21T13:35:04.690Z",
  "source": "CISA KEV (last 14 days)",
- "catalogVersion": "2026.11.18",
- "since": "2026-11-06",
- "count": 18,
+ "catalogVersion": "2026.11.20",
+ "since": "2026-11-07",
+ "count": 21,
  "data": [
+  {
+   "cve": "CVE-2026-129448",
+   "vendor": "Apache",
+   "product": "Roller",
+   "name": "Apache Roller Deserialization of Untrusted Data Vulnerability",
+   "dateAdded": "2026-11-20",
+   "dueDate": "2026-11-23",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-123890",
+   "vendor": "Broadcom",
+   "product": "VMware vCenter",
+   "name": "VMWare vCenter Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+   "dateAdded": "2026-11-20",
+   "dueDate": "2026-11-23",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2025-42884",
+   "vendor": "SAP",
+   "product": "NetWeaver",
+   "name": "SAP NetWeaver Improper Neutralization of Special Elements in Data Query Logic Vulnerability",
+   "dateAdded": "2026-11-20",
+   "dueDate": "2026-11-23",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-76466",
+   "vendor": "Cisco",
+   "product": "Expressway Series",
+   "name": "Cisco Expressway Series Use of Hard-coded Credentials Vulnerability",
+   "dateAdded": "2026-11-20",
+   "dueDate": "2026-11-23",
+   "ransomware": false
+  },
   {
    "cve": "CVE-2024-10441",
    "vendor": "Synology",
@@ -156,15 +192,6 @@
    "name": "IBM Aspera Faspex Incorrect Authorization Vulnerability",
    "dateAdded": "2026-11-09",
    "dueDate": "2026-11-12",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-19868",
-   "vendor": "SonicWall",
-   "product": "SonicOS SSLVPN",
-   "name": "SonicWall SonicOS SSLVPN Use of Single-factor Authentication Vulnerability",
-   "dateAdded": "2026-11-06",
-   "dueDate": "2026-11-20",
    "ransomware": false
   }
  ]

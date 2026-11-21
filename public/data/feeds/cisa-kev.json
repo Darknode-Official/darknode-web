@@ -1,8 +1,52 @@
 {
- "updated": "2026-11-20T14:09:54.703Z",
+ "updated": "2026-11-21T13:35:04.234Z",
  "source": "CISA KEV",
  "count": 500,
  "data": [
+  {
+   "cve": "CVE-2026-129448",
+   "vendor": "Apache",
+   "product": "Roller",
+   "name": "Apache Roller Deserialization of Untrusted Data Vulnerability",
+   "description": "Apache Roller contains a deserialization of untrusted data vulnerability that allows an unauthenticated remote attacker to execute arbitrary code via the XML-RPC endpoint, which accepts and deserializes vendor extension types before authentication. This CVE covers the same underlying vulnerability as CVE-2026-82384 but applies to a broader range of affected versions.",
+   "dateAdded": "2026-11-20",
+   "dueDate": "2026-11-23",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-123890",
+   "vendor": "Broadcom",
+   "product": "VMware vCenter",
+   "name": "VMWare vCenter Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+   "description": "Broadcom VMware vCenter contains an authentication bypass using an alternate path or channel vulnerability in the VMware Directory Service that allows an unauthenticated attacker with network access to vCenter to bypass authentication and gain unauthorized access to the system.",
+   "dateAdded": "2026-11-20",
+   "dueDate": "2026-11-23",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2025-42884",
+   "vendor": "SAP",
+   "product": "NetWeaver",
+   "name": "SAP NetWeaver Improper Neutralization of Special Elements in Data Query Logic Vulnerability",
+   "description": "SAP NetWeaver Enterprise Portal contains an improper neutralization of special elements in data query logic vulnerability that allows an unauthenticated attacker to disclose or modify server information via injected JNDI environment properties or a URL used during JNDI lookup operations.",
+   "dateAdded": "2026-11-20",
+   "dueDate": "2026-11-23",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-76466",
+   "vendor": "Cisco",
+   "product": "Expressway Series",
+   "name": "Cisco Expressway Series Use of Hard-coded Credentials Vulnerability",
+   "description": "Cisco Expressway Series contains a use of hard-coded credentials vulnerability that allows an unauthenticated, remote attacker with persistent cookies and network access to execute commands as root on a clustered device via the database service.",
+   "dateAdded": "2026-11-20",
+   "dueDate": "2026-11-23",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
   {
    "cve": "CVE-2024-10441",
    "vendor": "Synology",
@@ -5456,50 +5500,6 @@
    "description": "Advantive VeraCore contains an unrestricted file upload vulnerability that allows a remote unauthenticated attacker to upload files to unintended folders via upload.apsx.",
    "dateAdded": "2025-03-10",
    "dueDate": "2025-03-31",
-   "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-25181",
-   "vendor": "Advantive",
-   "product": "VeraCore",
-   "name": "Advantive VeraCore SQL Injection Vulnerability",
-   "description": "Advantive VeraCore contains a SQL injection vulnerability in timeoutWarning.asp that allows a remote attacker to execute arbitrary SQL commands via the PmSess1 parameter.",
-   "dateAdded": "2025-03-10",
-   "dueDate": "2025-03-31",
-   "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-22226",
-   "vendor": "VMware",
-   "product": "ESXi, Workstation, and Fusion",
-   "name": "VMware ESXi, Workstation, and Fusion Information Disclosure Vulnerability",
-   "description": "VMware ESXi, Workstation, and Fusion contain an information disclosure vulnerability due to an out-of-bounds read in HGFS. Successful exploitation allows an attacker with administrative privileges to a virtual machine to leak memory from the vmx process.",
-   "dateAdded": "2025-03-04",
-   "dueDate": "2025-03-25",
-   "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-22225",
-   "vendor": "VMware",
-   "product": "ESXi",
-   "name": "VMware ESXi Arbitrary Write Vulnerability",
-   "description": "VMware ESXi contains an arbitrary write vulnerability. Successful exploitation allows an attacker with privileges within the VMX process to trigger an arbitrary kernel write leading to an escape of the sandbox.",
-   "dateAdded": "2025-03-04",
-   "dueDate": "2025-03-25",
-   "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Known"
-  },
-  {
-   "cve": "CVE-2025-22224",
-   "vendor": "VMware",
-   "product": "ESXi and Workstation",
-   "name": "VMware ESXi and Workstation TOCTOU Race Condition Vulnerability",
-   "description": "VMware ESXi and Workstation contain a time-of-check time-of-use (TOCTOU) race condition vulnerability that leads to an out-of-bounds write. Successful exploitation enables an attacker with local administrative privileges on a virtual machine to execute code as the virtual machine's VMX process running on the host.",
-   "dateAdded": "2025-03-04",
-   "dueDate": "2025-03-25",
    "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
    "ransomware": "Unknown"
   }
