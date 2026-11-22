@@ -138,3 +138,27 @@ group("ingest DO/prototype safety", () => {
     assert.equal(list.keys.length, 1, "the real key is unaffected");
   });
 });
+
+group("ingest DO/plan", () => {
+  const withWid = (key, body) => new Request("https://ingest/", { method: "POST", headers: { "x-ing-key": key, "x-ing-wid": "u1", "content-type": "application/json" }, body });
+  const tierIs = (tier, status = 200) => ({ token: async () => "sa", cache: new Map(), fetch: async () => ({ ok: status === 200, status, json: async () => ({ fields: { tier: { stringValue: tier } } }) }) });
+  const mkd = () => { const d = new IngestDO(memState(), { FIREBASE_PROJECT_ID: "p1" }); return d; };
+  test("a key keeps ingesting while its creator has Team", async () => {
+    const d = mkd(); const k = await newKey(d, ["ingest:write"]);
+    d.planOpts = tierIs("team");
+    assert.equal((await d.fetch(withWid(k.key, JSON.stringify([{ title: "A", severity: "low" }])))).status, 200);
+  });
+  test("after the creator is downgraded the key is refused with 402; read-back stays open", async () => {
+    const d = mkd(); const k = await newKey(d, ["ingest:write", "findings:read"]);
+    await d.fetch(withWid(k.key, JSON.stringify([{ title: "A", severity: "low" }])));
+    d.planOpts = tierIs("free");
+    const r = await jsonOf(await d.fetch(withWid(k.key, JSON.stringify([{ title: "B", severity: "low" }]))));
+    assert.equal(r.status, 402); assert.equal(r.json.plan, true);
+    assert.equal((await d.fetch(readback(k.key))).status, 200);
+  });
+  test("a plan that cannot be read does not break CI (fails open)", async () => {
+    const d = mkd(); const k = await newKey(d, ["ingest:write"]);
+    d.planOpts = tierIs("free", 503);
+    assert.equal((await d.fetch(withWid(k.key, JSON.stringify([{ title: "A", severity: "low" }])))).status, 200);
+  });
+});
