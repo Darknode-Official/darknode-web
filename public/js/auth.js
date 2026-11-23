@@ -591,7 +591,7 @@ const errText = (e) => {
   return /^Firebase:|auth\//.test(m) ? "Sign-in failed. Try again, or use another sign-in method." : m;
 };
 
-async function ensureUserDoc(user) {
+async function ensureUserDoc(user, retry = 1) {
   try {
     const providers = user.providerData.map(p => p.providerId.replace('.com', '')).join(', ') || 'email';
     await setDoc(doc(db, "users", user.uid), {
@@ -600,7 +600,10 @@ async function ensureUserDoc(user) {
       createdAt: user.metadata?.creationTime || null,
       lastLoginAt: user.metadata?.lastSignInTime || null,
     }, { merge: true });
-  } catch (_) { /* rules/offline - non-fatal */ }
+  } catch (e) { // non-fatal, but retry once: a missing profile hides the account from the admin user list
+    if (retry > 0) { await new Promise((r) => setTimeout(r, 1500)); return ensureUserDoc(user, retry - 1); }
+    console.warn("[auth] profile write failed:", e?.code || e?.message || e);
+  }
 }
 
 // ---------- views ----------
@@ -2999,7 +3002,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("tosAgree").onclick = async (ev) => {
       const btn = ev.currentTarget; btn.disabled = true;
       try {
-        await setDoc(doc(db, "users", user.uid), { tosAccepted: true, tosVersion: TOS_VERSION, tosAcceptedAt: serverTimestamp() }, { merge: true });
+        await setDoc(doc(db, "users", user.uid), { email: user.email, tosAccepted: true, tosVersion: TOS_VERSION, tosAcceptedAt: serverTimestamp() }, { merge: true });
       } catch (e) {
         btn.disabled = false;
         document.getElementById("tosErr").textContent = "Couldn't save your acceptance. Check your connection and try again.";
