@@ -448,7 +448,8 @@ export const TOOLS = [
     run(v) {
       const cat = v.category || "process";
       const conds = lines(v.conds);
-      const where = conds.length ? conds.join(" and ") : "true";
+      if (!conds.length) return ""; // nothing to build until a condition is entered
+      const where = conds.join(" and ");
       if (v.sequence) {
         return `sequence by host.id with maxspan=5m\n  [ ${cat} where ${where} ]\n  [ process where event.type == "start" ]`;
       }
@@ -490,6 +491,10 @@ export const TOOLS = [
     ],
     run(v) {
       const esc = (s) => S(s).replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+      const HEAD = [["vendor", "Device Vendor"], ["product", "Device Product"], ["version", "Device Version"], ["sig", "Signature ID"], ["name", "Name"], ["severity", "Severity"]];
+      const missing = HEAD.filter(([k]) => !S(v[k]).trim()).map(([, l]) => l);
+      if (missing.length === HEAD.length && !lines(v.ext).length) return ""; // nothing entered yet
+      if (missing.length) return { error: "A CEF header needs every field. Missing: " + missing.join(", ") + "." };
       const header = ["CEF:0", esc(v.vendor), esc(v.product), esc(v.version), esc(v.sig), esc(v.name), esc(v.severity)].join("|");
       const ext = lines(v.ext).map((l) => { const i = l.indexOf("="); return i < 0 ? l : `${l.slice(0, i)}=${l.slice(i + 1).replace(/\\/g, "\\\\").replace(/=/g, "\\=")}`; }).join(" ");
       return header + "|" + ext;

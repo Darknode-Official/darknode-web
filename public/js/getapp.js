@@ -97,17 +97,17 @@ export function renderDownloads(main) {
         <div class="os-ed">
           <div class="os-ed-h"><b>netinstall</b><span class="os-ed-sz">~12&nbsp;GB</span></div>
           <p class="muted os-ed-d">Just a terminal &mdash; no desktop, no UI. Core CLI security stack + Nexus AI agent + local models. Boots straight to a console. Smallest &amp; fastest.</p>
-          <div class="dlapp-cmd"><code data-cmd>./build.sh debian netinstall &amp;&amp; ./launch.sh netinstall</code></div>
+          <div class="dlapp-cmd"><code data-cmd title="Click to copy">./build.sh debian netinstall &amp;&amp; ./launch.sh netinstall</code></div>
         </div>
         <div class="os-ed">
           <div class="os-ed-h"><b>slim</b><span class="os-ed-sz">~20&nbsp;GB</span></div>
           <p class="muted os-ed-d">Full branded XFCE desktop + Nexus + the CLI toolset &mdash; minus Metasploit, SecLists, Docker and the cockpit app. A lean graphical workstation.</p>
-          <div class="dlapp-cmd"><code data-cmd>./build.sh debian slim &amp;&amp; ./export-vbox.sh slim</code></div>
+          <div class="dlapp-cmd"><code data-cmd title="Click to copy">./build.sh debian slim &amp;&amp; ./export-vbox.sh slim</code></div>
         </div>
         <div class="os-ed os-ed-full">
           <div class="os-ed-h"><b>full</b><span class="os-ed-sz">~30&nbsp;GB</span><span class="os-ed-tag">everything</span></div>
           <p class="muted os-ed-d">The complete workstation: desktop, cockpit app, Metasploit, SecLists, Exploit-DB, Docker, autonomous AI recon, honeypot &mdash; 80+ heavyweight tools pre-installed, on top of the full Darknode CLI.</p>
-          <div class="dlapp-cmd"><code data-cmd>./build.sh debian full &amp;&amp; ./export-vbox.sh full</code></div>
+          <div class="dlapp-cmd"><code data-cmd title="Click to copy">./build.sh debian full &amp;&amp; ./export-vbox.sh full</code></div>
         </div>
       </div>
       <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:.78rem">

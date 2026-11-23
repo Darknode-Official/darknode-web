@@ -57,6 +57,7 @@ import { remediationPlan, slaReport } from "/js/core/report-plans.js?v=20261028a
 import { affectsMe, graphCves } from "/js/core/affects-me.js?v=20261028a";
 import { roleFocus, ROLES as HOME_ROLES } from "/js/core/role-home.js?v=20261028a";
 import { makeMessage as makeBridge, parseMessage as parseBridge, MSG as BMSG } from "/js/core/tool-bridge.js?v=20261018g";
+import { SCENES, SCENE_PATH } from "/js/deck/routes.js?v=1";
 
 const LS_CONN = "dn_deck_connections_v1";
 // AI providers whose key the AI Assistant (webai.js) uses, calling the provider directly from the browser.
@@ -1033,6 +1034,7 @@ const CSS = `
 .dk-tsearch svg{width:17px;height:17px;color:#687388;flex:none}
 .dk .dk-tsearch input{flex:1;min-width:0;width:auto;height:100%;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;outline:0;box-shadow:none!important;background:transparent!important;color:#1a2233;font:inherit;font-size:14px;-webkit-appearance:none;appearance:none}
 .dk .dk-tsearch input::-webkit-search-decoration{-webkit-appearance:none}
+.dk .dk-tsearch input:focus-visible{outline:0!important;box-shadow:none!important}
 @media(max-width:640px){.dk-tbar{padding:14px 16px 10px;gap:10px}.dk-tsearch{max-width:none}}
 .dk-tbar{flex-wrap:wrap}.dk-tbar>.dk-ti-head{flex-basis:100%;margin-bottom:4px}
 .dk-tbody{flex:1;display:flex;min-height:0}
@@ -1076,6 +1078,8 @@ const CSS = `
 .dk-rtab th{text-align:left;padding:7px 10px;color:#6a7488;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;border-bottom:1px solid rgba(23,33,56,.1)}
 .dk-rtab td{padding:8px 10px;border-bottom:1px solid rgba(23,33,56,.06);color:#38435c}
 .dk-rtab tr:last-child td{border-bottom:0}
+.dk-rtab td:nth-child(n+2){overflow-wrap:normal;white-space:nowrap}
+@media(max-width:640px){.dk .dk-rtab :is(th,td){padding:8px 6px!important}}
 .dk-cve .bd .ti{font-size:12.5px;color:#5a6680;margin-top:3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .dk-cve .bd .dt{font-size:11px;color:#6a7488;margin-top:5px}
 .dk-loading{display:flex;align-items:center;gap:12px;color:#687388;font-size:13.5px;padding:30px 4px}
@@ -1707,6 +1711,10 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-brand .dk-wm{filter:brightness(0)}
 .dk[data-ui=deck] .dk-scene *{box-shadow:none!important}
 .dk[data-ui=deck] .dk-wframe iframe{filter:brightness(.92)}
+/* toasts sit outside the invert layer, so they take the ink tones directly */
+body:has(.dk[data-ui=deck]) .toast-item{background:#262522!important;color:#ece9e4!important;border:1px solid #3a3935!important;border-left:4px solid var(--toast-c)!important;box-shadow:0 8px 24px rgba(0,0,0,.4)!important}
+body:has(.dk[data-ui=deck]) .toast-x{color:#9a968f!important}
+body:has(.dk[data-ui=deck]) .toast-x:hover{color:#fff!important}
 .dk[data-ui=deck] .dk-wbar{background:var(--dk-bg)}
 .dk[data-ui=deck] :is(.dk-gcard,.dk-intcard,.dk-act,.dk-qacard){background:var(--dk-surf)}
 .dk[data-ui=deck] .dk-spot{background:rgba(0,0,0,.55)}
@@ -2078,7 +2086,7 @@ export function renderDeck(host, opts) {
   function drawStars(){}
 
   // ---------- workspace router ----------
-  const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", inventory: "#dkInventory", correlations: "#dkCorrelations", monitors: "#dkMonitors", apikeys: "#dkApiKeys", device: "#dkDevice", audit: "#dkAudit", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports", team: "#dkTeam", personal: "#dkPersonal", enterprise: "#dkEnterprise" };
+  // SCENES (scene id -> element) and SCENE_PATH live in deck/routes.js, shared with the signed-out 404 check
   const sceneEls = {}; for (const k in SCENES) sceneEls[k] = $(SCENES[k]);
   const sceneTools = sceneEls.tools;   // kept for the tools gallery code
   // sec -> label, for activity lines and quick-action titles
@@ -2110,7 +2118,6 @@ export function renderDeck(host, opts) {
   // an open tool is /<sec>, a page is /<scene> (the overview is /, a section is
   // /area/<id>, a Personal/Organization tab is /personal/<tab>). compliance and tools are also tool ids, so those pages take another
   // name. Navigating adds a history entry; boot and back/forward only replace it.
-  const SCENE_PATH = { overview: "", compliance: "compliance-center", tools: "all-tools", con: "connections", invest: "investigations" };
   const scenePath = (scene, sect) => "/" + (scene === "section" ? "area/" + sect : scene in SCENE_PATH ? SCENE_PATH[scene] : scene);
   // -> { scene, arg } for a Deck page path, null for anything else (a tool)
   function routeOf(pathname){
@@ -2120,6 +2127,7 @@ export function renderDeck(host, opts) {
     if (m) return isSect(m[1]) ? { scene: "section", arg: m[1] } : null;
     const sp = raw.match(/^(personal|enterprise)\/([\w-]+)$/);
     if (sp) return { scene: sp[1], arg: { tab: sp[2] } };
+    if (raw === "overview") return { scene: "overview" }; // the weekly digest links /overview
     for (const k in SCENES) if (k !== "section" && (k in SCENE_PATH ? SCENE_PATH[k] : k) === raw) return { scene: k };
     return null;
   }
@@ -2530,17 +2538,23 @@ export function renderDeck(host, opts) {
     search.oninput = () => { toolQ = search.value.trim().toLowerCase(); applyTools(); revealGallery(); };
   }
   function applyTools(){
-    const q = toolQ; let shown = 0;
-    sceneTools.querySelectorAll("#dkToolNav .dk-tcat").forEach((b) => b.classList.toggle("on", !q && b.dataset.cat === toolCat));
+    const q = toolQ; let shown = 0; const hits = {};
     sceneTools.querySelectorAll(".dk-tsec").forEach((sec) => {
       const inCat = !!q || toolCat === "all" || sec.dataset.g === toolCat;
       let any = false;
       sec.querySelectorAll(".dk-gcard").forEach((c) => {
         const hit = inCat && (!q || q.split(/\s+/).every((w) => c.dataset.txt.includes(w)));
         c.style.display = hit ? "" : "none";
-        if (hit) { any = true; shown++; }
+        if (hit) { any = true; shown++; hits[sec.dataset.g] = (hits[sec.dataset.g] || 0) + 1; }
       });
       sec.hidden = !any;
+    });
+    // While searching, each category shows how many of its tools match.
+    sceneTools.querySelectorAll("#dkToolNav .dk-tcat").forEach((b) => {
+      b.classList.toggle("on", !q && b.dataset.cat === toolCat);
+      const n = b.querySelector(".n"); if (!n) return;
+      if (!n.dataset.total) n.dataset.total = n.textContent;
+      n.textContent = !q ? n.dataset.total : (b.dataset.cat === "all" ? shown : (hits[b.dataset.cat] || 0)).toLocaleString();
     });
     const countEl = sceneTools.querySelector("#dkToolCount");
     if (countEl) countEl.textContent = q ? `${shown} match${shown === 1 ? "" : "es"}` : `${shown} tool${shown === 1 ? "" : "s"}`;

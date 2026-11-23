@@ -122,6 +122,7 @@ export const TOS_HTML = `
 export async function renderLegal(mount, id) {
   let html = TOS_HTML;
   // The docs sections carry no heading of their own (the docs sidebar names them).
-  if (id !== "terms") html = "<h3>" + ({ privacy: "Privacy Policy", "acceptable-use": "Acceptable Use Policy" }[id] || "") + "</h3>" + (await import("/js/docs.js?v=20261102a")).docSectionHTML(id);
+  // (the /acceptable-use page asks for the docs section id "aup")
+  if (id !== "terms") html = "<h3>" + ({ privacy: "Privacy Policy", aup: "Acceptable Use Policy" }[id] || "") + "</h3>" + (id === "aup" ? "<p><strong>Last updated:</strong> November 22, 2026</p>" : "") + (await import("/js/docs.js?v=20261102a")).docSectionHTML(id);
   mount.innerHTML = '<article class="dn-legal">' + html + "</article>";
 }

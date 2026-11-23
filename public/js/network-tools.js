@@ -159,7 +159,7 @@ function renderSubnetCalculator(root) {
     <div class="panel">
       <p class="muted">Enter an address in CIDR notation (e.g. <span class="mono">192.168.1.0/24</span>) to get
       the network address, broadcast address, usable host range, wildcard mask, binary breakdown, and class info.</p>
-      ${field("CIDR", "sn-cidr", "192.168.1.0/24", "e.g. 10.0.0.0/8")}
+      ${field("CIDR", "sn-cidr", "", "e.g. 10.0.0.0/8")}
       <div class="tk-btns"><button class="btn sm" id="sn-go">Calculate</button>
       <button class="btn ghost sm" id="sn-clear">Clear</button></div>
       <div class="nt-presets"><span class="muted">Common ranges:</span>${SUBNET_PRESETS.map(([c, n]) => `<button class="nt-preset" data-cidr="${c}" title="${n}">${c}</button>`).join("")}</div>
@@ -169,7 +169,7 @@ function renderSubnetCalculator(root) {
       <p class="muted">The calculated network as one block. Select a block to split it in half, merge it back with its
       sibling, tag what it is used for and label it. The plan below updates as you go.</p>
       <div id="snm-legend" class="nt-map-legend"></div>
-      <div id="snm-map" class="nt-map" role="list" aria-label="Subnet blocks"></div>
+      <div id="snm-map" class="nt-map" role="list" aria-label="Subnet blocks"><span class="muted">Calculate a network above to draw its map.</span></div>
       <div id="snm-detail"></div>
       <pre class="tk-out" id="snm-plan" style="margin-top:10px"></pre>
 
@@ -178,21 +178,15 @@ function renderSubnetCalculator(root) {
       match each segment's actual host requirement, rather than wasting addresses on a uniform prefix length.
       Enter a base network and a list of required host counts (one per line, largest first is not required --
       the planner sorts automatically) to get an allocation plan.</p>
-      ${field("Base network", "vlsm-base", "10.0.0.0/24", "e.g. 10.0.0.0/24")}
-      <textarea class="tk-in" id="vlsm-hosts" rows="5" placeholder="Required host counts, one per line, e.g.&#10;50&#10;20&#10;10&#10;2">50
-20
-10
-2</textarea>
+      ${field("Base network", "vlsm-base", "", "e.g. 10.0.0.0/24")}
+      <textarea class="tk-in" id="vlsm-hosts" rows="5" placeholder="Required host counts, one per line, e.g.&#10;50&#10;20&#10;10&#10;2"></textarea>
       <div class="tk-btns"><button class="btn sm" id="vlsm-go">Plan subnets</button></div>
       <div id="vlsm-out"></div>
 
       <p class="pg-sub" style="margin-top:26px">CIDR aggregator (route summarization)</p>
       <p class="muted">Given a list of networks, find the smallest set of supernets that covers them all --
       useful for summarizing routes to reduce routing-table size. Enter one CIDR block per line.</p>
-      <textarea class="tk-in" id="agg-in" rows="5" placeholder="One CIDR per line, e.g.&#10;192.168.0.0/24&#10;192.168.1.0/24&#10;192.168.2.0/24&#10;192.168.3.0/24">192.168.0.0/24
-192.168.1.0/24
-192.168.2.0/24
-192.168.3.0/24</textarea>
+      <textarea class="tk-in" id="agg-in" rows="5" placeholder="One CIDR per line, e.g.&#10;192.168.0.0/24&#10;192.168.1.0/24&#10;192.168.2.0/24&#10;192.168.3.0/24"></textarea>
       <div class="tk-btns"><button class="btn sm" id="agg-go">Aggregate</button></div>
       <div id="agg-out"></div>
     </div>`;
@@ -350,7 +344,6 @@ function renderSubnetCalculator(root) {
   root.querySelector("#sn-go").onclick = calc;
   root.querySelector("#sn-cidr").addEventListener("keydown", (e) => { if (e.key === "Enter") calc(); });
   root.querySelector("#sn-clear").onclick = () => { root.querySelector("#sn-cidr").value = ""; root.querySelector("#sn-out").innerHTML = ""; };
-  calc();
 
   // -- VLSM planner --------------------------------------------------------
   const bitsNeededForHosts = (hosts) => {
@@ -422,7 +415,6 @@ function renderSubnetCalculator(root) {
     }
   };
   root.querySelector("#vlsm-go").onclick = planVlsm;
-  planVlsm();
 
   // -- CIDR aggregator (route summarization) -------------------------------
   const aggregate = () => {
@@ -479,7 +471,6 @@ function renderSubnetCalculator(root) {
     }
   };
   root.querySelector("#agg-go").onclick = aggregate;
-  aggregate();
 }
 
 // ---------------------------------------------------------------------------
@@ -610,7 +601,7 @@ function renderCidrRange(root) {
     <div class="panel">
       <p class="muted">Enter a CIDR block to see its full first/last address range, host count, and (for small
       blocks) an enumerated address list.</p>
-      ${field("CIDR", "cr-cidr", "192.168.1.0/28", "e.g. 10.10.10.0/30")}
+      ${field("CIDR", "cr-cidr", "", "e.g. 10.10.10.0/30")}
       <div class="tk-row"><label><input type="checkbox" id="cr-list" checked> List individual addresses (blocks up to /20, max 4096 shown)</label></div>
       <div class="tk-btns"><button class="btn sm" id="cr-go">Calculate</button></div>
       <div id="cr-out"></div>
@@ -698,7 +689,6 @@ function renderCidrRange(root) {
   root.querySelector("#cr-go").onclick = calc;
   root.querySelector("#cr-list").onchange = calc;
   root.querySelector("#cr-cidr").addEventListener("keydown", (e) => { if (e.key === "Enter") calc(); });
-  calc();
 }
 
 // ---------------------------------------------------------------------------
@@ -781,7 +771,7 @@ function renderIpv6Converter(root) {
       <p class="pg-sub" style="margin-top:26px">IPv6 subnet calculator</p>
       <p class="muted">Enter a native IPv6 address in CIDR notation (compressed or expanded) to get its network
       prefix, address range, and both compressed and fully-expanded forms.</p>
-      ${field("IPv6 CIDR", "v6sub-cidr", "2001:db8:acad::/48", "e.g. 2001:db8::/32")}
+      ${field("IPv6 CIDR", "v6sub-cidr", "", "e.g. 2001:db8::/32")}
       <div class="tk-btns"><button class="btn sm" id="v6sub-go">Calculate</button></div>
       <div id="v6sub-out"></div>
     </div>`;

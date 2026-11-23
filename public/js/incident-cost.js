@@ -511,7 +511,7 @@ export function renderIncidentCost(container) {
   var state = {
     sectorId: 'healthcare',
     vectorId: 'phishing',
-    records: 50000,
+    records: 0, // not entered yet: no estimate until the user gives a record count
     dataTypes: ['pii'],
     mtti: 204,
     mttc: 73,
@@ -520,7 +520,7 @@ export function renderIncidentCost(container) {
     lawEnforcement: false,
     amplifiers: [],
     mitigators: [],
-    revenue: 500000000,
+    revenue: 0,
     gdprApplicable: false,
     insuranceTier: 2,
     activeTab: 'calculator',
@@ -554,6 +554,8 @@ export function renderIncidentCost(container) {
 
     if (state.activeTab === 'calculator') {
       h += renderCalculator(costs);
+    } else if (!state.records && state.activeTab !== 'response') {
+      h += '<div class="ic-panel"><div style="text-align:center;padding:30px;color:var(--mut)">Enter the number of records compromised in the Cost calculator tab to see this analysis.</div></div>';
     } else if (state.activeTab === 'regulatory') {
       h += renderRegulatory(costs);
     } else if (state.activeTab === 'insurance') {
@@ -575,6 +577,12 @@ export function renderIncidentCost(container) {
     var h = '';
 
     // Hero cost display
+    if (!state.records) {
+      h += '<div class="ic-hero">';
+      h += '<div class="ic-hero-label">Estimated total breach cost</div>';
+      h += '<div class="ic-hero-range">Enter the number of records compromised to see an estimate.</div>';
+      h += '</div>';
+    } else {
     h += '<div class="ic-hero">';
     h += '<div class="ic-hero-label">Estimated total breach cost</div>';
     h += '<div class="ic-hero-cost">' + fmt$(costs.total) + '</div>';
@@ -603,6 +611,7 @@ export function renderIncidentCost(container) {
       h += '</div>';
     }
     h += '</div>';
+    } // records entered
 
     // Main grid: form + breakdown
     h += '<div class="ic-grid">';
@@ -634,8 +643,7 @@ export function renderIncidentCost(container) {
     h += '<div class="ic-form-group">';
     h += '<label class="ic-label">Records Compromised</label>';
     h += '<div class="ic-range-wrap">';
-    h += '<input type="range" class="ic-range" id="ic-records" min="1000" max="100000000" value="' + state.records + '" step="1000">';
-    h += '<span class="ic-range-val">' + fmtN(state.records) + '</span>';
+    h += '<input type="number" class="ic-input" id="ic-records" min="1" step="1" inputmode="numeric" value="' + (state.records || '') + '" placeholder="Number of records">';
     h += '</div></div>';
 
     // Data types
@@ -670,7 +678,7 @@ export function renderIncidentCost(container) {
     // Revenue (for GDPR)
     h += '<div class="ic-form-group">';
     h += '<label class="ic-label">Annual Revenue (for fine calculation)</label>';
-    h += '<input type="text" class="ic-input" id="ic-revenue" value="$' + state.revenue.toLocaleString() + '" placeholder="$500,000,000">';
+    h += '<input type="text" class="ic-input" id="ic-revenue" value="' + (state.revenue ? '$' + state.revenue.toLocaleString() : '') + '" placeholder="Annual revenue, USD">';
     h += '</div>';
 
     // GDPR toggle
@@ -711,6 +719,7 @@ export function renderIncidentCost(container) {
     h += '<div class="ic-panel-title">Cost breakdown</div>';
     // Fines are one of the bars below, so they must be in the max or a
     // fines-dominated breach produces a >100% bar width and mis-scales the rest.
+    if (!state.records) h += '<div style="color:var(--mut);font-size:13px;padding:8px 0">Shown once the number of records compromised is entered.</div>';
     var maxVal = Math.max(costs.detection, costs.lostBusiness, costs.postBreach, costs.notification, costs.fines);
     var bars = [
       { name: 'Lost Business Impact', val: costs.lostBusiness, cls: 'red' },
@@ -719,7 +728,7 @@ export function renderIncidentCost(container) {
       { name: 'Regulatory Fines', val: costs.fines, cls: 'purple' },
       { name: 'Notification Costs', val: costs.notification, cls: 'cyan' },
     ];
-    for (var b = 0; b < bars.length; b++) {
+    for (var b = 0; state.records && b < bars.length; b++) {
       var pct = maxVal > 0 ? Math.round(bars[b].val / maxVal * 100) : 0;
       h += '<div class="ic-bar-row">';
       h += '<div class="ic-bar-header"><span class="ic-bar-name">' + bars[b].name + '</span><span class="ic-bar-val" style="color:inherit">' + fmt$(bars[b].val) + '</span></div>';
@@ -1153,8 +1162,7 @@ export function renderIncidentCost(container) {
 
     // Records
     var recordsEl = wrap.querySelector('#ic-records');
-    if (recordsEl) recordsEl.addEventListener('input', function() { state.records = parseInt(this.value); if (this.nextElementSibling) this.nextElementSibling.textContent = fmtN(state.records); });
-    if (recordsEl) recordsEl.addEventListener('change', render);
+    if (recordsEl) recordsEl.addEventListener('change', function() { state.records = Math.max(0, parseInt(this.value, 10) || 0); render(); });
 
     // Data types
     wrap.querySelectorAll('[data-dtype]').forEach(function(cb) {

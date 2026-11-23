@@ -56,7 +56,7 @@ export function renderReport(main) {
             <div class="lbl">Add a finding</div>
             <div class="pb-fields" style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
               <input class="tk-f" id="fTitle" placeholder="Finding title">
-              <select class="tk-f" id="fSev">${SEV.map((s) => `<option>${s}</option>`).join("")}</select>
+              <select class="tk-f" id="fSev" required><option value="" selected>Select severity</option>${SEV.map((s) => `<option>${s}</option>`).join("")}</select>
             </div>
             <input class="tk-f" id="fTarget" placeholder="Target (URL / host / param)" style="margin-top:8px">
             <textarea class="tk-in" id="fDesc" rows="2" placeholder="Description" style="margin-top:8px"></textarea>
@@ -82,6 +82,7 @@ export function renderReport(main) {
     $("#rAdd").onclick = () => {
       const f = { title: $("#fTitle").value.trim(), sev: $("#fSev").value, target: $("#fTarget").value.trim(), desc: $("#fDesc").value.trim(), evidence: $("#fEvidence").value.trim(), remediation: $("#fRem").value.trim() };
       if (!f.title) { $("#fTitle").focus(); return; }
+      if (!f.sev) { const s = $("#fSev"); s.setCustomValidity("Choose a severity for this finding."); s.reportValidity(); s.onchange = () => s.setCustomValidity(""); return; }
       d.findings.push(f); save(d); draw();
     };
     $("#rList").onclick = (e) => { const b = e.target.closest("[data-rm]"); if (!b) return; d.findings.splice(+b.dataset.rm, 1); save(d); draw(); };

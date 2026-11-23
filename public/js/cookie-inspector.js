@@ -474,8 +474,8 @@ function exampleText() {
 
 // ── render ──
 export function renderCookieInspector(main) {
-  function toast(msg) {
-    if (typeof window.showToast === "function") window.showToast(msg);
+  function toast(msg, type) {
+    if (typeof window.showToast === "function") window.showToast(msg, type);
   }
 
   main.innerHTML = CK_CSS +
@@ -637,9 +637,9 @@ export function renderCookieInspector(main) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(lastReport).then(
         function () { toast("Report copied to clipboard"); },
-        function () { toast("Copy failed — select the text manually"); });
+        function () { toast("Copy failed — select the text manually", "error"); });
     } else {
-      toast("Clipboard unavailable — select the text manually");
+      toast("Clipboard unavailable — select the text manually", "error");
     }
   };
 }

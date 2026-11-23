@@ -45,6 +45,15 @@ async function appResolveAsset(os) {
   return null;
 }
 
+// "Vendor Product", without repeating the vendor when CISA lists it in the product too
+// ("UnrealIRCd" / "UnrealIRCd", "Apple" / "Apple iOS").
+function kevName(vendor, product) {
+  const v = String(vendor || "").trim(), p = String(product || "").trim();
+  if (!v || !p) return v || p;
+  const pl = p.toLowerCase(), vl = v.toLowerCase();
+  return pl === vl || pl.startsWith(vl + " ") ? p : v + " " + p;
+}
+
 // Hero side panel: the newest CISA KEV additions from the daily same-origin feed. Real data
 // only; on failure the panel says so instead of showing anything made up.
 function loadHeroLive(view) {
@@ -54,7 +63,7 @@ function loadHeroLive(view) {
     if (!box.isConnected) return;
     const rows = (d && Array.isArray(d.data) ? d.data : []).slice(0, 5);
     if (!rows.length) { box.innerHTML = '<div class="hx-live-msg">No new entries in the last two weeks.</div>'; return; }
-    box.innerHTML = rows.map((v) => `<a class="hx-row" href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(v.cve)}" target="_blank" rel="noopener"><span class="hx-cve">${e(v.cve)}</span><span class="hx-what">${e([v.vendor, v.product].filter(Boolean).join(" "))}${v.ransomware ? ' <span class="hx-rw">Ransomware</span>' : ""}</span><span class="hx-when">${e(String(v.dateAdded || "").slice(5))}</span></a>`).join("");
+    box.innerHTML = rows.map((v) => `<a class="hx-row" href="https://nvd.nist.gov/vuln/detail/${encodeURIComponent(v.cve)}" target="_blank" rel="noopener"><span class="hx-cve">${e(v.cve)}</span><span class="hx-what">${e(kevName(v.vendor, v.product))}${v.ransomware ? ' <span class="hx-rw">Ransomware</span>' : ""}</span><span class="hx-when">${e(String(v.dateAdded || "").slice(5))}</span></a>`).join("");
     const f = view.querySelector("#hxLiveF");
     if (f && d.count) f.textContent = d.count + " added to the catalog in the last 14 days" + (d.catalogVersion ? " (version " + d.catalogVersion + ")" : "") + ". The Deck matches them against what you run.";
   }).catch(() => { if (box.isConnected) box.innerHTML = '<div class="hx-live-msg">The live feed could not be loaded right now.</div>'; });
@@ -1305,6 +1314,9 @@ export function renderLanding(view, actions) {
       if (sec.id !== dedicatedId) sec.hidden = true;
     });
     const target = view.querySelector("#" + dedicatedId);
+    // the hidden hero holds the home page's h1, so the section title becomes this page's h1
+    const h2 = target && target.querySelector("h2.sec-title");
+    if (h2) { const h1 = document.createElement("h1"); for (const a of h2.attributes) h1.setAttribute(a.name, a.value); h1.innerHTML = h2.innerHTML; h2.replaceWith(h1); }
     if (target) {
       const back = document.createElement("div");
       back.className = "dedicated-page-header";
@@ -1331,8 +1343,27 @@ export function renderLanding(view, actions) {
     page.querySelector(".dn-pubbar .btn").addEventListener("click", () => actions && actions.onSignIn && actions.onSignIn());
     view.prepend(page);
     const mount = page.querySelector(".dn-pubmain");
-    pub.load().then((render) => render(mount)).catch(() => { mount.textContent = "Couldn't load this tool. Check your connection and reload."; });
+    // the page renders after load, so a #section link (security.txt's Policy) scrolls once it exists
+    pub.load().then((render) => render(mount)).then(() => { const t = location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1))); if (t) t.scrollIntoView(); }).catch(() => { mount.textContent = "Couldn't load this tool. Check your connection and reload."; });
     document.title = pub.title + " — Darknode";
+    window.scrollTo(0, 0);
+  }
+
+  // Any other path that the app does not route either (a mistyped or retired link) gets a real
+  // "Page not found" instead of a copy of the home page at that URL. Pages the signed-in app opens
+  // (/<tool>, /all-tools, /console/...) keep the landing: signing in then opens that page.
+  const path = location.pathname.replace(/\/+$/, "") || "/";
+  if (!dedicatedId && !pub && !PAGE_ROUTES[path] && !PUBLIC_TOOLS[path] && actions && actions.isAppPath && !actions.isAppPath(location.pathname)) {
+    view.querySelectorAll(".section, .hero, .cta-final").forEach((sec) => { sec.hidden = true; });
+    const page = document.createElement("section");
+    page.className = "section dn-notfound";
+    page.innerHTML = '<div class="wrap"><h1>Page not found</h1><p>There is no page at <code></code>. Check the address, or start from the home page.</p><a class="btn" href="/">Go to the home page</a></div>';
+    page.querySelector("code").textContent = location.pathname;
+    view.prepend(page);
+    let robots = document.querySelector('meta[name="robots"]');
+    if (!robots) { robots = document.createElement("meta"); robots.name = "robots"; document.head.appendChild(robots); }
+    robots.content = "noindex";
+    document.title = "Page not found — Darknode";
     window.scrollTo(0, 0);
   }
 }

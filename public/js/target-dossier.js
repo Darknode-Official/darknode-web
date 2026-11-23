@@ -528,9 +528,9 @@ export function renderDossier(main) {
 
   function renderSummary(summary) {
     var statHtml = '<div class="dsr-stat-row">' +
-      '<div class="dsr-stat"><b>' + summary.stats.subdomains + '</b><span>Subdomains</span></div>' +
-      '<div class="dsr-stat"><b>' + summary.stats.dnsRecords + '</b><span>DNS records</span></div>' +
-      '<div class="dsr-stat"><b>' + summary.stats.nameservers + '</b><span>Nameservers</span></div>' +
+      '<div class="dsr-stat"><b>' + statVal(summary.stats.subdomains) + '</b><span>Subdomains</span></div>' +
+      '<div class="dsr-stat"><b>' + statVal(summary.stats.dnsRecords) + '</b><span>DNS records</span></div>' +
+      '<div class="dsr-stat"><b>' + statVal(summary.stats.nameservers) + '</b><span>Nameservers</span></div>' +
       '<div class="dsr-stat"><b>' + (summary.stats.asn || "—") + '</b><span>ASN</span></div>' +
       "</div>";
     var findHtml = summary.findings.length
@@ -547,12 +547,15 @@ export function renderDossier(main) {
 
 // ── Summary / risk computation ──────────────────────────────────────────────
 
+function statVal(n) { return n == null ? "—" : n; }
+
 function computeSummary(d, primaryIP) {
   var findings = [];
-  var dnsCount = 0;
+  // A source that failed or was skipped counts as null (shown as a dash), never as a real zero.
+  var dnsCount = d.dns ? 0 : null;
   if (d.dns) Object.keys(d.dns).forEach(function (k) { dnsCount += d.dns[k].length; });
-  var subCount = d.subdomains ? d.subdomains.names.length : 0;
-  var nsCount = d.registration && d.registration.nameservers ? d.registration.nameservers.length : 0;
+  var subCount = d.subdomains ? d.subdomains.names.length : null;
+  var nsCount = d.registration ? (d.registration.nameservers ? d.registration.nameservers.length : 0) : null;
 
   if (subCount >= 100) findings.push({ level: "warn", text: "Large attack surface: " + subCount + " subdomains observed in certificate transparency logs." });
   else if (subCount > 0) findings.push({ level: "info", text: subCount + " subdomain(s) discovered via certificate transparency." });
@@ -639,9 +642,9 @@ function toMarkdown(d) {
     L.push("");
     L.push("| Metric | Value |");
     L.push("| --- | --- |");
-    L.push("| Subdomains | " + d.summary.stats.subdomains + " |");
-    L.push("| DNS records | " + d.summary.stats.dnsRecords + " |");
-    L.push("| Nameservers | " + d.summary.stats.nameservers + " |");
+    L.push("| Subdomains | " + (d.summary.stats.subdomains == null ? "n/a" : d.summary.stats.subdomains) + " |");
+    L.push("| DNS records | " + (d.summary.stats.dnsRecords == null ? "n/a" : d.summary.stats.dnsRecords) + " |");
+    L.push("| Nameservers | " + (d.summary.stats.nameservers == null ? "n/a" : d.summary.stats.nameservers) + " |");
     L.push("| ASN | " + (d.summary.stats.asn || "n/a") + " |");
     L.push("");
     if (d.summary.findings.length) {

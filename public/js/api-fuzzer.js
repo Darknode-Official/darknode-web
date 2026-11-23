@@ -180,7 +180,7 @@ export function renderAPIFuzzer(container) {
     tab: 'builder',
     method: 'GET',
     url: '',
-    headers: [{ key: 'Content-Type', val: 'application/json' }, { key: 'Authorization', val: '' }],
+    headers: [{ key: 'Content-Type', val: 'application/json' }],
     bodyType: 'json',
     body: '',
     fuzzTarget: 'param',

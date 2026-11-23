@@ -167,7 +167,9 @@ node darknode.js nexus init                 # optional: scaffold .nexus/ project
         <li>Develop or distribute malware for malicious use, conduct denial-of-service attacks, or target individuals.</li>
         <li>Exfiltrate data, evade detection for unlawful purposes, or violate any law or third-party rights.</li>
       </ul>
-      <p style="color:var(--mut,#94a3b8);margin-top:16px;font-size:.9rem">Darknode is intended for authorized penetration testing, CTFs, security research and defense. Misuse is your responsibility.</p>`;
+      <p style="color:var(--mut,#94a3b8);margin-top:16px;font-size:.9rem">Darknode is intended for authorized penetration testing, CTFs, security research and defense. Misuse is your responsibility. The full list of prohibited activities is in Section 11 of the Terms of Service, which governs if the two differ.</p>
+      <h4 id="report-security" style="margin:20px 0 6px;font-size:1rem">Reporting a security issue in Darknode</h4>
+      <p style="color:var(--mut,#94a3b8);font-size:.9rem">Email <strong>security@darknode.ai</strong> with the details and the steps to reproduce. Please do not open a public issue or share the details until it is fixed.</p>`;
 
     case 'license': return `
       <p style="color:var(--mut,#94a3b8);font-size:.9rem">The Darknode suite is proprietary — all rights reserved by the author. No license to use, copy, modify, or distribute is granted. The software is provided "as is", without warranty of any kind.</p>`;

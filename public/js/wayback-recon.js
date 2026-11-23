@@ -3,6 +3,7 @@
  * Historical website intelligence via the Wayback CDX API
  * Copyright 2024-2026 Darknode Project. All rights reserved.
  */
+import { dnFetchJSON } from "/js/net.js";
 
 var _WB_CSS = '<style>' +
   '.wb-domain{flex:1}' +
@@ -338,9 +339,9 @@ export function renderWaybackRecon(container) {
 
     try {
       var url = 'https://web.archive.org/cdx/search/cdx?url=' + encodeURIComponent(domain) + '/*&output=json&fl=timestamp,original,mimetype,statuscode,digest&collapse=digest&limit=500';
-      var resp = await fetch(url);
-      if (!resp.ok) throw new Error('CDX API returned ' + resp.status);
-      var data = await resp.json();
+      // The CDX API sends no CORS headers, so it is fetched through the Darknode edge proxy.
+      // It can take ~25 s to answer a prefix query, so wait as long as the proxy allows.
+      var data = await dnFetchJSON(url, { max: 1000000, timeout: 30000 });
       if (!data || data.length < 2) {
         statusEl.textContent = 'No snapshots found for ' + domain;
         statusEl.style.color = 'var(--warn)';
@@ -366,9 +367,11 @@ export function renderWaybackRecon(container) {
       renderFilters();
       renderTable();
     } catch (e) {
-      statusEl.textContent = 'Error: ' + e.message;
+      var msg = String((e && e.message) || e);
+      var slow = /abort|timed? ?out|HTTP 50[234]/i.test(msg);
+      statusEl.textContent = slow ? 'The Internet Archive did not answer in time.' : 'Could not reach the Internet Archive.';
       statusEl.style.color = 'var(--bad)';
-      resultsEl.innerHTML = '<div class="wb-errbox">Scan failed: ' + esc(e.message) + '<br><span style="color:var(--mut,#7a93b8);font-size:12px;">Check that web.archive.org is in the CSP connect-src directive.</span></div>';
+      resultsEl.innerHTML = '<div class="wb-errbox">' + (slow ? 'The Internet Archive took too long to answer. It is often slow for large sites; try again in a minute.' : 'The archive search could not be completed: ' + esc(msg)) + '</div>';
     }
 
     state.loading = false;

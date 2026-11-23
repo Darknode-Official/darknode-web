@@ -211,7 +211,7 @@ body.landing #view{max-width:none;padding:0;margin:0}
 .os-ed-sz{margin-left:auto;font-size:.66rem;font-weight:700;letter-spacing:.06em;color:var(--mut);font-variant-numeric:tabular-nums}
 .os-ed-tag{font-size:.56rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--bg);background:var(--acc);border-radius:999px;padding:2px 7px}
 .os-ed-d{font-size:.76rem;line-height:1.5;margin:0;flex:1}
-.os-ed .dlapp-cmd code{font-size:.68rem;padding:7px 8px;white-space:pre;overflow-x:auto;word-break:normal}
+.os-ed .dlapp-cmd code{font-size:.68rem;padding:7px 8px;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;cursor:copy}
 .dlapp-card{display:block;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 16px;text-decoration:none;color:var(--txt)}
 .dlapp-card:hover{border-color:var(--acc);transform:translateY(-2px)}
 .dlapp-os{font-weight:800;font-size:1.05rem}

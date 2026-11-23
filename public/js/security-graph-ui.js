@@ -43,7 +43,8 @@ export function renderSecurityGraphUI(main) {
 .sgu-toggle button.active{background:var(--acc,#2563eb);color:#fff}
 .sgu-tbtn{padding:7px 14px;border:1px solid var(--brd,#e2e8f0);border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--card-bg,#fff);color:var(--txt,#0f172a)}
 .sgu-tbtn:hover{border-color:var(--acc,#2563eb);color:var(--acc,#2563eb)}
-.sgu-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.sgu-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:24px}
+@media(max-width:560px){.sgu-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .sgu-stat{background:var(--card-bg,#fff);border:1px solid var(--brd,#e2e8f0);border-radius:10px;padding:14px 16px;text-align:center}
 .sgu-stat-n{font-size:1.4rem;font-weight:800;color:var(--txt,#0f172a)}
 .sgu-stat-l{font-size:.72rem;color:var(--mut,#64748b);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}

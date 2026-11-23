@@ -65,7 +65,7 @@ function _drRenderVictims(list) {
     if (v.group) h += '<span style="color:var(--warn);font-size:12px;border:1px solid var(--warn);padding:1px 6px;border-radius:2px;">' + esc(v.group) + '</span>';
     h += '</div>';
     h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:4px 16px;font-size:12px;color:var(--txt-2);line-height:1.6;">';
-    if (v.activity) h += '<div><span style="color:var(--mut);">Sector:</span> ' + esc(v.activity) + '</div>';
+    if (v.activity && !/^(not found|n\/a|unknown)$/i.test(String(v.activity).trim())) h += '<div><span style="color:var(--mut);">Sector:</span> ' + esc(v.activity) + '</div>';
     if (v.country) h += '<div><span style="color:var(--mut);">Country:</span> ' + esc(v.country) + '</div>';
     if (v.attackdate) h += '<div><span style="color:var(--mut);">Attack:</span> ' + esc(_drFmtDate(v.attackdate)) + '</div>';
     if (v.discovered) h += '<div><span style="color:var(--mut);">Discovered:</span> ' + esc(_drFmtDate(v.discovered)) + '</div>';
@@ -141,7 +141,7 @@ async function _drLoadTab(key) {
   panel.innerHTML = _drLoading();
   try {
     if (key === 'victims') st.data = await dnFetchJSON(RANSOM_VICTIMS_URL, { timeout: 25000 });
-    else if (key === 'groups') st.data = await dnFetchJSON(RANSOM_GROUPS_URL, { timeout: 25000 });
+    else if (key === 'groups') st.data = await dnFetchJSON(RANSOM_GROUPS_URL, { timeout: 25000, max: 2000000 }); // the full groups feed is ~850 KB
     else if (key === 'kev') { var d = await loadKevCatalog(); st.data = d.vulnerabilities; }
     st.error = '';
   } catch (err) {

@@ -451,8 +451,8 @@ export function renderSecurityTxt(main) {
       var block = body.querySelector('[data-multi="' + key + '"]');
       var list = block.querySelector(".st-multi-list");
       var ph = ({
-        contact: "mailto:security@example.com", encryption: "https://example.com/pgp-key.txt",
-        acknowledgments: "https://example.com/hall-of-fame", canonical: "Canonical URL",
+        contact: "mailto:security@example.com", encryption: "https://example.com/key.txt",
+        acknowledgments: "https://example.com/thanks", canonical: "Canonical URL",
         policy: "Policy URL", hiring: "https://example.com/jobs"
       })[key];
 

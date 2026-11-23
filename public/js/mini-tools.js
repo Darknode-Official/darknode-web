@@ -81,7 +81,10 @@ function inputHTML(f, i) {
     return `<div class="mt-field mt-field-check"><label class="mt-check"><input id="${id}" type="checkbox" data-k="${esc(f.k)}"${f.value ? " checked" : ""}><span>${esc(f.label || f.k)}</span></label></div>`;
   if (f.type === "range")
     return `<div class="mt-field mt-field-row">${lab}<input id="${id}" class="mt-in mt-range" type="range" data-k="${esc(f.k)}" min="${f.min ?? 0}" max="${f.max ?? 100}" step="${f.step ?? 1}" value="${f.value ?? f.min ?? 0}"><output class="mt-rangev">${f.value ?? f.min ?? 0}</output></div>`;
-  return `<div class="mt-field mt-field-row">${lab}<input id="${id}" class="mt-in" type="${esc(f.inputType || "text")}" data-k="${esc(f.k)}" spellcheck="false" placeholder="${esc(f.placeholder || (typed(f) ? f.value || "" : ""))}" value="${esc(typed(f) ? "" : f.value || "")}"></div>`;
+  // a long example would run past a narrow box, so it goes in a wrapping line under it instead
+  const ph = String(f.placeholder || (typed(f) ? f.value || "" : ""));
+  const long = ph.length > 32;
+  return `<div class="mt-field mt-field-row">${lab}<input id="${id}" class="mt-in" type="${esc(f.inputType || "text")}" data-k="${esc(f.k)}" spellcheck="false" placeholder="${esc(long ? "" : ph)}" value="${esc(typed(f) ? "" : f.value || "")}">${long ? `<div class="mt-hint">${f.placeholder ? "e.g. " : "Default: "}${esc(ph)}</div>` : ""}</div>`;
 }
 
 export function renderMiniTool(main, id, opts = {}) {

@@ -109,9 +109,15 @@ group("wayback-recon", () => {
     await withDom(async ({ els, mk }) => {
       const { renderWaybackRecon } = await import(mod("wayback-recon.js"));
       renderWaybackRecon(mk("c"));
-      setGlobal("fetch", async () => ({ ok: true, json: async () => [["timestamp", "original", "mimetype", "statuscode", "digest"], ["20200101000000", "http://example.com/wp-admin/wp-login.php", "text/html", "200", "AAA"]] }));
+      // The CDX API sends no CORS headers, so it is fetched through the Darknode proxy.
+      globalThis.DARKNODE_PROXY_URL = "https://proxy.test/api/chat";
+      let asked = "";
+      const rows = [["timestamp", "original", "mimetype", "statuscode", "digest"], ["20200101000000", "http://example.com/wp-admin/wp-login.php", "text/html", "200", "AAA"]];
+      setGlobal("fetch", async (u) => { asked = new URL(u).searchParams.get("url"); return { ok: true, json: async () => ({ status: 200, body: JSON.stringify(rows) }) }; });
       els["wb-domain"].value = "example.com";
-      els["wb-scan"].click(); await tick();
+      els["wb-scan"].click(); for (let i = 0; i < 5; i++) await tick();
+      delete globalThis.DARKNODE_PROXY_URL;
+      assert.ok(asked.startsWith("https://web.archive.org/cdx/search/cdx?url=example.com"), asked);
       await fn(els);
     });
   }

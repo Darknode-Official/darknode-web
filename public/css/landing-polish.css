@@ -95,3 +95,7 @@ html body.landing #nav-start { display: inline-flex !important; align-items: cen
   html body.landing #nav-signin,
   html body.landing #nav-start { height: 36px !important; }
 }
+/* "Page not found" for a path that is neither a public page nor an app page */
+html body.landing .dn-notfound .wrap { max-width: 640px; margin: 0 auto; padding: 14vh 24px 16vh; box-sizing: border-box; }
+html body.landing .dn-notfound h1 { font-size: 2rem; margin: 0 0 12px; color: rgb(15, 23, 42); }
+html body.landing .dn-notfound p { margin: 0 0 24px; color: rgb(63, 63, 70); line-height: 1.6; overflow-wrap: anywhere; }

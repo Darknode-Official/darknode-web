@@ -34,7 +34,8 @@ import "/js/net.js?v=20261011a";
 import "/js/scroll-top.js?v=20260926a";
 import "/js/shortcuts.js";
 import "/js/mobile-nav.js";
-import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs, RETIRED } from "/js/console-nav.js?v=20261029d";
+import { consoleHTML, directoryHTML, wireConsole, labelOf as navLabel, groupOf as navGroup, recentSecs as navRecent, favSecs as navFavs, RETIRED, NAV as CONSOLE_NAV } from "/js/console-nav.js?v=20261029d";
+import { isAppPath } from "/js/deck/routes.js?v=1";
 // Only the tool count is needed here; the manifest carries ids/names/categories without the
 // tool code (js/tools/*), which loads when the Toolbox opens.
 import { TOOL_META as _MINI_TOOLS } from "/js/tools-manifest.js?v=20261006a";
@@ -727,7 +728,16 @@ function showLanding() {
   loadLanding().then(m => m.renderLanding(view, {
     onGetStarted: () => renderAuth("signup"),
     onSignIn: () => renderAuth("signin"),
+    isAppPath: (p) => isAppPath(p, appSecs()),
   }));
+}
+// Every section/tool id the signed-in app routes, from the routers' own registries: the console
+// catalog (with mini-tools and retired ids, whose old links still route) and the tool blurbs,
+// which list the Deck's own tools. The landing shows "Page not found" for anything else.
+let _appSecs = null;
+function appSecs() {
+  if (!_appSecs) _appSecs = new Set([...CONSOLE_NAV.flatMap((g) => g.items.map((i) => i.sec)), ...RETIRED, ...Object.keys(SIDE_DESC)]);
+  return _appSecs;
 }
 
 // ---------- Google Identity Services: in-page FedCM / One Tap bubble ----------
@@ -1813,7 +1823,18 @@ function renderApp(user) {
           + 'html[data-embed] body.app.dn-embed :is(.btn:not(.ghost,.danger,.github),button[style*="background:#00aaff"],button[style*="background:#00d4ff"]):not(#dn-x):not(#dn-y):not(#dn-z){color:#fff!important}'
           // (three id-not()s outrank aws.css, which pins its skin with two)
           // let the Deck's own page tone show through behind every tool (ink or cyber)
-          + 'html[data-embed] body.app.dn-embed:not(#dn-x):not(#dn-y):not(#dn-z),html[data-embed] body.app.dn-embed :is(#app,#view,.app-shell,.app-main):not(#dn-x):not(#dn-y):not(#dn-z){background:transparent!important}';
+          + 'html[data-embed] body.app.dn-embed:not(#dn-x):not(#dn-y):not(#dn-z),html[data-embed] body.app.dn-embed :is(#app,#view,.app-shell,.app-main):not(#dn-x):not(#dn-y):not(#dn-z){background:transparent!important}'
+          // the Deck inverts this frame, so the pro theme's hard-coded dark code panels would land
+          // light (and each inner code chip black): give them light values that invert to dark ink
+          + 'body.dn-embed :is(.dl-cmd,.api-code-block,pre.code-block):not(#dn-x){background:#ecebe7!important;color:#1f1e1c!important;border:1px solid #d6d4cf!important}'
+          + 'body.dn-embed :is(.dl-cmd,.api-code-block,pre.code-block) :is(code,.mono,pre):not(#dn-x){background:transparent!important;color:inherit!important;padding:0;border-radius:0}'
+          + 'body.dn-embed .api-code-block pre:not(#dn-x){padding:14px 16px}'
+          + 'body.dn-embed .api-code-header:not(#dn-x){background:#e2e0db!important;color:#5d5a55!important;border-bottom:1px solid #d6d4cf!important}'
+          + 'body.dn-embed :is(.api-code-copy,.code-block .cb-copy):not(#dn-x){background:#fff!important;color:#3f3d3a!important;border:1px solid #d6d4cf!important}'
+          + 'body.dn-embed pre.code-block.cta-cmd:not(#dn-x){padding-right:72px!important}'
+          + 'body.dn-embed .dl-cmd .stat-l:not(#dn-x){color:#6a6762!important}'
+          // a dark scrim inverts to light grey; a light one inverts to the Deck's dark scrim
+          + 'body.dn-embed .dn-modal-ov:not(#dn-x){background:rgba(245,244,241,.6)!important}';
         document.head.appendChild(st);
         const fl = document.createElement("link"); fl.rel = "stylesheet"; fl.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap"; document.head.appendChild(fl);
       }

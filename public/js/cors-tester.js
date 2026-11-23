@@ -15,7 +15,7 @@ export function renderCorsTester(container) {
 
   h += '<div class="card">';
   h += '<div style="display:flex;gap:8px;margin-bottom:10px;">';
-  h += '<input id="cors-url" style="flex:1;" placeholder="https://api.example.com/endpoint" data-on-keydown="if(event.key===\'Enter\')_corsTest()">';
+  h += '<input id="cors-url" style="flex:1;" placeholder="https://api.example.com" data-on-keydown="if(event.key===\'Enter\')_corsTest()">';
   h += '<button class="btn" data-on-click="_corsTest()">Test</button>';
   h += '</div>';
 
