@@ -2127,6 +2127,7 @@ export function renderDeck(host, opts) {
     if (m) return isSect(m[1]) ? { scene: "section", arg: m[1] } : null;
     const sp = raw.match(/^(personal|enterprise)\/([\w-]+)$/);
     if (sp) return { scene: sp[1], arg: { tab: sp[2] } };
+    if (raw === "overview") return { scene: "overview" }; // the weekly digest links /overview
     for (const k in SCENES) if (k !== "section" && (k in SCENE_PATH ? SCENE_PATH[k] : k) === raw) return { scene: k };
     return null;
   }
