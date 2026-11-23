@@ -1,7 +1,7 @@
 {
- "updated": "2026-11-22T13:27:28.169Z",
+ "updated": "2026-11-23T16:12:17.053Z",
  "source": "CISA KEV (full catalog index)",
- "catalogVersion": "2026.11.20",
+ "catalogVersion": "2026.11.23",
  "count": 1790,
  "data": [
   {
@@ -6393,7 +6393,8 @@
   {
    "cve": "CVE-2024-10441",
    "dateAdded": "2026-11-18",
-   "dueDate": "2026-11-21"
+   "dueDate": "2026-11-21",
+   "ransomware": "Known"
   },
   {
    "cve": "CVE-2024-1086",
