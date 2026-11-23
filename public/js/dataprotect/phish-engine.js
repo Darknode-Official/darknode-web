@@ -223,10 +223,22 @@ export function analyzeUrl(raw) {
 
   // a brand's own address in the path or query (evil.example/https://paypal.com/) makes the link read as the brand's
   if (!look.exact) { const inPath = BRANDS.find((b) => b.length >= 4 && new RegExp("(^|[^a-z0-9-])" + b + "\\.(com|net|org)\\b").test(decodeSafe(out.path).toLowerCase())); if (inPath) out.reasons.push({ w: 1, t: `The path mentions "${inPath}" but the link goes to "${reg}".` }); }
+  // open redirect: a redirect-style parameter that sends the visitor on to another site, so the
+  // link shows a trusted domain but lands somewhere else (?next=//evil.example, ?url=https://...)
+  for (const [k, v] of u.searchParams) {
+    if (!REDIRECT_PARAM.test(k)) continue;
+    const val = String(v).trim();
+    if (!/^([a-z][a-z0-9+.-]*:)?[/\\]{2}/i.test(val)) continue;
+    let dest = ""; try { dest = new URL(val.replace(/\\/g, "/"), u).hostname.toLowerCase(); } catch (_) { continue; }
+    // landing on a brand's own site is not where the danger is (a phishing page often sends the victim back there)
+    if (dest && registrableDomain(dest) !== reg && !lookalike(dest).exact) { out.reasons.push({ w: 2, t: `The "${k}" parameter forwards the visitor to ${dest}, a different site: an open-redirect pattern that borrows the first domain's trust.` }); break; }
+  }
+
   out.severity = sevFromWeight(sumWeight(out.reasons));
   out.lookalike = look;
   return out;
 }
+const REDIRECT_PARAM = /^(next|url|uri|redirect|redirect_?ur[il]|redir|return|return_?to|return_?url|returnurl|continue|dest|destination|goto|go|target|to|r|u|out|forward|rurl|link|callback_?url|success_?url)$/i;
 
 function decodeSafe(s) { try { return decodeURIComponent(s || ""); } catch (_) { return String(s || ""); } }
 function sumWeight(reasons) { return reasons.reduce((a, r) => a + r.w, 0); }
@@ -517,6 +529,8 @@ export function selfTest() {
   T("impersonation flagged", a.lookalike.impersonation && a.severity !== "info");
   const b = analyzeUrl("https://paypa1.com");
   T("typosquat flagged", b.lookalike.near && b.lookalike.brand === "paypal");
+  T("open redirect flagged", analyzeUrl("https://example.com/login?next=//evil.example").reasons.some((r) => /open-redirect/.test(r.t)));
+  T("same-site redirect not flagged", !analyzeUrl("https://example.com/login?next=https://www.example.com/a").reasons.some((r) => /open-redirect/.test(r.t)));
   const c = analyzeUrl("https://github.com/x/y");
   T("benign url low", c.severity === "info" || c.severity === "low");
   const d = analyzeUrl("http://user:pass@198.51.100.9/login");

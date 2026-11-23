@@ -325,3 +325,17 @@ group("phish: digit-swapped brands and brand addresses in the path", () => {
     assert.ok(r.findings.some((f) => /digits in place of letters/.test(f.t)));
   });
 });
+
+group("phish: open-redirect parameters", () => {
+  const flagged = (u) => analyzeUrl(u).reasons.some((r) => /open-redirect/.test(r.t));
+  test("a redirect parameter pointing at another site is flagged", () => {
+    assert.ok(flagged("https://example.com/login?next=//evil.example"));
+    assert.ok(flagged("https://example.com/?url=https%3A%2F%2Fevil.example%2Fx"));
+    assert.ok(flagged("https://example.com/?r=/\\evil.example"));
+  });
+  test("relative, same-site and non-redirect parameters are not flagged", () => {
+    assert.notOk(flagged("https://example.com/login?next=/dashboard"));
+    assert.notOk(flagged("https://example.com/?return_to=https://www.example.com/a"));
+    assert.notOk(flagged("https://example.com/?q=//evil.example"));
+  });
+});

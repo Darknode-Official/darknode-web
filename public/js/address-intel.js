@@ -3,6 +3,7 @@
 // Parallel lookups against GreyNoise, AbuseIPDB, Shodan, VirusTotal, crt.sh, DNS, plus
 // saved IPsum / ThreatFox / URLhaus snapshot files (not live queries), community reports,
 // a hosting-ASN tag, "My IP" and a bulk IP check.
+import { dnFetchJSON } from "/js/net.js";
 
 var esc = function(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
@@ -263,7 +264,8 @@ function fetchDNSRecords(domain, type) {
 }
 
 function fetchCertTransparency(domain) {
-  return fetchJSON("https://crt.sh/?q=" + encodeURIComponent(domain) + "&output=json");
+  // crt.sh sends no CORS headers, so it is fetched through the Darknode edge proxy
+  return dnFetchJSON("https://crt.sh/?q=" + encodeURIComponent(domain) + "&output=json", { timeout: 25000, max: 2000000 });
 }
 
 // Hosting / datacenter networks by ASN. Being on this list is CONTEXT, not a verdict:
@@ -541,6 +543,8 @@ function renderNetworkPanel(data, shodan, reverseDNS) {
   return html;
 }
 
+var IP_ONLY_NA = "IP-only source, not applicable to domains. Investigate the domain's IP address to check it here.";
+
 function renderReputationPanel(results) {
   var html = '<div class="ai-panel-body">';
 
@@ -560,6 +564,8 @@ function renderReputationPanel(results) {
     '</div>';
   } else if (results.greynoise_err) {
     html += panelUnavailable(results.greynoise_err);
+  } else if (results.ip_only_na) {
+    html += panelUnavailable(IP_ONLY_NA);
   } else {
     html += panelLoading();
   }
@@ -583,6 +589,8 @@ function renderReputationPanel(results) {
     html += panelUnavailable(results.abuseipdb_err);
   } else if (results.abuseipdb_nokey) {
     html += panelNeedsKey("AbuseIPDB");
+  } else if (results.ip_only_na) {
+    html += panelUnavailable(IP_ONLY_NA);
   } else {
     html += panelLoading();
   }
@@ -902,6 +910,8 @@ function runInvestigation(input, type, container) {
   }
 
   var keys = getApiKeys();
+  // GreyNoise and AbuseIPDB look up IP addresses only, so a domain or URL never queries them.
+  if (!ip) results.ip_only_na = true;
 
   // Build panels structure
   var panelOrder = [];

@@ -83,7 +83,11 @@ self.addEventListener('fetch', e => {
       // shell directly so a navigation never resolves to Response.error(), which
       // the browser logs as "FetchEvent ... resulted in a network error response".
       try { const idx = await fetch('/'); if (idx && idx.ok) return idx; } catch (_) {}
-      return Response.error();
+      // Nothing reachable: a plain offline page instead of the browser's raw error page.
+      return new Response('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline - Darknode</title></head>'
+        + '<body style="font:16px/1.5 system-ui,sans-serif;max-width:32rem;margin:18vh auto 0;padding:0 24px"><h1 style="font-size:22px;margin:0 0 8px">You\'re offline</h1>'
+        + '<p style="margin:0 0 16px">Darknode couldn\'t reach the server. Check your connection, then reload.</p><p><a href="">Reload</a></p></body></html>',
+        { status: 503, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
     })());
     return;
   }

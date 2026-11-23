@@ -281,7 +281,8 @@ var SG_CSS =
   '.sg-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}' +
   '@media(max-width:520px){.sg-row2,.sg-row3{grid-template-columns:1fr}}' +
   '.sg-sel-block{border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px;background:color-mix(in srgb,var(--card2) 50%,var(--card))}' +
-  '.sg-sel-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}' +
+  '.sg-sel-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}' +
+  '.sg-sel-head>button{flex:none;white-space:nowrap}' +
   '.sg-sel-head .sg-in{max-width:220px}' +
   '.sg-detrow{display:grid;grid-template-columns:1.1fr 1fr 1.6fr auto;gap:8px;margin-bottom:8px;align-items:start}' +
   '@media(max-width:620px){.sg-detrow{grid-template-columns:1fr 1fr}}' +

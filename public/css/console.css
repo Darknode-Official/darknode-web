@@ -189,6 +189,8 @@ body.app .svc-menu .svc-card .side-item.active{color:var(--txt)!important;font-w
 .mt-in{width:100%;background:var(--bg,var(--card2));border:1px solid var(--line);border-radius:9px;color:var(--txt);font:inherit;font-size:.9rem;padding:9px 11px;outline:none;box-sizing:border-box}
 .mt-field-row .mt-in{flex:1;min-width:120px;width:auto}
 .mt-field-row .mt-sel,.mt-field-row input[type=number].mt-in{flex:0 1 auto;max-width:100%}
+.mt-hint{flex-basis:100%;font-size:.75rem;line-height:1.45;color:var(--mut);white-space:normal;overflow-wrap:anywhere}
+@media(max-width:560px){.mt-field-row .mt-lbl{flex-basis:100%}}
 .mt-in:focus{border-color:var(--acc);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 45%,transparent)}
 .mt-ta{min-height:120px;resize:vertical;font-family:var(--font-mono,ui-monospace,monospace);font-size:.85rem;line-height:1.5}
 .mt-sel{cursor:pointer}

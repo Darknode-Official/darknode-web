@@ -28,7 +28,7 @@ var C_FAIL = "var(--bad)";
 // random per-domain tokens, so it can only be found with a selector you enter.
 var DEFAULT_SELECTORS = ["default", "google", "selector1", "selector2", "k1", "k2", "k3", "dkim", "s1", "s2", "mail", "smtp",
   "resend", "mandrill", "protonmail", "protonmail2", "fm1", "fm2", "sig1", "zmail", "mailjet", "pm"];
-var EXAMPLE_DOMAINS = ["google.com", "github.com", "paypal.com", "microsoft.com"];
+var EXAMPLE_DOMAINS = ["example.com", "example.org"];
 
 function toast(msg) {
   if (typeof window.showToast === "function") window.showToast(msg);
