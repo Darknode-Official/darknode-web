@@ -13,6 +13,14 @@ import {
   addDoc, query, orderBy, updateDoc, limit,
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
+// Profile timestamps come as Firestore Timestamps, epoch numbers (the worker's Auth-only rows)
+// or the Auth metadata string ensureUserDoc stores ("Wed, 11 Nov 2026 ..."); all count.
+const tsMs = (ts) => ts && ts.toMillis ? ts.toMillis() : ts && ts.toDate ? ts.toDate().getTime()
+  : typeof ts === "number" ? (ts < 1e12 ? ts * 1000 : ts) : typeof ts === "string" ? (Date.parse(ts) || 0) : 0;
+// Only the sign-in providers' own avatar hosts load: photoURL is user-writable, and any other
+// URL would send the owner's IP and browser to a server the user picked.
+const AVATAR_HOST = /^(lh\d+\.googleusercontent\.com|avatars\.githubusercontent\.com)$/;
+const safeAvatar = (u) => { try { const x = new URL(u); return x.protocol === "https:" && AVATAR_HOST.test(x.hostname) ? x.href : ""; } catch (_) { return ""; } };
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmtDate = (ts) => {
@@ -329,7 +337,7 @@ export async function renderAdmin(main, user) {
         }
       } catch (_) { /* Worker unreachable: the Firestore list still shows */ }
       $("#stUsers").textContent = users.length;
-      const toMs = (ts) => ts && ts.toMillis ? ts.toMillis() : (ts && ts.toDate ? ts.toDate().getTime() : (typeof ts === "number" ? (ts < 1e12 ? ts * 1000 : ts) : 0));
+      const toMs = tsMs;
       const now = Date.now(), day = 864e5, midnight = new Date(); midnight.setHours(0, 0, 0, 0);
       $("#stNew").textContent = users.filter((u) => { const c = toMs(u.created || u.createdAt); return c && now - c < 7 * day; }).length || "—";
       $("#stActive").textContent = users.filter((u) => toMs(u.lastSeen) >= midnight.getTime()).length;
@@ -359,8 +367,9 @@ export async function renderAdmin(main, user) {
       const provBadge = prov.includes("google") ? '<span class="ur-prov google">Google</span>'
         : prov.includes("github") ? '<span class="ur-prov github">GitHub</span>'
         : '<span class="ur-prov email">Email</span>';
-      const avatar = u.photoURL
-        ? `<img class="ur-avatar" src="${esc(u.photoURL)}" alt="" width="32" height="32">`
+      const pic = safeAvatar(u.photoURL);
+      const avatar = pic
+        ? `<img class="ur-avatar" src="${esc(pic)}" alt="" width="32" height="32" referrerpolicy="no-referrer">`
         : `<span class="ur-avatar ur-initials">${esc((u.email || "?")[0].toUpperCase())}</span>`;
       return `<div class="user-row" data-uid="${esc(u.uid)}">
         ${avatar}
@@ -681,7 +690,7 @@ export async function renderAdmin(main, user) {
           const label = d.toLocaleDateString('en', { weekday: 'short' });
           const dayStart = new Date(d); dayStart.setHours(0,0,0,0);
           const dayEnd = new Date(d); dayEnd.setHours(23,59,59,999);
-          const toMs = (ts) => ts && ts.toMillis ? ts.toMillis() : (ts && ts.toDate ? ts.toDate().getTime() : 0);
+          const toMs = tsMs;
           const count = users.filter(u => { const c = toMs(u.created || u.createdAt); return c >= dayStart.getTime() && c <= dayEnd.getTime(); }).length;
           days.push({ label, count });
         }
@@ -722,7 +731,7 @@ export async function renderAdmin(main, user) {
   if (clearInactive) clearInactive.onclick = async () => {
     const msg = $("#maintMsg");
     const cutoff = Date.now() - 90 * 864e5;
-    const toMs = (ts) => ts && ts.toMillis ? ts.toMillis() : (ts && ts.toDate ? ts.toDate().getTime() : 0);
+    const toMs = tsMs;
     const inactive = users.filter(u => {
       const last = toMs(u.lastSeen) || toMs(u.created || u.createdAt);
       return last && last < cutoff && !isOwnerRow(u);

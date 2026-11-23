@@ -466,3 +466,52 @@ group("monitor DO/alert window + viewer redaction", () => {
     assert.equal(sevRank("HIGH"), 3);
   });
 });
+
+group("monitor DO/plan", () => {
+  const mk = async (net) => {
+    const st = memState(); const mon = new MonitorDO(st);
+    const r = await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"] }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    return { st, mon, id: r.json.monitor.id };
+  };
+  test("upsert records who set the monitor up", async () => {
+    const { st, id } = await mk();
+    assert.equal(st._map.get("monitors")[id].by, "u1");
+  });
+  test("a scheduled run is held when the creator's plan lapsed, and waits a full interval", async () => {
+    const { st, mon, id } = await mk();
+    const net = fakeNet(day(5));
+    const r = await mon.runDue({ fetch: net.fetch, sleep: async () => {}, planOk: async () => false });
+    assert.equal(r.ran.length, 0, "nothing ran");
+    assert.equal(net.deliveries.length, 0, "no alert delivered");
+    const m = st._map.get("monitors")[id];
+    assert.equal(m.planHeld, true);
+    assert.equal(m.lastRunAt, 0, "last run is not faked");
+    assert.ok(st.storage._alarm() > Date.now() + 60000, "no tight alarm loop while held");
+    assert.ok(/held/.test(st._map.get("history")[0].error));
+  });
+  test("once the plan is back the next scheduled run goes ahead and clears the hold", async () => {
+    const { st, mon, id } = await mk();
+    await mon.runDue({ planOk: async () => false });
+    st._map.get("monitors")[id].planHeldAt = 0; // pretend the interval passed
+    const net = fakeNet(day(5));
+    const r = await mon.runDue({ fetch: net.fetch, sleep: async () => {}, planOk: async () => true });
+    assert.equal(r.ran.length, 1);
+    assert.equal(st._map.get("monitors")[id].planHeld, undefined);
+  });
+  test("alarm() checks the creator's live plan (free -> held)", async () => {
+    const { st, mon, id } = await mk();
+    await st.storage.put("wid", "u1");
+    mon.env = { FIREBASE_PROJECT_ID: "p1" };
+    mon.planOpts = { token: async () => "sa", cache: new Map(), fetch: async () => ({ ok: true, status: 200, json: async () => ({ fields: { tier: { stringValue: "free" } } }) }) };
+    await mon.alarm();
+    assert.equal(st._map.get("monitors")[id].planHeld, true);
+  });
+  test("resuming hands the plan check to the resumer and clears a hold", async () => {
+    const { st, mon, id } = await mk();
+    Object.assign(st._map.get("monitors")[id], { by: "gone", planHeld: true, planHeldAt: 5 });
+    await post(mon, { op: "pause", id, paused: true });
+    await post(mon, { op: "pause", id, paused: false });
+    const m = st._map.get("monitors")[id];
+    assert.equal(m.by, "u1"); assert.equal(m.planHeld, undefined);
+  });
+});

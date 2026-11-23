@@ -9,7 +9,7 @@ import { ingestToFindings } from "../public/js/ingest/formats.js";
 import { requireUser, presentedKey } from "./auth.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
 import { featureDenied } from "./plan.js";
-import { workspaceTier } from "./plan-share.js";
+import { workspaceTier, liveTier } from "./plan-share.js";
 import { readCapped } from "./body-cap.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -33,7 +33,7 @@ const capFields = (f) => {
 const safeKey = (k) => ({ keyId: k.keyId, prefix: keyPrefix(k.keyId), scopes: k.scopes, label: k.label, createdAt: k.createdAt, lastUsedAt: k.lastUsedAt || 0, revoked: !!k.revoked });
 
 export class IngestDO {
-  constructor(state) { this.state = state; this.storage = state.storage; }
+  constructor(state, env) { this.state = state; this.storage = state.storage; this.env = env || {}; }
   // Null-proto map: keyId comes from an API caller, so a key named "__proto__"/
   // "constructor" must be an ordinary own entry, never reach Object.prototype.
   async _keys() { return Object.assign(Object.create(null), await this.storage.get("keys")); }
@@ -78,7 +78,7 @@ export class IngestDO {
       if (!timingSafeEqual(h, rec.hash)) { out = { ok: false, status: 401, error: "Invalid API key." }; return; }
       if (scope && !hasScope(rec.scopes, scope)) { out = { ok: false, status: 403, error: `This key lacks the ${scope} scope.` }; return; }
       rec.lastUsedAt = now(); await this.storage.put("keys", keys);
-      out = { ok: true, keyId, scopes: rec.scopes };
+      out = { ok: true, keyId, scopes: rec.scopes, by: rec.by || "" };
     });
     return out;
   }
@@ -98,6 +98,12 @@ export class IngestDO {
         return reply({ pending: findings.length, findings });
       }
       const v = await this._verify(apiKey, "ingest:write"); if (!v.ok) return reply({ error: v.error }, v.status);
+      // a key keeps ingesting only while its creator still has the plan (read-back stays open
+      // so findings already sent can be pulled after a downgrade)
+      const wid = request.headers.get("x-ing-wid");
+      const tier = wid ? await liveTier(this.env, wid, v.by, this.planOpts) : null; // planOpts: test seam (fetch/token), unset in production
+      const planMsg = tier === null ? null : featureDenied("apiKeys", tier);
+      if (planMsg) return reply({ error: planMsg + " (checked against the plan of the person who created this key)", plan: true }, 402);
       const text = await request.text();
       if (text.length > BODY_CAP) return reply({ error: "Body too large." }, 413);
       const { format, findings: parsed, errors } = ingestToFindings(text);
@@ -133,7 +139,7 @@ export class IngestDO {
       // let a concurrent create/revoke drop this key (its await hashKey yields).
       await this.state.blockConcurrencyWhile(async () => {
         const keys = await this._keys();
-        keys[keyId] = { keyId, hash: await hashKey(key), scopes, label: String(body.label || "").slice(0, 80) || "API key", createdAt: now(), lastUsedAt: 0, revoked: false };
+        keys[keyId] = { keyId, hash: await hashKey(key), scopes, label: String(body.label || "").slice(0, 80) || "API key", by: mgmtUid, createdAt: now(), lastUsedAt: 0, revoked: false };
         await this.storage.put("keys", keys);
       });
       return reply({ key, keyId, prefix, scopes });   // full key shown once
@@ -207,6 +213,6 @@ export async function handleIngest(request, env, wid, json, kind) {
   const bodyText = isRead ? null : await readCapped(request, BODY_CAP);
   if (!isRead && bodyText === null) return json({ error: "Body too large." }, 413);
   const stub = env.INGEST.get(env.INGEST.idFromName(wid));
-  const res = await stub.fetch("https://ingest/" + (isRead ? "findings" : ""), { method: isRead ? "GET" : "POST", body: bodyText, headers: { "x-ing-key": key, "Content-Type": "application/json" } });
+  const res = await stub.fetch("https://ingest/" + (isRead ? "findings" : ""), { method: isRead ? "GET" : "POST", body: bodyText, headers: { "x-ing-key": key, "x-ing-wid": wid, "Content-Type": "application/json" } });
   return json(await res.json(), res.status);
 }
