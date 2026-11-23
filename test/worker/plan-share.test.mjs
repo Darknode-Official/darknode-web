@@ -80,3 +80,33 @@ group("worker: workspace plan sharing", () => {
     } finally { globalThis.fetch = real; _resetShareCache(); }
   });
 });
+
+// liveTier: the plan behind work with no user request (monitor alarms, API-key ingest).
+import { liveTier } from "../../worker/plan-share.js";
+group("worker: live plan for background work", () => {
+  const lo = (fetch) => ({ fetch, token: async () => "sa-token", cache: new Map(), shareCache: new Map() });
+  test("reads the creator's live plan with the service account", async () => {
+    const seen = [];
+    assert.equal(await liveTier(ENV, "u1", "u1", lo(fs({ users: { u1: { tier: "pro" } } }, seen))), "pro");
+    assert.ok(seen.every(([, t]) => t === "sa-token"), "service account token");
+  });
+  test("a downgraded creator reads as free; no profile reads as free", async () => {
+    assert.equal(await liveTier(ENV, "u1", "u1", lo(fs({ users: { u1: { tier: "free" } } }))), "free");
+    assert.equal(await liveTier(ENV, "u1", "u1", lo(fs({ users: {} }))), "free");
+  });
+  test("the owner's admin flag counts as the top plan", async () => {
+    assert.equal(await liveTier(ENV, "boss", "boss", lo(fs({ users: { boss: { admin: true } } }))), "enterprise");
+  });
+  test("no recorded creator: personal workspace uses its own user, a team workspace its createdBy", async () => {
+    assert.equal(await liveTier(ENV, "u9", "", lo(fs({ users: { u9: { tier: "pro" } } }))), "pro");
+    assert.equal(await liveTier(ENV, TEAM, "", lo(fs({ ws: { createdBy: { stringValue: "boss" } }, users: { boss: { tier: "team" } } }))), "team");
+  });
+  test("a member's work in a team workspace counts the owner's shared plan", async () => {
+    assert.equal(await liveTier(ENV, TEAM, "u1", lo(fs({ ws: on(), users: { boss: { tier: "team" } } }))), "team");
+  });
+  test("an unreadable profile or missing service account is unknown (null), never a false downgrade", async () => {
+    assert.equal(await liveTier(ENV, "u1", "u1", lo(async () => ({ ok: false, status: 503, json: async () => ({}) }))), null);
+    assert.equal(await liveTier(ENV, "u1", "u1", { fetch: fs(), token: async () => { throw new Error("FIREBASE_SA is not set"); }, cache: new Map() }), null);
+    assert.equal(await liveTier(undefined, "u1", "u1", lo(fs())), null);
+  });
+});

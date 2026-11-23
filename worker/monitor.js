@@ -12,7 +12,7 @@ import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
 import { requireUser } from "./auth.js";
 import { resolveWorkspaceRole, canDo } from "./workspace.js";
 import { featureDenied } from "./plan.js";
-import { workspaceTier } from "./plan-share.js";
+import { workspaceTier, liveTier } from "./plan-share.js";
 import { readCapped } from "./body-cap.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -25,6 +25,8 @@ const uid = () => "m_" + Math.random().toString(36).slice(2, 10) + now().toStrin
 // A Slack/Discord/Teams webhook URL is itself the credential: viewers see only its host.
 const hideUrl = (u) => { try { const x = new URL(u); return x.origin + (x.pathname.length > 1 || x.search ? "/…" : ""); } catch (_) { return "…"; } };
 const safeChannel = (c, full = true) => ({ type: c.type, url: full ? c.url : hideUrl(c.url), hasSecret: !!c.secret });
+// next run: a run held for the plan waits a full interval too, or the alarm would refire every second
+const dueAt = (m) => Math.max(m.lastRunAt || 0, m.planHeldAt || 0) + Math.max(m.intervalMs || 0, MIN_INTERVAL);
 const safeMonitor = (m, full = true) => ({ ...m, channels: (m.channels || []).map((c) => safeChannel(c, full)), lastResults: undefined, graphMeta: undefined, lastResultCount: (m.lastResults || []).length });
 
 export class MonitorDO {
@@ -90,7 +92,7 @@ export class MonitorDO {
     let soonest = null;
     for (const m of Object.values(mons)) {
       if (m.paused) continue;
-      const due = (m.lastRunAt || 0) + Math.max(m.intervalMs || 0, MIN_INTERVAL);
+      const due = dueAt(m);
       if (soonest == null || due < soonest) soonest = due;
     }
     if (soonest != null) await this.storage.setAlarm(Math.max(soonest, now() + 1000));
@@ -220,8 +222,16 @@ export class MonitorDO {
     const ran = [];
     for (const m of Object.values(mons)) {
       if (m.paused) continue;
-      const due = (m.lastRunAt || 0) + Math.max(m.intervalMs || 0, MIN_INTERVAL);
-      if (deps.force || t >= due) ran.push(await this._runOne(m, deps, mons));
+      if (!deps.force && t < dueAt(m)) continue;
+      // scheduled runs re-check the plan of whoever set the monitor up: a downgrade (or the
+      // workspace owner turning plan sharing off) holds it until someone with the plan resumes
+      if (!deps.force && deps.planOk && !(await deps.planOk(m))) {
+        m.planHeld = true; m.planHeldAt = t;
+        await this._log("history", HISTORY_CAP, { id: m.id, at: t, error: "held: the plan of the person who set this monitor up no longer includes monitoring" });
+        continue;
+      }
+      if (m.planHeld) { delete m.planHeld; delete m.planHeldAt; }
+      ran.push(await this._runOne(m, deps, mons));
     }
     await this._put(mons);
     await this._reschedule();
@@ -229,7 +239,9 @@ export class MonitorDO {
   }
 
   async alarm() {
-    await this.state.blockConcurrencyWhile(async () => { await this.runDue({}); });
+    const wid = await this.storage.get("wid");
+    const planOk = async (m) => { if (!wid) return true; const t = await liveTier(this.env, wid, m.by || "", this.planOpts); return t === null || !featureDenied("monitors", t); };
+    await this.state.blockConcurrencyWhile(async () => { await this.runDue({ planOk }); });
   }
 
   // ---- HTTP interface for the Deck (via handleMonitor) ----
@@ -264,13 +276,15 @@ export class MonitorDO {
       const mons = await this._monitors();
       const id = m.id && mons[m.id] ? m.id : uid();
       const prev = mons[id] || {};
-      mons[id] = { id, name: m.name || m.type, type: m.type, config: m.config || {}, rules: m.rules || prev.rules || {}, channels: Array.isArray(m.channels) ? m.channels : (prev.channels || []), intervalMs: Math.max(m.intervalMs || prev.intervalMs || MIN_INTERVAL, MIN_INTERVAL), paused: !!m.paused, lastRunAt: prev.lastRunAt || 0, lastResults: prev.lastResults || [], graphMeta: prev.graphMeta || {}, baselined: prev.baselined || [] };
+      mons[id] = { id, name: m.name || m.type, type: m.type, config: m.config || {}, rules: m.rules || prev.rules || {}, channels: Array.isArray(m.channels) ? m.channels : (prev.channels || []), intervalMs: Math.max(m.intervalMs || prev.intervalMs || MIN_INTERVAL, MIN_INTERVAL), paused: !!m.paused, by: request.headers.get("x-mon-uid"), lastRunAt: prev.lastRunAt || 0, lastResults: prev.lastResults || [], graphMeta: prev.graphMeta || {}, baselined: prev.baselined || [] };
       await this._put(mons); await this._reschedule();
       return reply({ monitor: safeMonitor(mons[id]) });
     }
     if (op === "pause") {
       const mons = await this._monitors(); const m = mons[body.id]; if (!m) return reply({ error: "not found" }, 404);
-      m.paused = !!body.paused; await this._put(mons); await this._reschedule();
+      m.paused = !!body.paused;
+      if (!m.paused) { m.by = request.headers.get("x-mon-uid"); delete m.planHeld; delete m.planHeldAt; } // resuming passed the plan check: the resumer now carries it
+      await this._put(mons); await this._reschedule();
       return reply({ monitor: safeMonitor(m) });
     }
     if (op === "delete") {
@@ -313,9 +327,10 @@ export async function handleMonitor(request, env, wid, json) {
   const bodyText = await readCapped(request, 256 * 1024);
   if (bodyText === null) return json({ error: "Request too large." }, 413);
   // Adding, editing or running a monitor needs the plan; list, pause and delete stay open
-  // so someone who downgrades can still see and clean up what they had.
-  let op = ""; try { op = String((JSON.parse(bodyText || "{}") || {}).op || ""); } catch (_) {}
-  if (MON_PAID_OPS.has(op)) {
+  // so someone who downgrades can still see and clean up what they had (but not resume).
+  // Resuming a paused monitor restarts paid work, so it needs the plan too.
+  let op = "", resume = false; try { const b = JSON.parse(bodyText || "{}") || {}; op = String(b.op || ""); resume = op === "pause" && b.paused === false; } catch (_) {}
+  if (MON_PAID_OPS.has(op) || resume) {
     const planMsg = featureDenied("monitors", await workspaceTier(env, wid, who));
     if (planMsg) return json({ error: planMsg, plan: true }, 402);
   }

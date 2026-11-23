@@ -84,6 +84,7 @@ function paint() {
         <span class="mon-name">${E(m.name)}</span>
         <span class="mon-pill">${E(m.type)}</span>
         ${m.paused ? '<span class="mon-pill paused">Paused</span>' : ""}
+        ${!m.paused && m.planHeld ? '<span class="mon-pill paused" title="The plan of the person who set this up no longer includes monitoring. Pause and resume it from an account on Pro to restart it.">Held: plan</span>' : ""}
         <span class="mon-meta">${dom.length ? E(dom.slice(0, 3).join(", ")) + (dom.length > 3 ? ` +${dom.length - 3}` : "") + " · " : m.config && m.config.epssFloor != null ? "KEV or EPSS ≥ " + E(m.config.epssFloor) + " · " : ""}every ${every(m.intervalMs)} · last run ${E(ago(m.lastRunAt))} · ${m.lastResultCount || 0} open · ${(m.channels || []).length} channel${(m.channels || []).length === 1 ? "" : "s"}</span>
         <span class="mon-actions">
           <button class="mon-btn" data-act="run">Run now</button>
