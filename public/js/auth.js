@@ -1712,7 +1712,8 @@ function renderDesktopHome(user) {
         if (typeof t === "function") t("Darknode " + r.latest + " is available. Open This Computer to download it.");
       }, () => {});
     })
-    .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true));
+    .catch((e) => note("The workspace did not load", esc((e && e.message) || "Unknown error"), true))
+    .finally(dismissBoot);
 }
 // Web home: the Deck is the only signed-in UI and owns every darknode.ai/<page> link.
 // The console is not offered to anyone, admins included: an old /console/<page> link opens
@@ -1751,7 +1752,8 @@ function renderDeckHome(user) {
       view.innerHTML = `<div role="status" style="max-width:560px;margin:18vh auto 0;padding:28px 32px;border:1px solid var(--line,rgba(23,33,56,.14));border-radius:8px"><h1 style="font-size:22px;margin:0 0 8px">Your workspace did not load</h1><p style="margin:0 0 20px;overflow-wrap:anywhere">A network or browser error stopped it. Check your connection and try again.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="dkRetry">Try again</button><button class="btn ghost" id="dkOut">Sign out</button></div></div>`;
       view.querySelector("#dkRetry").onclick = () => location.reload(); // a failed import stays failed for this page, so reload
       view.querySelector("#dkOut").onclick = doLogout;
-    });
+    })
+    .finally(dismissBoot);
 }
 function renderApp(user) {
   _appUid = user && user.uid || null;
@@ -1760,7 +1762,9 @@ function renderApp(user) {
   // the Deck) can adopt the parent tab's session when its own Firebase persistence resolves
   // to null — otherwise every Deck tool paints the public landing page instead of the tool.
   try { window.__dnCurrentUser = user || null; } catch (_) {}
-  dismissBoot();
+  // The Deck paths take the boot screen down only once the Deck has drawn, so the empty
+  // page never shows while its code and the account's profile load.
+  if (window.__boot) window.__boot.set(85);
   document.body.classList.remove("landing");
   document.body.classList.add("app");
   // Desktop app (top frame only; tool iframes never see the bridge): the Deck is the home screen.
@@ -1772,6 +1776,7 @@ function renderApp(user) {
     if (q.get("embed") === "1" && window.parent === window) { q.delete("embed"); q.delete("ink"); const qs = q.toString(); location.replace(location.pathname + (qs ? "?" + qs : "") + location.hash); return; }
   } catch (_) {}
   if (deckIsHome()) { renderDeckHome(user); return; }
+  dismissBoot();
   // Embed mode: when loaded as /<sec>?embed=1 (e.g. inside Darknode Command's
   // in-deck workspace iframe), strip the console chrome so only the live tool
   // shows, full-bleed and transparent. Reused by any host that frames a tool.
