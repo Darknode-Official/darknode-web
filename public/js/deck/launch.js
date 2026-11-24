@@ -13,14 +13,15 @@ let _deckOff = null; // teardown of the mounted Deck, so relaunching never stack
 // admin custom claim; Security Rules enforce it server-side) unlocks the owner-only
 // pieces, and onSignOut makes the Deck the primary UI (no console exit).
 export async function openDeck(user, extra = {}) {
-  const [{ renderDeck }, nav] = await Promise.all([
+  const modsP = Promise.all([
     import("/js/deck-ui.js?v=20261030d"),
     import("/js/console-nav.js?v=20261029d"),
   ]);
   // Workspace identity (A1): load the owner's workspace profile so the Deck header,
   // Plans and reports show it instead of a hardcoded label. Non-fatal if it fails.
+  // The code and the three reads below are independent, so they load together (the boot screen waits on them).
   let wsProfile = {}, deckTier = "", onboarding = {};
-  if (user) {
+  const profileP = !user ? null : (async () => {
     try {
       const snap = await getDoc(doc(db, "users", user.uid));
       const d = snap.exists() ? snap.data() : {};
@@ -28,26 +29,27 @@ export async function openDeck(user, extra = {}) {
       deckTier = d.tier || "";
       onboarding = d.onboarding || {};
     } catch (_) {}
-  }
+  })();
   // Plan sharing: when the remembered active workspace is a team whose owner shares their
   // plan, the Deck is built for that plan. Non-fatal (falls back to the user's own plan).
   let sharedTier = "";
-  if (user) {
+  const shareP = !user ? null : (async () => {
     try {
       const ws = await import("/js/workspaces.js?v=20261018i");
       const wid = ws.activeWorkspace();
       if (wid && wid !== user.uid) { const sh = await ws.getWorkspacePlanShare(wid); if (sh.on) sharedTier = sh.tier; }
     } catch (_) {}
-  }
+  })();
   // Durable account notifications (A6): the owner's own recent account-level
   // messages (e.g. a granted upgrade). Low-volume subcollection; non-fatal.
   let accountNotifs = [];
-  if (user) {
+  const notifsP = !user ? null : (async () => {
     try {
       const nsnap = await getDocs(query(collection(db, "users", user.uid, "notifications"), orderBy("ts", "desc"), limit(20)));
       accountNotifs = nsnap.docs.map((dd) => { const n = dd.data() || {}; return { id: dd.id, text: n.text || "", ts: typeof n.ts === "number" ? n.ts : 0, kind: n.kind || "", read: !!n.read }; });
     } catch (_) {}
-  }
+  })();
+  const [[{ renderDeck }, nav]] = await Promise.all([modsP, profileP, shareP, notifsP]);
   // Inside the desktop app: report app + VM usage to the owner's admin panel (at most
   // every 6 hours; Settings > Share app usage turns it off). A no-op in a browser.
   if (user) import("/js/usage-ping.js?v=1").then((m) => m.pingAppUsage()).catch(() => {});
