@@ -1,8 +1,52 @@
 {
- "updated": "2026-11-24T15:59:38.756Z",
+ "updated": "2026-11-25T15:47:48.318Z",
  "source": "CISA KEV",
  "count": 500,
  "data": [
+  {
+   "cve": "CVE-2026-103406",
+   "vendor": "Hewlett Packard Enterprise (HPE)",
+   "product": "Juniper Session Smart Conductor and Session Smart Router",
+   "name": "Hewlett Packard Enterprise (HPE) Juniper Session Smart Conductor and Session Smart Router OS Command Injection Vulnerability",
+   "description": "Hewlett Packard Enterprise (HPE) Juniper Session Smart Conductor and Session Smart Router contain an OS command injection vulnerability that could allow a remote attacker to execute arbitrary commands as root via a specially crafted salt minion ID.",
+   "dateAdded": "2026-11-25",
+   "dueDate": "2026-11-28",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-132224",
+   "vendor": "Optimizely",
+   "product": "Web Experimentation",
+   "name": "Optimizely Web Experimentation External Control of Critical State Data Vulnerability",
+   "description": "Optimizely Web Experimentation contains an external control of critical state data vulnerability in its account signup flow that could allow an attacker to impersonate existing customer users and modify Project JavaScript. Successful exploitation can result in attacker-controlled JavaScript being distributed through Optimizely-hosted assets and executed in browsers visiting affected customer websites.",
+   "dateAdded": "2026-11-24",
+   "dueDate": "2026-11-27",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-131914",
+   "vendor": "Idunno",
+   "product": "AntiCsrf",
+   "name": "Idunno AntiCsrf Deserialization of Untrusted Data Vulnerability",
+   "description": "Idunno AntiCsrf contains a deserialization of untrusted data vulnerability that allows an unauthenticated remote attacker to execute arbitrary code via object injection. The impacted product(s) could be end-of-life (EoL) and/or end-of-service (EoS). Users are advised to discontinue use and/or transition to a supported version.",
+   "dateAdded": "2026-11-24",
+   "dueDate": "2026-11-27",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
+  {
+   "cve": "CVE-2026-132165",
+   "vendor": "Drupal",
+   "product": "Core",
+   "name": "Drupal Core Remote Code Execution Vulnerability",
+   "description": "Drupal Core contains a not failing securely vulnerability that could allow an unauthenticated attacker to take over an existing site or execute arbitrary code via the Drupal installer. Under specific conditions, the attacker can use install.php to attempt to reinstall Drupal on the site.",
+   "dateAdded": "2026-11-24",
+   "dueDate": "2026-11-27",
+   "action": "Apply mitigations in accordance with vendor instructions, ensuring compliance with CISA’s BOD 26-04 Prioritizing Security Updates Based on Risk (see URL in Notes) guidance and CISA’s “Forensics Triage Requirements” (see URL in Notes). Follow applicable BOD 26-04 guidance for cloud services or discontinue use of the product if mitigations are unavailable. Stakeholders are responsible for evaluating each asset's internet exposure and ensuring adherence to BOD 26-04 patching guidelines.",
+   "ransomware": "Unknown"
+  },
   {
    "cve": "CVE-2026-133968",
    "vendor": "Project MONAI",
@@ -5456,50 +5500,6 @@
    "description": "Microsoft Windows New Technology File System (NTFS) contains an insertion of sensitive Information into log file vulnerability that allows an unauthorized attacker to disclose information with a physical attack. An attacker who successfully exploited this vulnerability could potentially read portions of heap memory.",
    "dateAdded": "2025-03-11",
    "dueDate": "2025-04-01",
-   "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-24983",
-   "vendor": "Microsoft",
-   "product": "Windows",
-   "name": "Microsoft Windows Win32k Use-After-Free Vulnerability",
-   "description": "Microsoft Windows Win32 Kernel Subsystem contains a use-after-free vulnerability that allows an authorized attacker to elevate privileges locally.",
-   "dateAdded": "2025-03-11",
-   "dueDate": "2025-04-01",
-   "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2025-26633",
-   "vendor": "Microsoft",
-   "product": "Windows",
-   "name": "Microsoft Windows Management Console (MMC) Improper Neutralization Vulnerability",
-   "description": "Microsoft Windows Management Console (MMC) contains an improper neutralization vulnerability that allows an unauthorized attacker to bypass a security feature locally.",
-   "dateAdded": "2025-03-11",
-   "dueDate": "2025-04-01",
-   "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Known"
-  },
-  {
-   "cve": "CVE-2024-13161",
-   "vendor": "Ivanti",
-   "product": "Endpoint Manager (EPM)",
-   "name": "Ivanti Endpoint Manager (EPM) Absolute Path Traversal Vulnerability",
-   "description": "Ivanti Endpoint Manager (EPM) contains an absolute path traversal vulnerability that allows a remote unauthenticated attacker to leak sensitive information.",
-   "dateAdded": "2025-03-10",
-   "dueDate": "2025-03-31",
-   "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
-   "ransomware": "Unknown"
-  },
-  {
-   "cve": "CVE-2024-13160",
-   "vendor": "Ivanti",
-   "product": "Endpoint Manager (EPM)",
-   "name": "Ivanti Endpoint Manager (EPM) Absolute Path Traversal Vulnerability",
-   "description": "Ivanti Endpoint Manager (EPM) contains an absolute path traversal vulnerability that allows a remote unauthenticated attacker to leak sensitive information.",
-   "dateAdded": "2025-03-10",
-   "dueDate": "2025-03-31",
    "action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
    "ransomware": "Unknown"
   }
