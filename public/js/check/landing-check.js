@@ -69,14 +69,14 @@ async function runInto(out, raw, { actions, msg, button, onStart }) {
   const domain = mod.normalizeDomain(raw);
   if (!domain) { say(String(raw || "").trim() ? "That is not a domain name. Enter one like example.com." : "Enter a domain, like example.com."); return null; }
   out.hidden = false;
-  out.innerHTML = renderPending(domain);
+  out.innerHTML = renderPending(domain); // darknode-ignore: renderPending escapes every value it interpolates (check-view.js esc); the domain is validated by normalizeDomain first
   if (onStart) onStart();
   const prevLabel = button ? button.textContent : "";
   if (button) { button.disabled = true; button.textContent = "Checking…"; }
   try {
     const res = await mod.runDomainCheck(domain, { onProgress: (r) => { if (seq === runSeq) out.innerHTML = renderResult(r, { running: true }); } });
     if (seq !== runSeq) return null;
-    out.innerHTML = renderResult(res);
+    out.innerHTML = renderResult(res); // darknode-ignore: renderResult escapes every value, including DNS and header text from the checked domain (check-view.js esc)
     out.firstElementChild.appendChild(actionsBar(res, actions));
     return res;
   } catch (e) {
