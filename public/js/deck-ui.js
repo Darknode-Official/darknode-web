@@ -1881,6 +1881,11 @@ export function renderDeck(host, opts) {
   // Onboarding (A3): a short checklist whose steps complete from REAL signals, not a
   // manual tick. Only the "dismissed" flag persists; completion is always recomputed.
   let onbState = opts.onboarding || {};
+  // First run: the overview opens with a live domain check (js/check/first-run.js) while no
+  // scan has run, or when a /check/<domain> link or the landing hand-off names a domain.
+  // Once shown it stays for this page load, so the user keeps their result on screen.
+  let frPending = "", frShown = false, frMod = null;
+  const frStored = () => { try { return localStorage.getItem("dn_first_domain") || ""; } catch (_) { return ""; } };
   function onbSteps(){
     let aiConnected = INTEGRATIONS.some((i) => i.kind === "ai" && conns[i.id] && conns[i.id].connected);
     if (!aiConnected) { try { const u = window.dnKeys && window.dnKeys.uid(); aiConnected = !!u && Object.keys(localStorage).some((k) => k.indexOf("dnk:" + u + ":dn_key_") === 0); } catch (_) {} }
@@ -2128,6 +2133,8 @@ export function renderDeck(host, opts) {
     const sp = raw.match(/^(personal|enterprise)\/([\w-]+)$/);
     if (sp) return { scene: sp[1], arg: { tab: sp[2] } };
     if (raw === "overview") return { scene: "overview" }; // the weekly digest links /overview
+    const ck = raw.match(/^check\/([^/\s]+)$/); // a shared domain check runs on the overview
+    if (ck) { let d = ck[1]; try { d = decodeURIComponent(d); } catch (_) {} return { scene: "overview", arg: { check: d } }; }
     for (const k in SCENES) if (k !== "section" && (k in SCENE_PATH ? SCENE_PATH[k] : k) === raw) return { scene: k };
     return null;
   }
@@ -2155,7 +2162,7 @@ export function renderDeck(host, opts) {
     setNav(scene === "section" ? "section:" + curSect : "scene:" + scene);
     for (const k in sceneEls) sceneEls[k].hidden = k !== scene;
     try { closeDrawer(); } catch (_) {} // an Integrations details panel does not follow you to another page
-    if (scene === "overview") renderOverview();
+    if (scene === "overview") { if (arg && arg.check) frPending = arg.check; renderOverview(); }
     else if (scene === "surface") renderSurface();
     else if (scene === "threat") renderThreat();
     else if (scene === "cloud") renderCloud();
@@ -3197,6 +3204,8 @@ export function renderDeck(host, opts) {
     const steps = onbSteps();
     const onbDone = steps.filter((x) => x.done).length;
     const showOnb = !onbState.dismissed && onbDone < steps.length;
+    const scanStep = steps.find((x) => x.id === "scan");
+    const frOn = frShown || !!frPending || !!frStored() || !!(scanStep && !scanStep.done);
     const onbCard = showOnb ? `
       <div class="dk-onbd" id="dkOnbd">
         <div class="dk-onbd-h"><b>Getting started</b><span class="pg">${onbDone} of ${steps.length} done</span><button class="dx" id="dkOnbDismiss">Dismiss</button></div>
@@ -3212,6 +3221,7 @@ export function renderDeck(host, opts) {
         <div><h1>${esc(greet)}, ${esc(first)}</h1><p>Your security posture, with live vulnerability intelligence from NVD, CISA KEV and FIRST EPSS.</p></div>
         <div class="when">${now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}</div>
       </div>
+      ${frOn ? '<div id="dkFirstRun"></div>' : ""}
       <form class="dk-ask" id="dkAsk">
         <span class="ai">${IC.spark}</span>
         <input id="dkAskIn" aria-label="Ask Darknode AI" placeholder="Ask Darknode AI…" autocomplete="off" spellcheck="false">
@@ -3266,6 +3276,19 @@ export function renderDeck(host, opts) {
       </div>`;
     pruneLocked(el);
     el.querySelectorAll(".dk-qacard[data-tool]").forEach((b) => b.onclick = () => openTool(b.dataset.tool, secLabel[b.dataset.tool] || b.dataset.tool));
+    // first run: a live domain check before any setup (drawn at once when already loaded, so a re-render does not flash)
+    const frSlot = el.querySelector("#dkFirstRun");
+    if (frSlot) {
+      frShown = true;
+      const mountFr = (m) => {
+        if (!frSlot.isConnected) return;
+        frMod = m;
+        const pending = frPending; frPending = "";
+        m.mountFirstRun(frSlot, { user, pending, isLocked, toolName: (id) => secLabel[id] || "", openTool: (id) => openTool(id, secLabel[id] || id), go, onSaved: refreshGraphScene });
+      };
+      if (frMod) mountFr(frMod);
+      else import("/js/check/first-run.js?v=1").then(mountFr).catch(() => frSlot.remove());
+    }
     // quick AI ask bar -> prefill + open the assistant
     const askForm = el.querySelector("#dkAsk"), askIn = el.querySelector("#dkAskIn");
     if (askForm) askForm.onsubmit = (e) => { e.preventDefault(); askAI(askIn.value); };
@@ -3377,7 +3400,7 @@ export function renderDeck(host, opts) {
       sig.hot = real.filter((e) => /^(critical|high)$/i.test(e.severity || "") && !/^(resolved|closed)$/i.test(e.status || "")).length;
       const hk = el.querySelector('[data-k="hot"] .kn'); if (hk) hk.textContent = real.length ? sig.hot.toLocaleString() : "—";
       // Nothing real to score yet: one get-started card replaces the two empty posture tiles.
-      const st = el.querySelector("#dkStart"); if (st) { st.hidden = !!real.length; el.querySelectorAll('[data-k="exposure"],[data-k="hot"]').forEach((k) => { k.hidden = !real.length; }); }
+      const st = el.querySelector("#dkStart"); if (st) { st.hidden = !!real.length || !!el.querySelector("#dkFirstRun"); el.querySelectorAll('[data-k="exposure"],[data-k="hot"]').forEach((k) => { k.hidden = !real.length; }); }
       recomputeExposure();
     }).catch(() => { const kn = el.querySelector('[data-k="graph"] .kn'); if (kn) kn.textContent = "0"; sig.real = 0; recomputeExposure(); });
     fillSince(el);
@@ -5210,6 +5233,7 @@ export function renderDeck(host, opts) {
   // a page link (/surface, /area/code) opens that page; / restores the last one
   const route0 = primary ? routeOf(location.pathname) : null;
   if (route0 && route0.scene !== "overview") initial = route0.scene;
+  else if (route0 && route0.arg && route0.arg.check) initial = "overview";
   // a link to a page or tool above the plan: open Plans and say why, instead of quietly
   // landing somewhere else (the page itself stays hidden, as in the sidebar)
   const lockedKey = route0 && route0.scene !== "overview" ? (route0.scene === "section" ? "section:" + route0.arg : "scene:" + route0.scene)

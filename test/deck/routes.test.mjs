@@ -32,6 +32,10 @@ group("deck routes: isAppPath", () => {
     for (const p of ["/nonexistent-page-xyz", "/get-started", "/tool-zzz-nope", "/emailauth/extra", "/area/a/b", "/console/nope-nope"])
       assert.notOk(isAppPath(p, secs), p);
   });
+  test("a shareable domain check is an app path, one segment only", () => {
+    for (const p of ["/check/example.com", "/check/example.com/", "/check/xn--bcher-kva.example"]) assert.ok(isAppPath(p, secs), p);
+    for (const p of ["/check", "/check/", "/check/a/b"]) assert.notOk(isAppPath(p, secs), p);
+  });
   test("hyphenated paths map to camelCase section ids", () => {
     assert.ok(isAppPath("/a-b", new Set(["aB"])));
     assert.notOk(isAppPath("/a-b", new Set(["a-b"])));
