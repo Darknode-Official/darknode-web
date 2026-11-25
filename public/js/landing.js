@@ -729,6 +729,7 @@ export function renderLanding(view, actions) {
               <li>Personal space: domain, link, secret and data checks</li>
               <li>Live vulnerability feed (CVE and known-exploited)</li>
               <li>Local-only security graph &amp; case files</li>
+              <li>Watch 1 domain: certificate expiry and email/DNS changes, alerts by email</li>
               <li>Darknode AI assistant: 50 messages a day</li>
               <li>1 workspace, 1 seat</li>
             </ul>

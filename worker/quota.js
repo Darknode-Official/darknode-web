@@ -72,6 +72,13 @@ export async function chargeQuota(env, principal, ip, kind, tier, now = Date.now
   return { ...out, tier: tierName, remaining: Math.max(0, limit - (out.used | 0)), resetIn: secondsToReset(now) };
 }
 
+// A plain daily counter on the same storage, for limits that are not AI messages (alert
+// emails per account per day). `key` names the counter; refund gives one back.
+// -> { ok, used, limit }
+export async function takeDaily(env, key, limit, now = Date.now(), refund = false) {
+  return step(env, "daily:" + key, utcDay(now), limit, refund);
+}
+
 // Give back one message charged by chargeQuota (same principal, ip, kind and day).
 export async function refundQuota(env, principal, ip, kind, now = Date.now()) {
   if (isExempt(principal)) return;

@@ -258,7 +258,16 @@ export function gradeEmailDns(domain, rec = {}) {
     if (!caa.some((c) => c.tag === "issue" || c.tag === "issuewild")) add("caa", "CAA", "low", { detail: caa.length ? "CAA is published without an issue tag, so any certificate authority may issue." : "No CAA record, so any certificate authority may issue certificates.", advice: "Publish CAA issue records naming only the certificate authorities you use." });
   }
   findings.sort((a, b) => a.key.localeCompare(b.key));
-  return { findings, unknown };
+  // what the SPF and DMARC records say right now, so an alert can name the change ("DMARC policy
+  // weakened from reject to none"); null where the lookup failed. Healthy records yield no finding,
+  // so this is the only memory of the state before a weakening.
+  const failed = (t) => !!(t && t.failed);
+  const posture = {
+    spf: failed(rec.spfTxts) ? null : !spf.present ? "missing" : spf.multiple ? "multiple" : spf.qualifier ? spf.qualifier + "all" : /\bredirect=/i.test(spf.record || "") ? "redirect" : "?all",
+    dmarc: failed(rec.dmarcTxts) ? null : !dmarc.present ? "missing" : dmarc.multiple ? "multiple" : (rec.dmarcFrom ? dmarc.sp || dmarc.policy : dmarc.policy) || "none",
+    dmarcAt: "_dmarc." + (rec.dmarcFrom || domain),
+  };
+  return { findings, unknown, posture };
 }
 
 const hasDmarc = (t) => t.some((x) => /^v=dmarc1\b/i.test(String(x).trim()));
@@ -288,7 +297,7 @@ async function lookupEmailDns(dom, f) {
 export async function emailPostureCheck(domains, deps = {}) {
   const f = deps.fetch || (typeof fetch !== "undefined" ? fetch : null);
   if (!f) return [];
-  const out = [], held = [], unknown = [], checked = [];
+  const out = [], held = [], unknown = [], checked = [], posture = {};
   let tried = false, answered = false;
   for (const domain of (domains || [])) {
     const dom = hostOnly(domain);
@@ -297,12 +306,14 @@ export async function emailPostureCheck(domains, deps = {}) {
     const rec = await lookupEmailDns(dom, f);
     if ([rec.spfTxts, rec.dmarcTxts, rec.mx, rec.caa].some((v) => !v.failed)) { answered = true; checked.push(dom); }
     const g = gradeEmailDns(dom, rec);
+    if (checked.includes(dom)) posture[dom] = g.posture;
     out.push(...g.findings);
     for (const u of g.unknown) { unknown.push(u); held.push(...u.keys); }
   }
   if (tried && !answered) return Object.assign([], { unreachable: true, unknown });
-  // checked: the domains that answered, so the monitor knows which have a baseline (see drift)
-  return Object.assign(out, { held, unknown, checked });
+  // checked: the domains that answered, so the monitor knows which have a baseline (see drift);
+  // posture: their SPF/DMARC state this run, so the next alert can say what it was before
+  return Object.assign(out, { held, unknown, checked, posture });
 }
 
 // Registry of worker-native check types a monitor can run. Each: (config, deps) -> findings[].

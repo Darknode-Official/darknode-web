@@ -19,7 +19,8 @@
 
 import { handleVault } from "./vault.js";
 import { handleGraph } from "./graph.js";
-import { handleMonitor } from "./monitor.js";
+import { handleMonitor, handleWatchStop } from "./monitor.js";
+import { STOP_PATH } from "./alert-email.js";
 import { handleKeys, handleIngest } from "./ingest.js";
 import { hostAllowed, ipOnCloudflare } from "./net-guard.js";
 import { readCapped } from "./body-cap.js";
@@ -781,12 +782,14 @@ async function route(request, env, rid) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
     // Reject disallowed browser origins before anything else, so a hostile page
     // cannot ride a visitor's browser to spend the server-side keys.
+    // The one exception: the alert-email stop page posts back to itself from this Worker's own
+    // origin. That route spends nothing and acts only with a signed token (monitor.js handleWatchStop).
     const origin = request.headers.get("Origin");
-    if (!originAllowed(origin)) return json({ error: "Origin not allowed" }, 403);
+    const { pathname } = new URL(request.url);
+    if (!originAllowed(origin) && pathname !== STOP_PATH) return json({ error: "Origin not allowed" }, 403);
     const ip = request.headers.get("cf-connecting-ip") || "unknown";
     const limited = (wait) => withHeaders(json({ error: "Rate limit exceeded — slow down and retry shortly." }, 429), { "Retry-After": String(wait) });
     // The route table (auth.js) declares what each path needs; enforce it here.
-    const { pathname } = new URL(request.url);
     const hit = matchRoute(pathname, request.method);
     if (hit.status === 404) return json({ error: "Not found" }, 404);
     if (hit.status === 405) return withHeaders(json({ error: hit.allow.join(" or ") + " only" }, 405), { Allow: hit.allow.join(", ") });
@@ -815,6 +818,7 @@ async function route(request, env, rid) {
       case "monitor": return handleMonitor(request, env, rest, json);
       case "keys": return handleKeys(request, env, rest, json);
       case "digest-unsub": return handleUnsubscribe(request, env);
+      case "watch-stop": return handleWatchStop(request, env);
       case "digest": return handleDigest(request, env, rest, json, principal);
       case "admin-users": return handleAdminUsers(env, json);
       case "usage": return handleUsage(request, env, json, principal);

@@ -3,7 +3,12 @@
 // webhook. Talks to the MonitorDO through deck/monitor-client.js. The first check type is
 // certificate expiry (real CT-log lookups graded by the posture engine); more are added
 // server-side as worker-safe engines are extracted.
-import { monitorApi, monitoringAvailable } from "./monitor-client.js";
+//
+// On the Free plan the scene shows the one-domain watch (certificate expiry + email/DNS
+// changes, alerts by email to the account's own address) in the caller's own workspace, with a
+// switch to turn it off. The Worker enforces the limits (worker/free-watch.js); this only hides
+// what the plan does not include.
+import { monitorApi as api, monitoringAvailable } from "./monitor-client.js";
 
 const S = { ctx: null, el: null, data: null, adding: false, busy: false, seq: 0 }; // seq: a reply for a previous mount/workspace is dropped
 const E = (s) => (S.ctx && S.ctx.esc ? S.ctx.esc(s) : String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])));
@@ -11,7 +16,24 @@ const toast = (m, t) => { try { S.ctx && S.ctx.toast && S.ctx.toast(m, t); } cat
 const ago = (ts) => { if (!ts) return "never"; const s = Math.floor((Date.now() - ts) / 1000); if (s < 60) return s + "s ago"; if (s < 3600) return Math.floor(s / 60) + "m ago"; if (s < 86400) return Math.floor(s / 3600) + "h ago"; return Math.floor(s / 86400) + "d ago"; };
 // 1440 minutes reads as "1d", 90 as "90m"
 export const every = (ms) => { const m = Math.round((ms || 0) / 60000); return m && m % 1440 === 0 ? m / 1440 + "d" : m && m % 60 === 0 ? m / 60 + "h" : m + "m"; };
-const CHANNELS =[["slack", "Slack"], ["teams", "Microsoft Teams"], ["discord", "Discord"], ["webhook", "Signed webhook"]];
+const CHANNELS =[["email", "Email (your account address)"], ["slack", "Slack"], ["teams", "Microsoft Teams"], ["discord", "Discord"], ["webhook", "Signed webhook"]];
+const isFree = () => !!(S.ctx && S.ctx.tier === "free");
+// the Free watch lives in the caller's own workspace, so on Free every request goes there
+const monitorApi = (body) => api(body, { personal: isFree() });
+const WATCH_TYPES = ["cert-expiry", "email-posture"];
+// The Free watch as the Worker counts it (free-watch.js freeAllowed): monitors of a watch type,
+// alerting by email only, on exactly one domain; the earliest-created one's domain is the watch.
+function freeWatch(mons) {
+  const fits = mons.filter((m) => WATCH_TYPES.includes(m.type) && ((m.config && m.config.domains) || []).length === 1 && (m.channels || []).every((c) => c.type === "email"))
+    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0) || String(a.id).localeCompare(String(b.id)));
+  if (!fits.length) return null;
+  const domain = hostOf(fits[0].config.domains[0]) || fits[0].config.domains[0];
+  const list = fits.filter((m) => (hostOf(m.config.domains[0]) || m.config.domains[0]) === domain);
+  const mail = list.flatMap((m) => m.channels || []).find((c) => c.type === "email" && c.to);
+  return { domain, list, paused: list.every((m) => m.paused), to: mail ? mail.to : "" };
+}
+const chanText = (chs) => !chs || !chs.length ? "no alert channel"
+  : chs.map((c) => c.type === "email" ? "email" + (c.to ? " to " + c.to : "") : ((CHANNELS.find(([v]) => v === c.type) || [])[1] || c.type)).join(", ");
 
 function injectStyle() {
   if (document.getElementById("mon-css")) return;
@@ -36,12 +58,16 @@ function injectStyle() {
 .mon-field .hint{font-size:11.5px;color:#5a6680;margin:3px 0 0}
 .mon-field input,.mon-field textarea,.mon-field select{width:100%;font:inherit;font-size:13px;border:1px solid rgba(23,33,56,.18);border-radius:7px;padding:7px 9px;box-sizing:border-box}
 .mon-field textarea{min-height:52px;resize:vertical}
-.mon-chrow{display:flex;gap:8px}.mon-chrow select{flex:0 0 150px}.mon-chrow input{flex:1}
+.mon-chrow{display:flex;gap:8px;flex-wrap:wrap}.mon-chrow select{flex:0 1 240px}.mon-chrow input{flex:1 1 200px}
 .mon-panel{margin:18px 0 0}
 .mon-panel h2{font-size:14px;margin:0 0 8px}
 .mon-log{font-size:12px;color:#45506a;border-top:1px dashed rgba(23,33,56,.1);padding:5px 0}
 .mon-log b{color:#141c2e;font-weight:650}
 .mon-off{font-size:12.5px;color:#7a4a00;background:rgba(245,146,11,.1);border-radius:8px;padding:11px 13px;line-height:1.5}
+.mon-watch{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;border:1px solid rgba(23,33,56,.12);border-radius:10px;padding:12px 14px;margin:0 0 14px;font-size:12.5px;line-height:1.55;color:#45506a}
+.mon-watch b{color:#141c2e;font-weight:650}
+.mon-watch .tx{flex:1 1 320px;min-width:0}
+.mon-watch .mon-actions{margin-left:0}
 `;
   document.head.appendChild(st);
 }
@@ -50,7 +76,7 @@ export function mountMonitors(el, ctx) {
   injectStyle();
   S.ctx = ctx || S.ctx; S.el = el; S.adding = false;
   el.innerHTML = `
-    <div class="dk-ovhead"><div><h1>Monitors</h1><p>Scheduled security checks that run on the server and keep running when the Deck is closed. Only real changes raise an alert, routed to Slack, Teams, Discord or a signed webhook.</p></div></div>
+    <div class="dk-ovhead"><div><h1>Monitors</h1><p>Scheduled security checks that run on the server and keep running when the Deck is closed. Only real changes raise an alert, ${isFree() ? "sent by email to your account address" : "sent to your account email, Slack, Teams, Discord or a signed webhook"}.</p></div></div>
     <div class="dk-ovp" id="monBody"><div class="dk-loading"><span class="sp"></span>Loading monitors…</div></div>`;
   load();
 }
@@ -85,7 +111,7 @@ function paint() {
         <span class="mon-pill">${E(m.type)}</span>
         ${m.paused ? '<span class="mon-pill paused">Paused</span>' : ""}
         ${!m.paused && m.planHeld ? '<span class="mon-pill paused" title="The plan of the person who set this up no longer includes monitoring. Pause and resume it from an account on Pro to restart it.">Held: plan</span>' : ""}
-        <span class="mon-meta">${dom.length ? E(dom.slice(0, 3).join(", ")) + (dom.length > 3 ? ` +${dom.length - 3}` : "") + " · " : m.config && m.config.epssFloor != null ? "KEV or EPSS ≥ " + E(m.config.epssFloor) + " · " : ""}every ${every(m.intervalMs)} · last run ${E(ago(m.lastRunAt))} · ${m.lastResultCount || 0} open · ${(m.channels || []).length} channel${(m.channels || []).length === 1 ? "" : "s"}</span>
+        <span class="mon-meta">${dom.length ? E(dom.slice(0, 3).join(", ")) + (dom.length > 3 ? ` +${dom.length - 3}` : "") + " · " : m.config && m.config.epssFloor != null ? "KEV or EPSS ≥ " + E(m.config.epssFloor) + " · " : ""}every ${every(m.intervalMs)} · last run ${E(ago(m.lastRunAt))} · ${m.lastResultCount || 0} open · alerts: ${E(chanText(m.channels))}</span>
         <span class="mon-actions">
           <button class="mon-btn" data-act="run">Run now</button>
           <button class="mon-btn" data-act="pause">${m.paused ? "Resume" : "Pause"}</button>
@@ -95,16 +121,29 @@ function paint() {
     </div>`;
   }).join("") : `<div class="dk-nempty">No monitors yet. Add a certificate monitor to get alerted before a cert expires.</div>`;
 
+  const free = isFree(), fw = free ? freeWatch(mons) : null;
+  const watchHtml = !free ? "" : fw
+    ? `<div class="mon-watch"><div class="tx"><b>Free plan watch: ${E(fw.domain)}${fw.paused ? " (turned off)" : ""}</b><br>${fw.paused
+        ? "Turned off: nothing is checked and no alerts are sent until you turn it back on."
+        : `Certificate expiry and email/DNS changes (SPF, DMARC, MX, CAA), checked once a day. Alerts go by email to ${fw.to ? E(fw.to) : "your account address"}, at most 5 emails a day.`}</div>
+        <span class="mon-actions"><button class="mon-btn${fw.paused ? " pri" : ""}" id="monWatchToggle">${fw.paused ? "Turn on" : "Turn off"}</button><button class="mon-btn" id="monPlans">See Plans</button></span></div>`
+    : `<div class="mon-watch"><div class="tx"><b>Free plan: watch one domain</b><br>Certificate expiry and email/DNS changes, checked once a day, with alerts by email to your account address. Run a domain check on the Overview and choose Watch this domain, or add a monitor below.</div>
+        <span class="mon-actions"><button class="mon-btn" id="monPlans">See Plans</button></span></div>`;
+
   box.innerHTML = `
-    <p class="mon-sub">${mons.length.toLocaleString()} monitor${mons.length === 1 ? "" : "s"}. Monitors run on the server's own schedule; alerts fire only when something changes.</p>
-    <div style="margin:0 0 14px;display:flex;gap:8px;flex-wrap:wrap"><button class="mon-btn pri" id="monAdd">Add certificate monitor</button><button class="mon-btn" id="monAddKev">Add KEV/EPSS watch</button><button class="mon-btn" id="monAddMail">Add email &amp; DNS watch</button></div>
+    ${watchHtml}
+    <p class="mon-sub">${mons.length.toLocaleString()} monitor${mons.length === 1 ? "" : "s"}. Monitors run on the server's own schedule; alerts fire only when something changes.${free ? " More domains, known-exploited CVE watches and Slack, Teams or webhook alerts are part of Pro." : ""}</p>
+    <div style="margin:0 0 14px;display:flex;gap:8px;flex-wrap:wrap"><button class="mon-btn pri" id="monAdd">Add certificate monitor</button>${free ? "" : '<button class="mon-btn" id="monAddKev">Add KEV/EPSS watch</button>'}<button class="mon-btn" id="monAddMail">Add email &amp; DNS watch</button></div>
     <div id="monFormSlot"></div>
     ${monHtml}
     ${logPanel("Recent runs", (S.data.history || []).slice(0, 8), (h) => `<b>${E((S.data.monitors.find((m) => m.id === h.id) || {}).name || h.id)}</b> — ${h.error ? ("error: " + E(h.error)) : `${h.found} open, ${h.added} new, ${h.changed} changed, ${h.alerted} alerted${h.skipped ? `, ${h.skipped} could not be checked` : ""}${h.graphError ? ", not synced to Findings: " + E(h.graphError) : ""}`} · ${E(ago(h.at))}`)}
-    ${logPanel("Delivery log", (S.data.deliveries || []).slice(0, 8), (d) => `<b>${E(d.type)}</b> ${d.ok ? "delivered" : "failed"} (${d.status})${d.error ? " — " + E(d.error) : ""} · ${E(ago(d.at))}`)}`;
+    ${logPanel("Delivery log", (S.data.deliveries || []).slice(0, 8), (d) => `<b>${E(d.type)}</b>${d.to ? " to " + E(d.to) : ""} ${d.ok ? "delivered" : "failed"} (${d.status})${d.error ? " — " + E(d.error) : ""} · ${E(ago(d.at))}`)}`;
 
   box.querySelector("#monAdd").onclick = () => { const was = S.adding && S.kind === "cert-expiry"; S.kind = "cert-expiry"; S.adding = !was; renderForm(); };
-  box.querySelector("#monAddKev").onclick = () => { const was = S.adding && S.kind === "kev-epss"; S.kind = "kev-epss"; S.adding = !was; renderForm(); };
+  const kevBtn = box.querySelector("#monAddKev"), plansBtn = box.querySelector("#monPlans"), watchBtn = box.querySelector("#monWatchToggle");
+  if (plansBtn) plansBtn.onclick = () => { if (S.ctx && S.ctx.go) S.ctx.go("plans"); };
+  if (watchBtn) watchBtn.onclick = () => toggleWatch(fw);
+  if (kevBtn) kevBtn.onclick = () => { const was = S.adding && S.kind === "kev-epss"; S.kind = "kev-epss"; S.adding = !was; renderForm(); };
   box.querySelector("#monAddMail").onclick = () => { const was = S.adding && S.kind === "email-posture"; S.kind = "email-posture"; S.adding = !was; renderForm(); };
   if (S.adding) renderForm();
   box.querySelectorAll(".mon-row").forEach((row) => row.querySelector(".mon-actions").onclick = (e) => {
@@ -124,29 +163,42 @@ function logPanel(title, rows, fmt) {
 function renderForm() {
   const slot = S.el && S.el.querySelector("#monFormSlot"); if (!slot) return;
   if (!S.adding) { slot.innerHTML = ""; return; }
-  const kev = S.kind === "kev-epss", mail = S.kind === "email-posture";
+  const kev = S.kind === "kev-epss", mail = S.kind === "email-posture", free = isFree();
+  const one = free ? " The Free plan watches one domain." : "";
+  const domPh = free ? "example.com" : "one per line or comma-separated";
   const specific = mail
-    ? `<div class="mon-field"><label for="mfDomains">Domains</label><textarea id="mfDomains" placeholder="one per line or comma-separated" spellcheck="false"></textarea><p class="hint">Domains to watch, e.g. example.com. SPF, DMARC, MX and CAA are read over public DNS-over-HTTPS; after the first run, any record that is removed or weakened raises an alert.</p></div>`
+    ? `<div class="mon-field"><label for="mfDomains">${free ? "Domain" : "Domains"}</label><textarea id="mfDomains" placeholder="${domPh}" spellcheck="false"></textarea><p class="hint">Domains to watch, e.g. example.com. SPF, DMARC, MX and CAA are read over public DNS-over-HTTPS; after the first run, any record that is removed or weakened raises an alert.${one}</p></div>`
     : kev
     ? `<div class="mon-field"><label for="mfEpss">EPSS alert floor (0–1)</label><input id="mfEpss" type="number" min="0" max="1" step="0.05" placeholder="0.5"><p class="hint">A CVE in your graph alerts when it is in the CISA KEV catalogue, or its EPSS exploit-prediction score is at or above this floor. Nothing is sent anywhere; the match runs against the current feeds.</p></div>`
-    : `<div class="mon-field"><label for="mfDomains">Domains</label><textarea id="mfDomains" placeholder="one per line or comma-separated" spellcheck="false"></textarea><p class="hint">Hostnames to watch, e.g. test.darknode.ai. Certificate transparency logs are checked; nothing is sent to the domains.</p></div>
+    : `<div class="mon-field"><label for="mfDomains">${free ? "Domain" : "Domains"}</label><textarea id="mfDomains" placeholder="${domPh}" spellcheck="false"></textarea><p class="hint">Hostnames to watch, e.g. test.darknode.ai. Certificate transparency logs are checked; nothing is sent to the domains.${one}</p></div>
     <div class="mon-field"><label for="mfWarn">Warn when expiring within (days)</label><input id="mfWarn" type="number" min="1" max="365" placeholder="21"></div>`;
+  // Free: email alerts only. Above Free a monitor may also have no channel (listed in the Deck only), as before.
+  const chans = free ? CHANNELS.slice(0, 1) : CHANNELS.concat([["none", "None (Deck only)"]]);
+  const EMAIL_HINT = "Alerts go to your account's verified email address, at most 5 alert emails a day.";
+  const HOOK_HINT = "Slack, Teams and Discord use their own incoming-webhook URL. For a signed webhook you can add a shared secret below.";
   slot.innerHTML = `<div class="mon-form">
     <h3>${kev ? "New KEV / EPSS watch" : mail ? "New email &amp; DNS watch" : "New certificate-expiry monitor"}</h3>
     <div class="mon-field"><label for="mfName">Name</label><input id="mfName" placeholder="${kev ? "Known-exploited vulnerabilities" : mail ? "Email and DNS records" : "Public certificates"}" autocomplete="off"></div>
     ${specific}
-    <div class="mon-field"><label for="mfInt">Check interval (minutes)</label><input id="mfInt" type="number" min="15" max="10080" placeholder="1440"></div>
-    <div class="mon-field"><label for="mfChUrl">Alert channel</label>
-      <div class="mon-chrow"><select id="mfChType" aria-label="Channel type">${CHANNELS.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select><input id="mfChUrl" placeholder="incoming webhook URL" autocomplete="off" spellcheck="false"></div>
-      <p class="hint">Optional. For a signed webhook you can add a shared secret below; Slack/Teams/Discord use their own incoming-webhook URL.</p>
+    <div class="mon-field"><label for="mfInt">Check interval (minutes)</label><input id="mfInt" type="number" min="${free ? 1440 : 15}" max="10080" placeholder="1440">${free ? '<p class="hint">The Free plan checks once a day (1440 minutes).</p>' : ""}</div>
+    <div class="mon-field"><label for="mfChType">Alert channel</label>
+      <div class="mon-chrow"><select id="mfChType">${chans.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select><input id="mfChUrl" placeholder="incoming webhook URL" aria-label="Incoming webhook URL" autocomplete="off" spellcheck="false" hidden></div>
+      <p class="hint" id="mfChHint">${EMAIL_HINT}</p>
     </div>
-    <div class="mon-field"><label for="mfChSecret">Webhook signing secret (signed webhook only)</label><input id="mfChSecret" placeholder="leave blank unless using a signed webhook" autocomplete="off"></div>
+    <div class="mon-field" id="mfSecretRow" hidden><label for="mfChSecret">Webhook signing secret (signed webhook only)</label><input id="mfChSecret" placeholder="leave blank unless using a signed webhook" autocomplete="off"></div>
     <div style="display:flex;gap:8px"><button class="mon-btn pri" id="mfSave">Save monitor</button><button class="mon-btn" id="mfTest">Test channel</button><button class="mon-btn" id="mfCancel">Cancel</button></div>
   </div>`;
   const $ = (s) => slot.querySelector(s);
   $("#mfCancel").onclick = () => { S.adding = false; renderForm(); };
   $("#mfSave").onclick = () => saveMonitor(slot);
   $("#mfTest").onclick = () => testChannel(slot);
+  // the URL and the signing secret only apply to a webhook channel
+  $("#mfChType").onchange = () => {
+    const t = $("#mfChType").value, hook = t !== "email" && t !== "none";
+    $("#mfChUrl").hidden = !hook; $("#mfSecretRow").hidden = t !== "webhook";
+    $("#mfChHint").textContent = t === "email" ? EMAIL_HINT : t === "none" ? "No alerts are sent; runs and changes are listed on this page." : HOOK_HINT;
+    $("#mfTest").hidden = t === "none";
+  };
 }
 
 export function hostOf(x) {
@@ -159,8 +211,9 @@ function readForm(slot) {
   const chUrl = ($("#mfChUrl").value || "").trim();
   const chType = $("#mfChType").value;
   const chSecret = ($("#mfChSecret").value || "").trim();
-  const channels = chUrl ? [{ type: chType, url: chUrl, ...(chType === "webhook" && chSecret ? { secret: chSecret } : {}) }] : [];
-  const intervalMs = Math.max(15, Math.min(10080, Number($("#mfInt").value) || 1440)) * 60000;
+  // an email channel carries no address: the Worker uses the signed-in account's verified one
+  const channels = chType === "email" ? [{ type: "email" }] : chType === "none" ? [] : [{ type: chType, url: chUrl, ...(chType === "webhook" && chSecret ? { secret: chSecret } : {}) }];
+  const intervalMs = Math.max(isFree() ? 1440 : 15, Math.min(10080, Number($("#mfInt").value) || 1440)) * 60000;
   if (S.kind === "kev-epss") {
     // an empty field is Number("") = 0, which would alert on every CVE with any EPSS score
     const floorEl = $("#mfEpss"), floorTxt = floorEl ? floorEl.value.trim() : "", floorRaw = floorTxt ? Number(floorTxt) : NaN;
@@ -189,6 +242,8 @@ async function saveMonitor(slot) {
   if (mon.bad && mon.bad.length) { toast("Not a domain name: " + mon.bad.slice(0, 3).join(", ") + (mon.bad.length > 3 ? " and " + (mon.bad.length - 3) + " more" : "") + ". Use hostnames such as test.darknode.ai.", "warn"); return; }
   delete mon.bad;
   if ((mon.type === "cert-expiry" || mon.type === "email-posture") && !mon.config.domains.length) { toast("Add at least one domain.", "warn"); return; }
+  if (isFree() && mon.config.domains && mon.config.domains.length > 1) { toast("The Free plan watches one domain. Keep one domain, or request an upgrade under Plans to watch more.", "warn"); return; }
+  if (mon.channels[0] && mon.channels[0].type !== "email" && mon.channels[0].type && !mon.channels[0].url) { toast("Add the incoming webhook URL for this channel.", "warn"); return; }
   S.busy = true;
   try { await monitorApi({ op: "upsert", monitor: mon }); toast("Monitor saved.", "ok"); S.adding = false; await load(); }
   catch (e) { toast(e.message || "Could not save.", "error"); }
@@ -197,10 +252,28 @@ async function saveMonitor(slot) {
 
 async function testChannel(slot) {
   const mon = readForm(slot);
-  if (!mon.channels.length) { toast("Add a channel URL to test.", "warn"); return; }
+  if (!mon.channels.length || (mon.channels[0].type !== "email" && !mon.channels[0].url)) { toast("Add a channel URL to test.", "warn"); return; }
   const deckUrl = location.origin + location.pathname + "#monitors";
-  try { const r = await monitorApi({ op: "test", channel: mon.channels[0], deckUrl }); toast(r.ok ? "Test alert sent." : "Delivery failed" + (r.error ? ": " + r.error : r.status ? " (HTTP " + r.status + ")" : "") + ". Check the URL.", r.ok ? "ok" : "error"); }
+  const mail = mon.channels[0].type === "email";
+  try {
+    const r = await monitorApi({ op: "test", channel: mon.channels[0], deckUrl });
+    toast(r.ok ? (mail ? "Test email sent to " + (r.to || "your account address") + "." : "Test alert sent.")
+      : "Delivery failed" + (r.error ? ": " + r.error : r.status ? " (HTTP " + r.status + ")" : "") + (mail ? "" : ". Check the URL."), r.ok ? "ok" : "error");
+    if (mail) load(); // the delivery log shows the attempt
+  }
   catch (e) { toast(e.message || "Test failed.", "error"); }
+}
+
+// Turn the Free watch off or on: pause or resume every monitor in it.
+async function toggleWatch(fw) {
+  if (!fw || S.busy) return;
+  const paused = !fw.paused;
+  S.busy = true;
+  try {
+    for (const m of fw.list) if (!!m.paused !== paused) await monitorApi({ op: "pause", id: m.id, paused });
+    toast(paused ? "Watch on " + fw.domain + " turned off. No alerts are sent until you turn it on." : "Watch on " + fw.domain + " turned on.", "ok");
+  } catch (e) { toast(e.message || "Could not update the watch.", "error"); }
+  finally { S.busy = false; await load(); }
 }
 
 async function act_run(id) {

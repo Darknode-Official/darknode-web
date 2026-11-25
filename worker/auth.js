@@ -26,6 +26,8 @@ export const ROUTES = [
   { id: "monitor", prefix: "/api/monitor/", auth: "user" },
   { id: "keys", prefix: "/api/keys/", auth: "user" },
   { id: "digest-unsub", path: "/api/digest/unsubscribe", methods: ["GET", "POST"], auth: "none" },
+  // the stop link in a monitor alert email (an HMAC token in the URL, not a sign-in)
+  { id: "watch-stop", path: "/api/watch/stop", methods: ["GET", "POST"], auth: "none" },
   { id: "digest", prefix: "/api/digest/", auth: "user" },
   { id: "usage", path: "/api/v1/usage", methods: ["POST"], auth: "user" },
   { id: "admin-users", path: "/api/admin/users", methods: ["GET"], auth: "user", role: "admin" },

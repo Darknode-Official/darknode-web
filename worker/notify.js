@@ -3,9 +3,8 @@
 // Cloudflare worker and in node (both have fetch + WebCrypto). No secrets live here —
 // webhook URLs and signing secrets come from the workspace config at call time.
 //
-// Email is intentionally NOT implemented here: it needs an owner-chosen provider and a
-// worker secret (an owner decision gate). Slack, Teams, Discord and signed webhooks all
-// work with no provider, so monitoring alerts are useful before that decision is made.
+// Email alerts are not sent from here: they go through Resend to the account's own address
+// (worker/alert-email.js), and the MonitorDO routes an "email" channel there instead.
 
 import { hostAllowed } from "./net-guard.js";
 

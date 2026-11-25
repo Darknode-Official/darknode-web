@@ -3284,7 +3284,7 @@ export function renderDeck(host, opts) {
         if (!frSlot.isConnected) return;
         frMod = m;
         const pending = frPending; frPending = "";
-        m.mountFirstRun(frSlot, { user, pending, isLocked, toolName: (id) => secLabel[id] || "", openTool: (id) => openTool(id, secLabel[id] || id), go, onSaved: refreshGraphScene });
+        m.mountFirstRun(frSlot, { user, tier: planTier, pending, isLocked, toolName: (id) => secLabel[id] || "", openTool: (id) => openTool(id, secLabel[id] || id), go, onSaved: refreshGraphScene });
       };
       if (frMod) mountFr(frMod);
       else import("/js/check/first-run.js?v=1").then(mountFr).catch(() => frSlot.remove());
@@ -4102,7 +4102,7 @@ export function renderDeck(host, opts) {
   function repaintCorrelations(g){ corrMod().then((m) => m.repaintCorrelations(g), () => {}); }
   function renderInventory(){ lazyScene(sceneEls.inventory, invMod, (m) => m.mountInventory(sceneEls.inventory, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, agoISO: agoISO, toast })); }
   function renderCorrelations(){ lazyScene(sceneEls.correlations, corrMod, (m) => m.mountCorrelations(sceneEls.correlations, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, toast })); }
-  function renderMonitors(){ lazyScene(sceneEls.monitors, monMod, (m) => m.mountMonitors(sceneEls.monitors, { esc, IC, toast })); }
+  function renderMonitors(){ lazyScene(sceneEls.monitors, monMod, (m) => m.mountMonitors(sceneEls.monitors, { esc, IC, toast, tier: planTier, go })); }
   function renderApiKeys(){ lazyScene(sceneEls.apikeys, keysMod, (m) => m.mountApiKeys(sceneEls.apikeys, { esc, IC, toast })); }
   function renderAudit(){ lazyScene(sceneEls.audit, auditMod, (m) => m.mountAudit(sceneEls.audit, { esc, IC, toast })); }
   function renderDevice(){ lazyScene(sceneEls.device, deviceMod, (m) => m.mountDevice(sceneEls.device, { esc, IC, toast, askAI })); }
@@ -4209,11 +4209,11 @@ export function renderDeck(host, opts) {
     const PLANS = [
       { id: "free", name: "Free", price: "$0", unit: "forever", tag: "", a: "#2552c6",
         blurb: "The full browser toolbox for solo practitioners and evaluation.",
-        feats: ["Every browser-based security tool", "Quick Checks: email security, headers, certificates, DNS, breaches, CVEs", "Personal space: domain, link, secret and data checks", "Live vulnerability feed (CVE and known-exploited)", "Local-only security graph & case files", "Darknode AI assistant: 50 messages a day", "1 workspace, 1 seat"],
+        feats: ["Every browser-based security tool", "Quick Checks: email security, headers, certificates, DNS, breaches, CVEs", "Personal space: domain, link, secret and data checks", "Live vulnerability feed (CVE and known-exploited)", "Local-only security graph & case files", "Watch 1 domain: certificate expiry and email/DNS changes, alerts by email", "Darknode AI assistant: 50 messages a day", "1 workspace, 1 seat"],
         cta: "Current plan", cur: true },
       { id: "pro", name: "Pro", price: "$29", unit: "per user / month", tag: "Recommended", a: "#2552c6",
         blurb: "For professionals who need history, exports and the strongest AI models.",
-        feats: ["Everything in Free", "Exposure and Application Security tools, findings and reports", "Unlimited saved findings & reports", "Premium AI models: Claude Fable 5.1, Claude Opus 5.5, Darknode Max", "500 AI messages a day (150 on Claude)", "Cloud sync across devices", "Email support"],
+        feats: ["Everything in Free", "Exposure and Application Security tools, findings and reports", "Unlimited saved findings & reports", "Premium AI models: Claude Fable 5.1, Claude Opus 5.5, Darknode Max", "500 AI messages a day (150 on Claude)", "Cloud sync across devices", "Monitors for more domains and known-exploited CVEs, with Slack, Teams and webhook alerts", "Email support"],
         cta: "Upgrade to Pro" },
       { id: "team", name: "Team", price: "$79", unit: "per user / month", tag: "", a: "#2552c6",
         blurb: "Shared workspaces, roles and one audit trail for the whole team.",

@@ -113,4 +113,12 @@ html[data-style] body.landing .hero .dmc-linkbox{background:rgba(255,255,255,.06
 .dk .dk-fr-saved{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:12px;font-size:13px;color:var(--dk-tx2,#56544f)}
 .dk-fr-saved b{color:var(--dk-tx,#1d1c1a);font-weight:600}
 .dk-fr-saved .dk-tibtn{height:32px}
+/* "Watch this domain" after a check: the Free plan's one-domain watch */
+.dk .dk-fr-watch{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--dk-line2,#efeee9);font-size:13px;line-height:1.5;color:var(--dk-tx2,#56544f)}
+.dk .dk-fr-watch[hidden]{display:none}
+.dk-fr-watch .dk-fr-wtx{flex:1 1 320px;min-width:0}
+.dk-fr-watch b{color:var(--dk-tx,#1d1c1a);font-weight:600}
+.dk-fr-watch .dk-fr-wbtns{display:flex;flex-wrap:wrap;gap:8px}
+.dk-fr-watch .dk-tibtn{height:32px}
+.dk-fr-watch.err .dk-fr-wtx{color:#b3261e}
 @media (max-width:720px){.dk-fr .dk-actform input{flex:1 1 100%;width:auto}}

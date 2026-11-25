@@ -51,10 +51,17 @@ group("worker: paid platform features", () => {
     assert.equal((await call(handleGraph, TEAM, { plan: "pro", method: "GET" })).status, 402);
     assert.equal((await call(handleGraph, TEAM, { plan: "team", method: "GET" })).status, 200);
   });
-  test("monitors: adding, running and testing need Pro; list, pause and delete stay open", async () => {
-    for (const op of ["upsert", "run", "test"]) assert.equal((await call(handleMonitor, "u1", { body: { op } })).status, 402, op);
+  test("monitors: adding, running and testing need Pro in a team workspace; list, pause and delete stay open", async () => {
+    // a Free caller's personal workspace gets the one-domain watch (checked inside the MonitorDO,
+    // see test/worker/free-watch.test.mjs); a team workspace has no Free watch
+    for (const op of ["upsert", "run", "test"]) {
+      const r = await call(handleMonitor, TEAM, { body: { op } });
+      assert.equal(r.status, 402, op); assert.equal(r.body.plan, true); assert.equal(r.reached, false);
+    }
+    for (const op of ["upsert", "run", "test"]) assert.equal((await call(handleMonitor, "u1", { body: { op } })).reached, true, op);
     for (const op of ["list", "pause", "delete"]) assert.equal((await call(handleMonitor, "u1", { body: { op } })).reached, true, op);
     assert.equal((await call(handleMonitor, "u1", { plan: "pro", body: { op: "upsert" } })).reached, true);
+    assert.equal((await call(handleMonitor, TEAM, { plan: "pro", body: { op: "upsert" } })).reached, true);
   });
   test("API keys: creating one needs Team; list and revoke stay open", async () => {
     assert.equal((await call(handleKeys, "u1", { plan: "pro", body: { op: "create" } })).status, 402);
