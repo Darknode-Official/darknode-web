@@ -4185,8 +4185,8 @@ export function renderDeck(host, opts) {
     const el = sceneEls.plans;
     const PLANS = [
       { id: "free", name: "Free", price: "$0", unit: "forever", tag: "", a: "#2552c6",
-        blurb: "The full browser toolbox for solo practitioners and evaluation.",
-        feats: ["Every browser-based security tool", "Quick Checks: email security, headers, certificates, DNS, breaches, CVEs", "Personal space: domain, link, secret and data checks", "Live vulnerability feed (CVE and known-exploited)", "Local-only security graph & case files", "Darknode AI assistant: 50 messages a day", "1 workspace, 1 seat"],
+        blurb: "Quick checks, the live feed and the assistant, for individuals and evaluation.",
+        feats: ["Free browser tools in the Tool Library", "Quick Checks: email security, headers, certificates, DNS, breaches, CVEs", "Personal space: domain, link, secret and data checks", "Live vulnerability feed (CVE and known-exploited)", "Local-only security graph & case files", "Darknode AI assistant: 50 messages a day", "1 workspace, 1 seat"],
         cta: "Current plan", cur: true },
       { id: "pro", name: "Pro", price: "$29", unit: "per user / month", tag: "Recommended", a: "#2552c6",
         blurb: "For professionals who need history, exports and the strongest AI models.",
