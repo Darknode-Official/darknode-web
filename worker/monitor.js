@@ -17,6 +17,7 @@ import { workspaceTier, liveTier } from "./plan-share.js";
 import { readCapped } from "./body-cap.js";
 import { FREE_WATCH, FREE_TEAM_MSG, freeWatchDenied, freeAllowed } from "./free-watch.js";
 import { ALERT_EMAILS_PER_DAY, buildAlertEmail, buildTestEmail, maskEmail, recipient, sendEmail, stopToken, stopUrl, STOP_PATH } from "./alert-email.js";
+import { timingSafeEqual } from "./keys-core.js";
 import { unsubSecret } from "./digest.js";
 import { takeDaily } from "./quota.js";
 
@@ -493,7 +494,7 @@ const DECK = "https://darknode.ai/monitors";
 export async function handleWatchStop(request, env) {
   const u = new URL(request.url), wid = u.searchParams.get("w") || "", uidQ = u.searchParams.get("u") || "", t = u.searchParams.get("t") || "";
   const secret = unsubSecret(env || {});
-  const ok = secret && MON_ID.test(wid) && uidQ && uidQ.length <= 128 && t && t === (await stopToken(wid, uidQ, secret));
+  const ok = secret && MON_ID.test(wid) && uidQ && uidQ.length <= 128 && t && timingSafeEqual(t, await stopToken(wid, uidQ, secret));
   if (!ok) return page("Link not valid", `This link is incomplete or was not issued by Darknode. You can pause or remove a watch in the Deck under <a href="${DECK}" style="color:#2552c6">Monitors</a>.`);
   if (request.method !== "POST") {
     const action = STOP_PATH + "?w=" + encodeURIComponent(wid) + "&u=" + encodeURIComponent(uidQ) + "&t=" + encodeURIComponent(t);
