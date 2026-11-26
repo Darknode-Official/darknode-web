@@ -19,6 +19,7 @@ export function isAppPath(pathname, secs) {
   if (raw === "console" || raw.startsWith("console/")) raw = raw.slice(7).replace(/^\/+/, "");
   if (!raw || raw === "index.html") return true;
   if (/^(area|personal|enterprise)\/[\w-]+$/.test(raw)) return true;
+  if (/^check\/[^/\s]+$/.test(raw)) return true; // a shareable domain check: /check/<domain>
   for (const k in SCENES) if (k !== "section" && (k === raw || SCENE_PATH[k] === raw)) return true;
   if (raw.includes("/")) return false;
   const sec = raw.startsWith("tool-") ? raw : raw.replace(/-([a-z])/g, (_, c) => c.toUpperCase());

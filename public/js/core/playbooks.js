@@ -15,7 +15,7 @@ const has = (hay, ...needles) => { const s = low(hay); return needles.some((n) =
 // tool is telling. Kept small and honest — only tools that clearly map to one domain.
 const TOOL_DOMAIN = {
   identity: ["caaudit", "signins", "signin-forensics", "privaudit", "jml", "accessreview", "oauthgov", "nhi", "vpnaudit"],
-  exposure: ["netexposure", "domainguard", "tlsfleet", "posture", "surface"],
+  exposure: ["netexposure", "domainguard", "tlsfleet", "posture", "surface", "domaincheck"],
   cloud: ["iacscan", "k8saudit", "cloudtrail", "fleetcomply"],
   secret: ["codescan", "leakprobe", "dlp", "iacscan"],
   phishing: ["phishtriage"],

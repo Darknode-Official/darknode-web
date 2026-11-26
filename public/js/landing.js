@@ -4,6 +4,7 @@
 
 import { db } from "/js/firebase.js?v=20261021a";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+import { mountLandingCheck } from "/js/check/landing-check.js?v=1";
 
 const GITHUB = "https://github.com/Darknode-Official";
 
@@ -567,6 +568,7 @@ export function renderLanding(view, actions) {
   const path = location.pathname.replace(/\/+$/, "") || "/";
   const pageOnly = PAGE_ONLY[path] ? PAGE_ONLY[path]() : "";
   setTimeout(() => loadHeroLive(view), 0);
+  queueMicrotask(() => mountLandingCheck(view, actions)); // hero domain check, or the /check/<domain> page
   view.innerHTML = `
 
     <!-- ====== HERO ====== -->
@@ -575,26 +577,18 @@ export function renderLanding(view, actions) {
       <div class="hero-grain"></div>
       <div class="wrap hero-inner">
         <div class="hx-grid"><div class="hx-copy">
-        <div class="hero-badge"><span class="badge-dot"></span> Runs air-gapped &middot; Deterministic &middot; Your data stays yours</div>
+        <div class="hero-badge"><span class="badge-dot"></span> Deterministic &middot; Explainable &middot; Offline in the CLI and desktop app</div>
         <h1 class="hero-h1">Find the real risks in your<br><span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">code</span></span></h1>
-        <p class="hero-sub">Darknode scans your code, cloud, dependencies, configs and records for real vulnerabilities and risks — with accurate, explainable, deterministic engines that run on your own infrastructure. No black-box AI deciding severity, no data leaving your estate.</p>
+        <p class="hero-sub">Darknode checks your domains, code, cloud, dependencies and configs for real vulnerabilities and risks, with deterministic engines that show how they reached each result. No black-box AI deciding severity. The CLI and desktop app run on your own machines and work offline with local Ollama models.</p>
+        <form class="dmc-form" id="dmcForm" novalidate>
+          <label class="dmc-lbl" for="dmcIn">Check your domain</label>
+          <div class="dmc-field"><input id="dmcIn" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="example.com" aria-describedby="dmcHelp"><button class="btn lg" type="submit">Check domain</button></div>
+          <p class="dmc-help" id="dmcHelp">Free, no sign-up, results in seconds. Reads public DNS records and HTTP headers: email authentication, HTTPS, security headers, DNSSEC, CAA and security.txt.</p>
+          <p class="dmc-msg" role="alert" hidden></p>
+        </form>
         <div class="hero-cta">
-          <button class="btn lg" id="cta-start">Scan your first repo &mdash; free</button>
-          <a class="btn lg ghost" href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="margin-right:8px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58v-2.23c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.08-.74.08-.73.08-.73 1.2.08 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.5 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.14-.3-.54-1.52.1-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 016.02 0c2.28-1.55 3.29-1.23 3.29-1.23.64 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.8 5.63-5.48 5.92.42.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12.01 12.01 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-            Star on GitHub
-          </a>
-        </div>
-        <div class="hero-built-with">
-          <span class="built-label">Built with</span>
-          <div class="built-pills">
-            <span class="built-pill">Node.js</span>
-            <span class="built-pill">Python</span>
-            <span class="built-pill">Ollama</span>
-            <span class="built-pill">Claude</span>
-            <span class="built-pill">Firebase</span>
-            <span class="built-pill">Linux</span>
-          </div>
+          <button class="btn lg ghost" id="cta-start">Create a free account</button>
+          <a class="btn lg ghost" href="/?app=1">See the Deck</a>
         </div>
         </div>
         <aside class="hx-live" id="hxLive" aria-label="Newly exploited vulnerabilities">
@@ -602,6 +596,7 @@ export function renderLanding(view, actions) {
           <div class="hx-live-b" id="hxLiveB"><div class="hx-live-msg">Loading the live feed…</div></div>
           <div class="hx-live-f" id="hxLiveF">Real vulnerabilities attackers are using now, refreshed daily. The Deck matches them against what you run.</div>
         </aside>
+        <div class="dmc-out" id="dmcOut" aria-live="polite" hidden></div>
         </div>
       </div>
     </section>

@@ -35,7 +35,7 @@ export const ASSET_COV = [
     refs: ["CIS v8 11.2", "ISO 27001 A.8.13"],
     what: "is a managed host with no backup coverage, so it could not be recovered after ransomware or data loss",
     fix: "Bring the host into a backup policy with a tested restore (Backup Readiness)." },
-  { id: "exposure", label: "External exposure", sources: ["domainguard", "posture", "tlsfleet", "netexposure"],
+  { id: "exposure", label: "External exposure", sources: ["domainguard", "posture", "tlsfleet", "netexposure", "domaincheck"],
     finding: false },
 ];
 

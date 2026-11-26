@@ -46,6 +46,13 @@
           ]
         },
         {
+          "source": "/check/**",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache" },
+            { "key": "X-Robots-Tag", "value": "noindex" }
+          ]
+        },
+        {
           "source": "/version",
           "headers": [
             { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
@@ -109,6 +116,13 @@
           "regex": "^/(?:[^.]*|.*\\.html)$",
           "headers": [
             { "key": "Cache-Control", "value": "no-cache" }
+          ]
+        },
+        {
+          "source": "/check/**",
+          "headers": [
+            { "key": "Cache-Control", "value": "no-cache" },
+            { "key": "X-Robots-Tag", "value": "noindex" }
           ]
         },
         {
