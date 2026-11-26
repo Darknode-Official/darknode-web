@@ -70,241 +70,59 @@ function loadHeroLive(view) {
   }).catch(() => { if (box.isConnected) box.innerHTML = '<div class="hx-live-msg">The live feed could not be loaded right now.</div>'; });
 }
 
-export function renderLanding(view, actions) {
-  setTimeout(() => loadHeroLive(view), 0);
-  queueMicrotask(() => mountLandingCheck(view, actions)); // hero domain check, or the /check/<domain> page
-  view.innerHTML = `
+// The home page's "What it checks" grid. Every line must stay true of what ships (the Deck's
+// tool help in js/ui/explain.js describes each check); change it when a check changes.
+const CHECKS = [
+  { title: "Exploited right now", icon: '<path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17h.01"/>',
+    what: "New entries in CISA&rsquo;s known-exploited catalog and FIRST EPSS exploit scores, matched against the CVEs in your findings.",
+    fix: "a patch order driven by real exploitation, not CVSS alone." },
+  { title: "Domain and email", icon: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+    what: "SPF, DKIM and DMARC, TLS certificates, security headers, cookies and DNS, looked up live.",
+    fix: "the record or header to publish, written out." },
+  { title: "Attack surface", icon: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9M12 3C9.5 5.7 8.2 8.7 8.2 12s1.3 6.3 3.8 9"/>',
+    what: "What the internet can see for your domain: subdomains from certificate logs, DNS, the network it sits on, mail security and web headers.",
+    fix: "each gap flagged in plain terms, and one click to track it in your security graph." },
+  { title: "Code and secrets", icon: '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/>',
+    what: "Static analysis of a GitHub repository or local folder for injection risks, unsafe code and leaked keys, down to the file and line.",
+    fix: "a fix note for each rule, such as how to revoke and rotate a leaked key." },
+  { title: "Dependencies", icon: '<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/>',
+    what: "Manifests and lockfiles checked against the OSV database and weighted by known exploitation, with licence and typosquat checks.",
+    fix: "the version that fixes each vulnerable package." },
+  { title: "Cloud and infrastructure as code", icon: '<path d="M7 18h10.5a4 4 0 00.6-7.96A6 6 0 006.3 9.2 4.5 4.5 0 007 18z"/>',
+    what: "IAM and bucket policies, security groups, Terraform, CloudFormation, Kubernetes and Dockerfiles, checked in your browser.",
+    fix: "each misconfiguration with the setting to change." },
+];
 
-    <!-- ====== HERO ====== -->
-    <section class="hero" aria-label="Hero">
-      <div class="hero-mesh"></div>
-      <div class="hero-grain"></div>
-      <div class="wrap hero-inner">
-        <div class="hx-grid"><div class="hx-copy">
-        <div class="hero-badge"><span class="badge-dot"></span> Deterministic &middot; Explainable &middot; Offline in the CLI and desktop app</div>
-        <h1 class="hero-h1">Find the real risks in your<br><span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">code</span></span></h1>
-        <p class="hero-sub">Darknode checks your domains, code, cloud, dependencies and configs for real vulnerabilities and risks, with deterministic engines that show how they reached each result. No black-box AI deciding severity. The CLI and desktop app run on your own machines and work offline with local Ollama models.</p>
-        <form class="dmc-form" id="dmcForm" novalidate>
-          <label class="dmc-lbl" for="dmcIn">Check your domain</label>
-          <div class="dmc-field"><input id="dmcIn" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="example.com" aria-describedby="dmcHelp"><button class="btn lg" type="submit">Check domain</button></div>
-          <p class="dmc-help" id="dmcHelp">Free, no sign-up, results in seconds. Reads public DNS records and HTTP headers: email authentication, HTTPS, security headers, DNSSEC, CAA and security.txt.</p>
-          <p class="dmc-msg" role="alert" hidden></p>
-        </form>
-        <div class="hero-cta">
-          <button class="btn lg ghost" id="cta-start">Create a free account</button>
-          <a class="btn lg ghost" href="/?app=1">See the Deck</a>
-        </div>
-        </div>
-        <aside class="hx-live" id="hxLive" aria-label="Newly exploited vulnerabilities">
-          <div class="hx-live-h"><span class="hx-dot"></span><b>Newly exploited</b><span class="hx-src">CISA KEV</span></div>
-          <div class="hx-live-b" id="hxLiveB"><div class="hx-live-msg">Loading the live feed…</div></div>
-          <div class="hx-live-f" id="hxLiveF">Real vulnerabilities attackers are using now, refreshed daily. The Deck matches them against what you run.</div>
-        </aside>
-        <div class="dmc-out" id="dmcOut" aria-live="polite" hidden></div>
-        </div>
-      </div>
-    </section>
+// FAQ: [question, answer, onlyOnFaqPage]. The home page shows the first six (the ones that
+// decide whether to sign up); /faq shows them all. Keep the plan answer in step with the
+// pricing cards and the docs FAQ "Which tools do I get on my plan?".
+const FAQ = [
+  ["What is free, and how do paid plans work?",
+    "Free includes the Quick Checks (email security, website headers, certificates, DNS, breaches and CVEs), the Personal space, the live vulnerability feed, a local security graph and case files, the free browser tools in the Tool Library, and the Darknode assistant with 50 messages a day. The CLI is free to run from source. Pro adds the Exposure and Application Security tools, saved findings and reports, premium AI models and cloud sync; Team adds the Organization space, identity and security-operations tools and shared workspaces; Enterprise adds risk and compliance tooling. Tools outside your plan are simply not shown. Paid plans are in preview: checkout is not live yet, so upgrades are requested and granted by hand and no payment is taken."],
+  ["Does our code or data leave our environment?",
+    "Your saved findings stay in your browser unless you turn on cloud sync, a Pro feature. Code, cloud and infrastructure-as-code files you load are analysed on your device and are not uploaded to us; dependency checks send package names and versions to the public OSV database. Live checks against a domain (DNS, headers, certificate transparency) go through our edge proxy and are not stored. The built-in assistant sends your question through that proxy to the model you choose (Google Gemini on every plan, Anthropic Claude on Pro); we do not log or store prompts or answers. Nexus in the CLI can use a local Ollama model, so nothing leaves your machine."],
+  ["Can I run Darknode offline or air-gapped?",
+    "The CLI and Nexus can. Install them from source and use a local Ollama model, and they run on your own machine without a Darknode account; Nexus has <code>/offline</code> to block cloud engines entirely. The website and the desktop app need a connection: sign-in, live domain checks and the hosted assistant go through our servers."],
+  ["How is this different from a standalone scanner?",
+    "Most tools cover one surface. Darknode checks your domain, code, dependencies and cloud configuration in one workspace, ranks findings with deterministic rules and live exploitation data (CISA KEV and FIRST EPSS) rather than a model&rsquo;s opinion, and gives each one a concrete fix. The optional assistant explains findings and drafts remediation steps; it never decides severity."],
+  ["Which AI models does it use, and do I need a key?",
+    "No key is needed to start. On darknode.ai the built-in assistant runs Google Gemini on every plan (50 messages a day on Free); Pro adds Claude Fable 5.1, Claude Opus 5.5 and Darknode Max with higher limits. You can also connect your own provider key. Nexus, the terminal agent in the CLI, drives six engines through one interface: Claude Code, the Gemini CLI, Codex, OpenCode, Aider, and Ollama for free local models. There is no per-token billing on any plan."],
+  ["Is it legal to use?",
+    "Yes, on systems you own or are authorized to assess. Domain and certificate checks read only public signals such as DNS, headers and certificate logs. Tools that send requests to a target, such as a port scan or the API, WebSocket and fuzzing tools, must only be pointed at systems you own or have written permission to test. Testing systems without authorization is illegal whatever tool you use."],
+  ["Can I use this for professional security assessments?",
+    "Yes, within scope. Darknode covers the assessment workflow: scanning code, dependencies, cloud configuration and web exposure; triaging findings by real severity; and building a report you can hand over. The hands-on web-security tools (security headers, CSP, CORS, cookies, API and WebSocket testing) work against targets you name. Always operate within your engagement scope and rules of engagement, and keep written authorization for every system you test.", true],
+  ["What are the system requirements?",
+    "For the web platform (darknode.ai): any modern browser (Chrome, Firefox, Safari, Edge). For the CLI: Node.js 18+ on Windows, macOS, or Linux. For local AI models via Ollama: 16 GB RAM minimum (32 GB recommended for larger models). For practice labs: Docker installed and running. For Darknode OS (Custom Kernel): VirtualBox or QEMU with 128 MB RAM. For Darknode OS (Linux Edition): VirtualBox or VMware with 4 GB RAM and 40 GB disk space. The desktop app is available as .AppImage (Linux), .dmg (macOS), and .exe (Windows).", true],
+  ["Can I contribute or modify the code?",
+    "The Darknode source code is publicly available on GitHub for transparency and learning purposes. You can read, study, and reference the code to understand how the platform works. However, copying, forking, redistribution, and commercial use are not permitted under the license. If you find a bug or have a feature request, please open an issue on GitHub &mdash; we actively review and respond to community feedback.", true],
+  ["Where can I get help?",
+    "Once you are signed in, the docs are at <a href=\"/docs\">darknode.ai/docs</a>; in Nexus, run <code>/docs</code> to search every command and key. For bug reports and feature requests, open an issue on our GitHub repository. For account issues, use the in-app feedback form or email contact@darknode.ai.", true],
+];
 
-    <!-- ====== PRODUCT BENTO ====== -->
-    <section class="section" id="products" aria-labelledby="products-title">
-      <div class="wrap">
-        <div class="sec-label">Products</div>
-        <h2 class="sec-title" id="products-title">One platform. Every surface.</h2>
-        <p class="sec-sub">Web, desktop, terminal, cloud, and a programmable API — deploy it wherever your security and engineering teams already work.</p>
-        <div class="bento">
-          <div class="bento-card">
-            <div class="bento-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg>
-            </div>
-            <h3>Web App</h3>
-            <p>Open darknode.ai in your browser. Scan code and cloud, triage CVEs, map compliance, and run investigations from one command center — zero install.</p>
-            <span class="bento-tag">No install needed</span>
-          </div>
-          <div class="bento-card">
-            <div class="bento-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-            </div>
-            <h3>CLI</h3>
-            <!-- NPM_SUSPENDED: restore <code>npm i -g darknode-cli</code> and the "npm install" tag when the npm account is back -->
-            <p>Clone and run: <code>git clone .../darknode-cli</code>. Run the full scanning and analysis toolset in CI/CD, fail builds on real findings, and ship results as artifacts.</p>
-            <span class="bento-tag">git clone</span>
-          </div>
-          <div class="bento-card">
-            <div class="bento-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/><path d="M7 9l2.5 2L7 13M13 13h4"/></svg>
-            </div>
-            <h3>Desktop App</h3>
-            <p>Native app for macOS, Windows, and Linux. The full workspace, offline-first, with system-level scanning for teams that keep sensitive code off the cloud.</p>
-            ${APP_DL_LIVE ? `<div class="bento-dl">
-              <a class="btn sm" id="app-dl" href="${APP_RELEASES}" target="_blank" rel="noopener">Download the app</a>
-              <a class="bento-dl-alt" id="app-dl-alt" href="${APP_RELEASES}" target="_blank" rel="noopener">Other platforms</a>
-            </div>` : `<span class="bento-tag">macOS &middot; Win &middot; Linux</span>`}
-          </div>
-          <div class="bento-card">
-            <div class="bento-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>
-            </div>
-            <h3>REST API</h3>
-            <p>Every scanning and analysis engine behind a clean HTTP API. Run the server with the CLI, set a token, and wire Darknode into your pipelines and dashboards &mdash; on your own infrastructure.</p>
-            <span class="bento-tag">runs locally &middot; token auth</span>
-          </div>
-          <div class="bento-card">
-            <div class="bento-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7l8-4 8 4v10l-8 4-8-4z"/><path d="M4 7l8 4 8-4M12 11v10"/></svg>
-            </div>
-            <h3>MCP Server</h3>
-            <p>Plug Darknode into Claude, Cursor, Codex and any MCP client. Your team's assistants get the Deck's 32 analysis tools as callable functions, run on your own machine, with the tools your plan includes.</p>
-            <span class="bento-tag">Model Context Protocol</span>
-          </div>
-          <div class="bento-card">
-            <div class="bento-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/><circle cx="5" cy="6" r=".5" fill="currentColor"/><circle cx="7.5" cy="6" r=".5" fill="currentColor"/></svg>
-            </div>
-            <h3>Cloud VM</h3>
-            <p>A full security workstation with every Darknode engine built in. Runs in VirtualBox, QEMU, or your own cloud — including air-gapped.</p>
-            <span class="bento-tag">VirtualBox &middot; cloud</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====== INTEGRATIONS STRIP ====== -->
-    <section class="section integ-band" aria-label="Integrations">
-      <div class="wrap">
-        <p class="integ-label">Plugs into the tools you already use</p>
-        <div class="integ-row">
-          <span class="integ-pill">Claude</span>
-          <span class="integ-pill">Cursor</span>
-          <span class="integ-pill">VS Code</span>
-          <span class="integ-pill">GitHub</span>
-          <span class="integ-pill">Docker</span>
-          <span class="integ-pill">Kali Linux</span>
-          <span class="integ-pill">Burp Suite</span>
-          <span class="integ-pill">Nmap</span>
-          <span class="integ-pill">Metasploit</span>
-          <span class="integ-pill">Ollama</span>
-          <span class="integ-pill">Wireshark</span>
-          <span class="integ-pill">MCP</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====== FEATURES ====== -->
-    <section class="section alt" id="features" aria-labelledby="features-title">
-      <div class="wrap">
-        <div class="sec-label">Capabilities</div>
-        <h2 class="sec-title" id="features-title">Everything your security team needs in one place</h2>
-        <div class="feature-rows">
-          <div class="feature-row">
-            <div class="feature-text">
-              <h3>Scan code, cloud and dependencies</h3>
-              <p>Static analysis, dependency and SBOM checks, secret detection and cloud-config review run in the Deck, ready to use. The CLI adds checks from your own terminal: port scans of hosts you are allowed to test, plus dependency and environment-variable audits.</p>
-            </div>
-            <div class="feature-visual">
-              <div class="term-window">
-                <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode (example)</span></div>
-                <pre class="tw-body"><span class="c-pl">$</span> darknode scan 192.0.2.10 top
-<span class="c-mut">PORT   SERVICE   BANNER</span>
-<span class="c-ok">22</span>     ssh       SSH-2.0-OpenSSH_9.6
-<span class="c-ok">443</span>    https
-<span class="c-acc">&#9679;</span> 2 open ports on 192.0.2.10</pre>
-              </div>
-            </div>
-          </div>
-          <div class="feature-row reverse">
-            <div class="feature-text">
-              <h3>Deterministic engines, with AI only to explain</h3>
-              <p>The engines that find and rank risk are deterministic — no model decides severity. Nexus, the optional assistant, only reads the findings to explain them and draft remediation. Run it on a local model and nothing leaves your machine, or use your own key.</p>
-            </div>
-            <div class="feature-visual">
-              <div class="term-window">
-                <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
-                <pre class="tw-body"><span class="c-pl">$</span> nexus "explain CVE-2021-44228"\n\n<span class="c-acc">Nexus:</span> Log4Shell is a critical RCE\nin Apache Log4j. It exploits\nJNDI lookup string injection...\n\n<span class="c-mut">engine: ollama (local, free)</span></pre>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====== HOW IT WORKS (4-step timeline) ====== -->
-    <section class="section" id="how" aria-labelledby="how-title">
-      <div class="wrap">
-        <div class="sec-label">How it works</div>
-        <h2 class="sec-title" id="how-title">From repo to findings in four steps</h2>
-        <p class="sec-sub">From install to your first scan of real code in under five minutes.</p>
-        <div class="timeline-v">
-
-          <div class="tlv-step">
-            <div class="tlv-num">1</div>
-            <div class="tlv-body">
-              <div class="tlv-text">
-                <h3>Install from source</h3>
-                <!-- NPM_SUSPENDED: restore "Install in one command" + <code>npm i -g darknode-cli</code> when the npm account is back -->
-                <p><code>git clone</code> the CLI repo or download the desktop app. Works on Linux, macOS, and Windows.</p>
-              </div>
-              <div class="tlv-visual">
-                <div class="term-window demo-term">
-                  <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">terminal</span></div>
-                  <!-- NPM_SUSPENDED: restore the "npm i -g darknode-cli" terminal demo when the npm account is back -->
-                  <pre class="tw-body"><span class="c-pl">$</span> git clone https://github.com/Darknode-Official/darknode-cli\n<span class="c-mut">Cloning into 'darknode-cli'...</span>\n<span class="c-mut">done.</span>\n\n<span class="c-pl">$</span> node darknode.js --version\n<span class="c-ok">darknode v2.46.3</span></pre>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="tlv-step">
-            <div class="tlv-num">2</div>
-            <div class="tlv-body">
-              <div class="tlv-text">
-                <h3>Point it at your code or cloud</h3>
-                <p>Connect a repository, cloud account, or dependency manifest. Everything runs on your infrastructure — nothing leaves your estate without your say-so.</p>
-              </div>
-              <div class="tlv-visual">
-                <div class="term-window demo-term">
-                  <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
-                  <pre class="tw-body"><span class="c-pl">$</span> nexus\n\n  <span class="c-acc">Nexus v2.14</span>\n  Model: <span class="c-ok">local</span> (no key) or <span class="c-ok">BYOK cloud</span>\n  Status: <span class="c-ok">Ready</span>\n\n<span class="c-acc">nexus&gt;</span> <span class="tw-cursor">_</span></pre>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="tlv-step">
-            <div class="tlv-num">3</div>
-            <div class="tlv-body">
-              <div class="tlv-text">
-                <h3>Run the scan</h3>
-                <p>Deterministic engines find vulnerabilities, risky dependencies, exposed secrets, and misconfigurations — each with the exact file and line, ranked by real severity.</p>
-              </div>
-              <div class="tlv-visual">
-                <div class="term-window demo-term">
-                  <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">nexus</span></div>
-                  <pre class="tw-body"><span class="c-acc">nexus&gt;</span> scan 10.10.14.7 and explain\n        what you find\n\n<span class="c-acc">Nexus:</span> Running nmap on target...\n\n<span class="c-ok">22</span>  ssh    OpenSSH 9.6\n<span class="c-ok">80</span>  http   nginx 1.24\n<span class="c-ok">443</span> https\n\nPort 22: check <span class="c-bad">CVE-2024-6387</span>...</pre>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="tlv-step">
-            <div class="tlv-num">4</div>
-            <div class="tlv-body">
-              <div class="tlv-text">
-                <h3>Fix, track, and report</h3>
-                <p>Jump straight to the vulnerable line, apply the suggested fix, gate your CI on findings, and export audit-ready reports. Everything runs on your machine.</p>
-              </div>
-              <div class="tlv-visual">
-                <div class="term-window demo-term">
-                  <div class="tw-bar"><span class="tw-dot r"></span><span class="tw-dot y"></span><span class="tw-dot g"></span><span class="tw-title">darknode</span></div>
-                  <pre class="tw-body"><span class="c-pl">$</span> darknode lab start dvwa\n<span class="c-ok">[+]</span> DVWA running on localhost:8080\n\n<span class="c-acc">nexus&gt;</span> walk me through SQL injection\n\n<span class="c-acc">Nexus:</span> Open localhost:8080/login.\nTry entering <span class="c-bad">' OR 1=1--</span> in the\nusername field...</pre>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
+// Pages that are not on the home page: each renders only at its own path (PAGE_ROUTES in
+// renderLanding), and the home page links to them from one line under "Where it runs".
+const PAGE_ONLY = {
+  "/nexus": () => `
     <!-- ====== NEXUS ENGINE ====== -->
     <section class="section nx-section" id="nexus" aria-labelledby="nexus-title">
       <div class="nx-section-glow"></div>
@@ -390,14 +208,14 @@ export function renderLanding(view, actions) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-3.5-6.5L16 7m-8 10l-2.5 2.5M20.5 18.5L18 16M5.5 7L3.5 5.5"/><circle cx="12" cy="12" r="4"/></svg>
             </div>
             <h3>Multi-engine</h3>
-            <p>Switch between 6 AI engines, race them against each other, or ensemble their answers for higher accuracy.</p>
+            <p>Switch between 6 AI engines, race them against each other, or combine their answers.</p>
           </div>
           <div class="nx-hl">
             <div class="nx-hl-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0H5a2 2 0 01-2-2v-4m6 6h10a2 2 0 002-2v-4"/><path d="M14 9l-1 2 3 2-1 2"/></svg>
             </div>
             <h3>Autonomous</h3>
-            <p>Give it a goal -- it plans, executes, and verifies with zero babysitting. Background jobs keep long tasks running while you work.</p>
+            <p>Give it a goal and it plans, runs and checks the work. Background jobs keep long tasks running while you work.</p>
           </div>
           <div class="nx-hl">
             <div class="nx-hl-icon">
@@ -459,7 +277,8 @@ export function renderLanding(view, actions) {
         </details>
       </div>
     </section>
-
+`,
+  "/security-knowledge": () => `
     <!-- ====== SECURITY KNOWLEDGE ====== -->
     <section class="section" id="security-knowledge" aria-labelledby="rag-title">
       <div class="wrap">
@@ -644,13 +463,14 @@ export function renderLanding(view, actions) {
         </div>
       </div>
     </section>
-
+`,
+  "/darknode-os": () => `
     <!-- ====== DARKNODE OS ====== -->
     <section class="section alt" id="darknode-os" aria-labelledby="os-title">
       <div class="wrap">
         <div class="sec-label">Darknode OS</div>
         <h2 class="sec-title" id="os-title">Your own security operating system</h2>
-        <p class="sec-sub">Two editions — a custom x86 kernel built from scratch, and a full Linux desktop. Both run on your own machines, ideal for locked-down and air-gapped environments.</p>
+        <p class="sec-sub">Two editions: a from-scratch x86 research kernel, and a Linux desktop with the Darknode CLI and Nexus. Both run in a virtual machine on your own hardware.</p>
         <div class="os-grid">
           <div class="os-card">
             <div class="os-card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
@@ -672,14 +492,13 @@ export function renderLanding(view, actions) {
           <div class="os-card">
             <div class="os-card-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
             <h3 class="os-card-title">Darknode OS — Linux Edition</h3>
-            <p class="os-card-desc">Full desktop environment built on Ubuntu 24.04 LTS. Pre-loaded with the entire Darknode toolkit, Nexus AI agent, and every security tool configured and ready to go.</p>
+            <p class="os-card-desc">Desktop environment built on Ubuntu 24.04 LTS, with the Darknode CLI, the Nexus agent and a security toolset installed on its first boot.</p>
             <ul class="os-features">
               <li>Ubuntu 24.04 LTS with XFCE desktop</li>
               <li>Darknode CLI + Nexus pre-installed</li>
-              <li>nmap, sqlmap, nuclei, ffuf, httpx, Burp Suite</li>
-              <li>The full security toolset ready to run</li>
+              <li>nmap, sqlmap, nuclei, ffuf, httpx</li>
               <li>Custom wallpapers, icons, and theming</li>
-              <li>Cloud-init auto-provisioning on first boot</li>
+              <li>Cloud-init provisioning on first boot (needs a network connection)</li>
             </ul>
             <div class="os-card-meta">370 MB download &middot; Self-provisions on first boot</div>
             <a href="https://github.com/Darknode-Official/darknode-os/releases/download/v1.0.0/darknode-os-ubuntu-slim.qcow2.xz" class="btn lg os-dl" target="_blank" rel="noopener">Download qcow2</a>
@@ -711,20 +530,159 @@ export function renderLanding(view, actions) {
         </div>
       </div>
     </section>
+`,
+  "/government": () => `
+    <!-- ====== GOVERNMENT & ENTERPRISE ====== -->
+    <section class="section gov-section" id="government" aria-labelledby="gov-title">
+      <div class="wrap">
+        <div class="sec-label">Government &amp; Enterprise</div>
+        <h2 class="sec-title" id="gov-title">Built for government and regulated industries</h2>
+        <p class="sec-sub">For teams that answer to NIST, FedRAMP, CMMC or HIPAA: control mapping, vulnerability deadlines and audit evidence, built from your own findings.</p>
+        <div class="gov-grid">
+          <div class="gov-card">
+            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h11M9 12h11M9 19h11"/><path d="M4 5l1 1 2-2M4 12l1 1 2-2M4 19l1 1 2-2"/></svg></div>
+            <h3>Federal Compliance Mapper</h3>
+            <p>A reference crosswalk of a representative NIST SP 800-53 Rev 5 subset to CSF 2.0, FedRAMP, CMMC 2.0, CJIS and HIPAA, with a self-assessment checklist, POA&amp;M drafting and ATO tracking. Progress is saved in your browser.</p>
+          </div>
+          <div class="gov-card">
+            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <h3>Vulnerability deadlines</h3>
+            <p>Import Nessus, Tenable, Qualys, OpenVAS, Rapid7, Trivy, Grype, Snyk or SARIF exports into one register, ranked by CISA KEV, EPSS and CVSS, with SLA due dates that include the BOD 22-01 clock for internet-facing KEV entries.</p>
+          </div>
+          <div class="gov-card">
+            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg></div>
+            <h3>Controls and audit evidence</h3>
+            <p>Assess controls against CIS, ISO 27001, SOC 2, PCI DSS, HIPAA, GDPR and NIST CSF, and group open findings by the controls they cite for an evidence pack.</p>
+          </div>
+        </div>
+        <p class="lt-note">Vulnerability deadlines come with Pro; the compliance tools come with Enterprise. <a href="/pricing">Compare plans</a></p>
+      </div>
+    </section>
+`,
+};
+
+export function renderLanding(view, actions) {
+  // Sections that moved off the home page keep their old links: /#nexus now opens /nexus.
+  const MOVED = { "#nexus": "/nexus", "#security-knowledge": "/security-knowledge", "#darknode-os": "/darknode-os", "#government": "/government" };
+  if (location.pathname === "/" && MOVED[location.hash]) history.replaceState(null, "", MOVED[location.hash]);
+  const path = location.pathname.replace(/\/+$/, "") || "/";
+  const pageOnly = PAGE_ONLY[path] ? PAGE_ONLY[path]() : "";
+  setTimeout(() => loadHeroLive(view), 0);
+  queueMicrotask(() => mountLandingCheck(view, actions)); // hero domain check, or the /check/<domain> page
+  view.innerHTML = `
+
+    <!-- ====== HERO ====== -->
+    <section class="hero" aria-label="Hero">
+      <div class="hero-mesh"></div>
+      <div class="hero-grain"></div>
+      <div class="wrap hero-inner">
+        <div class="hx-grid"><div class="hx-copy">
+        <div class="hero-badge"><span class="badge-dot"></span> Deterministic &middot; Explainable &middot; Offline in the CLI and desktop app</div>
+        <h1 class="hero-h1">Find the real risks in your<br><span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">code</span></span></h1>
+        <p class="hero-sub">Darknode checks your domains, code, cloud, dependencies and configs for real vulnerabilities and risks, with deterministic engines that show how they reached each result. No black-box AI deciding severity. The CLI and desktop app run on your own machines and work offline with local Ollama models.</p>
+        <form class="dmc-form" id="dmcForm" novalidate>
+          <label class="dmc-lbl" for="dmcIn">Check your domain</label>
+          <div class="dmc-field"><input id="dmcIn" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="example.com" aria-describedby="dmcHelp"><button class="btn lg" type="submit">Check domain</button></div>
+          <p class="dmc-help" id="dmcHelp">Free, no sign-up, results in seconds. Reads public DNS records and HTTP headers: email authentication, HTTPS, security headers, DNSSEC, CAA and security.txt.</p>
+          <p class="dmc-msg" role="alert" hidden></p>
+        </form>
+        <div class="hero-cta">
+          <button class="btn lg ghost" id="cta-start">Create a free account</button>
+          <a class="btn lg ghost" href="/?app=1">See the Deck</a>
+        </div>
+        </div>
+        <aside class="hx-live" id="hxLive" aria-label="Newly exploited vulnerabilities">
+          <div class="hx-live-h"><span class="hx-dot"></span><b>Newly exploited</b><span class="hx-src">CISA KEV</span></div>
+          <div class="hx-live-b" id="hxLiveB"><div class="hx-live-msg">Loading the live feed…</div></div>
+          <div class="hx-live-f" id="hxLiveF">Real vulnerabilities attackers are using now, refreshed daily. The Deck matches them against what you run.</div>
+        </aside>
+        <div class="dmc-out" id="dmcOut" aria-live="polite" hidden></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== WHAT IT CHECKS ====== -->
+    <section class="section lt-sec" id="features" aria-labelledby="features-title">
+      <div class="wrap">
+        <div class="sec-label">What it checks</div>
+        <h2 class="sec-title" id="features-title">Find what attackers exploit first, then fix it.</h2>
+        <p class="sec-sub">Darknode checks your domain, code, cloud and dependencies for the weaknesses being exploited now, ranks what it finds, and tells you exactly how to fix each one.</p>
+        <div class="lt-grid">
+          ${CHECKS.map((c) => `<div class="lt-card"><div class="lt-card-h"><span class="lt-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${c.icon}</svg></span><h3>${c.title}</h3></div><p>${c.what}</p><p class="lt-fix"><b>You get</b> ${c.fix}</p></div>`).join("")}
+        </div>
+        <p class="lt-note">Domain, email and certificate checks and the live vulnerability feed are free. Code, dependency, cloud and attack-surface scanning come with Pro. <a href="/pricing">Compare plans</a></p>
+      </div>
+    </section>
+
+    <!-- ====== HOW IT WORKS ====== -->
+    <section class="section alt lt-sec" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <div class="sec-label">How it works</div>
+        <h2 class="sec-title" id="how-title">From sign-in to your first fix in four steps</h2>
+        <ol class="lt-steps">
+          <li class="lt-step"><div class="lt-card-h"><span class="lt-num">1</span><h3>Sign in free</h3></div><p>Open the Deck in your browser. No install and no card. Prefer your own machine? Use the desktop app or the CLI.</p></li>
+          <li class="lt-step"><div class="lt-card-h"><span class="lt-num">2</span><h3>Add what you own</h3></div><p>A domain, a GitHub repository or folder, a dependency manifest, or your cloud and infrastructure-as-code files.</p></li>
+          <li class="lt-step"><div class="lt-card-h"><span class="lt-num">3</span><h3>Get ranked findings</h3></div><p>Deterministic checks show where each problem is, how severe it is, and whether attackers are exploiting it now.</p></li>
+          <li class="lt-step"><div class="lt-card-h"><span class="lt-num">4</span><h3>Fix and prove it</h3></div><p>Apply the fix, run the check again to confirm it is closed, and export a report for your team.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ====== WHERE IT RUNS ====== -->
+    <section class="section lt-sec" id="products" aria-labelledby="products-title">
+      <div class="wrap">
+        <div class="sec-label">Where it runs</div>
+        <h2 class="sec-title" id="products-title">Use it where you already work</h2>
+        <div class="lt-surfaces">
+          <div class="lt-surface">
+            <h3>Web</h3>
+            <p>The full Deck workspace in your browser. Nothing to install.</p>
+            <button class="btn sm" id="surf-web" type="button">Start free</button>
+          </div>
+          <div class="lt-surface">
+            <h3>Desktop app</h3>
+            <p>The Deck for macOS, Windows and Linux, plus native tools a browser cannot run: a terminal, port scanner and web fuzzer.</p>
+            ${APP_DL_LIVE ? `<div class="bento-dl">
+              <a class="btn sm" id="app-dl" href="${APP_RELEASES}" target="_blank" rel="noopener">Download the app</a>
+              <a class="bento-dl-alt" id="app-dl-alt" href="${APP_RELEASES}" target="_blank" rel="noopener">Other platforms</a>
+            </div>` : `<span class="lt-tag">macOS &middot; Windows &middot; Linux</span>`}
+          </div>
+          <div class="lt-surface">
+            <h3>CLI</h3>
+            <!-- NPM_SUSPENDED: restore <code>npm i -g darknode-cli</code> when the npm account is back -->
+            <p>Port scans of hosts you may test, plus dependency and environment-variable audits, with a strict mode that fails a CI build. Installs from source.</p>
+            <a class="lt-link" href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">darknode-cli on GitHub</a>
+          </div>
+          <div class="lt-surface">
+            <h3>API and MCP</h3>
+            <p>Give Claude, Cursor, Codex or any MCP client the Deck's 32 analysis tools, limited to your plan. The CLI also serves the engines as a local REST API.</p>
+            <span class="lt-tag">darknode mcp</span>
+          </div>
+        </div>
+        <nav class="lt-more" aria-label="More from Darknode">
+          <span class="lt-more-h">More from Darknode</span>
+          <a href="/nexus">Nexus, the terminal coding agent</a>
+          <a href="/security-knowledge">Security knowledge base</a>
+          <a href="/darknode-os">Darknode OS</a>
+          <a href="/government">Government and regulated teams</a>
+        </nav>
+      </div>
+    </section>
+${pageOnly}
 
     <!-- ====== PRICING ====== -->
     <section class="section alt" id="pricing" aria-labelledby="pricing-title">
       <div class="wrap">
         <div class="sec-label">Pricing</div>
         <h2 class="sec-title" id="pricing-title">Free to start. Upgrade when you're ready.</h2>
-        <p class="sec-sub">Bring your own AI key on any plan. Paid plans unlock platform features, not AI access.</p>
+        <p class="sec-sub">Start free. Paid plans add more tools, premium AI models and higher limits.</p>
         <div class="pricing-grid" id="pricing-grid">
           <div class="price-card">
             <div class="price-tier">Free</div>
             <div class="price-amount">$0<span class="price-period">/forever</span></div>
-            <p class="price-desc">The full browser toolbox for solo practitioners and evaluation.</p>
+            <p class="price-desc">Quick checks, the live feed and the assistant, for individuals and evaluation.</p>
             <ul class="price-features compact">
-              <li>Every browser-based security tool</li>
+              <li>Free browser tools in the Tool Library</li>
               <li>Quick Checks: email security, headers, certificates, DNS, breaches, CVEs</li>
               <li>Personal space: domain, link, secret and data checks</li>
               <li>Live vulnerability feed (CVE and known-exploited)</li>
@@ -780,171 +738,33 @@ export function renderLanding(view, actions) {
             <button class="btn lg ghost" id="price-enterprise">Contact sales</button>
           </div>
         </div>
-        <p class="pricing-note">Paid plans are in preview: checkout is not live yet, so upgrades are requested and granted by hand and no payment is taken. You never pay Darknode for AI tokens &mdash; bring your own key or run Ollama locally.</p>
+        <p class="pricing-note">Paid plans are in preview: checkout is not live yet, so upgrades are requested and granted by hand and no payment is taken. There is no per-token AI billing: each plan includes a daily message allowance, and you can also connect your own key or run a local model with Nexus.</p>
       </div>
     </section>
 
-    <!-- ====== FAQ ====== -->
-    <section class="section" id="faq" aria-labelledby="faq-title">
+    <!-- ====== FAQ (the first six here; /faq shows every question) ====== -->
+    <section class="section lt-sec" id="faq" aria-labelledby="faq-title">
       <div class="wrap">
         <div class="sec-label">FAQ</div>
         <h2 class="sec-title" id="faq-title">Frequently asked questions</h2>
         <div class="faq-list">
-
-          <div class="faq-item">
-            <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">Can I run Darknode offline or air-gapped?</span>
-              <span class="faq-toggle" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. The Free plan includes every browser-based security tool, the Personal space checks, a local security graph and the Darknode AI assistant, with no time limit. The CLI is free to run from source. Pro, Team and Enterprise add the premium AI models (Claude Fable 5.1, Claude Opus 5.5, Darknode Max), the Exposure, Application Security, Organization and Compliance tool sets, shared workspaces and cloud sync; they are in preview and granted on request while checkout is not live.</div>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">Does our code or data ever leave our environment?</span>
-              <span class="faq-toggle" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-a" hidden>
-              <div class="faq-a-inner">Your scans and saved findings stay with you. The CLI, desktop app and Darknode OS run on your own machines and can run fully air-gapped. On darknode.ai, most analysis runs inside your browser; live checks against a domain (DNS, headers, certificate transparency) are fetched through our edge proxy and are not stored. The built-in web assistant sends your question through that same proxy to Google&rsquo;s Gemini model; we do not log or store prompts or answers. With Nexus you choose the engine: a local Ollama model keeps everything offline, and with a cloud engine your prompts go to that provider under its terms.</div>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">What AI models does Darknode support?</span>
-              <span class="faq-toggle" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-a" hidden>
-              <div class="faq-a-inner">Nexus drives 6 AI engines through one interface: Claude Code (Anthropic), the Gemini CLI (Google), Codex (OpenAI), OpenCode, Aider, and Ollama for free local models &mdash; any Ollama-compatible model including Llama 3, Mixtral, CodeLlama, Phi-3, and Qwen. Nexus can switch engines mid-conversation, race multiple models against each other, or ensemble their answers for higher accuracy. You can also point the local engine at any OpenAI-compatible endpoint (OpenRouter, Groq, DeepSeek, Together, Mistral, and others). You bring your own API key &mdash; Darknode never charges for AI tokens on any plan.</div>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">Is this legal to use?</span>
-              <span class="faq-toggle" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes. Darknode is built for assessing systems you own or are authorized to assess &mdash; your own code, cloud accounts, dependencies, and infrastructure. Any practice labs and vulnerable environments run locally in Docker containers on your own machine. The underlying tools are the same ones used by professional security teams worldwide (nmap, nuclei, Burp Suite, etc.). Always ensure you have authorization for the systems you scan; unauthorized testing of systems you don't own is illegal regardless of the tools used.</div>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">How is this different from a standalone scanner?</span>
-              <span class="faq-toggle" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-a" hidden>
-              <div class="faq-a-inner">Most tools cover one surface &mdash; code, or dependencies, or cloud. Darknode brings code, cloud, dependencies, secrets, configs, and threat intelligence into one command center, links every finding to the exact file and line, ranks it by real severity with deterministic engines, and then lets the optional Nexus assistant explain it and draft remediation. It runs entirely on your own infrastructure, exposes a REST API and CLI for your pipelines, and exports audit-ready reports &mdash; so one platform covers scanning, triage, compliance, and reporting instead of five.</div>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">Can I use this for professional security assessments?</span>
-              <span class="faq-toggle" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-a" hidden>
-              <div class="faq-a-inner">Yes, within scope. Darknode covers the assessment workflow: scanning code, dependencies, cloud configuration and web exposure; triaging findings by real severity; and building a report you can hand over. The hands-on web-security tools (security headers, CSP, CORS, cookies, API and WebSocket testing) work against targets you name. Always operate within your engagement scope and rules of engagement, and keep written authorization for every system you test.</div>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">What are the system requirements?</span>
-              <span class="faq-toggle" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-a" hidden>
-              <div class="faq-a-inner">For the web platform (darknode.ai): any modern browser (Chrome, Firefox, Safari, Edge). For the CLI: Node.js 18+ on Windows, macOS, or Linux. For local AI models via Ollama: 16 GB RAM minimum (32 GB recommended for larger models). For practice labs: Docker installed and running. For Darknode OS (Custom Kernel): VirtualBox or QEMU with 128 MB RAM. For Darknode OS (Linux Edition): VirtualBox or VMware with 4 GB RAM and 40 GB disk space. The desktop app is available as .AppImage (Linux), .dmg (macOS), and .exe (Windows).</div>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">How do paid plans work?</span>
-              <span class="faq-toggle" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-a" hidden>
-              <div class="faq-a-inner">The core platform, the CLI, desktop and OS editions stay free. Paid Pro, Team and Enterprise plans (coming soon) add more of the platform: Pro adds exposure, application-security and reporting tools; Team adds the shared Organization space, identity and security-operations tools and team workspaces; Enterprise adds risk and compliance tooling. Tools are shown according to your plan, so you only see what your plan includes.</div>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">Can I contribute or modify the code?</span>
-              <span class="faq-toggle" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-a" hidden>
-              <div class="faq-a-inner">The Darknode source code is publicly available on GitHub for transparency and learning purposes. You can read, study, and reference the code to understand how the platform works. However, copying, forking, redistribution, and commercial use are not permitted under the license. If you find a bug or have a feature request, please open an issue on GitHub &mdash; we actively review and respond to community feedback.</div>
-            </div>
-          </div>
-
-          <div class="faq-item">
-            <button class="faq-q" aria-expanded="false">
-              <span class="faq-q-text">Where can I get help?</span>
-              <span class="faq-toggle" aria-hidden="true">+</span>
-            </button>
-            <div class="faq-a" hidden>
-              <div class="faq-a-inner">Start with the docs on this site (Docs in the top menu), or run <code>/docs</code> inside Nexus to search every command and key. For bug reports and feature requests, open an issue on our GitHub repository. For account issues, use the in-app feedback form or email contact@darknode.ai.</div>
-            </div>
-          </div>
-
+          ${FAQ.map(([q, a, more]) => `<div class="faq-item"${more ? " data-faq-more hidden" : ""}><button class="faq-q" type="button" aria-expanded="false"><span class="faq-q-text">${q}</span><span class="faq-toggle" aria-hidden="true">+</span></button><div class="faq-a" hidden><div class="faq-a-inner">${a}</div></div></div>`).join("")}
         </div>
-      </div>
-    </section>
-
-    <!-- ====== GOVERNMENT & ENTERPRISE ====== -->
-    <section class="section gov-section" id="government" aria-labelledby="gov-title">
-      <div class="wrap">
-        <div class="sec-label">Government &amp; Enterprise</div>
-        <h2 class="sec-title" id="gov-title">Built for government and regulated industries</h2>
-        <p class="sec-sub">Tools designed for SOC analysts, CISOs, and GRC teams. From executive briefings to NIST, FedRAMP, and HIPAA compliance mapping.</p>
-        <div class="gov-grid">
-          <div class="gov-card">
-            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg></div>
-            <h3>Executive Cyber Briefing</h3>
-            <p>Generate PDB-style intelligence reports with BLUF summaries, threat actor tracking, sector risk matrices, and classification banners.</p>
-          </div>
-          <div class="gov-card">
-            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
-            <h3>Vulnerability Triage Engine</h3>
-            <p>SSVC decision trees, CISA KEV integration, BOD 22-01 compliance tracking, and remediation SLA calculators for federal systems.</p>
-          </div>
-          <div class="gov-card">
-            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 19h8"/></svg></div>
-            <h3>Incident Cost Calculator</h3>
-            <p>Planning estimates from IBM Cost of a Data Breach figures, with sector multipliers, regulatory fine estimation, and insurance gap analysis.</p>
-          </div>
-          <div class="gov-card">
-            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h11M9 12h11M9 19h11"/><path d="M4 5l1 1 2-2M4 12l1 1 2-2M4 19l1 1 2-2"/></svg></div>
-            <h3>Federal Compliance Mapper</h3>
-            <p>Cross-walk NIST 800-53, CSF 2.0, FedRAMP, CMMC 2.0, FISMA, and HIPAA. Gap analysis with POA&amp;M generation and ATO checklists.</p>
-          </div>
-          <div class="gov-card">
-            <div class="gov-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
-            <h3>Adversary Playbook Builder</h3>
-            <p>MITRE ATT&amp;CK emulation planning with detection coverage heatmaps, purple team exercise generation, and STIX 2.1 export.</p>
-          </div>
-        </div>
+        <p class="lt-faq-all" id="faq-all"><a href="/faq">See all questions</a></p>
       </div>
     </section>
 
     <!-- ====== CTA ====== -->
-    <section class="cta-final">
-      <div class="cta-mesh"></div>
-      <div class="cta-grid-bg"></div>
+    <section class="cta-final" id="start" aria-labelledby="cta-title">
       <div class="wrap cta-inner">
-        <h2>Find your real risks today.</h2>
-        <p class="cta-sub">Your code and findings stay on infrastructure you control.</p>
-        <button class="btn lg" id="cta-signup">Get started &rarr;</button>
-        <div class="cta-divider"></div>
-        <div class="cta-notify">
+        <h2 id="cta-title">See what attackers would find first.</h2>
+        <p class="cta-sub">Start with a free check of your own domain. No card and nothing to install.</p>
+        <button class="btn lg" id="cta-signup" type="button">Get started &rarr;</button>
+        <div class="cta-notify lt-notify">
           <h3 class="cta-notify-h">Get notified when Pro launches</h3>
           <form class="cta-form" id="cta-notify-form" autocomplete="off">
             <input type="email" class="cta-email" id="cta-email" placeholder="test@darknode.ai" required aria-label="Email address">
-            <button type="submit" class="btn lg" id="cta-notify-btn">Notify me</button>
+            <button type="submit" class="btn ghost" id="cta-notify-btn">Notify me</button>
           </form>
           <p class="cta-reassure" id="cta-reassure">No spam. One email when we launch.</p>
         </div>
@@ -956,21 +776,22 @@ export function renderLanding(view, actions) {
       <div class="wrap land-footer-inner lf-grid">
         <div class="lf-brand">
           <span class="land-footer-brand">Darknode</span>
-          <p class="lf-tag">Security and data-integrity platform for companies &mdash; scan your code, cloud, dependencies, and records.</p>
+          <p class="lf-tag">Finds the weaknesses attackers exploit in your domain, code, cloud and dependencies, and tells you how to fix them.</p>
         </div>
         <nav class="lf-col" aria-label="Product">
           <h4>Product</h4>
-          <a href="/features" data-nav="section">Features</a>
-          <a href="/pricing" data-nav="section">Pricing</a>
-          <a href="/darknode-os" data-nav="section">Darknode OS</a>
-          <a href="/faq" data-nav="section" data-section="faq">FAQ</a>
+          <a href="/features">Features</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/nexus">Nexus</a>
+          <a href="/darknode-os">Darknode OS</a>
+          <a href="/government">Government</a>
         </nav>
-        <nav class="lf-col" aria-label="Open source">
-          <h4>Open source</h4>
+        <nav class="lf-col" aria-label="Resources">
+          <h4>Resources</h4>
+          <a href="/faq">FAQ</a>
+          <a href="/security-knowledge">Security knowledge</a>
           <a href="${GITHUB}" target="_blank" rel="noopener">GitHub</a>
-          <a href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">CLI</a>
-          <a href="${GITHUB}/nexus" target="_blank" rel="noopener">Nexus</a>
-          <a href="${GITHUB}/darknode-os" target="_blank" rel="noopener">OS</a>
+          <a href="${GITHUB}/darknode-cli" target="_blank" rel="noopener">CLI source</a>
         </nav>
         <nav class="lf-col" aria-label="Legal">
           <h4>Legal</h4>
@@ -990,6 +811,7 @@ export function renderLanding(view, actions) {
   $("cta-start").onclick = actions.onGetStarted;
   $("cta-signup").onclick = actions.onGetStarted;
   if ($("price-free")) $("price-free").onclick = actions.onGetStarted;
+  if ($("surf-web")) $("surf-web").onclick = actions.onGetStarted;
 
   // Desktop-app download button — label it for the visitor's OS and, on click,
   // resolve the matching installer from the latest release (fallback: releases page).
@@ -1010,7 +832,7 @@ export function renderLanding(view, actions) {
     });
   }
 
-  const scrollToCta = () => { const el = view.querySelector(".cta-notify"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); };
+  const scrollToCta = () => { const el = view.querySelector(".cta-notify"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); const inp = $("cta-email"); if (inp) inp.focus({ preventScroll: true }); };
   if ($("price-pro")) $("price-pro").onclick = scrollToCta;
   if ($("price-team")) $("price-team").onclick = scrollToCta;
   if ($("price-enterprise")) $("price-enterprise").onclick = scrollToCta;
@@ -1293,23 +1115,17 @@ export function renderLanding(view, actions) {
     });
   }
 
-  // Handle footer and in-page section links
-  view.querySelectorAll("a[data-nav='section']").forEach(link => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
-      window.location.href = link.getAttribute("href");
-    });
-  });
-
-  // Dedicated page routing — show only the target section at /faq, /pricing, etc.
-  const PAGE_ROUTES = { "/pricing": "pricing", "/faq": "faq", "/features": "features", "/darknode-os": "darknode-os" };
-  const PAGE_TITLES = { "/pricing": "Pricing", "/faq": "FAQ", "/features": "Features", "/darknode-os": "Darknode OS" };
-  const dedicatedId = PAGE_ROUTES[location.pathname];
-  if (dedicatedId) {
+  // Dedicated pages: each shows only its own sections and hides the rest of the home page.
+  // /nexus, /security-knowledge, /darknode-os and /government are not on the home page at all:
+  // PAGE_ONLY renders them only at their own path.
+  const PAGE_ROUTES = { "/pricing": ["pricing", "start"], "/faq": ["faq"], "/features": ["features", "how", "products"], "/nexus": ["nexus"], "/security-knowledge": ["security-knowledge"], "/darknode-os": ["darknode-os"], "/government": ["government"] };
+  const PAGE_TITLES = { "/pricing": "Pricing", "/faq": "FAQ", "/features": "Features", "/nexus": "Nexus", "/security-knowledge": "Security knowledge", "/darknode-os": "Darknode OS", "/government": "Government and regulated teams" };
+  const dedicated = PAGE_ROUTES[path];
+  if (dedicated) {
     view.querySelectorAll(".section, .hero, .cta-final").forEach(sec => {
-      if (sec.id !== dedicatedId) sec.hidden = true;
+      if (!dedicated.includes(sec.id)) sec.hidden = true;
     });
-    const target = view.querySelector("#" + dedicatedId);
+    const target = view.querySelector("#" + dedicated[0]);
     // the hidden hero holds the home page's h1, so the section title becomes this page's h1
     const h2 = target && target.querySelector("h2.sec-title");
     if (h2) { const h1 = document.createElement("h1"); for (const a of h2.attributes) h1.setAttribute(a.name, a.value); h1.innerHTML = h2.innerHTML; h2.replaceWith(h1); }
@@ -1320,8 +1136,14 @@ export function renderLanding(view, actions) {
       back.querySelector("a").addEventListener("click", (e) => { e.preventDefault(); window.location.href = "/"; });
       target.insertAdjacentElement("beforebegin", back);
     }
-    document.title = (PAGE_TITLES[location.pathname] || "Darknode") + " — Darknode";
+    // the home page shows the first six questions; /faq shows every one
+    if (path === "/faq") { view.querySelectorAll("[data-faq-more]").forEach((el) => { el.hidden = false; }); if ($("faq-all")) $("faq-all").hidden = true; }
+    document.title = (PAGE_TITLES[path] || "Darknode") + " — Darknode";
     window.scrollTo(0, 0);
+  } else if (path === "/" && location.hash.length > 1) {
+    // a link to a home section (/#pricing) lands on it: the section did not exist when the browser looked
+    const t = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+    if (t) requestAnimationFrame(() => t.scrollIntoView());
   }
 
   // Public tool pages: published open data that needs no account. The sitemap and the app
@@ -1348,8 +1170,7 @@ export function renderLanding(view, actions) {
   // Any other path that the app does not route either (a mistyped or retired link) gets a real
   // "Page not found" instead of a copy of the home page at that URL. Pages the signed-in app opens
   // (/<tool>, /all-tools, /console/...) keep the landing: signing in then opens that page.
-  const path = location.pathname.replace(/\/+$/, "") || "/";
-  if (!dedicatedId && !pub && !PAGE_ROUTES[path] && !PUBLIC_TOOLS[path] && actions && actions.isAppPath && !actions.isAppPath(location.pathname)) {
+  if (!dedicated && !pub && !PUBLIC_TOOLS[path] && actions && actions.isAppPath && !actions.isAppPath(location.pathname)) {
     view.querySelectorAll(".section, .hero, .cta-final").forEach((sec) => { sec.hidden = true; });
     const page = document.createElement("section");
     page.className = "section dn-notfound";
