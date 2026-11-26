@@ -13,8 +13,8 @@
 // Pure builders (buildDigest, certRows, validatePrefs, unsubToken) are unit-tested; the rest is
 // thin REST plumbing.
 
-const SITE = "https://darknode.ai";
-const FROM = "Darknode <digest@darknode.ai>";
+export const SITE = "https://darknode.ai";
+export const FROM = "Darknode <digest@darknode.ai>"; // also the sender of watch alerts (worker/alert-email.js)
 const DAY = 86400000;
 const MAX_DOMAINS = 50, MAX_CERTS = 200;
 const DOMAIN_RE = /^(?=.{1,253}$)(?!-)[a-z0-9-]{1,63}(?:\.[a-z0-9-]{1,63})+$/;
@@ -161,7 +161,7 @@ export async function unsubToken(uid, secret) {
   const k = await crypto.subtle.importKey("raw", await crypto.subtle.digest("SHA-256", enc.encode("digest-unsub:" + secret)), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   return b64u(await crypto.subtle.sign("HMAC", k, enc.encode(uid))).slice(0, 32);
 }
-const unsubSecret = (env) => env.DIGEST_SECRET || (readSA(env) || {}).private_key || "";
+export const unsubSecret = (env) => env.DIGEST_SECRET || (readSA(env) || {}).private_key || "";
 async function unsubUrl(env, uid) {
   return (env.DIGEST_API_BASE || "https://darknode-proxy.darknode-ai.workers.dev") + "/api/digest/unsubscribe?u=" + encodeURIComponent(uid) + "&t=" + (await unsubToken(uid, unsubSecret(env)));
 }

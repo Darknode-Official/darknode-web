@@ -4,7 +4,7 @@
 // whenever this text changes, so every account is asked to accept the new version.
 export const TOS_HTML = `
 <h3>Darknode Terms of Service</h3>
-<p><strong>Last updated:</strong> October 31, 2026</p>
+<p><strong>Last updated:</strong> November 25, 2026</p>
 <p>By using Darknode ("the Platform"), including darknode.ai, the Darknode command center, the Darknode Deck and its Personal and Organization spaces, the code, cloud, dependency and web-exposure analysis engines, the Darknode CLI, the Nexus agent, Darknode OS, the API and MCP server, and all associated tools, you (and, where you act for an organization, that organization) agree to these terms. If you do not agree, do not use the Platform.</p>
 
 <h4>1. Authorized Use Only</h4>
@@ -77,6 +77,7 @@ export const TOS_HTML = `
   <li><strong>Data retention:</strong> your data is retained while your account is active. After deletion, data is purged within 30 days, except where retention is required by law.</li>
   <li><strong>Integration relay:</strong> Deck integrations with providers that do not accept calls from a browser (such as VirusTotal, Shodan or AbuseIPDB) send your API key and the value you look up through Darknode's edge relay to that provider only. The relay uses the key for that one request and does not log or store the key, the value or the result; the provider processes them under its own terms. Keys stay in your browser, under your account.</li>
   <li><strong>Weekly email digest (optional):</strong> only if you turn it on, we store your watched domains and latest certificate-check results to build a weekly email, sent to your account email through our email provider (Resend). You can turn it off at any time in Settings or from the unsubscribe link.</li>
+  <li><strong>Monitors and domain watch (optional):</strong> only if you set up a monitor, including the Free plan's one-domain watch, we store the domains it watches, its settings and latest results, and a log of its runs and alert deliveries, so it can run on a schedule and report what changed. Email alerts are sent only to your own verified account email, through our email provider (Resend), at most 5 a day. You can turn a watch off under Monitors or from the stop link in any alert email.</li>
   <li><strong>Product usage:</strong> when you are signed in to the Nexus terminal agent or the Darknode desktop app, it tells us about every 6 hours that your account uses it, with the app version and operating system; the desktop app also reports how many virtual machines its VM manager holds and when one last started (never their names, disks or contents). We use this to know which products and versions to support. Turn it off with <code>/shareusage off</code> in Nexus or Settings &gt; Share app usage in the desktop app.</li>
   <li><strong>No selling or sharing:</strong> we do not sell, rent, or share your personal data with third parties for marketing purposes.</li>
   <li><strong>Cookies:</strong> we use only essential cookies and localStorage for session management and user preferences. We do not use tracking cookies or third-party analytics.</li>

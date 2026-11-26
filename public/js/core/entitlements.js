@@ -17,6 +17,7 @@ export const FEATURES = {
   cloudSync: "pro",          // findings/reports synced across devices
   unlimitedReports: "pro",   // unlimited saved findings & reports
   priorityAI: "pro",         // premium AI models (worker/plan.js enforces them)
+  monitors: "pro",           // monitors beyond the Free one-domain watch: more domains, KEV/EPSS, chat and webhook alerts
   teamWorkspaces: "team",    // shared workspaces & roles
   vaultServerEnforced: "team", // server-enforced VAULT approvals & audit
   integrations: "team",      // SIEM / ticketing / chat connectors
@@ -30,6 +31,9 @@ export const FEATURES = {
 export const LIMITS = {
   seats:      { free: 1, pro: 1, team: 25, enterprise: -1 },
   workspaces: { free: 1, pro: 1, team: 5,  enterprise: -1 },
+  // domains a Free account may watch for certificate expiry and email/DNS changes, with
+  // alerts by email (worker/free-watch.js enforces it); Pro and above have no domain cap
+  watchDomains: { free: 1, pro: -1, team: -1, enterprise: -1 },
 };
 
 // Normalise any input into a known tier string.
@@ -85,9 +89,11 @@ export function limit(tier, key) {
 // entries. Shared by the Deck sidebar and the AI tool catalog (js/api/catalog.js), so a
 // tool an AI can run through the MCP server needs the same plan it needs in the Deck.
 export const PLAN_GROUP = { exposure: "pro", code: "pro", identity: "team", detect: "team", finsec: "team", risk: "enterprise", compliance: "enterprise" };
-export const PLAN_ITEM = { enterprise: "team", findings: "pro", inventory: "pro", reports: "pro", activity: "pro", monitors: "pro", phishtriage: "pro", dlp: "pro", leakprobe: "pro", team: "team",
+export const PLAN_ITEM = { enterprise: "team", findings: "pro", inventory: "pro", reports: "pro", activity: "pro", phishtriage: "pro", dlp: "pro", leakprobe: "pro", team: "team",
   // Free on every plan: the public vulnerability feed and the local-only graph and case files.
-  threat: "free", secgraph: "free", investigation: "free" };
+  threat: "free", secgraph: "free", investigation: "free",
+  // Free: the one-domain watch (Pro adds more monitors; the server enforces both)
+  monitors: "free" };
 export const tierFor = (id, group) => (own(PLAN_ITEM, id) && PLAN_ITEM[id]) || (own(PLAN_GROUP, group) && PLAN_GROUP[group]) || "free";
 
 export const planLabel = (tier) => PLAN_LABEL[normTier(tier)] || "Free";

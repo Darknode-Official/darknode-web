@@ -2,7 +2,8 @@
 // checks on the server, so live checks (certificate expiry, exposure, posture) keep
 // running when nobody has the Deck open. It diffs each run against the last, turns real
 // changes into alerts under the workspace's rules, and delivers them to Slack / Teams /
-// Discord / signed webhooks with retry. State and scheduling are the DO's; the grading
+// Discord / signed webhooks / the account's own email with retry. On the Free plan it runs
+// the one-domain watch (worker/free-watch.js). State and scheduling are the DO's; the grading
 // is the SAME pure engine the browser tools use (worker/checks.js), and the alert brain
 // is worker/monitor-core.js — both unit-tested without a deploy.
 import { runCheck, cvesFromEntities, hostOnly } from "./checks.js";
@@ -10,10 +11,15 @@ import { diffFindings, diffToEvents, shouldAlert, defaultAlertRules } from "./mo
 import { buildGraphWrite } from "./monitor-graph.js";
 import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
 import { requireUser } from "./auth.js";
-import { resolveWorkspaceRole, canDo } from "./workspace.js";
+import { resolveWorkspaceRole, canDo, isPersonalWorkspace, isTeamWorkspaceId } from "./workspace.js";
 import { featureDenied } from "./plan.js";
 import { workspaceTier, liveTier } from "./plan-share.js";
 import { readCapped } from "./body-cap.js";
+import { FREE_WATCH, FREE_TEAM_MSG, freeWatchDenied, freeAllowed } from "./free-watch.js";
+import { ALERT_EMAILS_PER_DAY, buildAlertEmail, buildTestEmail, maskEmail, recipient, sendEmail, stopToken, stopUrl, STOP_PATH } from "./alert-email.js";
+import { timingSafeEqual } from "./keys-core.js";
+import { unsubSecret } from "./digest.js";
+import { takeDaily } from "./quota.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
 const HISTORY_CAP = 200, DELIVERY_CAP = 200;
@@ -24,10 +30,46 @@ const uid = () => "m_" + Math.random().toString(36).slice(2, 10) + now().toStrin
 // Redact channel secrets before anything leaves the DO.
 // A Slack/Discord/Teams webhook URL is itself the credential: viewers see only its host.
 const hideUrl = (u) => { try { const x = new URL(u); return x.origin + (x.pathname.length > 1 || x.search ? "/…" : ""); } catch (_) { return "…"; } };
-const safeChannel = (c, full = true) => ({ type: c.type, url: full ? c.url : hideUrl(c.url), hasSecret: !!c.secret });
+// An email channel's address is shown in full only to its own account; anyone else sees it masked.
+const safeChannel = (c, full = true, viewer = "") => c.type === "email"
+  ? { type: "email", to: viewer && viewer === c.uid ? c.to : maskEmail(c.to), mine: !!viewer && viewer === c.uid, hasSecret: false }
+  : { type: c.type, url: full ? c.url : hideUrl(c.url), hasSecret: !!c.secret };
 // next run: a run held for the plan waits a full interval too, or the alarm would refire every second
 const dueAt = (m) => Math.max(m.lastRunAt || 0, m.planHeldAt || 0) + Math.max(m.intervalMs || 0, MIN_INTERVAL);
-const safeMonitor = (m, full = true) => ({ ...m, channels: (m.channels || []).map((c) => safeChannel(c, full)), lastResults: undefined, graphMeta: undefined, lastResultCount: (m.lastResults || []).length });
+const safeMonitor = (m, full = true, viewer = "") => ({ ...m, channels: (m.channels || []).map((c) => safeChannel(c, full, viewer)), lastResults: undefined, graphMeta: undefined, posture: undefined, lastResultCount: (m.lastResults || []).length });
+
+// The channels a saved monitor keeps. An email channel never takes its recipient from the request:
+// it is the verified address of the account saving the monitor (x-mon-email, which handleMonitor
+// sets from the ID token only when email_verified is true). At most one email channel per monitor.
+// -> { channels } | { error }
+function saveChannels(given, prev, uid, email) {
+  if (!Array.isArray(given)) return { channels: prev || [] };
+  const out = [];
+  let mail = false;
+  for (const c of given) {
+    if (!c || typeof c !== "object") continue;
+    if (c.type !== "email") { out.push(c); continue; }
+    if (mail) continue;
+    if (!email) return { error: "Verify your account email address first, then turn on email alerts." };
+    mail = true;
+    out.push({ type: "email", to: email, uid });
+  }
+  return { channels: out };
+}
+
+// An alerted event plus the finding fields the alert email explains (what changed, why it matters,
+// the fix). SPF and DMARC events also carry the record's state on the previous run and now.
+function alertEvent(e, f = {}, before = {}, after = {}) {
+  const out = { kind: e.kind, severity: e.severity, title: e.title, detail: e.detail, key: e.key };
+  for (const k of ["domain", "check", "advice", "daysToExpiry", "notAfter", "issuer", "cve", "dueDate", "epss"]) if (f[k] != null && f[k] !== "") out[k] = f[k];
+  const part = f.check === "SPF" ? "spf" : f.check === "DMARC" ? "dmarc" : "";
+  if (part && f.domain) {
+    const was = (before[f.domain] || {})[part], now = (after[f.domain] || {})[part];
+    if (was && now && was !== now) { out.was = was; out.now = now; }
+    if (part === "dmarc" && (after[f.domain] || {}).dmarcAt) out.recordAt = after[f.domain].dmarcAt;
+  }
+  return out;
+}
 
 export class MonitorDO {
   constructor(state, env) { this.state = state; this.storage = state.storage; this.env = env; }
@@ -118,6 +160,7 @@ export class MonitorDO {
 
     // a domain whose lookup got no answer keeps its last finding as it was (checks.js held)
     const skipped = (findings.unknown || []).length, checked = findings.checked;
+    const postureBefore = m.posture || {}, postureNow = findings.posture || {}; // SPF/DMARC state (email-posture)
     const prevByKey = new Map((m.lastResults || []).map((f) => [f.key, f]));
     findings = [...findings, ...(findings.held || []).filter((k) => prevByKey.has(k) && !findings.some((f) => f.key === k)).map((k) => prevByKey.get(k))];
     const diff = diffFindings(m.lastResults || [], findings);
@@ -151,9 +194,9 @@ export class MonitorDO {
         severity: alerted.map((e) => e.severity).sort((a, b) => ({ critical: 4, high: 3, medium: 2, low: 1 }[b] || 0) - ({ critical: 4, high: 3, medium: 2, low: 1 }[a] || 0))[0] || "info",
         text: `Monitor "${m.name || m.type}" reported changes.`,
         url: deps.deckUrl || undefined,
-        events: alerted.map((e) => ({ kind: e.kind, severity: e.severity, title: e.title, detail: e.detail })),
+        events: alerted.map((e) => alertEvent(e, findings.find((f) => f.key === e.key), postureBefore, postureNow)),
       };
-      for (const ch of m.channels) delivered += (await this._deliverWithRetry(ch, alert, deps)) ? 1 : 0;
+      for (const ch of m.channels) delivered += (await this._deliverWithRetry(ch, alert, { ...deps, now: t0 }, m)) ? 1 : 0;
     }
 
     // ---- feed findings into the workspace Security Graph (Trident Phase 2) ----
@@ -183,7 +226,11 @@ export class MonitorDO {
     m.lastResults = findings;
     m.lastRunAt = t0;
     // a domain removed from the monitor loses its baseline, so re-adding it starts fresh
-    if (checked) { const watched = new Set(((m.config && m.config.domains) || []).map(hostOnly)); m.baselined = [...new Set([...(m.baselined || []), ...checked])].filter((d) => watched.has(d)); }
+    if (checked) {
+      const watched = new Set(((m.config && m.config.domains) || []).map(hostOnly));
+      m.baselined = [...new Set([...(m.baselined || []), ...checked])].filter((d) => watched.has(d));
+      m.posture = Object.fromEntries(Object.entries({ ...postureBefore, ...postureNow }).filter(([d]) => watched.has(d)));
+    }
     let graphSynced = 0, graphError = null;
     try {
       const write = buildGraphWrite(m.id, m.name || m.type, findings, resolvedList, gm, t0);
@@ -203,7 +250,8 @@ export class MonitorDO {
   }
 
   // One delivery with bounded retry/backoff. Each attempt is logged.
-  async _deliverWithRetry(channel, alert, deps) {
+  async _deliverWithRetry(channel, alert, deps, monitor) {
+    if (channel && channel.type === "email") return this._deliverEmail(channel, alert, deps, monitor);
     const sleep = deps.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
     for (let i = 0; i < RETRY_BACKOFF_MS.length; i++) {
       if (RETRY_BACKOFF_MS[i]) await sleep(RETRY_BACKOFF_MS[i]);
@@ -215,6 +263,38 @@ export class MonitorDO {
     return false;
   }
 
+  // An email alert to the account's own address (alert-email.js). Every outcome lands in the
+  // delivery log: a recipient that cannot be confirmed, the daily cap, and each send attempt.
+  // The cap is taken once per alert (not per retry) and given back when every attempt fails.
+  async _deliverEmail(channel, alert, deps, monitor) {
+    const env = this.env || {}, t0 = Number.isFinite(deps.now) ? deps.now : now();
+    const sleep = deps.sleep || ((ms) => new Promise((r) => setTimeout(r, ms)));
+    const quota = deps.emailQuota || ((key, limit, at, refund) => takeDaily(env, key, limit, at, refund));
+    const log = async (res, attempt) => {
+      await this._log("deliveries", DELIVERY_CAP, { at: now(), type: "email", url: "", to: maskEmail(channel.to), status: res.status || 0, ok: !!res.ok, attempt, error: res.error });
+      if (deps.report) deps.report.last = res;
+    };
+    const who = await recipient(env, channel, deps);
+    if (who.error) { await log({ ok: false, status: 0, error: who.error }, 1); return false; }
+    const key = "alert-email:" + channel.uid;
+    const q = await quota(key, ALERT_EMAILS_PER_DAY, t0, false);
+    if (!q.ok) { await log({ ok: false, status: 429, error: "Daily alert email limit reached (" + ALERT_EMAILS_PER_DAY + " a day). This change is listed in the Deck under Monitors; email alerts resume tomorrow (UTC)." }, 1); return false; }
+    const wid = (await this.storage.get("wid")) || "";
+    const stop = wid ? await stopUrl(env, wid, channel.uid) : "";
+    const mail = alert.test
+      ? buildTestEmail({ stopUrl: stop, sent: q.used, limit: q.limit || ALERT_EMAILS_PER_DAY, now: t0 })
+      : buildAlertEmail({ monitor: monitor || {}, events: alert.events || [], stopUrl: stop, sent: q.used, limit: q.limit || ALERT_EMAILS_PER_DAY, now: t0 });
+    const idempotencyKey = "dn-" + ((monitor && monitor.id) || "test") + "-" + t0 + "-" + channel.uid;
+    for (let i = 0; i < RETRY_BACKOFF_MS.length; i++) {
+      if (RETRY_BACKOFF_MS[i]) await sleep(RETRY_BACKOFF_MS[i]);
+      const res = await (deps.sendEmail || sendEmail)(env, { to: who.to, ...mail, stop, idempotencyKey }, deps.fetch || fetch);
+      await log(res, i + 1);
+      if (res.ok) return true;
+    }
+    try { await quota(key, ALERT_EMAILS_PER_DAY, t0, true); } catch (_) {} // nothing was delivered: it does not count
+    return false;
+  }
+
   // Run every monitor that is due. Called by alarm() and by an explicit run request.
   async runDue(deps = {}) {
     const mons = await this._monitors();
@@ -222,6 +302,7 @@ export class MonitorDO {
     const ran = [];
     for (const m of Object.values(mons)) {
       if (m.paused) continue;
+      if (deps.only && !deps.only.has(m.id)) continue; // a Free plan "Run now" runs the watch only
       if (!deps.force && t < dueAt(m)) continue;
       // scheduled runs re-check the plan of whoever set the monitor up: a downgrade (or the
       // workspace owner turning plan sharing off) holds it until someone with the plan resumes
@@ -240,8 +321,12 @@ export class MonitorDO {
 
   async alarm() {
     const wid = await this.storage.get("wid");
-    const planOk = async (m) => { if (!wid) return true; const t = await liveTier(this.env, wid, m.by || "", this.planOpts); return t === null || !featureDenied("monitors", t); };
-    await this.state.blockConcurrencyWhile(async () => { await this.runDue({ planOk }); });
+    await this.state.blockConcurrencyWhile(async () => {
+      // below Pro, only the Free plan's one-domain watch keeps running (personal workspace only)
+      const free = wid && !isTeamWorkspaceId(wid) ? freeAllowed(await this._monitors()) : new Set();
+      const planOk = async (m) => { if (!wid) return true; const t = await liveTier(this.env, wid, m.by || "", this.planOpts); return t === null || !featureDenied("monitors", t) || free.has(m.id); };
+      await this.runDue({ planOk });
+    });
   }
 
   // ---- HTTP interface for the Deck (via handleMonitor) ----
@@ -256,11 +341,30 @@ export class MonitorDO {
     if (request.method === "POST") { try { body = await request.json(); } catch (_) { return reply({ error: "Invalid JSON body" }, 400); } }
     const op = body.op || "list";
     const canWrite = canDo(role, "write");
+    const caller = request.headers.get("x-mon-uid");
+    // x-mon-plan "free": the caller is below Pro, so only the one-domain watch is allowed (free-watch.js).
+    // x-mon-email: the caller's verified address, the only one an email channel may use.
+    const free = request.headers.get("x-mon-plan") === "free";
+    let email = ""; try { email = decodeURIComponent(request.headers.get("x-mon-email") || ""); } catch (_) {}
+    const planReply = (error) => reply({ error, plan: true }, 402);
 
     if (op === "list") {
       const mons = await this._monitors();
       const deliveries = (await this.storage.get("deliveries")) || [];
-      return reply({ monitors: Object.values(mons).map((x) => safeMonitor(x, canWrite)), history: (await this.storage.get("history")) || [], deliveries: canWrite ? deliveries : deliveries.map((d) => ({ ...d, url: hideUrl(d.url) })) });
+      return reply({ monitors: Object.values(mons).map((x) => safeMonitor(x, canWrite, caller)), history: (await this.storage.get("history")) || [], deliveries: canWrite ? deliveries : deliveries.map((d) => ({ ...d, url: hideUrl(d.url) })) });
+    }
+    // The stop link in an alert email (handleWatchStop, never reachable through handleMonitor):
+    // pause every monitor here that emails that account.
+    if (op === "stopEmail" && request.headers.get("x-mon-stop") === "1") {
+      return this.state.blockConcurrencyWhile(async () => {
+        const mons = await this._monitors(), paused = [];
+        for (const m of Object.values(mons)) {
+          if (!(m.channels || []).some((c) => c && c.type === "email" && c.uid === body.uid)) continue;
+          if (!m.paused) { m.paused = true; paused.push(m.name || m.type); }
+        }
+        if (paused.length) { await this._put(mons); await this._reschedule(); }
+        return reply({ ok: true, paused });
+      });
     }
     if (!canWrite) return reply({ error: "Your role (" + role + ") cannot change monitors." }, 403);
 
@@ -276,27 +380,53 @@ export class MonitorDO {
       const mons = await this._monitors();
       const id = m.id && mons[m.id] ? m.id : uid();
       const prev = mons[id] || {};
-      mons[id] = { id, name: m.name || m.type, type: m.type, config: m.config || {}, rules: m.rules || prev.rules || {}, channels: Array.isArray(m.channels) ? m.channels : (prev.channels || []), intervalMs: Math.max(m.intervalMs || prev.intervalMs || MIN_INTERVAL, MIN_INTERVAL), paused: !!m.paused, by: request.headers.get("x-mon-uid"), lastRunAt: prev.lastRunAt || 0, lastResults: prev.lastResults || [], graphMeta: prev.graphMeta || {}, baselined: prev.baselined || [] };
+      const ch = saveChannels(m.channels, prev.channels, caller, email);
+      if (ch.error) return reply({ error: ch.error }, 400);
+      // the Free watch alerts by email: that is its default channel
+      if (free && !ch.channels.length && Array.isArray(m.channels)) {
+        if (!email) return reply({ error: "Verify your account email address first: the Free watch sends its alerts there." }, 400);
+        ch.channels.push({ type: "email", to: email, uid: caller });
+      }
+      const minInterval = free ? FREE_WATCH.minIntervalMs : MIN_INTERVAL;
+      const next = { id, name: m.name || m.type, type: m.type, config: m.config || {}, rules: m.rules || prev.rules || {}, channels: ch.channels, intervalMs: Math.max(m.intervalMs || prev.intervalMs || minInterval, minInterval), paused: !!m.paused, by: caller, createdAt: prev.createdAt || now(), lastRunAt: prev.lastRunAt || 0, lastResults: prev.lastResults || [], graphMeta: prev.graphMeta || {}, baselined: prev.baselined || [], posture: prev.posture || {} };
+      if (free) { const no = freeWatchDenied(next, Object.values(mons).filter((x) => x.id !== id)); if (no) return planReply(no); }
+      mons[id] = next;
       await this._put(mons); await this._reschedule();
-      return reply({ monitor: safeMonitor(mons[id]) });
+      return reply({ monitor: safeMonitor(mons[id], true, caller) });
     }
     if (op === "pause") {
       const mons = await this._monitors(); const m = mons[body.id]; if (!m) return reply({ error: "not found" }, 404);
+      // resuming on the Free plan: only the one-domain watch
+      if (free && body.paused === false && !freeAllowed(mons).has(m.id)) return planReply("This monitor is not part of the Free plan's one-domain watch, so it cannot be resumed on the Free plan. Request an upgrade under Plans.");
       m.paused = !!body.paused;
-      if (!m.paused) { m.by = request.headers.get("x-mon-uid"); delete m.planHeld; delete m.planHeldAt; } // resuming passed the plan check: the resumer now carries it
+      if (!m.paused) { m.by = caller; delete m.planHeld; delete m.planHeldAt; } // resuming passed the plan check: the resumer now carries it
       await this._put(mons); await this._reschedule();
-      return reply({ monitor: safeMonitor(m) });
+      return reply({ monitor: safeMonitor(m, true, caller) });
     }
     if (op === "delete") {
       const mons = await this._monitors(); if (mons[body.id]) { delete mons[body.id]; await this._put(mons); await this._reschedule(); }
       return reply({ ok: true });
     }
     if (op === "run") {
-      const r = await this.runDue({ force: true, deckUrl: body.deckUrl });
-      return reply(r);
+      if (!free) return reply(await this.runDue({ force: true, deckUrl: body.deckUrl }));
+      // Free: the watch only, and at most once per 10 minutes (each run reads public CT logs and DNS)
+      const last = (await this.storage.get("freeRunAt")) || 0, wait = last + FREE_WATCH.manualRunGapMs - now();
+      if (wait > 0) return reply({ error: "The watch ran a few minutes ago. Run it again in " + Math.ceil(wait / 60000) + " minute" + (Math.ceil(wait / 60000) === 1 ? "" : "s") + "." }, 429);
+      await this.storage.put("freeRunAt", now());
+      return reply(await this.runDue({ force: true, deckUrl: body.deckUrl, only: freeAllowed(await this._monitors()) }));
     }
     if (op === "test") {
-      const ch = body.channel; if (!ch || !ch.url) return reply({ error: "channel.url required" }, 400);
+      const given = body.channel || {};
+      if (free && given.type !== "email") return planReply("On the Free plan, alerts go to your account email. Slack, Teams, Discord and webhook alerts are part of the Pro plan.");
+      if (given.type === "email") {
+        // a test email goes to the caller's own verified address, never to one in the request
+        if (!email) return reply({ error: "Verify your account email address first, then test email alerts." }, 400);
+        const report = {};
+        const ok = await this._deliverEmail({ type: "email", to: email, uid: caller }, { test: true }, { report });
+        const last = report.last || {};
+        return reply(ok ? { ok, to: email } : { ok, status: last.status || 0, error: last.error || "" });
+      }
+      const ch = given; if (!ch.url) return reply({ error: "channel.url required" }, 400);
       const report = {};
       const ok = await this._deliverWithRetry(ch, { title: "Darknode test alert", severity: "info", text: "This is a test from your Deck monitor configuration.", url: body.deckUrl }, { report });
       const last = report.last || {};
@@ -329,12 +459,58 @@ export async function handleMonitor(request, env, wid, json) {
   // Adding, editing or running a monitor needs the plan; list, pause and delete stay open
   // so someone who downgrades can still see and clean up what they had (but not resume).
   // Resuming a paused monitor restarts paid work, so it needs the plan too.
+  // Below Pro, the personal workspace gets the Free plan's one-domain watch: the request goes on
+  // marked x-mon-plan "free" and the MonitorDO enforces the watch's limits (free-watch.js) in the
+  // same step as the write. A team workspace has no Free watch.
   let op = "", resume = false; try { const b = JSON.parse(bodyText || "{}") || {}; op = String(b.op || ""); resume = op === "pause" && b.paused === false; } catch (_) {}
+  let plan = "";
   if (MON_PAID_OPS.has(op) || resume) {
     const planMsg = featureDenied("monitors", await workspaceTier(env, wid, who));
-    if (planMsg) return json({ error: planMsg, plan: true }, 402);
+    if (planMsg) {
+      if (!isPersonalWorkspace(wid, who.uid)) return json({ error: FREE_TEAM_MSG, plan: true }, 402);
+      plan = "free";
+    }
   }
+  // the only address an email channel may use: the caller's own, from the verified ID token
+  const verified = !!(who.claims && who.claims.email_verified === true) && !!who.email;
+  const headers = { "Content-Type": "application/json", "x-mon-uid": who.uid, "x-mon-role": role, "x-mon-wid": wid };
+  if (plan) headers["x-mon-plan"] = plan;
+  if (verified) headers["x-mon-email"] = encodeURIComponent(String(who.email).trim());
   const stub = env.MONITOR.get(env.MONITOR.idFromName(wid));
-  const res = await stub.fetch("https://monitor/", { method: "POST", body: bodyText || "{}", headers: { "Content-Type": "application/json", "x-mon-uid": who.uid, "x-mon-role": role, "x-mon-wid": wid } });
+  const res = await stub.fetch("https://monitor/", { method: "POST", body: bodyText || "{}", headers });
   return json(await res.json(), res.status);
+}
+
+// ---- the stop link in an alert email: GET /api/watch/stop?w=<wid>&u=<uid>&t=<token> ----------
+// GET shows a page with one button (a link scanner that opens it does not stop anything); POST,
+// from that button or a mail client's List-Unsubscribe one-click, pauses every monitor in the
+// workspace that emails that account. The token is an HMAC of (workspace, account), so a link
+// cannot be altered to stop someone else's alerts.
+const page = (title, msg, form = "") => new Response(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(title)} · Darknode</title><body style="margin:0;font:15px/1.55 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f7f7f4;color:#1d1c1a;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;box-sizing:border-box"><main style="width:100%;max-width:460px"><div style="font-weight:800;font-size:16px;letter-spacing:-.01em;margin:0 4px 14px">Darknode</div><div style="background:#fff;border:1px solid #e6e4de;border-radius:12px;padding:28px"><h1 style="font-size:20px;line-height:1.3;margin:0 0 8px;letter-spacing:-.01em">${esc(title)}</h1><p style="margin:0;color:#56544f">${msg}</p>${form}</div></main></body></html>`, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" } });
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const BTN = "display:inline-block;border:0;background:#2552c6;color:#fff;font:600 14px/1 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:12px 18px;border-radius:8px;cursor:pointer";
+const DECK = "https://darknode.ai/monitors";
+
+export async function handleWatchStop(request, env) {
+  const u = new URL(request.url), wid = u.searchParams.get("w") || "", uidQ = u.searchParams.get("u") || "", t = u.searchParams.get("t") || "";
+  const secret = unsubSecret(env || {});
+  const ok = secret && MON_ID.test(wid) && uidQ && uidQ.length <= 128 && t && timingSafeEqual(t, await stopToken(wid, uidQ, secret));
+  if (!ok) return page("Link not valid", `This link is incomplete or was not issued by Darknode. You can pause or remove a watch in the Deck under <a href="${DECK}" style="color:#2552c6">Monitors</a>.`);
+  if (request.method !== "POST") {
+    const action = STOP_PATH + "?w=" + encodeURIComponent(wid) + "&u=" + encodeURIComponent(uidQ) + "&t=" + encodeURIComponent(t);
+    return page("Stop alert emails?", "This pauses every monitor in this workspace that emails you, so it stops checking and sending. You can resume it any time in the Deck under Monitors.",
+      `<form method="post" action="${esc(action)}" style="margin:22px 0 0"><button type="submit" style="${BTN}">Stop alert emails</button></form>`);
+  }
+  if (!env.MONITOR) return page("Something went wrong", "Monitoring is not available right now. Try the link again later, or pause the watch in the Deck under Monitors.");
+  try {
+    const stub = env.MONITOR.get(env.MONITOR.idFromName(wid));
+    const res = await stub.fetch("https://monitor/", { method: "POST", body: JSON.stringify({ op: "stopEmail", uid: uidQ }), headers: { "Content-Type": "application/json", "x-mon-uid": uidQ, "x-mon-role": "viewer", "x-mon-stop": "1" } });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(String(out.error || res.status));
+    const n = (out.paused || []).length;
+    return page("Alert emails stopped", (n ? "Paused " + n + " monitor" + (n === 1 ? "" : "s") + ": " + esc(out.paused.slice(0, 5).join(", ")) + ". " : "Nothing here was emailing you any more. ")
+      + `To start again, open the Deck, go to <a href="${DECK}" style="color:#2552c6">Monitors</a> and click Resume.`);
+  } catch (_) {
+    return page("Something went wrong", `We could not pause the watch just now. Try the link again, or pause it in the Deck under <a href="${DECK}" style="color:#2552c6">Monitors</a>.`);
+  }
 }
