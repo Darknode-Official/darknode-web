@@ -114,7 +114,7 @@ const pill = (txt, warn) => `<span style="display:inline-block;padding:2px 8px;b
 
 // The page around a message: brand line, white card, footer. Table layout + inline styles only
 // (Gmail and Outlook strip <style>), the same look as the weekly digest.
-function shell({ title, preheader, date, body, footer }) {
+function shell({ title, preheader, date, body, footer, cta = { label: "Open Monitors in the Deck", url: DECK_MONITORS } }) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${esc(title)}</title></head>
 <body style="margin:0;padding:0;background:#f7f7f4">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f7f7f4">${esc(preheader)}</div>
@@ -124,7 +124,7 @@ function shell({ title, preheader, date, body, footer }) {
 <tr><td style="background:#ffffff;border:1px solid #e6e4de;border-radius:12px;padding:28px 28px 30px">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
 ${body}
-<tr><td style="padding-top:26px"><a href="${DECK_MONITORS}" style="display:inline-block;background:#2552c6;color:#ffffff;text-decoration:none;font:600 14px/1 ${F};padding:12px 20px;border-radius:8px">Open Monitors in the Deck</a></td></tr>
+<tr><td style="padding-top:26px"><a href="${cta.url}" style="display:inline-block;background:#2552c6;color:#ffffff;text-decoration:none;font:600 14px/1 ${F};padding:12px 20px;border-radius:8px">${esc(cta.label)}</a></td></tr>
 </table></td></tr>
 <tr><td style="padding:16px 4px 0;font:12px/1.6 ${F};color:#86837c">${footer}</td></tr>
 </table></td></tr></table></body></html>`;
@@ -192,6 +192,50 @@ export function buildTestEmail({ stopUrl = "", sent = 0, limit = ALERT_EMAILS_PE
     + lines.map((l) => `<tr><td style="padding-top:10px;font:15px/1.5 ${F};color:#56544f">${esc(l)}</td></tr>`).join("");
   const text = [subject, "", ...lines, "", "Open Monitors in the Deck: " + DECK_MONITORS].concat(stopUrl ? ["Stop alert emails: " + stopUrl] : []).join("\n");
   return { subject, text, html: shell({ title: subject, preheader: lines[0], date: new Date(now).toISOString().slice(0, 10), body, footer }) };
+}
+
+// ---- deadline alerts (public/js/core/deadlines.js) --------------------------------------------
+// A deadline alert goes out when a deadline is created and when a quarter of its time is left.
+// Cyber Resilience Act alerts do not count against ALERT_EMAILS_PER_DAY: a busy day of monitor
+// alerts must not hold back a 24-hour legal clock. They have their own daily limit instead, so a
+// fault still cannot flood anyone.
+export const CRA_EMAILS_PER_DAY = 20;
+export const DECK_DEADLINES = SITE + "/deadlines";
+
+/**
+ * items: [{ title, detail, kind, stage }] (alertLine output plus the deadline's kind and stage);
+ * cra: true for Cyber Resilience Act clocks (adds where to file and the disclaimer);
+ * monitor: the monitor that found it; sent / limit: this email's number today and its cap.
+ * -> { subject, text, html }
+ */
+export function buildDeadlineEmail({ items = [], cra = false, monitor = {}, stopUrl = "", sent = 0, limit = ALERT_EMAILS_PER_DAY, now = Date.now(), notes = [] } = {}) {
+  const one = items.length === 1 ? items[0] : null;
+  const allNew = items.length > 0 && items.every((it) => it.stage !== "quarter");
+  const subject = one ? (one.stage === "quarter" ? "A quarter of the time is left: " : "New deadline: ") + one.title
+    : items.length ? (allNew ? "New deadlines: " : "Deadlines need attention: ") + items[0].title + " and " + (items.length - 1) + " more" : "Deadlines need attention";
+  const heading = one ? (one.stage === "quarter" ? "A quarter of the time is left" : "A new deadline started") : allNew ? items.length + " new deadlines started" : items.length + " deadlines need attention";
+  const name = clip(monitor.name || monitor.type || "Monitor", 80);
+  const reason = `You get this because the monitor "${name}" emails your account address, and Darknode keeps the deadlines it finds under Deadlines in the Deck.`;
+  const capped = sent >= limit;
+  const capLine = `This is deadline email ${sent} of ${limit} today, the daily limit. Further deadline alerts today are listed in the Deck under Deadlines and are not emailed.`;
+  const t = [heading, ""];
+  items.forEach((it, i) => { t.push((items.length > 1 ? i + 1 + ". " : "") + it.title); if (it.detail) t.push(it.detail); t.push(""); });
+  for (const n of notes) t.push(n);
+  if (notes.length) t.push("");
+  t.push("Open Deadlines in the Deck: " + DECK_DEADLINES, "", "--", reason);
+  if (capped) t.push(capLine);
+  if (stopUrl) t.push("Stop these alerts: " + stopUrl);
+  t.push("To stop them in the Deck: Monitors, then Pause on \"" + name + "\".");
+  const rows = items.map((it, i) => `<tr><td style="padding:${i ? "18px" : "22px"} 0 0;${i ? "border-top:1px solid #eceae4" : ""}">
+<div style="font:700 15px/1.4 ${F};color:#1d1c1a">${esc(it.title)}</div>
+${it.detail ? `<div style="margin-top:6px;font:14px/1.5 ${F};color:#56544f">${esc(it.detail)}</div>` : ""}</td></tr>`).join("");
+  const noteRows = notes.map((n) => `<tr><td style="padding-top:14px;font:13px/1.5 ${F};color:#56544f">${esc(n)}</td></tr>`).join("");
+  const body = `<tr><td style="font:700 20px/1.3 ${F};color:#1d1c1a;letter-spacing:-.01em">${esc(heading)}</td></tr>${rows}${noteRows}`;
+  const footer = esc(reason) + (capped ? "<br>" + esc(capLine) : "") + "<br>"
+    + (stopUrl ? `<a href="${esc(stopUrl)}" style="color:#86837c">Stop these alerts</a> &middot; ` : "")
+    + `<a href="${DECK_DEADLINES}" style="color:#86837c">Deadlines</a> &middot; <a href="${SITE}" style="color:#86837c">darknode.ai</a>`;
+  const html = shell({ title: subject, preheader: one ? one.detail || heading : heading, date: new Date(now).toISOString().slice(0, 10), body, footer, cta: { label: "Open Deadlines in the Deck", url: DECK_DEADLINES } });
+  return { subject: cra && !/Cyber Resilience Act|CRA/.test(subject) ? "CRA: " + subject : subject, text: t.join("\n"), html };
 }
 
 // ---- the stop link ----------------------------------------------------------------------------

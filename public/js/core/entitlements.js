@@ -92,8 +92,9 @@ export const PLAN_GROUP = { exposure: "pro", code: "pro", identity: "team", dete
 export const PLAN_ITEM = { enterprise: "team", findings: "pro", inventory: "pro", reports: "pro", activity: "pro", phishtriage: "pro", dlp: "pro", leakprobe: "pro", team: "team",
   // Free on every plan: the public vulnerability feed and the local-only graph and case files.
   threat: "free", secgraph: "free", investigation: "free",
-  // Free: the one-domain watch (Pro adds more monitors; the server enforces both)
-  monitors: "free" };
+  // Free: the one-domain watch (Pro adds more monitors; the server enforces both). Deadlines are
+  // free to see (a watched certificate's expiry); the CRA and BOD clocks need Pro on the server.
+  monitors: "free", deadlines: "free" };
 export const tierFor = (id, group) => (own(PLAN_ITEM, id) && PLAN_ITEM[id]) || (own(PLAN_GROUP, group) && PLAN_GROUP[group]) || "free";
 
 export const planLabel = (tier) => PLAN_LABEL[normTier(tier)] || "Free";

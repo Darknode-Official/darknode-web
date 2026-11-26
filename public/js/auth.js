@@ -3013,6 +3013,7 @@ onAuthStateChanged(auth, async (user) => {
           <strong>What changed (November 25, 2026)</strong>
           <ul>
             <li>The Free plan can now watch one domain. If you set up a monitor or the domain watch, we store the domains it watches and its latest results, and send email alerts only to your verified account email through our email provider, Resend. Turn it off under Monitors or with the stop link in any alert email (Section 14).</li>
+            <li>Deadlines: Darknode can track certificate expiry and, if you opt in, Cyber Resilience Act and CISA BOD 22-01 clocks. They are reminders only: Darknode does not decide whether a rule applies to you and does not submit anything for you (Sections 3 and 14).</li>
           </ul></div>` : ""}
         <div class="tos-box" id="tosBox" tabindex="0">
           ${TOS_HTML}

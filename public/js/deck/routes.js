@@ -5,7 +5,7 @@
 // Pure data and logic, no imports, so the landing can load it without the Deck.
 
 // scene id -> its element in the Deck
-export const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", inventory: "#dkInventory", correlations: "#dkCorrelations", monitors: "#dkMonitors", apikeys: "#dkApiKeys", device: "#dkDevice", audit: "#dkAudit", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports", team: "#dkTeam", personal: "#dkPersonal", enterprise: "#dkEnterprise" };
+export const SCENES = { overview: "#dkOverview", surface: "#dkSurface", threat: "#dkThreat", cloud: "#dkCloud", compliance: "#dkCompliance", invest: "#dkInvest", findings: "#dkFindings", inventory: "#dkInventory", correlations: "#dkCorrelations", monitors: "#dkMonitors", deadlines: "#dkDeadlines", apikeys: "#dkApiKeys", device: "#dkDevice", audit: "#dkAudit", section: "#dkSection", con: "#dkCon", tools: "#dkTools", toolkit: "#dkToolkit", activity: "#dkActivity", assistant: "#dkAssistant", plans: "#dkPlans", settings: "#dkSettings", reports: "#dkReports", team: "#dkTeam", personal: "#dkPersonal", enterprise: "#dkEnterprise" };
 // Every Deck page has a darknode.ai link: a page is /<scene> (the overview is /, a section is
 // /area/<id>, a Personal/Organization tab is /personal/<tab>). compliance and tools are also
 // tool ids, so those pages take another name.

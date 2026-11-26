@@ -46,6 +46,7 @@ const fqMod = lazyMod("/js/deck/findings-queue.js?v=20261027c");
 const invMod = lazyMod("/js/deck/inventory.js?v=20261027c");
 const corrMod = lazyMod("/js/deck/correlations.js?v=20261029c");
 const monMod = lazyMod("/js/deck/monitors.js?v=20261029d");
+const dlMod = lazyMod("/js/deck/deadlines.js?v=1");
 const keysMod = lazyMod("/js/deck/apikeys.js?v=20261030d");
 const auditMod = lazyMod("/js/deck/audit.js?v=20261028a");
 const deviceMod = lazyMod("/js/deck/device.js?v=20261101a");
@@ -259,6 +260,7 @@ const IC = {
   pulse: SVG('<path d="M3 12h4l2 6 4-14 2 8h6"/>'),
   spark: SVG('<path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="M12 8l1.4 2.6L16 12l-2.6 1.4L12 16l-1.4-2.6L8 12l2.6-1.4Z"/>'),
   bell: SVG('<path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10.5 21a2 2 0 0 0 3 0"/>'),
+  clock: SVG('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
   plus: SVG('<path d="M12 5v14M5 12h14"/>'),
   chevd: SVG('<path d="m6 9 6 6 6-6"/>'),
   gear: SVG('<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/>'),
@@ -1815,7 +1817,7 @@ export function renderDeck(host, opts) {
     { id: "exposure", g: "Exposure", items: [["scene", "surface", "Attack Surface", IC.radar], ["scene", "cloud", "Cloud Posture", IC.cloud], ["scene", "threat", "Vulnerabilities", IC.alert], ["tool", "posture", "Scorecard", IC.gauge], ["tool", "tlsfleet", "Certificates", IC.cert], ["tool", "fwaudit", "Firewall Audit", IC.shield], ["tool", "vulnimport", "Scan Imports", IC.alert], ["tool", "fleetcomply", "Devices", IC.gauge], ["tool", "dmarcreports", "DMARC Reports", IC.link], ["tool", "domainguard", "Domains", IC.radar], ["tool", "netexposure", "Network Scans", IC.nodes]] },
     { id: "identity", g: "Identity", items: [["tool", "signins", "Sign-ins", IC.search], ["tool", "accessreview", "Access Review", IC.check], ["tool", "caaudit", "Conditional Access", IC.shield], ["tool", "privaudit", "Privileged Access", IC.key], ["tool", "nhi", "Service Accounts", IC.gear], ["tool", "jml", "Joiners & Leavers", IC.check], ["tool", "oauthgov", "OAuth Apps", IC.plug], ["tool", "vpnaudit", "VPN & Remote Access", IC.lock]] },
     { id: "code", g: "Application Security", items: [["tool", "codescan", "Code Scanner", IC.code], ["tool", "supplychain", "Dependencies", IC.branch], ["tool", "threatforest", "Attack Trees", IC.tree], ["tool", "iacscan", "Infrastructure as Code", IC.code], ["tool", "k8saudit", "Kubernetes", IC.nodes], ["tool", "licenseaudit", "Licenses", IC.scale], ["tool", "apispec", "API Definitions", IC.plug]] },
-    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "inventory", "Asset Inventory", IC.grid], ["scene", "correlations", "Correlations", IC.nodes], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incidents", IC.shield], ["tool", "investigation", "Case Files", IC.brief], ["tool", "phishtriage", "Phishing", IC.hook], ["tool", "loghunt", "Log Search", IC.term], ["scene", "monitors", "Monitors", IC.bell], ["scene", "apikeys", "API & Ingest", IC.key], ["scene", "audit", "Audit Log", IC.lock], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Logs", IC.cloud], ["tool", "dnshunt", "DNS Logs", IC.search], ["tool", "proxyhunt", "Proxy Logs", IC.eye], ["tool", "pentestreg", "Pentest Findings", IC.wrench]] },
+    { id: "detect", g: "Security Operations", items: [["scene", "findings", "Findings", IC.alert], ["scene", "inventory", "Asset Inventory", IC.grid], ["scene", "correlations", "Correlations", IC.nodes], ["scene", "invest", "Investigations", IC.search], ["tool", "secgraph", "Security Graph", IC.nodes], ["tool", "incidents", "Incidents", IC.shield], ["tool", "investigation", "Case Files", IC.brief], ["tool", "phishtriage", "Phishing", IC.hook], ["tool", "loghunt", "Log Search", IC.term], ["scene", "monitors", "Monitors", IC.bell], ["scene", "deadlines", "Deadlines", IC.clock], ["scene", "apikeys", "API & Ingest", IC.key], ["scene", "audit", "Audit Log", IC.lock], ["scene", "reports", "Reports", IC.note], ["scene", "activity", "Activity", IC.pulse], ["tool", "cloudtrail", "Cloud Audit Logs", IC.cloud], ["tool", "dnshunt", "DNS Logs", IC.search], ["tool", "proxyhunt", "Proxy Logs", IC.eye], ["tool", "pentestreg", "Pentest Findings", IC.wrench]] },
     { id: "finsec", g: "Fraud & Abuse", items: [["tool", "strongroom", "Payment Fraud", IC.coins], ["tool", "payees", "Payee Changes", IC.shield], ["tool", "cloudspend", "Cloud Spend", IC.gauge]] },
     { id: "risk", g: "Risk & Resilience", items: [["tool", "breachclock", "Breach Deadlines", IC.bell], ["tool", "riskreg", "Risk Register", IC.scale], ["tool", "vendorrisk", "Vendors", IC.nodes], ["tool", "backupready", "Backups", IC.folder]] },
     { id: "compliance", g: "Compliance", items: [["scene", "compliance", "Frameworks", IC.check], ["tool", "crosswalk", "AI Risk Mapping", IC.map], ["tool", "dlp", "Sensitive Data", IC.eye], ["tool", "leakprobe", "Exposed Keys", IC.key], ["tool", "evidence", "Audit Evidence", IC.book], ["tool", "dataflow", "Data Inventory", IC.folder], ["tool", "awareness", "Security Training", IC.pulse]] },
@@ -2026,6 +2028,7 @@ export function renderDeck(host, opts) {
     <div class="dk-scene dk-inv" id="dkCorrelations" hidden></div>
 
     <div class="dk-scene dk-inv" id="dkMonitors" hidden></div>
+    <div class="dk-scene dk-inv" id="dkDeadlines" hidden></div>
 
     <div class="dk-scene dk-inv" id="dkApiKeys" hidden></div>
     <div class="dk-scene dk-inv" id="dkDevice" hidden></div>
@@ -2175,6 +2178,7 @@ export function renderDeck(host, opts) {
     else if (scene === "inventory") renderInventory();
     else if (scene === "correlations") renderCorrelations();
     else if (scene === "monitors") renderMonitors();
+    else if (scene === "deadlines") renderDeadlines();
     else if (scene === "apikeys") renderApiKeys();
     else if (scene === "audit") renderAudit();
     else if (scene === "section") renderSection();
@@ -2730,6 +2734,7 @@ export function renderDeck(host, opts) {
     { type: "action", label: "Go to Asset Inventory", group: "Navigate", icon: IC.tree, run: () => go("inventory"), k: "scene:inventory" },
     { type: "action", label: "Go to Correlations", group: "Navigate", icon: IC.nodes, run: () => go("correlations"), k: "scene:correlations" },
     { type: "action", label: "Go to Monitors", group: "Navigate", icon: IC.bell, run: () => go("monitors"), k: "scene:monitors", kw: "watch alert schedule certificate expiry email dns spf dmarc mx caa drift" },
+    { type: "action", label: "Go to Deadlines", group: "Navigate", icon: IC.clock, run: () => go("deadlines"), k: "scene:deadlines", kw: "deadline due clock cyber resilience act cra article 14 enisa early warning bod 22-01 kev certificate expiry" },
     { type: "action", label: "Go to API & Ingest", group: "Navigate", icon: IC.key, run: () => go("apikeys"), k: "scene:apikeys" },
     { type: "action", label: "Go to Audit Log", group: "Navigate", icon: IC.lock, run: () => go("audit"), k: "scene:audit" },
     { type: "action", label: "Go to Investigations", group: "Navigate", icon: IC.search, run: () => go("invest"), k: "scene:invest" },
@@ -3246,6 +3251,7 @@ export function renderDeck(host, opts) {
       <div class="dk-ovlay">
         <div class="dk-ovmain">
           <div class="dk-ovp dk-since" id="dkSince" hidden></div>
+          <div class="dk-ovp" id="dkDeadlines0" hidden></div>
           <div class="dk-roles" id="dkRoles"></div>
           <div class="dk-ovp dk-rolefocus" id="dkRoleFocus" hidden></div>
           <div class="dk-ovp"><h2 data-explain="panel.actions">${IC.bolt} Needs attention <span class="mo" role="button" tabindex="0" data-scene="findings">All findings</span></h2><div id="dkTopAct"><div class="dk-loading"><span class="sp"></span>Ranking what needs attention…</div></div></div>
@@ -3289,6 +3295,9 @@ export function renderDeck(host, opts) {
       if (frMod) mountFr(frMod);
       else import("/js/check/first-run.js?v=1").then(mountFr).catch(() => frSlot.remove());
     }
+    // Deadlines: the soonest open ones, or nothing at all when none are open
+    const dlSlot = el.querySelector("#dkDeadlines0");
+    if (dlSlot && !isLocked("scene:deadlines")) dlMod().then((m) => m.mountDeadlineBlock(dlSlot, { tier: planTier, go }), () => {});
     // quick AI ask bar -> prefill + open the assistant
     const askForm = el.querySelector("#dkAsk"), askIn = el.querySelector("#dkAskIn");
     if (askForm) askForm.onsubmit = (e) => { e.preventDefault(); askAI(askIn.value); };
@@ -4103,6 +4112,7 @@ export function renderDeck(host, opts) {
   function renderInventory(){ lazyScene(sceneEls.inventory, invMod, (m) => m.mountInventory(sceneEls.inventory, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, agoISO: agoISO, toast })); }
   function renderCorrelations(){ lazyScene(sceneEls.correlations, corrMod, (m) => m.mountCorrelations(sceneEls.correlations, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, toast })); }
   function renderMonitors(){ lazyScene(sceneEls.monitors, monMod, (m) => m.mountMonitors(sceneEls.monitors, { esc, IC, toast, tier: planTier, go })); }
+  function renderDeadlines(){ lazyScene(sceneEls.deadlines, dlMod, (m) => m.mountDeadlines(sceneEls.deadlines, { toast, tier: planTier, go })); }
   function renderApiKeys(){ lazyScene(sceneEls.apikeys, keysMod, (m) => m.mountApiKeys(sceneEls.apikeys, { esc, IC, toast })); }
   function renderAudit(){ lazyScene(sceneEls.audit, auditMod, (m) => m.mountAudit(sceneEls.audit, { esc, IC, toast })); }
   function renderDevice(){ lazyScene(sceneEls.device, deviceMod, (m) => m.mountDevice(sceneEls.device, { esc, IC, toast, askAI })); }
@@ -4213,7 +4223,7 @@ export function renderDeck(host, opts) {
         cta: "Current plan", cur: true },
       { id: "pro", name: "Pro", price: "$29", unit: "per user / month", tag: "Recommended", a: "#2552c6",
         blurb: "For professionals who need history, exports and the strongest AI models.",
-        feats: ["Everything in Free", "Exposure and Application Security tools, findings and reports", "Unlimited saved findings & reports", "Premium AI models: Claude Fable 5.1, Claude Opus 5.5, Darknode Max", "500 AI messages a day (150 on Claude)", "Cloud sync across devices", "Monitors for more domains and known-exploited CVEs, with Slack, Teams and webhook alerts", "Email support"],
+        feats: ["Everything in Free", "Exposure and Application Security tools, findings and reports", "Unlimited saved findings & reports", "Premium AI models: Claude Fable 5.1, Claude Opus 5.5, Darknode Max", "500 AI messages a day (150 on Claude)", "Cloud sync across devices", "Monitors for more domains and known-exploited CVEs, with Slack, Teams and webhook alerts", "Cyber Resilience Act and BOD 22-01 deadline clocks for known-exploited CVEs, if you opt in", "Email support"],
         cta: "Upgrade to Pro" },
       { id: "team", name: "Team", price: "$79", unit: "per user / month", tag: "", a: "#2552c6",
         blurb: "Shared workspaces, roles and one audit trail for the whole team.",
@@ -5014,7 +5024,7 @@ export function renderDeck(host, opts) {
   // ---------- keyboard & shortcuts ----------
   // Vim-style navigation: press "g" then a scene key. "?" opens the cheatsheet.
   const GOTO = { o: "overview", e: "surface", i: "threat", l: "cloud", m: "compliance", n: "invest", c: "con", t: "tools", k: "toolkit", a: "activity", s: "assistant", f: "findings", r: "reports", w: "team", p: "plans", ",": "settings", v: "inventory", x: "correlations", b: "monitors", y: "apikeys", u: "audit" };
-  const SCENE_TITLE = { overview: "Overview", surface: "Attack Surface", threat: "Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings", inventory: "Asset Inventory", correlations: "Correlations", monitors: "Monitors", apikeys: "API & Ingest", device: "This Computer", audit: "Audit Log" };
+  const SCENE_TITLE = { overview: "Overview", surface: "Attack Surface", threat: "Vulnerabilities", cloud: "Cloud Posture", compliance: "Frameworks", invest: "Investigations", findings: "Findings", section: "Section overview", con: "Integrations", tools: "Tool Library", toolkit: "Toolkit", activity: "Activity", assistant: "Assistant", reports: "Reports", team: "Team", plans: "Plans & billing", settings: "Settings", inventory: "Asset Inventory", correlations: "Correlations", monitors: "Monitors", deadlines: "Deadlines", apikeys: "API & Ingest", device: "This Computer", audit: "Audit Log" };
   const keysEl = $("#dkKeys");
   function buildKeysOverlay(){
     const nav = Object.entries(GOTO).filter(([, sc]) => !isLocked("scene:" + sc)).map(([k, sc]) => `<div class="dk-keyrow"><span>Go to ${esc(SCENE_TITLE[sc] || sc)}</span><span class="kb"><kbd>g</kbd><kbd>${esc(k)}</kbd></span></div>`).join("");

@@ -5,9 +5,12 @@
 // Discord / signed webhooks / the account's own email with retry. On the Free plan it runs
 // the one-domain watch (worker/free-watch.js). State and scheduling are the DO's; the grading
 // is the SAME pure engine the browser tools use (worker/checks.js), and the alert brain
-// is worker/monitor-core.js — both unit-tested without a deploy.
+// is worker/monitor-core.js — both unit-tested without a deploy. The deadlines a run finds
+// (certificate expiry, and with the workspace's opt-ins Cyber Resilience Act and BOD 22-01
+// clocks) are kept here too, one storage key each ("dl:<id>", CRA cases "cra:<CVE>"), and
+// alerted when they start and when a quarter of their time is left (public/js/core/deadlines.js).
 import { runCheck, cvesFromEntities, hostOnly } from "./checks.js";
-import { diffFindings, diffToEvents, shouldAlert, defaultAlertRules } from "./monitor-core.js";
+import { diffFindings, diffToEvents, shouldAlert, defaultAlertRules, inQuietHours } from "./monitor-core.js";
 import { buildGraphWrite } from "./monitor-graph.js";
 import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
 import { requireUser } from "./auth.js";
@@ -16,8 +19,9 @@ import { featureDenied } from "./plan.js";
 import { workspaceTier, liveTier } from "./plan-share.js";
 import { readCapped } from "./body-cap.js";
 import { FREE_WATCH, FREE_TEAM_MSG, freeWatchDenied, freeAllowed } from "./free-watch.js";
-import { ALERT_EMAILS_PER_DAY, buildAlertEmail, buildTestEmail, maskEmail, recipient, sendEmail, stopToken, stopUrl, STOP_PATH } from "./alert-email.js";
+import { ALERT_EMAILS_PER_DAY, CRA_EMAILS_PER_DAY, DECK_DEADLINES, buildAlertEmail, buildDeadlineEmail, buildTestEmail, maskEmail, recipient, sendEmail, stopToken, stopUrl, STOP_PATH } from "./alert-email.js";
 import { unsubSecret } from "./digest.js";
+import { normSettings, checkSettings, kevDeadlines, certDeadlines, closeDeadline, reopenDeadline, updateCase, syncCaseClocks, dueAlerts, nextAlertAt, quarterAt, alertLine, sortDeadlines, CRA, DAY as DL_DAY } from "../public/js/core/deadlines.js";
 import { takeDaily } from "./quota.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -25,6 +29,9 @@ const HISTORY_CAP = 200, DELIVERY_CAP = 200;
 const MIN_INTERVAL = 15 * 60 * 1000;   // never run a monitor more than every 15 min
 const now = () => Date.now();
 const uid = () => "m_" + Math.random().toString(36).slice(2, 10) + now().toString(36);
+const CLOSED_KEEP_MS = 180 * DL_DAY;   // a closed certificate or BOD deadline is dropped after 180 days (CRA records stay)
+// the first top of an hour outside the monitor's quiet hours (a deadline alert held by them waits until then)
+const quietEnd = (t, rules) => { let x = Math.ceil((t + 1) / 3600000) * 3600000; for (let i = 0; i < 25 && inQuietHours(x, rules); i++) x += 3600000; return x; };
 
 // Redact channel secrets before anything leaves the DO.
 // A Slack/Discord/Teams webhook URL is itself the credential: viewers see only its host.
@@ -81,10 +88,14 @@ export class MonitorDO {
   // per workspace, and it reads the SAME workspace's graph (the GET pull is not uid-scoped —
   // the per-workspace DO is itself the access boundary, reachable only by server code). Used
   // only by the kev-epss check. Returns [] if the graph binding or the stored wid is missing.
-  async _graphCves() {
+  async _graphCves() { const inv = await this._graphInventory(); return inv && cvesFromEntities(inv.entities); }
+  // The workspace graph's entities and relationships, without the monitor's own writes:
+  // { entities, relationships } | null (could not read it). The relationships tell the deadline
+  // code which assets a CVE is in (public/js/core/deadlines.js shippedMatches).
+  async _graphInventory() {
     try {
       const wid = await this.storage.get("wid");
-      if (!wid || !this.env || !this.env.GRAPH) return [];
+      if (!wid || !this.env || !this.env.GRAPH) return { entities: [], relationships: [] };
       const stub = this.env.GRAPH.get(this.env.GRAPH.idFromName(wid));
       const res = await stub.fetch("https://graph/?since=0", { headers: { "x-graph-uid": wid } });
       if (!res.ok) return null; // could not read the inventory: not the same as an empty one
@@ -95,9 +106,107 @@ export class MonitorDO {
       // inventory would be a feedback loop — a patched CVE would never clear because the
       // monitor keeps seeing the node it authored last run. Only genuine tool/ingest sources
       // count as the workspace's real CVE inventory.
-      const inventory = ((data && data.entities) || []).filter((e) => !String((e && e.source) || "").startsWith("monitor:"));
-      return cvesFromEntities(inventory);
+      const entities = ((data && data.entities) || []).filter((e) => !String((e && e.source) || "").startsWith("monitor:"));
+      const ids = new Set(entities.map((e) => e && e.id));
+      const relationships = ((data && data.relationships) || []).filter((r) => r && ids.has(r.fromId) && ids.has(r.toId));
+      return { entities, relationships };
     } catch (_) { return null; }
+  }
+
+  // ---- deadlines: one key per record, so no single value nears the storage size limit ----
+  async _list(prefix) {
+    const out = Object.create(null);
+    if (typeof this.storage.list !== "function") return out;
+    for (const [k, v] of await this.storage.list({ prefix })) out[k.slice(prefix.length)] = v;
+    return out;
+  }
+  _deadlines() { return this._list("dl:"); }
+  _cases() { return this._list("cra:"); }
+  async _dlSettings() { return normSettings(await this.storage.get("dlSettings")); }
+  async _putDeadlines(list) { for (const d of list) await this.storage.put("dl:" + d.id, d); }
+
+  // The deadlines one run found: certificate expiry from a cert-expiry run; CRA and BOD 22-01
+  // clocks from a kev-epss run, only with the workspace's opt-ins. Never throws.
+  async _deadlinesFromRun(m, { findings, events, alerted, inventory, at }) {
+    try {
+      if (m.type === "cert-expiry") {
+        const existing = await this._deadlines();
+        const firstSeen = {}; for (const [k, v] of Object.entries(m.graphMeta || {})) if (v && v.firstSeen) firstSeen[k] = v.firstSeen;
+        const watched = new Set(((m.config && m.config.domains) || []).map(hostOnly).filter(Boolean));
+        const r = certDeadlines({ findings, existing, monitorId: m.id, firstSeen, alerted: new Set(alerted.map((e) => e.key)), watched, at });
+        const closed = r.close.map((c) => ({ ...existing[c.id], status: c.status, reason: c.reason, closedAt: at, closedBy: "monitor" }));
+        await this._putDeadlines([...r.add, ...closed]);
+        return r.add.length;
+      }
+      if (m.type === "kev-epss" && inventory) {
+        const settings = await this._dlSettings();
+        if (!settings.cra && !settings.bod2201) return 0;               // nothing assumed: no opt-in, no clocks
+        const r = kevDeadlines({ events, findings, settings, inventory, existing: await this._deadlines(), cases: await this._cases(), monitorId: m.id, at });
+        for (const c of r.cases) await this.storage.put("cra:" + c.cve, c);
+        await this._putDeadlines(r.add);
+        return r.add.length;
+      }
+    } catch (_) {}
+    return 0;
+  }
+
+  // Send the deadline alerts that are due: a "created" alert once a clock starts and a "quarter"
+  // alert when 25% of its time is left (dueAlerts). They go to the channels of the monitor that
+  // found the deadline; a deadline whose monitor is gone, paused or held for the plan stays in
+  // the Deck and is not sent. CRA alerts ignore digest mode and quiet hours (a 24-hour clock does
+  // not wait for the morning) and have their own email allowance (CRA_EMAILS_PER_DAY); the rest
+  // follow the monitor's rules and share its ALERT_EMAILS_PER_DAY.
+  async _deadlinePass(deps = {}, monsIn) {
+    const t0 = Number.isFinite(deps.now) ? deps.now : now();
+    let sent = 0;
+    try {
+      const dls = await this._deadlines();
+      // closed certificate and BOD records older than CLOSED_KEEP_MS are dropped (CRA records stay)
+      for (const d of Object.values(dls)) if (d.kind !== "cra-exploited" && d.status !== "open" && d.closedAt && d.closedAt < t0 - CLOSED_KEEP_MS) { await this.storage.delete("dl:" + d.id); delete dls[d.id]; }
+      const todo = dueAlerts(Object.values(dls), t0);
+      if (!todo.length) return 0;
+      const mons = monsIn || await this._monitors();
+      const changed = new Map(), groups = new Map();
+      const mark = (d, stage, v) => { d.alerts = { ...(d.alerts || {}), [stage]: v }; changed.set(d.id, d); };
+      for (const { id, stage } of todo) {
+        const d = dls[id];
+        if (stage === "skip") { mark(d, "quarter", { at: t0, sent: false, why: "already due" }); continue; }
+        const m = mons[d.monitorId];
+        const why = !m ? "its monitor was deleted" : m.paused ? "its monitor is paused" : m.planHeld ? "its monitor is held for the plan" : !(m.channels || []).length ? "its monitor has no alert channel" : "";
+        const cra = d.kind === "cra-exploited";
+        if (!why && !cra) {
+          const rules = { ...defaultAlertRules(), ...(m.rules || {}) };
+          if (rules.digest) { mark(d, stage, { at: t0, sent: false, why: "digest mode" }); continue; }
+          if (inQuietHours(t0, rules)) { d.alerts = { ...(d.alerts || {}), holdUntil: quietEnd(t0, rules) }; changed.set(d.id, d); continue; }
+        }
+        if (why) { mark(d, stage, { at: t0, sent: false, why }); continue; }
+        const key = d.monitorId + "|" + (cra ? "cra" : "std");
+        if (!groups.has(key)) groups.set(key, { m, cra, items: [] });
+        groups.get(key).items.push({ d, stage });
+      }
+      for (const g of groups.values()) {
+        const lines = g.items.map(({ d, stage }) => ({ ...alertLine(d, stage, t0), kind: d.kind, stage, severity: g.cra ? "critical" : "high" }));
+        const alert = {
+          title: lines.length === 1 ? (lines[0].stage === "quarter" ? "A quarter of the time is left: " : "New deadline: ") + lines[0].title : lines.length + " deadlines need attention",
+          severity: g.cra ? "critical" : "high",
+          text: g.cra ? CRA.where + " Darknode tracks these clocks and prepares the facts under Deadlines; it does not decide whether the Cyber Resilience Act applies and does not submit anything." : "From your monitor \"" + (g.m.name || g.m.type) + "\".",
+          url: DECK_DEADLINES,
+          events: lines.map((l) => ({ kind: "deadline", severity: l.severity, title: l.title, detail: l.detail })),
+          deadline: { cra: g.cra, items: lines },
+        };
+        let ok = 0;
+        for (const ch of g.m.channels) ok += (await this._deliverWithRetry(ch, alert, { ...deps, now: t0 }, g.m)) ? 1 : 0;
+        sent += ok;
+        for (const { d, stage } of g.items) {
+          mark(d, stage, { at: t0, sent: ok > 0 });
+          const q = quarterAt(d);
+          if (stage === "created" && !(d.alerts || {}).quarter && q != null && t0 >= q) mark(d, "quarter", { at: t0, sent: ok > 0, via: "created" }); // due together: one alert
+          if (d.alerts && d.alerts.holdUntil) { const { holdUntil, ...rest } = d.alerts; d.alerts = rest; }
+        }
+      }
+      await this._putDeadlines([...changed.values()]);
+    } catch (_) {}
+    return sent;
   }
   // Push a monitor's findings into THIS workspace's GraphDO (same wid as the MonitorDO).
   // Returns { synced, error }; never throws. The per-workspace DO is itself the access
@@ -127,8 +236,8 @@ export class MonitorDO {
     await this.storage.put(key, list);
   }
 
-  // Soonest next-due time across active monitors; sets the DO alarm to it.
-  async _reschedule() {
+  // Soonest next-due time across active monitors and deadline alerts; sets the DO alarm to it.
+  async _reschedule(at) {
     const mons = await this._monitors();
     let soonest = null;
     for (const m of Object.values(mons)) {
@@ -136,6 +245,9 @@ export class MonitorDO {
       const due = dueAt(m);
       if (soonest == null || due < soonest) soonest = due;
     }
+    const t = Number.isFinite(at) ? at : now();
+    const dl = nextAlertAt(Object.values(await this._deadlines()), t);
+    if (dl != null && (soonest == null || dl < soonest)) soonest = dl;
     if (soonest != null) await this.storage.setAlarm(Math.max(soonest, now() + 1000));
   }
 
@@ -146,8 +258,10 @@ export class MonitorDO {
     // production deps.now is never set, so this is the real wall clock.
     const t0 = Number.isFinite(deps.now) ? deps.now : now();
     let findings = [];
-    // The kev-epss check grades the workspace's own CVE inventory, read from its graph.
-    const extra = m.type === "kev-epss" ? { cves: await this._graphCves(), feedBase: deps.feedBase } : {};
+    // The kev-epss check grades the workspace's own CVE inventory, read from its graph (the
+    // relationships also say which assets a CVE is in, for the CRA deadline).
+    const inventory = m.type === "kev-epss" ? await this._graphInventory() : null;
+    const extra = m.type === "kev-epss" ? { cves: inventory && cvesFromEntities(inventory.entities), feedBase: deps.feedBase } : {};
     // A lookup that got no answer is not a clean result: diffing it would resolve every open
     // finding (closing them in the graph) and alert them all as new once the source is back.
     try {
@@ -170,7 +284,11 @@ export class MonitorDO {
     if (m.type === "cert-expiry" && m.config && Number(m.config.warnDays) > 0 && !(m.rules && m.rules.certExpiryDays != null)) rules.certExpiryDays = Number(m.config.warnDays);
     const alerted = [];
     const held = [];
+    let folded = 0;
     for (const ev of events) {
+      // A certificate crossing into its last week (high -> critical) no longer re-alerts: the cert
+      // is a deadline now, and its reminder goes out when a quarter of the time to expiry is left.
+      if (m.type === "cert-expiry" && ev.kind === "worsened") { folded++; continue; }
       // carry cert window into the rule check for cert monitors
       // Only new and worsened events take the cert/KEV path. A "changed" event here is just the
       // title moving (expires in 10 days -> 9, EPSS 61% -> 62%) and re-alerted every run.
@@ -197,6 +315,10 @@ export class MonitorDO {
       };
       for (const ch of m.channels) delivered += (await this._deliverWithRetry(ch, alert, { ...deps, now: t0 }, m)) ? 1 : 0;
     }
+
+    // ---- deadlines this run found (public/js/core/deadlines.js). graphMeta first-seen clocks are
+    // read before this run adds new ones, so a certificate already open keeps its older start. ----
+    const deadlines = await this._deadlinesFromRun(m, { findings, events, alerted, inventory, at: t0 });
 
     // ---- feed findings into the workspace Security Graph (Trident Phase 2) ----
     // Monitor findings become ownable, SLA-tracked, correlatable FINDING entities, the
@@ -244,7 +366,7 @@ export class MonitorDO {
       }
     } catch (e) { graphError = String(e.message || e); }
 
-    await this._log("history", HISTORY_CAP, { id: m.id, at: t0, found: findings.length, added: diff.added.length, changed: diff.changed.length, removed: diff.removed.length, alerted: alerted.length, held: held.length, ...(skipped ? { skipped } : {}), delivered, graphSynced, graphError, ms: now() - t0 });
+    await this._log("history", HISTORY_CAP, { id: m.id, at: t0, found: findings.length, added: diff.added.length, changed: diff.changed.length, removed: diff.removed.length, alerted: alerted.length, held: held.length, ...(skipped ? { skipped } : {}), ...(folded ? { folded } : {}), ...(deadlines ? { deadlines } : {}), delivered, graphSynced, graphError, ms: now() - t0 });
     return { id: m.id, found: findings.length, alerted: alerted.length, delivered, graphSynced };
   }
 
@@ -275,22 +397,26 @@ export class MonitorDO {
     };
     const who = await recipient(env, channel, deps);
     if (who.error) { await log({ ok: false, status: 0, error: who.error }, 1); return false; }
-    const key = "alert-email:" + channel.uid;
-    const q = await quota(key, ALERT_EMAILS_PER_DAY, t0, false);
-    if (!q.ok) { await log({ ok: false, status: 429, error: "Daily alert email limit reached (" + ALERT_EMAILS_PER_DAY + " a day). This change is listed in the Deck under Monitors; email alerts resume tomorrow (UTC)." }, 1); return false; }
+    // CRA deadline alerts count against their own allowance, never the monitor alerts' one
+    const cra = !!(alert.deadline && alert.deadline.cra), cap = cra ? CRA_EMAILS_PER_DAY : ALERT_EMAILS_PER_DAY;
+    const key = (cra ? "deadline-email:" : "alert-email:") + channel.uid;
+    const q = await quota(key, cap, t0, false);
+    if (!q.ok) { await log({ ok: false, status: 429, error: (cra ? "Daily CRA deadline email limit reached (" : "Daily alert email limit reached (") + cap + " a day). " + (alert.deadline ? "It is listed in the Deck under Deadlines" : "This change is listed in the Deck under Monitors") + "; email alerts resume tomorrow (UTC)." }, 1); return false; }
     const wid = (await this.storage.get("wid")) || "";
     const stop = wid ? await stopUrl(env, wid, channel.uid) : "";
     const mail = alert.test
-      ? buildTestEmail({ stopUrl: stop, sent: q.used, limit: q.limit || ALERT_EMAILS_PER_DAY, now: t0 })
-      : buildAlertEmail({ monitor: monitor || {}, events: alert.events || [], stopUrl: stop, sent: q.used, limit: q.limit || ALERT_EMAILS_PER_DAY, now: t0 });
-    const idempotencyKey = "dn-" + ((monitor && monitor.id) || "test") + "-" + t0 + "-" + channel.uid;
+      ? buildTestEmail({ stopUrl: stop, sent: q.used, limit: q.limit || cap, now: t0 })
+      : alert.deadline
+        ? buildDeadlineEmail({ items: alert.deadline.items || [], cra, monitor: monitor || {}, stopUrl: stop, sent: q.used, limit: q.limit || cap, now: t0, notes: cra ? [CRA.where, "Darknode does not decide whether the Cyber Resilience Act applies to you and does not submit anything: it tracks the clocks and prepares the facts (Deadlines, then Copy early-warning facts).", "Source: " + CRA.source.label + ", " + CRA.source.url] : [] })
+        : buildAlertEmail({ monitor: monitor || {}, events: alert.events || [], stopUrl: stop, sent: q.used, limit: q.limit || cap, now: t0 });
+    const idempotencyKey = "dn-" + (alert.deadline ? "dl-" : "") + ((monitor && monitor.id) || "test") + "-" + t0 + "-" + channel.uid;
     for (let i = 0; i < RETRY_BACKOFF_MS.length; i++) {
       if (RETRY_BACKOFF_MS[i]) await sleep(RETRY_BACKOFF_MS[i]);
       const res = await (deps.sendEmail || sendEmail)(env, { to: who.to, ...mail, stop, idempotencyKey }, deps.fetch || fetch);
       await log(res, i + 1);
       if (res.ok) return true;
     }
-    try { await quota(key, ALERT_EMAILS_PER_DAY, t0, true); } catch (_) {} // nothing was delivered: it does not count
+    try { await quota(key, cap, t0, true); } catch (_) {} // nothing was delivered: it does not count
     return false;
   }
 
@@ -314,8 +440,9 @@ export class MonitorDO {
       ran.push(await this._runOne(m, deps, mons));
     }
     await this._put(mons);
-    await this._reschedule();
-    return { ran };
+    const deadlineAlerts = await this._deadlinePass(deps, mons);
+    await this._reschedule(deps.now);
+    return { ran, ...(deadlineAlerts ? { deadlineAlerts } : {}) };
   }
 
   async alarm() {
@@ -351,6 +478,11 @@ export class MonitorDO {
       const mons = await this._monitors();
       const deliveries = (await this.storage.get("deliveries")) || [];
       return reply({ monitors: Object.values(mons).map((x) => safeMonitor(x, canWrite, caller)), history: (await this.storage.get("history")) || [], deliveries: canWrite ? deliveries : deliveries.map((d) => ({ ...d, url: hideUrl(d.url) })) });
+    }
+    // Deadlines (read): every member can see them, the CRA cases behind them and the opt-ins.
+    if (op === "deadlines") {
+      const t = now();
+      return reply({ deadlines: sortDeadlines(Object.values(await this._deadlines()), t), cases: Object.values(await this._cases()), settings: await this._dlSettings(), now: t, craAppliesFrom: CRA.appliesFrom });
     }
     // The stop link in an alert email (handleWatchStop, never reachable through handleMonitor):
     // pause every monitor here that emails that account.
@@ -403,8 +535,48 @@ export class MonitorDO {
       return reply({ monitor: safeMonitor(m, true, caller) });
     }
     if (op === "delete") {
-      const mons = await this._monitors(); if (mons[body.id]) { delete mons[body.id]; await this._put(mons); await this._reschedule(); }
+      const mons = await this._monitors();
+      if (mons[body.id]) {
+        delete mons[body.id]; await this._put(mons);
+        // its open certificate deadlines go with it (nothing checks them any more); CRA and BOD clocks stay
+        const gone = Object.values(await this._deadlines()).filter((d) => d.kind === "cert-expiry" && d.status === "open" && d.monitorId === body.id);
+        await this._putDeadlines(gone.map((d) => ({ ...d, status: "dismissed", reason: "Its monitor was deleted.", closedAt: now(), closedBy: caller })));
+        await this._reschedule();
+      }
       return reply({ ok: true });
+    }
+    // ---- deadlines (write) ----
+    // The opt-ins and the assets marked as shipped in a product. Turning an opt-in on needs the
+    // plan of the known-exploited CVE monitor (Pro); turning them off never does.
+    if (op === "dlSettings") {
+      const r = checkSettings(body.settings, { free });
+      if (r.error) return r.plan ? planReply(r.error) : reply({ error: r.error }, 400);
+      await this.storage.put("dlSettings", r.settings);
+      return reply({ settings: r.settings });
+    }
+    // A CRA case: when you became aware, when a fix or mitigation became available, the measures
+    // known and the Member States. Its three clocks follow.
+    if (op === "dlCase") {
+      const cve = String(body.cve || "").toUpperCase();
+      const c = /^CVE-\d{4}-\d{4,7}$/.test(cve) ? await this.storage.get("cra:" + cve) : null;
+      if (!c) return reply({ error: "not found" }, 404);
+      const r = updateCase(c, body.patch || {}, now());
+      if (r.error) return reply({ error: r.error }, 400);
+      await this.storage.put("cra:" + cve, r.case);
+      const moved = syncCaseClocks(r.case, await this._deadlines());
+      await this._putDeadlines(moved);
+      await this._reschedule();
+      return reply({ case: r.case, deadlines: moved });
+    }
+    if (op === "dlClose" || op === "dlReopen") {
+      const id = String(body.id || "").slice(0, 300);
+      const d = id ? await this.storage.get("dl:" + id) : null;
+      if (!d) return reply({ error: "not found" }, 404);
+      const r = op === "dlClose" ? closeDeadline(d, { status: body.status, reason: body.reason, by: caller, at: now() }) : reopenDeadline(d);
+      if (r.error) return reply({ error: r.error }, 400);
+      await this._putDeadlines([r.deadline]);
+      await this._reschedule();
+      return reply({ deadline: r.deadline });
     }
     if (op === "run") {
       if (!free) return reply(await this.runDue({ force: true, deckUrl: body.deckUrl }));
@@ -461,12 +633,15 @@ export async function handleMonitor(request, env, wid, json) {
   // Below Pro, the personal workspace gets the Free plan's one-domain watch: the request goes on
   // marked x-mon-plan "free" and the MonitorDO enforces the watch's limits (free-watch.js) in the
   // same step as the write. A team workspace has no Free watch.
+  // Deadline settings go on marked "free" below Pro, in any workspace: the MonitorDO then refuses
+  // to turn the CRA or BOD 22-01 opt-in on (those clocks come from the Pro CVE monitor) but still
+  // lets them be turned off.
   let op = "", resume = false; try { const b = JSON.parse(bodyText || "{}") || {}; op = String(b.op || ""); resume = op === "pause" && b.paused === false; } catch (_) {}
   let plan = "";
-  if (MON_PAID_OPS.has(op) || resume) {
+  if (MON_PAID_OPS.has(op) || resume || op === "dlSettings") {
     const planMsg = featureDenied("monitors", await workspaceTier(env, wid, who));
     if (planMsg) {
-      if (!isPersonalWorkspace(wid, who.uid)) return json({ error: FREE_TEAM_MSG, plan: true }, 402);
+      if (op !== "dlSettings" && !isPersonalWorkspace(wid, who.uid)) return json({ error: FREE_TEAM_MSG, plan: true }, 402);
       plan = "free";
     }
   }
