@@ -12,6 +12,7 @@ function memState() {
     async delete(k) { map.delete(k); },
     async setAlarm(ts) { alarm = ts; },
     async getAlarm() { return alarm; },
+    async list({ prefix = "" } = {}) { return new Map([...map].filter(([k]) => k.startsWith(prefix)).sort(([a], [b]) => a.localeCompare(b))); },
     _alarm: () => alarm,
   };
   return { storage, blockConcurrencyWhile: async (fn) => fn(), _map: map };
@@ -89,7 +90,7 @@ group("monitor DO/run + alert", () => {
     assert.equal(net.deliveries.length, 1, "no duplicate alert on an unchanged cert");
   });
 
-  test("a day later the same expiring cert does not alert again; crossing into the last week does", async () => {
+  test("a day later the same expiring cert does not alert again; the deadline reminds once when a quarter of the time is left", async () => {
     const st = memState(); const mon = new MonitorDO(st);
     await post(mon, { op: "upsert", monitor: { name: "Certs", type: "cert-expiry", config: { domains: ["a.test.darknode.ai"], warnDays: 21 }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
     const base = Date.now(), D = 86400000;
@@ -98,7 +99,12 @@ group("monitor DO/run + alert", () => {
     await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base + D });
     assert.equal(net.deliveries.length, 1, "expires in 10 days -> 9 days is only a title change");
     await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base + 4 * D });
-    assert.equal(net.deliveries.length, 2, "high -> critical at 6 days alerts");
+    assert.equal(net.deliveries.length, 1, "high -> critical at 6 days is folded into the deadline: no second alert");
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base + 7.6 * D });
+    assert.equal(net.deliveries.length, 2, "2.4 days left of 10: the quarter-left reminder");
+    assert.ok(/quarter of the time is left/i.test(net.deliveries[1].body), "the reminder says why it came");
+    await mon.runDue({ force: true, fetch: net.fetch, sleep: async () => {}, now: base + 8 * D });
+    assert.equal(net.deliveries.length, 2, "the reminder is sent once");
   });
 
   test("a run where the certificate logs do not answer keeps the finding open, and it does not re-alert when they are back", async () => {

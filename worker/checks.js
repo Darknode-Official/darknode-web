@@ -138,7 +138,7 @@ export function matchKevEpss(cves, ctx = {}) {
     const score = epss.get(cve);
     if (kev.has(cve)) {
       const info = kev.get(cve) || {};
-      out.push({ key: "kev:" + cve, severity: "critical", status: "open", title: `Known-exploited vulnerability in your inventory: ${cve}`, cve, kev: true, dueDate: info.dueDate || "", epss: typeof score === "number" ? score : null, category: "vulnerability", tool: "monitor:kev-epss" });
+      out.push({ key: "kev:" + cve, severity: "critical", status: "open", title: `Known-exploited vulnerability in your inventory: ${cve}`, cve, kev: true, dueDate: info.dueDate || "", dateAdded: info.dateAdded || "", epss: typeof score === "number" ? score : null, category: "vulnerability", tool: "monitor:kev-epss" });
     } else if (typeof score === "number" && score >= floor) {
       out.push({ key: "epss:" + cve, severity: score >= 0.9 ? "high" : "medium", status: "open", title: `High exploit-likelihood vulnerability in your inventory: ${cve} (EPSS ${Math.round(score * 100)}%)`, cve, kev: false, epss: score, category: "vulnerability", tool: "monitor:kev-epss" });
     }

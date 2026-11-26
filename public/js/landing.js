@@ -704,6 +704,7 @@ ${pageOnly}
               <li>Unlimited saved findings &amp; reports</li>
               <li>Premium AI models: Claude Fable 5.1, Claude Opus 5.5, Darknode Max</li>
               <li>500 AI messages a day (150 on Claude)</li>
+              <li>Known-exploited CVE monitors, with Cyber Resilience Act and BOD 22-01 deadline clocks</li>
               <li>Cloud sync across devices</li>
               <li>Email support</li>
             </ul>
