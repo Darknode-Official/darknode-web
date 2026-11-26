@@ -113,6 +113,12 @@ async function load() {
   const box = S.el && S.el.querySelector("#dlBody"); if (!box) return;
   const my = ++S.seq;
   if (!monitoringAvailable()) { box.innerHTML = `<div class="ddl-off">Deadlines need the cloud proxy, which this build has not configured.</div>`; return; }
+  // guest / Test Mode: the clocks come from server-side monitors, which need an account
+  if (S.ctx && S.ctx.noAccount) {
+    box.innerHTML = `<div class="ddl-warn">Deadlines come from monitors, which run on Darknode's servers for an account. Create a free account and watch a domain, and its certificate expiry is tracked here. <button class="ddl-btn pri" id="dlSignup">Create a free account</button></div>`;
+    box.querySelector("#dlSignup").onclick = () => S.ctx.signup && S.ctx.signup();
+    return;
+  }
   try {
     const [data, mons] = await Promise.all([call({ op: "deadlines" }), call({ op: "list" }).catch(() => null)]);
     if (my !== S.seq) return;

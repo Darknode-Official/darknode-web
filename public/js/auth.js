@@ -2969,6 +2969,9 @@ onAuthStateChanged(auth, async (user) => {
     // The desktop app has no marketing landing: straight to sign-in (which keeps the
     // no-account Test Mode entry for local tools).
     if (isDesktop()) { dismissBoot(); renderAuth("signin"); return; }
+    // "Create a free account" in the guest Deck links /?signup=1: open the sign-up form.
+    let signup = false; try { signup = new URLSearchParams(location.search).get("signup") === "1"; } catch (_) {}
+    if (signup) { try { history.replaceState(history.state, "", "/"); } catch (_) {} dismissBoot(); renderAuth("signup"); return; }
     showLanding(); return;
   }
   // An embedded tool (/<sec>?embed=1 inside the Deck) shares this tab's sessionStorage with

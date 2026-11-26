@@ -89,6 +89,13 @@ async function load() {
   const box = S.el && S.el.querySelector("#monBody"); if (!box) return;
   const my = ++S.seq;
   if (!monitoringAvailable()) { box.innerHTML = `<div class="mon-off">Monitoring is not available on this build — it needs the cloud proxy. Nothing to configure yet.</div>`; return; }
+  // guest / Test Mode: monitors run on the server for an account and email it, so offer sign-up
+  if (S.ctx && S.ctx.noAccount) {
+    box.innerHTML = `<div class="mon-watch"><div class="tx"><b>Monitors need a free account</b><br>They run on Darknode's servers and email the account that set them up. A free account watches one domain for certificate expiry and email/DNS changes, checked once a day.</div>
+      <span class="mon-actions"><button class="mon-btn pri" id="monSignup">Create a free account</button></span></div>`;
+    box.querySelector("#monSignup").onclick = () => S.ctx.signup && S.ctx.signup();
+    return;
+  }
   try {
     const data = await monitorApi({ op: "list" });
     if (my !== S.seq) return;

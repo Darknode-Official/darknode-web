@@ -1637,6 +1637,11 @@ textarea.dk-kitio{min-height:120px}
 .dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]) .dk-actform input{flex:1 1 140px;min-width:0}
 @media(max-width:720px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:repeat(2,minmax(0,1fr))!important}.dk[data-ui=deck] .dk-kpis6>.dk-start:not([hidden]){grid-row:auto}}
 @media(max-width:520px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-start:not([hidden])){grid-template-columns:1fr!important}}
+/* no findings yet and the first-run check showing: the two exposure tiles are hidden, so the four left fill the row */
+.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-kpi[data-k="exposure"][hidden]):not(:has(>.dk-start:not([hidden]))){grid-template-columns:repeat(4,minmax(0,1fr))!important}
+@media(max-width:720px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-kpi[data-k="exposure"][hidden]):not(:has(>.dk-start:not([hidden]))){grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:520px){.dk[data-ui=deck] .dk-ov .dk-kpis.dk-kpis6:has(>.dk-kpi[data-k="exposure"][hidden]):not(:has(>.dk-start:not([hidden]))){grid-template-columns:1fr!important}}
+.dk .dk-sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .dk[data-ui=deck] .dk-start b{font-size:15px;font-weight:600}
 .dk[data-ui=deck] .dk-start p{font-size:13px;color:var(--dk-tx2);line-height:1.5;margin:0 0 6px}
 @media(max-width:520px){.dk[data-ui=deck] .dk-start{grid-column:auto}.dk[data-ui=deck] .dk-start .dk-actform input{flex:1 1 100%;width:100%}}
@@ -1996,7 +2001,7 @@ export function renderDeck(host, opts) {
       <div class="dk-sbfoot"><button class="dk-nv" id="dkSbCollapse" data-explain="hdr.collapse" data-l="Expand navigation">${IC.rail}<span class="nl">Collapse</span></button></div>
     </aside>
     <div class="dk-sbshade" id="dkSbShade"></div>
-    <div class="dk-fly" id="dkFly" role="tooltip"></div>
+    <div class="dk-fly" id="dkFly" aria-hidden="true"></div>
 
     <div class="dk-pop" id="dkNewPop"></div>
     <div class="dk-pop" id="dkWsPop"></div>
@@ -2080,6 +2085,16 @@ export function renderDeck(host, opts) {
     <div class="dk-keys" id="dkKeys" tabindex="-1" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts"></div>`;
   (host || document.body).appendChild(root);
   const $ = (s) => root.querySelector(s);
+  // When the Deck is the page, the signed-out shell behind it (#app: its header and the empty
+  // #view, plus the scroll-to-top button) stays in the DOM. Keep it out of the tab order and
+  // the accessibility tree, make the page that is showing the main landmark, and point
+  // "Skip to content" at it. Undone by teardown.
+  const behind = primary ? [document.getElementById("app"), document.querySelector("body > .stt")].filter((e) => e && !e.inert) : [];
+  behind.forEach((e) => { e.inert = true; });
+  if (primary) root.querySelectorAll(".dk-scene").forEach((sc) => { sc.setAttribute("role", "main"); sc.setAttribute("tabindex", "-1"); });
+  const skipLink = primary ? document.querySelector(".skip-link") : null;
+  const onSkip = (e) => { const sc = [...root.querySelectorAll(".dk-scene")].find((x) => !x.hidden); if (!sc) return; e.preventDefault(); sc.focus(); };
+  if (skipLink) skipLink.addEventListener("click", onSkip);
 
   // clock
   const clock = $("#dkClock");
@@ -2090,6 +2105,10 @@ export function renderDeck(host, opts) {
   // Decorative animated starfield removed — a flat dark surface reads as an ops
   // console, not an AI landing page. Kept as no-ops so resize/teardown stay valid.
   let rafId = 0;
+  // Pages and tools opened since this Deck mounted. The boot route below waits for a frame,
+  // and a background tab gets no frames until it is shown: a page the user (or a script)
+  // opened before then must not be replaced by the restored one.
+  let navSeq = 0;
   function sizeStars(){}
   function drawStars(){}
 
@@ -2155,6 +2174,7 @@ export function renderDeck(host, opts) {
     });
   }
   function go(scene, arg){
+    navSeq++;
     if (!SCENES[scene] || isLocked(scene === "section" ? "section:" + (isSect(arg) ? arg : curSect) : "scene:" + scene)) scene = "overview";
     curScene = scene;
     if (scene === "section") { if (isSect(arg)) curSect = arg; try { localStorage.setItem("dn_deck_sect", curSect); } catch (_) {} }
@@ -2643,6 +2663,7 @@ export function renderDeck(host, opts) {
   function openTool(sec, label, accent){
     if (!sec) return;
     if (isLocked("tool:" + sec)) return;
+    navSeq++;
     label = label || sec; curSec = sec;
     try { closeDrawer(); } catch (_) {}
     syncUrl("/" + sec); pushRecentTool(sec);
@@ -2798,6 +2819,11 @@ export function renderDeck(host, opts) {
   // ---------- command-center chrome: status, quick-create, notifications, account ----------
   const popNew = $("#dkNewPop"), popBell = $("#dkBellPop"), popAcct = $("#dkAcctPop"), badge = $("#dkBadge"), health = $("#dkHealth");
   const user = opts.user || {};
+  // Guest (/?app=1) and Test Mode run without an account (auth.js gives them a per-session
+  // "app-guest-" / "test-" uid). What needs one (monitors, deadlines, the digest, upgrade
+  // requests) says so and offers sign-up instead of failing after the click.
+  const noAccount = /^(test|app-guest)-/.test(user.uid || "");
+  function toSignup(){ try { sessionStorage.removeItem("dn_guest"); } catch (_) {} location.assign("/?signup=1"); }
   let notifs = readRecentActivity().map((a) => ({ text: a.text, ts: a.ts, sim: !!a.sim }));
   let notifSeen = 0, busOffs = [];
   try { notifSeen = parseInt(localStorage.getItem(LS_NOTIF_SEEN) || "0", 10) || 0; } catch (_) {}
@@ -2857,8 +2883,9 @@ export function renderDeck(host, opts) {
     };
   }
   function buildAcctMenu(){
-    const nm = user.displayName || user.email || "Account", em = user.email || "Signed in to Darknode";
+    const nm = user.displayName || user.email || "Account", em = noAccount ? "Not signed in. Your work stays in this browser." : user.email || "Signed in to Darknode";
     popAcct.innerHTML = `<div class="dk-acctcard"><b>${esc(nm)}</b><span>${esc(em)}</span></div>
+      ${noAccount ? `<button class="dk-mi" id="dkMiSignup">${IC.star}<span>Create a free account<span class="sub">Watch a domain and get email alerts</span></span></button>` : ""}
       <button class="dk-mi" data-go="overview">${IC.home}<span>Command center home</span></button>
       <button class="dk-mi" data-tool="settings">${IC.gear}<span>Settings</span></button>
       <button class="dk-mi" id="dkMiPlans">${IC.star}<span>Plans &amp; billing<span class="sub">Compare Darknode plans</span></span></button>
@@ -2870,7 +2897,8 @@ export function renderDeck(host, opts) {
       <button class="dk-mi" id="dkMiImport">${IC.folder}<span>Import deck state</span></button>
       ${primary ? (opts.isOwner ? `<button class="dk-mi" id="dkMiAdmin">${IC.gear}<span>Admin</span></button>` : "") + (typeof opts.onClassic === "function" ? `<button class="dk-mi" id="dkMiClassic">${IC.ext}<span>Classic console<span class="sub">Switch back any time from its account menu</span></span></button>` : "") : `<button class="dk-mi" id="dkMiConsole">${IC.ext}<span>Open full console</span></button>`}
       <div class="dk-mi-div"></div>
-      <button class="dk-mi" id="dkMiExit">${IC.logout}<span>${primary ? "Sign out" : "Exit command center"}</span></button>`;
+      <button class="dk-mi" id="dkMiExit">${IC.logout}<span>${!primary ? "Exit command center" : noAccount ? "Leave guest mode" : "Sign out"}</span></button>`;
+    const su = popAcct.querySelector("#dkMiSignup"); if (su) su.onclick = () => { closeAllMenus(); toSignup(); };
     popAcct.querySelector("[data-go]").onclick = () => { closeAllMenus(); go("overview"); };
     popAcct.querySelector("[data-tool]").onclick = () => { closeAllMenus(); go("settings"); };
     popAcct.querySelector("#dkMiPlans").onclick = () => { closeAllMenus(); go("plans"); };
@@ -2901,9 +2929,14 @@ export function renderDeck(host, opts) {
           + `<span class="bd"><b>${esc(w.name)}</b><span>${sub}</span></span>`
           + (active ? `<span class="ck">${IC.check}</span>` : "") + `</button>`;
       }).join("");
+      // Team workspaces are a Team-plan feature (worker/plan.js teamSync; the Team page is hidden
+      // below it), so below Team the menu points at Plans instead of creating one that cannot sync or add members.
+      const canTeam = !isLocked("scene:team");
       popWs.innerHTML = `<div class="dk-pop-h">Workspace</div>${rows}<div class="dk-mi-div"></div>`
-        + `<button class="dk-wsrow" id="dkWsNew"><span class="ic">${IC.plus}</span><span class="bd"><b>Create a workspace</b><span>Share a security graph with your team</span></span></button>`
+        + (canTeam ? `<button class="dk-wsrow" id="dkWsNew"><span class="ic">${IC.plus}</span><span class="bd"><b>Create a workspace</b><span>Share a security graph with your team</span></span></button>`
+          : `<button class="dk-wsrow" id="dkWsPlans"><span class="ic">${IC.star}</span><span class="bd"><b>Team workspaces</b><span>Share a security graph with your team on the Team plan</span></span></button>`)
         + `<div class="dk-wsnote">Each workspace has its own security graph. A team's graph is shared with its members and always syncs; your personal graph syncs only when you turn it on in Settings.</div>`;
+      const wp = popWs.querySelector("#dkWsPlans"); if (wp) wp.onclick = () => { closeAllMenus(); go("plans"); };
       popWs.querySelectorAll(".dk-wsrow[data-wid]").forEach((b) => b.onclick = () => {
         const wid = b.dataset.wid || null;
         if ((wid || null) === (cur || null)) { closeAllMenus(); return; }
@@ -3297,7 +3330,7 @@ export function renderDeck(host, opts) {
     }
     // Deadlines: the soonest open ones, or nothing at all when none are open
     const dlSlot = el.querySelector("#dkDeadlines0");
-    if (dlSlot && !isLocked("scene:deadlines")) dlMod().then((m) => m.mountDeadlineBlock(dlSlot, { tier: planTier, go }), () => {});
+    if (dlSlot && !noAccount && !isLocked("scene:deadlines")) dlMod().then((m) => m.mountDeadlineBlock(dlSlot, { tier: planTier, go }), () => {});
     // quick AI ask bar -> prefill + open the assistant
     const askForm = el.querySelector("#dkAsk"), askIn = el.querySelector("#dkAskIn");
     if (askForm) askForm.onsubmit = (e) => { e.preventDefault(); askAI(askIn.value); };
@@ -4111,8 +4144,8 @@ export function renderDeck(host, opts) {
   function repaintCorrelations(g){ corrMod().then((m) => m.repaintCorrelations(g), () => {}); }
   function renderInventory(){ lazyScene(sceneEls.inventory, invMod, (m) => m.mountInventory(sceneEls.inventory, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, agoISO: agoISO, toast })); }
   function renderCorrelations(){ lazyScene(sceneEls.correlations, corrMod, (m) => m.mountCorrelations(sceneEls.correlations, { withGraph, esc, IC, IC_SEARCH, openEntityDrawer, openTool, toast })); }
-  function renderMonitors(){ lazyScene(sceneEls.monitors, monMod, (m) => m.mountMonitors(sceneEls.monitors, { esc, IC, toast, tier: planTier, go })); }
-  function renderDeadlines(){ lazyScene(sceneEls.deadlines, dlMod, (m) => m.mountDeadlines(sceneEls.deadlines, { toast, tier: planTier, go })); }
+  function renderMonitors(){ lazyScene(sceneEls.monitors, monMod, (m) => m.mountMonitors(sceneEls.monitors, { esc, IC, toast, tier: planTier, go, noAccount, signup: toSignup })); }
+  function renderDeadlines(){ lazyScene(sceneEls.deadlines, dlMod, (m) => m.mountDeadlines(sceneEls.deadlines, { toast, tier: planTier, go, noAccount, signup: toSignup })); }
   function renderApiKeys(){ lazyScene(sceneEls.apikeys, keysMod, (m) => m.mountApiKeys(sceneEls.apikeys, { esc, IC, toast })); }
   function renderAudit(){ lazyScene(sceneEls.audit, auditMod, (m) => m.mountAudit(sceneEls.audit, { esc, IC, toast })); }
   function renderDevice(){ lazyScene(sceneEls.device, deviceMod, (m) => m.mountDevice(sceneEls.device, { esc, IC, toast, askAI })); }
@@ -4193,7 +4226,7 @@ export function renderDeck(host, opts) {
       const feedNote = iv.status === "rejected" && kv.status === "rejected" ? `<div class="dk-nempty">Live CVE feeds are unavailable right now, so this list uses your security graph only.</div>` : "";
       const SRC = { finding: "Your findings", cve: "Global feed", connect: "Setup" };
       box.innerHTML = (acts.length
-        ? `<div class="dk-tscroll"><table class="dk-natbl"><thead><tr><th>Severity</th><th>Item</th><th>Source</th><th></th></tr></thead><tbody>${acts.map((a) => `<tr><td class="sv"><span class="dk-sev" style="--c:${SEV_C[a.sev] || "#8a93a6"}"><i></i>${esc(a.sev.charAt(0).toUpperCase() + a.sev.slice(1))}</span></td><td class="it"><b>${esc(a.title)}</b><span>${esc(a.detail)}</span></td><td class="so">${esc(SRC[a.kind] || "")}</td><td class="ac">${go1(a)}</td></tr>`).join("")}</tbody></table></div>`
+        ? `<div class="dk-tscroll"><table class="dk-natbl"><thead><tr><th>Severity</th><th>Item</th><th>Source</th><th><span class="dk-sr-only">Action</span></th></tr></thead><tbody>${acts.map((a) => `<tr><td class="sv"><span class="dk-sev" style="--c:${SEV_C[a.sev] || "#8a93a6"}"><i></i>${esc(a.sev.charAt(0).toUpperCase() + a.sev.slice(1))}</span></td><td class="it"><b>${esc(a.title)}</b><span>${esc(a.detail)}</span></td><td class="so">${esc(SRC[a.kind] || "")}</td><td class="ac">${go1(a)}</td></tr>`).join("")}</tbody></table></div>`
         : `<div class="dk-nempty">Nothing urgent: no open critical or high findings and no known-exploited CVEs in this week's feed.</div>`) + feedNote;
       const f = box.querySelector(".dk-actform");
       if (f) {
@@ -4249,7 +4282,7 @@ export function renderDeck(host, opts) {
       <div class="dk-ti-head"><h1>Plans &amp; billing</h1></div>
       ${opts.isOwner
         ? `<div class="dk-compnote">Owner account: pick any plan to use the Deck exactly as a customer on it does. You're using <b>${esc(planLabel(planTier))}</b>${planTier !== realTier ? `; your account plan is ${esc(planLabel(realTier))}` : ""}. Your account keeps full access on the server either way.</div>`
-        : `<div class="dk-compnote">Preview pricing — checkout isn't live yet. You're on the <b>${esc(planLabel(planTier))}</b> plan${lentTier ? ` in this workspace, shared by its owner; your own plan is ${esc(planLabel(realTier))}` : ""}. Upgrades are requested here and granted manually; no payment is taken.</div>`}
+        : `<div class="dk-compnote">Preview pricing — checkout isn't live yet. You're on the <b>${esc(planLabel(planTier))}</b> plan${lentTier ? ` in this workspace, shared by its owner; your own plan is ${esc(planLabel(realTier))}` : ""}. Upgrades are requested here and granted manually; no payment is taken.${noAccount ? " You're not signed in: create a free account to request one." : ""}</div>`}
       <div class="dk-plangrid">${PLANS.map((p) => { const c = ctaFor(p.id); return `
         <div class="dk-plancard${p.tag ? " feat" : ""}${p.id === planTier ? " iscur" : ""}" style="--a:${p.a}" data-explain="plan.${p.id}">
           ${p.id === planTier ? `<span class="dk-plantag">Current</span>` : p.tag ? `<span class="dk-plantag">${esc(p.tag)}</span>` : ""}
@@ -4267,6 +4300,11 @@ export function renderDeck(host, opts) {
       const plan = b.dataset.plan;
       if (b.dataset.owner) { setPreviewTier(plan === realTier ? "" : plan, "plans"); toast("Using the " + planLabel(plan) + " plan"); return; }
       if (plan === "enterprise") { try { window.open("mailto:sales@darknode.ai?subject=" + encodeURIComponent("Darknode Enterprise enquiry"), "_blank", "noopener"); } catch (_) {} return; }
+      if (noAccount) {
+        const ok = window.dnConfirm ? await window.dnConfirm("Upgrades need an account", "Create a free Darknode account first, then request " + planLabel(plan) + " from this page.", { submitText: "Create a free account" }) : false;
+        if (ok) toSignup();
+        return;
+      }
       if (typeof opts.onUpgradeRequest !== "function") { toast("Upgrade requests aren't available in this context."); return; }
       const note = window.dnPrompt ? await window.dnPrompt("Request " + planLabel(plan), { desc: "We'll review and get back to you. Add anything about your team or needs (optional).", placeholder: "e.g. 6 analysts, needs SSO", textarea: true, submitText: "Send request" }) : "";
       if (note === null) return; // cancelled
@@ -4404,6 +4442,7 @@ export function renderDeck(host, opts) {
   function wireDigest(el){
     const on = el.querySelector("#dkDigOn"), tb = el.querySelector("#dkDigTest"), st = el.querySelector("#dkDigSt");
     if (!on) return;
+    if (noAccount) { on.textContent = "Off"; st.textContent = "The digest is emailed to an account, so it needs a free account."; return; }
     const watchLine = (m, d) => {
       const w = m.localWatch(), n = (w.certs || []).length;
       return n ? "Watching " + n + " certificate" + (n === 1 ? "" : "s") + (w.certsAt ? ", last checked " + new Date(w.certsAt).toLocaleDateString() : "") + "." + (d && d.lastSent ? " Last digest sent " + new Date(d.lastSent).toLocaleDateString() + "." : "")
@@ -4450,10 +4489,13 @@ export function renderDeck(host, opts) {
             <div class="m"><div class="t">Accent colour</div><div class="s">A hex colour for workspace accents. Optional.</div></div>
             <input class="dk-setin" id="dkSetWsAccent" type="text" maxlength="7" placeholder="#2552c6" value="${esc(wsProfile.accent || "")}" autocomplete="off" spellcheck="false" style="width:110px">
           </div>
-          <div class="dk-setrow">
+          ${noAccount ? `<div class="dk-setrow">
+            <div class="m"><div class="t">Not signed in</div><div class="s">Without an account, your checks, notes and keys stay in this browser, and monitors, deadlines and the weekly digest are off. A free account watches one domain and emails you its alerts.</div></div>
+            <button class="dk-settog on" id="dkSetSignup">Create a free account</button>
+          </div>` : `<div class="dk-setrow">
             <div class="m"><div class="t">Signed in as</div><div class="s">${esc(user.email || "—")}</div></div>
             <span class="s" style="color:#6b7589;font-size:12.5px">${esc(user.displayName || "")}</span>
-          </div>
+          </div>`}
         </div>
 
         <div class="dk-ovp">
@@ -4483,7 +4525,7 @@ export function renderDeck(host, opts) {
         <div class="dk-ovp" id="dkDigest">
           <h2>${IC.note} Weekly email digest</h2>
           <div class="dk-setrow">
-            <div class="m"><div class="t">Monday digest</div><div class="s">Each Monday: vulnerabilities CISA confirmed as exploited that week, and any certificate you watch that has expired or expires within 30 days. Sent to ${esc(user.email || "your account email")}.</div></div>
+            <div class="m"><div class="t">Monday digest</div><div class="s">Each Monday: vulnerabilities CISA confirmed as exploited that week, and any certificate you watch that has expired or expires within 30 days. Sent to ${noAccount ? "your account email" : esc(user.email || "your account email")}.</div></div>
             <button class="dk-settog" id="dkDigOn" disabled>Loading</button>
           </div>
           <div class="dk-setrow">
@@ -4551,6 +4593,7 @@ export function renderDeck(host, opts) {
     const coolBtn = el.querySelector("#dkSetCool");
     if (coolBtn) coolBtn.onclick = (e) => { const on = !coolOn(); try { localStorage.setItem("dn_cool_ui", on ? "1" : "0"); } catch (_) {} reloadToolsForCool(); e.target.classList.toggle("on", on); e.target.textContent = on ? "On" : "Off"; };
     el.querySelector("#dkSetPlans").onclick = () => go("plans");
+    const setSu = el.querySelector("#dkSetSignup"); if (setSu) setSu.onclick = toSignup;
     el.querySelector("#dkSetExport").onclick = () => exportDeckState();
     el.querySelector("#dkSetImport").onclick = () => importDeckState();
     const syncPlanBtn = el.querySelector("#dkSetSyncPlan");
@@ -5250,6 +5293,7 @@ export function renderDeck(host, opts) {
     : opts.startSec && !route0 ? "tool:" + opts.startSec : null;
   const lockedLink = lockedKey && isLocked(lockedKey) && !isLocked("scene:plans") ? lockedKey : null;
   rafId = requestAnimationFrame(() => {
+    if (navSeq) { routing = false; return; } // something was opened already (see navSeq)
     if (lockedLink) {
       go("plans");
       const name = navName[lockedLink] || lockedLink.split(":")[1];
@@ -5284,6 +5328,8 @@ export function renderDeck(host, opts) {
     cancelAnimationFrame(rafId); clearInterval(clockId); clearTimeout(gTimer);
     busOffs.forEach((off) => { try { off(); } catch (_) {} }); busOffs = [];
     document.removeEventListener("keydown", onKey); window.removeEventListener("resize", onResize);
+    behind.forEach((e) => { e.inert = false; });
+    if (skipLink) skipLink.removeEventListener("click", onSkip);
     root.remove();
   }
   return () => (swapped ? swapped() : teardown());
