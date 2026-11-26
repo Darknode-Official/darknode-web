@@ -8,7 +8,18 @@
       "rewrites": [
         { "source": "/api/chat", "function": { "functionId": "chat", "region": "us-central1" } },
         { "source": "/version", "destination": "/version.txt" },
-        { "source": "**", "destination": "/index.html" }
+        { "regex": "^/features/?$", "destination": "/pages/features.html" },
+        { "regex": "^/pricing/?$", "destination": "/pages/pricing.html" },
+        { "regex": "^/faq/?$", "destination": "/pages/faq.html" },
+        { "regex": "^/nexus/?$", "destination": "/pages/nexus.html" },
+        { "regex": "^/security-knowledge/?$", "destination": "/pages/security-knowledge.html" },
+        { "regex": "^/darknode-os/?$", "destination": "/pages/darknode-os.html" },
+        { "regex": "^/government/?$", "destination": "/pages/government.html" },
+        { "regex": "^/crosswalk/?$", "destination": "/pages/crosswalk.html" },
+        { "regex": "^/terms/?$", "destination": "/pages/terms.html" },
+        { "regex": "^/privacy/?$", "destination": "/pages/privacy.html" },
+        { "regex": "^/acceptable-use/?$", "destination": "/pages/acceptable-use.html" },
+        { "regex": "^/(?:console(?:/|$))?(?:(?:area|personal|enterprise)/[\\w-]+|check/[^/]+|tool-[a-z0-9-]+|accessreview|activity|addressintel|admin|adversary|adversaryplaybook|aegis|ai|all-tools|api|apifuzzer|apikeys|apispec|apitester|asnexplorer|assistant|attacksim|audit|awareness|backupready|beta|binanalyze|breachclock|breachlookup|caaudit|cheats|citadel|cloud|cloudspend|cloudtrail|coder|codescan|compliance|compliance-center|con|connections|cookieinspect|correlations|corstester|cracklab|credaudit|crosswalk|crucible|cryptotools|cspevaluator|cvesearch|cvetimeline|cvsscalc|cyberbriefing|cyberrange|darknetradar|dataflow|dataviz|deadlines|deception|device|dlguide|dlp|dmarcreports|dns|dnshunt|docs|domainguard|dossier|downloads|education|emailauth|emailheader|embedsdk|encoding|engine|engines|enterprise|evidence|exploitdb|exploitdev|favicon|fedcompliance|findings|firewall|fleetcomply|forensicstoolkit|ftimeline|fwaudit|ghdb|hashsuite|headeranalyzer|home|huntlab|hydra|iacscan|identitymatrix|incidentcost|incidents|inventory|invest|investigation|investigations|iocenrich|jml|k8saudit|leakprobe|learn|learndo|leetspeak|licenseaudit|loganalyze|loghunt|malclass|math|mcpconnect|memforensics|mobilesec|monitors|navarch|netexposure|netmap|networkscanner|networktools|nhi|oauthgov|oracle|osint|overview|packetanalyzer|packetcraft|payees|payloadgen|payloads|payloadstudio|pentestconsole|pentestreg|personal|phantom|phishtriage|plans|posture|privatecloud|privaudit|privesc|prometheus|proxyhunt|reconplanner|refs|regexlab|report|reports|reverseshell|riskreg|secdash|secgraph|secquiz|securitytxt|sentineleye|settings|setup|sigma|signins|snippets|socialeng|spectre|sslinspector|stego|strongroom|subdomains|supplychain|surface|targets|team|techfingerprint|threat|threatforest|threatmodel|tlsfleet|toolbox|toolkit|tools|urldissect|vanguard|veil|vendorrisk|vmlab|vpnaudit|vulndb|vulnimport|wayback|websockettester|wirelesslab|xsslab|yarabuilder|zerotrust)?/?$", "destination": "/index.html" }
       ],
       "headers": [
         {
@@ -81,7 +92,18 @@
       "rewrites": [
         { "source": "/api/chat", "function": { "functionId": "chat", "region": "us-central1" } },
         { "source": "/version", "destination": "/version.txt" },
-        { "source": "**", "destination": "/index.html" }
+        { "regex": "^/features/?$", "destination": "/pages/features.html" },
+        { "regex": "^/pricing/?$", "destination": "/pages/pricing.html" },
+        { "regex": "^/faq/?$", "destination": "/pages/faq.html" },
+        { "regex": "^/nexus/?$", "destination": "/pages/nexus.html" },
+        { "regex": "^/security-knowledge/?$", "destination": "/pages/security-knowledge.html" },
+        { "regex": "^/darknode-os/?$", "destination": "/pages/darknode-os.html" },
+        { "regex": "^/government/?$", "destination": "/pages/government.html" },
+        { "regex": "^/crosswalk/?$", "destination": "/pages/crosswalk.html" },
+        { "regex": "^/terms/?$", "destination": "/pages/terms.html" },
+        { "regex": "^/privacy/?$", "destination": "/pages/privacy.html" },
+        { "regex": "^/acceptable-use/?$", "destination": "/pages/acceptable-use.html" },
+        { "regex": "^/(?:console(?:/|$))?(?:(?:area|personal|enterprise)/[\\w-]+|check/[^/]+|tool-[a-z0-9-]+|accessreview|activity|addressintel|admin|adversary|adversaryplaybook|aegis|ai|all-tools|api|apifuzzer|apikeys|apispec|apitester|asnexplorer|assistant|attacksim|audit|awareness|backupready|beta|binanalyze|breachclock|breachlookup|caaudit|cheats|citadel|cloud|cloudspend|cloudtrail|coder|codescan|compliance|compliance-center|con|connections|cookieinspect|correlations|corstester|cracklab|credaudit|crosswalk|crucible|cryptotools|cspevaluator|cvesearch|cvetimeline|cvsscalc|cyberbriefing|cyberrange|darknetradar|dataflow|dataviz|deadlines|deception|device|dlguide|dlp|dmarcreports|dns|dnshunt|docs|domainguard|dossier|downloads|education|emailauth|emailheader|embedsdk|encoding|engine|engines|enterprise|evidence|exploitdb|exploitdev|favicon|fedcompliance|findings|firewall|fleetcomply|forensicstoolkit|ftimeline|fwaudit|ghdb|hashsuite|headeranalyzer|home|huntlab|hydra|iacscan|identitymatrix|incidentcost|incidents|inventory|invest|investigation|investigations|iocenrich|jml|k8saudit|leakprobe|learn|learndo|leetspeak|licenseaudit|loganalyze|loghunt|malclass|math|mcpconnect|memforensics|mobilesec|monitors|navarch|netexposure|netmap|networkscanner|networktools|nhi|oauthgov|oracle|osint|overview|packetanalyzer|packetcraft|payees|payloadgen|payloads|payloadstudio|pentestconsole|pentestreg|personal|phantom|phishtriage|plans|posture|privatecloud|privaudit|privesc|prometheus|proxyhunt|reconplanner|refs|regexlab|report|reports|reverseshell|riskreg|secdash|secgraph|secquiz|securitytxt|sentineleye|settings|setup|sigma|signins|snippets|socialeng|spectre|sslinspector|stego|strongroom|subdomains|supplychain|surface|targets|team|techfingerprint|threat|threatforest|threatmodel|tlsfleet|toolbox|toolkit|tools|urldissect|vanguard|veil|vendorrisk|vmlab|vpnaudit|vulndb|vulnimport|wayback|websockettester|wirelesslab|xsslab|yarabuilder|zerotrust)?/?$", "destination": "/index.html" }
       ],
       "headers": [
         {

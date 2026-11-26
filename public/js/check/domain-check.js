@@ -7,6 +7,7 @@
 //   posture-engine.js      HSTS and security-header grading (the External Posture tool)
 //   domainguard-engine.js  DoH answer parsing, CAA records, registrable domain
 //   security-txt.js        RFC 9116 validation (the security.txt tool)
+//   ct-fetch.js            certificate-transparency rows (crt.sh, Cert Spotter fallback)
 // DNS goes straight to public DNS-over-HTTPS (Cloudflare, then Google). Web requests go
 // through the Darknode fetch proxy (net.js dnFetch), which reads public responses only.
 //
@@ -19,7 +20,7 @@
 // test/check/domain-check.test.mjs with the network injected.
 
 import { analyzeSPF, analyzeDMARC, analyzeDKIM, DEFAULT_SELECTORS } from "../email-auth.js?v=1";
-import { gradeTransport, gradeHeaders, letterGrade } from "../dataprotect/posture-engine.js?v=1";
+import { gradeTransport, gradeHeaders, letterGrade, newestCert, certDaysLeft } from "../dataprotect/posture-engine.js?v=1";
 import { dohStatus, rrData, txtStrings, parseCaaData, parseMx, registrableDomain, toAsciiDomain, isDomainName } from "../exposure/domainguard-engine.js?v=1";
 import { validateSecurityTxt } from "../security-txt.js?v=1";
 
@@ -38,13 +39,14 @@ export const CHECKS = [
   { id: "dmarc", group: "email", label: "DMARC policy", weight: 12, tool: "emailauth" },
   { id: "dkim", group: "email", label: "DKIM", weight: 6, tool: "emailauth" },
   { id: "mx", group: "email", label: "Mail servers (MX)", weight: 4, tool: "dns" },
-  { id: "https", group: "https", label: "HTTPS", weight: 12, tool: "headeranalyzer" },
-  { id: "redirect", group: "https", label: "HTTP to HTTPS redirect", weight: 8, tool: "headeranalyzer" },
+  { id: "https", group: "https", label: "HTTPS", weight: 10, tool: "headeranalyzer" },
+  { id: "redirect", group: "https", label: "HTTP to HTTPS redirect", weight: 7, tool: "headeranalyzer" },
+  { id: "cert", group: "https", label: "Certificate expiry", weight: 6, tool: "sslinspector" },
   { id: "hsts", group: "headers", label: "HSTS", weight: 8, tool: "headeranalyzer" },
-  { id: "csp", group: "headers", label: "Content-Security-Policy", weight: 8, tool: "headeranalyzer" },
-  { id: "frame", group: "headers", label: "Frame protection", weight: 5, tool: "headeranalyzer" },
+  { id: "csp", group: "headers", label: "Content-Security-Policy", weight: 7, tool: "headeranalyzer" },
+  { id: "frame", group: "headers", label: "Frame protection", weight: 4, tool: "headeranalyzer" },
   { id: "nosniff", group: "headers", label: "X-Content-Type-Options", weight: 4, tool: "headeranalyzer" },
-  { id: "referrer", group: "headers", label: "Referrer-Policy", weight: 3, tool: "headeranalyzer" },
+  { id: "referrer", group: "headers", label: "Referrer-Policy", weight: 2, tool: "headeranalyzer" },
   { id: "dnssec", group: "dns", label: "DNSSEC", weight: 7, tool: "dns" },
   { id: "caa", group: "dns", label: "CAA records", weight: 7, tool: "dns" },
   { id: "securitytxt", group: "disclosure", label: "security.txt", weight: 6, tool: "securitytxt" },
@@ -128,6 +130,18 @@ async function defaultFetch(url, opts) {
   return dnFetch(url, opts);
 }
 
+// Certificate-transparency rows covering a host (ct-fetch.js: crt.sh, then Cert Spotter), capped
+// so a slow log never holds the whole check: past the cap the check is "error", not graded.
+export const CERT_TIMEOUT_MS = 15000;
+async function defaultCertRows(host) {
+  const { fetchCertRows } = await import("/js/dataprotect/ct-fetch.js?v=20261029e");
+  return fetchCertRows(host);
+}
+function withTimeout(p, ms, why) {
+  let t;
+  return Promise.race([p, new Promise((_, rej) => { t = setTimeout(() => rej(new Error(why)), ms); })]).finally(() => clearTimeout(t));
+}
+
 const msgOf = (e) => String((e && e.message) || e || "unknown error").replace(/\.+$/, "");
 
 // A failure of the proxy itself (or the site refusing the proxy) says nothing about the
@@ -156,6 +170,8 @@ function dnsRes(r) {
 }
 
 const STATUS = { PASS: "pass", WARN: "warn", FAIL: "fail" };
+// A CT timestamp in ms: crt.sh writes zoneless ISO ("2026-01-14T23:59:59"), which is UTC.
+const ctTime = (s) => { s = String(s || ""); return Date.parse(/^\d{4}-\d\d-\d\d[T ]\d\d:\d\d(:\d\d(\.\d+)?)?$/.test(s) ? s.replace(" ", "T") + "Z" : s); };
 // The fix for a problem email-auth.js reports in a record that exists, keyed on its wording.
 const SPF_FIXES = [
   [/SPF records \(v=spf1\) are published/, "Merge them into a single v=spf1 record."],
@@ -287,6 +303,32 @@ const EVAL = {
     const fin = h.value.finalUrl || h.value.url || "";
     if (/^https:/i.test(fin)) return { status: "pass", detail: `http:// redirects to ${clip(fin.replace(/^(https:\/\/[^/]+).*$/i, "$1"), 80)}.`, fix: "" };
     return { status: "fail", detail: `http:// serves the site without moving to HTTPS (HTTP ${h.value.status | 0}).`, fix: "Answer every http:// request with a 301 redirect to the same path on https://." };
+  },
+  cert(o) {
+    const g = webGate(o);
+    if (g) return g;
+    const r = o.cert;
+    if (!r) return PENDING;
+    if (r.error) return err("the certificate logs", r.error);
+    const rows = r.value || [];
+    if (rows.unreachable) return err("the certificate logs", "neither crt.sh nor Cert Spotter answered");
+    const now = o.now || Date.now();
+    const c = newestCert(rows, now);
+    const days = c ? certDaysLeft(c.notAfter, now) : null;
+    // nothing logged says nothing certain (a private CA, or a name the logs file differently)
+    if (days == null) return err("the certificate logs", `no certificate for ${o.webHost} is logged`);
+    const tAfter = ctTime(c.notAfter), tBefore = ctTime(c.notBefore);
+    const until = isNaN(tAfter) ? String(c.notAfter).slice(0, 10) : new Date(tAfter).toISOString().slice(0, 10);
+    const by = c.issuer ? ` (${clip(String(c.issuer).replace(/^.*\bO=("?)([^,"]+)\1.*$/, "$2"), 50)})` : "";
+    const fix = "Renew the certificate now, and check that automatic renewal (your ACME client or host's setting) is running.";
+    if (days < 0) return { status: "fail", detail: `The newest logged certificate for ${o.webHost}${by} expired on ${until}.`, fix };
+    // bands follow the certificate's own lifetime, so 90-day and short-lived certificates renewing on schedule are not flagged
+    const life = isNaN(tAfter) || isNaN(tBefore) ? null : (tAfter - tBefore) / 86400000;
+    const lifeDays = life && life > 0 ? life : 90;
+    const left = days === 0 ? "less than a day" : days === 1 ? "1 day" : days + " days";
+    if (days < Math.min(7, lifeDays * 0.1)) return { status: "fail", detail: `The newest logged certificate for ${o.webHost}${by} expires in ${left}, on ${until}.`, fix };
+    if (days < Math.min(21, lifeDays * 0.25)) return { status: "warn", detail: `The newest logged certificate for ${o.webHost}${by} expires in ${left}, on ${until}, later than renewal usually happens.`, fix: "Renew the certificate before then, and check that automatic renewal (your ACME client or host's setting) is running." };
+    return { status: "pass", detail: `The newest logged certificate for ${o.webHost}${by} is valid until ${until} (${left}).`, fix: "" };
   },
   hsts(o) {
     const src = headerSource(o);
@@ -436,14 +478,14 @@ const lookupFailed = (r) => !r || !!r.error || !["ok", "nxdomain"].includes(dohS
 
 /**
  * Run the check. onProgress(result) fires as each source lands, with pending checks.
- * deps: { doh(name, type, {cd}), fetchUrl(url, opts) } for tests; defaults are live.
+ * deps: { doh(name, type, {cd}), fetchUrl(url, opts), certRows(host), now } for tests; defaults are live.
  * @returns {Promise<{domain, webHost, grade, score, earned, possible, checks, counts, ranAt}>}
  */
-export async function runDomainCheck(input, { onProgress, doh = dohJSON, fetchUrl = defaultFetch } = {}) {
+export async function runDomainCheck(input, { onProgress, doh = dohJSON, fetchUrl = defaultFetch, certRows = defaultCertRows, certTimeoutMs = CERT_TIMEOUT_MS, now } = {}) {
   const domain = normalizeDomain(input);
   if (!domain) throw new Error("Enter a domain name, like example.com.");
   const org = registrableDomain(domain);
-  const obs = { domain, org, webHost: domain, web: "pending" };
+  const obs = { domain, org, webHost: domain, web: "pending", now };
   const result = () => {
     const checks = evaluate(obs);
     const g = gradeChecks(checks);
@@ -479,6 +521,7 @@ export async function runDomainCheck(input, { onProgress, doh = dohJSON, fetchUr
     track("https", settleWeb(fetchUrl("https://" + obs.webHost + "/", { timeout: 15000 })));
     track("http", settleWeb(fetchUrl("http://" + obs.webHost + "/", { timeout: 15000 })));
     track("stxt", settle(fetchSecurityTxt(fetchUrl, obs.webHost)));
+    track("cert", settle(withTimeout(Promise.resolve().then(() => certRows(obs.webHost)), certTimeoutMs, "the certificate logs did not answer within " + Math.round(certTimeoutMs / 1000) + " seconds")));
   }
   await Promise.all(jobs);
   return result();
@@ -486,7 +529,7 @@ export async function runDomainCheck(input, { onProgress, doh = dohJSON, fetchUr
 
 // ---- findings (the Deck sink kit) -----------------------------------------------------------
 
-const HIGH_ON_FAIL = new Set(["https", "dmarc", "spf"]);
+const HIGH_ON_FAIL = new Set(["https", "cert", "dmarc", "spf"]);
 const fid = (domain, id) => `domaincheck|${domain}|${id}`;
 
 // Failing and warning checks -> common Finding shape (core/sink-map.js). Ids are stable,

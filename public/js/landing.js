@@ -5,6 +5,7 @@
 import { db } from "/js/firebase.js?v=20261021a";
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { mountLandingCheck } from "/js/check/landing-check.js?v=1";
+import { HOME, PAGES, applyPageMeta } from "/js/site-meta.js?v=1";
 
 const GITHUB = "https://github.com/Darknode-Official";
 
@@ -98,7 +99,7 @@ const CHECKS = [
 // pricing cards and the docs FAQ "Which tools do I get on my plan?".
 const FAQ = [
   ["What is free, and how do paid plans work?",
-    "Free includes the Quick Checks (email security, website headers, certificates, DNS, breaches and CVEs), the Personal space, the live vulnerability feed, a local security graph and case files, the free browser tools in the Tool Library, and the Darknode assistant with 50 messages a day. The CLI is free to run from source. Pro adds the Exposure and Application Security tools, saved findings and reports, premium AI models and cloud sync; Team adds the Organization space, identity and security-operations tools and shared workspaces; Enterprise adds risk and compliance tooling. Tools outside your plan are simply not shown. Paid plans are in preview: checkout is not live yet, so upgrades are requested and granted by hand and no payment is taken."],
+    "Free includes the Quick Checks (email security, website headers, certificates, DNS, breaches and CVEs), the Personal space, the live vulnerability feed, a local security graph and case files, the free browser tools in the Tool Library, one watched domain with email alerts, and the Darknode assistant with 50 messages a day. The CLI is free to run from source. Pro adds the Exposure and Application Security tools, saved findings and reports, premium AI models, cloud sync, monitors for more domains and known-exploited CVEs, and deadline clocks; Team adds the Organization space, identity and security-operations tools and shared workspaces, which the owner can let members use the owner&rsquo;s plan in; Enterprise adds risk and compliance tooling. Tools outside your plan are simply not shown. Paid plans are in preview: checkout is not live yet, so upgrades are requested and granted by hand and no payment is taken."],
   ["Does our code or data leave our environment?",
     "Your saved findings stay in your browser unless you turn on cloud sync, a Pro feature. Code, cloud and infrastructure-as-code files you load are analysed on your device and are not uploaded to us; dependency checks send package names and versions to the public OSV database. Live checks against a domain (DNS, headers, certificate transparency) go through our edge proxy and are not stored. The built-in assistant sends your question through that proxy to the model you choose (Google Gemini on every plan, Anthropic Claude on Pro); we do not log or store prompts or answers. Nexus in the CLI can use a local Ollama model, so nothing leaves your machine."],
   ["Can I run Darknode offline or air-gapped?",
@@ -127,9 +128,9 @@ const PAGE_ONLY = {
     <section class="section nx-section" id="nexus" aria-labelledby="nexus-title">
       <div class="nx-section-glow"></div>
       <div class="wrap">
-        <div class="sec-label">AI Assistant</div>
-        <h2 class="sec-title" id="nexus-title">Nexus &mdash; the assistant on top of your findings</h2>
-        <p class="sec-sub">The deterministic engines do the finding and ranking; Nexus turns those results into plain-English explanations, remediation steps, and draft reports. It runs on your choice of backend &mdash; Claude, GPT, Gemini, Groq, Mistral and OpenRouter in the cloud, or a fully local model via Ollama for teams that keep everything in-house.</p>
+        <div class="sec-label">Terminal coding agent</div>
+        <h2 class="sec-title" id="nexus-title">Nexus &mdash; one coding agent over six engines</h2>
+        <p class="sec-sub">Nexus is the coding agent in the Darknode CLI. It puts one interface, with shared sessions, memory and commands, over Claude Code, the Gemini CLI, Codex, OpenCode, Aider and local Ollama models. Use the engines you already have accounts for, or keep everything on your own machine with a local model.</p>
 
         <!-- Architecture diagram -->
         <div class="nx-arch" aria-label="Nexus architecture diagram">
@@ -577,13 +578,13 @@ export function renderLanding(view, actions) {
       <div class="hero-grain"></div>
       <div class="wrap hero-inner">
         <div class="hx-grid"><div class="hx-copy">
-        <div class="hero-badge"><span class="badge-dot"></span> Deterministic &middot; Explainable &middot; Offline in the CLI and desktop app</div>
+        <div class="hero-badge"><span class="badge-dot"></span> Deterministic &middot; Explainable &middot; Offline CLI</div>
         <h1 class="hero-h1">Find the real risks in your<br><span class="hero-rotate-wrap"><span class="hero-rotate" id="hero-rotate">code</span></span></h1>
-        <p class="hero-sub">Darknode checks your domains, code, cloud, dependencies and configs for real vulnerabilities and risks, with deterministic engines that show how they reached each result. No black-box AI deciding severity. The CLI and desktop app run on your own machines and work offline with local Ollama models.</p>
+        <p class="hero-sub">Darknode checks your domains, code, cloud, dependencies and configs for real vulnerabilities and risks, with deterministic engines that show how they reached each result. No black-box AI deciding severity. The CLI runs on your own machine and works offline with local Ollama models.</p>
         <form class="dmc-form" id="dmcForm" novalidate>
           <label class="dmc-lbl" for="dmcIn">Check your domain</label>
           <div class="dmc-field"><input id="dmcIn" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="example.com" aria-describedby="dmcHelp"><button class="btn lg" type="submit">Check domain</button></div>
-          <p class="dmc-help" id="dmcHelp">Free, no sign-up, results in seconds. Reads public DNS records and HTTP headers: email authentication, HTTPS, security headers, DNSSEC, CAA and security.txt.</p>
+          <p class="dmc-help" id="dmcHelp">Free, no sign-up, results in seconds. Reads public DNS, HTTP headers and certificate logs: email authentication, HTTPS, certificate expiry, security headers, DNSSEC, CAA and security.txt.</p>
           <p class="dmc-msg" role="alert" hidden></p>
         </form>
         <div class="hero-cta">
@@ -697,15 +698,16 @@ ${pageOnly}
             <div class="price-badge">Recommended</div>
             <div class="price-tier">Pro</div>
             <div class="price-amount">$29<span class="price-period">/user/month</span></div>
-            <p class="price-desc">Built for working security professionals.</p>
+            <p class="price-desc">For professionals who need history, exports and the strongest AI models.</p>
             <ul class="price-features compact">
               <li>Everything in Free, plus:</li>
               <li>Exposure and Application Security tools, findings and reports</li>
               <li>Unlimited saved findings &amp; reports</li>
               <li>Premium AI models: Claude Fable 5.1, Claude Opus 5.5, Darknode Max</li>
               <li>500 AI messages a day (150 on Claude)</li>
-              <li>Known-exploited CVE monitors, with Cyber Resilience Act and BOD 22-01 deadline clocks</li>
               <li>Cloud sync across devices</li>
+              <li>Monitors for more domains and known-exploited CVEs, with Slack, Teams and webhook alerts</li>
+              <li>Cyber Resilience Act and BOD 22-01 deadline clocks for known-exploited CVEs, if you opt in</li>
               <li>Email support</li>
             </ul>
             <button class="btn lg ghost" id="price-pro">Join waitlist</button>
@@ -713,11 +715,12 @@ ${pageOnly}
           <div class="price-card">
             <div class="price-tier">Team</div>
             <div class="price-amount">$79<span class="price-period">/user/month</span></div>
-            <p class="price-desc">Shared findings and workflow for a security team.</p>
+            <p class="price-desc">Shared workspaces, roles and one audit trail for the whole team.</p>
             <ul class="price-features compact">
               <li>Everything in Pro, plus:</li>
               <li>Organization space, Identity, Security Operations, Fraud &amp; Abuse</li>
               <li>Shared team workspaces &amp; roles</li>
+              <li>Optionally share your plan with workspace members</li>
               <li>1,000 AI messages a day per user</li>
               <li>Integrations (ticketing, chat webhooks)</li>
               <li>Activity &amp; audit log</li>
@@ -727,7 +730,7 @@ ${pageOnly}
           <div class="price-card">
             <div class="price-tier">Enterprise</div>
             <div class="price-amount">Custom</div>
-            <p class="price-desc">Control, compliance, and scale for organizations.</p>
+            <p class="price-desc">Scale, compliance and deployment on your terms.</p>
             <ul class="price-features compact">
               <li>Everything in Team, plus:</li>
               <li>Risk &amp; Resilience and Compliance tools</li>
@@ -836,7 +839,8 @@ ${pageOnly}
   const scrollToCta = () => { const el = view.querySelector(".cta-notify"); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); const inp = $("cta-email"); if (inp) inp.focus({ preventScroll: true }); };
   if ($("price-pro")) $("price-pro").onclick = scrollToCta;
   if ($("price-team")) $("price-team").onclick = scrollToCta;
-  if ($("price-enterprise")) $("price-enterprise").onclick = scrollToCta;
+  // Enterprise is a conversation, not a launch list: the same address the Deck's Plans page uses
+  if ($("price-enterprise")) $("price-enterprise").onclick = () => { location.href = "mailto:sales@darknode.ai?subject=" + encodeURIComponent("Darknode Enterprise enquiry"); };
 
   // Animated counter for hero stats — scroll-triggered with easing
   const counterEls = view.querySelectorAll("[data-count]");
@@ -1120,8 +1124,9 @@ ${pageOnly}
   // /nexus, /security-knowledge, /darknode-os and /government are not on the home page at all:
   // PAGE_ONLY renders them only at their own path.
   const PAGE_ROUTES = { "/pricing": ["pricing", "start"], "/faq": ["faq"], "/features": ["features", "how", "products"], "/nexus": ["nexus"], "/security-knowledge": ["security-knowledge"], "/darknode-os": ["darknode-os"], "/government": ["government"] };
-  const PAGE_TITLES = { "/pricing": "Pricing", "/faq": "FAQ", "/features": "Features", "/nexus": "Nexus", "/security-knowledge": "Security knowledge", "/darknode-os": "Darknode OS", "/government": "Government and regulated teams" };
   const dedicated = PAGE_ROUTES[path];
+  // title, description and canonical of this page (the same head the build serves it with)
+  if (PAGES[path]) applyPageMeta(path, PAGES[path]); else if (path === "/") applyPageMeta("/", HOME);
   if (dedicated) {
     view.querySelectorAll(".section, .hero, .cta-final").forEach(sec => {
       if (!dedicated.includes(sec.id)) sec.hidden = true;
@@ -1139,7 +1144,6 @@ ${pageOnly}
     }
     // the home page shows the first six questions; /faq shows every one
     if (path === "/faq") { view.querySelectorAll("[data-faq-more]").forEach((el) => { el.hidden = false; }); if ($("faq-all")) $("faq-all").hidden = true; }
-    document.title = (PAGE_TITLES[path] || "Darknode") + " — Darknode";
     window.scrollTo(0, 0);
   } else if (path === "/" && location.hash.length > 1) {
     // a link to a home section (/#pricing) lands on it: the section did not exist when the browser looked
@@ -1164,7 +1168,6 @@ ${pageOnly}
     const mount = page.querySelector(".dn-pubmain");
     // the page renders after load, so a #section link (security.txt's Policy) scrolls once it exists
     pub.load().then((render) => render(mount)).then(() => { const t = location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1))); if (t) t.scrollIntoView(); }).catch(() => { mount.textContent = "Couldn't load this tool. Check your connection and reload."; });
-    document.title = pub.title + " — Darknode";
     window.scrollTo(0, 0);
   }
 
@@ -1178,10 +1181,7 @@ ${pageOnly}
     page.innerHTML = '<div class="wrap"><h1>Page not found</h1><p>There is no page at <code></code>. Check the address, or start from the home page.</p><a class="btn" href="/">Go to the home page</a></div>';
     page.querySelector("code").textContent = location.pathname;
     view.prepend(page);
-    let robots = document.querySelector('meta[name="robots"]');
-    if (!robots) { robots = document.createElement("meta"); robots.name = "robots"; document.head.appendChild(robots); }
-    robots.content = "noindex";
-    document.title = "Page not found — Darknode";
+    applyPageMeta(path, null); // noindex, no canonical
     window.scrollTo(0, 0);
   }
 }

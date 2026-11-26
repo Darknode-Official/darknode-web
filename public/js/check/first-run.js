@@ -83,6 +83,10 @@ function watchHtml() {
       : `Its certificate (expiry within 21 days) and its email/DNS records (SPF, DMARC, MX, CAA) are checked once a day. ${where} Turn the watch off any time under Monitors.`;
     return `<div class="dk-fr-wtx"><b>${head}</b> ${body}</div><div class="dk-fr-wbtns">${goBtn("monitors", "Open Monitors")}</div>`;
   }
+  if (w.state === "guest") {
+    return `<div class="dk-fr-wtx"><b>Watching a domain needs a free account.</b> Alerts go to the account's verified email address, so Test Mode cannot hold a watch. Create a free account and ${esc(d)} is checked again when the Deck first opens, ready to watch.</div>
+      <div class="dk-fr-wbtns"><button type="button" class="dk-tibtn on" data-fr-signup="1">Create a free account</button></div>`;
+  }
   if (w.state === "conflict") {
     return `<div class="dk-fr-wtx"><b>Your Free plan already watches ${esc(w.other)}.</b> The Free plan watches one domain. To watch ${esc(d)} instead, delete the watch on ${esc(w.other)} under Monitors, or request an upgrade under Plans.</div>
       <div class="dk-fr-wbtns">${goBtn("monitors", "Open Monitors")}${goBtn("plans", "See Plans")}</div>`;
@@ -95,6 +99,8 @@ async function watchDomain() {
   if (!domain || S.running || (S.watch && S.watch.domain === domain && S.watch.state === "busy")) return;
   const free = isFree();
   const set = (w) => { if (S.res && S.res.domain === domain) { S.watch = { domain, ...w }; paint(); } };
+  // a Test Mode / guest session has no account to alert: offer the sign-up instead of a call that cannot succeed
+  if (isTestIdentity(S.ctx && S.ctx.user)) return set({ state: "guest" });
   set({ state: "busy" });
   try {
     const { monitorApi } = await import("/js/deck/monitor-client.js?v=1");
@@ -118,8 +124,17 @@ async function watchDomain() {
     set({ state: "on", already: !made.length, paused: all.some((m) => m.paused), to: mail ? mail.to : "", emailAll: all.every((m) => (m.channels || []).some((c) => c.type === "email")) });
   } catch (e) {
     const msg = (e && e.message) || "The watch could not be set up. Try again.";
-    set({ state: "error", plan: !!(e && e.plan), msg: !(e && e.status) && /^Sign in/.test(msg) ? "Sign in with your own account to watch a domain. Alerts go to its verified email address." : msg });
+    if (!(e && e.status) && /^Sign in/.test(msg)) return set({ state: "guest" });
+    set({ state: "error", plan: !!(e && e.plan), msg });
   }
+}
+
+// Leave the guest session for the sign-up form (auth.js opens it on /?signup=1), keeping the
+// domain so the Deck checks it again on first open and the watch is one click away.
+function toSignup(domain) {
+  try { localStorage.setItem(FIRST_DOMAIN_KEY, domain); } catch (_) {}
+  try { sessionStorage.removeItem("dn_guest"); } catch (_) {}
+  location.assign("/?signup=1");
 }
 
 function savedHtml(sv) {
@@ -179,7 +194,7 @@ export function mountFirstRun(slot, ctx) {
   S.slot = slot; S.ctx = ctx;
   const chip = isTestIdentity(ctx.user) ? "" : workDomainFromEmail(ctx.user && ctx.user.email);
   slot.innerHTML = `<div class="dk-fr" role="region" aria-label="Check your domain">
-    <div class="dk-fr-h"><b>Start with your domain</b><p>See where you stand before setting anything up: email authentication, HTTPS, security headers, DNS hardening and security.txt, read live from public records.</p></div>
+    <div class="dk-fr-h"><b>Start with your domain</b><p>See where you stand before setting anything up: email authentication, HTTPS, certificate expiry, security headers, DNS hardening and security.txt, read live from public records.</p></div>
     <form class="dk-actform dk-fr-form" novalidate><input type="text" placeholder="example.com" aria-label="Domain to check" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="dk-tibtn on" type="submit">Check domain</button></form>
     ${chip ? `<div class="dk-fr-chips"><span>From your sign-up email:</span><button type="button" class="dk-fr-chip" data-fr-domain="${esc(chip)}">Check ${esc(chip)}</button></div>` : ""}
     <p class="dk-fr-help">Use a domain you own or manage. The result is saved to this workspace, with each issue as a finding.</p>
@@ -196,6 +211,7 @@ export function mountFirstRun(slot, ctx) {
     if (t.dataset.frDomain && !S.running) run(t.dataset.frDomain);
     else if (t.dataset.dmcTool && S.ctx.openTool) S.ctx.openTool(t.dataset.dmcTool);
     else if (t.dataset.frWatch) watchDomain();
+    else if (t.dataset.frSignup && S.res) toSignup(S.res.domain);
     else if (t.dataset.frGo === "secgraph" && S.ctx.openTool) S.ctx.openTool("secgraph");
     else if (t.dataset.frGo && S.ctx.go) S.ctx.go(t.dataset.frGo);
   });

@@ -159,7 +159,7 @@ function runScaffold(args) {
   for (const [rel, content] of Object.entries(creates)) { mkdirSync(dirname(join(ROOT, rel)), { recursive: true }); writeFileSync(join(ROOT, rel), content); }
   for (const [rel, content] of Object.entries(next)) writeFileSync(join(ROOT, rel), content);
   process.stdout.write(`applied (stamp ${stamp}):\n` + [...Object.keys(next).map((r) => `  M ${r}`), ...Object.keys(creates).map((r) => `  A ${r}`)].join("\n") + "\n");
-  process.stdout.write("next: implement the engine checks, then `node test/run.mjs` and `node scripts/new-deck-tool.mjs --check`.\n");
+  process.stdout.write("next: implement the engine checks, run `node scripts/sync-hosting-routes.mjs` (so the new path is not a 404), then `node test/run.mjs` and `node scripts/new-deck-tool.mjs --check`.\n");
 }
 
 const args = parseArgs(argv);

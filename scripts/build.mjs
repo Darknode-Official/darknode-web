@@ -14,10 +14,11 @@
 //
 // Source files keep their old ?v= values, so serving public/ directly still works in
 // development. Usage: node scripts/build.mjs [--out dist] [--check]
-import { cpSync, rmSync, readFileSync, writeFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { cpSync, rmSync, readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join, dirname, resolve, relative, sep, posix } from "node:path";
 import { fileURLToPath } from "node:url";
+import * as SITE_META from "../public/js/site-meta.js";
 
 const SPEC = /(["'`])((?:\.{1,2}\/|\/)[^"'`?\s$]+?\.(?:m?js|css|json|txt|svg|png|ico|webp|jpe?g|gif|woff2?))\?v=[A-Za-z0-9._-]+(\\?)\1/g;
 const TEXT = /\.(?:m?js|html)$/;
@@ -137,6 +138,29 @@ export function addModulePreloads(html, texts) {
   return html.slice(0, at) + add.map((u) => "\n" + last[1] + '<link rel="modulepreload" href="' + u + '">').join("") + html.slice(at);
 }
 
+// The head of index.html pointed at one public page (js/site-meta.js): its title, description,
+// canonical and social tags. meta null -> the not-found page: noindex and no canonical.
+const escAttr = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+export function pageHtml(html, path, meta, site) {
+  const swap = (re, val) => { if (!re.test(html)) throw new Error("index.html: " + re + " not found"); html = html.replace(re, (all, a, b) => a + val + b); };
+  if (!meta) {
+    swap(/(<title>)[^<]*(<\/title>)/, site.NOT_FOUND_TITLE);
+    swap(/(<meta name="robots" content=")[^"]*(">)/, "noindex");
+    html = html.replace(/^[ \t]*<link rel="canonical"[^>]*>\n/m, "");
+    return html;
+  }
+  const title = escAttr(meta === site.HOME ? meta.title : site.pageTitle(meta)), desc = escAttr(meta.description), url = site.SITE + (meta === site.HOME ? "/" : path);
+  swap(/(<title>)[^<]*(<\/title>)/, title);
+  swap(/(<meta name="description" content=")[^"]*(">)/, desc);
+  swap(/(<link rel="canonical" href=")[^"]*(">)/, url);
+  swap(/(<meta property="og:title" content=")[^"]*(">)/, title);
+  swap(/(<meta property="og:description" content=")[^"]*(">)/, desc);
+  swap(/(<meta property="og:url" content=")[^"]*(">)/, url);
+  swap(/(<meta name="twitter:title" content=")[^"]*(">)/, title);
+  swap(/(<meta name="twitter:description" content=")[^"]*(">)/, desc);
+  return html;
+}
+
 export function build({ src, out, check = false }) {
   const list = walk(src);
   const files = new Map(list.filter((f) => TEXT.test(f)).map((f) => [f, readFileSync(join(src, f), "utf8")]));
@@ -161,11 +185,20 @@ export function build({ src, out, check = false }) {
     if (first.length) sw = sw.replace(/const STATIC = \[\n/, (m) => m + [...new Set(first)].map((u) => "  '" + u + "',\n").join(""));
     outText.set("sw.js", sw);
   }
+  // Each public page gets index.html with its own head (firebase.json serves /pricing from
+  // /pages/pricing.html, and so on); 404.html is what Hosting answers, with a 404, for a path
+  // that is neither a public page nor an app page. The app renders the same view either way.
+  if (outText.has("index.html") && files.has("js/site-meta.js")) {
+    const site = SITE_META;
+    const index = outText.get("index.html");
+    for (const [path, meta] of Object.entries(site.PAGES)) outText.set("pages/" + meta.slug + ".html", pageHtml(index, path, meta, site));
+    outText.set("404.html", pageHtml(index, "", null, site));
+  }
   if (check) return { files: list.length, versioned: version.size, unresolved, buildHash };
 
   rmSync(out, { recursive: true, force: true });
   cpSync(src, out, { recursive: true, filter: (p) => { const rel = relative(src, p).split(sep).join("/"); return !rel || !SKIP.some((r) => r.test(rel)); } });
-  for (const [f, t] of outText) if (t !== files.get(f)) writeFileSync(join(out, f), t);
+  for (const [f, t] of outText) if (t !== files.get(f)) { mkdirSync(dirname(join(out, f)), { recursive: true }); writeFileSync(join(out, f), t); }
   writeFileSync(join(out, "build.json"), JSON.stringify({ build: buildHash, at: new Date().toISOString(), files: list.length }) + "\n");
   return { files: list.length, versioned: version.size, unresolved, buildHash };
 }

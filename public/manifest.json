@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Darknode — Agentic AI Security Platform",
+  "name": "Darknode",
   "short_name": "Darknode",
-  "description": "Agentic AI security platform: autonomous AI agents, LLM & GenAI red-teaming, the OWASP GenAI risk crosswalk, prompt-injection and AI threat labs, and an AI security copilot.",
+  "description": "Find the real risks in your domain, code and cloud: a free domain security check, then vulnerabilities in your code, dependencies and cloud ranked by what attackers exploit now.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,17 +10,19 @@
   "background_color": "#f8fafc",
   "theme_color": "#2563eb",
   "orientation": "any",
-  "categories": ["security", "productivity", "developer", "education"],
+  "categories": ["security", "productivity", "developer"],
   "prefer_related_applications": false,
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "/og.png", "sizes": "1200x630", "type": "image/png" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
     { "name": "Dashboard", "short_name": "Home", "description": "Home dashboard", "url": "/", "icons": [{ "src": "/favicon.svg", "sizes": "any" }] },
     { "name": "Tools", "short_name": "Tools", "description": "Security tools", "url": "/tools" },
-    { "name": "Darknode AI", "short_name": "AI", "description": "Agentic AI security copilot", "url": "/ai" },
-    { "name": "Nexus Agent", "short_name": "Nexus", "description": "Autonomous agentic AI agent", "url": "/coder" },
+    { "name": "Darknode AI", "short_name": "AI", "description": "The security assistant", "url": "/ai" },
+    { "name": "Nexus Agent", "short_name": "Nexus", "description": "The terminal coding agent", "url": "/coder" },
     { "name": "GenAI Crosswalk", "short_name": "Crosswalk", "description": "OWASP GenAI risks mapped to 26 frameworks", "url": "/crosswalk" },
     { "name": "Settings", "short_name": "Settings", "description": "App settings", "url": "/settings" },
     { "name": "CVE Search", "short_name": "CVEs", "description": "Search and browse the newest CVEs", "url": "/cvesearch" },

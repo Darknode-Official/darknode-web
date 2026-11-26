@@ -22,6 +22,7 @@ function setNoindex() {
   let robots = document.querySelector('meta[name="robots"]');
   if (!robots) { robots = document.createElement("meta"); robots.name = "robots"; document.head.appendChild(robots); }
   robots.content = "noindex";
+  const canon = document.querySelector('link[rel="canonical"]'); if (canon) canon.remove(); // a noindex page names no canonical
 }
 
 async function copyLink(btn, domain) {
@@ -111,12 +112,12 @@ function mountCheckPage(view, actions, raw) {
   page.innerHTML = `<div class="wrap">
     <div class="dedicated-page-header dn-pubbar"><a class="dedicated-back" href="/"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to home</a><span class="dn-pubnote">Free to use, no account needed.</span><button class="btn sm" type="button">Sign in for the full platform</button></div>
     <h1 class="dmc-ph">Domain check</h1>
-    <p class="dmc-psub">Run live in your browser when this page opened, from public DNS records and HTTP responses. Nothing about it is stored, so the link always shows the current state.</p>
+    <p class="dmc-psub">Run live in your browser when this page opened, from public DNS records, HTTP responses and certificate logs. Nothing about it is stored, so the link always shows the current state.</p>
     <div class="dmc-out" id="dmcOut"></div>
     <form class="dmc-form dmc-form-page" id="dmcForm" novalidate>
       <label class="dmc-lbl" for="dmcIn">Check another domain</label>
       <div class="dmc-field"><input id="dmcIn" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="example.com" aria-describedby="dmcHelp"><button class="btn lg" type="submit">Check domain</button></div>
-      <p class="dmc-help" id="dmcHelp">Reads public DNS records and HTTP headers only. Use a domain you own or are allowed to assess.</p>
+      <p class="dmc-help" id="dmcHelp">Reads public DNS records, HTTP headers and certificate logs only. Use a domain you own or are allowed to assess.</p>
       <p class="dmc-msg" role="alert" hidden></p>
     </form>
   </div>`;

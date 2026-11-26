@@ -1,10 +1,9 @@
 /* TEAM */
 Platform: Darknode
-Category: Cybersecurity Education
+Category: Cybersecurity
 Site: https://darknode.ai
-Description: Interactive cybersecurity education platform with AI tutoring, practice labs, and 164+ study tools.
-Standards: NIST NICE Framework, NSA CAE-CD, CompTIA Security+
-Audience: Students, educators, IT professionals, security analysts
+Description: Find the real risks in your domain, code and cloud: a free domain security check, then vulnerabilities in code, dependencies and cloud configuration ranked by live exploitation data.
+Contact: contact@darknode.ai
 
 /* SITE */
-Software: Firebase, Vanilla JS, CesiumJS, Ollama AI
+Software: Firebase Hosting, Cloudflare Workers, vanilla JavaScript
