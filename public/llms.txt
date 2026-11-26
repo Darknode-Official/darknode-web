@@ -1,0 +1,36 @@
+# Darknode
+
+> Darknode finds the real security risks in a domain, code, dependencies and cloud configuration, ranks them by live exploitation data (CISA KEV and FIRST EPSS) rather than by an AI model's opinion, and gives a concrete fix for each. It starts with a free domain check that needs no sign-up.
+
+Darknode runs in the browser (the Deck workspace at darknode.ai), as a desktop app for macOS, Windows and Linux, and as a command-line tool (the Darknode CLI, which includes the Nexus terminal coding agent). Checks are deterministic: each result shows how it was reached. Use it only on systems you own or are authorized to assess.
+
+Plans: Free ($0) includes the domain, email and certificate checks, the live vulnerability feed, one watched domain with email alerts, and the Darknode assistant at 50 messages a day. Pro ($29 per user a month) adds the exposure and application security tools, saved findings and reports, premium AI models, monitors and deadline clocks. Team ($79 per user a month) adds shared workspaces, roles and the organization tools. Enterprise is custom. Paid plans are in preview: checkout is not live yet, so upgrades are requested and granted by hand.
+
+## Product
+
+- [Home and free domain check](https://darknode.ai/): enter a domain to grade its email authentication (SPF, DKIM, DMARC), HTTPS, certificate expiry, security headers, DNSSEC, CAA and security.txt, with the fix for each failing check
+- [Shareable check page](https://darknode.ai/check/example.com): the same check for one domain at a link you can share; it runs live each time it opens
+- [Features](https://darknode.ai/features): what Darknode checks (known-exploited vulnerabilities, domain and email, attack surface, code and secrets, dependencies, cloud and infrastructure as code) and how it works
+- [Pricing](https://darknode.ai/pricing): Free, Pro, Team and Enterprise, and what each includes
+- [FAQ](https://darknode.ai/faq): plans, where code and data go, offline use, AI models, legal use
+
+## Tools and products
+
+- [Nexus](https://darknode.ai/nexus): the terminal coding agent in the Darknode CLI; one interface over six engines (Claude Code, the Gemini CLI, Codex, OpenCode, Aider and local Ollama models)
+- [GenAI Security Crosswalk](https://darknode.ai/crosswalk): the OWASP GenAI security risks mapped to 26 security frameworks; free, no account needed
+- [Security knowledge](https://darknode.ai/security-knowledge): OWASP Top 10, security patterns, cheat sheets, privilege escalation and network reconnaissance
+- [Darknode OS](https://darknode.ai/darknode-os): a from-scratch x86 research kernel and an Ubuntu 24.04 desktop edition, both run in a virtual machine
+- [Government and regulated teams](https://darknode.ai/government): control mapping, vulnerability deadlines with the BOD 22-01 clock, and audit evidence
+- [Darknode CLI source](https://github.com/Darknode-Official/darknode-cli): install from source; includes Nexus and the `darknode mcp` server for MCP clients
+
+## Legal
+
+- [Terms of Service](https://darknode.ai/terms)
+- [Privacy Policy](https://darknode.ai/privacy)
+- [Acceptable Use Policy](https://darknode.ai/acceptable-use)
+
+## Optional
+
+- [Source code on GitHub](https://github.com/Darknode-Official)
+- [Sitemap](https://darknode.ai/sitemap.xml)
+- Contact: contact@darknode.ai

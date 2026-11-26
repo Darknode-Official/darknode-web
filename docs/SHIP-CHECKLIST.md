@@ -24,6 +24,7 @@ asking to deploy. Skip a step only when it truly doesn't apply, and say which we
 - **Hover help (test-enforced):** `public/js/ui/explain.js` needs `tool.<id>` or `scene.<id>`, or a HELP entry in `section-help-a.js` / `section-help-b.js`.
 - **Section intro:** `public/js/section-help.js` if the tool has a console page.
 - **Findings:** if it produces findings, wire `core/sink.js` attachSinkButton so they reach the Security Graph.
+- **Hosting routes (test-enforced):** run `node scripts/sync-hosting-routes.mjs` after adding or removing a console page, Deck tool or scene, so firebase.json serves the app at its path; anything not listed answers a real 404.
 - **Removal:** take it out of every place above, plus pins and saved state that might point at it (fall back cleanly, as with the retired Finance view).
 
 ## 2. Docs and in-product copy
@@ -31,6 +32,7 @@ asking to deploy. Skip a step only when it truly doesn't apply, and say which we
 - `public/js/docs.js`: Getting Started (if it changes what a product does), FAQ, Changelog (current line), Nexus CMD_GROUPS (Nexus commands), Security tab (if safety-relevant). Bump `UPDATED`.
 - `public/js/landing.js`: feature/bento cards, FAQ answers, pricing plan feature lists, footer links.
 - `public/index.html`: JSON-LD (`featureList`, descriptions), meta description if the headline offer changed.
+- A new public (signed-out) page: add it to `public/js/site-meta.js` PAGES (its own title, description and canonical; the build writes `dist/pages/<slug>.html`), `public/sitemap.xml` and `public/llms.txt`, then run `node scripts/sync-hosting-routes.mjs`.
 - `public/sitemap.xml` for any new public page; `public/robots.txt` only if crawl rules change.
 - `public/js/darknode-chat.js` system prompt (the in-house assistant's description of the platform and its counts).
 - `public/humans.txt` for large releases.

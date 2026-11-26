@@ -45,7 +45,7 @@ export function renderResult(res, { running = false, toolLabel = null } = {}) {
   const parts = [`${n.pass} passed`, `${n.warn} warning${n.warn === 1 ? "" : "s"}`, `${n.fail} failed`];
   if (n.error) parts.push(`${n.error} could not be checked`);
   if (n.na) parts.push(`${n.na} not applicable`);
-  const scoreLine = !graded ? "Reading public DNS records and HTTP responses. Each row fills in as its source answers."
+  const scoreLine = !graded ? "Reading public DNS records, HTTP responses and certificate logs. Each row fills in as its source answers."
     : res.score == null ? "Too few checks could run to grade this domain."
       : `${res.score} out of 100 &middot; ${parts.join(" &middot; ")}`;
   const how = `Each check is worth the points shown. A pass earns all of them, a warning half, a fail none. Checks that could not run or do not apply are left out${graded && res.possible < 100 ? `, so this grade is based on ${fmt(res.possible)} of 100 points` : ""}.`;

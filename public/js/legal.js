@@ -127,5 +127,7 @@ export async function renderLegal(mount, id) {
   // The docs sections carry no heading of their own (the docs sidebar names them).
   // (the /acceptable-use page asks for the docs section id "aup")
   if (id !== "terms") html = "<h3>" + ({ privacy: "Privacy Policy", aup: "Acceptable Use Policy" }[id] || "") + "</h3>" + (id === "aup" ? "<p><strong>Last updated:</strong> November 22, 2026</p>" : "") + (await import("/js/docs.js?v=20261102a")).docSectionHTML(id);
+  // the document's own title is the page's h1 (the source keeps h3 for the docs and the TOS modal)
+  html = html.replace(/<h3>([\s\S]*?)<\/h3>/, "<h1>$1</h1>");
   mount.innerHTML = '<article class="dn-legal">' + html + "</article>";
 }

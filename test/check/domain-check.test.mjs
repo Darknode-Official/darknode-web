@@ -56,6 +56,14 @@ const goodWeb = (d) => fetcher({
   [`http://${d}/`]: { status: 200, finalUrl: `https://${d}/`, headers: GOOD_HEADERS },
   [`https://${d}/.well-known/security.txt`]: { status: 200, body: STXT },
 });
+// certificate-transparency rows as ct-fetch.js returns them (crt.sh shape), against a fixed clock
+const NOW = Date.UTC(2026, 5, 1);
+const DAY = 86400000;
+const iso = (t) => new Date(t).toISOString().slice(0, 19);
+const certRow = (daysLeft, life = 90) => ({ issuer_name: 'C=US, O="Let\'s Encrypt", CN=R10', not_before: iso(NOW + (daysLeft - life) * DAY), not_after: iso(NOW + daysLeft * DAY), name_value: "good.test" });
+const certs = (...rows) => async () => rows;
+// every run gets a healthy certificate unless a test passes its own certRows
+const check = (d, o = {}) => runDomainCheck(d, { certRows: certs(certRow(60)), now: NOW, ...o });
 const byId = (res) => Object.fromEntries(res.checks.map((c) => [c.id, c]));
 
 group("domain check: catalog and grading", () => {
@@ -113,7 +121,7 @@ group("domain check: input", () => {
 
 group("domain check: live run with injected sources", () => {
   test("a well-configured domain passes every check (A)", async () => {
-    const res = await runDomainCheck("good.test", { doh: resolver(goodDns("good.test")), fetchUrl: goodWeb("good.test") });
+    const res = await check("good.test", { doh: resolver(goodDns("good.test")), fetchUrl: goodWeb("good.test") });
     const bad = res.checks.filter((c) => c.status !== "pass").map((c) => c.id + ":" + c.status + ":" + c.detail);
     assert.deepEqual(bad, []);
     assert.equal(res.grade, "A"); assert.equal(res.score, 100); assert.equal(res.possible, 100);
@@ -121,34 +129,34 @@ group("domain check: live run with injected sources", () => {
   });
   test("progress snapshots arrive with pending checks, and the last one is complete", async () => {
     const snaps = [];
-    const res = await runDomainCheck("good.test", { doh: resolver(goodDns("good.test")), fetchUrl: goodWeb("good.test"), onProgress: (r) => snaps.push(r) });
+    const res = await check("good.test", { doh: resolver(goodDns("good.test")), fetchUrl: goodWeb("good.test"), onProgress: (r) => snaps.push(r) });
     assert.ok(snaps.length >= 3);
     assert.ok(snaps.some((s) => s.checks.some((c) => c.status === "pending")));
     assert.equal(res.counts.pending, 0);
   });
   test("NXDOMAIN stops the check with a plain reason", async () => {
     let msg = "";
-    try { await runDomainCheck("nope.test", { doh: resolver({}), fetchUrl: goodWeb("nope.test") }); } catch (e) { msg = e.message; }
+    try { await check("nope.test", { doh: resolver({}), fetchUrl: goodWeb("nope.test") }); } catch (e) { msg = e.message; }
     assert.ok(/does not exist/.test(msg), msg);
   });
   test("invalid input is rejected before any lookup", async () => {
     const doh = resolver({});
     let msg = "";
-    try { await runDomainCheck("not a domain", { doh, fetchUrl: goodWeb("x") }); } catch (e) { msg = e.message; }
+    try { await check("not a domain", { doh, fetchUrl: goodWeb("x") }); } catch (e) { msg = e.message; }
     assert.ok(/domain name/.test(msg)); assert.equal(doh.calls.length, 0);
   });
   test("a failing proxy makes the web checks 'error', not fails, and they leave the grade", async () => {
     const proxyDown = async () => { throw new Error("Network error reaching the Darknode proxy: Failed to fetch"); };
-    const res = await runDomainCheck("good.test", { doh: resolver(goodDns("good.test")), fetchUrl: proxyDown });
+    const res = await check("good.test", { doh: resolver(goodDns("good.test")), fetchUrl: proxyDown, certRows: proxyDown });
     const c = byId(res);
-    for (const id of ["https", "redirect", "hsts", "csp", "frame", "nosniff", "referrer", "securitytxt"]) assert.equal(c[id].status, "error", id);
+    for (const id of ["https", "redirect", "cert", "hsts", "csp", "frame", "nosniff", "referrer", "securitytxt"]) assert.equal(c[id].status, "error", id);
     assert.equal(c.spf.status, "pass");
     assert.equal(res.possible, 46); // email 32 + DNS 14
     assert.equal(res.grade, "N/A"); // 46 of 100 applicable points graded is under half
   });
   test("a resolver outage on one record is 'error' for that check only", async () => {
     const t = goodDns("good.test"); t["good.test CAA"] = { Status: 2 };
-    const res = await runDomainCheck("good.test", { doh: resolver(t), fetchUrl: goodWeb("good.test") });
+    const res = await check("good.test", { doh: resolver(t), fetchUrl: goodWeb("good.test") });
     const c = byId(res);
     assert.equal(c.caa.status, "error"); assert.ok(/SERVFAIL/.test(c.caa.detail));
     assert.equal(c.caa.points, null); assert.equal(res.possible, 93); assert.equal(res.score, 100);
@@ -158,7 +166,7 @@ group("domain check: live run with injected sources", () => {
     t[`${d} TXT`] = ans(d, "TXT", ['"v=spf1 include:_spf.mail.test ~all"']);
     t[`_dmarc.${d} TXT`] = ans("_dmarc." + d, "TXT", ['"v=DMARC1; p=none"']);
     t[`${d} A`] = ans(d, "A", ["192.0.2.20"]); t[`${d} AAAA`] = nodata(); delete t[`${d} DS`]; delete t[`${d} CAA`];
-    const res = await runDomainCheck(d, { doh: resolver(t), fetchUrl: fetcher({ [`https://${d}/`]: { status: 200 }, [`http://${d}/`]: { status: 200 } }) });
+    const res = await check(d, { doh: resolver(t), fetchUrl: fetcher({ [`https://${d}/`]: { status: 200 }, [`http://${d}/`]: { status: 200 } }) });
     const c = byId(res);
     assert.equal(c.spf.status, "warn"); assert.equal(c.dmarc.status, "warn"); assert.ok(/p=quarantine/.test(c.dmarc.fix), c.dmarc.fix);
     assert.equal(c.https.status, "pass"); assert.equal(c.redirect.status, "fail");
@@ -174,7 +182,7 @@ group("domain check: live run with injected sources", () => {
       const d = "mail.test", t = goodDns(d);
       if (spf == null) t[`${d} TXT`] = nodata(); else t[`${d} TXT`] = ans(d, "TXT", spf.map((s) => `"${s}"`));
       if (dmarc == null) t[`_dmarc.${d} TXT`] = nodata(); else t[`_dmarc.${d} TXT`] = ans("_dmarc." + d, "TXT", [`"${dmarc}"`]);
-      return byId(await runDomainCheck(d, { doh: resolver(t), fetchUrl: goodWeb(d) }));
+      return byId(await check(d, { doh: resolver(t), fetchUrl: goodWeb(d) }));
     };
     let c = await run(["v=spf1 include:_spf.mail.test ~all"], "v=DMARC1; p=quarantine; rua=mailto:r@mail.test");
     assert.ok(/change ~all to -all/.test(c.spf.fix), c.spf.fix); assert.ok(!/Publish/.test(c.spf.fix));
@@ -190,7 +198,7 @@ group("domain check: live run with injected sources", () => {
   });
   test("HTTPS down at the site is a fail; plain-HTTP-only headers fail HSTS", async () => {
     const d = "plain.test";
-    const res = await runDomainCheck(d, { doh: resolver(goodDns(d)), fetchUrl: fetcher({ [`https://${d}/`]: new Error("TLS handshake failed"), [`http://${d}/`]: { status: 200, headers: GOOD_HEADERS } }) });
+    const res = await check(d, { doh: resolver(goodDns(d)), fetchUrl: fetcher({ [`https://${d}/`]: new Error("TLS handshake failed"), [`http://${d}/`]: { status: 200, headers: GOOD_HEADERS } }) });
     const c = byId(res);
     assert.equal(c.https.status, "fail"); assert.ok(/TLS handshake failed/.test(c.https.detail));
     assert.equal(c.redirect.status, "fail");
@@ -199,42 +207,73 @@ group("domain check: live run with injected sources", () => {
   });
   test("closed port 80 with working HTTPS is a pass for the redirect check", async () => {
     const d = "tls-only.test";
-    const res = await runDomainCheck(d, { doh: resolver(goodDns(d)), fetchUrl: fetcher({ [`https://${d}/`]: { status: 200, headers: GOOD_HEADERS }, [`http://${d}/`]: new Error("connect ECONNREFUSED") }) });
+    const res = await check(d, { doh: resolver(goodDns(d)), fetchUrl: fetcher({ [`https://${d}/`]: { status: 200, headers: GOOD_HEADERS }, [`http://${d}/`]: new Error("connect ECONNREFUSED") }) });
     assert.equal(byId(res).redirect.status, "pass");
+  });
+  test("certificate expiry: bands follow the certificate's own lifetime", async () => {
+    const cert = async (rows, o = {}) => byId(await check("good.test", { doh: resolver(goodDns("good.test")), fetchUrl: goodWeb("good.test"), certRows: certs(...rows), ...o })).cert;
+    let c = await cert([certRow(60)]);
+    assert.equal(c.status, "pass"); assert.ok(/valid until 2026-07-31 \(60 days\)/.test(c.detail), c.detail); assert.ok(/Let's Encrypt/.test(c.detail), c.detail);
+    c = await cert([certRow(-3)]);
+    assert.equal(c.status, "fail"); assert.ok(/expired on 2026-05-29/.test(c.detail), c.detail); assert.ok(/Renew/.test(c.fix));
+    c = await cert([certRow(5)]);
+    assert.equal(c.status, "fail"); assert.ok(/expires in 5 days/.test(c.detail), c.detail);
+    c = await cert([certRow(15)]);
+    assert.equal(c.status, "warn"); assert.ok(c.fix.length > 0);
+    // a 6-day certificate with 3 days left is on schedule, not about to lapse
+    c = await cert([certRow(3, 6)]);
+    assert.equal(c.status, "pass", c.detail);
+    // the newest certificate decides: a renewed one outweighs the old one still in the logs
+    c = await cert([certRow(2), certRow(80)]);
+    assert.equal(c.status, "pass", c.detail);
+  });
+  test("certificate expiry: nothing logged or logs down is 'error', not a fail", async () => {
+    const run1 = async (certRows, o = {}) => check("good.test", { doh: resolver(goodDns("good.test")), fetchUrl: goodWeb("good.test"), certRows, ...o });
+    for (const certRows of [certs(), async () => Object.assign([], { unreachable: true }), async () => { throw new Error("crt.sh 502"); }]) {
+      const res = await run1(certRows);
+      assert.equal(byId(res).cert.status, "error"); assert.equal(res.possible, 94); assert.equal(res.score, 100);
+    }
+    const slow = await run1(() => new Promise(() => {}), { certTimeoutMs: 20 });
+    assert.equal(byId(slow).cert.status, "error"); assert.ok(/did not answer/.test(byId(slow).cert.detail), byId(slow).cert.detail);
+  });
+  test("an expired certificate is a high-severity finding", async () => {
+    const res = await check("good.test", { doh: resolver(goodDns("good.test")), fetchUrl: goodWeb("good.test"), certRows: certs(certRow(-1)) });
+    const f = domainCheckFindings(res).find((x) => x.id === "domaincheck|good.test|cert");
+    assert.ok(f); assert.equal(f.severity, "high");
   });
   test("no address at the apex: the web checks run against www", async () => {
     const d = "apexless.test", t = goodDns(d);
     t[`${d} A`] = nodata({ AD: true }); t[`www.${d} A`] = ans("www." + d, "A", ["192.0.2.30"]);
     const w = "www." + d;
-    const res = await runDomainCheck(d, { doh: resolver(t), fetchUrl: goodWeb(w) });
+    const res = await check(d, { doh: resolver(t), fetchUrl: goodWeb(w) });
     assert.equal(res.webHost, w); assert.equal(byId(res).https.status, "pass");
   });
   test("no website at all: web checks are not applicable and the grade uses email + DNS", async () => {
     const d = "mailonly.test", t = goodDns(d);
     t[`${d} A`] = nodata({ AD: true });
-    const res = await runDomainCheck(d, { doh: resolver(t), fetchUrl: async () => { throw new Error("must not fetch"); } });
+    const res = await check(d, { doh: resolver(t), fetchUrl: async () => { throw new Error("must not fetch"); } });
     const c = byId(res);
-    for (const id of ["https", "redirect", "hsts", "csp", "frame", "nosniff", "referrer", "securitytxt"]) assert.equal(c[id].status, "na", id);
+    for (const id of ["https", "redirect", "cert", "hsts", "csp", "frame", "nosniff", "referrer", "securitytxt"]) assert.equal(c[id].status, "na", id);
     assert.equal(res.possible, 46); assert.equal(res.grade, "A");
   });
   test("a domain that sends no mail needs no DKIM; null MX passes", async () => {
     const d = "parked.test", t = goodDns(d);
     t[`${d} TXT`] = ans(d, "TXT", ['"v=spf1 -all"']); t[`${d} MX`] = ans(d, "MX", ["0 ."]);
     delete t[`selector1._domainkey.${d} TXT`];
-    const res = await runDomainCheck(d, { doh: resolver(t), fetchUrl: goodWeb(d) });
+    const res = await check(d, { doh: resolver(t), fetchUrl: goodWeb(d) });
     const c = byId(res);
     assert.equal(c.dkim.status, "na"); assert.equal(c.mx.status, "pass"); assert.ok(/Null MX/.test(c.mx.detail));
   });
   test("DKIM not found at the common selectors is a warning, not a fail", async () => {
     const d = "nodkim.test", t = goodDns(d); delete t[`selector1._domainkey.${d} TXT`];
-    const res = await runDomainCheck(d, { doh: resolver(t), fetchUrl: goodWeb(d) });
+    const res = await check(d, { doh: resolver(t), fetchUrl: goodWeb(d) });
     assert.equal(byId(res).dkim.status, "warn");
   });
   test("broken DNSSEC (SERVFAIL that answers with checking disabled) fails DNSSEC", async () => {
     const d = "bogus.test";
     // validating resolvers SERVFAIL every name in a bogus zone
     const t = { [`${d} A`]: { Status: 2 }, [`${d} AAAA`]: { Status: 2 }, [`${d} TXT`]: { Status: 2 }, [`${d} A cd`]: ans(d, "A", ["192.0.2.40"]) };
-    const res = await runDomainCheck(d, { doh: resolver(t), fetchUrl: goodWeb(d) });
+    const res = await check(d, { doh: resolver(t), fetchUrl: goodWeb(d) });
     const c = byId(res);
     assert.equal(c.dnssec.status, "fail"); assert.equal(c.https.status, "error"); assert.equal(c.spf.status, "error");
   });
@@ -243,14 +282,14 @@ group("domain check: live run with injected sources", () => {
     t["app.org.test A"] = ans("app.org.test", "A", ["192.0.2.50"], { AD: true }); t["app.org.test AAAA"] = nodata();
     t["app.org.test TXT"] = ans("app.org.test", "TXT", ['"v=spf1 -all"']);
     t["app.org.test MX"] = ans("app.org.test", "MX", ["0 ."]);
-    const res = await runDomainCheck("app.org.test", { doh: resolver(t), fetchUrl: goodWeb("app.org.test") });
+    const res = await check("app.org.test", { doh: resolver(t), fetchUrl: goodWeb("app.org.test") });
     const c = byId(res);
     assert.equal(c.dmarc.status, "pass"); assert.ok(/inherited from org\.test/.test(c.dmarc.detail), c.dmarc.detail);
     assert.equal(c.caa.status, "pass"); assert.ok(/CAA at org\.test/.test(c.caa.detail));
   });
   test("an invalid security.txt is a warning that says why", async () => {
     const d = "stxt.test";
-    const res = await runDomainCheck(d, { doh: resolver(goodDns(d)), fetchUrl: fetcher({
+    const res = await check(d, { doh: resolver(goodDns(d)), fetchUrl: fetcher({
       [`https://${d}/`]: { status: 200, headers: GOOD_HEADERS }, [`http://${d}/`]: { finalUrl: `https://${d}/`, headers: GOOD_HEADERS },
       [`https://${d}/.well-known/security.txt`]: { status: 200, body: "Contact: mailto:a@stxt.test\nExpires: 2000-01-01T00:00:00.000Z\n" } }) });
     const c = byId(res).securitytxt;
@@ -258,7 +297,7 @@ group("domain check: live run with injected sources", () => {
   });
   test("an HTML app answering every path is not a security.txt", async () => {
     const d = "spa.test";
-    const res = await runDomainCheck(d, { doh: resolver(goodDns(d)), fetchUrl: fetcher({
+    const res = await check(d, { doh: resolver(goodDns(d)), fetchUrl: fetcher({
       [`https://${d}/`]: { status: 200, headers: GOOD_HEADERS }, [`http://${d}/`]: { finalUrl: `https://${d}/`, headers: GOOD_HEADERS },
       [`https://${d}/.well-known/security.txt`]: { status: 200, body: "<!doctype html><p>Contact: us</p>" },
       [`https://${d}/security.txt`]: { status: 200, body: "<!doctype html>" } }) });

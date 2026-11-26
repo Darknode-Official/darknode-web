@@ -672,7 +672,7 @@ function showLanding() {
     <div class="nav-dd" data-dd="products">
       <button class="nav-dd-btn">Products <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
       <div class="nav-dd-menu">
-        <a class="nav-dd-item" href="/get-started" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></span><span><strong>Web App</strong><span class="nav-dd-desc">The Deck security workspace in your browser</span></span></a>
+        <a class="nav-dd-item" href="/" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></span><span><strong>Web App</strong><span class="nav-dd-desc">The Deck security workspace in your browser</span></span></a>
         <a class="nav-dd-item" href="/quelvra/"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h6M7 9v6M14 9h6M14 15h6"/><rect x="2" y="3" width="20" height="18" rx="3"/></svg></span><span><strong>Quelvra Math</strong><span class="nav-dd-desc">Verified math engine, works offline</span></span></a>
         <a class="nav-dd-item" href="https://github.com/Darknode-Official/darknode-cli" target="_blank" rel="noopener"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span><span><strong>CLI</strong><span class="nav-dd-desc">Install from GitHub</span></span></a><!-- NPM_SUSPENDED: restore "Install via npm" when the npm account is back -->
         <a class="nav-dd-item" href="https://github.com/Darknode-Official/darknode-app/releases/latest" target="_blank" rel="noopener"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><span><strong>Desktop App</strong><span class="nav-dd-desc">The Deck as an app, plus native tools</span></span></a>
@@ -684,8 +684,8 @@ function showLanding() {
       <button class="nav-dd-btn">Features <svg width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></button>
       <div class="nav-dd-menu">
         <a class="nav-dd-item" href="/features" data-nav="section" data-section="features"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span><span><strong>Overview</strong><span class="nav-dd-desc">What Darknode checks, and how</span></span></a>
-        <a class="nav-dd-item" href="/arsenal" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span><strong>Tools</strong><span class="nav-dd-desc">Analysis tools for code, cloud, email and identity</span></span></a>
-        <a class="nav-dd-item" href="/ai" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span><span><strong>Darknode AI</strong><span class="nav-dd-desc">AI-powered security agent</span></span></a>
+        <a class="nav-dd-item" href="/all-tools" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg></span><span><strong>Tools</strong><span class="nav-dd-desc">Analysis tools for code, cloud, email and identity</span></span></a>
+        <a class="nav-dd-item" href="/ai" data-nav="auth"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span><span><strong>Darknode AI</strong><span class="nav-dd-desc">The security assistant, in the Deck</span></span></a>
         <a class="nav-dd-item" href="/government" data-nav="section"><span class="nav-dd-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18M5 21V10M19 21V10M9 21V10M15 21V10M2 10l10-7 10 7z"/></svg></span><span><strong>Government</strong><span class="nav-dd-desc">For government and regulated teams</span></span></a>
       </div>
     </div>
@@ -699,8 +699,10 @@ function showLanding() {
       </div>
     </div>
     <span class="nav-spacer"></span>
-    <a class="nav-link" id="nav-signin">Log in</a>
-    <button class="btn" id="nav-start">Get Started</button>`;
+    <button class="nav-mm-btn" id="nav-menu" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-mm"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <button class="nav-link" id="nav-signin" type="button">Log in</button>
+    <button class="btn" id="nav-start">Get Started</button>
+    <div class="nav-mm" id="nav-mm" role="dialog" aria-label="Menu" hidden></div>`;
   document.querySelectorAll(".nav-dd").forEach(dd => {
     const btn = dd.querySelector(".nav-dd-btn");
     let closeTimer;
@@ -713,6 +715,35 @@ function showLanding() {
     btn.addEventListener("click", (e) => { e.stopPropagation(); dd.classList.toggle("open"); });
   });
   document.addEventListener("click", () => document.querySelectorAll(".nav-dd.open").forEach(d => d.classList.remove("open")));
+  // Phones: the three menus fold into one full-width panel behind a Menu button.
+  // (on <body>: the header is a containing block for fixed children, which would clip the panel)
+  document.querySelectorAll("body > .nav-mm").forEach((el) => el.remove());
+  const mm = document.getElementById("nav-mm"), mmBtn = document.getElementById("nav-menu");
+  mm.innerHTML = [...document.querySelectorAll(".nav-dd")].map((dd) => '<div class="nav-mm-grp"><h2>' + dd.querySelector(".nav-dd-btn").textContent.trim() + "</h2>" + [...dd.querySelectorAll(".nav-dd-item")].map((a) => a.outerHTML).join("") + "</div>").join("")
+    + '<div class="nav-mm-acts"><button class="btn ghost" type="button" data-mm="signin">Log in</button><button class="btn" type="button" data-mm="signup">Get Started</button></div>';
+  document.body.appendChild(mm);
+  const mmSet = (open) => {
+    mm.hidden = !open;
+    mmBtn.setAttribute("aria-expanded", String(open));
+    document.documentElement.classList.toggle("nav-mm-open", open);
+    if (open) { const tb = document.getElementById("topbar"); mm.style.top = (tb ? Math.round(tb.getBoundingClientRect().bottom) : 56) + "px"; }
+  };
+  mmBtn.addEventListener("click", (e) => { e.stopPropagation(); mmSet(mm.hidden); if (!mm.hidden) { const first = mm.querySelector("a,button"); if (first) first.focus(); } });
+  mm.addEventListener("click", (e) => {
+    const act = e.target.closest("[data-mm]");
+    if (act) { mmSet(false); renderAuth(act.dataset.mm); return; }
+    if (e.target.closest(".nav-dd-item")) mmSet(false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (mm.hidden || !mm.isConnected) return;
+    if (e.key === "Escape") { mmSet(false); mmBtn.focus(); return; }
+    // Tab stays in the open menu and its Menu button (the page behind is covered)
+    if (e.key !== "Tab") return;
+    const ring = [mmBtn, ...mm.querySelectorAll("a,button")], i = ring.indexOf(document.activeElement);
+    e.preventDefault();
+    ring[(i < 0 ? 0 : i + (e.shiftKey ? ring.length - 1 : 1)) % ring.length].focus();
+  });
+  matchMedia("(min-width: 561px)").addEventListener("change", (q) => { if (q.matches) mmSet(false); });
   document.querySelectorAll(".nav-dd-item[data-nav]").forEach(item => {
     item.addEventListener("click", (e) => {
       e.preventDefault();
