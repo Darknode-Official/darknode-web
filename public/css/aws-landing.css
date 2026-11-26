@@ -173,3 +173,196 @@ body.landing .cta-final .cta-notify-h {
   font-size: 1.35rem !important;
   font-weight: 750 !important;
 }
+
+/* ============================================================
+   One story (2026-11-25). The home page leads with what Darknode
+   checks and how you fix it; the long sections moved to their own
+   pages (/nexus, /security-knowledge, /darknode-os, /government).
+   New blocks use lt-* classes. Flat cards, the palette above, no
+   new colours. The hero is styled elsewhere and is not touched here.
+   ============================================================ */
+
+/* Tighter rhythm and section heads (pro-theme: 84px padding, 61px titles) */
+html[data-style="pro"] body.landing .section {
+  padding-top: 64px !important;
+  padding-bottom: 64px !important;
+}
+html[data-style="pro"] body.landing .section > .wrap > .sec-title {
+  font-size: clamp(1.75rem, 3vw, 2.5rem) !important;
+  line-height: 1.12 !important;
+  max-width: 980px !important;
+}
+html[data-style="pro"] body.landing .section > .wrap > .sec-sub {
+  max-width: 760px !important;
+  margin-bottom: 28px !important;
+}
+/* Scroll progress line: one flat colour, not a gradient */
+html body.landing::before { background: #0972d3 !important; }
+/* Home sections are reached by /#id links under a sticky header */
+html body.landing .section[id], html body.landing .cta-final[id] { scroll-margin-top: 72px; }
+
+/* Shared card look for the new blocks */
+html body.landing :is(.lt-card, .lt-step, .lt-surface) {
+  margin: 0 !important; /* a generic card rule adds 16px below every *-card */
+  background: #ffffff;
+  border: 1px solid #e9ebed;
+  border-radius: 8px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+html body.landing :is(.lt-card, .lt-step, .lt-surface) h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  line-height: 1.3;
+  color: #0f172a;
+}
+html body.landing :is(.lt-card, .lt-step, .lt-surface) p {
+  margin: 0;
+  font-size: .9rem;
+  line-height: 1.55;
+  color: #475569;
+}
+
+/* What it checks: 3 x 2 grid */
+html body.landing .lt-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+html body.landing .lt-card { padding: 20px 20px 18px; display: flex; flex-direction: column; }
+html body.landing .lt-card > p:not(.lt-fix) { flex: 1; }
+html body.landing .lt-card-h { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+html body.landing .lt-card-h h3 { margin: 0; }
+html body.landing .lt-icon {
+  flex: none;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  background: rgb(239, 246, 255);
+  border: 1px solid rgb(191, 219, 254);
+  color: rgb(24, 24, 27);
+}
+html body.landing .lt-icon svg { width: 20px; height: 20px; }
+html body.landing .lt-card .lt-fix {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e9ebed;
+  color: #0f172a;
+}
+html body.landing .lt-fix b { color: #0972d3; font-weight: 700; margin-right: 2px; }
+html body.landing .lt-note { margin: 18px 0 0; font-size: .92rem; line-height: 1.55; color: #475569; }
+
+/* How it works: four steps in one row */
+html body.landing .lt-steps {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+html body.landing .lt-step { padding: 20px 20px 18px; }
+html body.landing .lt-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #0f172a;
+  color: #ffffff;
+  flex: none;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+/* Where it runs: one row of four surfaces, then one line of links */
+html body.landing .lt-surfaces {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+html body.landing .lt-surface {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+html body.landing .lt-surface h3 { margin: 0; }
+html body.landing .lt-surface p { flex: 1; }
+html body.landing .lt-surface .bento-dl { margin: 0; gap: 12px; }
+html body.landing .lt-tag {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace !important;
+  font-size: .76rem;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgb(239, 246, 255);
+  color: rgb(37, 99, 235);
+}
+html body.landing .lt-link { font-size: .9rem; font-weight: 600; }
+html body.landing .lt-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  margin-top: 16px;
+  padding: 14px 18px;
+  border: 1px solid #e9ebed;
+  border-radius: 8px;
+  background: #fafafa;
+  font-size: .92rem;
+}
+html body.landing .lt-more-h { font-weight: 700; color: #0f172a; }
+
+/* FAQ: two columns across the full width; extra questions only on /faq */
+html body.landing #faq .faq-list {
+  max-width: none !important; /* pro-theme centres it at 720px !important */
+  margin: 28px 0 0 !important;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 48px;
+  align-items: start;
+}
+html body.landing #faq .faq-item:last-child { border-bottom: 1px solid #eeeeee; }
+html body.landing #faq .faq-a-inner { max-width: none; }
+html body.landing :is(.faq-item, .lt-faq-all)[hidden] { display: none !important; }
+html body.landing .lt-faq-all { margin: 20px 0 0; font-size: .95rem; font-weight: 600; }
+
+/* Pricing: cards span the content width; the preview note reads as one left-aligned line */
+html body.landing #pricing .pricing-grid { padding: 0 !important; }
+html[data-style="pro"] body.landing #pricing .price-card { padding: 24px 22px !important; }
+html body.landing #pricing .pricing-note { text-align: left !important; max-width: none !important; margin: 22px 0 0 !important; }
+
+/* Final CTA: "Get started" leads; the Pro launch form is a quiet second line */
+html body.landing .cta-final { padding: 56px 24px !important; }
+html body.landing .cta-final .cta-sub { max-width: 640px; margin-left: auto; margin-right: auto; }
+html body.landing .cta-final .lt-notify {
+  margin: 28px auto 0;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, .14);
+  max-width: 440px;
+}
+html body.landing .cta-final .cta-notify-h {
+  font-size: .92rem !important;
+  font-weight: 600 !important;
+  margin: 0 0 10px !important;
+  color: #d5dbdb !important;
+  -webkit-text-fill-color: #d5dbdb !important;
+}
+html body.landing .cta-final .cta-email { padding: 8px 12px !important; font-size: .88rem; }
+html body.landing .cta-final .cta-reassure { font-size: .8rem; margin: 8px 0 0; }
+
+@media (max-width: 960px) {
+  html[data-style="pro"] body.landing .section { padding-top: 52px !important; padding-bottom: 52px !important; }
+  html body.landing :is(.lt-grid, .lt-steps, .lt-surfaces) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html body.landing #faq .faq-list { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  html[data-style="pro"] body.landing .section { padding-top: 44px !important; padding-bottom: 44px !important; }
+  html body.landing .section > .wrap { padding-left: 4px !important; padding-right: 4px !important; } /* 16px from the screen edge, not 40 */
+  html body.landing :is(.lt-grid, .lt-steps, .lt-surfaces) { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  html body.landing :is(.lt-card, .lt-step, .lt-surface) { padding: 16px; }
+  html body.landing .lt-card .lt-fix { margin-top: 10px; padding-top: 10px; }
+  html body.landing .lt-more { gap: 8px 18px; padding: 12px 14px; }
+  html body.landing .cta-final { padding: 44px 16px !important; }
+}
