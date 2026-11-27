@@ -970,7 +970,13 @@ function renderVerify(user) {
       <button class="btn" id="reload">I've verified — reload</button>
       <button class="btn ghost" id="resend">Resend email</button>
       <p id="err" class="auth-err"></p>
+      <p class="muted" style="margin-top:14px;font-size:.85rem">Wrong address, or don't want the account? <a href="#" id="delacct">Delete this account</a></p>
     </section>`;
+  document.getElementById("delacct").onclick = async (e) => {
+    e.preventDefault();
+    try { const m = await import("/js/account-delete.js?v=1"); await m.deleteAccount({ toast: showToast }); }
+    catch (_) { showToast("Couldn't load account deletion. Reload and try again.", "error"); }
+  };
   document.getElementById("reload").onclick = async () => {
     await reload(user);
     if (user.emailVerified) location.reload();
@@ -1540,8 +1546,8 @@ claude mcp add darknode -- node ~/darknode-cli/darknode.js mcp</code></pre>
           <button class="btn ghost" id="data-clear" type="button" style="flex:none">Clear data</button>
         </div>
         ${isGuest ? "" : `<div class="set-row" style="align-items:center;gap:16px">
-          <span style="display:flex;flex-direction:column;gap:3px"><b>Delete my account</b><span class="muted" style="font-size:.76rem">Request permanent deletion of your Darknode account and its records. We confirm by email.</span></span>
-          <button class="btn danger" id="data-delete" type="button" style="flex:none">Request deletion</button>
+          <span style="display:flex;flex-direction:column;gap:3px"><b>Delete my account</b><span class="muted" style="font-size:.76rem">Permanently delete your Darknode account and everything stored with it. This cannot be undone.</span></span>
+          <button class="btn danger" id="data-delete" type="button" style="flex:none">Delete account</button>
         </div>`}
       </div>
       <p class="muted" style="font-size:.72rem;margin-top:14px">Questions about your data? Email <a href="mailto:contact@darknode.ai" style="color:var(--acc)">contact@darknode.ai</a>.</p>`,
@@ -1649,10 +1655,8 @@ claude mcp add darknode -- node ~/darknode-cli/darknode.js mcp</code></pre>
     };
     const dataDelete = main.querySelector("#data-delete");
     if (dataDelete) dataDelete.onclick = async () => {
-      const ok = window.dnConfirm ? await window.dnConfirm("Request account deletion?", "We'll permanently delete your Darknode account and its records, then confirm by email to " + (user.email || "your address") + ".", { submitText: "Request deletion", danger: true }) : true;
-      if (!ok) return;
-      try { await setDoc(doc(db, "deletionRequests", user.uid), { uid: user.uid, email: user.email || "", requestedAt: serverTimestamp() }, { merge: true }); showToast("Deletion request received. We'll confirm by email.", "success"); }
-      catch (e) { showToast("Could not file the request: " + ((e && e.message) || "try emailing contact@darknode.ai"), "error"); }
+      try { const m = await import("/js/account-delete.js?v=1"); await m.deleteAccount({ toast: showToast }); }
+      catch (_) { showToast("Couldn't load account deletion. Reload and try again.", "error"); }
     };
     // MCP + code-block copy buttons
     const mcpCopy = main.querySelector("#dn-mcp-copy2");

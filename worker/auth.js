@@ -30,6 +30,7 @@ export const ROUTES = [
   { id: "watch-stop", path: "/api/watch/stop", methods: ["GET", "POST"], auth: "none" },
   { id: "digest", prefix: "/api/digest/", auth: "user" },
   { id: "usage", path: "/api/v1/usage", methods: ["POST"], auth: "user" },
+  { id: "account-delete", path: "/api/account/delete", methods: ["POST"], auth: "user" },
   { id: "admin-users", path: "/api/admin/users", methods: ["GET"], auth: "user", role: "admin" },
   { id: "ingest", prefix: "/api/v1/ingest/", auth: "key", scope: "ingest:write" },
   { id: "findings", prefix: "/api/v1/findings/", auth: "key", scope: "findings:read" },

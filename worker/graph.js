@@ -25,6 +25,7 @@ import { featureDenied } from "./plan.js";
 import { workspaceTier } from "./plan-share.js";
 import { readCapped } from "./body-cap.js";
 import { chainAppend, chainVerify, GENESIS, pad } from "./audit-chain.js";
+import { maybeWipe } from "./account-delete.js";
 
 // The audit chain is never trimmed: "verify from genesis" must stay meaningful. It only
 // grows on a real change (an idle sync that writes nothing appends nothing), and each
@@ -214,6 +215,7 @@ export class GraphDO {
   }
 
   async fetch(request) {
+    const wiped = await maybeWipe(request, this.storage); if (wiped) return wiped; // account deletion (worker/account-delete.js)
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
     const uid = request.headers.get("x-graph-uid");
     if (!uid) return reply({ error: "forbidden" }, 403);

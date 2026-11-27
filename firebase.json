@@ -5,6 +5,9 @@
       "predeploy": ["node scripts/build.mjs"],
       "site": "sentinel-b4194",
       "ignore": ["firebase/**", "**/.git/**", "**/node_modules/**", "**/*.exe", "**/*.deb", "**/*.AppImage", "**/*.dmg"],
+      "redirects": [
+        { "source": "/legal/terms-of-service.html", "destination": "/terms", "type": 301 }
+      ],
       "rewrites": [
         { "source": "/api/chat", "function": { "functionId": "chat", "region": "us-central1" } },
         { "source": "/version", "destination": "/version.txt" },
@@ -89,6 +92,9 @@
       "predeploy": ["node scripts/build.mjs"],
       "site": "sentinel-b4194-6173e",
       "ignore": ["firebase/**", "**/.git/**", "**/node_modules/**", "**/*.exe", "**/*.deb", "**/*.AppImage", "**/*.dmg"],
+      "redirects": [
+        { "source": "/legal/terms-of-service.html", "destination": "/terms", "type": 301 }
+      ],
       "rewrites": [
         { "source": "/api/chat", "function": { "functionId": "chat", "region": "us-central1" } },
         { "source": "/version", "destination": "/version.txt" },
