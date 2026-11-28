@@ -24,7 +24,7 @@ export const OWNED_BY_FIELD = [
   ["feedback", "uid"], ["errors", "uid"], ["ip_reports", "reporter_uid"],
 ];
 // Docs keyed by the user's uid.
-export const KEYED_BY_UID = ["usage", "deletionRequests"];
+export const KEYED_BY_UID = ["usage"]; // deletionRequests/{uid} goes last, after the sign-in
 
 export function recentEnough(claims, now = Math.floor(Date.now() / 1000)) {
   const t = Number(claims && claims.auth_time);
@@ -120,6 +120,42 @@ export async function maybeWipe(request, storage) {
   return new Response('{"ok":true}', { headers: { "Content-Type": "application/json" } });
 }
 
+// Delete one account everywhere. -> { ok: true } | { blocking: [...] }; throws on a failed step.
+export async function deleteAccountData(env, fs, token, uid, email, doFetch = fetch) {
+  const mine = await memberships(fs, uid);
+  const blocking = mine.filter((m) => m.founder && m.others > 0);
+  if (blocking.length) return { blocking: blocking.map((b) => ({ kind: b.kind === "vaults" ? "vault" : "workspace", id: b.id, name: b.name, members: b.others })) };
+  // personal workspace (wid === uid) and every space they hold alone
+  await wipeDO(env.GRAPH, uid); await wipeDO(env.MONITOR, uid); await wipeDO(env.INGEST, uid);
+  for (const m of mine) {
+    const alone = m.role !== "removed" && m.others === 0 && (m.founder || m.role === "owner");
+    if (alone && m.kind === "workspaces") { await wipeDO(env.GRAPH, m.id); await wipeDO(env.MONITOR, m.id); await wipeDO(env.INGEST, m.id); await deleteTree(fs, "workspaces/" + m.id); }
+    else if (alone && m.kind === "vaults") { await wipeDO(env.VAULT, m.id); await deleteTree(fs, "vaults/" + m.id); }
+    else await fs.del(m.memberPath);
+  }
+  for (const [c, field] of OWNED_BY_FIELD) for (const d of await fs.where(c, field, uid)) await fs.del(d.path);
+  if (email) for (const d of await fs.where("waitlist", "email", email)) await fs.del(d.path);
+  for (const c of KEYED_BY_UID) await fs.del(c + "/" + uid);
+  await deleteTree(fs, "users/" + uid);
+  const r = await doFetch("https://identitytoolkit.googleapis.com/v1/projects/" + env.FIREBASE_PROJECT_ID + "/accounts:delete", {
+    method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ localId: uid }),
+  });
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({}));
+    if (!(d && d.error && /USER_NOT_FOUND/.test(d.error.message || ""))) throw new Error("Deleting the sign-in failed (HTTP " + r.status + ")");
+  }
+  await fs.del("deletionRequests/" + uid);
+  return { ok: true };
+}
+
+const blockedMsg = (who, blocking) => who + " created " + blocking.map((b) => '"' + b.name + '"').join(", ") + ", which still " + (blocking.length > 1 ? "have" : "has") + " other members. Remove them first, then delete the account.";
+const failedMsg = (e) => (e && e.message ? e.message : "Deletion failed") + ". Part of the account may already be deleted; try again to finish.";
+
+async function serviceFs(env, opts) {
+  const token = await (opts.token || googleToken)(env);
+  return { token, fs: firestore(env, token, opts.fetch || fetch) };
+}
+
 export async function handleAccountDelete(request, env, json, principal, opts = {}) {
   if (request.method !== "POST") return json({ error: "POST only" }, 405);
   if (!env.FIREBASE_PROJECT_ID) return json({ error: "FIREBASE_PROJECT_ID is not set" }, 503);
@@ -128,44 +164,98 @@ export async function handleAccountDelete(request, env, json, principal, opts = 
   let body = {}; try { body = await request.json(); } catch (_) {}
   if (!body || body.confirm !== "DELETE") return json({ error: 'Send {"confirm":"DELETE"} to delete the account.' }, 400);
   if (!recentEnough(principal.claims, opts.now)) return json({ error: "Sign in again to confirm it's you, then delete.", reauth: true }, 401);
-
-  const doFetch = opts.fetch || fetch;
-  let token;
-  try { token = await (opts.token || googleToken)(env); }
-  catch (e) { return json({ error: "Server credentials unavailable: " + e.message }, 503); }
-  const fs = firestore(env, token, doFetch);
-
+  let c; try { c = await serviceFs(env, opts); } catch (e) { return json({ error: "Server credentials unavailable: " + e.message }, 503); }
   try {
-    const mine = await memberships(fs, uid);
-    const blocking = mine.filter((m) => m.founder && m.others > 0);
-    if (blocking.length) {
-      return json({
-        error: "You created " + blocking.map((b) => '"' + b.name + '"').join(", ") + ", which still " + (blocking.length > 1 ? "have" : "has") + " other members. Remove them first, then delete your account.",
-        blocking: blocking.map((b) => ({ kind: b.kind === "vaults" ? "vault" : "workspace", id: b.id, name: b.name, members: b.others })),
-      }, 409);
-    }
-    // personal workspace (wid === uid) and every space they hold alone
-    await wipeDO(env.GRAPH, uid); await wipeDO(env.MONITOR, uid); await wipeDO(env.INGEST, uid);
-    for (const m of mine) {
-      const alone = m.role !== "removed" && m.others === 0 && (m.founder || m.role === "owner");
-      if (alone && m.kind === "workspaces") { await wipeDO(env.GRAPH, m.id); await wipeDO(env.MONITOR, m.id); await wipeDO(env.INGEST, m.id); await deleteTree(fs, "workspaces/" + m.id); }
-      else if (alone && m.kind === "vaults") { await wipeDO(env.VAULT, m.id); await deleteTree(fs, "vaults/" + m.id); }
-      else await fs.del(m.memberPath);
-    }
-    for (const [c, field] of OWNED_BY_FIELD) for (const d of await fs.where(c, field, uid)) await fs.del(d.path);
-    if (principal.email) for (const d of await fs.where("waitlist", "email", principal.email)) await fs.del(d.path);
-    for (const c of KEYED_BY_UID) await fs.del(c + "/" + uid);
-    await deleteTree(fs, "users/" + uid);
-
-    const r = await doFetch("https://identitytoolkit.googleapis.com/v1/projects/" + env.FIREBASE_PROJECT_ID + "/accounts:delete", {
-      method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ localId: uid }),
-    });
-    if (!r.ok) {
-      const d = await r.json().catch(() => ({}));
-      if (!(d && d.error && /USER_NOT_FOUND/.test(d.error.message || ""))) throw new Error("Deleting the sign-in failed (HTTP " + r.status + ")");
-    }
-  } catch (e) {
-    return json({ error: (e && e.message ? e.message : "Deletion failed") + ". Part of the account may already be deleted; try again to finish." }, 502);
-  }
+    const r = await deleteAccountData(env, c.fs, c.token, uid, principal.email, opts.fetch || fetch);
+    if (r.blocking) return json({ error: blockedMsg("You", r.blocking), blocking: r.blocking }, 409);
+  } catch (e) { return json({ error: failedMsg(e) }, 502); }
   return json({ ok: true });
+}
+
+// GET  /api/admin/deletions        (owner) pending deletion requests filed before self-service existed
+// POST /api/admin/deletions  {uid} (owner) carry one out. Only an account that asked (it has a
+// deletionRequests/{uid} doc) can be deleted this way.
+export async function handleAdminDeletions(request, env, json, opts = {}) {
+  if (!env.FIREBASE_PROJECT_ID) return json({ error: "FIREBASE_PROJECT_ID is not set" }, 503);
+  let c; try { c = await serviceFs(env, opts); } catch (e) { return json({ error: "Server credentials unavailable: " + e.message }, 503); }
+  const { fs, token } = c;
+  if (request.method === "GET") {
+    let rows; try { rows = await fs.list("deletionRequests"); } catch (e) { return json({ error: e.message }, 502); }
+    return json({ requests: rows.map((d) => ({ uid: d.path.split("/")[1], email: fs.val(d.fields.email) || "", requestedAt: (d.fields.requestedAt && d.fields.requestedAt.timestampValue) || "" })) });
+  }
+  if (request.method !== "POST") return json({ error: "GET or POST only" }, 405);
+  let body = {}; try { body = await request.json(); } catch (_) {}
+  const uid = String((body && body.uid) || "");
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(uid)) return json({ error: "Invalid uid" }, 400);
+  const req = await fs.get("deletionRequests/" + uid);
+  if (!req) return json({ error: "This account has not asked to be deleted." }, 404);
+  try {
+    const r = await deleteAccountData(env, fs, token, uid, fs.val((req.fields || {}).email) || "", opts.fetch || fetch);
+    if (r.blocking) return json({ error: blockedMsg("This user", r.blocking), blocking: r.blocking }, 409);
+  } catch (e) { return json({ error: failedMsg(e) }, 502); }
+  return json({ ok: true });
+}
+
+// ---- export: GET /api/account/export (signed in) -----------------------------------------------
+// Everything the server holds about the caller, as plain JSON (GDPR access/portability). The
+// security graph has its own export in the Deck (Settings > Data), so it is pointed to, not copied.
+export function plain(v) {
+  if (!v || typeof v !== "object") return v ?? null;
+  if ("stringValue" in v) return v.stringValue;
+  if ("integerValue" in v) return Number(v.integerValue);
+  if ("doubleValue" in v) return v.doubleValue;
+  if ("booleanValue" in v) return v.booleanValue;
+  if ("timestampValue" in v) return v.timestampValue;
+  if ("nullValue" in v) return null;
+  if ("referenceValue" in v) return v.referenceValue;
+  if ("geoPointValue" in v) return v.geoPointValue;
+  if ("bytesValue" in v) return "[bytes]";
+  if ("arrayValue" in v) return (v.arrayValue.values || []).map(plain);
+  if ("mapValue" in v) return plainFields(v.mapValue.fields || {});
+  return null;
+}
+export const plainFields = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, x]) => [k, plain(x)]));
+const SECRET_FIELDS = new Set(["apiKey", "keyHash", "hash", "secret", "token"]);
+const redact = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, SECRET_FIELDS.has(k) ? "[redacted]" : v]));
+
+async function doList(ns, id, headers, body = { op: "list" }) {
+  if (!ns) return null;
+  const r = await ns.get(ns.idFromName(id)).fetch("https://do/", { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(body) });
+  return r.ok ? r.json() : null;
+}
+
+export async function handleAccountExport(request, env, json, principal, opts = {}) {
+  if (request.method !== "GET") return json({ error: "GET only" }, 405);
+  if (!env.FIREBASE_PROJECT_ID) return json({ error: "FIREBASE_PROJECT_ID is not set" }, 503);
+  const uid = principal && principal.uid;
+  if (!uid || principal.kind !== "user") return json({ error: "Sign in required" }, 401);
+  let c; try { c = await serviceFs(env, opts); } catch (e) { return json({ error: "Server credentials unavailable: " + e.message }, 503); }
+  const { fs, token } = c, doFetch = opts.fetch || fetch;
+  try {
+    const out = { exportedAt: new Date(opts.nowMs || Date.now()).toISOString(), uid };
+    const lr = await doFetch("https://identitytoolkit.googleapis.com/v1/projects/" + env.FIREBASE_PROJECT_ID + "/accounts:lookup", {
+      method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" }, body: JSON.stringify({ localId: [uid] }),
+    });
+    const a = ((lr.ok ? await lr.json().catch(() => ({})) : {}).users || [])[0] || {};
+    out.account = { email: a.email || principal.email || "", emailVerified: !!a.emailVerified, name: a.displayName || "",
+      signInMethods: (a.providerUserInfo || []).map((p) => p.providerId), createdAt: a.createdAt ? new Date(Number(a.createdAt)).toISOString() : null,
+      lastSignInAt: a.lastLoginAt ? new Date(Number(a.lastLoginAt)).toISOString() : null };
+    const prof = await fs.get("users/" + uid);
+    out.profile = prof ? redact(plainFields(prof.fields)) : null;
+    out.profileCollections = {};
+    for (const col of await fs.subcollections("users/" + uid)) out.profileCollections[col] = (await fs.list("users/" + uid + "/" + col)).map((d) => ({ id: d.path.split("/").pop(), ...redact(plainFields(d.fields)) }));
+    for (const col of KEYED_BY_UID.concat("deletionRequests")) { const d = await fs.get(col + "/" + uid); out[col] = d ? plainFields(d.fields) : null; }
+    out.records = {};
+    for (const [col, field] of OWNED_BY_FIELD) out.records[col] = (await fs.where(col, field, uid)).map((d) => ({ id: d.path.split("/").pop(), ...redact(plainFields(d.fields)) }));
+    out.records.waitlist = out.account.email ? (await fs.where("waitlist", "email", out.account.email)).map((d) => ({ id: d.path.split("/").pop(), ...plainFields(d.fields) })) : [];
+    out.memberships = (await memberships(fs, uid)).map((m) => ({ kind: m.kind === "vaults" ? "vault" : "workspace", id: m.id, name: m.name, role: m.role, createdByYou: m.founder }));
+    const mon = await doList(env.MONITOR, uid, { "x-mon-uid": uid, "x-mon-role": "owner", "x-mon-wid": uid });
+    const dl = await doList(env.MONITOR, uid, { "x-mon-uid": uid, "x-mon-role": "owner", "x-mon-wid": uid }, { op: "deadlines" });
+    out.personalWorkspace = {
+      monitors: mon ? mon.monitors || [] : [], monitorHistory: mon ? mon.history || [] : [], deadlines: dl || null,
+      apiKeys: ((await doList(env.INGEST, uid, { "x-ing-uid": uid, "x-ing-role": "owner" })) || {}).keys || [],
+      securityGraph: "Export it in the Deck under Settings, Data, Security graph.",
+    };
+    return json(out);
+  } catch (e) { return json({ error: "Export failed: " + (e && e.message ? e.message : "unknown error") }, 502); }
 }

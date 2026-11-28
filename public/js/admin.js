@@ -108,6 +108,12 @@ export async function renderAdmin(main, user) {
           <div id="upReqList"><p class="muted">Loading requests…</p></div>
         </div>
         <div class="panel">
+          <div class="panel-h"><h2 class="pg-h2" style="margin:0">Account deletion requests</h2>
+            <button class="btn ghost sm" id="delReqRefresh">Refresh</button></div>
+          <p class="muted" style="font-size:.82rem;margin:0 0 8px">Filed before users could delete their own account. Delete runs the same full deletion a user starts in Settings; only accounts that asked are listed.</p>
+          <div id="delReqList"><p class="muted">Loading requests…</p></div>
+        </div>
+        <div class="panel">
           <div class="panel-h"><h2 class="pg-h2" style="margin:0">Feedback &amp; bug reports</h2>
             <button class="btn ghost sm" id="fbRefresh">Refresh</button></div>
           <div id="fbAdminList"><p class="muted">Loading feedback…</p></div>
@@ -482,6 +488,36 @@ export async function renderAdmin(main, user) {
     }
   };
   loadUpgradeRequests();
+
+  // ---- account deletion requests (Worker /api/admin/deletions, service account) ----
+  async function loadDeletionRequests() {
+    const host = $("#delReqList"); if (!host) return;
+    try {
+      const { api } = await import("/js/core/api.js");
+      const r = await api("/api/admin/deletions");
+      const items = (r && r.requests) || [];
+      if (!items.length) { host.innerHTML = `<p class="muted">No pending deletion requests.</p>`; return; }
+      host.innerHTML = items.map((x) => `
+        <div class="fb-row" data-uid="${esc(x.uid)}" data-email="${esc(x.email || "")}">
+          <div class="fb-row-h"><span class="muted">${esc(x.email || x.uid)}</span>
+            <span style="flex:1"></span><span class="muted" style="font-size:.72rem">${x.requestedAt ? esc(new Date(x.requestedAt).toLocaleString()) : ""}</span>
+            <button class="btn danger sm dr-del">Delete account</button></div>
+        </div>`).join("");
+    } catch (e) { host.innerHTML = `<p class="adm-err">Couldn't load deletion requests: ${esc(e.message)}</p>`; }
+  }
+  $("#delReqRefresh").onclick = loadDeletionRequests;
+  $("#delReqList").onclick = async (e) => {
+    const btn = e.target.closest(".dr-del"); if (!btn) return;
+    const row = btn.closest(".fb-row"), uid = row.dataset.uid, who = row.dataset.email || uid;
+    if (!(await window.dnConfirm("Delete " + who + "?", "This permanently deletes the account and everything stored with it, as the user asked. It cannot be undone.", { submitText: "Delete account", danger: true }))) return;
+    btn.disabled = true;
+    try {
+      const { api } = await import("/js/core/api.js");
+      await api("/api/admin/deletions", { method: "POST", body: { uid } });
+      window.showToast("Deleted " + who, "success"); row.remove();
+    } catch (err) { btn.disabled = false; window.showToast(err.message || "Delete failed", "error"); }
+  };
+  loadDeletionRequests();
 
   // ---- client error log ----
   async function loadErrors() {

@@ -4544,6 +4544,10 @@ export function renderDeck(host, opts) {
 
         <div class="dk-ovp">
           <h2>${IC.folder} Data</h2>
+          ${noAccount ? "" : `<div class="dk-setrow">
+            <div class="m"><div class="t">Your account data</div><div class="s">Everything Darknode's servers hold about you: account, settings, notifications, requests you sent, workspaces, monitors and API keys (secrets left out), as one JSON file.</div></div>
+            <button class="dk-settog" id="dkSetAcctExp">Download</button>
+          </div>`}
           <div class="dk-setrow">
             <div class="m"><div class="t">Deck state</div><div class="s">Connections, pinned tools and notes (no API keys), as a JSON file you can re-import.</div></div>
             <span style="display:flex;gap:8px;flex:none"><button class="dk-settog" id="dkSetExport">Export</button><button class="dk-settog" id="dkSetImport">Import</button></span>
@@ -4599,6 +4603,20 @@ export function renderDeck(host, opts) {
     el.querySelector("#dkSetPlans").onclick = () => go("plans");
     const setSu = el.querySelector("#dkSetSignup"); if (setSu) setSu.onclick = toSignup;
     el.querySelector("#dkSetExport").onclick = () => exportDeckState();
+    const acctExp = el.querySelector("#dkSetAcctExp");
+    if (acctExp) acctExp.onclick = async () => {
+      acctExp.disabled = true; const was = acctExp.textContent; acctExp.textContent = "Preparing…";
+      try {
+        const { api } = await import("/js/core/api.js");
+        const data = await api("/api/account/export");
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+        a.download = "darknode-account-" + new Date().toISOString().slice(0, 10) + ".json";
+        document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+        toast("Account data downloaded");
+      } catch (e) { toast((e && e.message) || "Couldn't export your account data.", "error"); }
+      finally { acctExp.disabled = false; acctExp.textContent = was; }
+    };
     el.querySelector("#dkSetImport").onclick = () => importDeckState();
     const syncPlanBtn = el.querySelector("#dkSetSyncPlan");
     if (syncPlanBtn) syncPlanBtn.onclick = () => { toast("Cloud sync is part of the Pro plan"); go("plans"); };
