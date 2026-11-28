@@ -12,7 +12,7 @@
 // never for a free-mail provider or a Test Mode / guest identity.
 //
 // Once a check has run, "Watch this domain" sets up the Free plan's one-domain watch: a
-// certificate-expiry and an email/DNS monitor on that domain, checked once a day, alerting by
+// certificate, domain-registration, email/DNS and website monitor on that domain, checked once a day, alerting by
 // email to the account's own verified address (the Worker takes the address from the sign-in
 // token and enforces the one-domain limit, worker/free-watch.js).
 
@@ -63,8 +63,6 @@ function paint() {
 }
 
 // ---- "Watch this domain" -------------------------------------------------------------------
-const WATCH_TYPES = ["cert-expiry", "email-posture"];
-const DAY = 86400000;
 const isFree = () => { const t = S.ctx && S.ctx.tier; return !t || t === "free"; };
 const hostsOf = (m) => ((m && m.config && m.config.domains) || []).map((d) => normalizeDomain(d)).filter(Boolean);
 const goBtn = (act, label) => `<button type="button" class="dk-tibtn" data-fr-go="${act}">${label}</button>`;
@@ -73,14 +71,14 @@ function watchHtml() {
   const d = S.res.domain, w = S.watch && S.watch.domain === d ? S.watch : null;
   if (!w || w.state === "busy") {
     const busy = !!w;
-    return `<div class="dk-fr-wtx"><b>Watch ${esc(d)}</b><br>Get an email when its certificate is close to expiry, or when an email or DNS record (SPF, DMARC, MX, CAA) is removed or weakened. Checked once a day${isFree() ? ". The Free plan watches one domain" : ""}.</div>
+    return `<div class="dk-fr-wtx"><b>Watch ${esc(d)}</b><br>Get an email before its certificate or its domain registration expires, when an email or DNS record (SPF, DMARC, MX, CAA) is removed or weakened, and when the website loses a security header or exposes its .git or .env. Checked once a day${isFree() ? ". The Free plan watches one domain" : ""}.</div>
       <div class="dk-fr-wbtns"><button type="button" class="dk-tibtn on" data-fr-watch="1"${busy ? " disabled" : ""}>${busy ? "Setting up…" : "Watch this domain"}</button></div>`;
   }
   if (w.state === "on") {
     const where = w.to ? `Alerts go by email to <b>${esc(w.to)}</b>, at most 5 emails a day.` : w.emailAll ? "Alerts go by email to your account address, at most 5 emails a day." : "Alerts go to the channels set on each monitor.";
     const head = w.paused ? `The watch on ${esc(d)} is turned off.` : (w.already ? "Already watching " : "Watching ") + esc(d) + ".";
-    const body = w.paused ? "Turn it back on under Monitors to check its certificate and email/DNS records once a day."
-      : `Its certificate (expiry within 21 days) and its email/DNS records (SPF, DMARC, MX, CAA) are checked once a day. ${where} Turn the watch off any time under Monitors.`;
+    const body = w.paused ? "Turn it back on under Monitors to check it once a day."
+      : `Its certificate (expiry within 21 days), its domain registration (expiry within 30 days, transfer lock), its email and DNS records (SPF, DMARC, MX, CAA) and its website (HTTPS, security headers, an exposed .git or .env) are checked once a day. ${where} Turn the watch off any time under Monitors.`;
     return `<div class="dk-fr-wtx"><b>${head}</b> ${body}</div><div class="dk-fr-wbtns">${goBtn("monitors", "Open Monitors")}</div>`;
   }
   if (w.state === "guest") {
@@ -103,7 +101,7 @@ async function watchDomain() {
   if (isTestIdentity(S.ctx && S.ctx.user)) return set({ state: "guest" });
   set({ state: "busy" });
   try {
-    const { monitorApi } = await import("/js/deck/monitor-client.js?v=1");
+    const { monitorApi, WATCH_TYPES, watchMonitor } = await import("/js/deck/monitor-client.js?v=1");
     // the Free watch lives in the caller's own workspace, whichever one is active
     const opts = { personal: free };
     const mons = ((await monitorApi({ op: "list" }, opts)) || {}).monitors || [];
@@ -115,8 +113,7 @@ async function watchDomain() {
     const made = [];
     for (const type of WATCH_TYPES) {
       if (mine.some((m) => m.type === type)) continue;
-      const monitor = { name: (type === "cert-expiry" ? "Certificate: " : "Email and DNS: ") + domain, type, config: type === "cert-expiry" ? { domains: [domain], warnDays: 21 } : { domains: [domain] }, intervalMs: DAY, channels: [{ type: "email" }] };
-      const r = await monitorApi({ op: "upsert", monitor }, opts);
+      const r = await monitorApi({ op: "upsert", monitor: watchMonitor(type, domain) }, opts);
       if (r && r.monitor) made.push(r.monitor);
     }
     const all = mine.concat(made);

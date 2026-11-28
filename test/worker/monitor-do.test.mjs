@@ -521,3 +521,39 @@ group("monitor DO/plan", () => {
     assert.equal(m.by, "u1"); assert.equal(m.planHeld, undefined);
   });
 });
+
+// ---- Website and domain-registration watches ----
+group("monitor DO/web-posture + domain-expiry", () => {
+  const H = { "strict-transport-security": "max-age=31536000", "content-security-policy": "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'", "x-content-type-options": "nosniff" };
+  const webNet = (headers) => {
+    const deliveries = [];
+    const fetch = async (url, opts = {}) => {
+      if (url === "https://example.com/") return { ok: true, status: 200, url, headers: new Headers(headers), body: null };
+      if (url === "http://example.com/") return { ok: false, status: 301, url, headers: new Headers({ location: "https://example.com/" }), body: null };
+      if (url.startsWith("https://example.com/.")) return { ok: false, status: 404, url, headers: new Headers(), body: null };
+      deliveries.push({ url, body: opts.body }); return { ok: true, status: 200 };
+    };
+    return { fetch, deliveries };
+  };
+  test("a header that disappears after the baseline alerts as drift, below minSeverity", async () => {
+    const st = memState(); const mon = new MonitorDO(st);
+    await post(mon, { op: "upsert", monitor: { name: "Site", type: "web-posture", config: { domains: ["example.com"] }, channels: [{ type: "webhook", url: "https://hook.test/x" }] } });
+    const a = webNet(H);
+    const r1 = await mon.runDue({ force: true, fetch: a.fetch, sleep: async () => {} });
+    assert.equal(r1.ran[0].found, 0);
+    const { "x-content-type-options": _, ...less } = H;
+    const b = webNet(less);
+    await mon.runDue({ force: true, fetch: b.fetch, sleep: async () => {} });
+    assert.equal(b.deliveries.length, 1, "nosniff (low) removed after the baseline alerts");
+    assert.ok(b.deliveries[0].body.includes("X-Content-Type-Options"));
+  });
+  test("a registration watch on a subdomain baselines the registrable domain", async () => {
+    const st = memState(); const mon = new MonitorDO(st);
+    await post(mon, { op: "upsert", monitor: { name: "Reg", type: "domain-expiry", config: { domains: ["www.example.com"] }, channels: [] } });
+    const fetch = async (url) => url.includes("iana.org") ? { ok: true, status: 200, json: async () => ({ services: [[["com"], ["https://rdap.test/"]]] }) }
+      : { ok: true, status: 200, json: async () => ({ status: ["client transfer prohibited"], events: [{ eventAction: "expiration", eventDate: day(200) }] }) };
+    await mon.runDue({ force: true, fetch, sleep: async () => {} });
+    const m = Object.values(await st.storage.get("monitors"))[0];
+    assert.deepEqual(m.baselined, ["example.com"]);
+  });
+});

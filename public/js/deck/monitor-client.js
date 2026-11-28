@@ -28,3 +28,13 @@ export async function monitorApi(body, opts = {}) {
   if (!r.ok) throw Object.assign(new Error(j.error || ("Monitor request failed (" + r.status + ")")), { status: r.status, plan: j.plan === true });
   return j;
 }
+
+// The domain watch: one daily monitor per check type, alerting by email. Free accounts get
+// exactly this for one domain (worker/free-watch.js FREE_WATCH.types).
+export const WATCH_TYPES = ["cert-expiry", "email-posture", "domain-expiry", "web-posture"];
+export const WATCH_NAME = { "cert-expiry": "Certificate", "email-posture": "Email and DNS", "domain-expiry": "Domain registration", "web-posture": "Website" };
+export const watchMonitor = (type, domain) => ({
+  name: WATCH_NAME[type] + ": " + domain, type,
+  config: type === "cert-expiry" ? { domains: [domain], warnDays: 21 } : type === "domain-expiry" ? { domains: [domain], warnDays: 30 } : { domains: [domain] },
+  intervalMs: 86400000, channels: [{ type: "email" }],
+});

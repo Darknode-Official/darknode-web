@@ -31,7 +31,7 @@ export const FEATURES = {
 export const LIMITS = {
   seats:      { free: 1, pro: 1, team: 25, enterprise: -1 },
   workspaces: { free: 1, pro: 1, team: 5,  enterprise: -1 },
-  // domains a Free account may watch for certificate expiry and email/DNS changes, with
+  // domains a Free account may watch for its certificate, registration, email/DNS records and website, with
   // alerts by email (worker/free-watch.js enforces it); Pro and above have no domain cap
   watchDomains: { free: 1, pro: -1, team: -1, enterprise: -1 },
 };

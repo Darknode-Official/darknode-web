@@ -10,6 +10,7 @@
 // clocks) are kept here too, one storage key each ("dl:<id>", CRA cases "cra:<CVE>"), and
 // alerted when they start and when a quarter of their time is left (public/js/core/deadlines.js).
 import { runCheck, cvesFromEntities, hostOnly } from "./checks.js";
+import { registrableDomain } from "../public/js/dataprotect/phish-engine.js";
 import { maybeWipe } from "./account-delete.js";
 import { diffFindings, diffToEvents, shouldAlert, defaultAlertRules, inQuietHours } from "./monitor-core.js";
 import { buildGraphWrite } from "./monitor-graph.js";
@@ -67,9 +68,18 @@ function saveChannels(given, prev, uid, email) {
 
 // An alerted event plus the finding fields the alert email explains (what changed, why it matters,
 // the fix). SPF and DMARC events also carry the record's state on the previous run and now.
+// Watches whose domains get a baseline: once a domain answered a run, a new or worsened finding
+// on it is drift (a record, header or registration got worse) and alerts regardless of severity.
+const DRIFT_TYPES = ["email-posture", "web-posture", "domain-expiry"];
+const UNREACHABLE = {
+  "email-posture": "no DNS resolver answered; nothing changed this run",
+  "domain-expiry": "no registry answered over RDAP; nothing changed this run",
+  "web-posture": "no watched site answered over HTTP or HTTPS; nothing changed this run",
+};
+
 function alertEvent(e, f = {}, before = {}, after = {}) {
   const out = { kind: e.kind, severity: e.severity, title: e.title, detail: e.detail, key: e.key };
-  for (const k of ["domain", "check", "advice", "daysToExpiry", "notAfter", "issuer", "cve", "dueDate", "epss"]) if (f[k] != null && f[k] !== "") out[k] = f[k];
+  for (const k of ["domain", "check", "advice", "daysToExpiry", "notAfter", "issuer", "registrar", "url", "cve", "dueDate", "epss"]) if (f[k] != null && f[k] !== "") out[k] = f[k];
   const part = f.check === "SPF" ? "spf" : f.check === "DMARC" ? "dmarc" : "";
   if (part && f.domain) {
     const was = (before[f.domain] || {})[part], now = (after[f.domain] || {})[part];
@@ -269,7 +279,7 @@ export class MonitorDO {
     try {
       if (m.type === "kev-epss" && extra.cves == null) throw new Error("could not read the workspace's CVE inventory; nothing changed this run");
       findings = await runCheck(m.type, m.config || {}, { fetch: deps.fetch, now: t0, ...extra });
-      if (findings && findings.unreachable) throw new Error(m.type === "email-posture" ? "no DNS resolver answered; nothing changed this run" : "a feed did not answer; nothing changed this run");
+      if (findings && findings.unreachable) throw new Error(UNREACHABLE[m.type] || "a feed did not answer; nothing changed this run");
     }
     catch (e) { await this._log("history", HISTORY_CAP, { id: m.id, at: t0, error: String(e.message || e) }); return { id: m.id, error: String(e.message || e) }; }
 
@@ -301,7 +311,7 @@ export class MonitorDO {
       // once a domain has a baseline (a run where its records answered), any new or worsened
       // record on it is drift and alerts regardless of severity (onDrift). A domain's first
       // answered run, including one added to an existing monitor, obeys minSeverity.
-      else if (m.type === "email-posture" && real && (m.baselined || []).includes((findings.find((f) => f.key === ev.key) || {}).domain)) ev.kind = "drift";
+      else if (DRIFT_TYPES.includes(m.type) && real && (m.baselined || []).includes((findings.find((f) => f.key === ev.key) || {}).domain)) ev.kind = "drift";
       const d = shouldAlert(ev, rules, t0);
       if (d.alert) alerted.push(ev); else if (d.suppressed) held.push(ev);
     }
@@ -350,7 +360,8 @@ export class MonitorDO {
     m.lastRunAt = t0;
     // a domain removed from the monitor loses its baseline, so re-adding it starts fresh
     if (checked) {
-      const watched = new Set(((m.config && m.config.domains) || []).map(hostOnly));
+      // a domain-registration watch on www.shop.example.com checks (and baselines) example.com
+      const watched = new Set(((m.config && m.config.domains) || []).map(hostOnly).flatMap((h) => [h, registrableDomain(h)]));
       m.baselined = [...new Set([...(m.baselined || []), ...checked])].filter((d) => watched.has(d));
       m.posture = Object.fromEntries(Object.entries({ ...postureBefore, ...postureNow }).filter(([d]) => watched.has(d)));
     }
