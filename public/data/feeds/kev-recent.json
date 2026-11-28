@@ -1,10 +1,37 @@
 {
- "updated": "2026-11-27T15:19:11.311Z",
+ "updated": "2026-11-28T14:21:08.224Z",
  "source": "CISA KEV (last 14 days)",
- "catalogVersion": "2026.11.25",
- "since": "2026-11-13",
- "count": 26,
+ "catalogVersion": "2026.11.27",
+ "since": "2026-11-14",
+ "count": 27,
  "data": [
+  {
+   "cve": "CVE-2026-120705",
+   "vendor": "OSGeo",
+   "product": "GeoServer",
+   "name": "OSGeo GeoServer XML Injection Vulnerability",
+   "dateAdded": "2026-11-27",
+   "dueDate": "2026-11-30",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-129243",
+   "vendor": "OSGeo",
+   "product": "GeoServer",
+   "name": "OSGeo GeoServer Incorrect Authorization Vulnerability",
+   "dateAdded": "2026-11-27",
+   "dueDate": "2026-11-30",
+   "ransomware": false
+  },
+  {
+   "cve": "CVE-2026-136716",
+   "vendor": "Drupal",
+   "product": "Core",
+   "name": "Drupal Core Improper Check for Unusual or Exceptional Conditions Vulnerability",
+   "dateAdded": "2026-11-27",
+   "dueDate": "2026-11-30",
+   "ransomware": false
+  },
   {
    "cve": "CVE-2026-103406",
    "vendor": "Hewlett Packard Enterprise (HPE)",
@@ -219,24 +246,6 @@
    "name": "Perforce Puppet Enterprise Deserialization of Untrusted Data Vulnerability",
    "dateAdded": "2026-11-17",
    "dueDate": "2026-12-01",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-114713",
-   "vendor": "UnrealIRCd",
-   "product": "UnrealIRCd",
-   "name": "UnrealIRCd Improper Neutralization of Delimiters Vulnerability",
-   "dateAdded": "2026-11-13",
-   "dueDate": "2026-11-16",
-   "ransomware": false
-  },
-  {
-   "cve": "CVE-2026-123039",
-   "vendor": "Check Point",
-   "product": "Multiple Products",
-   "name": "Check Point Multiple Products Incorrect Permission Assignment for Critical Resource Vulnerability",
-   "dateAdded": "2026-11-13",
-   "dueDate": "2026-11-16",
    "ransomware": false
   }
  ]
