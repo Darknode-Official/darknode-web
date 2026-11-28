@@ -4252,7 +4252,7 @@ export function renderDeck(host, opts) {
     const PLANS = [
       { id: "free", name: "Free", price: "$0", unit: "forever", tag: "", a: "#2552c6",
         blurb: "Quick checks, the live feed and the assistant, for individuals and evaluation.",
-        feats: ["Free browser tools in the Tool Library", "Quick Checks: email security, headers, certificates, DNS, breaches, CVEs", "Personal space: domain, link, secret and data checks", "Live vulnerability feed (CVE and known-exploited)", "Local-only security graph & case files", "Watch 1 domain: certificate expiry and email/DNS changes, alerts by email", "Darknode AI assistant: 50 messages a day", "1 workspace, 1 seat"],
+        feats: ["Free browser tools in the Tool Library", "Quick Checks: email security, headers, certificates, DNS, breaches, CVEs", "Personal space: domain, link, secret and data checks", "Live vulnerability feed (CVE and known-exploited)", "Local-only security graph & case files", "Watch 1 domain: certificate, registration, email/DNS and website changes, alerts by email", "Darknode AI assistant: 50 messages a day", "1 workspace, 1 seat"],
         cta: "Current plan", cur: true },
       { id: "pro", name: "Pro", price: "$29", unit: "per user / month", tag: "Recommended", a: "#2552c6",
         blurb: "For professionals who need history, exports and the strongest AI models.",

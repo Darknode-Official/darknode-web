@@ -5,7 +5,8 @@
 // Findings returned use the monitor shape monitor-core expects:
 //   { key, severity, title, status, ...extra }
 // `key` is stable across runs so diffFindings can tell a new issue from a persisting one.
-import { newestCert, certDaysLeft, gradeEmail, parseSPF, parseDMARC } from "../public/js/dataprotect/posture-engine.js";
+import { newestCert, certDaysLeft, gradeEmail, parseSPF, parseDMARC, gradeTransport, gradeHeaders } from "../public/js/dataprotect/posture-engine.js";
+import { hostAllowed } from "./net-guard.js";
 import { registrableDomain } from "../public/js/dataprotect/phish-engine.js";
 
 // Normalise SSLMate certspotter issuances into crt.sh-shaped rows (same mapping the
@@ -321,10 +322,210 @@ export const CHECKS = {
   "cert-expiry": (cfg, deps) => certExpiryCheck((cfg && cfg.domains) || [], { ...deps, warnDays: (cfg && cfg.warnDays) || 21 }),
   "kev-epss": (cfg, deps) => kevEpssCheck(cfg || {}, deps),
   "email-posture": (cfg, deps) => emailPostureCheck((cfg && cfg.domains) || [], deps),
+  "domain-expiry": (cfg, deps) => domainExpiryCheck((cfg && cfg.domains) || [], { ...deps, warnDays: (cfg && cfg.warnDays) || 30 }),
+  "web-posture": (cfg, deps) => webPostureCheck((cfg && cfg.domains) || [], deps),
 };
 
 export function runCheck(type, cfg, deps) {
   const fn = Object.prototype.hasOwnProperty.call(CHECKS, type) ? CHECKS[type] : null; // "toString" etc. are not checks
   if (!fn) return Promise.resolve([]);
   return fn(cfg, deps);
+}
+
+// ---- Domain registration watch (RDAP) ---------------------------------------------------
+// A domain whose registration lapses takes the website, the mail and every login on it down
+// at once, and can be bought by someone else. The registry's own RDAP record (RFC 9083) gives
+// the expiry date and the EPP status codes; the IANA bootstrap file names each TLD's server.
+const RDAP_BOOTSTRAP = "https://data.iana.org/rdap/dns.json";
+const timeout = (ms) => (typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
+
+// rdapBase(bootstrap, domain) -> the https RDAP base URL (ending in "/") for the domain's
+// longest matching TLD entry, or "". PURE.
+export function rdapBase(boot, domain) {
+  const d = String(domain || "").toLowerCase();
+  let best = "", len = 0;
+  for (const svc of (boot && Array.isArray(boot.services) ? boot.services : [])) {
+    const tlds = Array.isArray(svc) && Array.isArray(svc[0]) ? svc[0] : [], urls = Array.isArray(svc) && Array.isArray(svc[1]) ? svc[1] : [];
+    const url = urls.find((u) => /^https:\/\//i.test(String(u)));
+    if (!url) continue;
+    for (const t of tlds) {
+      const tl = String(t).toLowerCase();
+      if ((d === tl || d.endsWith("." + tl)) && tl.length > len) { best = url.endsWith("/") ? url : url + "/"; len = tl.length; }
+    }
+  }
+  return best;
+}
+
+const ccTld = (d) => /^[a-z]{2}$/.test(String(d).split(".").pop());
+
+// gradeRdap(domain, rdap, { now, warnDays }) -> { findings, unknown, expiresAt }. PURE.
+// rdap: the registry's domain object, or null for a 404 (the domain is not registered).
+// Healthy states yield no finding. The transfer-lock check runs for generic TLDs only: ICANN
+// requires gTLD registries to publish EPP statuses, while many country-code registries have
+// no registrar lock at all and would read as unlocked.
+export function gradeRdap(domain, rdap, opts = {}) {
+  const now = opts.now || Date.now(), warnDays = opts.warnDays || 30;
+  const findings = [], unknown = [];
+  const k = (id) => "domain:" + domain + ":" + id;
+  const add = (id, severity, title, extra = {}) => findings.push({ key: k(id), severity, status: "open", title, domain, category: "domain", tool: "monitor:domain-expiry", ...extra });
+  if (rdap === null) {
+    add("expiry", "critical", `${domain} is not registered`, { check: "Registration", advice: `Register ${domain} again at a registrar now, before someone else does.` });
+    return { findings, unknown, expiresAt: null };
+  }
+  const status = (Array.isArray(rdap && rdap.status) ? rdap.status : []).map((s) => String(s).toLowerCase());
+  const ev = (Array.isArray(rdap && rdap.events) ? rdap.events : []).find((e) => e && /^expiration$/i.test(String(e.eventAction || "")));
+  const at = ev && Date.parse(ev.eventDate);
+  const registrar = ((Array.isArray(rdap && rdap.entities) ? rdap.entities : []).find((e) => e && Array.isArray(e.roles) && e.roles.includes("registrar")) || {});
+  const regName = (() => { const v = Array.isArray(registrar.vcardArray) ? registrar.vcardArray[1] : null; const fn = Array.isArray(v) && v.find((p) => Array.isArray(p) && p[0] === "fn"); return fn ? String(fn[3] || "") : ""; })();
+  const extra = { check: "Registration", ...(regName ? { registrar: regName } : {}) };
+  const lapsing = status.find((s) => s === "redemption period" || s === "pending delete" || s === "pending restore");
+  if (Number.isFinite(at)) {
+    const days = Math.floor((at - now) / 86400000), iso = new Date(at).toISOString();
+    const s = days < 0 || days <= 7 || lapsing ? "critical" : days <= warnDays ? "high" : null;
+    if (s) add("expiry", s, lapsing ? `${domain} is in ${lapsing}: its registration has lapsed` : days < 0 ? `Registration for ${domain} has expired` : `Registration for ${domain} expires in ${days} day${days === 1 ? "" : "s"}`, { ...extra, daysToExpiry: days, notAfter: iso });
+  } else if (lapsing) add("expiry", "critical", `${domain} is in ${lapsing}: its registration has lapsed`, extra);
+  else unknown.push({ domain, check: "Registration", reason: "The registry does not publish an expiry date over RDAP.", keys: [k("expiry")] });
+  if (status.includes("pending transfer")) add("transfer", "high", `A transfer of ${domain} to another registrar is pending`, { ...extra, check: "Transfer", advice: "If you did not start this transfer, reject it at your registrar today and change the registrar account password." });
+  if (!ccTld(domain) && status.length && !status.some((s) => s === "client transfer prohibited" || s === "server transfer prohibited")) {
+    add("lock", "medium", `Transfer lock is off for ${domain}`, { ...extra, check: "Transfer lock", advice: "Turn on the registrar lock (clientTransferProhibited) at your registrar, so the domain cannot move to another registrar without you unlocking it." });
+  }
+  return { findings, unknown, expiresAt: Number.isFinite(at) ? new Date(at).toISOString() : null };
+}
+
+// domainExpiryCheck(domains, deps) -> findings[] (+ .held, .unknown, .checked). deps: { fetch, now, warnDays }.
+// Each watched hostname is graded by its registrable domain (www.shop.example.co.uk -> example.co.uk).
+export async function domainExpiryCheck(domains, deps = {}) {
+  const f = deps.fetch || (typeof fetch !== "undefined" ? fetch : null);
+  if (!f) return [];
+  const regs = [...new Set((domains || []).map(hostOnly).filter(Boolean).map((h) => registrableDomain(h)))];
+  if (!regs.length) return [];
+  let boot = null;
+  try { const r = await f(RDAP_BOOTSTRAP, { headers: { accept: "application/json" }, signal: timeout(10000) }); if (r && r.ok) boot = await r.json().catch(() => null); } catch (_) {}
+  if (!boot) return Object.assign([], { unreachable: true });
+  const out = [], held = [], unknown = [], checked = [];
+  for (const dom of regs) {
+    const base = rdapBase(boot, dom);
+    const keys = ["expiry", "transfer", "lock"].map((id) => "domain:" + dom + ":" + id);
+    if (!base) { unknown.push({ domain: dom, check: "Registration", reason: "The ." + dom.split(".").pop() + " registry has no RDAP service.", keys }); held.push(...keys); continue; }
+    let rdap;
+    try {
+      const r = await f(base + "domain/" + encodeURIComponent(dom), { headers: { accept: "application/rdap+json, application/json" }, signal: timeout(10000) });
+      rdap = r && r.status === 404 ? null : r && r.ok ? await r.json().catch(() => undefined) : undefined;
+    } catch (_) { rdap = undefined; }
+    if (rdap === undefined) { held.push(...keys); continue; }   // no answer: keep the last state
+    checked.push(dom);
+    const g = gradeRdap(dom, rdap, { now: deps.now, warnDays: deps.warnDays });
+    out.push(...g.findings);
+    for (const u of g.unknown) { unknown.push(u); held.push(...u.keys); }
+  }
+  if (!checked.length && !unknown.length) return Object.assign([], { unreachable: true });
+  return Object.assign(out, { held, unknown, checked });
+}
+
+// ---- Website watch ------------------------------------------------------------------------
+// The security headers a site sends, whether plain HTTP still redirects to HTTPS, and whether
+// the site serves its git repository or its .env file to anyone. Graded by the same posture
+// engine as the browser Posture tool. A file probe reads at most 2 KB to recognise the file,
+// and keeps nothing of it: a finding carries only the URL.
+const WEB_WATCH = {
+  "HTTPS": { id: "https", fail: "high" },
+  "HTTP to HTTPS redirect": { id: "redirect", fail: "medium" },
+  "HSTS": { id: "hsts", fail: "medium", warn: "low" },
+  "Content-Security-Policy": { id: "csp", fail: "medium", warn: "low" },
+  "Clickjacking protection": { id: "frame", fail: "medium" },
+  "X-Content-Type-Options": { id: "nosniff", fail: "low" },
+  "Cookie security": { id: "cookies", fail: "medium", warn: "low" },
+};
+export const WEB_KEYS = [...Object.values(WEB_WATCH).map((w) => w.id), "git", "env"];
+
+// Is this body (the first bytes) a real git HEAD / .env file, not an HTML catch-all page? PURE.
+export const looksLikeGitHead = (t) => /^(ref: refs\/[\w./-]+|[0-9a-f]{40})\s*$/.test(String(t || "").trim().split("\n")[0] || "");
+export function looksLikeEnv(t, contentType = "") {
+  const s = String(t || "");
+  if (/html|json|xml|javascript/i.test(contentType) || /^\s*</.test(s)) return false;
+  const lines = s.split(/\r?\n/).filter((l) => l.trim() && !/^\s*#/.test(l));
+  return lines.length >= 2 && lines.filter((l) => /^\s*(export\s+)?[A-Z][A-Z0-9_]*\s*=/.test(l)).length >= Math.max(2, Math.ceil(lines.length * 0.6));
+}
+
+// gradeWeb(host, probe) -> findings[]. PURE. probe: { httpsOk, headers, setCookie, httpTested,
+// httpRedirectsToHttps, git, env } as webPostureCheck collects it.
+export function gradeWeb(host, p = {}) {
+  const findings = [];
+  const add = (id, severity, title, extra = {}) => findings.push({ key: "web:" + host + ":" + id, severity, status: "open", title, domain: host, category: "website", tool: "monitor:web-posture", ...extra });
+  const cats = [gradeTransport({ headers: p.headers || {}, httpsOk: !!p.httpsOk, httpTested: !!p.httpTested, httpRedirectsToHttps: !!p.httpRedirectsToHttps })];
+  if (p.httpsOk) cats.push(gradeHeaders({ headers: p.headers || {}, setCookie: p.setCookie || [] }));
+  for (const c of cats.flatMap((x) => x.checks)) {
+    const w = WEB_WATCH[c.name];
+    if (!w || (!p.httpsOk && c.name === "HSTS")) continue;   // no HTTPS answer: there is no HSTS to grade
+    const s = w[c.status];
+    if (s) add(w.id, s, `${c.name} on ${host}: ${c.detail}`, { check: c.name, detail: c.detail, advice: c.advice || "" });
+  }
+  if (p.git) add("git", "critical", `The git repository of ${host} is publicly readable`, { check: "Exposed files", url: p.git, advice: `Block /.git/ on ${host} in the web server or CDN, then treat every secret ever committed to that repository as leaked and rotate it.` });
+  if (p.env) add("env", "critical", `The .env file of ${host} is publicly readable`, { check: "Exposed files", url: p.env, advice: `Remove .env from the web root of ${host} or block it, then rotate every key, password and token it held.` });
+  findings.sort((a, b) => a.key.localeCompare(b.key));
+  return findings;
+}
+
+async function readHead(r, max = 2048) {
+  try {
+    if (!r.body || !r.body.getReader) return (await r.text()).slice(0, max);
+    const rd = r.body.getReader(), dec = new TextDecoder();
+    let s = "";
+    while (s.length < max) { const { done, value } = await rd.read(); if (done) break; s += dec.decode(value, { stream: true }); }
+    rd.cancel().catch(() => {});
+    return s.slice(0, max);
+  } catch (_) { return ""; }
+}
+const drop = (r) => { try { r && r.body && r.body.cancel && r.body.cancel().catch(() => {}); } catch (_) {} };
+
+// webPostureCheck(domains, deps) -> findings[] (+ .held, .checked). deps: { fetch }.
+export async function webPostureCheck(domains, deps = {}) {
+  const f = deps.fetch || (typeof fetch !== "undefined" ? fetch : null);
+  if (!f) return [];
+  const UA = { "user-agent": "DarknodeMonitor/1.0 (+https://darknode.ai)" };
+  const out = [], held = [], checked = [];
+  let tried = false;
+  for (const raw of (domains || [])) {
+    const host = hostOnly(raw);
+    if (!host || !hostAllowed(new URL("https://" + host))) continue;
+    tried = true;
+    const p = { httpsOk: false, headers: {}, setCookie: [], httpTested: false, httpRedirectsToHttps: false, git: "", env: "" };
+    try {
+      const r = await f("https://" + host + "/", { headers: UA, redirect: "follow", signal: timeout(12000) });
+      if (/^https:/i.test(r.url || "https:")) {
+        p.httpsOk = true;
+        p.headers = Object.fromEntries(r.headers.entries());
+        p.setCookie = typeof r.headers.getSetCookie === "function" ? r.headers.getSetCookie() : [];
+      }
+      drop(r);
+    } catch (_) {}
+    try {
+      let url = "http://" + host + "/";
+      for (let hop = 0; hop < 4; hop++) {
+        const r = await f(url, { headers: UA, redirect: "manual", signal: timeout(12000) });
+        drop(r);
+        p.httpTested = true;
+        const loc = r.status >= 300 && r.status < 400 ? r.headers.get("location") : "";
+        if (!loc) break;
+        const next = new URL(loc, url);
+        if (next.protocol === "https:") { p.httpRedirectsToHttps = true; break; }
+        if (next.protocol !== "http:" || !hostAllowed(next)) break;
+        url = next.href;
+      }
+    } catch (_) {}
+    if (!p.httpsOk && !p.httpTested) { held.push(...WEB_KEYS.map((id) => "web:" + host + ":" + id)); continue; }
+    checked.push(host);
+    if (p.httpsOk) {
+      for (const [field, path, test] of [["git", "/.git/HEAD", (t) => looksLikeGitHead(t)], ["env", "/.env", (t, ct) => looksLikeEnv(t, ct)]]) {
+        try {
+          const r = await f("https://" + host + path, { headers: UA, redirect: "manual", signal: timeout(10000) });
+          if (r.status === 200 && test(await readHead(r), r.headers.get("content-type") || "")) p[field] = "https://" + host + path;
+          else drop(r);
+        } catch (_) { held.push("web:" + host + ":" + field); }
+      }
+    }
+    out.push(...gradeWeb(host, p));
+  }
+  if (tried && !checked.length) return Object.assign([], { unreachable: true });
+  return Object.assign(out, { held, checked });
 }

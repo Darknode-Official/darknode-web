@@ -4,11 +4,11 @@
 // certificate expiry (real CT-log lookups graded by the posture engine); more are added
 // server-side as worker-safe engines are extracted.
 //
-// On the Free plan the scene shows the one-domain watch (certificate expiry + email/DNS
-// changes, alerts by email to the account's own address) in the caller's own workspace, with a
+// On the Free plan the scene shows the one-domain watch (certificate, registration, email/DNS
+// and website checks, alerts by email to the account's own address) in the caller's own workspace, with a
 // switch to turn it off. The Worker enforces the limits (worker/free-watch.js); this only hides
 // what the plan does not include.
-import { monitorApi as api, monitoringAvailable } from "./monitor-client.js";
+import { monitorApi as api, monitoringAvailable, WATCH_TYPES, watchMonitor } from "./monitor-client.js";
 
 const S = { ctx: null, el: null, data: null, adding: false, busy: false, seq: 0 }; // seq: a reply for a previous mount/workspace is dropped
 const E = (s) => (S.ctx && S.ctx.esc ? S.ctx.esc(s) : String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])));
@@ -20,7 +20,6 @@ const CHANNELS =[["email", "Email (your account address)"], ["slack", "Slack"], 
 const isFree = () => !!(S.ctx && S.ctx.tier === "free");
 // the Free watch lives in the caller's own workspace, so on Free every request goes there
 const monitorApi = (body) => api(body, { personal: isFree() });
-const WATCH_TYPES = ["cert-expiry", "email-posture"];
 // The Free watch as the Worker counts it (free-watch.js freeAllowed): monitors of a watch type,
 // alerting by email only, on exactly one domain; the earliest-created one's domain is the watch.
 function freeWatch(mons) {
@@ -30,7 +29,15 @@ function freeWatch(mons) {
   const domain = hostOf(fits[0].config.domains[0]) || fits[0].config.domains[0];
   const list = fits.filter((m) => (hostOf(m.config.domains[0]) || m.config.domains[0]) === domain);
   const mail = list.flatMap((m) => m.channels || []).find((c) => c.type === "email" && c.to);
-  return { domain, list, paused: list.every((m) => m.paused), to: mail ? mail.to : "" };
+  const missing = WATCH_TYPES.filter((t) => !list.some((m) => m.type === t));
+  return { domain, list, missing, paused: list.every((m) => m.paused), to: mail ? mail.to : "" };
+}
+const WATCH_PART = { "cert-expiry": "certificate expiry", "email-posture": "email/DNS records (SPF, DMARC, MX, CAA)", "domain-expiry": "domain registration", "web-posture": "website security (HTTPS, headers, exposed files)" };
+// "Certificate expiry, domain registration and ..." for the checks this watch holds
+function watchList(fw) {
+  const parts = WATCH_TYPES.filter((t) => fw.list.some((m) => m.type === t)).map((t) => WATCH_PART[t]);
+  const s = parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts[0] || "";
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 const chanText = (chs) => !chs || !chs.length ? "no alert channel"
   : chs.map((c) => c.type === "email" ? "email" + (c.to ? " to " + c.to : "") : ((CHANNELS.find(([v]) => v === c.type) || [])[1] || c.type)).join(", ");
@@ -91,7 +98,7 @@ async function load() {
   if (!monitoringAvailable()) { box.innerHTML = `<div class="mon-off">Monitoring is not available on this build — it needs the cloud proxy. Nothing to configure yet.</div>`; return; }
   // guest / Test Mode: monitors run on the server for an account and email it, so offer sign-up
   if (S.ctx && S.ctx.noAccount) {
-    box.innerHTML = `<div class="mon-watch"><div class="tx"><b>Monitors need a free account</b><br>They run on Darknode's servers and email the account that set them up. A free account watches one domain for certificate expiry and email/DNS changes, checked once a day.</div>
+    box.innerHTML = `<div class="mon-watch"><div class="tx"><b>Monitors need a free account</b><br>They run on Darknode's servers and email the account that set them up. A free account watches one domain: its certificate, registration, email/DNS records and website, checked once a day.</div>
       <span class="mon-actions"><button class="mon-btn pri" id="monSignup">Create a free account</button></span></div>`;
     box.querySelector("#monSignup").onclick = () => S.ctx.signup && S.ctx.signup();
     return;
@@ -126,21 +133,21 @@ function paint() {
         </span>
       </div>
     </div>`;
-  }).join("") : `<div class="dk-nempty">No monitors yet. Add a certificate monitor to get alerted before a cert expires.</div>`;
+  }).join("") : `<div class="dk-nempty">No monitors yet. Add a certificate, domain registration or website watch to hear about a problem before your visitors do.</div>`;
 
   const free = isFree(), fw = free ? freeWatch(mons) : null;
   const watchHtml = !free ? "" : fw
     ? `<div class="mon-watch"><div class="tx"><b>Free plan watch: ${E(fw.domain)}${fw.paused ? " (turned off)" : ""}</b><br>${fw.paused
         ? "Turned off: nothing is checked and no alerts are sent until you turn it back on."
-        : `Certificate expiry and email/DNS changes (SPF, DMARC, MX, CAA), checked once a day. Alerts go by email to ${fw.to ? E(fw.to) : "your account address"}, at most 5 emails a day.`}</div>
-        <span class="mon-actions"><button class="mon-btn${fw.paused ? " pri" : ""}" id="monWatchToggle">${fw.paused ? "Turn on" : "Turn off"}</button><button class="mon-btn" id="monPlans">See Plans</button></span></div>`
-    : `<div class="mon-watch"><div class="tx"><b>Free plan: watch one domain</b><br>Certificate expiry and email/DNS changes, checked once a day, with alerts by email to your account address. Run a domain check on the Overview and choose Watch this domain, or add a monitor below.</div>
+        : `${E(watchList(fw))}, checked once a day. Alerts go by email to ${fw.to ? E(fw.to) : "your account address"}, at most 5 emails a day.`}</div>
+        <span class="mon-actions">${fw.missing.length && !fw.paused ? '<button class="mon-btn pri" id="monWatchMore">Add the other checks</button>' : ""}<button class="mon-btn${fw.paused ? " pri" : ""}" id="monWatchToggle">${fw.paused ? "Turn on" : "Turn off"}</button><button class="mon-btn" id="monPlans">See Plans</button></span></div>`
+    : `<div class="mon-watch"><div class="tx"><b>Free plan: watch one domain</b><br>Its certificate, registration, email/DNS records and website, checked once a day, with alerts by email to your account address. Run a domain check on the Overview and choose Watch this domain, or add a monitor below.</div>
         <span class="mon-actions"><button class="mon-btn" id="monPlans">See Plans</button></span></div>`;
 
   box.innerHTML = `
     ${watchHtml}
     <p class="mon-sub">${mons.length.toLocaleString()} monitor${mons.length === 1 ? "" : "s"}. Monitors run on the server's own schedule; alerts fire only when something changes.${free ? " More domains, known-exploited CVE watches and Slack, Teams or webhook alerts are part of Pro." : ""}</p>
-    <div style="margin:0 0 14px;display:flex;gap:8px;flex-wrap:wrap"><button class="mon-btn pri" id="monAdd">Add certificate monitor</button>${free ? "" : '<button class="mon-btn" id="monAddKev">Add KEV/EPSS watch</button>'}<button class="mon-btn" id="monAddMail">Add email &amp; DNS watch</button></div>
+    <div style="margin:0 0 14px;display:flex;gap:8px;flex-wrap:wrap"><button class="mon-btn pri" id="monAdd">Add certificate monitor</button>${free ? "" : '<button class="mon-btn" id="monAddKev">Add KEV/EPSS watch</button>'}<button class="mon-btn" id="monAddMail">Add email &amp; DNS watch</button><button class="mon-btn" id="monAddReg">Add domain registration watch</button><button class="mon-btn" id="monAddWeb">Add website watch</button></div>
     <div id="monFormSlot"></div>
     ${monHtml}
     ${logPanel("Recent runs", (S.data.history || []).slice(0, 8), (h) => `<b>${E((S.data.monitors.find((m) => m.id === h.id) || {}).name || h.id)}</b> — ${h.error ? ("error: " + E(h.error)) : `${h.found} open, ${h.added} new, ${h.changed} changed, ${h.alerted} alerted${h.skipped ? `, ${h.skipped} could not be checked` : ""}${h.graphError ? ", not synced to Findings: " + E(h.graphError) : ""}`} · ${E(ago(h.at))}`)}
@@ -150,8 +157,12 @@ function paint() {
   const kevBtn = box.querySelector("#monAddKev"), plansBtn = box.querySelector("#monPlans"), watchBtn = box.querySelector("#monWatchToggle");
   if (plansBtn) plansBtn.onclick = () => { if (S.ctx && S.ctx.go) S.ctx.go("plans"); };
   if (watchBtn) watchBtn.onclick = () => toggleWatch(fw);
+  const moreBtn = box.querySelector("#monWatchMore");
+  if (moreBtn) moreBtn.onclick = () => addWatchChecks(fw);
   if (kevBtn) kevBtn.onclick = () => { const was = S.adding && S.kind === "kev-epss"; S.kind = "kev-epss"; S.adding = !was; renderForm(); };
-  box.querySelector("#monAddMail").onclick = () => { const was = S.adding && S.kind === "email-posture"; S.kind = "email-posture"; S.adding = !was; renderForm(); };
+  for (const [id, kind] of [["#monAddMail", "email-posture"], ["#monAddReg", "domain-expiry"], ["#monAddWeb", "web-posture"]]) {
+    box.querySelector(id).onclick = () => { const was = S.adding && S.kind === kind; S.kind = kind; S.adding = !was; renderForm(); };
+  }
   if (S.adding) renderForm();
   box.querySelectorAll(".mon-row").forEach((row) => row.querySelector(".mon-actions").onclick = (e) => {
     const b = e.target.closest("[data-act]"); if (!b) return;
@@ -170,10 +181,16 @@ function logPanel(title, rows, fmt) {
 function renderForm() {
   const slot = S.el && S.el.querySelector("#monFormSlot"); if (!slot) return;
   if (!S.adding) { slot.innerHTML = ""; return; }
-  const kev = S.kind === "kev-epss", mail = S.kind === "email-posture", free = isFree();
+  const kev = S.kind === "kev-epss", mail = S.kind === "email-posture", reg = S.kind === "domain-expiry", web = S.kind === "web-posture", free = isFree();
   const one = free ? " The Free plan watches one domain." : "";
   const domPh = free ? "example.com" : "one per line or comma-separated";
-  const specific = mail
+  const domField = (hint) => `<div class="mon-field"><label for="mfDomains">${free ? "Domain" : "Domains"}</label><textarea id="mfDomains" placeholder="${domPh}" spellcheck="false"></textarea><p class="hint">${hint}${one}</p></div>`;
+  const specific = reg
+    ? domField("Domains to watch, e.g. example.com. The registry's RDAP record is read once per check: an alert goes out before the registration expires (30 days by default), when a transfer to another registrar is pending, and when the transfer lock is turned off. A subdomain is checked by its registered domain.") + `
+    <div class="mon-field"><label for="mfWarn">Warn when expiring within (days)</label><input id="mfWarn" type="number" min="1" max="365" placeholder="30"></div>`
+    : web
+    ? domField("Sites to watch, e.g. example.com. Each check loads the home page over HTTPS and HTTP and asks for /.git/HEAD and /.env, the same requests any visitor can make. Only the headers are kept, never page content. After the first check, any header that disappears or gets weaker raises an alert.")
+    : mail
     ? `<div class="mon-field"><label for="mfDomains">${free ? "Domain" : "Domains"}</label><textarea id="mfDomains" placeholder="${domPh}" spellcheck="false"></textarea><p class="hint">Domains to watch, e.g. example.com. SPF, DMARC, MX and CAA are read over public DNS-over-HTTPS; after the first run, any record that is removed or weakened raises an alert.${one}</p></div>`
     : kev
     ? `<div class="mon-field"><label for="mfEpss">EPSS alert floor (0–1)</label><input id="mfEpss" type="number" min="0" max="1" step="0.05" placeholder="0.5"><p class="hint">A CVE in your graph alerts when it is in the CISA KEV catalogue, or its EPSS exploit-prediction score is at or above this floor. Nothing is sent anywhere; the match runs against the current feeds.</p></div>`
@@ -184,8 +201,8 @@ function renderForm() {
   const EMAIL_HINT = "Alerts go to your account's verified email address, at most 5 alert emails a day.";
   const HOOK_HINT = "Slack, Teams and Discord use their own incoming-webhook URL. For a signed webhook you can add a shared secret below.";
   slot.innerHTML = `<div class="mon-form">
-    <h3>${kev ? "New KEV / EPSS watch" : mail ? "New email &amp; DNS watch" : "New certificate-expiry monitor"}</h3>
-    <div class="mon-field"><label for="mfName">Name</label><input id="mfName" placeholder="${kev ? "Known-exploited vulnerabilities" : mail ? "Email and DNS records" : "Public certificates"}" autocomplete="off"></div>
+    <h3>${kev ? "New KEV / EPSS watch" : mail ? "New email &amp; DNS watch" : reg ? "New domain registration watch" : web ? "New website watch" : "New certificate-expiry monitor"}</h3>
+    <div class="mon-field"><label for="mfName">Name</label><input id="mfName" placeholder="${kev ? "Known-exploited vulnerabilities" : mail ? "Email and DNS records" : reg ? "Domain registration" : web ? "Website security" : "Public certificates"}" autocomplete="off"></div>
     ${specific}
     <div class="mon-field"><label for="mfInt">Check interval (minutes)</label><input id="mfInt" type="number" min="${free ? 1440 : 15}" max="10080" placeholder="1440">${free ? '<p class="hint">The Free plan checks once a day (1440 minutes).</p>' : ""}</div>
     <div class="mon-field"><label for="mfChType">Alert channel</label>
@@ -233,6 +250,8 @@ function readForm(slot) {
   const domains = [], bad = [];
   for (const x of raw) { const h = hostOf(x); if (h) { if (!domains.includes(h)) domains.push(h); } else bad.push(x); }
   if (S.kind === "email-posture") return { bad, name: ($("#mfName").value || "").trim() || "Email and DNS watch", type: "email-posture", config: { domains }, intervalMs, channels };
+  if (S.kind === "web-posture") return { bad, name: ($("#mfName").value || "").trim() || "Website watch", type: "web-posture", config: { domains }, intervalMs, channels };
+  if (S.kind === "domain-expiry") return { bad, name: ($("#mfName").value || "").trim() || "Domain registration watch", type: "domain-expiry", config: { domains, warnDays: Math.max(1, Math.min(365, Number($("#mfWarn").value) || 30)) }, intervalMs, channels };
   return {
     bad,
     name: ($("#mfName").value || "").trim() || "Certificate monitor",
@@ -248,7 +267,7 @@ async function saveMonitor(slot) {
   const mon = readForm(slot);
   if (mon.bad && mon.bad.length) { toast("Not a domain name: " + mon.bad.slice(0, 3).join(", ") + (mon.bad.length > 3 ? " and " + (mon.bad.length - 3) + " more" : "") + ". Use hostnames such as test.darknode.ai.", "warn"); return; }
   delete mon.bad;
-  if ((mon.type === "cert-expiry" || mon.type === "email-posture") && !mon.config.domains.length) { toast("Add at least one domain.", "warn"); return; }
+  if (mon.type !== "kev-epss" && !mon.config.domains.length) { toast("Add at least one domain.", "warn"); return; }
   if (isFree() && mon.config.domains && mon.config.domains.length > 1) { toast("The Free plan watches one domain. Keep one domain, or request an upgrade under Plans to watch more.", "warn"); return; }
   if (mon.channels[0] && mon.channels[0].type !== "email" && mon.channels[0].type && !mon.channels[0].url) { toast("Add the incoming webhook URL for this channel.", "warn"); return; }
   S.busy = true;
@@ -272,6 +291,17 @@ async function testChannel(slot) {
 }
 
 // Turn the Free watch off or on: pause or resume every monitor in it.
+// A watch set up before a check type existed gets the missing ones, same domain, same email alerts.
+async function addWatchChecks(fw) {
+  if (!fw || S.busy || !fw.missing.length) return;
+  S.busy = true;
+  try {
+    for (const t of fw.missing) await monitorApi({ op: "upsert", monitor: watchMonitor(t, fw.domain) });
+    toast("Added to the watch on " + fw.domain + ". The first check runs within a few minutes.", "ok");
+  } catch (e) { toast(e.message || "Could not add the checks.", "error"); }
+  finally { S.busy = false; await load(); }
+}
+
 async function toggleWatch(fw) {
   if (!fw || S.busy) return;
   const paused = !fw.paused;

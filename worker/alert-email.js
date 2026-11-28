@@ -51,6 +51,37 @@ export function explainEvent(ev = {}) {
     return out(what, why, fix);
   }
 
+  const dm = /^domain:(.+):([a-z]+)$/.exec(key);
+  if (dm) {
+    const dom = d || dm[1], id = dm[2], n = Number(ev.daysToExpiry), at = ev.registrar ? "your registrar (" + clip(ev.registrar, 60) + ")" : "your registrar";
+    const until = ev.notAfter && !isNaN(Date.parse(ev.notAfter)) ? new Date(ev.notAfter).toISOString().slice(0, 10) : "";
+    if (id === "expiry") {
+      if (/is not registered/.test(ev.title || "")) return out(ev.title, `Anyone can register ${dom} now and receive its mail, serve its website and reset passwords sent to its addresses.`, ev.advice);
+      const why = `When a registration lapses, the website, the mail and every sign-in on ${dom} stop working, and after the grace period anyone can register it.`;
+      return out(ev.title, why, `Renew ${dom} at ${at}${until ? " (it is registered until " + until + ")" : ""}, and turn on auto-renew with a payment card that will still be valid.`);
+    }
+    if (id === "transfer") return out(ev.title, `A transfer moves ${dom} to another registrar account, which then controls its DNS, its mail and its website.`, ev.advice);
+    if (id === "lock") return out(ev.title, `Without the lock, anyone who gets into the registrar account, or tricks its support, can move ${dom} away in days.`, ev.advice);
+    return out(ev.title);
+  }
+
+  const wm = /^web:(.+):([a-z]+)$/.exec(key);
+  if (wm) {
+    const host = d || wm[1], id = wm[2];
+    const WHY = {
+      git: `Anyone can download the site's source code and its full history, including any password or key ever committed.`,
+      env: `The file usually holds database passwords, API keys and signing secrets, and anyone who requested it has them.`,
+      https: `Visitors to ${host} cannot reach it securely, so their sessions and logins can be read or changed on the way.`,
+      redirect: `Visitors who type ${host} without https:// stay on plain HTTP, where their traffic can be read or changed.`,
+      hsts: `Without HSTS a visitor's first request can be downgraded to plain HTTP by anyone on the same network.`,
+      csp: `Without a strong Content-Security-Policy, an injected script runs with full access to the page and its visitors' sessions.`,
+      frame: `Another site can load ${host} in a hidden frame and trick visitors into clicking its buttons (clickjacking).`,
+      nosniff: `Browsers may guess content types, so an uploaded file can run as a script on ${host}.`,
+      cookies: `Cookies without the right flags can be sent over plain HTTP or read by injected scripts.`,
+    };
+    return out(ev.title, WHY[id] || "", ev.advice);
+  }
+
   const em = /^email:(.+):([a-z-]+)$/.exec(key);
   if (em) {
     const dom = d || em[1], id = em[2], at = ev.recordAt || "_dmarc." + dom, was = ev.was || "", now = ev.now || "";
