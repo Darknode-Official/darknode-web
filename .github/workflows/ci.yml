@@ -26,8 +26,8 @@ jobs:
       matrix:
         node: [20, 22]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
       - name: Tests
@@ -42,8 +42,8 @@ jobs:
       run:
         working-directory: worker
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - name: Bundle production Worker (dry run, no credentials)
