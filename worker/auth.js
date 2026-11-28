@@ -31,6 +31,8 @@ export const ROUTES = [
   { id: "digest", prefix: "/api/digest/", auth: "user" },
   { id: "usage", path: "/api/v1/usage", methods: ["POST"], auth: "user" },
   { id: "account-delete", path: "/api/account/delete", methods: ["POST"], auth: "user" },
+  { id: "account-export", path: "/api/account/export", methods: ["GET"], auth: "user" },
+  { id: "admin-deletions", path: "/api/admin/deletions", methods: ["GET", "POST"], auth: "user", role: "admin" },
   { id: "admin-users", path: "/api/admin/users", methods: ["GET"], auth: "user", role: "admin" },
   { id: "ingest", prefix: "/api/v1/ingest/", auth: "key", scope: "ingest:write" },
   { id: "findings", prefix: "/api/v1/findings/", auth: "key", scope: "findings:read" },

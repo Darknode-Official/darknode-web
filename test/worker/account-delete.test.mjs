@@ -1,7 +1,7 @@
 // Unit tests for worker/account-delete.js: self-service account deletion. Firestore REST and
 // Firebase Auth are an in-memory stand-in behind a fake fetch; Durable Objects are stubs.
 import { test, group, assert } from "../harness.mjs";
-import { handleAccountDelete, recentEnough, maybeWipe, RECENT_S } from "../../worker/account-delete.js";
+import { handleAccountDelete, handleAccountExport, handleAdminDeletions, recentEnough, maybeWipe, plain, RECENT_S } from "../../worker/account-delete.js";
 import { matchRoute, authorize } from "../../worker/auth.js";
 
 const json = (body, status = 200) => ({ status, body });
@@ -16,7 +16,8 @@ function fakeCloud(docs) {
   const doc = (path) => ({ name: "projects/p/databases/(default)/documents/" + path, fields: db.get(path) });
   const fetch = async (url, init = {}) => {
     const m = init.method || "GET";
-    if (url.endsWith("/accounts:delete")) { authDeleted.push(JSON.parse(init.body).localId); return res(200, {}); }
+    if (url.endsWith("/accounts:delete")) { if (cloud.authFails) return res(500, {}); authDeleted.push(JSON.parse(init.body).localId); return res(200, {}); }
+    if (url.endsWith("/accounts:lookup")) return res(200, { users: [{ localId: "u1", email: "test@darknode.ai", emailVerified: true, providerUserInfo: [{ providerId: "password" }], createdAt: "1793404800000" }] });
     if (url === ROOT + ":runQuery") {
       const q = JSON.parse(init.body).structuredQuery, from = q.from[0], ff = q.where.fieldFilter;
       const hits = [...db.keys()].filter((p) => {
@@ -40,12 +41,15 @@ function fakeCloud(docs) {
     }
     return db.has(path) ? res(200, doc(path)) : res(404, {});
   };
-  return { db, fetch, authDeleted };
+  const cloud = { db, fetch, authDeleted, authFails: false };
+  return cloud;
 }
 
 function fakeDOs() {
   const wiped = [];
-  const ns = (kind) => ({ idFromName: (n) => n, get: (id) => ({ fetch: async (u, init) => { assert.equal(u, "https://do/__wipe"); assert.equal(init.headers["x-dn-wipe"], "1"); wiped.push(kind + ":" + id); return { ok: true, status: 200 }; } }) });
+  const ns = (kind) => ({ idFromName: (n) => n, get: (id) => ({ fetch: async (u, init) => {
+    if (u === "https://do/") { const op = JSON.parse(init.body).op; return { ok: true, status: 200, json: async () => kind === "monitor" ? (op === "list" ? { monitors: [{ id: "m1", target: "example.com", wid: id }], history: [] } : { deadlines: [] }) : { keys: [{ keyId: "k1", prefix: "dk_ab", scopes: ["ingest:write"] }] } }; }
+    assert.equal(u, "https://do/__wipe"); assert.equal(init.headers["x-dn-wipe"], "1"); wiped.push(kind + ":" + id); return { ok: true, status: 200 }; } }) });
   return { wiped, env: { FIREBASE_PROJECT_ID: "p", GRAPH: ns("graph"), MONITOR: ns("monitor"), INGEST: ns("ingest"), VAULT: ns("vault") } };
 }
 
@@ -142,5 +146,53 @@ group("account-delete", () => {
     assert.equal(calls.length, 0);
     const r = await maybeWipe(mk("/__wipe", { "x-dn-wipe": "1" }), storage);
     assert.equal(r.status, 200); assert.deepEqual(calls, ["alarm", "all"]);
+  });
+
+  test("export: the caller's own records, secrets redacted, other people's left out", async () => {
+    const cloud = fakeCloud({
+      "users/u1": { email: "test@darknode.ai", tier: "free" }, "users/u1/notifications/n1": { text: "hi" },
+      "users/u2": { email: "other@darknode.ai" }, "pairings/c1": { uid: "u1", apiKey: "dk_secret" }, "pairings/c2": { uid: "u2" },
+      "feedback/f1": { uid: "u1", message: "nice" }, "waitlist/w1": { email: "test@darknode.ai" },
+      "workspaces/team0000000000000000": { createdBy: "u2", name: "Team" }, "workspaces/team0000000000000000/members/u1": { uid: "u1", role: "analyst" },
+    }), dos = fakeDOs();
+    const r = await handleAccountExport({ method: "GET" }, dos.env, json, me(), { fetch: cloud.fetch, token: async () => "t" });
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    const b = r.body;
+    assert.equal(b.account.email, "test@darknode.ai"); assert.deepEqual(b.account.signInMethods, ["password"]);
+    assert.equal(b.profile.tier, "free");
+    assert.deepEqual(b.profileCollections.notifications, [{ id: "n1", text: "hi" }]);
+    assert.deepEqual(b.records.pairings, [{ id: "c1", uid: "u1", apiKey: "[redacted]" }]);
+    assert.equal(b.records.feedback.length, 1); assert.equal(b.records.waitlist.length, 1);
+    assert.deepEqual(b.memberships, [{ kind: "workspace", id: "team0000000000000000", name: "Team", role: "analyst", createdByYou: false }]);
+    assert.equal(b.personalWorkspace.monitors[0].target, "example.com"); assert.equal(b.personalWorkspace.apiKeys[0].keyId, "k1");
+    assert.ok(!JSON.stringify(b).includes("other@darknode.ai"));
+    assert.equal(cloud.db.size, 9); // nothing was changed
+  });
+
+  test("export decodes every Firestore value type", () => {
+    assert.deepEqual(plain({ mapValue: { fields: { a: { integerValue: "3" }, b: { arrayValue: { values: [{ booleanValue: true }, { nullValue: null }] } }, t: { timestampValue: "2026-11-27T00:00:00Z" } } } }),
+      { a: 3, b: [true, null], t: "2026-11-27T00:00:00Z" });
+  });
+
+  test("admin deletions: owner only; lists requests; deletes only accounts that asked", async () => {
+    const route = matchRoute("/api/admin/deletions", "POST").route;
+    assert.equal(authorize(route, { kind: "user", claims: {} }).status, 403);
+    assert.equal(authorize(route, { kind: "user", claims: { admin: true } }), null);
+    const cloud = fakeCloud({ "deletionRequests/u1": { uid: "u1", email: "test@darknode.ai" }, "users/u1": {}, "users/u2": {}, "waitlist/w1": { email: "test@darknode.ai" } }), dos = fakeDOs();
+    const o = { fetch: cloud.fetch, token: async () => "t" };
+    const list = await handleAdminDeletions({ method: "GET" }, dos.env, json, o);
+    assert.deepEqual(list.body.requests.map((x) => [x.uid, x.email]), [["u1", "test@darknode.ai"]]);
+    const no = await handleAdminDeletions(req({ uid: "u2" }), dos.env, json, o);
+    assert.equal(no.status, 404); assert.ok(cloud.db.has("users/u2"));
+    const yes = await handleAdminDeletions(req({ uid: "u1" }), dos.env, json, o);
+    assert.equal(yes.status, 200);
+    assert.deepEqual([...cloud.db.keys()], ["users/u2"]); assert.deepEqual(cloud.authDeleted, ["u1"]);
+  });
+
+  test("admin deletions: if the sign-in delete fails the request stays, so it can be retried", async () => {
+    const cloud = fakeCloud({ "deletionRequests/u1": { uid: "u1", email: "" }, "users/u1": {} }), dos = fakeDOs();
+    cloud.authFails = true;
+    const r = await handleAdminDeletions(req({ uid: "u1" }), dos.env, json, { fetch: cloud.fetch, token: async () => "t" });
+    assert.equal(r.status, 502); assert.ok(cloud.db.has("deletionRequests/u1"));
   });
 });
