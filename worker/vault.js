@@ -19,6 +19,7 @@ import { Ledger, toCents, fmtCents, hashStr, canon } from "../public/js/vault/le
 import { readCapped } from "./body-cap.js";
 import { requireUser } from "./auth.js";
 import { ROLES, canDo } from "../public/js/vault/roles.js";
+import { maybeWipe } from "./account-delete.js";
 
 export { ROLES, canDo };
 
@@ -215,6 +216,7 @@ export class VaultDO {
   }
 
   async fetch(request) {
+    const wiped = await maybeWipe(request, this.storage); if (wiped) return wiped; // account deletion (worker/account-delete.js)
     const actor = { uid: request.headers.get("x-vault-uid") || "", role: request.headers.get("x-vault-role") || "" };
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
     if (!actor.uid || !ROLES.includes(actor.role)) return reply({ error: "forbidden" }, 403);

@@ -4560,6 +4560,10 @@ export function renderDeck(host, opts) {
             <div class="m"><div class="t">Reset local Deck state</div><div class="s">Clears connections, pins, notes and layout in this browser. Does not touch your account or the security graph.</div></div>
             <button class="dk-settog" id="dkSetReset" style="border-color:rgba(200,50,50,.4);color:#b4332e">Reset</button>
           </div>
+          ${noAccount ? "" : `<div class="dk-setrow">
+            <div class="m"><div class="t">Delete account</div><div class="s">Permanently deletes your account and everything stored with it: security graph, monitors, API keys, settings, and team workspaces you hold alone. Export first if you want a copy.</div></div>
+            <button class="dk-settog" id="dkSetDelAcct" style="border-color:rgba(200,50,50,.4);color:#b4332e">Delete</button>
+          </div>`}
         </div>
 
         ${opts.isOwner ? `<div class="dk-ovp">
@@ -4632,6 +4636,13 @@ export function renderDeck(host, opts) {
       try { localStorage.removeItem(acctKey(LS_CONN)); } catch (_) {} // connections are per account (acctKey)
       toast("Local Deck state reset — reloading");
       setTimeout(() => { try { location.reload(); } catch (_) {} }, 600);
+    };
+    const delAcct = el.querySelector("#dkSetDelAcct");
+    if (delAcct) delAcct.onclick = async () => {
+      delAcct.disabled = true;
+      try { const m = await import("/js/account-delete.js?v=1"); await m.deleteAccount({ toast }); }
+      catch (_) { toast("Couldn't load account deletion. Reload and try again.", "error"); }
+      finally { delAcct.disabled = false; }
     };
     const admBtn = el.querySelector("#dkSetAdmin");
     if (admBtn) admBtn.onclick = () => openTool("admin", "Admin");

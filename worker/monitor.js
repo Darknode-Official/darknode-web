@@ -10,6 +10,7 @@
 // clocks) are kept here too, one storage key each ("dl:<id>", CRA cases "cra:<CVE>"), and
 // alerted when they start and when a quarter of their time is left (public/js/core/deadlines.js).
 import { runCheck, cvesFromEntities, hostOnly } from "./checks.js";
+import { maybeWipe } from "./account-delete.js";
 import { diffFindings, diffToEvents, shouldAlert, defaultAlertRules, inQuietHours } from "./monitor-core.js";
 import { buildGraphWrite } from "./monitor-graph.js";
 import { deliver, RETRY_BACKOFF_MS } from "./notify.js";
@@ -458,6 +459,7 @@ export class MonitorDO {
 
   // ---- HTTP interface for the Deck (via handleMonitor) ----
   async fetch(request) {
+    const wiped = await maybeWipe(request, this.storage); if (wiped) return wiped; // account deletion (worker/account-delete.js)
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
     if (!request.headers.get("x-mon-uid")) return reply({ error: "forbidden" }, 403);
     const role = request.headers.get("x-mon-role") || "viewer";

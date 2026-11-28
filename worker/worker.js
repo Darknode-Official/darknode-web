@@ -30,6 +30,7 @@ import { GEMINI_MODELS, CLAUDE_PLAN, userTier, planDenied } from "./plan.js";
 import { chargeQuota, refundQuota, quotaMessage } from "./quota.js";
 import { handleDigest, handleUnsubscribe, runDigest } from "./digest.js";
 import { handleAdminUsers } from "./admin-users.js";
+import { handleAccountDelete } from "./account-delete.js";
 import { handleUsage } from "./usage.js";
 export { VaultDO } from "./vault.js";
 export { GraphDO } from "./graph.js";
@@ -822,6 +823,7 @@ async function route(request, env, rid) {
       case "digest": return handleDigest(request, env, rest, json, principal);
       case "admin-users": return handleAdminUsers(env, json);
       case "usage": return handleUsage(request, env, json, principal);
+      case "account-delete": return handleAccountDelete(request, env, json, principal);
       case "ingest": return handleIngest(request, env, rest, json, "ingest");
       case "findings": return handleIngest(request, env, rest, json, "findings");
     }

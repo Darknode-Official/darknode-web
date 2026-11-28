@@ -95,3 +95,9 @@ themed fiction rather than real tools: PROMETHEUS made up confidence and risk nu
 `Math.random()`, and Sentinel Eye showed a "TOP SECRET" banner over simulated SIGINT and
 aircraft. Their routes (`prometheus`, `sentineleye`) were removed from `public/js/auth.js`
 and `public/js/console-nav.js`. Files are kept at their original names under `js/`.
+
+## legal-terms-of-service-template.html
+
+An unfilled Terms of Service template (21 "[SPECIFY ...]" placeholders and drafting notes)
+that was publicly served at /legal/terms-of-service.html. It was never the binding text
+(that is public/js/legal.js, shown at /terms); the old URL now redirects to /terms.

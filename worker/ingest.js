@@ -11,6 +11,7 @@ import { resolveWorkspaceRole, canDo } from "./workspace.js";
 import { featureDenied } from "./plan.js";
 import { workspaceTier, liveTier } from "./plan-share.js";
 import { readCapped } from "./body-cap.js";
+import { maybeWipe } from "./account-delete.js";
 
 const WID = /^[A-Za-z0-9_-]{1,128}$/;
 const QUEUE_CAP = 2000;           // max findings held awaiting a browser drain
@@ -84,6 +85,7 @@ export class IngestDO {
   }
 
   async fetch(request) {
+    const wiped = await maybeWipe(request, this.storage); if (wiped) return wiped; // account deletion (worker/account-delete.js)
     const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
     const mgmtUid = request.headers.get("x-ing-uid");
     const apiKey = request.headers.get("x-ing-key");
